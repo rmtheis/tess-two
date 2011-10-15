@@ -1,0 +1,355 @@
+#*====================================================================*
+#-  Copyright (C) 2001 Leptonica.  All rights reserved.
+#-  This software is distributed in the hope that it will be
+#-  useful, but with NO WARRANTY OF ANY KIND.
+#-  No author or distributor accepts responsibility to anyone for the
+#-  consequences of using this software, or for whether it serves any
+#-  particular purpose or works at all, unless he or she says so in
+#-  writing.  Everyone is granted permission to copy, modify and
+#-  redistribute this source code, for commercial or non-commercial
+#-  purposes, with the following restrictions: (1) the origin of this
+#-  source code must not be misrepresented; (2) modified versions must
+#-  be plainly marked as such; and (3) this notice may not be removed
+#-  or altered from any source or modified source distribution.
+#*====================================================================*/
+
+
+#   makefile.mingw  (cross-compiler for windows on linux)
+#
+#   Hand-built -- editable -- simple -- makefile
+#
+#   Usage Notes (Important):
+#     (1) Only the building of optimized code has been tested
+#     (2) To use this, download these packages (e.g., from Debian):
+#            mingw32 (the cross-compiler)
+#            mingw32-runtime
+#            mingw32-binutils
+#         The cross-compiler programs will all be installed here:
+#            /usr/bin/mingw32msvc*
+#     (3) Put a copy of the following header files into
+#         /usr/local/include/mingw:
+#            jconfig.h     tiffconf.h
+#            jerror.h      tiff.h
+#            jpeglib.h     tiffio.h
+#            pngconf.h     tiffio.hxx
+#            png.h         tiffvers.h
+#            zconf.h       zlib.h
+#         These header files should be distributed with the corresponding
+#         4 libraries (jpeg, png, tiff, zlib) that you link to.
+#         See prog/Makefile.mingw for details on obtaining and using
+#         those libraries.
+#
+#   For a nodebug version:             make
+#   For a debug version:               make DEBUG=yes debug
+#   For a shared library version:      make SHARED=yes shared
+#   For all versions:                  make all
+#   With nonstandard header directories
+#                    make EXTRAINCLUDES="-I<nonstandard-incl-dir>"
+#
+#   To remove object files in src: make clean
+#   To remove object files and executables in prog: make clean
+#
+#   Customization for machine hardware:
+#   (1) On little-endian machines (e.g., i386, x86-64):
+#          CPPFLAGS = $(INCLUDES) -DL_LITTLE_ENDIAN
+#       On big-endian machines (e.g., Mac Power PC, Sun Sparc):
+#          CPPFLAGS = $(INCLUDES) -DL_BIG_ENDIAN
+#   (2) To generate function prototypes, you need a program called
+#       xtractprotos.  Build it with this command:
+#          make xtractprotos
+#       Then 'make allprotos'
+#
+#   Stuff used by Makefile
+RM =		rm -f
+TEST =		test
+MKDIRHIER =	mkdir -p
+LIBRARIAN =	i586-mingw32msvc-ar cq
+RANLIB =	i586-mingw32msvc-ranlib
+
+
+# Libraries are built into a binary tree with its root in the parent directory
+ROOT_DIR =	..
+
+BASE_OBJ =	$(ROOT_DIR)/obj
+OBJ_NODEBUG =	$(ROOT_DIR)/obj/nodebug
+OBJ_DEBUG =	$(ROOT_DIR)/obj/debug
+OBJ_SHARED =	$(ROOT_DIR)/obj/shared
+
+BASE_LIB =	$(ROOT_DIR)/lib
+LIB_NODEBUG =	$(ROOT_DIR)/lib/nodebug
+LIB_DEBUG =	$(ROOT_DIR)/lib/debug
+LIB_SHARED =	$(ROOT_DIR)/lib/shared
+
+
+# Include files
+INCLUDES =	-I./ -I/usr/local/include/mingw
+PROTOTYPE_DIR =	.
+
+# Conditional compilation (depending on processor endian-ness)
+CPPFLAGS =	$(INCLUDES) -DL_LITTLE_ENDIAN -D_NO_AUTOCONF_
+#CPPFLAGS =	$(INCLUDES) -DL_BIG_ENDIAN -D_NO_AUTOCONF_
+
+# Shared library linker options
+SONAME_OPTION = -Wl,-h,
+
+ifdef  SHARED
+    OPTIMIZE =		-O2 -fPIC
+else
+    ifdef  DEBUG
+	OPTIMIZE =	-g
+    else
+	OPTIMIZE =	-O2
+    endif
+endif
+
+
+#  which to use?
+#     use -Werror to verify there are no serious warnings
+#     use g++ to apply stricter rules.  Libraries made with g++ may not
+#        link to programs compiled with gcc (depends on the glibc version).
+#     use -DNO_CONSOLE_IO to remove all L_INFO, L_WARNING and
+#        ERROR_* logging, and to remove all DEBUG information dependent
+#        on whether or not NO_CONSOLE_IO has been defined.
+CC =		i586-mingw32msvc-gcc -ansi -Werror -D_BSD_SOURCE -DANSI
+#CC =		i586-mingw32msvc-g++ -ansi -Werror -D_BSD_SOURCE
+#CC =		i586-mingw32msvc-gcc -ansi -Werror -DNO_CONSOLE -D_BSD_SOURCE -DANSI
+
+OPTIONS =
+CFLAGS =		$(OPTIMIZE) $(OPTIONS)
+LIBRARIAN_SHARED =	i586-mingw32msvc-gcc -shared
+
+# Libraries differing only in their minor revision numbers
+# are required to have the same interface.  By using
+# "-h" in the ld, the "soname" is <libname>.X, where X is
+# the major revision number.
+# Links are created among the files <libname>.X.Y,
+# <libname>.X, and <libname>, where Y is the minor revision number.
+MAJOR_REV = 1
+MINOR_REV = 66
+
+#########################################################
+
+# Libraries
+
+LEPTLIB =		liblept.a
+LEPTLIB_SHARED =	liblept.so
+
+#########################################################
+
+LEPTLIB_C =	adaptmap.c affine.c affinecompose.c \
+		arithlow.c arrayaccess.c \
+		bardecode.c baseline.c bbuffer.c \
+		bilinear.c binarize.c \
+		binexpand.c binexpandlow.c \
+		binreduce.c binreducelow.c \
+		blend.c bmf.c bmpio.c bmpiostub.c \
+		boxbasic.c boxfunc1.c boxfunc2.c boxfunc3.c \
+		ccbord.c ccthin.c classapp.c \
+		colorcontent.c colormap.c colormorph.c \
+		colorquant.c colorseg.c \
+		compare.c conncomp.c \
+		convolve.c convolvelow.c correlscore.c \
+		dewarp.c dwacomb.2.c dwacomblow.2.c \
+		edge.c enhance.c \
+		fhmtauto.c fhmtgen.1.c fhmtgenlow.1.c \
+		finditalic.c flipdetect.c fliphmtgen.c \
+		fmorphauto.c fmorphgen.1.c fmorphgenlow.1.c \
+		fpix1.c fpix2.c \
+		gifio.c gifiostub.c \
+		gplot.c graphics.c \
+		graymorph.c graymorphlow.c \
+		grayquant.c grayquantlow.c heap.c \
+		jbclass.c jpegio.c jpegiostub.c \
+		kernel.c list.c maze.c mediancut.c \
+		morph.c morphapp.c morphdwa.c morphseq.c \
+		numabasic.c numafunc1.c numafunc2.c \
+		pageseg.c paintcmap.c \
+		parseprotos.c partition.c \
+		pix1.c pix2.c pix3.c pix4.c pix5.c \
+		pixabasic.c pixacc.c \
+		pixafunc1.c pixafunc2.c \
+		pixalloc.c pixarith.c \
+		pixcomp.c pixconv.c pixtiling.c \
+		pngio.c pngiostub.c pnmio.c pnmiostub.c \
+		projective.c psio1.c psio1stub.c \
+		psio2.c psio2stub.c \
+		ptabasic.c ptafunc1.c \
+                ptra.c queue.c rank.c \
+		readbarcode.c readfile.c regutils.c \
+		rop.c ropiplow.c roplow.c \
+		rotate.c rotateam.c rotateamlow.c \
+		rotateorth.c rotateorthlow.c rotateshear.c \
+		runlength.c sarray.c \
+		scale.c scalelow.c \
+		seedfill.c seedfilllow.c \
+		sel1.c sel2.c selgen.c \
+		shear.c skew.c spixio.c stack.c \
+		textops.c tiffio.c tiffiostub.c \
+		utils.c viewfiles.c \
+		warper.c watershed.c writefile.c \
+		zlibmem.c zlibmemstub.c
+
+LEPTLIB_H =	allheaders.h alltypes.h \
+		array.h arrayaccess.h bbuffer.h \
+		bmf.h bmp.h ccbord.h \
+		dewarp.h environ.h gplot.h \
+		heap.h imageio.h \
+		jbclass.h jpeglib.h \
+		leptprotos.h list.h \
+		morph.h pix.h ptra.h queue.h \
+		readbarcode.h regutils.h stack.h \
+		watershed.h
+
+##################################################################
+
+#  Main targets
+ 
+nodebug: dirs $(LEPTLIB:%=$(LIB_NODEBUG)/%)
+
+all:
+	make -f makefile.mingw TARGET=$(TARGET) nodebug
+	make -f makefile.mingw TARGET=$(TARGET) DEBUG=true debug
+	make -f makefile.mingw TARGET=$(TARGET) SHARED=true shared
+
+DEBUG_LIBS = $(LEPTLIB:%=$(LIB_DEBUG)/%)
+SHARED_LIBS = $(LEPTLIB_SHARED:%=$(LIB_SHARED)/%)
+debug:	dirs $(DEBUG_LIBS)
+shared:	dirs $(SHARED_LIBS)
+
+##################################################################
+
+#   Proto target
+#
+#  Note: To make the prototype file leptprotos.h requires the existence
+#  of the xtractprotos executable.  However, we don't let the allprotos
+#  target depend explicitly on xtractprotos because of a dependency loop
+#  back on leptprotos.h, which causes an extra library compilation
+#  when you 'make allprotos'.  Before making allprotos the first
+#  time, 'make xtractprotos'  (Also, see the comments near the top
+#  of this Makefile.)
+
+allprotos:	leptprotos
+
+leptprotos:	$(LEPTLIB_C)
+		@$(TEST) -f xtractprotos || echo "First run 'make xtractprotos'"
+		./xtractprotos -prestring=LEPT_DLL $(LEPTLIB_C) > tempprotos.h
+		mv tempprotos.h $(PROTOTYPE_DIR)/$@.h
+
+##################################################################
+
+#  xtractprotos
+
+xtractprotos:	dirs leptlib
+	cd ../prog; make xtractprotos
+
+xtractprotos.o:	xtractprotos.c
+
+##################################################################
+
+# Rule to make optimized library
+
+$(LIB_NODEBUG)/%.a:
+		$(RM) $@
+		$(LIBRARIAN) $@ $<
+		$(RANLIB) $@
+
+# Rule to make debuggable library
+
+$(LIB_DEBUG)/%.a:
+		$(RM) $@
+		$(LIBRARIAN) $@ $<
+		$(RANLIB) $@
+
+# Rule to make shared library
+
+$(LIB_SHARED)/%.so:
+		$(RM) $@
+		$(LIBRARIAN_SHARED) $(SONAME_OPTION)$(notdir $@).$(MAJOR_REV) -o $@ $<
+	mv $@ $@.$(MAJOR_REV).$(MINOR_REV)
+	cd $(LIB_SHARED); rm $(notdir $@).$(MAJOR_REV); \
+	  ln -s $(notdir $@).$(MAJOR_REV).$(MINOR_REV) $(notdir $@).$(MAJOR_REV)
+	cd $(LIB_SHARED); rm $(notdir $@); \
+	  ln -s $(notdir $@).$(MAJOR_REV) $(notdir $@)
+
+##################################################################
+
+# No-debug library dependencies and rules
+
+leptlib:	$(LIB_NODEBUG)/$(LEPTLIB)
+$(LIB_NODEBUG)/$(LEPTLIB):	$(LEPTLIB_C:%.c=$(OBJ_NODEBUG)/%.o)
+		$(RM) $@
+		$(LIBRARIAN) $@ $(LEPTLIB_C:%.c=$(OBJ_NODEBUG)/%.o)
+		$(RANLIB) $@
+
+# Debug library dependencies and rules
+
+leptlibd:	$(LIB_DEBUG)/$(LEPTLIB)
+$(LIB_DEBUG)/$(LEPTLIB):	$(LEPTLIB_C:%.c=$(OBJ_DEBUG)/%.o)
+		$(RM) $@
+		$(LIBRARIAN) $@ $(LEPTLIB_C:%.c=$(OBJ_DEBUG)/%.o)
+		$(RANLIB) $@
+
+# Shared library dependencies, rules and links
+
+leptlibs:	$(LIB_SHARED)/$(LEPTLIB_SHARED)
+$(LIB_SHARED)/$(LEPTLIB_SHARED):	$(LEPTLIB_C:%.c=$(OBJ_SHARED)/%.o)
+		$(RM) $@
+		$(LIBRARIAN_SHARED) $(SONAME_OPTION)$(notdir $@).$(MAJOR_REV) -o $@ $(LEPTLIB_C:%.c=$(OBJ_SHARED)/%.o)
+	mv $@ $@.$(MAJOR_REV).$(MINOR_REV)
+	cd $(LIB_SHARED); rm $(notdir $@).$(MAJOR_REV); \
+	  ln -s $(notdir $@).$(MAJOR_REV).$(MINOR_REV) $(notdir $@).$(MAJOR_REV)
+	cd $(LIB_SHARED); rm $(notdir $@); \
+	  ln -s $(notdir $@).$(MAJOR_REV) $(notdir $@)
+
+#########################################################
+
+#  Rules for compiling source
+
+$(OBJ_NODEBUG)/%.o:	%.c  $(LEPTLIB_H)
+		@$(TEST) -d $(OBJ_NODEBUG) || $(MKDIRHIER) $(OBJ_NODEBUG)
+		$(COMPILE.c) -o $@ $<
+
+$(OBJ_DEBUG)/%.o:	%.c  $(LEPTLIB_H)
+		@$(TEST) -d $(OBJ_DEBUG) || $(MKDIRHIER) $(OBJ_DEBUG)
+		$(COMPILE.c) -o $@ $<
+
+$(OBJ_SHARED)/%.o:	%.c  $(LEPTLIB_H)
+		@$(TEST) -d $(OBJ_SHARED) || $(MKDIRHIER) $(OBJ_SHARED)
+		$(COMPILE.c) -o $@ $<
+
+###########################################################
+
+# Prepare a local environment
+
+dirs:
+		@$(TEST) -d $(BASE_OBJ) || $(MKDIRHIER) $(BASE_OBJ)
+		@$(TEST) -d $(OBJ_NODEBUG) || $(MKDIRHIER) $(OBJ_NODEBUG)
+		@$(TEST) -d $(OBJ_DEBUG) || $(MKDIRHIER) $(OBJ_DEBUG)
+		@$(TEST) -d $(OBJ_SHARED) || $(MKDIRHIER) $(OBJ_SHARED)
+		@$(TEST) -d $(BASE_LIB) || $(MKDIRHIER) $(BASE_LIB)
+		@$(TEST) -d $(LIB_NODEBUG) || $(MKDIRHIER) $(LIB_NODEBUG)
+		@$(TEST) -d $(LIB_DEBUG) || $(MKDIRHIER) $(LIB_DEBUG)
+		@$(TEST) -d $(LIB_SHARED) || $(MKDIRHIER) $(LIB_SHARED)
+
+
+###########################################################
+
+clean:		
+		$(RM) $(OBJ_NODEBUG)/*.o $(OBJ_DEBUG)/*.o \
+			$(OBJ_SHARED)/*.o \
+			$(LIB_NODEBUG)/*.a $(LIB_DEBUG)/*.a \
+			$(LIB_SHARED)/*.so $(LIB_SHARED)/*.so.? \
+			$(LIB_SHARED)/*.so.?.* \
+			xtractprotos.o xtractprotos
+
+###########################################################
+
+depend:
+	/usr/X11R6/bin/makedepend -DNO_PROTOS $(CPPFLAGS) $(LEPTLIB_C)
+
+###########################################################
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+
+
+

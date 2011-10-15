@@ -1,0 +1,40 @@
+#!/bin/bash
+#   pdf2tiff
+#
+#     Rasterizes a PDF file, saving as a set of g4 compressed tiff images
+#
+#     input:  PDF file
+#             root name of output files
+#     output: ccitt-g4 compressed tiff binary files for each page
+
+
+scriptname=${0##*/}
+
+if test $# != 2
+then
+  echo "usage: " $scriptname " inpdffile outtifroot"
+  exit -1
+fi
+
+inpdffile=$1
+outtifroot=$2
+
+# assert (input pdf filename ends in .pdf)
+if test ${inpdffile##*.} != pdf
+then
+  echo $scriptname ": " $inpdffile "does not end in .pdf"
+  exit -1
+fi
+
+# need mysterious "primer"
+# choose one of the two options below
+
+# output image size depending on resolution
+echo "0 neg 0 neg" translate | gs -sDEVICE=tiffg4 -sOutputFile=${outtifroot}%03d.tif -r300x300 -q - ${inpdffile}
+
+# output fixed image size
+#echo "0 neg 0 neg" translate | gs -sDEVICE=tiffg4 -sOutputFile=${outtifroot}%03d.tif -g2550x3300 -r300x300 -q - ${inpdffile}
+
+# use this to output to a single multipage tiff file
+#tiffcp -c g4 ${outtifroot}*.tif ${outtifroot}.tif
+
