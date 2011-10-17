@@ -3,7 +3,7 @@
 	<name>tess-two-test</name>
 	<comment></comment>
 	<projects>
-		<project>tesseract-android-tools</project>
+		<project>tess-two</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
@@ -33,9 +33,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>tesseract-android-tools_src</name>
+			<name>tess-two_src</name>
 			<type>2</type>
-			<locationURI>_android_tesseract_android_tools_ce5fb1c4/src</locationURI>
+			<location>C:/ocr/tess-two/tess-two/src</location>
 		</link>
 	</linkedResources>
 </projectDescription>
