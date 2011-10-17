@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>tesseract-android-tools-test</name>
+	<name>tess-two-test</name>
 	<comment></comment>
 	<projects>
 		<project>tesseract-android-tools</project>
