@@ -39,6 +39,24 @@ To build this project, run the following commands in the terminal:
 You may also want to edit jni/Android.mk to reflect the correct library source
 directories and avoid running "export" every time you run ndk-build.
 
+Test
+====
+
+Import tess-two and tess-two-test into Eclipse (File->Import->Existing Projects) and build.
+
+Start an AVD running Android 2.2 or higher, with an SD card.
+
+    cd <project-directory>/tess-two-test
+    wget http://tesseract-ocr.googlecode.com/files/eng.traineddata.gz
+    gunzip eng.traineddata.gz
+    adb shell mkdir /mnt/sdcard/tesseract
+    adb shell mkdir /mnt/sdcard/tesseract/tessdata
+    adb push eng.traineddata /mnt/sdcard/tesseract/tessdata
+    adb install bin/tess-two-test.apk
+    adb shell am instrument -w -e package com.googlecode.tesseract.android.test \
+    com.googlecode.tesseract.android.test/android.test.InstrumentationTestRunner
+
+When the test cases pass, "OK (3 tests)" will be reported.
 
 License
 =======
