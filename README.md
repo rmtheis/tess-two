@@ -79,8 +79,8 @@ tess-two is licensed under the [Apache License, Version 2.0](http://www.apache.o
      * limitations under the License.
      */
 
-	 
-This project contains other third party software in the "external" folder:
+ 
+This project contains other third party software in the "external" folder, with separate license agreements:
 
 * Tesseract 3.00 (Modified to add TessBaseAPI::GetCharacters())
 * Leptonica 1.66 (Unmodified)
