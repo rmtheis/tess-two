@@ -35,7 +35,7 @@
 		<link>
 			<name>tess-two_src</name>
 			<type>2</type>
-			<location>C:/ocr/tess-two/tess-two/src</location>
+			<locationURI>_android_tess_two_bb85cb10/src</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>
