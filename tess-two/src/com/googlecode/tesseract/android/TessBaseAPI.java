@@ -32,7 +32,7 @@ import java.io.File;
  * JNI methods, but does implement enough to be useful. Comments are adapted
  * from original Tesseract source.
  * 
- * Modified from the original version by Robert Theis, Aug. 2011. Added getRegions(),
+ * Modified from the original version. Added getRegions(), getTextlines(),
  * getWords(), and getCharacters(), and modified finalize().
  *
  * @author alanv@google.com (Alan Viverette)
@@ -354,7 +354,16 @@ public class TessBaseAPI {
     public Pixa getRegions() {
         return new Pixa(nativeGetRegions(), 0, 0);
     }
-    
+   
+    /**
+     * Returns the textlines as a Pixa.
+     * 
+     * @return Pixa containing textlines
+     */
+    public Pixa getTextlines() {
+        return new Pixa(nativeGetTextlines(), 0, 0);
+    }
+
     /**
      * Returns the word bounding boxes as a Pixa, in reading order.
      * 
@@ -420,6 +429,8 @@ public class TessBaseAPI {
     private native void nativeSetPageSegMode(int mode);
     
     private native int nativeGetRegions();
+
+    private native int nativeGetTextlines();
 
     private native int nativeGetWords();
     

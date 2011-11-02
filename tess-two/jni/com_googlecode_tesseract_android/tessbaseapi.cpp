@@ -360,6 +360,21 @@ jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetRegions(JNIEnv *
   return reinterpret_cast<jint>(pixa);
 }
 
+jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetTextlines(JNIEnv *env,
+                                                                        jobject thiz) {
+  LOGV(__FUNCTION__);
+
+  native_data_t *nat = get_native_data(env, thiz);;
+  PIXA *pixa = NULL;
+  BOXA *boxa;
+
+  boxa = nat->api.GetTextlines(&pixa, NULL);
+
+  boxaDestroy(&boxa);
+
+  return reinterpret_cast<jint>(pixa);
+}
+
 jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetWords(JNIEnv *env,
                                                                       jobject thiz) {
   LOGV(__FUNCTION__);
