@@ -9,6 +9,7 @@ This API adds the following methods on top of tesseract-android-tools r6 to
 enable retrieving bounding boxes for words and characters recognized using OCR:
 
 * TessBaseAPI::GetRegions()
+* TessBaseAPI::GetTextlines()
 * TessBaseAPI::GetWords()
 * TessBaseAPI::GetCharacters()
 
