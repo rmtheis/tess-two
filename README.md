@@ -9,10 +9,11 @@ This API adds the following methods on top of tesseract-android-tools r6 to
 enable retrieving bounding boxes for words and characters recognized using OCR:
 
 * TessBaseAPI::GetRegions()
+* TessBaseAPI::GetTextlines()
 * TessBaseAPI::GetWords()
 * TessBaseAPI::GetCharacters()
 
-Note: GetWords() and GetCharacters() work well, but I have not gotten good 
+Note: GetTextlines(), GetWords() and GetCharacters() work well, but I have not gotten good 
 results from Tesseract when calling GetRegions().
 
 
@@ -25,6 +26,9 @@ This project contains tools for compiling the Tesseract, Leptonica, and JPEG
 libraries for use on the Android platform. It contains an Eclipse Android
 [library project](http://developer.android.com/guide/developing/projects/projects-eclipse.html#SettingUpLibraryProject) 
 that provides a Java API for accessing natively-compiled Tesseract and Leptonica APIs.
+
+Note: These build instructions work on Android SDK r12/ADT 12. Modifications
+will generally be necessary for newer versions of the SDK/ADT.
 
 To build this project, run the following commands in the terminal:
 
