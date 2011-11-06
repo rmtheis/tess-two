@@ -1,0 +1,38 @@
+#!/bin/bash
+# Requirement: tesseract directory name must be "tesseract-ocr" otherwise
+# script will not work
+
+# get version information
+version=`grep PACKAGE_VERSION= configure | sed -e "s/PACKAGE_VERSION=//" | sed -e "s/'//g"`
+ver=tesseract-ocr-$version
+excld="exclude.txt"
+cd ..
+echo Output for $ver is in `pwd`...
+
+# create language files packages
+if [ -f $excld ] 
+then
+	echo Removing $excld...
+	rm -f $excld
+fi
+
+for l in tesseract-ocr/tessdata/*.traineddata
+do
+	echo  Creating language package for `basename "$l" .traineddata`...
+	chmod 644 ${l%%.*}.*
+        tar --group root --owner root -chozf $ver.`basename "$l" .traineddata`.tar.gz ${l%%.*}.*
+	echo ${l%%.*}.* | tr " " "\n" >>$excld
+done
+
+# create linux source package
+tar -chzf tesseract-ocr-$version.tar.gz --exclude=.svn --exclude=vs2008 --exclude=vs2010 -X $excld tesseract-ocr/*
+rm -f $excld
+
+# Windows build relevant files
+name=$ver-win_vs
+# Let's be nice and use common windows packager ;-)
+zip $name.zip tesseract-ocr/vs2008/* tesseract-ocr/vs2008/include/* tesseract-ocr/vs2008/include/leptonica/* tesseract-ocr/vs2008/port/* tesseract-ocr/vs2008/lib/* tesseract-ocr/vs2010/* tesseract-ocr/vs2010/include/* tesseract-ocr/vs2010/include/leptonica/* tesseract-ocr/vs2010/port/*
+
+# create doc
+doxygen tesseract-ocr/doc/Doxyfile
+tar -chzf $ver-doc-html.tar.gz tesseract-ocr/doc/html/*

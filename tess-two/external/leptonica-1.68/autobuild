@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+#  autobuild
+
+libtoolize -c
+aclocal
+autoheader
+autoconf
+automake -a -c
+
