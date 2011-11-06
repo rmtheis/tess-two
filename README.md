@@ -22,13 +22,13 @@ Build
 
 _(Adapted from the tesseract-android-tools README)_
 
-Note: These build instructions work on Android SDK r12/ADT 12. Modifications
-will generally be necessary for newer versions of the SDK/ADT.
-
 This project contains tools for compiling the Tesseract, Leptonica, and JPEG
 libraries for use on the Android platform. It contains an Eclipse Android
 [library project](http://developer.android.com/guide/developing/projects/projects-eclipse.html#SettingUpLibraryProject) 
 that provides a Java API for accessing natively-compiled Tesseract and Leptonica APIs.
+
+Note: These build instructions work on Android SDK r12/ADT 12. Modifications
+will generally be necessary for newer versions of the SDK/ADT.
 
 To build this project, run the following commands in the terminal:
 
