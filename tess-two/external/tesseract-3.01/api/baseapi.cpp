@@ -3,8 +3,10 @@
  * Description: Simple API for calling tesseract.
  * Author:      Ray Smith
  * Created:     Fri Oct 06 15:35:01 PDT 2006
+ * Modified:    2011 by Robert Theis to add TessBaseAPI::GetCharacters()
  *
  * (C) Copyright 2006, Google Inc.
+ * (C) Copyright 2011, Robert Theis
  ** Licensed under the Apache License, Version 2.0 (the "License");
  ** you may not use this file except in compliance with the License.
  ** You may obtain a copy of the License at
@@ -53,9 +55,7 @@
 #include "otsuthr.h"
 #include "osdetect.h"
 
-#ifdef __MSW32__
 #include "version.h"
-#endif
 
 namespace tesseract {
 
@@ -1922,4 +1922,51 @@ const char* TessBaseAPI::GetLastInitLanguage() const {
 CubeRecoContext *TessBaseAPI::GetCubeRecoContext() const {
   return (tesseract_ == NULL) ? NULL : tesseract_->GetCubeRecoContext();
 }
+
+// Get the characters as a Pixa, in reading order.
+// Can be called before or after Recognize.
+Pixa* TessBaseAPI::GetCharacters() {
+  int im_height = pixGetHeight(tesseract_->pix_binary());
+
+  if (tesseract_ == NULL ||
+      (page_res_ == NULL &&
+       Recognize(NULL) < 0))
+    return NULL;
+
+  TESS_CHAR_LIST  tess_chars;
+  TESS_CHAR_IT    tess_chars_it(&tess_chars);
+
+  extract_result(&tess_chars_it, page_res_);
+  tess_chars_it.move_to_first();
+
+  Pixa *pixa = pixaCreate(tess_chars.length());
+
+  for (tess_chars_it.mark_cycle_pt();
+       !tess_chars_it.cycled_list();
+       tess_chars_it.forward())
+    {
+      TESS_CHAR *tc = tess_chars_it.data();
+
+      TBOX box  = tc->box;
+
+      if (box.null_box())
+        continue;
+
+      Box* lbox = boxCreate(box.left(), im_height - box.top(),
+                            box.width(), box.height());
+
+      Pix* pix  = pixCreate(box.width(), box.height(), 1);
+
+      // Copy the whole word bounding box to the output pix.
+      pixRasterop(pix, 0, 0, box.width(), box.height(),
+                  PIX_SRC, tesseract_->pix_binary(),
+                  box.left(), im_height - box.top());
+
+      pixaAddPix(pixa, pix, L_INSERT);
+      pixaAddBox(pixa, lbox, L_INSERT);
+    }
+
+  return pixa;
+}
+
 }  // namespace tesseract.

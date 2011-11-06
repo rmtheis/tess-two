@@ -3,8 +3,10 @@
 // Description: Simple API for calling tesseract.
 // Author:      Ray Smith
 // Created:     Fri Oct 06 15:35:01 PDT 2006
+// Modified:    2011 by Robert Theis to add TessBaseAPI::GetCharacters()
 //
 // (C) Copyright 2006, Google Inc.
+// (C) Copyright 2011, Robert Theis
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -528,6 +530,9 @@ class TESSDLL_API TessBaseAPI {
   /** Return the language used in the last valid initialization. */
   const char* GetLastInitLanguage() const;
 
+  /* Get the characters as a Pixa, in reading order. */
+  Pixa* GetCharacters();
+  
   // Returns a ROW object created from the input row specification.
   static ROW *MakeTessOCRRow(float baseline, float xheight,
                              float descender, float ascender);

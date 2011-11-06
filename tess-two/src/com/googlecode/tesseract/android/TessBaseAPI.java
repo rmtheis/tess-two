@@ -50,38 +50,53 @@ public class TessBaseAPI {
         nativeClassInit();
     }
 
-    /** Fully automatic page segmentation. */
-    public static final int PSM_AUTO = 0;
-
+    /** Orientation and script detection only. */
+    public static final int PSM_OSD_ONLY = 0;
+    
+    /** Automatic page segmentation with orientation and script detection. (OSD) */
+    public static final int PSM_AUTO_OSD = 1;
+    
+    /** Fully automatic page segmentation, but no OSD, or OCR. */
+    public static final int PSM_AUTO_ONLY = 2;
+    
+    /** Fully automatic page segmentation, but no OSD. */
+    public static final int PSM_AUTO = 3;
+    
     /** Assume a single column of text of variable sizes. */
-    public static final int PSM_SINGLE_COLUMN = 1;
-
-    /** Assume a single uniform block of text. (Default) */
-    public static final int PSM_SINGLE_BLOCK = 2;
-
+    public static final int PSM_SINGLE_COLUMN = 4;
+    
+    /** Assume a single uniform block of vertically aligned text. */
+    public static final int PSM_SINGLE_BLOCK_VERT_TEXT = 5;
+    
+    /** Assume a single uniform block of text. (Default.) */
+    public static final int PSM_SINGLE_BLOCK = 6;
+    
     /** Treat the image as a single text line. */
-    public static final int PSM_SINGLE_LINE = 3;
-
+    public static final int PSM_SINGLE_LINE = 7;
+    
     /** Treat the image as a single word. */
-    public static final int PSM_SINGLE_WORD = 4;
-
+    public static final int PSM_SINGLE_WORD = 8;
+    
     /** Treat the image as a single character. */
-    public static final int PSM_SINGLE_CHAR = 5;
-
-    /** Default accuracy versus speed mode. */
-    public static final int AVS_FASTEST = 0;
-
-    /** Slowest and most accurate mode. */
-    public static final int AVS_MOST_ACCURATE = 100;
-
+    public static final int PSM_SINGLE_CHAR = 9;
+    
     /** Whitelist of characters to recognize. */
     public static final String VAR_CHAR_WHITELIST = "tessedit_char_whitelist";
 
     /** Blacklist of characters to not recognize. */
     public static final String VAR_CHAR_BLACKLIST = "tessedit_char_blacklist";
-
-    /** Accuracy versus speed setting. */
-    public static final String VAR_ACCURACYVSPEED = "tessedit_accuracyvspeed";
+    
+    /** Run Tesseract only - fastest */
+    public static final int OEM_TESSERACT_ONLY = 0;
+    
+    /** Run Cube only - better accuracy, but slower */
+    public static final int OEM_CUBE_ONLY = 1;
+    
+    /** Run both and combine results - best accuracy */
+    public static final int OEM_TESSERACT_CUBE_COMBINED = 2;
+    
+    /** Default OCR engine mode. */
+    public static final int OEM_DEFAULT = 3;
 
     /**
      * Constructs an instance of TessBaseAPI.
@@ -152,6 +167,29 @@ public class TessBaseAPI {
             throw new IllegalArgumentException("Data path must contain subfolder tessdata!");
 
         return nativeInit(datapath, language);
+    }
+
+    /**
+     * Initializes the Tesseract engine with a specified language model. Returns
+     * <code>true</code> on success.
+     *
+     * @param datapath the parent directory of tessdata ending in a forward
+     *            slash
+     * @param language (optional) an ISO 639-3 string representing the language
+     * @param mode the OCR engine mode to be set
+     * @return <code>true</code> on success
+     */
+    public boolean init(String datapath, String language, int ocrEngineMode) {
+        if (datapath == null)
+            throw new IllegalArgumentException("Data path must not be null!");
+        if (!datapath.endsWith(File.separator))
+            datapath += File.separator;
+
+        File tessdata = new File(datapath + "tessdata");
+        if (!tessdata.exists() || !tessdata.isDirectory())
+            throw new IllegalArgumentException("Data path must contain subfolder tessdata!");
+
+        return nativeInitOem(datapath, language, ocrEngineMode);	
     }
 
     /**
@@ -354,16 +392,16 @@ public class TessBaseAPI {
     public Pixa getRegions() {
         return new Pixa(nativeGetRegions(), 0, 0);
     }
-   
+    
     /**
      * Returns the textlines as a Pixa.
      * 
      * @return Pixa containing textlines
      */
     public Pixa getTextlines() {
-        return new Pixa(nativeGetTextlines(), 0, 0);
+	return new Pixa(nativeGetTextlines(), 0, 0);
     }
-
+    
     /**
      * Returns the word bounding boxes as a Pixa, in reading order.
      * 
@@ -402,6 +440,8 @@ public class TessBaseAPI {
     private native void nativeFinalize();
 
     private native boolean nativeInit(String datapath, String language);
+    
+    private native boolean nativeInitOem(String datapath, String language, int mode);
 
     private native String nativeGetLastInitLanguage();
     
@@ -429,7 +469,7 @@ public class TessBaseAPI {
     private native void nativeSetPageSegMode(int mode);
     
     private native int nativeGetRegions();
-
+    
     private native int nativeGetTextlines();
 
     private native int nativeGetWords();

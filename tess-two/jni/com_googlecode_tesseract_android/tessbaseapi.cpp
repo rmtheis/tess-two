@@ -120,6 +120,35 @@ jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInit(JNIEnv *en
   return res;
 }
 
+jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInitOem(JNIEnv *env, 
+	                                                                      jobject thiz,
+                                                                          jstring dir, 
+																	      jstring lang, 
+																	      jint mode) {
+  LOGV(__FUNCTION__);
+
+  native_data_t *nat = get_native_data(env, thiz);
+
+  const char *c_dir = env->GetStringUTFChars(dir, NULL);
+  const char *c_lang = env->GetStringUTFChars(lang, NULL);
+
+  LOGI("Attempting Init() with dir=%s, lang=%s, oem=%d", c_dir, c_lang, mode);
+
+  jboolean res = JNI_TRUE;
+
+  if (nat->api.Init(c_dir, c_lang, (tesseract::OcrEngineMode) mode)) {
+    LOGE("Could not initialize Tesseract API with language=%s!", c_lang);
+    res = JNI_FALSE;
+  } else {
+    LOGI("Initialized Tesseract API with language=%s", c_lang);
+  }
+
+  env->ReleaseStringUTFChars(lang, c_dir);
+  env->ReleaseStringUTFChars(lang, c_lang);
+
+  return res;
+}
+
 jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetLastInitLanguage(JNIEnv *env,
                                                                              jobject thiz) {
   LOGV(__FUNCTION__);

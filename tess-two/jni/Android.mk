@@ -13,9 +13,9 @@
 # LEPTONICA_PATH := <path-to-leptonica>
 # LIBJPEG_PATH := <path-to-libjpeg>
 
-TESSERACT_PATH := $(call my-dir)/../external/tesseract-3.00
-LEPTONICA_PATH := $(call my-dir)/../external/leptonlib-1.66
-LIBJPEG_PATH := $(call my-dir)/../external/libjpeg
+#TESSERACT_PATH := $(call my-dir)/../external/tesseract-3.01
+#LEPTONICA_PATH := $(call my-dir)/../external/leptonica-1.68
+#LIBJPEG_PATH := $(call my-dir)/../external/libjpeg
 
 ifeq "$(TESSERACT_PATH)" ""
   $(error You must set the TESSERACT_PATH variable to the Tesseract source \
