@@ -5,6 +5,9 @@ A fork of Tesseract Tools for Android ([tesseract-android-tools](http://code.goo
 additional functions. Tesseract Tools for Android is a set of Android APIs and
 build files for the Tesseract OCR and Leptonica image processing libraries.
 
+This project works with Tesseract v3.01. Source code for Tesseract 3.01 and
+the other dependencies is included in the tess-two/external folder.
+
 This API adds the following methods on top of tesseract-android-tools r6 to
 enable retrieving bounding boxes for words and characters recognized using OCR:
 
@@ -17,6 +20,12 @@ Note: GetTextlines(), GetWords() and GetCharacters() work well, but I have not g
 results from Tesseract when calling GetRegions().
 
 
+Quickstart
+==========
+
+
+
+
 Build
 =====
 
@@ -27,14 +36,13 @@ libraries for use on the Android platform. It contains an Eclipse Android
 [library project](http://developer.android.com/guide/developing/projects/projects-eclipse.html#SettingUpLibraryProject) 
 that provides a Java API for accessing natively-compiled Tesseract and Leptonica APIs.
 
-Note: These build instructions work on Android SDK r12/ADT 12. Modifications
-will generally be necessary for newer versions of the SDK/ADT.
+This project is set up to build on Android SDK Tools r14/r15.
 
 To build this project, run the following commands in the terminal:
 
     cd <project-directory>/tess-two
-    export TESSERACT_PATH=${PWD}/external/tesseract-3.00
-    export LEPTONICA_PATH=${PWD}/external/leptonlib-1.66
+    export TESSERACT_PATH=${PWD}/external/tesseract-3.01
+    export LEPTONICA_PATH=${PWD}/external/leptonica-1.68
     export LIBJPEG_PATH=${PWD}/external/libjpeg
     ndk-build
     android update project --path .
@@ -46,21 +54,8 @@ directories and avoid running "export" every time you run ndk-build.
 Test
 ====
 
-Import tess-two and tess-two-test into Eclipse (File->Import->Existing Projects) and build.
 
-Start an AVD running Android 2.2 or higher, with an SD card.
 
-    cd <project-directory>/tess-two-test
-    wget http://tesseract-ocr.googlecode.com/files/eng.traineddata.gz
-    gunzip eng.traineddata.gz
-    adb shell mkdir /mnt/sdcard/tesseract
-    adb shell mkdir /mnt/sdcard/tesseract/tessdata
-    adb push eng.traineddata /mnt/sdcard/tesseract/tessdata
-    adb install bin/tess-two-test.apk
-    adb shell am instrument -w -e package com.googlecode.tesseract.android.test \
-    com.googlecode.tesseract.android.test/android.test.InstrumentationTestRunner
-
-When the test cases pass, "OK (3 tests)" will be reported.
 
 License
 =======
@@ -86,6 +81,6 @@ tess-two is licensed under the [Apache License, Version 2.0](http://www.apache.o
  
 This project contains other third party software in the "external" folder, with separate license agreements:
 
-* Tesseract 3.00 (Modified to add TessBaseAPI::GetCharacters())
-* Leptonica 1.66 (Unmodified)
+* Tesseract 3.01 (Modified to add TessBaseAPI::GetCharacters())
+* Leptonica 1.68 (Unmodified)
 * LibJPEG 6b (Unmodified)
