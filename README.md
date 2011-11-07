@@ -46,7 +46,7 @@ To build this project, run the following commands in the terminal:
     export LIBJPEG_PATH=${PWD}/external/libjpeg
     ndk-build
     android update project --path .
-    ant compile
+    ant release
 
 You may also want to edit jni/Android.mk to reflect the correct library source
 directories and avoid running "export" every time you run ndk-build.
