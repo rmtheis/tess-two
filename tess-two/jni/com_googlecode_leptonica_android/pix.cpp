@@ -111,7 +111,7 @@ jboolean Java_com_googlecode_leptonica_android_Pix_nativeInvert(JNIEnv *env, jcl
 
 void Java_com_googlecode_leptonica_android_Pix_nativeDestroy(JNIEnv *env, jclass clazz,
                                                               jint nativePix) {
-  LOGV(__FUNCTION__);
+  //LOGV(__FUNCTION__);
 
   PIX *pix = (PIX *) nativePix;
 

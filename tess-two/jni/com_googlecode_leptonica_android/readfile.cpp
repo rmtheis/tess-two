@@ -146,7 +146,7 @@ jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadFile(JNIEnv *env, 
 jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadBitmap(JNIEnv *env,
     jclass clazz,
     jobject bitmap) {
-  LOGV(__FUNCTION__);
+  //LOGV(__FUNCTION__);
 
   l_int32 w, h, d;
   AndroidBitmapInfo info;
