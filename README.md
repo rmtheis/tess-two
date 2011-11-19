@@ -36,7 +36,7 @@ libraries for use on the Android platform. It contains an Eclipse Android
 [library project](http://developer.android.com/guide/developing/projects/projects-eclipse.html#SettingUpLibraryProject) 
 that provides a Java API for accessing natively-compiled Tesseract and Leptonica APIs.
 
-This project is set up to build on Android SDK Tools r14/r15.
+This project is set up to build on Android SDK Tools r14/r15 and Android NDK r6b.
 
 To build this project, run the following commands in the terminal:
 
