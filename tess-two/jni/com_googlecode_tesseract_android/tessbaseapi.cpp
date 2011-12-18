@@ -114,7 +114,7 @@ jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInit(JNIEnv *en
     LOGI("Initialized Tesseract API with language=%s", c_lang);
   }
 
-  env->ReleaseStringUTFChars(lang, c_dir);
+  env->ReleaseStringUTFChars(dir, c_dir);
   env->ReleaseStringUTFChars(lang, c_lang);
 
   return res;
@@ -143,7 +143,7 @@ jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInitOem(JNIEnv 
     LOGI("Initialized Tesseract API with language=%s", c_lang);
   }
 
-  env->ReleaseStringUTFChars(lang, c_dir);
+  env->ReleaseStringUTFChars(dir, c_dir);
   env->ReleaseStringUTFChars(lang, c_lang);
 
   return res;
