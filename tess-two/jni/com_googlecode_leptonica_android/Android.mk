@@ -1,5 +1,5 @@
 REAL_LOCAL_PATH := $(call my-dir)
-LOCAL_PATH :=
+LOCAL_PATH := $(call my-dir)/../..
 
 include $(CLEAR_VARS)
 
