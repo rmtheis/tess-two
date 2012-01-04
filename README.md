@@ -19,13 +19,6 @@ enable retrieving bounding boxes for words and characters recognized using OCR:
 Note: GetTextlines(), GetWords() and GetCharacters() work well, but I have not gotten good 
 results from Tesseract when calling GetRegions().
 
-
-Quickstart
-==========
-
-
-
-
 Build
 =====
 
@@ -36,26 +29,15 @@ libraries for use on the Android platform. It contains an Eclipse Android
 [library project](http://developer.android.com/guide/developing/projects/projects-eclipse.html#SettingUpLibraryProject) 
 that provides a Java API for accessing natively-compiled Tesseract and Leptonica APIs.
 
-This project is set up to build on Android SDK Tools r14/r15 and Android NDK r6b.
+This project is set up to build on Android SDK Tools r16 and Android NDK r7.
 
 To build this project, run the following commands in the terminal:
 
-    cd <project-directory>/tess-two
-    export TESSERACT_PATH=${PWD}/external/tesseract-3.01
-    export LEPTONICA_PATH=${PWD}/external/leptonica-1.68
-    export LIBJPEG_PATH=${PWD}/external/libjpeg
+    git clone git://github.com/rmtheis/tess-two tess
+    cd tess/tess-two
     ndk-build
     android update project --path .
     ant release
-
-You may also want to edit jni/Android.mk to reflect the correct library source
-directories and avoid running "export" every time you run ndk-build.
-
-Test
-====
-
-
-
 
 License
 =======
