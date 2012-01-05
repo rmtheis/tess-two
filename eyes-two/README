@@ -1,0 +1,16 @@
+This project contains image processing tools for performing optical character recognition. It
+provides both a service and intents for reading images and returning text.
+
+To compile this project, you'll need to checkout and build the latest version of
+tesseract-android-tools. Run the following commands in the terminal to check out the necessary
+source code and compile both projects:
+
+cd <project-directory>/..
+svn checkout http://tesseract-android-tools.googlecode.com/svn/trunk/ tesseract-android-tools
+cd tesseract-android-tools
+
+Follow the instructions in the README file in this directory to compile tesseract-android-tools.
+
+cd <project-directory>
+ndk-build
+ant release

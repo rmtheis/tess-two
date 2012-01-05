@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2009 Google Inc.
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.googlecode.eyesfree.ocr"
+          android:versionCode="4"
+          android:versionName="0.6.1"
+          android:installLocation="auto">
+    <application android:icon="@drawable/service_icon">
+        <service android:name=".service.OcrService"
+                 android:enabled="true">
+            <intent-filter>
+                <action android:name="com.googlecode.eyesfree.ocr.intent.SERVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+        <activity android:name=".intent.PrefsActivity"
+                  android:icon="@drawable/service_icon"
+                  android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.PREFERENCE" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".intent.LanguagesActivity"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:label="@string/languages_title">
+            <intent-filter>
+                <action android:name="com.googlecode.eyesfree.ocr.intent.LANGUAGES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".intent.DetectActivity"
+                  android:label="@string/capture_title"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:screenOrientation="landscape"
+                  android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            <intent-filter>
+                <action android:name="com.googlecode.eyesfree.ocr.intent.DETECT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".intent.RecognizeActivity"
+                  android:label="@string/recognize_title"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:screenOrientation="landscape"
+                  android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            <intent-filter>
+                <action android:name="com.googlecode.eyesfree.ocr.intent.RECOGNIZE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".intent.UnveilRecognizeActivity"
+                  android:label="@string/recognize_title"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:screenOrientation="landscape"
+                  android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            <intent-filter>
+                <action android:name="com.googlecode.eyesfree.ocr.intent.UNVEIL_RECOGNIZE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".intent.MixedRecognizeActivity"
+                  android:label="@string/recognize_title"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:screenOrientation="landscape"
+                  android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            <intent-filter>
+                <action android:name="com.googlecode.eyesfree.ocr.intent.MIXED_RECOGNIZE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".intent.OpticalFlowActivity"
+                  android:label="@string/realtime_title"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:screenOrientation="landscape"
+                  android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            <intent-filter>
+                <action android:name="com.googlecode.eyesfree.ocr.intent.OPTICAL_FLOW" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".intent.TestActivity"
+                  android:label="@string/test_title"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:screenOrientation="landscape" />
+        <activity android:name=".intent.CheckOcrData"
+                  android:label="@string/app_name"
+                  android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="com.googlecode.eyesfree.ocr.intent.CHECK_OCR_DATA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+    <uses-sdk android:minSdkVersion="8" />
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.VIBRATE"/>
+</manifest>

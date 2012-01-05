@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2011 Google Inc.
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <string-array name="iso_639_1">
+    <item>bg</item>
+    <item>ca</item>
+    <item>cs</item>
+    <item>zh-CN</item>
+    <item>zh-TW</item>
+    <item>da</item>
+    <item>de</item>
+    <item>el</item>
+    <item>en</item>
+    <item>fi</item>
+    <item>fr</item>
+    <item>hu</item>
+    <item>id</item>
+    <item>it</item>
+    <item>ja</item>
+    <item>ko</item>
+    <item>lv</item>
+    <item>lt</item>
+    <item>nl</item>
+    <item>no</item>
+    <item>pl</item>
+    <item>pt-PT</item>
+    <item>ro</item>
+    <item>ru</item>
+    <item>sk</item>
+    <item>sl</item>
+    <item>es</item>
+    <item>sr</item>
+    <item>sv</item>
+    <item>tl</item>
+    <item>tr</item>
+    <item>uk</item>
+    <item>vi</item>
+  </string-array>
+
+  <string-array name="iso_639_2">
+    <item>bul</item>
+    <item>cat</item>
+    <item>ces</item>
+    <item>chi_sim</item>
+    <item>chi_tra</item>
+    <item>dan</item>
+    <item>deu</item>
+    <item>ell</item>
+    <item>eng</item>
+    <item>fin</item>
+    <item>fra</item>
+    <item>hun</item>
+    <item>ind</item>
+    <item>ita</item>
+    <item>jpn</item>
+    <item>kor</item>
+    <item>lav</item>
+    <item>lit</item>
+    <item>nld</item>
+    <item>nor</item>
+    <item>pol</item>
+    <item>por</item>
+    <item>ron</item>
+    <item>rus</item>
+    <item>slk</item>
+    <item>slv</item>
+    <item>spa</item>
+    <item>srp</item>
+    <item>swe</item>
+    <item>tgl</item>
+    <item>tur</item>
+    <item>ukr</item>
+    <item>vie</item>
+  </string-array>
+  
+  <string-array name="english">
+    <item>Bulgarian</item>
+    <item>Catalan</item>
+    <item>Czech</item>
+    <item>Chinese (Simplified)</item>
+    <item>Chinese (Traditional)</item>
+    <item>Danish</item>
+    <item>German</item>
+    <item>Greek (Modern)</item>
+    <item>English</item>
+    <item>Finnish</item>
+    <item>French</item>
+    <item>Hungarian</item>
+    <item>Indonesian</item>
+    <item>Italian</item>
+    <item>Japanese</item>
+    <item>Korean</item>
+    <item>Latvian</item>
+    <item>Lithuanian</item>
+    <item>Dutch</item>
+    <item>Norwegian</item>
+    <item>Polish</item>
+    <item>Portuguese</item>
+    <item>Romanian</item>
+    <item>Russian</item>
+    <item>Slovak</item>
+    <item>Slovenian</item>
+    <item>Spanish</item>
+    <item>Serbian</item>
+    <item>Swedish</item>
+    <item>Tagalog</item>
+    <item>Turkish</item>
+    <item>Ukranian</item>
+    <item>Vietnamese</item>
+  </string-array>
+  
+  <string-array name="required_files">
+    <item>eng.traineddata</item>
+  </string-array>
+  
+  <string-array name="speed_entries">
+    <item>(Default) Faster</item>
+    <item>More accurate</item>
+    <item>Most accurate</item>
+  </string-array>
+  
+  <string-array name="speed_values">
+    <item>0</item>
+    <item>50</item>
+    <item>100</item>
+  </string-array>
+  
+  <string-array name="thread_count">
+    <item>1</item>
+    <item>2</item>
+    <item>4</item>
+    <item>8</item>
+  </string-array>
+  
+  <string-array name="resolutions">
+    <item>480x320</item>
+    <item>640x480</item>
+    <item>1024x768</item>
+    <item>2048x1536</item>
+  </string-array>
+  
+</resources>

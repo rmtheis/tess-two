@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2011 Google Inc.
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+  <string name="app_name">OCR Service</string>
+  <string name="err_sd_card">Could not write to SD card. Make sure you have one inserted.</string>
+  <string name="uninstall_confirm">Are you sure you want to remove the %s language pack?</string>
+  <string name="uninstall_completed">%s language pack removed</string>
+  <string name="uninstall_failed">%s language pack could not be removed</string>
+  <string name="install_completed">%s language pack has been installed</string>
+  <string name="install_canceled">%s language pack installation canceled</string>
+  <string name="install_failed">%s language pack could not be installed</string>
+  <string name="installed">Installed</string>
+  <string name="not_installed">Not Installed</string>
+  <string name="extracting" formatted="false">Extracting %s from %s...</string>
+  <string name="downloading" formatted="false">Downloading %s from %s...</string>
+  <string name="cleaning">Cleaning up...</string>
+  <string name="languages_title">Install OCR Languages</string>
+  <string name="test_title">OCR Service Tests</string>
+  <string name="prefs_title">OCR Preferences</string>
+  <string name="blocking_title">Text Blocking</string>
+  <string name="clear">Clear</string>
+  <string name="cancel">Cancel</string>
+  <string name="accept">Accept</string>
+  
+  <!-- Languages activity -->
+  
+  <string name="manage_title">Manage languages</string>
+  <string name="manage_hint">Tap language to install or remove</string>
+  <string name="manage_error">Could not update list of available languages.</string>
+  <string name="manage_loading">Updating list of available languages...</string>
+  <string name="manage_alert">Please install at least one language pack.</string>
+  <string name="manage_extracting">Extracting language files...</string>
+    
+  <!-- Capture activity -->
+  
+  <string name="capture_title">Image Capture</string>
+  <string name="hint_capture">Take a picture of the text you want to recognize</string>
+  <string name="take_picture">Take picture</string>
+  <string name="disable_text_detection">Disable text detection</string>
+  <string name="enable_text_detection">Enable text detection</string>
+  <string name="scene">Scene</string>
+  <string name="close_up">Close-up</string>
+  <string name="full_page">Full-page</string>
+    
+  <!-- Real-time OCR activity -->
+  
+  <string name="realtime_title">Live OCR Demo</string>
+    
+  <!-- Recognize activity -->
+  
+  <string name="recognize_title">Recognize Image</string>
+  <string name="percent" formatted="false">%d%%</string>
+  <string name="ratio" formatted="false">%d/%d</string>
+  <string name="cancel_recognition">Cancel recognition</string>
+
+  <!-- Preferences -->
+  
+  <string name="manage_pref">manage</string>
+  <string name="manage_pref_title">Manage languages</string>
+  <string name="manage_pref_summary">Add and remove language recognition packs</string>
+  
+  <string name="lang_pref">lang_pref</string>
+  <string name="lang_pref_title">Set default language</string>
+  <string name="lang_pref_summary">Current language is %s</string>
+  
+  <string name="override_pref">override_pref</string>
+  <string name="override_pref_title">Override app settings</string>
+  <string name="override_pref_on">Applications will always use the default language</string>
+  <string name="override_pref_off">(Default) Applications will be able to set their own language</string>
+  
+  <string name="debug_pref">debug_pref</string>
+  <string name="debug_pref_title">Enable debug mode</string>
+  <string name="debug_pref_on">OCR will write intermediate files to SD card</string>
+  <string name="debug_pref_off">(Default) OCR will not write intermediate files</string>
+  
+  <string name="xml_cache_pref">xml_cache</string>
+</resources>
