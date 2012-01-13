@@ -191,7 +191,7 @@ jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteBitmap(JNIEn
       }
     } else if (d == 1) {
       for (int dw = 0; dw < info.width; dw++) {
-        dstx[0] = dstx[1] = dstx[2] = (srcx[0] & (dw % 8)) ? 0xFF : 0x00;
+        dstx[0] = dstx[1] = dstx[2] = (1 << (7 - (dw & 7)) & srcx[0]) ? 0x00 : 0xFF;
         dstx[3] = 0xFF;
 
         dstx += 4;
