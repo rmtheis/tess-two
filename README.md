@@ -38,7 +38,7 @@ convenience due to its dependency on Leptonica.
 Build
 =====
 
-This project is set up to build on Android SDK Tools r16 and Android NDK r7.
+This project is set up to build on Android SDK Tools r16 and Android NDK r7. The build works on Ubuntu 11.04. It's been reported to not work on Ubuntu 11.10 (Issue #6).
 
 To build tess-two, run the following commands in the terminal:
 
