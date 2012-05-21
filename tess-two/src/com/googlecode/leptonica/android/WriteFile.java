@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Google Inc.
+ * Copyright (C) 2011 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -17,7 +17,6 @@
 package com.googlecode.leptonica.android;
 
 import android.graphics.Bitmap;
-import android.os.Build;
 
 import java.io.File;
 
@@ -102,14 +101,9 @@ public class WriteFile {
         if (prefix == null)
             throw new IllegalArgumentException("Filename prefix must be non-null");
 
-        String rootname = new File(path, prefix).getAbsolutePath();
+        //String rootname = new File(path, prefix).getAbsolutePath();
 
-        // TODO Fix support for JPEG library in Android 2.2 & lower
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO) {
-            return nativeWriteFiles(pixas.mNativePixa, rootname, format);
-        } else {
-            throw new RuntimeException("writeFiles() is only available in SDK >= 10");
-        }
+        throw new RuntimeException("writeFiles() is not currently supported");
     }
 
     /**
@@ -182,12 +176,13 @@ public class WriteFile {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
 
-        int[] dimensions = pixs.getDimensions();
-        int width = dimensions[Pix.INDEX_W];
-        int height = dimensions[Pix.INDEX_H];
+        final int[] dimensions = pixs.getDimensions();
+        final int width = dimensions[Pix.INDEX_W];
+        final int height = dimensions[Pix.INDEX_H];
+        //final int depth = dimensions[Pix.INDEX_D];
 
-        Bitmap.Config config = Bitmap.Config.ARGB_8888;
-        Bitmap bitmap = Bitmap.createBitmap(width, height, config);
+        final Bitmap.Config config = Bitmap.Config.ARGB_8888;
+        final Bitmap bitmap = Bitmap.createBitmap(width, height, config);
 
         if (nativeWriteBitmap(pixs.mNativePix, bitmap)) {
             return bitmap;

@@ -1,12 +1,12 @@
 /*
- * Copyright (C) 2010 Google Inc.
- * 
+ * Copyright (C) 2011 Google Inc.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -20,14 +20,15 @@ import android.graphics.Rect;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Java representation of a native PIXA object. This object contains multiple
  * PIX objects and their associated bounding BOX objects.
  *
- * @author alanv@google.com (Your Name Here)
+ * @author alanv@google.com (Alan Viverette)
  */
-public class Pixa {
+public class Pixa implements Iterable<Pix> {
     static {
         System.loadLibrary("lept");
     }
@@ -334,22 +335,16 @@ public class Pixa {
      * @return an ArrayList of Box bounding Rects
      */
     public ArrayList<Rect> getBoxRects() {
-        int pixaCount = nativeGetCount(mNativePixa);
-        int[] buffer = new int[4];
-
-        ArrayList<Rect> rects = new ArrayList<Rect>(pixaCount);
-
-        int x;
-        int y;
-        Rect bound;
+        final int pixaCount = nativeGetCount(mNativePixa);
+        final int[] buffer = new int[4];
+        final ArrayList<Rect> rects = new ArrayList<Rect>(pixaCount);
 
         for (int i = 0; i < pixaCount; i++) {
             getBoxGeometry(i, buffer);
 
-            x = buffer[Box.INDEX_X];
-            y = buffer[Box.INDEX_Y];
-
-            bound = new Rect(x, y, x + buffer[Box.INDEX_W], y + buffer[Box.INDEX_H]);
+            final int x = buffer[Box.INDEX_X];
+            final int y = buffer[Box.INDEX_Y];
+            final Rect bound = new Rect(x, y, x + buffer[Box.INDEX_W], y + buffer[Box.INDEX_H]);
 
             rects.add(bound);
         }
@@ -390,6 +385,31 @@ public class Pixa {
      */
     public boolean writeToFileRandomCmap(File file) {
         return nativeWriteToFileRandomCmap(mNativePixa, file.getAbsolutePath(), mWidth, mHeight);
+    }
+
+    public Iterator<Pix> iterator() {
+        return new PixIterator();
+    }
+
+    private class PixIterator implements Iterator<Pix> {
+        private int mIndex;
+
+        private PixIterator() {
+            mIndex = 0;
+        }
+
+        public boolean hasNext() {
+            final int size = size();
+            return (size > 0 && mIndex < size);
+        }
+
+        public Pix next() {
+            return getPix(mIndex++);
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     // ***************

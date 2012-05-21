@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Google Inc.
+ * Copyright (C) 2011 Google Inc.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -21,7 +21,7 @@ import android.graphics.Rect;
 /**
  * Java representation of a native Leptonica PIX object.
  *
- * @author alanv@google.com (Your Name Here)
+ * @author alanv@google.com (Alan Viverette)
  */
 public class Pix {
     static {

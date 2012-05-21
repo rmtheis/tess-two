@@ -6,14 +6,14 @@ additional functions. Tesseract Tools for Android is a set of Android APIs and
 build files for the Tesseract OCR and Leptonica image processing libraries.
 
 This project works with Tesseract v3.01. Source code for Tesseract 3.01 and
-the other dependencies is included in the tess-two/external folder.
+Leptonica 1.68 is included within the tess-two/jni folder.
 
 The tess-two subdirectory contains tools for compiling the Tesseract, Leptonica, and JPEG
 libraries for use on the Android platform. It contains an Eclipse Android
 [library project](http://developer.android.com/guide/developing/projects/projects-eclipse.html#SettingUpLibraryProject)
 that provides a Java API for accessing natively-compiled Tesseract and Leptonica APIs.
 
-This project adds the following methods on top of tesseract-android-tools r6 to enable retrieving 
+This project adds the following methods on top of tesseract-android-tools to enable retrieving 
 bounding boxes for words and characters recognized using OCR:
 
 * TessBaseAPI::GetRegions()
@@ -38,7 +38,7 @@ convenience due to its dependency on Leptonica.
 Build
 =====
 
-This project is set up to build on Android SDK Tools r16 and Android NDK r7. The build works on Ubuntu 11.04. It's been reported to not work on Ubuntu 11.10 (Issue #6).
+This project is set up to build on Android SDK Tools r19 and Android NDK r7c. The build works on Ubuntu 11.04. It's been reported to not work on Ubuntu 11.10 (Issue 6).
 
 To build tess-two, run the following commands in the terminal:
 
@@ -80,8 +80,7 @@ This project is licensed under the [Apache License, Version 2.0](http://www.apac
      */
 
  
-This project contains third party software in "tess-two/external" with separate license agreements:
+This project contains third party software within "tess-two/jni" with separate license agreements:
 
 * Tesseract 3.01 (Modified to add TessBaseAPI::GetCharacters())
 * Leptonica 1.68 (Unmodified)
-* LibJPEG 6b (Unmodified)

@@ -1,5 +1,4 @@
-REAL_LOCAL_PATH := $(call my-dir)
-LOCAL_PATH := $(call my-dir)/../..
+LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
@@ -12,14 +11,14 @@ BLACKLIST_SRC_FILES := \
   %freetype.c \
   %xtractprotos.c
 
+LEPTONICA_SRC_FILES := \
+  $(subst $(LOCAL_PATH)/,,$(wildcard $(LEPTONICA_PATH)/src/*.c))
+
 LOCAL_SRC_FILES := \
-  $(filter-out $(BLACKLIST_SRC_FILES),$(wildcard $(LEPTONICA_PATH)/src/*.c))
+  $(filter-out $(BLACKLIST_SRC_FILES),$(LEPTONICA_SRC_FILES))
 
 LOCAL_CFLAGS := \
   -DHAVE_CONFIG_H
-
-LOCAL_C_INCLUDES := \
-  $(LIBJPEG_PATH)
 
 LOCAL_LDLIBS := \
   -lz
@@ -28,26 +27,26 @@ LOCAL_LDLIBS := \
 
 ifneq ($(TARGET_SIMULATOR),true)
 LOCAL_SRC_FILES += \
-  $(REAL_LOCAL_PATH)/stdio/open_memstream.c \
-  $(REAL_LOCAL_PATH)/stdio/fopencookie.c \
-  $(REAL_LOCAL_PATH)/stdio/fmemopen.c
+  stdio/open_memstream.c \
+  stdio/fopencookie.c \
+  stdio/fmemopen.c
 LOCAL_C_INCLUDES += \
-  $(REAL_LOCAL_PATH)/stdio
+  stdio
 endif
 
 # jni
 
 LOCAL_SRC_FILES += \
-  $(REAL_LOCAL_PATH)/box.cpp \
-  $(REAL_LOCAL_PATH)/pix.cpp \
-  $(REAL_LOCAL_PATH)/pixa.cpp \
-  $(REAL_LOCAL_PATH)/utilities.cpp \
-  $(REAL_LOCAL_PATH)/readfile.cpp \
-  $(REAL_LOCAL_PATH)/writefile.cpp \
-  $(REAL_LOCAL_PATH)/jni.cpp
+  box.cpp \
+  pix.cpp \
+  pixa.cpp \
+  utilities.cpp \
+  readfile.cpp \
+  writefile.cpp \
+  jni.cpp
   
 LOCAL_C_INCLUDES += \
-  $(REAL_LOCAL_PATH) \
+  $(LOCAL_PATH) \
   $(LEPTONICA_PATH)/src
 
 LOCAL_LDLIBS += \
@@ -56,7 +55,6 @@ LOCAL_LDLIBS += \
 
 # common
 
-LOCAL_SHARED_LIBRARIES:= libjpeg
 LOCAL_PRELINK_MODULE:= false
 
 include $(BUILD_SHARED_LIBRARY)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Google Inc.
+ * Copyright (C) 2011 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -18,7 +18,6 @@ package com.googlecode.leptonica.android;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Build;
 
 import java.io.File;
 
@@ -43,26 +42,16 @@ public class ReadFile {
         if (encodedData == null)
             throw new IllegalArgumentException("Image data byte array must be non-null");
 
-        // TODO Fix support for JPEG library in Android 2.2 & lower
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO) {
-            final int nativePix = nativeReadMem(encodedData, encodedData.length);
+        final BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
 
-            if (nativePix == 0)
-                throw new RuntimeException("Failed to read pix from memory");
+        final Bitmap bmp = BitmapFactory.decodeByteArray(encodedData, 0, encodedData.length,
+                opts);
+        final Pix pix = readBitmap(bmp);
 
-            return new Pix(nativePix);
-        } else {
-            final BitmapFactory.Options opts = new BitmapFactory.Options();
-            opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        bmp.recycle();
 
-            final Bitmap bmp = BitmapFactory.decodeByteArray(encodedData, 0, encodedData.length,
-                    opts);
-            final Pix pix = readBitmap(bmp);
-
-            bmp.recycle();
-
-            return pix;
-        }
+        return pix;
     }
 
     /**
@@ -136,19 +125,8 @@ public class ReadFile {
         if (!dir.canRead())
             throw new IllegalArgumentException("Cannot read directory");
 
-        // TODO Fix support for JPEG library in Android 2.2 & lower
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
-            int nativePixa = nativeReadFiles(dir.getAbsolutePath(), prefix);
-
-            if (nativePixa == 0)
-                throw new RuntimeException("Failed to read pixs from files");
-
-            // TODO Get bounding box from Pixa
-
-            return new Pixa(nativePixa, -1, -1);
-        } else {
-            throw new RuntimeException("readFiles() is only available in SDK >= 10");
-        }
+        // TODO: Remove or fix this.
+        throw new RuntimeException("readFiles() is not current supported");
     }
 
     /**
@@ -166,25 +144,15 @@ public class ReadFile {
         if (!file.canRead())
             throw new IllegalArgumentException("Cannot read file");
 
-        // TODO Fix support for JPEG library in Android 2.2 & lower
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO) {
-            final int nativePix = nativeReadFile(file.getAbsolutePath());
+        final BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
 
-            if (nativePix == 0)
-                throw new RuntimeException("Failed to read pix from file");
+        final Bitmap bmp = BitmapFactory.decodeFile(file.getAbsolutePath(), opts);
+        final Pix pix = readBitmap(bmp);
 
-            return new Pix(nativePix);
-        } else {
-            final BitmapFactory.Options opts = new BitmapFactory.Options();
-            opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        bmp.recycle();
 
-            final Bitmap bmp = BitmapFactory.decodeFile(file.getAbsolutePath(), opts);
-            final Pix pix = readBitmap(bmp);
-
-            bmp.recycle();
-
-            return pix;
-        }
+        return pix;
     }
 
     /**

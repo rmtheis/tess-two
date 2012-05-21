@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Google Inc.
+ * Copyright (C) 2011 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -18,7 +18,6 @@ package com.googlecode.leptonica.android;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
-import android.os.Build;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -64,25 +63,20 @@ public class JpegIO {
         if (quality < 0 || quality > 100)
             throw new IllegalArgumentException("Quality must be between 0 and 100 (inclusive)");
 
-        // TODO Fix support for JPEG library in Android 2.2 & lower
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.FROYO) {
-            return nativeCompressToJpeg(pixs.mNativePix, quality, progressive);
-        } else {
-            final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            final Bitmap bmp = WriteFile.writeBitmap(pixs);
-            bmp.compress(CompressFormat.JPEG, quality, byteStream);
-            bmp.recycle();
+        final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        final Bitmap bmp = WriteFile.writeBitmap(pixs);
+        bmp.compress(CompressFormat.JPEG, quality, byteStream);
+        bmp.recycle();
 
-            final byte[] encodedData = byteStream.toByteArray();
+        final byte[] encodedData = byteStream.toByteArray();
 
-            try {
-                byteStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return encodedData;
+        try {
+            byteStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        return encodedData;
     }
 
     // ***************

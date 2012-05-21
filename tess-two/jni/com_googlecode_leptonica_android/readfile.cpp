@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
 
 #include "common.h"
-#include "string.h"
-#include "android/bitmap.h"
+
+#include <string.h>
+#include <android/bitmap.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,8 +29,6 @@ extern "C" {
 
 jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadMem(JNIEnv *env, jclass clazz,
                                                                   jbyteArray image, jint length) {
-  LOGV(__FUNCTION__);
-
   jbyte *image_buffer = env->GetByteArrayElements(image, NULL);
   int buffer_length = env->GetArrayLength(image);
 
@@ -43,8 +42,6 @@ jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadMem(JNIEnv *env, j
 jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadBytes8(JNIEnv *env, jclass clazz,
                                                                      jbyteArray data, jint w,
                                                                      jint h) {
-  LOGV(__FUNCTION__);
-
   PIX *pix = pixCreateNoInit((l_int32) w, (l_int32) h, 8);
   l_uint8 **lineptrs = pixSetupByteProcessing(pix, NULL, NULL);
   jbyte *data_buffer = env->GetByteArrayElements(data, NULL);
@@ -71,8 +68,6 @@ jboolean Java_com_googlecode_leptonica_android_ReadFile_nativeReplaceBytes8(JNIE
                                                                             jint nativePix,
                                                                             jbyteArray data,
                                                                             jint srcw, jint srch) {
-  LOGV(__FUNCTION__);
-
   PIX *pix = (PIX *) nativePix;
   l_int32 w, h, d;
 
@@ -100,8 +95,6 @@ jboolean Java_com_googlecode_leptonica_android_ReadFile_nativeReplaceBytes8(JNIE
 
 jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadFiles(JNIEnv *env, jclass clazz,
                                                                     jstring dirName, jstring prefix) {
-  LOGV(__FUNCTION__);
-
   PIXA *pixad = NULL;
 
   const char *c_dirName = env->GetStringUTFChars(dirName, NULL);
@@ -126,8 +119,6 @@ jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadFiles(JNIEnv *env,
 
 jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadFile(JNIEnv *env, jclass clazz,
                                                                    jstring fileName) {
-  LOGV(__FUNCTION__);
-
   PIX *pixd = NULL;
 
   const char *c_fileName = env->GetStringUTFChars(fileName, NULL);
@@ -143,11 +134,8 @@ jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadFile(JNIEnv *env, 
   return (jint) pixd;
 }
 
-jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadBitmap(JNIEnv *env,
-    jclass clazz,
-    jobject bitmap) {
-  //LOGV(__FUNCTION__);
-
+jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadBitmap(JNIEnv *env, jclass clazz,
+                                                                     jobject bitmap) {
   l_int32 w, h, d;
   AndroidBitmapInfo info;
   void* pixels;
@@ -186,7 +174,7 @@ jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadBitmap(JNIEnv *env
       g = *src_line >> SK_G32_SHIFT;
       b = *src_line >> SK_B32_SHIFT;
       a = *src_line >> SK_A32_SHIFT;
-      pixel8 = (l_uint8) ((r + g + b) / 3);
+      pixel8 = (l_uint8)((r + g + b) / 3);
 
       // Set pixel to LUMA_8
       SET_DATA_BYTE(dst_line, x, pixel8);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,59 +20,49 @@
 extern "C" {
 #endif  /* __cplusplus */
 
-jint Java_com_googlecode_leptonica_android_Box_nativeCreate(JNIEnv *env, jclass clazz, jint x, jint y, jint w,
-                                                jint h) {
-  LOGV(__FUNCTION__);
-
+jint Java_com_googlecode_leptonica_android_Box_nativeCreate(JNIEnv *env, jclass clazz, jint x,
+                                                            jint y, jint w, jint h) {
   BOX *box = boxCreate((l_int32) x, (l_int32) y, (l_int32) w, (l_int32) h);
 
   return (jint) box;
 }
 
-void Java_com_googlecode_leptonica_android_Box_nativeDestroy(JNIEnv *env, jclass clazz, jint nativeBox) {
-  LOGV(__FUNCTION__);
-
+void Java_com_googlecode_leptonica_android_Box_nativeDestroy(JNIEnv *env, jclass clazz,
+                                                             jint nativeBox) {
   BOX *box = (BOX *) nativeBox;
 
   boxDestroy(&box);
 }
 
 jint Java_com_googlecode_leptonica_android_Box_nativeGetX(JNIEnv *env, jclass clazz, jint nativeBox) {
-    LOGV(__FUNCTION__);
+  BOX *box = (BOX *) nativeBox;
 
-    BOX *box = (BOX *) nativeBox;
-
-    return (jint) box->x;
+  return (jint) box->x;
 }
 
 jint Java_com_googlecode_leptonica_android_Box_nativeGetY(JNIEnv *env, jclass clazz, jint nativeBox) {
-    LOGV(__FUNCTION__);
+  BOX *box = (BOX *) nativeBox;
 
-    BOX *box = (BOX *) nativeBox;
-
-    return (jint) box->y;
+  return (jint) box->y;
 }
 
-jint Java_com_googlecode_leptonica_android_Box_nativeGetWidth(JNIEnv *env, jclass clazz, jint nativeBox) {
-    LOGV(__FUNCTION__);
+jint Java_com_googlecode_leptonica_android_Box_nativeGetWidth(JNIEnv *env, jclass clazz,
+                                                              jint nativeBox) {
+  BOX *box = (BOX *) nativeBox;
 
-    BOX *box = (BOX *) nativeBox;
-
-    return (jint) box->w;
+  return (jint) box->w;
 }
 
-jint Java_com_googlecode_leptonica_android_Box_nativeGetHeight(JNIEnv *env, jclass clazz, jint nativeBox) {
-    LOGV(__FUNCTION__);
+jint Java_com_googlecode_leptonica_android_Box_nativeGetHeight(JNIEnv *env, jclass clazz,
+                                                               jint nativeBox) {
+  BOX *box = (BOX *) nativeBox;
 
-    BOX *box = (BOX *) nativeBox;
-
-    return (jint) box->h;
+  return (jint) box->h;
 }
 
-jboolean Java_com_googlecode_leptonica_android_Box_nativeGetGeometry(JNIEnv *env, jclass clazz, jint nativeBox,
-                                                         jintArray dimensions) {
-  LOGV(__FUNCTION__);
-
+jboolean Java_com_googlecode_leptonica_android_Box_nativeGetGeometry(JNIEnv *env, jclass clazz,
+                                                                     jint nativeBox,
+                                                                     jintArray dimensions) {
   BOX *box = (BOX *) nativeBox;
   jint *dimensionArray = env->GetIntArrayElements(dimensions, NULL);
   l_int32 x, y, w, h;

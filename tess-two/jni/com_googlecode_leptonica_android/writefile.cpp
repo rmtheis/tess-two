@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
 
 #include "common.h"
-#include "string.h"
-#include "android/bitmap.h"
+
+#include <string.h>
+#include <android/bitmap.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,8 +30,6 @@ extern "C" {
 jint Java_com_googlecode_leptonica_android_WriteFile_nativeWriteBytes8(JNIEnv *env, jclass clazz,
                                                                        jint nativePix,
                                                                        jbyteArray data) {
-  LOGV(__FUNCTION__);
-
   l_int32 w, h, d;
   PIX *pix = (PIX *) nativePix;
   pixGetDimensions(pix, &w, &h, &d);
@@ -46,7 +45,7 @@ jint Java_com_googlecode_leptonica_android_WriteFile_nativeWriteBytes8(JNIEnv *e
   env->ReleaseByteArrayElements(data, data_buffer, 0);
   pixCleanupByteProcessing(pix, lineptrs);
 
-  return (jint) (w * h);
+  return (jint)(w * h);
 }
 
 jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteFiles(JNIEnv *env,
@@ -54,8 +53,6 @@ jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteFiles(JNIEnv
                                                                           jint nativePixa,
                                                                           jstring rootName,
                                                                           jint format) {
-  LOGV(__FUNCTION__);
-
   PIXA *pixas = (PIXA *) nativePixa;
 
   const char *c_rootName = env->GetStringUTFChars(rootName, NULL);
@@ -80,8 +77,6 @@ jbyteArray Java_com_googlecode_leptonica_android_WriteFile_nativeWriteMem(JNIEnv
                                                                           jclass clazz,
                                                                           jint nativePix,
                                                                           jint format) {
-  LOGV(__FUNCTION__);
-
   PIX *pixs = (PIX *) nativePix;
 
   l_uint8 *data;
@@ -108,8 +103,6 @@ jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteImpliedForma
                                                                                   jstring fileName,
                                                                                   jint quality,
                                                                                   jboolean progressive) {
-  LOGV(__FUNCTION__);
-
   PIX *pixs = (PIX *) nativePix;
 
   const char *c_fileName = env->GetStringUTFChars(fileName, NULL);
@@ -131,11 +124,9 @@ jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteImpliedForma
 }
 
 jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteBitmap(JNIEnv *env,
-    jclass clazz,
-    jint nativePix,
-    jobject bitmap) {
-  LOGV(__FUNCTION__);
-
+                                                                           jclass clazz,
+                                                                           jint nativePix,
+                                                                           jobject bitmap) {
   PIX *pixs = (PIX *) nativePix;
 
   l_int32 w, h, d;
@@ -173,7 +164,7 @@ jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteBitmap(JNIEn
   l_int32 srcBpl = 4 * pixGetWpl(pixs);
 
   LOGE("Writing 32bpp RGBA bitmap (w=%d, h=%d, stride=%d) from %dbpp Pix (wpl=%d)", info.width,
-      info.height, info.stride, d, pixGetWpl(pixs));
+       info.height, info.stride, d, pixGetWpl(pixs));
 
   for (int dy = 0; dy < info.height; dy++) {
     l_uint8 *dstx = dst;
