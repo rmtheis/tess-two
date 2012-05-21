@@ -18,19 +18,16 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <algorithm>
-
 #include "ambigs.h"
 #include "helpers.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #ifndef __GNUC__
 #define strtok_r strtok_s
 #else
 #include "strtok_r.h"
 #endif  /* __GNUC__ */
-#endif  /* WIN32 */
+#endif  /* _WIN32 */
 
 namespace tesseract {
 
@@ -314,7 +311,7 @@ void UnicharAmbigs::InsertIntoTable(
       unichar_id = ambig_spec->correct_ngram_id;
     } else {
       STRING frag_str = CHAR_FRAGMENT::to_string(
-          ReplacementString, i, TestAmbigPartSize);
+          ReplacementString, i, TestAmbigPartSize, false);
       unicharset->unichar_insert(frag_str.string());
       unichar_id = unicharset->unichar_to_id(frag_str.string());
     }

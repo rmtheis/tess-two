@@ -19,12 +19,14 @@
 
 #include "publictypes.h"
 
-// String name for each block type. Keep in sync with PolyBlockType.
+/** String name for each block type. Keep in sync with PolyBlockType. */
 const char* kPolyBlockNames[] = {
   "Unknown",
   "Flowing Text",
   "Heading Text",
   "Pullout Text",
+  "Equation",
+  "Inline Equation",
   "Table",
   "Vertical Text",
   "Caption Text",

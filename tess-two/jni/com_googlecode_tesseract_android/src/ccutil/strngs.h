@@ -1,4 +1,4 @@
-﻿/**********************************************************************
+/**********************************************************************
  * File:        strngs.h  (Formerly strings.h)
  * Description: STRING class definition.
  * Author:					Ray Smith
@@ -21,6 +21,7 @@
 #define           STRNGS_H
 
 #include          <string.h>
+#include          "platform.h"
 #include          "memry.h"
 #include          "serialis.h"
 
@@ -34,15 +35,9 @@
 // cannot assume we know the strlen.
 #define STRING_IS_PROTECTED  0
 
-#ifdef CCUTIL_EXPORTS
-#define CCUTIL_API __declspec(dllexport)
-#elif defined(CCUTIL_IMPORTS)
-#define CCUTIL_API __declspec(dllimport)
-#else
-#define CCUTIL_API
-#endif
+template <typename T> class GenericVector;
 
-class CCUTIL_API STRING
+class TESS_API STRING
 {
   public:
     STRING();
@@ -50,8 +45,15 @@ class CCUTIL_API STRING
     STRING(const char *string);
     ~STRING ();
 
+    // Writes to the given file. Returns false in case of error.
+    bool Serialize(FILE* fp) const;
+    // Reads from the given file. Returns false in case of error.
+    // If swap is true, assumes a big/little-endian swap is needed.
+    bool DeSerialize(bool swap, FILE* fp);
+
     BOOL8 contains(const char c) const;
     inT32 length() const;
+    inT32 size() const { return length(); }
     const char *string() const;
 
 #if STRING_IS_PROTECTED
@@ -59,10 +61,11 @@ class CCUTIL_API STRING
     // len is number of chars in s to insert starting at index in this string
     void insert_range(inT32 index, const char*s, int len);
     void erase_range(inT32 index, int len);
-    void truncate_at(inT32 index);
 #else
     char &operator[] (inT32 index) const;
 #endif
+    void split(const char c, GenericVector<STRING> *splited);
+    void truncate_at(inT32 index);
 
     BOOL8 operator== (const STRING & string) const;
     BOOL8 operator!= (const STRING & string) const;

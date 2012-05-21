@@ -143,6 +143,17 @@ public class TessBaseAPI {
      * multiple times on the same instance to change language, or just to reset
      * the classifier.
      * <p>
+	 * The language may be a string of the form [~]<lang>[+[~]<lang>]* indicating
+     * that multiple languages are to be loaded. Eg hin+eng will load Hindi and
+     * English. Languages may specify internally that they want to be loaded
+     * with one or more other languages, so the ~ sign is available to override
+     * that. Eg if hin were set to load eng by default, then hin+~eng would force
+     * loading only hin. The number of loaded languages is limited only by
+     * memory, with the caveat that loading additional languages will impact
+     * both speed and accuracy, as there is more work to do to decide on the
+     * applicable language, and there is more chance of hallucinating incorrect
+     * words.
+	 * <p>
      * <b>WARNING:</b> On changing languages, all Tesseract parameters are reset
      * back to their default values. (Which may vary between languages.)
      * <p>
@@ -153,7 +164,7 @@ public class TessBaseAPI {
      *
      * @param datapath the parent directory of tessdata ending in a forward
      *            slash
-     * @param language (optional) an ISO 639-3 string representing the language
+     * @param language (optional) an ISO 639-3 string representing the language(s)
      * @return <code>true</code> on success
      */
     public boolean init(String datapath, String language) {
@@ -170,12 +181,12 @@ public class TessBaseAPI {
     }
 
     /**
-     * Initializes the Tesseract engine with a specified language model. Returns
+     * Initializes the Tesseract engine with the specified language model(s). Returns
      * <code>true</code> on success.
      *
      * @param datapath the parent directory of tessdata ending in a forward
      *            slash
-     * @param language (optional) an ISO 639-3 string representing the language
+     * @param language (optional) an ISO 639-3 string representing the language(s)
      * @param mode the OCR engine mode to be set
      * @return <code>true</code> on success
      */
@@ -193,12 +204,16 @@ public class TessBaseAPI {
     }
 
     /**
-     * Returns the language used in the last valid initialization.
+     * Returns the languages string used in the last valid initialization.
+     * If the last initialization specified "deu+hin" then that will be
+     * returned. If hin loaded eng automatically as well, then that will
+     * not be included in this list. To find the languages actually
+     * loaded use GetLoadedLanguagesAsVector.
      * 
      * @return the last-used language code
      */
-    public String getLastInitLanguage() {
-    	return nativeGetLastInitLanguage();
+    public String getInitLanguagesAsString() {
+    	return nativeGetInitLanguagesAsString();
     }
     
     /**
@@ -443,7 +458,7 @@ public class TessBaseAPI {
     
     private native boolean nativeInitOem(String datapath, String language, int mode);
 
-    private native String nativeGetLastInitLanguage();
+    private native String nativeGetInitLanguagesAsString();
     
     private native void nativeClear();
 

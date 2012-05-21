@@ -145,12 +145,12 @@ jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInitOem(JNIEnv 
   return res;
 }
 
-jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetLastInitLanguage(JNIEnv *env,
-                                                                                    jobject thiz) {
+jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetInitLanguagesAsString(JNIEnv *env,
+                                                                                         jobject thiz) {
 
   native_data_t *nat = get_native_data(env, thiz);
 
-  const char *text = nat->api.GetLastInitLanguage();
+  const char *text = nat->api.GetInitLanguagesAsString();
 
   jstring result = env->NewStringUTF(text);
 

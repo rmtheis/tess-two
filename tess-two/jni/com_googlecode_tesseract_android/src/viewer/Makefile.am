@@ -1,7 +1,11 @@
-SUBDIRS =
-AM_CPPFLAGS =
+AM_CPPFLAGS += -I$(top_srcdir)/ccutil
 
-include_HEADERS = \
+if VISIBILITY
+AM_CPPFLAGS += -DTESS_EXPORTS \
+    -fvisibility=hidden -fvisibility-inlines-hidden
+endif
+
+noinst_HEADERS = \
     scrollview.h svmnode.h svutil.h
 
 if !USING_MULTIPLELIBS
@@ -13,5 +17,3 @@ endif
 
 libtesseract_viewer_la_SOURCES = \
     scrollview.cpp svmnode.cpp svutil.cpp svpaint.cpp
-
-

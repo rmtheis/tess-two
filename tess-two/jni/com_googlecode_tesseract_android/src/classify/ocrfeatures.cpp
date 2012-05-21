@@ -169,7 +169,7 @@ FEATURE ReadFeature(FILE *File, const FEATURE_DESC_STRUCT* FeatureDesc) {
   for (i = 0; i < Feature->Type->NumParams; i++) {
     if (fscanf (File, "%f", &(Feature->Params[i])) != 1)
       DoError (ILLEGAL_FEATURE_PARAM, "Illegal feature parameter spec");
-#ifndef WIN32
+#ifndef _WIN32
     assert (!isnan(Feature->Params[i]));
 #endif
   }
@@ -230,13 +230,12 @@ void WriteFeature(FILE *File, FEATURE Feature) {
   int i;
 
   for (i = 0; i < Feature->Type->NumParams; i++) {
-#ifndef WIN32
-    assert (!isnan(Feature->Params[i]));
+#ifndef _WIN32
+    assert(!isnan(Feature->Params[i]));
 #endif
-    fprintf (File, " %12g", Feature->Params[i]);
+    fprintf(File, " %g", Feature->Params[i]);
   }
-  fprintf (File, "\n");
-
+  fprintf(File, "\n");
 }                                /* WriteFeature */
 
 

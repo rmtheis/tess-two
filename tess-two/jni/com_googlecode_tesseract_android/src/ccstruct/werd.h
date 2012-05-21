@@ -27,6 +27,11 @@
 #include          "blckerr.h"
 #include          "stepblob.h"
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif
+
 enum WERD_FLAGS
 {
   W_SEGMENTED,                   //< correctly segmented
@@ -51,7 +56,8 @@ enum DISPLAY_FLAGS
   DF_TEXT,                       //< Correct ascii
   DF_POLYGONAL,                  //< Polyg approx
   DF_EDGE_STEP,                  //< Edge steps
-  DF_BN_POLYGONAL                //< BL normalisd polyapx
+  DF_BN_POLYGONAL,               //< BL normalisd polyapx
+  DF_BLAMER                      //< Blamer information
 };
 
 class ROW;                       //forward decl
@@ -140,17 +146,21 @@ class WERD : public ELIST2_LINK {
     // tprintf word metadata (but not blob innards)
     void print();
 
+    #ifndef GRAPHICS_DISABLED
     // plot word on window in a uniform colour
     void plot(ScrollView *window, ScrollView::Color colour);
+    #endif  // GRAPHICS_DISABLED
 
     // Get the next color in the (looping) rainbow.
     static ScrollView::Color NextColor(ScrollView::Color colour);
 
+    #ifndef GRAPHICS_DISABLED
     // plot word on window in a rainbow of colours
     void plot(ScrollView *window);
 
     // plot rejected blobs in a rainbow of colours
     void plot_rej_blobs(ScrollView *window);
+    #endif  // GRAPHICS_DISABLED
 
  private:
     uinT8 blanks;                // no of blanks

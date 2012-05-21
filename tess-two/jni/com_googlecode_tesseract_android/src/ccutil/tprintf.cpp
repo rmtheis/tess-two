@@ -31,7 +31,7 @@
 #include          "tprintf.h"
 #include          "ccutil.h"
 
-#define MAX_MSG_LEN     1024
+#define MAX_MSG_LEN     65536
 
 #define EXTERN
 // Since tprintf is protected by a mutex, these parameters can rmain global.
@@ -49,9 +49,11 @@ const char *format, ...          //special message
   static char msg[MAX_MSG_LEN + 1];
 
   va_start(args, format);  //variable list
-  #ifdef __MSW32__
+  #ifdef _WIN32
                                  //Format into msg
   offset += _vsnprintf (msg + offset, MAX_MSG_LEN - offset, format, args);
+  if (strcmp(debug_file.string(), "/dev/null") == 0)
+	  debug_file.set_value("nul");
   #else
                                  //Format into msg
   offset += vsprintf (msg + offset, format, args);
@@ -103,7 +105,7 @@ pause_continue (const char *format, ...
   return (c != 'c');
   #endif
 
-  #ifdef __MSW32__
+  #ifdef _WIN32
   str +=
     STRING (msg) + STRING ("\nUse OK to continue, CANCEL to stop pausing");
   //   return AfxMessageBox( str.string(), MB_OKCANCEL ) == IDOK;

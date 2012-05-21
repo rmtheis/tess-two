@@ -52,10 +52,9 @@ POLY_BLOCK::POLY_BLOCK(const TBOX& box, PolyBlockType t) {
   ICOORDELT_IT v = &vertices;
   v.move_to_first();
   v.add_to_end(new ICOORDELT(box.left(), box.top()));
-  v.add_to_end(new ICOORDELT(box.left(), box.top() + box.height()));
-  v.add_to_end(new ICOORDELT(box.left() + box.width(),
-                             box.top() + box.height()));
-  v.add_to_end(new ICOORDELT(box.left(), box.top() + box.height()));
+  v.add_to_end(new ICOORDELT(box.left(), box.bottom()));
+  v.add_to_end(new ICOORDELT(box.right(), box.bottom()));
+  v.add_to_end(new ICOORDELT(box.right(), box.top()));
   compute_bb();
   type = t;
 }
@@ -139,7 +138,7 @@ inT16 POLY_BLOCK::winding_number(const ICOORD &point) {
 }
 
 
-/// @Returns true if other is inside this.
+/// @return true if other is inside this.
 bool POLY_BLOCK::contains(POLY_BLOCK *other) {
   inT16 count;                   // winding count
   ICOORDELT_IT it = &vertices;   // iterator
@@ -201,6 +200,25 @@ void POLY_BLOCK::rotate(FCOORD rotation) {
     pts.forward ();
   }
   while (!pts.at_first ());
+  compute_bb();
+}
+
+/**
+ * @name POLY_BLOCK::reflect_in_y_axis
+ *
+ * Reflect the coords of the polygon in the y-axis. (Flip the sign of x.)
+ */
+
+void POLY_BLOCK::reflect_in_y_axis() {
+  ICOORDELT *pt;                 // current point
+  ICOORDELT_IT pts = &vertices;  // Iterator.
+
+  do {
+    pt = pts.data();
+    pt->set_x(-pt->x());
+    pts.forward();
+  }
+  while (!pts.at_first());
   compute_bb();
 }
 
@@ -283,7 +301,7 @@ void POLY_BLOCK::fill(ScrollView* window, ScrollView::Color colour) {
 #endif
 
 
-/// @Returns true if the polygons of other and this overlap.
+/// @return true if the polygons of other and this overlap.
 bool POLY_BLOCK::overlap(POLY_BLOCK *other) {
   inT16 count;                   // winding count
   ICOORDELT_IT it = &vertices;   // iterator
@@ -384,6 +402,8 @@ ScrollView::Color POLY_BLOCK::ColorForPolyBlockType(PolyBlockType type) {
     ScrollView::BLUE,         // Text that lives inside a column.
     ScrollView::CYAN,         // Text that spans more than one column.
     ScrollView::MEDIUM_BLUE,  // Text that is in a cross-column pull-out region.
+    ScrollView::AQUAMARINE,   // Partition belonging to an equation region.
+    ScrollView::SKY_BLUE,   // Partition belonging to an inline equation region.
     ScrollView::MAGENTA,      // Partition belonging to a table region.
     ScrollView::GREEN,        // Text-line runs vertically.
     ScrollView::LIGHT_BLUE,   // Text that belongs to an image.

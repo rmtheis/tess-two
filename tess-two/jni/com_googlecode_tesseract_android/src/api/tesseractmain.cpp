@@ -17,9 +17,9 @@
 *
 **********************************************************************/
 
-#include "mfcpch.h"
 // #define USE_VLD //Uncomment for Visual Leak Detector.
 #if (defined _MSC_VER && defined USE_VLD)
+#include "mfcpch.h"
 #include <vld.h>
 #endif
 
@@ -39,6 +39,7 @@
 #include "baseapi.h"
 #include "strngs.h"
 #include "tesseractmain.h"
+#include "tprintf.h"
 
 /**********************************************************************
  *  main()
@@ -46,14 +47,25 @@
  **********************************************************************/
 
 int main(int argc, char **argv) {
-#ifdef USE_NLS
+#ifdef USING_GETTEXT
   setlocale (LC_ALL, "");
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain (PACKAGE);
 #endif
   if ((argc == 2 && strcmp(argv[1], "-v") == 0) ||
       (argc == 2 && strcmp(argv[1], "--version") == 0)) {
+    char *versionStrP;
+
     fprintf(stderr, "tesseract %s\n", tesseract::TessBaseAPI::Version());
+    
+    versionStrP = getLeptonicaVersion();
+    fprintf(stderr, " %s\n", versionStrP);
+    lept_free(versionStrP);
+    
+    versionStrP = getImagelibVersions();
+    fprintf(stderr, "  %s\n", versionStrP);
+    lept_free(versionStrP);
+
     exit(0);
   }
   // Make the order of args a bit more forgiving than it used to be.
@@ -100,8 +112,14 @@ int main(int argc, char **argv) {
   tesseract::TessBaseAPI  api;
 
   api.SetOutputName(output);
-  api.Init(argv[0], lang, tesseract::OEM_DEFAULT,
+
+  int rc = api.Init(argv[0], lang, tesseract::OEM_DEFAULT,
            &(argv[arg]), argc - arg, NULL, NULL, false);
+  if (rc) {
+    fprintf(stderr, "Could not initialize tesseract.\n");
+    exit(1);
+  }
+   
   // We have 2 possible sources of pagesegmode: a config file and
   // the command line. For backwards compatability reasons, the
   // default in tesseract is tesseract::PSM_SINGLE_BLOCK, but the
@@ -116,7 +134,7 @@ int main(int argc, char **argv) {
   // but that doesn't work.
   if (api.GetPageSegMode() == tesseract::PSM_SINGLE_BLOCK)
     api.SetPageSegMode(pagesegmode);
-  printf("Tesseract Open Source OCR Engine v%s with Leptonica\n",
+  tprintf("Tesseract Open Source OCR Engine v%s with Leptonica\n",
            tesseract::TessBaseAPI::Version());
 
 
@@ -155,7 +173,7 @@ int main(int argc, char **argv) {
   return 0;                      // Normal exit
 }
 
-#ifdef __MSW32__
+#ifdef _WIN32
 
 char szAppName[] = "Tesseract";   //app name
 int initialized = 0;

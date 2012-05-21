@@ -1,5 +1,4 @@
-SUBDIRS =
-AM_CPPFLAGS = \
+AM_CPPFLAGS += \
     -DUSE_STD_NAMESPACE \
     -I$(top_srcdir)/cutil -I$(top_srcdir)/ccutil \
     -I$(top_srcdir)/ccstruct -I$(top_srcdir)/dict \
@@ -7,8 +6,13 @@ AM_CPPFLAGS = \
     -I$(top_srcdir)/textord -I$(top_srcdir)/wordrec \
     -I$(top_srcdir)/neural_networks/runtime \
     -I$(top_srcdir)/image -I$(top_srcdir)/viewer
+        
+if VISIBILITY
+AM_CPPFLAGS += -DTESS_EXPORTS \
+    -fvisibility=hidden -fvisibility-inlines-hidden
+endif
 
-include_HEADERS = \
+noinst_HEADERS = \
     altlist.h beam_search.h bmp_8.h cached_file.h \
     char_altlist.h char_bigrams.h char_samp.h char_samp_enum.h \
     char_samp_set.h char_set.h classifier_base.h classifier_factory.h \
@@ -27,15 +31,15 @@ else
 lib_LTLIBRARIES = libtesseract_cube.la
 libtesseract_cube_la_LDFLAGS = -version-info $(GENERIC_LIBRARY_VERSION)
 libtesseract_cube_la_LIBADD = \
-	../ccstruct/libtesseract_ccstruct.la \
-	../ccutil/libtesseract_ccutil.la \
-	../neural_networks/runtime/libtesseract_neural.la \
-	../image/libtesseract_image.la \
-	../viewer/libtesseract_viewer.la \
-	../wordrec/libtesseract_wordrec.la \
-	../cutil/libtesseract_cutil.la \
-	../classify/libtesseract_classify.la \
-	../dict/libtesseract_dict.la 
+    ../ccstruct/libtesseract_ccstruct.la \
+    ../ccutil/libtesseract_ccutil.la \
+    ../neural_networks/runtime/libtesseract_neural.la \
+    ../image/libtesseract_image.la \
+    ../viewer/libtesseract_viewer.la \
+    ../wordrec/libtesseract_wordrec.la \
+    ../cutil/libtesseract_cutil.la \
+    ../classify/libtesseract_classify.la \
+    ../dict/libtesseract_dict.la 
 endif
 
 libtesseract_cube_la_SOURCES = \

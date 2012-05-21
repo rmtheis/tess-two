@@ -6,6 +6,7 @@
 #include "config_auto.h"
 #endif
 
+#ifndef GRAPHICS_DISABLED
 #include "allheaders.h"
 
 #include "svshowim.h"
@@ -23,7 +24,6 @@ void sv_show_sub_image(IMAGE*    source,         // Image to show.
                        ScrollView*    window,         // Window to draw in.
                        inT32     xpos,           // Place to show bottom-left.
                        inT32     ypos) {         // Y position.
-
   Pix* pix;
   if (xstart != 0 || ystart != 0 ||
       xext != source->get_xsize() || yext != source->get_ysize()) {
@@ -37,3 +37,6 @@ void sv_show_sub_image(IMAGE*    source,         // Image to show.
   window->Image(pix, xpos, window->TranslateYCoordinate(yext) + ypos);
   pixDestroy(&pix);
 }
+
+#endif  // GRAPHICS_DISABLED
+

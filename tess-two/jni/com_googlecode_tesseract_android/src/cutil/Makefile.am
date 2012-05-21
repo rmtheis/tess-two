@@ -1,7 +1,11 @@
-SUBDIRS =
-AM_CPPFLAGS = -I$(top_srcdir)/ccutil -I$(top_srcdir)/viewer
+AM_CPPFLAGS += -I$(top_srcdir)/ccutil -I$(top_srcdir)/viewer
 
-include_HEADERS = \
+if VISIBILITY
+AM_CPPFLAGS += -DTESS_EXPORTS \
+    -fvisibility=hidden -fvisibility-inlines-hidden
+endif
+
+noinst_HEADERS = \
     bitvec.h callcpp.h const.h cutil.h cutil_class.h danerror.h efio.h \
     emalloc.h freelist.h globals.h listio.h \
     oldheap.h oldlist.h structures.h tessarray.h

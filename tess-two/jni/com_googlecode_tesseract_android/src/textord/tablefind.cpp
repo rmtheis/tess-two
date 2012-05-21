@@ -742,6 +742,7 @@ void TableFinder::SetGlobalSpacings(ColPartitionGrid* grid) {
   set_global_median_xheight(static_cast<int>(xheight_stats.median() + 0.5));
   set_global_median_blob_width(static_cast<int>(width_stats.median() + 0.5));
   set_global_median_ledding(static_cast<int>(ledding_stats.median() + 0.5));
+  #ifndef GRAPHICS_DISABLED
   if (textord_tablefind_show_stats) {
     const char* kWindowName = "X-height (R), X-width (G), and ledding (B)";
     ScrollView* stats_win = MakeWindow(500, 10, kWindowName);
@@ -749,6 +750,7 @@ void TableFinder::SetGlobalSpacings(ColPartitionGrid* grid) {
     width_stats.plot(stats_win, 10, 200, 2, 15, ScrollView::GREEN);
     ledding_stats.plot(stats_win, 10, 200, 2, 15, ScrollView::BLUE);
   }
+  #endif  // GRAPHICS_DISABLED
 }
 
 void TableFinder::set_global_median_xheight(int xheight) {
@@ -970,7 +972,7 @@ bool TableFinder::HasLeaderAdjacent(const ColPartition& part) {
       if (!part.IsInSameColumnAs(*leader))
         break;
       // There should be a significant vertical overlap
-      if (!leader->VOverlaps(part))
+      if (!leader->VSignificantCoreOverlap(part))
         continue;
       // Leader passed all tests, so it is adjacent.
       return true;
@@ -2112,9 +2114,17 @@ void TableFinder::MakeTableBlocks(ColPartitionGrid* grid,
     }
     // Insert table colpartition back to part_grid_
     if (table_partition) {
-      table_partition->SetPartitionType(resolution_,
-                                        all_columns[table_search.GridY()]);
+      // To match the columns used when transforming to blocks, the new table
+      // partition must have its first and last column set at the grid y that
+      // corresponds to its bottom.
+      const TBOX& table_box = table_partition->bounding_box();
+      int grid_x, grid_y;
+      grid->GridCoords(table_box.left(), table_box.bottom(), &grid_x, &grid_y);
+      table_partition->SetPartitionType(resolution_, all_columns[grid_y]);
       table_partition->set_table_type();
+      table_partition->set_blob_type(BRT_TEXT);
+      table_partition->set_flow(BTFT_CHAIN);
+      table_partition->SetBlobTypes();
       grid->InsertBBox(true, true, table_partition);
     }
   }

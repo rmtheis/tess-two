@@ -10,7 +10,7 @@
  **                  MicroSoft Window and MSW32 means the 32 bit worlds
  **                  of MicroSoft Window. Therefore you want the environment
  **                  to be MicroSoft Window and in the 32 bit world -
- **                  __MSW__ and __MSW32__ must be uncommented out.
+ **                  __MSW__ and _WIN32 must be uncommented out.
  **                  11/30/94 MCD Incorporated comments received for more
  **                  readability and the missing typedef for FLOAT.
  **                  12/1/94 MCD Added PFVOID typedef
@@ -48,7 +48,7 @@
 /******************************************************************************
  **                                IMPORTANT!!!                                                                                                                 **
  **                                                                                                                                                                              **
- ** Defines either __MSW__, __MSW32__, __MAC__, __UNIX__, __OS2__, __PM__ to
+ ** Defines either __MSW__, _WIN32, __MAC__, __UNIX__, __OS2__, __PM__ to
  ** use the specified definitions indicated below in the preprocessor settings.                                                        **
  **                                                                                                                                                                              **
  ** Also define either  __FarProc__ or  __FarData__  and __MOTO__ to use the
@@ -60,22 +60,15 @@
  ******************************************************************************/
 
 #include "platform.h"
-/* __MSW32__ */
-#ifdef __MSW32__
+/* _WIN32 */
+#ifdef _WIN32
 #include <windows.h>
 #include <winbase.h>             // winbase.h contains windows.h
-
-#define DLLIMPORT __declspec( dllimport)
-#define DLLEXPORT __declspec( dllexport)
-
 #else
 /********************************************************/
 /* __MSW__ */
 #ifdef __MSW__
 #include <windows.h>             // provides standard definitions (like HANDLE)
-
-#define DLLIMPORT __import
-#define DLLEXPORT __export
 #endif
 #endif
 
@@ -85,17 +78,12 @@
 #include <Types.h>
 /*----------------------------*/
 /*----------------------------*/
-#define DLLIMPORT
-#define DLLEXPORT
-
 #endif
 /********************************************************/
 #if defined(__UNIX__) || defined( __DOS__ ) || defined(__OS2__) || defined(__PM__)
 /*----------------------------*/
 /* FarProc and FarData */
 /*----------------------------*/
-#define DLLIMPORT
-#define DLLEXPORT
 /*----------------------------*/
 #endif
 /*****************************************************************************
@@ -150,15 +138,6 @@ typedef unsigned char BOOL8;
 #define MIN_FLOAT32 ((float)1.17549435e-38)
 
 // Defines
-
-#ifndef OKAY
-#define OKAY            0
-#endif
-
-#ifndef HPERR
-#define HPERR           -1
-#endif
-
 #ifndef TRUE
 #define TRUE            1
 #endif

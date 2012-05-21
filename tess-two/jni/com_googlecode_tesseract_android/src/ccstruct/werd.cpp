@@ -23,11 +23,6 @@
 #include "linlsq.h"
 #include "werd.h"
 
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
-#endif
-
 #define FIRST_COLOUR    ScrollView::RED         //< first rainbow colour
 #define LAST_COLOUR     ScrollView::AQUAMARINE  //< last rainbow colour
 #define CHILD_COLOUR    ScrollView::BROWN       //< colour of children
@@ -291,10 +286,7 @@ void WERD::plot(ScrollView *window, ScrollView::Color colour) {
   }
   plot_rej_blobs(window);
 }
-#endif
-
-
-#ifndef GRAPHICS_DISABLED
+#endif  // GRAPHICS_DISABLED
 
 // Get the next color in the (looping) rainbow.
 ScrollView::Color WERD::NextColor(ScrollView::Color colour) {
@@ -304,6 +296,7 @@ ScrollView::Color WERD::NextColor(ScrollView::Color colour) {
   return next;
 }
 
+#ifndef GRAPHICS_DISABLED
 /**
  * WERD::plot
  *
@@ -319,7 +312,6 @@ void WERD::plot(ScrollView* window) {
   }
   plot_rej_blobs(window);
 }
-#endif
 
 
 /**
@@ -328,14 +320,14 @@ void WERD::plot(ScrollView* window) {
  * Draw the WERD rejected blobs in window - ALWAYS GREY
  */
 
-#ifndef GRAPHICS_DISABLED
+
 void WERD::plot_rej_blobs(ScrollView *window) {
   C_BLOB_IT it = &rej_cblobs;
   for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
     it.data()->plot(window, ScrollView::GREY, ScrollView::GREY);
   }
 }
-#endif
+#endif  // GRAPHICS_DISABLED
 
 
 /**
@@ -452,6 +444,8 @@ WERD* WERD::ConstructWerdWithNewBlobs(C_BLOB_LIST* all_blobs,
     }
     if (!found) {
       not_found_it.add_after_then_move(werd_blob);
+    } else {
+      delete werd_blob;
     }
   }
   // Iterate over all not found blobs. Some of them may be due to
@@ -462,7 +456,6 @@ WERD* WERD::ConstructWerdWithNewBlobs(C_BLOB_LIST* all_blobs,
        not_found_it.forward()) {
     C_BLOB* not_found = not_found_it.data();
     TBOX not_found_box = not_found->bounding_box();
-    bool found = false;
     C_BLOB_IT existing_blobs_it(new_blobs_it);
     for (existing_blobs_it.mark_cycle_pt(); !existing_blobs_it.cycled_list();
          existing_blobs_it.forward()) {
@@ -470,10 +463,10 @@ WERD* WERD::ConstructWerdWithNewBlobs(C_BLOB_LIST* all_blobs,
       TBOX a_blob_box = a_blob->bounding_box();
       if ((not_found_box.major_overlap(a_blob_box) ||
            a_blob_box.major_overlap(not_found_box)) &&
-           not_found_box.y_overlap(a_blob_box) > 0.8) {
+           not_found_box.y_overlap(a_blob_box)) {
         // Already taken care of.
-        found = true;
-        not_found_it.extract();
+        delete not_found_it.extract();
+        break;
       }
     }
   }
@@ -487,6 +480,10 @@ WERD* WERD::ConstructWerdWithNewBlobs(C_BLOB_LIST* all_blobs,
   WERD* new_werd = NULL;
   if (!new_werd_blobs.empty()) {
     new_werd = new WERD(&new_werd_blobs, this);
+  } else {
+    // Add the blobs back to this word so that it can be reused.
+    C_BLOB_IT this_list_it(cblob_list());
+    this_list_it.add_list_after(&not_found_blobs);
   }
   return new_werd;
 }
