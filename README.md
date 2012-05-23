@@ -3,7 +3,7 @@
 
 A fork of Tesseract Tools for Android ([tesseract-android-tools](http://code.google.com/p/tesseract-android-tools/)) that adds some 
 additional functions. Tesseract Tools for Android is a set of Android APIs and
-build files for the Tesseract OCR and Leptonica image processing libraries.
+build files for the [Tesseract OCR](https://code.google.com/p/tesseract-ocr/) and [Leptonica](http://www.leptonica.com/) image processing libraries.
 
 This project works with Tesseract v3.02. The required source code for Tesseract 3.02 and
 Leptonica 1.68 is included within the tess-two/jni folder.
@@ -23,6 +23,11 @@ bounding boxes for words and characters recognized using OCR:
 
 Note: GetTextlines(), GetWords() and GetCharacters() work well, but I have not gotten good 
 results from Tesseract when calling GetRegions().
+
+## Requires
+
+* Android 2.2 or higher
+* A trained data file for a language - available [here](https://code.google.com/p/tesseract-ocr/downloads/list)
 
 eyes-two
 ========
