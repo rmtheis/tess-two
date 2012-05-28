@@ -27,7 +27,7 @@ results from Tesseract when calling GetRegions().
 ## Requires
 
 * Android 2.2 or higher
-* A trained data file for a language - available [here](https://code.google.com/p/tesseract-ocr/downloads/list)
+* A trained data file for a language - available [here](https://code.google.com/p/tesseract-ocr/downloads/list). Data files must be extracted to a subdirectory named "tessdata".
 
 eyes-two
 ========
@@ -43,7 +43,7 @@ convenience due to its dependency on Leptonica.
 Build
 =====
 
-This project is set up to build on Android SDK Tools r19 and Android NDK r7c. The build works on Ubuntu 11.04. It's been reported to not work on Ubuntu 11.10 (Issue 6).
+This project is set up to build on Android SDK Tools r19 and Android NDK r7c. The build works on 64-bit Ubuntu 11.04. It's been reported to not work on Ubuntu 11.10 (Issue 6).
 
 To build tess-two, run the following commands in the terminal:
 
