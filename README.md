@@ -45,6 +45,8 @@ Build
 
 This project is set up to build on Android SDK Tools r19 and Android NDK r7c. The build works on 64-bit Ubuntu 11.04. It's been reported to not work on Ubuntu 11.10 (Issue 6).
 
+On 64-but Ubuntu, you may need to install the "ia32-libs" 32-bit compatibility library.
+
 To build tess-two, run the following commands in the terminal:
 
     git clone git://github.com/rmtheis/tess-two tess
