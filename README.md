@@ -22,7 +22,7 @@ bounding boxes for words and characters recognized using OCR:
 * TessBaseAPI::GetWords()
 * TessBaseAPI::GetCharacters()
 
-Note: GetTextlines(), GetStrips, GetWords() and GetCharacters() work well, but I have not gotten good 
+Note: GetTextlines(), GetStrips(), GetWords() and GetCharacters() work well, but I have not gotten good 
 results from Tesseract when calling GetRegions().
 
 ## Requires
@@ -46,7 +46,7 @@ Build
 
 This project is set up to build on Android SDK Tools r19 and Android NDK r7c. The build works on 64-bit Ubuntu 11.04. It's been reported to not work on Ubuntu 11.10 (Issue 6).
 
-On 64-but Ubuntu, you may need to install the "ia32-libs" 32-bit compatibility library.
+On 64-bit Ubuntu, you may need to install the "ia32-libs" 32-bit compatibility library.
 
 To build tess-two, run the following commands in the terminal:
 
