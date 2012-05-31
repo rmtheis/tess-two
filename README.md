@@ -18,10 +18,11 @@ bounding boxes for words and characters recognized using OCR:
 
 * TessBaseAPI::GetRegions()
 * TessBaseAPI::GetTextlines()
+* TessBaseAPI::GetStrips()
 * TessBaseAPI::GetWords()
 * TessBaseAPI::GetCharacters()
 
-Note: GetTextlines(), GetWords() and GetCharacters() work well, but I have not gotten good 
+Note: GetTextlines(), GetStrips, GetWords() and GetCharacters() work well, but I have not gotten good 
 results from Tesseract when calling GetRegions().
 
 ## Requires

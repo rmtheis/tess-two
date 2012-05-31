@@ -411,11 +411,24 @@ public class TessBaseAPI {
     /**
      * Returns the textlines as a Pixa.
      * 
+     * Block IDs are not returned.
+     * 
      * @return Pixa containing textlines
      */
     public Pixa getTextlines() {
 	return new Pixa(nativeGetTextlines(), 0, 0);
     }
+    
+    /**
+     * Returns the strips as a Pixa.
+     * 
+     * Block IDs are not returned.
+     * 
+     * @return Pixa containing strips
+     */
+    public Pixa getStrips() {
+	return new Pixa(nativeGetStrips(), 0, 0);
+    }    
     
     /**
      * Returns the word bounding boxes as a Pixa, in reading order.
@@ -484,8 +497,10 @@ public class TessBaseAPI {
     private native void nativeSetPageSegMode(int mode);
     
     private native int nativeGetRegions();
-    
+
     private native int nativeGetTextlines();
+
+    private native int nativeGetStrips();
 
     private native int nativeGetWords();
     

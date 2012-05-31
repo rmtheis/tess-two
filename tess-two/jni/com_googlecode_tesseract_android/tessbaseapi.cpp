@@ -387,6 +387,20 @@ jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetTextlines(JNIEnv
   return reinterpret_cast<jint>(pixa);
 }
 
+jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetStrips(JNIEnv *env,
+                                                                       jobject thiz) {
+
+  native_data_t *nat = get_native_data(env, thiz);;
+  PIXA *pixa = NULL;
+  BOXA *boxa;
+
+  boxa = nat->api.GetStrips(&pixa, NULL);
+
+  boxaDestroy(&boxa);
+
+  return reinterpret_cast<jint>(pixa);
+}
+
 jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetWords(JNIEnv *env,
                                                                       jobject thiz) {
 
