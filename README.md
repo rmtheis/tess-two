@@ -6,9 +6,9 @@ additional functions. Tesseract Tools for Android is a set of Android APIs and
 build files for the [Tesseract OCR](https://code.google.com/p/tesseract-ocr/) and [Leptonica](http://www.leptonica.com/) image processing libraries.
 
 This project works with Tesseract v3.02. The required source code for Tesseract 3.02 and
-Leptonica 1.68 is included within the tess-two/jni folder.
+Leptonica 1.68 is included within the `tess-two/jni` folder.
 
-The tess-two subdirectory contains tools for compiling the Tesseract and Leptonica
+The `tess-two` subdirectory contains tools for compiling the Tesseract and Leptonica
 libraries for use on the Android platform. It contains an Eclipse Android
 [library project](http://developer.android.com/guide/developing/projects/projects-eclipse.html#SettingUpLibraryProject)
 that provides a Java API for accessing natively-compiled Tesseract and Leptonica APIs.
@@ -28,12 +28,12 @@ results from Tesseract when calling GetRegions().
 ## Requires
 
 * Android 2.2 or higher
-* A trained data file for a language - available [here](https://code.google.com/p/tesseract-ocr/downloads/list). Data files must be extracted to a subdirectory named "tessdata".
+* A [trained data file](https://code.google.com/p/tesseract-ocr/downloads/list) for a language. Data files must be extracted to a subdirectory named `tessdata`.
 
 eyes-two
 ========
 
-The eyes-two subdirectory contains a second, separate library project with additional image 
+The `eyes-two` subdirectory contains a second, separate library project with additional image 
 processing code copied from the [eyes-free project](http://code.google.com/p/eyes-free/) without 
 modifications. It includes native functions for text detection, blurriness detection, optical flow 
 detection, and thresholding. Building eyes-two is not necessary for using the Tesseract API.
@@ -44,21 +44,23 @@ convenience due to its dependency on Leptonica.
 Build
 =====
 
-This project is set up to build on Android SDK Tools r19 and Android NDK r7c. The build works on 64-bit Ubuntu 11.04. It's been reported to not work on Ubuntu 11.10 (Issue 6).
+This project is set up to build on Android SDK Tools r19 and Android NDK r7c. The build works on Linux, Mac OS X, and Windows 7. See [Issues](https://github.com/rmtheis/tess-two/issues) for reported build issues.
 
-On 64-bit Ubuntu, you may need to install the "ia32-libs" 32-bit compatibility library.
+On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility library.
 
 To build tess-two, run the following commands in the terminal:
 
     git clone git://github.com/rmtheis/tess-two tess
-    cd tess/tess-two
+    cd tess
+    cd tess-two
     ndk-build
     android update project --path .
     ant release
 
 To build eyes-two, additionally run the following:
 
-    cd ../eyes-two
+    cd ..
+    cd eyes-two
     ndk-build
     android update project --path .
     ant release
@@ -66,10 +68,15 @@ To build eyes-two, additionally run the following:
 After building, the tess-two and eyes-two projects can be imported into Eclipse using 
 File->Import->Existing Projects into Workspace.
 
+Maven
+=====
+
+While this project does not require Maven (and this project has not yet been registered in a Maven central repository), it can be [integrated into a local Maven repository for convenience](http://www.jameselsey.co.uk/blogs/techblog/tesseract-ocr-on-android-is-easier-if-you-maven-ise-it-works-on-windows-too/).
+
 License
 =======
 
-This project is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
+This project is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html).
 
     /*
      * Copyright 2011 Robert Theis
@@ -87,8 +94,4 @@ This project is licensed under the [Apache License, Version 2.0](http://www.apac
      * limitations under the License.
      */
 
- 
-This project contains third party software within "tess-two/jni" with separate license agreements:
-
-* Tesseract 3.02 (Modified to add TessBaseAPI::GetCharacters())
-* Leptonica 1.68 (Unmodified)
+[Leptonica](http://www.leptonica.com) by Dan Bloomberg is licensed under a [Creative Commons Attribution 3.0 United States License](http://creativecommons.org/licenses/by/3.0/us/).
