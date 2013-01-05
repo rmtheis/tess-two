@@ -422,6 +422,13 @@ jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetCharacters(JNIEn
   return reinterpret_cast<jint>(nat->api.GetCharacters());
 }
 
+jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetResultIterator(JNIEnv *env,
+    jobject thiz) {
+  native_data_t *nat = get_native_data(env, thiz);
+
+  return (jint) nat->api.GetIterator();
+}
+
 #ifdef __cplusplus
 }
 #endif

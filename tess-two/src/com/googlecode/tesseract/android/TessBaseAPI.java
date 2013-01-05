@@ -99,6 +99,31 @@ public class TessBaseAPI {
     public static final int OEM_DEFAULT = 3;
 
     /**
+     * Elements of the page hierarchy, used in {@link ResultIterator} to provide
+     * functions that operate on each level without having to have 5x as many
+     * functions.
+     * <p>
+     * NOTE: At present {@link #RIL_PARA} and {@link #RIL_BLOCK} are equivalent
+     * as there is no paragraph internally yet.
+     */
+    public static final class PageIteratorLevel {
+        /** Block of text/image/separator line. */
+        public static final int RIL_BLOCK = 0;
+
+        /** Paragraph within a block. */
+        public static final int RIL_PARA = 1;
+
+        /** Line within a paragraph. */
+        public static final int RIL_TEXTLINE = 2;
+
+        /** Word within a text line. */
+        public static final int RIL_WORD = 3;
+
+        /** Symbol/character within a word. */
+        public static final int RIL_SYMBOL = 4;
+    };
+    
+    /**
      * Constructs an instance of TessBaseAPI.
      */
     public TessBaseAPI() {
@@ -448,6 +473,16 @@ public class TessBaseAPI {
         return new Pixa(nativeGetCharacters(), 0, 0);
     }
 
+    public ResultIterator getResultIterator() {
+        int nativeResultIterator = nativeGetResultIterator();
+
+        if (nativeResultIterator == 0) {
+            return null;
+        }
+
+        return new ResultIterator(nativeResultIterator);
+    }
+    
     // ******************
     // * Native methods *
     // ******************
@@ -506,4 +541,5 @@ public class TessBaseAPI {
     
     private native int nativeGetCharacters();
 
+    private native int nativeGetResultIterator();
 }
