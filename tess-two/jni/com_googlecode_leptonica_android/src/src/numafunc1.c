@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -32,6 +43,7 @@
  *          NUMA        *numaMakeDelta()
  *          NUMA        *numaMakeSequence()
  *          NUMA        *numaMakeConstant()
+ *          NUMA        *numaMakeAbsValue()
  *          NUMA        *numaAddBorder()
  *          NUMA        *numaAddSpecifiedBorder()
  *          NUMA        *numaRemoveBorder()
@@ -60,7 +72,9 @@
  *
  *      Sorting
  *          NUMA        *numaSort()
+ *          NUMA        *numaBinSort()
  *          NUMA        *numaGetSortIndex()
+ *          NUMA        *numaGetBinSortIndex()
  *          NUMA        *numaSortByIndex()
  *          l_int32      numaIsSorted()
  *          l_int32      numaSortPair()
@@ -72,7 +86,9 @@
  *      Functions requiring sorting
  *          l_int32      numaGetRankValue()
  *          l_int32      numaGetMedian()
+ *          l_int32      numaGetBinnedMedian()
  *          l_int32      numaGetMode()
+ *          l_int32      numaGetMedianVariation()
  *
  *      Numa combination
  *          l_int32      numaJoin()
@@ -97,7 +113,6 @@
  *        numa by na[i].  This is conceptual only -- the numa is not an array!
  */
 
-#include <stdlib.h>
 #include <math.h>
 #include "allheaders.h"
 
@@ -638,7 +653,7 @@ NUMA      *na;
  *
  *      Input:  val
  *              size (of numa)
- *      Return: numa of given size with all entries equal to 'val',
+ *      Return: numa (of given size with all entries equal to 'val'),
  *              or null on error
  */
 NUMA *
@@ -646,6 +661,40 @@ numaMakeConstant(l_float32  val,
                  l_int32    size)
 {
     return numaMakeSequence(val, 0.0, size);
+}
+
+
+/*!
+ *  numaMakeAbsValue()
+ *
+ *      Input:  nad (can be null for new array, or the same as nas for inplace)
+ *              nas (input numa)
+ *      Return: nad (with all numbers being the absval of the input),
+ *              or null on error
+ */
+NUMA *
+numaMakeAbsValue(NUMA  *nad,
+                 NUMA  *nas)
+{
+l_int32    i, n;
+l_float32  val;
+
+    PROCNAME("numaMakeAbsValue");
+
+    if (!nas)
+        return (NUMA *)ERROR_PTR("nas not defined", procName, NULL);
+    if (nad && nad != nas)
+        return (NUMA *)ERROR_PTR("nad and not in-place", procName, NULL);
+
+    if (!nad)
+        nad = numaCopy(nas);
+    n = numaGetCount(nad);
+    for (i = 0; i < n; i++) {
+        val = nad->array[i];
+        nad->array[i] = L_ABS(val);
+    }
+
+    return nad;
 }
 
 
@@ -696,7 +745,7 @@ NUMA       *nad;
  *
  *      Input:  nas
  *              left, right (number of elements to add on each side)
- *              type (L_EXTENDED_BORDER, L_MIRRORED_BORDER)
+ *              type (L_CONTINUED_BORDER, L_MIRRORED_BORDER)
  *      Return: nad (with added elements at left and right), or null on error
  */
 NUMA *
@@ -717,7 +766,7 @@ NUMA       *nad;
     if (right < 0) right = 0;
     if (left == 0 && right == 0)
         return numaCopy(nas);
-    if (type != L_EXTENDED_BORDER && type != L_MIRRORED_BORDER)
+    if (type != L_CONTINUED_BORDER && type != L_MIRRORED_BORDER)
         return (NUMA *)ERROR_PTR("invalid type", procName, NULL);
     n = numaGetCount(nas);
     if (type == L_MIRRORED_BORDER && (left > n || right > n))
@@ -726,7 +775,7 @@ NUMA       *nad;
     nad = numaAddBorder(nas, left, right, 0);
     n = numaGetCount(nad);
     fa = numaGetFArray(nad, L_NOCOPY);
-    if (type == L_EXTENDED_BORDER) {
+    if (type == L_CONTINUED_BORDER) {
         for (i = 0; i < left; i++)
             fa[i] = fa[left];
         for (i = n - right; i < n; i++)
@@ -2096,6 +2145,41 @@ l_float32  *array;
 
 
 /*!
+ *  numaBinSort()
+ *
+ *      Input:  nas (of non-negative integers with a max that is
+ *                   typically less than 50,000)
+ *              sortorder (L_SORT_INCREASING or L_SORT_DECREASING)
+ *      Return: na (sorted), or null on error
+ *
+ *  Notes:
+ *      (1) Because this uses a bin sort with buckets of size 1, it
+ *          is not appropriate for sorting either small arrays or
+ *          arrays containing very large integer values.  For such
+ *          arrays, use a standard general sort function like
+ *          numaSort().
+ */
+NUMA *
+numaBinSort(NUMA    *nas,
+            l_int32  sortorder)
+{
+NUMA  *nat, *nad;
+
+    PROCNAME("numaBinSort");
+
+    if (!nas)
+        return (NUMA *)ERROR_PTR("nas not defined", procName, NULL);
+    if (sortorder != L_SORT_INCREASING && sortorder != L_SORT_DECREASING)
+        return (NUMA *)ERROR_PTR("invalid sort order", procName, NULL);
+
+    nat = numaGetBinSortIndex(nas, sortorder);
+    nad = numaSortByIndex(nas, nat);
+    numaDestroy(&nat);
+    return nad;
+}
+
+
+/*!
  *  numaGetSortIndex()
  *
  *      Input:  na
@@ -2155,6 +2239,81 @@ NUMA       *naisort;
     FREE(array);
     FREE(iarray);
     return naisort;
+}
+
+
+/*!
+ *  numaGetBinSortIndex()
+ *
+ *      Input:  na (of non-negative integers with a max that is typically
+ *                  less than 50,000)
+ *              sortorder (L_SORT_INCREASING or L_SORT_DECREASING)
+ *      Return: na (sorted), or null on error
+ *
+ *  Notes:
+ *      (1) This creates an array (or lookup table) that gives the
+ *          sorted position of the elements in the input Numa.
+ *      (2) Because it uses a bin sort with buckets of size 1, it
+ *          is not appropriate for sorting either small arrays or
+ *          arrays containing very large integer values.  For such
+ *          arrays, use a standard general sort function like
+ *          numaGetSortIndex().
+ */
+NUMA *
+numaGetBinSortIndex(NUMA    *nas,
+                    l_int32  sortorder)
+{
+l_int32    i, n, isize, ival, imax;
+l_float32  size;
+NUMA      *na, *nai, *nad;
+L_PTRA    *paindex;
+
+    PROCNAME("numaGetBinSortIndex");
+
+    if (!nas)
+        return (NUMA *)ERROR_PTR("nas not defined", procName, NULL);
+    if (sortorder != L_SORT_INCREASING && sortorder != L_SORT_DECREASING)
+        return (NUMA *)ERROR_PTR("invalid sort order", procName, NULL);
+
+        /* Set up a ptra holding numa at indices for which there
+         * are values in nas.  This effectively sorts the input
+         * numbers. */
+    numaGetMax(nas, &size, NULL);
+    isize = (l_int32)size;
+    if (isize > 50000)
+        L_WARNING_INT("large array: %d elements", procName, isize);
+    paindex = ptraCreate(isize + 1);
+    n = numaGetCount(nas);
+    for (i = 0; i < n; i++) {
+        numaGetIValue(nas, i, &ival);
+        nai = (NUMA *)ptraGetHandle(paindex, ival);
+        if (!nai) {  /* make it; no shifting will occur */
+            nai = numaCreate(1);
+            ptraInsert(paindex, ival, nai, L_MIN_DOWNSHIFT);
+        }
+        numaAddNumber(nai, i);
+    }
+
+        /* Sort by pulling the numbers out of the numas, taken
+         * successively in requested order. */
+    ptraGetMaxIndex(paindex, &imax);
+    nad = numaCreate(0);
+    if (sortorder == L_SORT_INCREASING) {
+        for (i = 0; i <= imax; i++) {
+            na = (NUMA *)ptraRemove(paindex, i, L_NO_COMPACTION);
+            numaJoin(nad, na, 0, 0);
+            numaDestroy(&na);
+        }
+    } else {  /* L_SORT_DECREASING */
+        for (i = imax; i >= 0; i--) {
+            na = (NUMA *)ptraRemove(paindex, i, L_NO_COMPACTION);
+            numaJoin(nad, na, 0, 0);
+            numaDestroy(&na);
+        }
+    }
+
+    ptraDestroy(&paindex, FALSE, FALSE);
+    return nad;
 }
 
 
@@ -2343,7 +2502,7 @@ NUMA     *na;
  *
  *      Input:  nas (input array)
  *              seed (for random number generation)
- *      Return: nas (randomly shuggled array), or null on error
+ *      Return: nas (randomly shuffled array), or null on error
  */
 NUMA *
 numaRandomPermutation(NUMA    *nas,
@@ -2380,21 +2539,35 @@ NUMA      *naindex, *nad;
  *
  *      Input:  na
  *              fract (use 0.0 for smallest, 1.0 for largest)
+ *              nasort (<optional> increasing sorted version of na)
+ *              usebins (0 for general sort; 1 for bin sort)
  *              &val  (<return> rank val)
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
- *      (1) Computes the rank value of the numbers in the numa, by
- *          sorting and finding the value a fraction @fract from
- *          the small end.
+ *      (1) Computes the rank value of a number in the @na, which is
+ *          the number that is a fraction @fract from the small
+ *          end of the sorted version of @na.
+ *      (2) If you do this multiple times for different rank values,
+ *          sort the array in advance and use that for @nasort;
+ *          if you're only calling this once, input @nasort == NULL.
+ *      (3) If @usebins == 1, this uses a bin sorting method.
+ *          Use this only where:
+ *           * the numbers are non-negative integers
+ *           * there are over 100 numbers
+ *           * the maximum value is less than about 50,000
+ *      (4) The advantage of using a bin sort is that it is O(n),
+ *          instead of O(nlogn) for general sort routines.
  */
 l_int32
 numaGetRankValue(NUMA       *na,
                  l_float32   fract,
+                 NUMA       *nasort,
+                 l_int32     usebins,
                  l_float32  *pval)
 {
 l_int32  n, index;
-NUMA    *nasort;
+NUMA    *nas;
 
     PROCNAME("numaGetRankValue");
 
@@ -2409,12 +2582,20 @@ NUMA    *nasort;
     if (n == 0)
         return ERROR_INT("na empty", procName, 1);
 
-    if ((nasort = numaSort(NULL, na, L_SORT_INCREASING)) == NULL)
-        return ERROR_INT("nasort not made", procName, 1);
+    if (nasort)
+        nas = nasort;
+    else {
+        if (usebins == 0)
+            nas = numaSort(NULL, na, L_SORT_INCREASING);
+        else
+            nas = numaBinSort(na, L_SORT_INCREASING);
+        if (!nas)
+            return ERROR_INT("nas not made", procName, 1);
+    }
     index = (l_int32)(fract * (l_float32)(n - 1) + 0.5);
-    numaGetFValue(nasort, index, pval);
+    numaGetFValue(nas, index, pval);
 
-    numaDestroy(&nasort);
+    if (!nasort) numaDestroy(&nas);
     return 0;
 }
 
@@ -2423,7 +2604,7 @@ NUMA    *nasort;
  *  numaGetMedian()
  *
  *      Input:  na
- *              &val  (<return> median val)
+ *              &val  (<return> median value)
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
@@ -2442,7 +2623,41 @@ numaGetMedian(NUMA       *na,
     if (!na)
         return ERROR_INT("na not defined", procName, 1);
 
-    return numaGetRankValue(na, 0.5, pval);
+    return numaGetRankValue(na, 0.5, NULL, 0, pval);
+}
+
+
+/*!
+ *  numaGetBinnedMedian()
+ *
+ *      Input:  na
+ *              &val  (<return> integer median value)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) Computes the median value of the numbers in the numa,
+ *          using bin sort and finding the middle value in the sorted array.
+ *      (2) See numaGetRankValue() for conditions on na for which
+ *          this should be used.  Otherwise, use numaGetMedian().
+ */
+l_int32
+numaGetBinnedMedian(NUMA     *na,
+                    l_int32  *pval)
+{
+l_int32    ret;
+l_float32  fval;
+
+    PROCNAME("numaGetBinnedMedian");
+
+    if (!pval)
+        return ERROR_INT("&val not defined", procName, 1);
+    *pval = 0;  /* init */
+    if (!na)
+        return ERROR_INT("na not defined", procName, 1);
+
+    ret = numaGetRankValue(na, 0.5, NULL, 1, &fval);
+    *pval = lept_roundftoi(fval);
+    return ret;
 }
 
 
@@ -2520,6 +2735,51 @@ NUMA       *nasort;
     numaDestroy(&nasort);
     return 0;
 }
+
+
+/*!
+ *  numaGetMedianVariation()
+ *
+ *      Input:  na
+ *              &medval  (<optional return> median value)
+ *              &medvar  (<return> median variation from median val)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) Finds the median variation from the median value in the array.
+ */
+l_int32
+numaGetMedianVariation(NUMA       *na,
+                       l_float32  *pmedval,
+                       l_float32  *pmedvar)
+{
+l_int32    n, i;
+l_float32  val, medval;
+NUMA      *navar;
+
+    PROCNAME("numaGetMedianVar");
+
+    if (!pmedvar)
+        return ERROR_INT("&medvar not defined", procName, 1);
+    *pmedvar = 0.0;  /* init */
+    if (!na)
+        return ERROR_INT("na not defined", procName, 1);
+
+    numaGetMedian(na, &medval);
+    if (pmedval) *pmedval = medval;
+
+    n = numaGetCount(na);
+    navar = numaCreate(n);
+    for (i = 0; i < n; i++) {
+        numaGetFValue(na, i, &val);
+        numaAddNumber(navar, L_ABS(val - medval));
+    }
+    numaGetMedian(navar, pmedvar);
+
+    numaDestroy(&navar);
+    return 0;
+}
+
 
 
 /*----------------------------------------------------------------------*
@@ -2611,4 +2871,3 @@ NUMA   **array;
 
     return nad;
 }
-

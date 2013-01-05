@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -420,10 +431,16 @@ FILE    *fp;
 
     PROCNAME("readHeaderJpeg");
 
-    if (!filename)
-        return ERROR_INT("filename not defined", procName, 1);
     if (!pw && !ph && !pspp && !pycck && !pcmyk)
         return ERROR_INT("no results requested", procName, 1);
+    if (pw) *pw = 0;
+    if (ph) *ph = 0;
+    if (pspp) *pspp = 0;
+    if (pycck) *pycck = 0;
+    if (pcmyk) *pcmyk = 0;
+    if (!filename)
+        return ERROR_INT("filename not defined", procName, 1);
+
     if ((fp = fopenReadStream(filename)) == NULL)
         return ERROR_INT("image file not found", procName, 1);
     ret = freadHeaderJpeg(fp, pw, ph, pspp, pycck, pcmyk);
@@ -457,10 +474,15 @@ struct jpeg_error_mgr          jerr;
 
     PROCNAME("freadHeaderJpeg");
 
-    if (!fp)
-        return ERROR_INT("stream not defined", procName, 1);
     if (!pw && !ph && !pspp && !pycck && !pcmyk)
         return ERROR_INT("no results requested", procName, 1);
+    if (pw) *pw = 0;
+    if (ph) *ph = 0;
+    if (pspp) *pspp = 0;
+    if (pycck) *pycck = 0;
+    if (pcmyk) *pcmyk = 0;
+    if (!fp)
+        return ERROR_INT("stream not defined", procName, 1);
 
     if (setjmp(jpeg_jmpbuf))
         return ERROR_INT("internal jpeg error", procName, 1);
@@ -867,10 +889,15 @@ FILE     *fp;
 
     PROCNAME("readHeaderMemJpeg");
 
-    if (!cdata)
-        return ERROR_INT("cdata not defined", procName, 1);
     if (!pw && !ph && !pspp && !pycck && !pcmyk)
         return ERROR_INT("no results requested", procName, 1);
+    if (pw) *pw = 0;
+    if (ph) *ph = 0;
+    if (pspp) *pspp = 0;
+    if (pycck) *pycck = 0;
+    if (pcmyk) *pcmyk = 0;
+    if (!cdata)
+        return ERROR_INT("cdata not defined", procName, 1);
 
     data = (l_uint8 *)cdata;  /* we're really not going to change this */
     if ((fp = fmemopen(data, size, "r")) == NULL)
@@ -1259,7 +1286,7 @@ l_int32   imeta, msize, bps, w, h, spp;
         fprintf(stderr, "w = %d, h = %d, bps = %d, spp = %d\n", w, h, bps, spp);
         fprintf(stderr, "imeta = %d, msize = %d\n", imeta, msize);
 #endif   /* DEBUG_INFO */
- 
+
             /* Is the data obviously bad? */
         if (h <= 0 || w <= 0 || bps != 8 || (spp != 1 && spp !=3 && spp != 4)) {
             L_WARNING("invalid image parameters:", procName);
@@ -1331,12 +1358,12 @@ PIX      *pix;
 
 /*
  *  locateJpegImageParameters()
- *  
+ *
  *      Input:  inarray (binary jpeg)
  *              size (of the data array)
  *              &index (<return> location of image metadata)
  *      Return: 0 if OK, 1 on error.  Caller must check this!
- *  
+ *
  *  Notes:
  *      (1) The metadata in jpeg files is a mess.  There are markers
  *          for the chunks that are always preceeded by 0xff.
@@ -1451,7 +1478,7 @@ l_int32  index, skiplength;
  *                      the first byte that is not 0xff, after
  *                      having encountered at least one 0xff.)
  *      Return: 0 if a marker is found, 1 if the end of the array is reached
- *      
+ *
  *  Notes:
  *      (1) In jpeg, 0xff is used to mark the end of a data segment.
  *          There may be more than one 0xff in succession.  But not every
@@ -1462,7 +1489,7 @@ l_int32  index, skiplength;
  *          _really_ get the next marker, because it doesn't check if
  *          the 0xff is escaped.  But the caller checks for this escape
  *          condition, and ignores the marker if escaped.
- */ 
+ */
 static l_int32
 getNextJpegMarker(l_uint8  *array,
                   size_t    size,
@@ -1481,13 +1508,13 @@ l_int32  index;
     index = *pindex;  /* initial location in array */
 
     while (index < size) {  /* skip to 0xff */
-       val = array[index++];    
+       val = array[index++];
        if (val == 0xff)
            break;
     }
 
     while (index < size) {  /* skip repeated 0xff */
-       val = array[index++];    
+       val = array[index++];
        if (val != 0xff)
            break;
     }

@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -19,17 +30,25 @@
  *     These are functions for computing correlation between
  *     pairs of 1 bpp images.
  *
+ *     Optimized 2 pix correlators (for jbig2 clustering)
  *         l_float32   pixCorrelationScore()
  *         l_int32     pixCorrelationScoreThresholded()
+ *
+ *     Simple 2 pix correlators
  *         l_float32   pixCorrelationScoreSimple()
+ *         l_float32   pixCorrelationScoreShifted()
+ *
+ *     Shift to find the best correlation
+ *         l_int32     pixBestCorrelation()
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
 #include "allheaders.h"
 
 
+/* -------------------------------------------------------------------- *
+ *           Optimized 2 pix correlators (for jbig2 clustering)         *
+ * -------------------------------------------------------------------- */
 /*!
  *  pixCorrelationScore()
  *
@@ -42,13 +61,13 @@
  *              maxdiffw (max width difference of pix1 and pix2)
  *              maxdiffh (max height difference of pix1 and pix2)
  *              tab    (sum tab for byte)
- *      Return: correlation score 
+ *      Return: correlation score
  *
  *  Note: we check first that the two pix are roughly the same size.
  *  For jbclass (jbig2) applications at roughly 300 ppi, maxdiffw and
  *  maxdiffh should be at least 2.
  *
- *  Only if they meet that criterion do we compare the bitmaps. 
+ *  Only if they meet that criterion do we compare the bitmaps.
  *  The centroid difference is used to align the two images to the
  *  nearest integer for the correlation.
  *
@@ -63,7 +82,7 @@
  *  be modified depending on the weight of the template.
  *  The modified threshold is
  *     thresh + (1.0 - thresh) * weight * R
- *  where 
+ *  where
  *     weight is a fixed input factor between 0.0 and 1.0
  *     R = |2| / area(2)
  *  and area(2) is the total number of pixels in 2 (i.e., width x height).
@@ -325,7 +344,8 @@ l_float32  score;
         }
     }
 
-    score = (l_float32)(count * count) / (l_float32)(area1 * area2);
+    score = (l_float32)count * (l_float32)count /
+             ((l_float32)area1 * (l_float32)area2);
 /*    fprintf(stderr, "score = %7.3f, count = %d, area1 = %d, area2 = %d\n",
              score, count, area1, area2); */
     return score;
@@ -656,7 +676,8 @@ l_int32    threshold;
         }
     }
 
-    score = (l_float32)(count * count) / (l_float32)(area1 * area2);
+    score = (l_float32)count * (l_float32)count /
+             ((l_float32)area1 * (l_float32)area2);
     if (score >= score_threshold) {
         fprintf(stderr, "count %d < threshold %d but score %g >= score_threshold %g\n",
                 count, threshold, score, score_threshold);
@@ -665,6 +686,9 @@ l_int32    threshold;
 }
 
 
+/* -------------------------------------------------------------------- *
+ *             Simple 2 pix correlators (for jbig2 clustering)          *
+ * -------------------------------------------------------------------- */
 /*!
  *  pixCorrelationScoreSimple()
  *
@@ -677,7 +701,7 @@ l_int32    threshold;
  *              maxdiffw (max width difference of pix1 and pix2)
  *              maxdiffh (max height difference of pix1 and pix2)
  *              tab    (sum tab for byte)
- *      Return: correlation score 
+ *      Return: correlation score
  *
  *  Notes:
  *      (1) This calculates exactly the same value as pixCorrelationScore().
@@ -742,8 +766,203 @@ PIX       *pixt;
     pixCountPixels(pixt, &count, tab);
     pixDestroy(&pixt);
 
-    score = (l_float32)(count * count) / (l_float32)(area1 * area2);
+    score = (l_float32)count * (l_float32)count /
+             ((l_float32)area1 * (l_float32)area2);
 /*    fprintf(stderr, "score = %7.3f, count = %d, area1 = %d, area2 = %d\n",
              score, count, area1, area2); */
     return score;
+}
+
+
+/*!
+ *  pixCorrelationScoreShifted()
+ *
+ *      Input:  pix1   (1 bpp)
+ *              pix2   (1 bpp)
+ *              area1  (number of on pixels in pix1)
+ *              area2  (number of on pixels in pix2)
+ *              delx (x translation of pix2 relative to pix1)
+ *              dely (y translation of pix2 relative to pix1)
+ *              tab    (sum tab for byte)
+ *      Return: correlation score
+ *
+ *  Notes:
+ *      (1) This finds the correlation between two 1 bpp images,
+ *          when pix2 is shifted by (delx, dely) with respect
+ *          to each other.
+ *      (2) This is implemented by starting with a copy of pix1 and
+ *          ANDing its pixels with those of a shifted pix2.
+ *      (3) Get the pixel counts for area1 and area2 using piCountPixels().
+ *      (4) A good estimate for a shift that would maximize the correlation
+ *          is to align the centroids (cx1, cy1; cx2, cy2), giving the
+ *          relative translations etransx and etransy:
+ *             etransx = cx1 - cx2
+ *             etransy = cy1 - cy2
+ *          Typically delx is chosen to be near etransx; ditto for dely.
+ *          This function is used in pixBestCorrelation(), where the
+ *          translations delx and dely are varied to find the best alignment.
+ *      (5) We do not check the sizes of pix1 and pix2, because they should
+ *          be comparable.
+ */
+l_float32
+pixCorrelationScoreShifted(PIX      *pix1,
+                           PIX      *pix2,
+                           l_int32   area1,
+                           l_int32   area2,
+                           l_int32   delx,
+                           l_int32   dely,
+                           l_int32  *tab)
+{
+l_int32    w1, h1, w2, h2, count;
+l_float32  score;
+PIX       *pixt;
+
+    PROCNAME("pixCorrelationScoreSimple");
+
+    if (!pix1 || pixGetDepth(pix1) != 1)
+        return (l_float32)ERROR_FLOAT("pix1 not 1 bpp", procName, 0.0);
+    if (!pix2 || pixGetDepth(pix2) != 1)
+        return (l_float32)ERROR_FLOAT("pix2 not 1 bpp", procName, 0.0);
+    if (!tab)
+        return (l_float32)ERROR_FLOAT("tab not defined", procName, 0.0);
+    if (!area1 || !area2)
+        return (l_float32)ERROR_FLOAT("areas must be > 0", procName, 0.0);
+
+    pixGetDimensions(pix1, &w1, &h1, NULL);
+    pixGetDimensions(pix2, &w2, &h2, NULL);
+
+        /*  To insure that pixels are ON only within the
+         *  intersection of pix1 and the shifted pix2:
+         *  (1) Start with pixt cleared and equal in size to pix1.
+         *  (2) Blit the shifted pix2 onto pixt.  Then all ON pixels
+         *      are within the intersection of pix1 and the shifted pix2.
+         *  (3) AND pix1 with pixt. */
+    pixt = pixCreateTemplate(pix1);
+    pixRasterop(pixt, delx, dely, w2, h2, PIX_SRC, pix2, 0, 0);
+    pixRasterop(pixt, 0, 0, w1, h1, PIX_SRC & PIX_DST, pix1, 0, 0);
+    pixCountPixels(pixt, &count, tab);
+    pixDestroy(&pixt);
+
+    score = (l_float32)count * (l_float32)count /
+             ((l_float32)area1 * (l_float32)area2);
+    return score;
+}
+
+
+/* -------------------------------------------------------------------- *
+ *                  Shift to find the best correlation                  *
+ * -------------------------------------------------------------------- */
+/*!
+ *  pixBestCorrelation()
+ *
+ *      Input:  pix1   (1 bpp)
+ *              pix2   (1 bpp)
+ *              area1  (number of on pixels in pix1)
+ *              area2  (number of on pixels in pix2)
+ *              etransx (estimated x translation of pix2 to align with pix1)
+ *              etransy (estimated y translation of pix2 to align with pix1)
+ *              maxshift  (max x and y shift of pix2, around the estimated
+ *                          alignment location, relative to pix1)
+ *              tab8 (<optional> sum tab for ON pixels in byte; can be NULL)
+ *              &delx (<return> best x shift of pix2 relative to pix1
+ *              &dely (<return> best y shift of pix2 relative to pix1
+ *              &score (<optional return> maximum score found; can be NULL)
+ *              debugflag (<= 0 to skip; positive to generate output.
+ *                         The integer is used to label the debug image.)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This finds the actual shift (delx, dely) between two 1 bpp
+ *          images that maximizes correlation score when pix2 is shifted
+ *          by this amount relative to pix1.  Also returns the max score.
+ *      (2) Get the pixel counts using pixCountPixels().
+ *          Get the centroids using pixCentroid() and wrap them into a pta.
+ *      (3) The centroid of pix2 is shifted with respect to the centroid
+ *          of pix1 by all values between -maxshiftx and maxshiftx,
+ *          and likewise for the y shifts.  Therefore, the number of
+ *          correlations computed is:
+ *               (2 * maxshiftx + 1) * (2 * maxshifty + 1)
+ *          Consequently, if pix1 and pix2 are large, you should do this
+ *          in a coarse-to-fine sequence.
+ */
+l_int32
+pixBestCorrelation(PIX        *pix1,
+                   PIX        *pix2,
+                   l_int32     area1,
+                   l_int32     area2,
+                   l_int32     etransx,
+                   l_int32     etransy,
+                   l_int32     maxshift,
+                   l_int32    *tab8,
+                   l_int32    *pdelx,
+                   l_int32    *pdely,
+                   l_float32  *pscore,
+                   l_int32     debugflag)
+{
+l_int32    shiftx, shifty, delx, dely;
+l_int32   *tab;
+l_float32  maxscore, score;
+FPIX      *fpix;
+PIX       *pixt1, *pixt2;
+
+    PROCNAME("pixBestCorrelation");
+
+    if (!pdelx || !pdely)
+        return ERROR_INT("&delx and &dely not defined", procName, 1);
+    *pdelx = *pdely = 0;
+    if (pscore) *pscore = 0.0;
+    if (!pix1 || pixGetDepth(pix1) != 1)
+        return ERROR_INT("pix1 not defined or not 1 bpp", procName, 1);
+    if (!pix2 || pixGetDepth(pix2) != 1)
+        return ERROR_INT("pix2 not defined or not 1 bpp", procName, 1);
+    if (!area1 || !area2)
+        return ERROR_INT("areas must be > 0", procName, 1);
+
+    if (debugflag > 0)
+        fpix = fpixCreate(2 * maxshift + 1, 2 * maxshift + 1);
+
+    if (!tab8)
+        tab = makePixelSumTab8();
+    else
+        tab = tab8;
+
+        /* Search over a set of {shiftx, shifty} for the max */
+    maxscore = 0;
+    delx = etransx;
+    dely = etransy;
+    for (shifty = -maxshift; shifty <= maxshift; shifty++) {
+        for (shiftx = -maxshift; shiftx <= maxshift; shiftx++) {
+            score = pixCorrelationScoreShifted(pix1, pix2, area1, area2,
+                                               etransx + shiftx,
+                                               etransy + shifty, tab);
+            if (debugflag > 0) {
+                fpixSetPixel(fpix, maxshift + shiftx, maxshift + shifty,
+                             1000.0 * score);
+/*                fprintf(stderr, "(sx, sy) = (%d, %d): score = %7.4f\n",
+                        shiftx, shifty, score); */
+            }
+            if (score > maxscore) {
+                maxscore = score;
+                delx = etransx + shiftx;
+                dely = etransy + shifty;
+            }
+        }
+    }
+
+    if (debugflag > 0) {
+        char  buf[128];
+        pixt1 = fpixDisplayMaxDynamicRange(fpix);
+        pixt2 = pixExpandReplicate(pixt1, 20);
+        snprintf(buf, sizeof(buf), "/tmp/junkcorrel_%d.png", debugflag);
+        pixWrite(buf, pixt2, IFF_PNG);
+        pixDestroy(&pixt1);
+        pixDestroy(&pixt2);
+        fpixDestroy(&fpix);
+    }
+
+    *pdelx = delx;
+    *pdely = dely;
+    if (pscore) *pscore = maxscore;
+    if (!tab8) FREE(tab);
+    return 0;
 }

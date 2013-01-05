@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 
@@ -36,7 +47,6 @@
  *
  */
 
-#include <stdio.h>
 #include <string.h>
 #include <math.h>   /* required for sin and tan */
 #include "allheaders.h"
@@ -327,7 +337,7 @@ l_float32  sina, cosa;
  *     of each pixel into 16 sub-pixels.  The exact coefficients that
  *     should be used are the same as for the 4x linear interpolation
  *     scaling case, and are given there.  I tried to approximate these
- *     as weighted coefficients with a maximum sum of 4, which 
+ *     as weighted coefficients with a maximum sum of 4, which
  *     allows us to do the arithmetic in parallel for the R, G and B
  *     components in a 32 bit pixel.  However, there are three reasons
  *     for not doing that:
@@ -353,7 +363,7 @@ l_float32  sina, cosa;
  *         7          (3 * sp1 + 9 * sp2 + sp3 + 3 * sp4) / 16
  *         8          (sp1 + sp3) / 2
  *         9          (3 * sp1 + sp2 + 3 * sp3 + sp4) / 8
- *         10         (sp1 + sp2 + sp3 + sp4) / 4 
+ *         10         (sp1 + sp2 + sp3 + sp4) / 4
  *         11         (sp1 + 3 * sp2 + sp3 + 3 * sp4) / 8
  *         12         (sp1 + 3 * sp3) / 4
  *         13         (3 * sp1 + sp2 + 9 * sp3 + 3 * sp4) / 16
@@ -376,13 +386,13 @@ l_float32  sina, cosa;
  *     we inline its extraction from each participating word,
  *     construct the linear combination, and combine the results
  *     into the destination 32 bit RGB pixel, using the appropriate shifts.
- *     
+ *
  *     It is interesting to note that an alternative method, where
  *     we do the arithmetic on the 32 bit pixels directly (after
  *     shifting the components so they won't overflow into each other)
  *     is significantly inferior.  Because we have only 8 bits for
  *     internal overflows, which can be distributed as 2, 3, 3, it
- *     is impossible to add these with the correct linear 
+ *     is impossible to add these with the correct linear
  *     interpolation coefficients, which require a sum of up to 16.
  *     Rounding off to a sum of 4 causes appreciable visual artifacts
  *     in the rotated image.  The code for the inferior method
@@ -496,7 +506,7 @@ l_float32  sina, cosa;
                         3 * ((word2 >> 16) & 0xff) +
                         3 * ((word3 >> 16) & 0xff) +
                         ((word4 >> 16) & 0xff);
-                blue = 9 * ((word1 >> 8) & 0xff) + 
+                blue = 9 * ((word1 >> 8) & 0xff) +
                        3 * ((word2 >> 8) & 0xff) +
                        3 * ((word3 >> 8) & 0xff) +
                        ((word4 >> 8) & 0xff);
@@ -511,7 +521,7 @@ l_float32  sina, cosa;
                 word4 = *(pword + wpls + 1);
                 red = 3 * (word1 >> 24) +  3 * (word2 >> 24) +
                       (word3 >> 24) + (word4 >> 24);
-                green = 3 * ((word1 >> 16) & 0xff) + 
+                green = 3 * ((word1 >> 16) & 0xff) +
                         3 * ((word2 >> 16) & 0xff) +
                         ((word3 >> 16) & 0xff) +
                         ((word4 >> 16) & 0xff);
@@ -530,7 +540,7 @@ l_float32  sina, cosa;
                 word4 = *(pword + wpls + 1);
                 red = 3 * (word1 >> 24) + 9 * (word2 >> 24) +
                       (word3 >> 24) + 3 * (word4 >> 24);
-                green = 3 * ((word1 >> 16) & 0xff) + 
+                green = 3 * ((word1 >> 16) & 0xff) +
                         9 * ((word2 >> 16) & 0xff) +
                         ((word3 >> 16) & 0xff) +
                         3 * ((word4 >> 16) & 0xff);
@@ -663,5 +673,3 @@ l_float32  sina, cosa;
 
     return;
 }
-
-

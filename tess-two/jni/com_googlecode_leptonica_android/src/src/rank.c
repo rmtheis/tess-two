@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -23,6 +34,9 @@
  *
  *      Median filter
  *          PIX      *pixMedianFilter()
+ *
+ *      Rank filter (accelerated with downscaling)
+ *          PIX      *pixRankFilterWithScaling()
  *
  *  What is a brick rank filter?
  *
@@ -80,7 +94,7 @@
  *      * Represented as a linked list.  This would overcome the
  *        summing-over-empty-bin problem, but you lose random access
  *        for insertions and deletions.  No way.
- *  
+ *
  *      * Two histogram solution.  Maintain two histograms with
  *        bin sizes of 1 and 16.  Proceed from coarse to fine.
  *        First locate the coarse bin for the given rank, of which
@@ -90,12 +104,19 @@
  *        coarse and fine histograms, is thus 16.
  *
  *  If someone has a better method, please let me know!
+ *
+ *  The rank filtering operation is relatively expensive, compared to most
+ *  of the other imaging operations.  The speed is only weakly dependent
+ *  on the size of the rank filter.  On standard hardware, it runs at
+ *  about 10 Mpix/sec for a 50 x 50 filter, and 25 Mpix/sec for
+ *  a 5 x 5 filter.   For applications where the rank filter can be
+ *  performed on a downscaled image, significant speedup can be
+ *  achieved because the time goes as the square of the scaling factor.
+ *  We provide an interface that handles the details, and only
+ *  requires the amount of downscaling to be input.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "allheaders.h"
-
 
 /*----------------------------------------------------------------------*
  *                           Rank order filter                          *
@@ -312,7 +333,7 @@ PIX       *pixt, *pixd;
                 lined = datad + i * wpld;
                 if (i == 0) {  /* do full histo */
                     for (k = 0; k < hf; k++) {
-                        linet = datat + (i + k) * wplt; 
+                        linet = datat + (i + k) * wplt;
                         for (m = 0; m < wf; m++) {
                             val = GET_DATA_BYTE(linet, j + m);
                             histo[val]++;
@@ -347,7 +368,7 @@ PIX       *pixt, *pixd;
                 for (m = 0; m < 16; m++) {
                     sum += histo[k];
                     if (sum > rankloc) {
-                        SET_DATA_BYTE(lined, j, k); 
+                        SET_DATA_BYTE(lined, j, k);
                         break;
                     }
                     k++;
@@ -366,7 +387,7 @@ PIX       *pixt, *pixd;
                     /* Update the histos for the new location */
                 if (j == 0) {  /* do full histo */
                     for (k = 0; k < hf; k++) {
-                        linet = datat + (i + k) * wplt; 
+                        linet = datat + (i + k) * wplt;
                         for (m = 0; m < wf; m++) {
                             val = GET_DATA_BYTE(linet, j + m);
                             histo[val]++;
@@ -398,7 +419,7 @@ PIX       *pixt, *pixd;
                 for (m = 0; m < 16; m++) {
                     sum += histo[k];
                     if (sum > rankloc) {
-                        SET_DATA_BYTE(lined, j, k); 
+                        SET_DATA_BYTE(lined, j, k);
                         break;
                     }
                     k++;
@@ -437,3 +458,63 @@ pixMedianFilter(PIX     *pixs,
 }
 
 
+/*----------------------------------------------------------------------*
+ *                Rank filter (accelerated with downscaling)            *
+ *----------------------------------------------------------------------*/
+/*!
+ *  pixRankFilterWithScaling()
+ *
+ *      Input:  pixs (8 or 32 bpp; no colormap)
+ *              wf, hf  (width and height of filter; each is >= 1)
+ *              rank (in [0.0 ... 1.0])
+ *              scalefactor (scale factor; must be >= 0.2 and <= 0.7)
+ *      Return: pixd (of rank values), or null on error
+ *
+ *  Notes:
+ *      (1) This is a convenience function that downscales, does
+ *          the rank filtering, and upscales.  Because the down-
+ *          and up-scaling functions are very fast compared to
+ *          rank filtering, the time it takes is reduced from that
+ *          for the simple rank filtering operation by approximately
+ *          the square of the scaling factor.
+ */
+PIX  *
+pixRankFilterWithScaling(PIX       *pixs,
+                         l_int32    wf,
+                         l_int32    hf,
+                         l_float32  rank,
+                         l_float32  scalefactor)
+{
+l_int32  w, h, d, wfs, hfs;
+PIX     *pix1, *pix2, *pixd;
+
+    PROCNAME("pixRankFilterWithScaling");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+    if (pixGetColormap(pixs) != NULL)
+        return (PIX *)ERROR_PTR("pixs has colormap", procName, NULL);
+    d = pixGetDepth(pixs);
+    if (d != 8 && d != 32)
+        return (PIX *)ERROR_PTR("pixs not 8 or 32 bpp", procName, NULL);
+    if (wf < 1 || hf < 1)
+        return (PIX *)ERROR_PTR("wf < 1 || hf < 1", procName, NULL);
+    if (rank < 0.0 || rank > 1.0)
+        return (PIX *)ERROR_PTR("rank must be in [0.0, 1.0]", procName, NULL);
+    if (wf == 1 && hf == 1)   /* no-op */
+        return pixCopy(NULL, pixs);
+    if (scalefactor < 0.2 || scalefactor > 0.7) {
+        L_ERROR("invalid scale factor; no scaling used", procName);
+        return pixRankFilter(pixs, wf, hf, rank);
+    }
+
+    pix1 = pixScaleAreaMap(pixs, scalefactor, scalefactor);
+    wfs = L_MAX(1, (l_int32)(scalefactor * wf + 0.5));
+    hfs = L_MAX(1, (l_int32)(scalefactor * hf + 0.5));
+    pix2 = pixRankFilter(pix1, wfs, hfs, rank);
+    pixGetDimensions(pixs, &w, &h, NULL);
+    pixd = pixScaleToSize(pix2, w, h);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    return pixd;
+}

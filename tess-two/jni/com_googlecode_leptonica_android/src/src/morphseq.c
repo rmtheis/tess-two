@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -38,11 +49,8 @@
  *            PIX     *pixColorMorphSequence()
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "allheaders.h"
-
 
 /*-------------------------------------------------------------------------*
  *         Run a sequence of binary rasterop morphological operations      *
@@ -52,8 +60,11 @@
  *
  *      Input:  pixs
  *              sequence (string specifying sequence)
- *              dispsep (horizontal separation in pixels between
- *                       successive displays; use zero to suppress display)
+ *              dispsep (controls debug display of each result in the sequence:
+ *                       0: no output
+ *                       > 0: gives horizontal separation in pixels between
+ *                            successive displays
+ *                       < 0: pdf output; abs(dispsep) is used for naming)
  *      Return: pixd, or null on error
  *
  *  Notes:
@@ -107,7 +118,7 @@
  *           it will not be safe.  For that situation, you need to add
  *           a sufficiently large border as the first operation in
  *           the sequence.  This will be removed automatically at the
- *           end.  There are two cautions: 
+ *           end.  There are two cautions:
  *              - When computing what is sufficient, remember that if
  *                reductions are carried out, the border is also reduced.
  *              - The border is removed at the end, so if a border is
@@ -119,10 +130,12 @@ pixMorphSequence(PIX         *pixs,
                  const char  *sequence,
                  l_int32      dispsep)
 {
-char    *rawop, *op;
-l_int32  nops, i, j, nred, fact, w, h, x, y, border;
+char    *rawop, *op, *fname;
+char     buf[256];
+l_int32  nops, i, j, nred, fact, w, h, x, y, border, pdfout;
 l_int32  level[4];
 PIX     *pixt1, *pixt2;
+PIXA    *pixa;
 SARRAY  *sa;
 
     PROCNAME("pixMorphSequence");
@@ -136,6 +149,7 @@ SARRAY  *sa;
     sa = sarrayCreate(0);
     sarraySplitString(sa, sequence, "+");
     nops = sarrayGetCount(sa);
+    pdfout = (dispsep < 0) ? 1 : 0;
 
     if (!morphSequenceVerify(sa)) {
         sarrayDestroy(&sa);
@@ -143,6 +157,13 @@ SARRAY  *sa;
     }
 
         /* Parse and operate */
+    pixa = NULL;
+    if (pdfout) {
+        pixa = pixaCreate(0);
+        pixaAddPix(pixa, pixs, L_CLONE);
+        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
+        fname = genPathname(buf, NULL);
+    }
     border = 0;
     pixt1 = pixCopy(NULL, pixs);
     pixt2 = NULL;
@@ -156,43 +177,23 @@ SARRAY  *sa;
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixDilateBrick(NULL, pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixErodeBrick(NULL, pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixOpenBrick(pixt1, pixt1, w, h);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixCloseSafeBrick(pixt1, pixt1, w, h);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
             break;
         case 'r':
         case 'R':
@@ -203,49 +204,43 @@ SARRAY  *sa;
                 level[j] = 0;
             pixt2 = pixReduceRankBinaryCascade(pixt1, level[0], level[1],
                                                level[2], level[3]);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'x':
         case 'X':
             sscanf(&op[1], "%d", &fact);
             pixt2 = pixExpandReplicate(pixt1, fact);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'b':
         case 'B':
             sscanf(&op[1], "%d", &border);
             pixt2 = pixAddBorder(pixt1, border, 0);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
             break;
         }
         FREE(op);
+
+            /* Debug output */
+        if (dispsep > 0) {
+            pixDisplay(pixt1, x, y);
+            x += dispsep;
+        }
+        if (pdfout)
+            pixaAddPix(pixa, pixt1, L_COPY);
     }
     if (border > 0) {
         pixt2 = pixRemoveBorder(pixt1, border);
-        pixDestroy(&pixt1);
-        pixt1 = pixClone(pixt2);
-        pixDestroy(&pixt2);
+        pixSwapAndDestroy(&pixt1, &pixt2);
+    }
+
+    if (pdfout) {
+        pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
+        FREE(fname);
+        pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
@@ -261,8 +256,11 @@ SARRAY  *sa;
  *
  *      Input:  pixs
  *              sequence (string specifying sequence)
- *              dispsep (horizontal separation in pixels between
- *                       successive displays; use zero to suppress display)
+ *              dispsep (controls debug display of each result in the sequence:
+ *                       0: no output
+ *                       > 0: gives horizontal separation in pixels between
+ *                            successive displays
+ *                       < 0: pdf output; abs(dispsep) is used for naming)
  *      Return: pixd, or null on error
  *
  *  Notes:
@@ -299,10 +297,12 @@ pixMorphCompSequence(PIX         *pixs,
                      const char  *sequence,
                      l_int32      dispsep)
 {
-char    *rawop, *op;
-l_int32  nops, i, j, nred, fact, w, h, x, y, border;
+char    *rawop, *op, *fname;
+char     buf[256];
+l_int32  nops, i, j, nred, fact, w, h, x, y, border, pdfout;
 l_int32  level[4];
 PIX     *pixt1, *pixt2;
+PIXA    *pixa;
 SARRAY  *sa;
 
     PROCNAME("pixMorphCompSequence");
@@ -316,6 +316,7 @@ SARRAY  *sa;
     sa = sarrayCreate(0);
     sarraySplitString(sa, sequence, "+");
     nops = sarrayGetCount(sa);
+    pdfout = (dispsep < 0) ? 1 : 0;
 
     if (!morphSequenceVerify(sa)) {
         sarrayDestroy(&sa);
@@ -323,6 +324,13 @@ SARRAY  *sa;
     }
 
         /* Parse and operate */
+    pixa = NULL;
+    if (pdfout) {
+        pixa = pixaCreate(0);
+        pixaAddPix(pixa, pixs, L_CLONE);
+        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
+        fname = genPathname(buf, NULL);
+    }
     border = 0;
     pixt1 = pixCopy(NULL, pixs);
     pixt2 = NULL;
@@ -336,43 +344,23 @@ SARRAY  *sa;
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixDilateCompBrick(NULL, pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixErodeCompBrick(NULL, pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixOpenCompBrick(pixt1, pixt1, w, h);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixCloseSafeCompBrick(pixt1, pixt1, w, h);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
             break;
         case 'r':
         case 'R':
@@ -383,49 +371,43 @@ SARRAY  *sa;
                 level[j] = 0;
             pixt2 = pixReduceRankBinaryCascade(pixt1, level[0], level[1],
                                                level[2], level[3]);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'x':
         case 'X':
             sscanf(&op[1], "%d", &fact);
             pixt2 = pixExpandReplicate(pixt1, fact);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'b':
         case 'B':
             sscanf(&op[1], "%d", &border);
             pixt2 = pixAddBorder(pixt1, border, 0);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
             break;
         }
         FREE(op);
+
+            /* Debug output */
+        if (dispsep > 0) {
+            pixDisplay(pixt1, x, y);
+            x += dispsep;
+        }
+        if (pdfout)
+            pixaAddPix(pixa, pixt1, L_COPY);
     }
     if (border > 0) {
         pixt2 = pixRemoveBorder(pixt1, border);
-        pixDestroy(&pixt1);
-        pixt1 = pixClone(pixt2);
-        pixDestroy(&pixt2);
+        pixSwapAndDestroy(&pixt1, &pixt2);
+    }
+
+    if (pdfout) {
+        pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
+        FREE(fname);
+        pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
@@ -441,8 +423,11 @@ SARRAY  *sa;
  *
  *      Input:  pixs
  *              sequence (string specifying sequence)
- *              dispsep (horizontal separation in pixels between
- *                       successive displays; use zero to suppress display)
+ *              dispsep (controls debug display of each result in the sequence:
+ *                       0: no output
+ *                       > 0: gives horizontal separation in pixels between
+ *                            successive displays
+ *                       < 0: pdf output; abs(dispsep) is used for naming)
  *      Return: pixd, or null on error
  *
  *  Notes:
@@ -460,10 +445,12 @@ pixMorphSequenceDwa(PIX         *pixs,
                     const char  *sequence,
                     l_int32      dispsep)
 {
-char    *rawop, *op;
-l_int32  nops, i, j, nred, fact, w, h, x, y, border;
+char    *rawop, *op, *fname;
+char     buf[256];
+l_int32  nops, i, j, nred, fact, w, h, x, y, border, pdfout;
 l_int32  level[4];
 PIX     *pixt1, *pixt2;
+PIXA    *pixa;
 SARRAY  *sa;
 
     PROCNAME("pixMorphSequenceDwa");
@@ -477,6 +464,7 @@ SARRAY  *sa;
     sa = sarrayCreate(0);
     sarraySplitString(sa, sequence, "+");
     nops = sarrayGetCount(sa);
+    pdfout = (dispsep < 0) ? 1 : 0;
 
     if (!morphSequenceVerify(sa)) {
         sarrayDestroy(&sa);
@@ -484,6 +472,13 @@ SARRAY  *sa;
     }
 
         /* Parse and operate */
+    pixa = NULL;
+    if (pdfout) {
+        pixa = pixaCreate(0);
+        pixaAddPix(pixa, pixs, L_CLONE);
+        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
+        fname = genPathname(buf, NULL);
+    }
     border = 0;
     pixt1 = pixCopy(NULL, pixs);
     pixt2 = NULL;
@@ -497,43 +492,23 @@ SARRAY  *sa;
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixDilateBrickDwa(NULL, pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixErodeBrickDwa(NULL, pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixOpenBrickDwa(pixt1, pixt1, w, h);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixCloseBrickDwa(pixt1, pixt1, w, h);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
             break;
         case 'r':
         case 'R':
@@ -544,49 +519,43 @@ SARRAY  *sa;
                 level[j] = 0;
             pixt2 = pixReduceRankBinaryCascade(pixt1, level[0], level[1],
                                                level[2], level[3]);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'x':
         case 'X':
             sscanf(&op[1], "%d", &fact);
             pixt2 = pixExpandReplicate(pixt1, fact);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'b':
         case 'B':
             sscanf(&op[1], "%d", &border);
             pixt2 = pixAddBorder(pixt1, border, 0);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
             break;
         }
         FREE(op);
+
+            /* Debug output */
+        if (dispsep > 0) {
+            pixDisplay(pixt1, x, y);
+            x += dispsep;
+        }
+        if (pdfout)
+            pixaAddPix(pixa, pixt1, L_COPY);
     }
     if (border > 0) {
         pixt2 = pixRemoveBorder(pixt1, border);
-        pixDestroy(&pixt1);
-        pixt1 = pixClone(pixt2);
-        pixDestroy(&pixt2);
+        pixSwapAndDestroy(&pixt1, &pixt2);
+    }
+
+    if (pdfout) {
+        pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
+        FREE(fname);
+        pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
@@ -602,8 +571,11 @@ SARRAY  *sa;
  *
  *      Input:  pixs
  *              sequence (string specifying sequence)
- *              dispsep (horizontal separation in pixels between
- *                       successive displays; use zero to suppress display)
+ *              dispsep (controls debug display of each result in the sequence:
+ *                       0: no output
+ *                       > 0: gives horizontal separation in pixels between
+ *                            successive displays
+ *                       < 0: pdf output; abs(dispsep) is used for naming)
  *      Return: pixd, or null on error
  *
  *  Notes:
@@ -621,10 +593,12 @@ pixMorphCompSequenceDwa(PIX         *pixs,
                         const char  *sequence,
                         l_int32      dispsep)
 {
-char    *rawop, *op;
-l_int32  nops, i, j, nred, fact, w, h, x, y, border;
+char    *rawop, *op, *fname;
+char     buf[256];
+l_int32  nops, i, j, nred, fact, w, h, x, y, border, pdfout;
 l_int32  level[4];
 PIX     *pixt1, *pixt2;
+PIXA    *pixa;
 SARRAY  *sa;
 
     PROCNAME("pixMorphCompSequenceDwa");
@@ -638,6 +612,7 @@ SARRAY  *sa;
     sa = sarrayCreate(0);
     sarraySplitString(sa, sequence, "+");
     nops = sarrayGetCount(sa);
+    pdfout = (dispsep < 0) ? 1 : 0;
 
     if (!morphSequenceVerify(sa)) {
         sarrayDestroy(&sa);
@@ -645,6 +620,13 @@ SARRAY  *sa;
     }
 
         /* Parse and operate */
+    pixa = NULL;
+    if (pdfout) {
+        pixa = pixaCreate(0);
+        pixaAddPix(pixa, pixs, L_CLONE);
+        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
+        fname = genPathname(buf, NULL);
+    }
     border = 0;
     pixt1 = pixCopy(NULL, pixs);
     pixt2 = NULL;
@@ -658,43 +640,23 @@ SARRAY  *sa;
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixDilateCompBrickDwa(NULL, pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixErodeCompBrickDwa(NULL, pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixOpenCompBrickDwa(pixt1, pixt1, w, h);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixCloseCompBrickDwa(pixt1, pixt1, w, h);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
             break;
         case 'r':
         case 'R':
@@ -705,49 +667,43 @@ SARRAY  *sa;
                 level[j] = 0;
             pixt2 = pixReduceRankBinaryCascade(pixt1, level[0], level[1],
                                                level[2], level[3]);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'x':
         case 'X':
             sscanf(&op[1], "%d", &fact);
             pixt2 = pixExpandReplicate(pixt1, fact);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'b':
         case 'B':
             sscanf(&op[1], "%d", &border);
             pixt2 = pixAddBorder(pixt1, border, 0);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, y);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
             break;
         }
         FREE(op);
+
+            /* Debug output */
+        if (dispsep > 0) {
+            pixDisplay(pixt1, x, y);
+            x += dispsep;
+        }
+        if (pdfout)
+            pixaAddPix(pixa, pixt1, L_COPY);
     }
     if (border > 0) {
         pixt2 = pixRemoveBorder(pixt1, border);
-        pixDestroy(&pixt1);
-        pixt1 = pixClone(pixt2);
-        pixDestroy(&pixt2);
+        pixSwapAndDestroy(&pixt1, &pixt2);
+    }
+
+    if (pdfout) {
+        pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
+        FREE(fname);
+        pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
@@ -902,9 +858,12 @@ l_int32  intlogbase2[5] = {1, 2, 3, 0, 4};  /* of arg/4 */
  *
  *      Input:  pixs
  *              sequence (string specifying sequence)
- *              dispsep (horizontal separation in pixels between
- *                       successive displays; use zero to suppress display)
- *              dispy (if dispsep != 0, this gives the y-value of the
+ *              dispsep (controls debug display of each result in the sequence:
+ *                       0: no output
+ *                       > 0: gives horizontal separation in pixels between
+ *                            successive displays
+ *                       < 0: pdf output; abs(dispsep) is used for naming)
+ *              dispy (if dispsep > 0, this gives the y-value of the
  *                     UL corner for display; otherwise it is ignored)
  *      Return: pixd, or null on error
  *
@@ -946,9 +905,11 @@ pixGrayMorphSequence(PIX         *pixs,
                      l_int32      dispsep,
                      l_int32      dispy)
 {
-char    *rawop, *op;
-l_int32  nops, i, valid, w, h, x;
+char    *rawop, *op, *fname;
+char     buf[256];
+l_int32  nops, i, valid, w, h, x, pdfout;
 PIX     *pixt1, *pixt2;
+PIXA    *pixa;
 SARRAY  *sa;
 
     PROCNAME("pixGrayMorphSequence");
@@ -962,6 +923,7 @@ SARRAY  *sa;
     sa = sarrayCreate(0);
     sarraySplitString(sa, sequence, "+");
     nops = sarrayGetCount(sa);
+    pdfout = (dispsep < 0) ? 1 : 0;
 
         /* Verify that the operation sequence is valid */
     valid = TRUE;
@@ -1023,6 +985,13 @@ SARRAY  *sa;
     }
 
         /* Parse and operate */
+    pixa = NULL;
+    if (pdfout) {
+        pixa = pixaCreate(0);
+        pixaAddPix(pixa, pixs, L_CLONE);
+        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
+        fname = genPathname(buf, NULL);
+    }
     pixt1 = pixCopy(NULL, pixs);
     pixt2 = NULL;
     x = 0;
@@ -1035,49 +1004,25 @@ SARRAY  *sa;
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixDilateGray(pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, dispy);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixErodeGray(pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, dispy);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixOpenGray(pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, dispy);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixCloseGray(pixt1, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, dispy);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 't':
         case 'T':
@@ -1086,19 +1031,27 @@ SARRAY  *sa;
                 pixt2 = pixTophat(pixt1, w, h, L_TOPHAT_WHITE);
             else   /* 'b' or 'B' */
                 pixt2 = pixTophat(pixt1, w, h, L_TOPHAT_BLACK);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, dispy);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
             break;
         }
         FREE(op);
+
+            /* Debug output */
+        if (dispsep > 0) {
+            pixDisplay(pixt1, x, dispy);
+            x += dispsep;
+        }
+        if (pdfout)
+            pixaAddPix(pixa, pixt1, L_COPY);
+    }
+
+    if (pdfout) {
+        pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
+        FREE(fname);
+        pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
@@ -1114,9 +1067,12 @@ SARRAY  *sa;
  *
  *      Input:  pixs
  *              sequence (string specifying sequence)
- *              dispsep (horizontal separation in pixels between
- *                       successive displays; use zero to suppress display)
- *              dispy (if dispsep != 0, this gives the y-value of the
+ *              dispsep (controls debug display of each result in the sequence:
+ *                       0: no output
+ *                       > 0: gives horizontal separation in pixels between
+ *                            successive displays
+ *                       < 0: pdf output; abs(dispsep) is used for naming)
+ *              dispy (if dispsep > 0, this gives the y-value of the
  *                     UL corner for display; otherwise it is ignored)
  *      Return: pixd, or null on error
  *
@@ -1153,9 +1109,11 @@ pixColorMorphSequence(PIX         *pixs,
                       l_int32      dispsep,
                       l_int32      dispy)
 {
-char    *rawop, *op;
-l_int32  nops, i, valid, w, h, x;
+char    *rawop, *op, *fname;
+char     buf[256];
+l_int32  nops, i, valid, w, h, x, pdfout;
 PIX     *pixt1, *pixt2;
+PIXA    *pixa;
 SARRAY  *sa;
 
     PROCNAME("pixColorMorphSequence");
@@ -1169,6 +1127,7 @@ SARRAY  *sa;
     sa = sarrayCreate(0);
     sarraySplitString(sa, sequence, "+");
     nops = sarrayGetCount(sa);
+    pdfout = (dispsep < 0) ? 1 : 0;
 
         /* Verify that the operation sequence is valid */
     valid = TRUE;
@@ -1211,6 +1170,13 @@ SARRAY  *sa;
     }
 
         /* Parse and operate */
+    pixa = NULL;
+    if (pdfout) {
+        pixa = pixaCreate(0);
+        pixaAddPix(pixa, pixs, L_CLONE);
+        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
+        fname = genPathname(buf, NULL);
+    }
     pixt1 = pixCopy(NULL, pixs);
     pixt2 = NULL;
     x = 0;
@@ -1223,59 +1189,47 @@ SARRAY  *sa;
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixColorMorph(pixt1, L_MORPH_DILATE, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, dispy);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixColorMorph(pixt1, L_MORPH_ERODE, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, dispy);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixColorMorph(pixt1, L_MORPH_OPEN, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, dispy);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
             pixt2 = pixColorMorph(pixt1, L_MORPH_CLOSE, w, h);
-            pixDestroy(&pixt1);
-            pixt1 = pixClone(pixt2);
-            pixDestroy(&pixt2);
-            if (dispsep > 0) {
-                pixDisplay(pixt1, x, dispy);
-                x += dispsep;
-            }
+            pixSwapAndDestroy(&pixt1, &pixt2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
             break;
         }
         FREE(op);
+
+            /* Debug output */
+        if (dispsep > 0) {
+            pixDisplay(pixt1, x, dispy);
+            x += dispsep;
+        }
+        if (pdfout)
+            pixaAddPix(pixa, pixt1, L_COPY);
+    }
+
+    if (pdfout) {
+        pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
+        FREE(fname);
+        pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
     return pixt1;
 }
-
-

@@ -1,0 +1,38 @@
+AM_CFLAGS = $(DEBUG_FLAGS)
+AM_CPPFLAGS = -I$(top_srcdir)/src
+LDADD = $(top_builddir)/src/liblept.la $(LIBM)
+
+bin_PROGRAMS = binarize_reg \
+	binmorph2_reg \
+	ccthin2_reg \
+	colorquant_reg \
+	colorseg_reg \
+	convolve_reg \
+	dewarp_reg \
+	dwamorph1_reg dwamorph2_reg \
+	distance_reg \
+	enhance_reg \
+	ioformats_reg \
+	maze_reg \
+	paintmask_reg \
+	rotate1_reg rotate2_reg \
+	scale_reg seedspread_reg \
+	splitcomp_reg \
+	threshnorm_reg \
+	warper_reg \
+	convertfilestopdf convertfilestops \
+	convertformat \
+	convertsegfilestopdf convertsegfilestops \
+	converttops \
+	dewarptest1 \
+	fcombautogen fhmtautogen fileinfo \
+	fmorphautogen \
+	pdfiotest \
+	printimage printsplitimage \
+	splitimage2pdf \
+	sudokutest  \
+	watershedtest \
+	xtractprotos
+
+dwamorph1_reg_SOURCES = dwamorph1_reg.c dwalinear.3.c dwalinearlow.3.c
+dwamorph2_reg_SOURCES = dwamorph2_reg.c dwalinear.3.c dwalinearlow.3.c

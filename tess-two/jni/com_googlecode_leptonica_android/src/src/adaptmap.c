@@ -1,21 +1,32 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
  *  adaptmap.c
- *                     
+ *
  *  ===================================================================
  *  Image binarization algorithms are found in:
  *     grayquant.c:   standard, simple, general grayscale quantization
@@ -116,10 +127,7 @@
  *      function doesn't change rapidly with position.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "allheaders.h"
-
 
     /* Default input parameters for pixBackgroundNormSimple()
      * Note:
@@ -464,7 +472,7 @@ PIX       *pixmr, *pixmg, *pixmb, *pixmri, *pixmgi, *pixmbi;
  *
  *  Notes:
  *    (1) See notes in pixBackgroundNorm().
- *    (2) This returns a 16 bpp pix that can be used by 
+ *    (2) This returns a 16 bpp pix that can be used by
  *        pixApplyInvBackgroundGrayMap() to generate a normalized version
  *        of the input pixs.
  */
@@ -538,7 +546,7 @@ PIX     *pixm;
  *
  *  Notes:
  *    (1) See notes in pixBackgroundNorm().
- *    (2) This returns a set of three 16 bpp pix that can be used by 
+ *    (2) This returns a set of three 16 bpp pix that can be used by
  *        pixApplyInvBackgroundGrayMap() to generate a normalized version
  *        of each component of the input pixs.
  */
@@ -619,7 +627,7 @@ PIX     *pixmr, *pixmg, *pixmb;
  *
  *  Notes:
  *    (1) See notes in pixBackgroundNormMorph().
- *    (2) This returns a 16 bpp pix that can be used by 
+ *    (2) This returns a 16 bpp pix that can be used by
  *        pixApplyInvBackgroundGrayMap() to generate a normalized version
  *        of the input pixs.
  */
@@ -681,7 +689,7 @@ PIX     *pixm;
  *
  *  Notes:
  *    (1) See notes in pixBackgroundNormMorph().
- *    (2) This returns a set of three 16 bpp pix that can be used by 
+ *    (2) This returns a set of three 16 bpp pix that can be used by
  *        pixApplyInvBackgroundGrayMap() to generate a normalized version
  *        of each component of the input pixs.
  */
@@ -1166,7 +1174,7 @@ PIX       *pixm, *pixt1, *pixt2, *pixt3, *pixims;
         pixims = pixScale(pixim, scale, scale);
         pixm = pixConvertTo8(pixims, FALSE);
         pixAnd(pixm, pixm, pixt3);
-    } 
+    }
     else
         pixm = pixClone(pixt3);
     pixDestroy(&pixt1);
@@ -1332,7 +1340,7 @@ PIX       *pixm, *pixmr, *pixmg, *pixmb, *pixt1, *pixt2, *pixt3, *pixims;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) This is an in-place operation on pix (the map).  pix is 
+ *      (1) This is an in-place operation on pix (the map).  pix is
  *          typically a low-resolution version of some other image
  *          from which it was derived, where each pixel in pix
  *          corresponds to a rectangular tile (say, m x n) of pixels
@@ -1406,7 +1414,7 @@ PIX      *pixt;
         }
     }
     numaAddNumber(na, 0);  /* last column */
-    
+
     if (nmiss == nx) {  /* no data in any column! */
         numaDestroy(&na);
         L_WARNING("no bg found; no data in any column", procName);
@@ -1447,7 +1455,7 @@ PIX      *pixt;
             pixSetPixel(pix, w - 1, i, val);
         }
     }
-    
+
     numaDestroy(&na);
     return 0;
 }
@@ -1970,7 +1978,7 @@ PIX       *pixd;
          * to warrant the overhead.  The LUT is of size 2^16.  For the
          * index to the table, get the MSB from pixs and the LSB from pixg.
          * Note: this LUT is bigger than the typical 32K L1 cache, so
-         * we expect cache misses.  L2 latencies are about 5ns.  But 
+         * we expect cache misses.  L2 latencies are about 5ns.  But
          * division is slooooow.  For large images, this function is about
          * 4x faster when using the LUT.  C'est la vie.  */
     lut = NULL;
@@ -2028,7 +2036,7 @@ PIX       *pixd;
  *
  *      Input:  pixd (<optional> null, existing or equal to pixs)
  *              pixs (32 bpp rgb, or colormapped)
- *              rval, gval, bval (pixel values in pixs that are 
+ *              rval, gval, bval (pixel values in pixs that are
  *                                linearly mapped to mapval)
  *              mapval (use 255 for mapping to white)
  *      Return: pixd (32 bpp rgb or colormapped), or null on error
@@ -2135,7 +2143,7 @@ PIXCMAP   *cmap;
  *
  *      Input:  pixd (<optional> null, existing or equal to pixs)
  *              pixs (32 bpp rgb)
- *              rval, gval, bval (pixel values in pixs that are 
+ *              rval, gval, bval (pixel values in pixs that are
  *                                linearly mapped to mapval; but see below)
  *              factor (subsampling factor; integer >= 1)
  *              rank (between 0.0 and 1.0; typ. use a value near 1.0)
@@ -2312,7 +2320,7 @@ PIX     *pixe, *pixet, *pixsd, *pixg1, *pixg2, *pixth;
 
         /* Do the mapping and thresholding */
     if (ppixd) {
-        *ppixd = pixApplyVariableGrayMap(pixs, pixth, targetthresh); 
+        *ppixd = pixApplyVariableGrayMap(pixs, pixth, targetthresh);
         if (ppixb)
             *ppixb = pixThresholdToBinary(*ppixd, targetthresh);
     }
@@ -2407,7 +2415,7 @@ PIX       *pixt, *pixsd, *pixmin, *pixbg, *pixbgi, *pixd;
         /* Map the bg to 200 */
     pixbgi = pixGetInvBackgroundMap(pixbg, 200, smoothx, smoothy);
     pixd = pixApplyInvBackgroundGrayMap(pixs, pixbgi, sx, sy);
-    
+
     pixDestroy(&pixt);
     pixDestroy(&pixsd);
     pixDestroy(&pixbg);
@@ -2597,7 +2605,7 @@ PIX     *pixmin1, *pixmax1, *pixmin2, *pixmax2;
  *          in a larger image, and a very small difference between
  *          the min and max in the tile indicates that the min and max
  *          values are not to be trusted.
- *      (2) If contrast (pixel difference) detection is expected to fail, 
+ *      (2) If contrast (pixel difference) detection is expected to fail,
  *          caller should check return value.
  */
 l_int32
@@ -2731,7 +2739,7 @@ l_uint32  *data, *datamin, *datamax, *line, *tline, *linemin, *linemax;
 /*                fprintf(stderr, "should't happen! i,j = %d,%d, minval = %d\n",
                         i, j, minval); */
                 continue;
-            } 
+            }
             ia = iaaGetLinearTRC(iaa, maxval - minval);
             for (k = 0; k < sy && yoff + k < h; k++) {
                 tline = line + k * wpl;
@@ -2776,7 +2784,7 @@ l_float32  factor;
 
     if (iaa[diff] != NULL)  /* already have it */
        return iaa[diff];
-                
+
     if ((ia = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
         return (l_int32 *)ERROR_PTR("ia not made", procName, NULL);
     iaa[diff] = ia;
@@ -2794,5 +2802,3 @@ l_float32  factor;
 
     return ia;
 }
-
-

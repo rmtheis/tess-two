@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -21,18 +32,17 @@
  *   between the src and dest rectangles.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "allheaders.h"
-
 
 main(int    argc,
 char **argv)
 {
-l_int32      i, j, equal;
-PIX         *pixs, *pixt, *pixd;
-static char  mainName[] = "rasteropip_reg";
+l_int32       i, j;
+PIX          *pixs, *pixt, *pixd;
+L_REGPARAMS  *rp;
 
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
 
     pixs = pixRead("test8.jpg");
     pixt = pixCopy(NULL, pixs);
@@ -41,36 +51,27 @@ static char  mainName[] = "rasteropip_reg";
            side to the left side. */
     for (j = 0; j < 200; j++)
         pixRasterop(pixs, 20 + j, 20, 1, 250, PIX_SRC, pixs, 250 + j, 20);
-    pixDisplay(pixs, 50, 50);
+    pixDisplayWithTitle(pixs, 50, 50, "in-place copy", rp->display);
 
         /* Copy, in-place and one ROW at a time, from the right
            side to the left side. */
     for (i = 0; i < 250; i++)
         pixRasterop(pixt, 20, 20 + i, 200, 1, PIX_SRC, pixt, 250, 20 + i);
-    pixDisplay(pixt, 620, 50);
 
         /* Test */
-    pixEqual(pixs, pixt, &equal);
-    if (equal)
-         fprintf(stderr, "OK: images are the same\n");
-    else
-         fprintf(stderr, "Error: images are different\n");
-    pixWrite("/tmp/junkpix.png", pixs, IFF_PNG);
+    regTestComparePix(rp, pixs, pixt);   /* 0 */
     pixDestroy(&pixs);
     pixDestroy(&pixt);
-
 
         /* Show the mirrored border, which uses the general
            pixRasterop() on an image in-place.  */
     pixs = pixRead("test8.jpg");
     pixt = pixRemoveBorder(pixs, 40);
-    pixd = pixAddMirroredBorder(pixt, 25, 25, 25, 25);
-    pixDisplay(pixd, 50, 550);
+    pixd = pixAddMirroredBorder(pixt, 40, 40, 40, 40);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 1 */
+    pixDisplayWithTitle(pixd, 650, 50, "mirrored border", rp->display);
     pixDestroy(&pixs);
     pixDestroy(&pixt);
     pixDestroy(&pixd);
-
-    return 0;
+    return regTestCleanup(rp);
 }
-
-

@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 
@@ -86,14 +97,14 @@
  *     find the holes (if any) in the pix, and separately
  *     trace out their borders, all using the same
  *     border-following rule that has ON pixels on the right
- *     side of the path.  
+ *     side of the path.
  *
  *     [For svg, we may want to turn each set of borders for a c.c.
  *     into a closed path.  This can be done by tunnelling
- *     through the component from the outer border to each of the 
+ *     through the component from the outer border to each of the
  *     holes, going in and coming out along the same path so
- *     the connection will be invisible in any rendering 
- *     (display or print) from the outline.  The result is a 
+ *     the connection will be invisible in any rendering
+ *     (display or print) from the outline.  The result is a
  *     closed path, where the outside border is traversed
  *     cw and each hole is traversed ccw.  The svg renderer
  *     is assumed to handle these closed borders properly.]
@@ -111,7 +122,7 @@
  *     Method 1.  Topological method using connected components.
  *     We have closed borders composed of cw border pixels for the
  *     exterior of c.c. and ccw border pixels for the interior (holes)
- *     in the c.c. 
+ *     in the c.c.
  *         (a) Initialize the destination to be OFF.  Then,
  *             in any order:
  *         (b) Fill the components within and including the cw borders,
@@ -135,7 +146,7 @@
  *               (3) Do a 4-connected fill from this seed pixel, using
  *                   the inverted image of the path in (1) as a filling
  *                   mask.
- *             
+ *
  *     ------------------------------------------------------
  *
  *     Method 2.  A variant of Method 1.  Topological.
@@ -143,7 +154,7 @@
  *     the interior (hole) borders.  Here, all borders in a c.c.
  *     are treated equally:
  *         (1) Start with a pix with a 1 pixel OFF boundary
- *             enclosing all the border pixels of the c.c. 
+ *             enclosing all the border pixels of the c.c.
  *             This is the filling mask.
  *         (2) Make a seed image of the same size as follows:  for
  *             each border, put one seed pixel OUTSIDE the border
@@ -183,7 +194,7 @@
  *         (a) The rasterizer will be in one of two states: ON and OFF.
  *         (b) Start each line in the OFF state.  In the OFF state,
  *             skip pixels until you hit a path of any type.  Turn
- *             the path pixel ON. 
+ *             the path pixel ON.
  *         (c) If the state is ON, each pixel you encounter will
  *             be turned on, until and including hitting a path pixel.
  *         (d) When you hit a path pixel, if the path does NOT cut
@@ -212,13 +223,13 @@
  *     (w=OFF, b=ON), but these of course must be inferred properly
  *     from the rules above:
  *
- *                     3   
+ *                     3
  *                  3  w  3             1  1  1
- *                  1  2  1          1  b  2  b  1 
+ *                  1  2  1          1  b  2  b  1
  *                  1  b  1             3  w  2  1
  *                  3  b  1          1  b  2  b  1
  *               3  w  3                1  1  1
- *               3  w  3                     
+ *               3  w  3
  *            1  b  2  b  1
  *            1  2  w  2  1
  *         1  b  2  w  2  b  1
@@ -331,7 +342,7 @@ CCBORDA  *ccba;
         return;
 
     pixDestroy(&ccba->pix);
-    for (i = 0; i < ccba->n; i++) 
+    for (i = 0; i < ccba->n; i++)
         ccbDestroy(&ccba->ccb[i]);
     FREE(ccba->ccb);
     FREE(ccba);
@@ -342,7 +353,7 @@ CCBORDA  *ccba;
 
 /*!
  *  ccbCreate()
- * 
+ *
  *     Input:  pixs  (<optional>)
  *     Return: ccb or null on error
  */
@@ -492,7 +503,7 @@ ccbaExtendArray(CCBORDA  *ccba)
  *     Input:  ccba
  *     Return: count, with 0 on error
  */
-l_int32 
+l_int32
 ccbaGetCount(CCBORDA  *ccba)
 {
 
@@ -595,7 +606,7 @@ PIXA     *pixa;
  *      (1) We are finding the exterior and interior borders
  *          of an 8-connected component.   This should be used
  *          on a pix that has exactly one 8-connected component.
- *      (2) Typically, pixs is a c.c. in some larger pix.  The 
+ *      (2) Typically, pixs is a c.c. in some larger pix.  The
  *          input box gives its location in global coordinates.
  *          This box is saved, as well as the boxes for the
  *          borders of any holes within the c.c., but the latter
@@ -704,7 +715,7 @@ PIXA     *pixa;
     boxaDestroy(&boxa);
     pixaDestroy(&pixa);
     pixDestroy(&pixh);
-        
+
     return ccb;
 }
 
@@ -909,7 +920,7 @@ PIX       *pixb;  /* with 1 pixel border */
         px = npx;
         py = npy;
     }
-    
+
     pixDestroy(&pixb);
     return 0;
 }
@@ -992,7 +1003,7 @@ PTA       *pta;
         px = npx;
         py = npy;
     }
-    
+
     return 0;
 }
 
@@ -1043,7 +1054,7 @@ l_uint32  *line;
 
     return 1;
 }
-        
+
 
 /*!
  *  locateOutsideSeedPixel()
@@ -1054,7 +1065,7 @@ l_uint32  *line;
  *
  *  Notes:
  *      (1) the first and second pixels must be 8-adjacent,
- *          so |dx| <= 1 and |dy| <= 1 and both dx and dy 
+ *          so |dx| <= 1 and |dy| <= 1 and both dx and dy
  *          cannot be 0.  There are 8 possible cases.
  *      (2) the seed pixel is OUTSIDE the foreground of the c.c.
  *      (3) these rules are for the situation where the INSIDE
@@ -1062,7 +1073,7 @@ l_uint32  *line;
  *          cw for an exterior border and ccw for a hole border.
  */
 void
-locateOutsideSeedPixel(l_int32   fpx, 
+locateOutsideSeedPixel(l_int32   fpx,
                        l_int32   fpy,
                        l_int32   spx,
                        l_int32   spy,
@@ -1553,14 +1564,14 @@ PTAA     *ptaap;  /* ptaa for all paths between borders */
             }
             boxDestroy(&boxinner);
         }
-                
+
             /* Make a single path for the c.c. using these connections */
         npt = ptaGetCount(pta);  /* outer border pts */
         for (k = 0; k < npt; k++) {
             ptaGetIPt(pta, k, &x, &y);
             if (k == 0) {   /* if there is a cut at the first point,
                              * we can wait until the end to take it */
-                ptaAddPt(ptas, x, y); 
+                ptaAddPt(ptas, x, y);
                 continue;
             }
             state = L_NOT_FOUND;
@@ -1590,7 +1601,7 @@ PTAA     *ptaap;  /* ptaa for all paths between borders */
             if (state == L_NOT_FOUND)
                 ptaAddPt(ptas, x, y);
         }
-        
+
 /*        ptaWriteStream(stderr, ptas, 1); */
         ptaaDestroy(&ptaap);
         ptaDestroy(&ptaf);
@@ -1641,7 +1652,7 @@ l_uint32  val;
 PTA      *ptac;
 
     PROCNAME("getCutPathForHole");
-    
+
     if (!pix)
         return (PTA *)ERROR_PTR("pix not defined", procName, NULL);
     if (!pta)
@@ -1658,7 +1669,7 @@ PTA      *ptac;
     ymid = boxinner->y + boxinner->h / 2;
 
         /* try top first */
-    for (y = ymid; y >= 0; y--) { 
+    for (y = ymid; y >= 0; y--) {
         pixGetPixel(pix, xmid, y, &val);
         if (val == 1) {
             ptaAddPt(ptac, xmid, y);
@@ -1682,7 +1693,7 @@ PTA      *ptac;
 
         /* Next try bottom */
     ptaEmpty(ptac);
-    for (y = ymid; y < h; y++) { 
+    for (y = ymid; y < h; y++) {
         pixGetPixel(pix, xmid, y, &val);
         if (val == 1) {
             ptaAddPt(ptac, xmid, y);
@@ -1706,7 +1717,7 @@ PTA      *ptac;
 
         /* Next try left */
     ptaEmpty(ptac);
-    for (x = xmid; x >= 0; x--) { 
+    for (x = xmid; x >= 0; x--) {
         pixGetPixel(pix, x, ymid, &val);
         if (val == 1) {
             ptaAddPt(ptac, x, ymid);
@@ -1730,7 +1741,7 @@ PTA      *ptac;
 
         /* Finally try right */
     ptaEmpty(ptac);
-    for (x = xmid; x < w; x++) { 
+    for (x = xmid; x < w; x++) {
         pixGetPixel(pix, x, ymid, &val);
         if (val == 1) {
             ptaAddPt(ptac, x, ymid);
@@ -1810,7 +1821,7 @@ PTA     *pta;
         }
         ccbDestroy(&ccb);
     }
-    
+
     return pixd;
 }
 
@@ -1855,7 +1866,7 @@ PTA     *ptag;
         }
         ccbDestroy(&ccb);  /* clone ref */
     }
-    
+
     return pixd;
 }
 
@@ -1875,7 +1886,7 @@ PTA     *ptag;
  *      (4) This uses topological properties (Method 1) to do scan
  *          conversion to raster
  *
- *  This algorithm deserves some commentary. 
+ *  This algorithm deserves some commentary.
  *
  *  I first tried the following:
  *    - outer borders: 4-fill from outside, stopping at the
@@ -1885,7 +1896,7 @@ PTA     *ptag;
  *         to get the hole.  This did not work, because if
  *         you have a hole border that looks like:
  *
- *                x x x x x x 
+ *                x x x x x x
  *                x          x
  *                x   x x x   x
  *                  x x o x   x
@@ -1908,7 +1919,7 @@ PTA     *ptag;
  *  (second coord minus first coord:  dx = sx - fx, dy = sy - fy).
  *  There are 8 possibilities, depending on the values of dx and
  *  dy (which can each be -1, 0, and +1, but not both 0).
- *  These 8 cases can be broken into 4; see the simple algorithm below. 
+ *  These 8 cases can be broken into 4; see the simple algorithm below.
  *  Once you have an interior seed pixel, you fill from the seed,
  *  clipping with the hole border pix by filling into its invert.
  *
@@ -2007,7 +2018,7 @@ PTA     *pta;
 
         ccbDestroy(&ccb);
     }
-    
+
     return pixd;
 }
 
@@ -2114,7 +2125,7 @@ PTA     *pta;
 
     return pixd;
 }
-        
+
 
 
 /*---------------------------------------------------------------------*
@@ -2183,7 +2194,7 @@ ccbaWriteStream(FILE     *fp,
 char      strbuf[256];
 l_uint8   bval;
 l_uint8  *datain, *dataout;
-l_int32   i, j, k, bx, by, bw, bh, val, startx, starty; 
+l_int32   i, j, k, bx, by, bw, bh, val, startx, starty;
 l_int32   ncc, nb, n;
 l_uint32  w, h;
 size_t    inbytes, outbytes;
@@ -2326,7 +2337,7 @@ ccbaReadStream(FILE  *fp)
 char      strbuf[256];
 l_uint8   bval;
 l_uint8  *datain, *dataout;
-l_int32   i, j, startx, starty; 
+l_int32   i, j, startx, starty;
 l_int32   offset, nib1, nib2;
 l_int32   ncc, nb;
 l_uint32  width, height, w, h, xoff, yoff;
@@ -2388,7 +2399,7 @@ NUMAA    *step;
         boxaAddBox(ccb->boxa, box, L_INSERT);
 /*        fprintf(stderr, "xoff = %d, yoff = %d, w = %d, h = %d\n",
                 xoff, yoff, w, h); */
-   
+
         memcpy((void *)&nb, (void *)(dataout + offset), 4);
         offset += 4;
 /*        fprintf(stderr, "num borders = %d\n", nb); */
@@ -2529,4 +2540,3 @@ SARRAY  *sa;
     sarrayDestroy(&sa);
     return svgstr;
 }
-

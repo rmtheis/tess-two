@@ -1,21 +1,32 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
  *  graphics.c
- *                     
+ *
  *      Pta generation for arbitrary shapes built with lines
  *
  *          PTA        *generatePtaLine()
@@ -63,6 +74,7 @@
  *      Contour rendering on grayscale images
  *
  *          PIX        *pixRenderContours()
+ *          PIX        *fpixAutoRenderContours()
  *          PIX        *fpixRenderContours()
  *
  *  The line rendering functions are relatively crude, but they
@@ -72,11 +84,9 @@
  *  render this onto a Pix.
  */
 
-#include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include "allheaders.h"
-
 
 
 /*------------------------------------------------------------------*
@@ -717,19 +727,19 @@ l_int32  i, n, x, y, w, h, d, maxval;
     if (op == L_SET_PIXELS) {
         switch (d)
         {
-        case 2: 
+        case 2:
             maxval = 0x3;
             break;
-        case 4: 
+        case 4:
             maxval = 0xf;
             break;
-        case 8: 
+        case 8:
             maxval = 0xff;
             break;
-        case 16: 
+        case 16:
             maxval = 0xffff;
             break;
-        case 32: 
+        case 32:
             maxval = 0xffffffff;
             break;
         }
@@ -765,7 +775,7 @@ l_int32  i, n, x, y, w, h, d, maxval;
 /*!
  *  pixRenderPtaArb()
  *
- *      Input:  pix
+ *      Input:  pix (any depth, cmapped ok)
  *              pta (arbitrary set of points)
  *              rval, gval, bval
  *      Return: 0 if OK, 1 on error
@@ -798,7 +808,7 @@ PIXCMAP  *cmap;
     if (!pta)
         return ERROR_INT("pta not defined", procName, 1);
     d = pixGetDepth(pix);
-    if (d != 1 && d != 2 && d != 4 && d != 8 && d != 32) 
+    if (d != 1 && d != 2 && d != 4 && d != 8 && d != 32)
         return ERROR_INT("depth not in {1,2,4,8,32}", procName, 1);
 
     if (d == 1) {
@@ -1067,7 +1077,7 @@ PTA  *pta;
 /*!
  *  pixRenderBoxArb()
  *
- *      Input:  pix
+ *      Input:  pix (any depth, cmapped ok)
  *              box
  *              width  (thickness of box lines)
  *              rval, gval, bval
@@ -1182,7 +1192,7 @@ PTA  *pta;
 
 
 /*!
- *  pixRenderBoxArb()
+ *  pixRenderHashBoxArb()
  *
  *      Input:  pix
  *              box
@@ -1640,7 +1650,7 @@ PIX       *pixd;
                         continue;
                     test = (val - startval) % incr;
                     if (!test)
-                        SET_DATA_BIT(lined, j); 
+                        SET_DATA_BIT(lined, j);
                 }
             }
         }
@@ -1654,7 +1664,7 @@ PIX       *pixd;
                         continue;
                     test = (val - startval) % incr;
                     if (!test)
-                        SET_DATA_BYTE(lined, j, 0); 
+                        SET_DATA_BYTE(lined, j, 0);
                 }
             }
         }
@@ -1671,7 +1681,7 @@ PIX       *pixd;
                         continue;
                     test = (val - startval) % incr;
                     if (!test)
-                        SET_DATA_BIT(lined, j); 
+                        SET_DATA_BIT(lined, j);
                 }
             }
         }
@@ -1685,7 +1695,7 @@ PIX       *pixd;
                         continue;
                     test = (val - startval) % incr;
                     if (!test)
-                        SET_DATA_TWO_BYTES(lined, j, 0); 
+                        SET_DATA_TWO_BYTES(lined, j, 0);
                 }
             }
         }
@@ -1700,17 +1710,57 @@ PIX       *pixd;
 
 
 /*!
+ *  fpixAutoRenderContours()
+ *
+ *      Input:  pixs (8 or 16 bpp; no colormap)
+ *              ncontours (> 1, < 500, typ. about 50)
+ *      Return: pixd (8 bpp), or null on error
+ *
+ *  Notes:
+ *      (1) The increment is set to get approximately @ncontours.
+ *      (2) The proximity to the target value for contour display
+ *          is set at 0.1 * increment.
+ *      (3) Negative contours are rendered in red; 0 or positive
+ *          contours are rendered in black.
+ */
+PIX *
+fpixAutoRenderContours(FPIX    *fpix,
+                       l_int32  ncontours)
+{
+l_float32  minval, maxval, incr;
+PIX       *pixd;
+
+    PROCNAME("fpixAutoRenderContours");
+
+    if (!fpix)
+        return (PIX *)ERROR_PTR("fpix not defined", procName, NULL);
+    if (ncontours < 2 || ncontours > 500)
+        return (PIX *)ERROR_PTR("ncontours < 2 or > 500", procName, NULL);
+
+    fpixGetMin(fpix, &minval, NULL, NULL);
+    fpixGetMax(fpix, &maxval, NULL, NULL);
+    if (minval == maxval)
+        return (PIX *)ERROR_PTR("all values in fpix are equal", procName, NULL);
+    incr = (maxval - minval) / ((l_float32)ncontours - 1);
+    pixd = fpixRenderContours(fpix, incr, 0.1 * incr);
+}
+
+
+/*!
  *  fpixRenderContours()
  *
  *      Input:  fpixs
- *              startval (value of lowest contour
- *              incr  (increment to next contour; must be > 0.0)
+ *              incr  (increment between contours; must be > 0.0)
  *              proxim (required proximity to target value; typ. 0.1 * incr)
- *      Return: pixd (1 bpp), or null on error
+ *      Return: pixd (8 bpp), or null on error
+ *
+ *  Notes:
+ *      (1) Values are displayed when val/incr is close to an integer.
+ *      (2) Negative contours are rendered in red; 0 or positive
+ *          contours are rendered in black.
  */
 PIX *
 fpixRenderContours(FPIX      *fpixs,
-                   l_float32  startval,
                    l_float32  incr,
                    l_float32  proxim)
 {
@@ -1719,6 +1769,7 @@ l_float32   val, invincr, finter, diff;
 l_uint32   *datad, *lined;
 l_float32  *datas, *lines;
 PIX        *pixd;
+PIXCMAP    *cmap;
 
     PROCNAME("fpixRenderContours");
 
@@ -1728,8 +1779,13 @@ PIX        *pixd;
         return (PIX *)ERROR_PTR("incr <= 0.0", procName, NULL);
 
     fpixGetDimensions(fpixs, &w, &h);
-    if ((pixd = pixCreate(w, h, 1)) == NULL)
+    if ((pixd = pixCreate(w, h, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    cmap = pixcmapCreate(8);
+    pixSetColormap(pixd, cmap);
+    pixcmapAddColor(cmap, 255, 255, 255);  /* white */
+    pixcmapAddColor(cmap, 0, 0, 0);  /* black */
+    pixcmapAddColor(cmap, 255, 0, 0);  /* red */
 
     datas = fpixGetData(fpixs);
     wpls = fpixGetWpl(fpixs);
@@ -1741,16 +1797,16 @@ PIX        *pixd;
         lined = datad + i * wpld;
         for (j = 0; j < w; j++) {
             val = lines[j];
-            if (val < startval)
-                continue;
-            finter = L_ABS(invincr * (val - startval));
+            finter = invincr * val;
             diff = finter - floorf(finter);
-            if (diff <= proxim)
-                SET_DATA_BIT(lined, j); 
+            if (diff <= proxim) {
+                if (val < 0.0)
+                    SET_DATA_BYTE(lined, j, 2);
+                else
+                    SET_DATA_BYTE(lined, j, 1);
+            }
         }
     }
 
     return pixd;
 }
-
-

@@ -3,16 +3,17 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 LDADD = $(top_builddir)/src/liblept.la $(LIBM)
 
 bin_PROGRAMS = adaptnorm_reg affine_reg \
-	alltests_reg alphaclean_reg alphaxform_reg \
-	bilinear_reg binarize_reg \
+	alltests_reg alphaops_reg \
+	alphaxform_reg bilinear_reg binarize_reg \
 	binmorph1_reg binmorph2_reg \
 	binmorph3_reg binmorph4_reg binmorph5_reg \
 	blend_reg blend2_reg \
 	ccthin1_reg ccthin2_reg \
-	cmapquant_reg colormask_reg colorquant_reg \
-	colorseg_reg compfilter_reg \
+	cmapquant_reg coloring_reg \
+	colormask_reg colorquant_reg \
+	colorseg_reg compare_reg compfilter_reg \
 	conncomp_reg conversion_reg convolve_reg \
-	dewarp_reg distance_reg \
+	dewarp_reg distance_reg dna_reg \
 	dwamorph1_reg dwamorph2_reg \
 	enhance_reg equal_reg \
 	expand_reg extrema_reg \
@@ -56,12 +57,13 @@ bin_PROGRAMS = adaptnorm_reg affine_reg \
 	convertsegfilestopdf convertsegfilestops \
 	converttogray converttops \
 	convolvetest cornertest \
-	croptext dewarptest digitprep1 dithertest \
+	croptext dewarptest1 dewarptest2 dewarptest3 \
+	digitprep1 dithertest \
 	dwalineargen edgetest falsecolortest \
 	fcombautogen fhmtautogen fileinfo \
 	findpattern1 findpattern2 findpattern3 \
-	flipselgen \
-	fmorphautogen gammatest \
+	flipselgen fmorphautogen \
+	fpixcontours gammatest \
 	genfonts graphicstest graymorphtest \
 	histotest iotest inserttest \
 	jbcorrelation jbrankhaus jbwords \
@@ -80,7 +82,7 @@ bin_PROGRAMS = adaptnorm_reg affine_reg \
 	ranktest reducetest \
 	removecmap renderfonts \
 	rotatefastalt rotateorthtest1 \
-	rotatetest1 rotatetest2 runlengthtest \
+	rotatetest1 runlengthtest \
 	scaleandtile scaletest1 scaletest2 \
 	seedfilltest sharptest \
 	sheartest showedges \

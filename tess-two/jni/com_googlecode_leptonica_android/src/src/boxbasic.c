@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -31,6 +42,7 @@
  *           l_int32   boxSetGeometry()
  *           l_int32   boxGetRefcount()
  *           l_int32   boxChangeRefcount()
+ *           l_int32   boxIsValid()
  *
  *      Boxa creation, copy, destruction
  *           BOXA     *boxaCreate()
@@ -64,13 +76,17 @@
  *      Boxaa array extension
  *           l_int32   boxaaAddBoxa()
  *           l_int32   boxaaExtendArray()
+ *           l_int32   boxaaExtendArrayToSize()
  *
  *      Boxaa accessors
  *           l_int32   boxaaGetCount()
  *           l_int32   boxaaGetBoxCount()
  *           BOXA     *boxaaGetBoxa()
+ *           BOX      *boxaaGetBox()
  *
  *      Boxa array modifiers
+ *           l_int32   boxaaInitFull()
+ *           l_int32   boxaaExtendWithInit()
  *           l_int32   boxaaReplaceBoxa()
  *           l_int32   boxaaInsertBoxa()
  *           l_int32   boxaaRemoveBoxa()
@@ -94,7 +110,7 @@
  *   Most functions use only valid boxes, which are boxes that have both
  *   width and height > 0.  However, a few functions, such as
  *   boxaGetMedian() do not assume that all boxes are valid.  For any
- *   function that can use a boxa with invalid boxes, it is convenient 
+ *   function that can use a boxa with invalid boxes, it is convenient
  *   to use these accessors:
  *       boxaGetValidCount()   :  count of valid boxes
  *       boxaGetValidBox()     :  returns NULL for invalid boxes
@@ -341,6 +357,31 @@ boxChangeRefcount(BOX     *box,
         return ERROR_INT("box not defined", procName, 1);
 
     box->refcount += delta;
+    return 0;
+}
+
+
+/*!
+ *  boxIsValid()
+ *
+ *      Input:  box
+ *              &valid (<return> 1 if valid; 0 otherwise)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+boxIsValid(BOX      *box,
+           l_int32  *pvalid)
+{
+    PROCNAME("boxIsValid");
+
+    if (!pvalid)
+        return ERROR_INT("&valid not defined", procName, 1);
+    *pvalid = 0;
+    if (!box)
+        return ERROR_INT("box not defined", procName, 1);
+
+    if (box->w > 0 && box->h > 0)
+        *pvalid = 1;
     return 0;
 }
 
@@ -720,7 +761,7 @@ BOX  *box;
  *
  *  Notes:
  *      (1) In-place replacement of one box.
- *      (2) The previous box at that location is destroyed.
+ *      (2) The previous box at that location, if any, is destroyed.
  */
 l_int32
 boxaReplaceBox(BOXA    *boxa,
@@ -856,7 +897,7 @@ BOX    **array;
  *          The initialization allows the boxa to always be properly
  *          filled, even if all the boxes are not later replaced.
  *          If you want to know which boxes have been replaced, you can
- *          initialize the array with invalid boxes that have 
+ *          initialize the array with invalid boxes that have
  *          w = 0 and/or h = 0.  Then boxaGetValidBox() will return
  *          NULL for the invalid boxes.
  */
@@ -1081,6 +1122,36 @@ boxaaExtendArray(BOXAA  *baa)
 }
 
 
+/*!
+ *  boxaaExtendArrayToSize()
+ *
+ *      Input:  boxaa
+ *              size (new size of boxa array)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) If necessary, reallocs the boxa ptr array to @size.
+ */
+l_int32
+boxaaExtendArrayToSize(BOXAA   *baa,
+                       l_int32  size)
+{
+    PROCNAME("boxaaExtendArrayToSize");
+
+    if (!baa)
+        return ERROR_INT("baa not defined", procName, 1);
+
+    if (size > baa->nalloc) {
+        if ((baa->boxa = (BOXA **)reallocNew((void **)&baa->boxa,
+                                             sizeof(BOXA *) * baa->nalloc,
+                                             size * sizeof(BOXA *))) == NULL)
+            return ERROR_INT("new ptr array not returned", procName, 1);
+        baa->nalloc = size;
+    }
+    return 0;
+}
+
+
 /*----------------------------------------------------------------------*
  *                           Boxaa accessors                            *
  *----------------------------------------------------------------------*/
@@ -1155,6 +1226,129 @@ l_int32  n;
         return (BOXA *)ERROR_PTR("invalid accessflag", procName, NULL);
 
     return boxaCopy(baa->boxa[index], accessflag);
+}
+
+
+/*!
+ *  boxaaGetBox()
+ *
+ *      Input:  baa
+ *              iboxa  (index into the boxa array in the boxaa)
+ *              ibox  (index into the box array in the boxa)
+ *              accessflag   (L_COPY or L_CLONE)
+ *      Return: box, or null on error
+ */
+BOX *
+boxaaGetBox(BOXAA   *baa,
+            l_int32  iboxa,
+            l_int32  ibox,
+            l_int32  accessflag)
+{
+BOX   *box;
+BOXA  *boxa;
+
+    PROCNAME("boxaaGetBox");
+
+    if ((boxa = boxaaGetBoxa(baa, iboxa, L_CLONE)) == NULL)
+        return (BOX *)ERROR_PTR("boxa not retrieved", procName, NULL);
+    if ((box = boxaGetBox(boxa, ibox, accessflag)) == NULL)
+        L_ERROR("box not retrieved", procName);
+    boxaDestroy(&boxa);
+    return box;
+}
+
+
+/*----------------------------------------------------------------------*
+ *                           Boxaa array modifiers                      *
+ *----------------------------------------------------------------------*/
+/*!
+ *  boxaaInitFull()
+ *
+ *      Input:  boxaa (typically empty)
+ *              boxa (to be replicated into the entire ptr array)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This initializes a boxaa by filling up the entire boxa ptr array
+ *          with copies of @boxa.  Any existing boxa are destroyed.
+ *          After this operation, the number of boxa is equal to
+ *          the number of allocated ptrs.
+ *      (2) Note that we use boxaaReplaceBox() instead of boxaInsertBox().
+ *          They both have the same effect when inserting into a NULL ptr
+ *          in the boxa ptr array
+ *      (3) Example usage.  This function is useful to prepare for a
+ *          random insertion (or replacement) of boxa into a boxaa.
+ *          To randomly insert boxa into a boxaa, up to some index "max":
+ *             Boxaa *baa = boxaaCreate(max);
+ *               // initialize the boxa
+ *             Boxa *boxa = boxaCreate(...);
+ *             ...  [optionally fix with boxes]
+ *             boxaaInitFull(baa, boxa);
+ *          A typical use is to initialize the array with empty boxa,
+ *          and to replace only a subset that must be aligned with
+ *          something else, such as a pixa.
+ */
+l_int32
+boxaaInitFull(BOXAA  *baa,
+              BOXA   *boxa)
+{
+l_int32  i, n;
+BOXA    *boxat;
+
+    PROCNAME("boxaaInitFull");
+
+    if (!baa)
+        return ERROR_INT("baa not defined", procName, 1);
+    if (!boxa)
+        return ERROR_INT("boxa not defined", procName, 1);
+
+    n = baa->nalloc;
+    baa->n = n;
+    for (i = 0; i < n; i++) {
+        boxat = boxaCopy(boxa, L_COPY);
+        boxaaReplaceBoxa(baa, i, boxat);
+    }
+    return 0;
+}
+
+
+/*!
+ *  boxaaExtendWithInit()
+ *
+ *      Input:  boxaa
+ *              maxindex
+ *              boxa (to be replicated into the extended ptr array)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This should be used on an existing boxaa that has been
+ *          fully loaded with boxa.  It then extends the boxaa,
+ *          loading all the additional ptrs with copies of boxa.
+ *          Typically, boxa will be empty.
+ */
+l_int32
+boxaaExtendWithInit(BOXAA   *baa,
+                    l_int32  maxindex,
+                    BOXA    *boxa)
+{
+l_int32  i, n;
+
+    PROCNAME("boxaaExtendWithInit");
+
+    if (!baa)
+        return ERROR_INT("baa not defined", procName, 1);
+    if (!boxa)
+        return ERROR_INT("boxa not defined", procName, 1);
+
+        /* Extend the ptr array if necessary */
+    n = boxaaGetCount(baa);
+    if (maxindex < n) return 0;
+    boxaaExtendArrayToSize(baa, maxindex + 1);
+
+        /* Fill the new entries with copies of boxa */
+    for (i = n; i <= maxindex; i++)
+        boxaaAddBoxa(baa, boxa, L_COPY);
+    return 0;
 }
 
 
@@ -1633,4 +1827,3 @@ boxPrintStreamInfo(FILE  *fp,
 
     return 0;
 }
-

@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -40,7 +51,7 @@
  *           l_int32     pixGetPSNR()
  *
  *      Translated images at the same resolution
- *           TODO
+ *           l_int32     pixCompareWithTranslation()
  */
 
 #include <string.h>
@@ -123,7 +134,7 @@ PIXCMAP   *cmap1, *cmap2;
 
     if (cmap1 && cmap2 && (d1 == d2))   /* use special function */
         return pixEqualWithCmap(pix1, pix2, psame);
-        
+
         /* Must remove colormaps if they exist, and in the process
          * end up with the resulting images having the same depth. */
     if (cmap1 && !cmap2) {
@@ -261,7 +272,7 @@ PIXCMAP   *cmap1, *cmap2;
  *          the returned result is same = FALSE.
  *      (3) We then check whether the colormaps are the same; if so,
  *          the comparison proceeds 32 bits at a time.
- *      (4) If the colormaps are different, the comparison is done by 
+ *      (4) If the colormaps are different, the comparison is done by
  *          slow brute force.
  */
 l_int32
@@ -440,7 +451,7 @@ PIXCMAP  *cmap;
  *                           (|1 AND 2|)**2
  *            correlation =  --------------
  *                             |1| * |2|
- *          where |x| is the count of foreground pixels in image x. 
+ *          where |x| is the count of foreground pixels in image x.
  *          If the images are identical, this is 1.0.
  *          If they have no fg pixels in common, this is 0.0.
  *          If one or both images have no fg pixels, the correlation is 0.0.
@@ -494,13 +505,14 @@ PIX      *pixn;
  *           * unchanged:  black (on), white (off)
  *           * on in pix1, off in pix2: red
  *           * on in pix2, off in pix1: green
- *      (2) pix1 and pix2 must be the same size.
+ *      (2) This aligns the UL corners of pix1 and pix2, and crops
+ *          to the overlapping pixels.
  */
 PIX *
 pixDisplayDiffBinary(PIX  *pix1,
                      PIX  *pix2)
 {
-l_int32   w, h;
+l_int32   w1, h1, d1, w2, h2, d2, minw, minh;
 PIX      *pixt, *pixd;
 PIXCMAP  *cmap;
 
@@ -508,20 +520,21 @@ PIXCMAP  *cmap;
 
     if (!pix1 || !pix2)
         return (PIX *)ERROR_PTR("pix1, pix2 not both defined", procName, NULL);
-    if (!pixSizesEqual(pix1, pix2))
-        return (PIX *)ERROR_PTR("pix1 and pix2 unequal size", procName, NULL);
-    if (pixGetDepth(pix1) != 1)
+    pixGetDimensions(pix1, &w1, &h1, &d1);
+    pixGetDimensions(pix2, &w2, &h2, &d2);
+    if (d1 != 1 || d2 != 1)
         return (PIX *)ERROR_PTR("pix1 and pix2 not 1 bpp", procName, NULL);
+    minw = L_MIN(w1, w2);
+    minh = L_MIN(h1, h2);
 
-    pixGetDimensions(pix1, &w, &h, NULL);
-    pixd = pixCreate(w, h, 4);
+    pixd = pixCreate(minw, minh, 4);
     cmap = pixcmapCreate(4);
     pixcmapAddColor(cmap, 255, 255, 255);  /* initialized to white */
     pixcmapAddColor(cmap, 0, 0, 0);
     pixcmapAddColor(cmap, 255, 0, 0);
     pixcmapAddColor(cmap, 0, 255, 0);
     pixSetColormap(pixd, cmap);
-    
+
     pixt = pixAnd(NULL, pix1, pix2);
     pixPaintThroughMask(pixd, pixt, 0, 0, 0x0);  /* black */
     pixSubtract(pixt, pix1, pix2);
@@ -741,7 +754,7 @@ PIX     *pixt;
         na = pixGetGrayHistogram(pixt, 1);
         numaGetNonzeroRange(na, TINY, &first, &last);
         nac = numaClipToInterval(na, 0, last);
-        gplot = gplotCreate("/tmp/grayroot", plottype, 
+        gplot = gplotCreate("/tmp/grayroot", plottype,
                             "Pixel Difference Histogram", "diff val",
                             "number of pixels");
         gplotAddPlot(gplot, NULL, nac, GPLOT_LINES, "gray");
@@ -857,7 +870,7 @@ PIX       *pixr1, *pixr2, *pixg1, *pixg2, *pixb1, *pixb2, *pixr, *pixg, *pixb;
         narc = numaClipToInterval(nar, 0, last);
         nagc = numaClipToInterval(nag, 0, last);
         nabc = numaClipToInterval(nab, 0, last);
-        gplot = gplotCreate("/tmp/rgbroot", plottype, 
+        gplot = gplotCreate("/tmp/rgbroot", plottype,
                             "Pixel Difference Histogram", "diff val",
                             "number of pixels");
         gplotAddPlot(gplot, NULL, narc, GPLOT_LINES, "red");
@@ -1437,3 +1450,147 @@ l_float32  mse;  /* mean squared error */
     return 0;
 }
 
+
+/*------------------------------------------------------------------*
+ *             Translated images at the same resolution             *
+ *------------------------------------------------------------------*/
+/*!
+ *  pixCompareWithTranslation()
+ *
+ *      Input:  pix1, pix2 (any depth; colormap OK)
+ *              thresh (threshold for converting to 1 bpp)
+ *              &delx (<return> x translation on pix2 to align with pix1)
+ *              &dely (<return> y translation on pix2 to align with pix1)
+ *              &score (<return> correlation score at best alignment)
+ *              debugflag (1 for debug output; 0 for no debugging)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This does a coarse-to-fine search for best translational
+ *          alignment of two images, measured by a scoring function
+ *          that is the correlation between the fg pixels.
+ *      (2) The threshold is used if the images aren't 1 bpp.
+ *      (3) With debug on, you get a pdf that shows, as a grayscale
+ *          image, the score as a function of shift from the initial
+ *          estimate, for each of the four levels.  The shift is 0 at
+ *          the center of the image.
+ *      (4) With debug on, you also get a pdf that shows the
+ *          difference at the best alignment between the two images,
+ *          at each of the four levels.  The red and green pixels
+ *          show locations where one image has a fg pixel and the
+ *          other doesn't.  The black pixels are where both images
+ *          have fg pixels, and white pixels are where neither image
+ *          has fg pixels.
+ */
+l_int32
+pixCompareWithTranslation(PIX        *pix1,
+                          PIX        *pix2,
+                          l_int32     thresh,
+                          l_int32    *pdelx,
+                          l_int32    *pdely,
+                          l_float32  *pscore,
+                          l_int32     debugflag)
+{
+l_uint8   *subtab;
+l_int32    i, level, area1, area2, delx, dely;
+l_int32    etransx, etransy, maxshift, dbint;
+l_int32   *stab, *ctab;
+l_float32  cx1, cx2, cy1, cy2, score;
+PIX       *pixb1, *pixb2, *pixt1, *pixt2, *pixt3, *pixt4;
+PIXA      *pixa1, *pixa2, *pixadb;
+
+    PROCNAME("pixCompareWithTranslation");
+
+    if (!pdelx || !pdely)
+        return ERROR_INT("&delx and &dely not defined", procName, 1);
+    *pdelx = *pdely = 0;
+    if (!pscore)
+        return ERROR_INT("&score not defined", procName, 1);
+    *pscore = 0.0;
+    if (!pix1)
+        return ERROR_INT("pix1 not defined", procName, 1);
+    if (!pix2)
+        return ERROR_INT("pix2 not defined", procName, 1);
+
+        /* Make tables */
+    subtab = makeSubsampleTab2x();
+    stab = makePixelSumTab8();
+    ctab = makePixelCentroidTab8();
+
+        /* Binarize each image */
+    pixb1 = pixConvertTo1(pix1, thresh);
+    pixb2 = pixConvertTo1(pix2, thresh);
+
+        /* Make a cascade of 2x reduced images for each, thresholding
+         * with level 2 (neutral), down to 8x reduction */
+    pixa1 = pixaCreate(4);
+    pixa2 = pixaCreate(4);
+    if (debugflag)
+        pixadb = pixaCreate(4);
+    pixaAddPix(pixa1, pixb1, L_INSERT);
+    pixaAddPix(pixa2, pixb2, L_INSERT);
+    for (i = 0; i < 3; i++) {
+        pixt1 = pixReduceRankBinary2(pixb1, 2, subtab);
+        pixt2 = pixReduceRankBinary2(pixb2, 2, subtab);
+        pixaAddPix(pixa1, pixt1, L_INSERT);
+        pixaAddPix(pixa2, pixt2, L_INSERT);
+        pixb1 = pixt1;
+        pixb2 = pixt2;
+    }
+
+        /* At the lowest level, use the centroids with a maxshift of 6
+         * to search for the best alignment.  Then at higher levels,
+         * use the result from the level below as the initial approximation
+         * for the alignment, and search with a maxshift of 2. */
+    for (level = 3; level >= 0; level--) {
+        pixt1 = pixaGetPix(pixa1, level, L_CLONE);
+        pixt2 = pixaGetPix(pixa2, level, L_CLONE);
+        pixCountPixels(pixt1, &area1, stab);
+        pixCountPixels(pixt2, &area2, stab);
+        if (level == 3) {
+            pixCentroid(pixt1, ctab, stab, &cx1, &cy1);
+            pixCentroid(pixt2, ctab, stab, &cx2, &cy2);
+            etransx = lept_roundftoi(cx1 - cx2);
+            etransy = lept_roundftoi(cy1 - cy2);
+            maxshift = 6;
+        }
+        else {
+            etransx = 2 * delx;
+            etransy = 2 * dely;
+            maxshift = 2;
+        }
+        dbint = (debugflag) ? level + 1 : 0;
+        pixBestCorrelation(pixt1, pixt2, area1, area2, etransx, etransy,
+                           maxshift, stab, &delx, &dely, &score, dbint);
+        if (debugflag) {
+            fprintf(stderr, "Level %d: delx = %d, dely = %d, score = %7.4f\n",
+                    level, delx, dely, score);
+            pixRasteropIP(pixt2, delx, dely, L_BRING_IN_WHITE);
+            pixt3 = pixDisplayDiffBinary(pixt1, pixt2);
+            pixt4 = pixExpandReplicate(pixt3, 8 / (1 << (3 - level)));
+            pixaAddPix(pixadb, pixt4, L_INSERT);
+            pixDestroy(&pixt3);
+        }
+        pixDestroy(&pixt1);
+        pixDestroy(&pixt2);
+    }
+
+    if (debugflag) {
+        pixaConvertToPdf(pixadb, 300, 1.0, L_FLATE_ENCODE, 0, NULL,
+                         "/tmp/junkcmp.pdf");
+        convertFilesToPdf("/tmp", "junkcorrel_", 30, 1.0, L_FLATE_ENCODE,
+                          0, "Correlation scores at levels 1 through 5",
+                          "/tmp/junkcorrel.pdf");
+        pixaDestroy(&pixadb);
+    }
+
+    *pdelx = delx;
+    *pdely = dely;
+    *pscore = score;
+    pixaDestroy(&pixa1);
+    pixaDestroy(&pixa2);
+    FREE(subtab);
+    FREE(stab);
+    FREE(ctab);
+    return 0;
+}

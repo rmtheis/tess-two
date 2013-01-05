@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 
@@ -95,7 +106,7 @@ static l_int32 bmfMakeAsciiTables(L_BMF *bmf);
  *  Notes:
  *      (1) This first tries to read a pre-computed pixa file with the
  *          95 ascii chars in it.  If the file is not found, it
- *          creates the pixa from the raw image.  It then generates all 
+ *          creates the pixa from the raw image.  It then generates all
  *          associated data required to use the bmf.
  */
 L_BMF *
@@ -390,7 +401,7 @@ PIXA    *pixa;
  *  ascii values in each row is as follows:
  *    row 0:  32-57   (32 is a space)
  *    row 1:  58-91   (92, '\', is not represented in this font)
- *    row 2:  93-126 
+ *    row 2:  93-126
  *  We LR flip the '/' char to generate a bitmap for the missing
  *  '\' character, so that we have representations of all 95
  *  printable chars.
@@ -514,7 +525,7 @@ PIXA     *pixa;
     *pbl0 = baseline[0];
     *pbl1 = baseline[1];
     *pbl2 = baseline[2];
-        
+
         /* Fix the space character up; it should have no ON pixels,
          * and be about twice as wide as the '!' character.    */
     pixt2 = pixaGetPix(pixa, 0, L_CLONE);
@@ -529,7 +540,7 @@ PIXA     *pixa;
     pixt3 = pixFlipLR(NULL, pixt2);
     pixDestroy(&pixt2);
     pixaReplacePix(pixa, 60, pixt3, NULL);
-    
+
 #if DEBUG_CHARS
   { PIX *pixd;
     pixd = pixaDisplayTiled(pixa, 1500, 0, 10);
@@ -648,7 +659,7 @@ PIX      *pix;
         /* First get the fonttab; we use this later for the char widths */
     if ((fonttab = (l_int32 *)CALLOC(128, sizeof(l_int32))) == NULL)
         return ERROR_INT("fonttab not made", procName, 1);
-    bmf->fonttab = fonttab;        
+    bmf->fonttab = fonttab;
     for (i = 0; i < 128; i++)
         fonttab[i] = UNDEF;
     for (i = 32; i < 127; i++)
@@ -656,7 +667,7 @@ PIX      *pix;
 
     if ((baselinetab = (l_int32 *)CALLOC(128, sizeof(l_int32))) == NULL)
         return ERROR_INT("baselinetab not made", procName, 1);
-    bmf->baselinetab = baselinetab;        
+    bmf->baselinetab = baselinetab;
     for (i = 0; i < 128; i++)
         baselinetab[i] = UNDEF;
     for (i = 32; i <= 57; i++)
@@ -670,7 +681,7 @@ PIX      *pix;
         /* Generate array of character widths; req's fonttab to exist */
     if ((widthtab = (l_int32 *)CALLOC(128, sizeof(l_int32))) == NULL)
         return ERROR_INT("widthtab not made", procName, 1);
-    bmf->widthtab = widthtab;        
+    bmf->widthtab = widthtab;
     for (i = 0; i < 128; i++)
         widthtab[i] = UNDEF;
     for (i = 32; i < 127; i++) {
@@ -695,7 +706,7 @@ PIX      *pix;
 
         /* Get the kern width (distance between characters).
          * We let it be the same for all characters in a given
-         * font size, and scale it linearly with the size; 
+         * font size, and scale it linearly with the size;
          * req's fonttab to be built first. */
     bmfGetWidth(bmf, 120, &xwidth);
     kernwidth = (l_int32)(0.08 * (l_float32)xwidth + 0.5);
@@ -710,4 +721,3 @@ PIX      *pix;
 
     return 0;
 }
-

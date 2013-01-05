@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -28,6 +39,7 @@
  *           PIXA     *pixaSelectWithIndicator()
  *           l_int32   pixRemoveWithIndicator()
  *           l_int32   pixAddWithIndicator()
+ *           PIX      *pixaRenderComponent()
  *
  *      Sort functions
  *           PIXA     *pixaSort()
@@ -82,7 +94,7 @@ static const l_int32   MIN_COMPS_FOR_BIN_SORT = 500;
  * are named pixSelectBy*() and pixaSelectBy*(), where the '*' is one of:
  *        Size
  *        AreaPerimRatio
- *        AreaFraction 
+ *        AreaFraction
  *        WidthHeightRatio
  *
  * For more complicated filtering, use the general method (2).
@@ -184,14 +196,14 @@ PIXA    *pixas, *pixad;
         relation != L_SELECT_IF_LTE && relation != L_SELECT_IF_GTE)
         return (PIX *)ERROR_PTR("invalid relation", procName, NULL);
     if (pchanged) *pchanged = FALSE;
-    
+
         /* Check if any components exist */
     pixZero(pixs, &empty);
     if (empty)
         return pixCopy(NULL, pixs);
 
         /* Identify and select the components */
-    boxa = pixConnComp(pixs, &pixas, connectivity); 
+    boxa = pixConnComp(pixs, &pixas, connectivity);
     pixad = pixaSelectBySize(pixas, width, height, type, relation, &changed);
     boxaDestroy(&boxa);
     pixaDestroy(&pixas);
@@ -323,14 +335,14 @@ PIXA    *pixas, *pixad;
         type != L_SELECT_IF_LTE && type != L_SELECT_IF_GTE)
         return (PIX *)ERROR_PTR("invalid type", procName, NULL);
     if (pchanged) *pchanged = FALSE;
-    
+
         /* Check if any components exist */
     pixZero(pixs, &empty);
     if (empty)
         return pixCopy(NULL, pixs);
 
         /* Filter thin components */
-    boxa = pixConnComp(pixs, &pixas, connectivity); 
+    boxa = pixConnComp(pixs, &pixas, connectivity);
     pixad = pixaSelectByAreaPerimRatio(pixas, thresh, type, &changed);
     boxaDestroy(&boxa);
     pixaDestroy(&pixas);
@@ -454,14 +466,14 @@ PIXA    *pixas, *pixad;
         type != L_SELECT_IF_LTE && type != L_SELECT_IF_GTE)
         return (PIX *)ERROR_PTR("invalid type", procName, NULL);
     if (pchanged) *pchanged = FALSE;
-    
+
         /* Check if any components exist */
     pixZero(pixs, &empty);
     if (empty)
         return pixCopy(NULL, pixs);
 
         /* Filter components */
-    boxa = pixConnComp(pixs, &pixas, connectivity); 
+    boxa = pixConnComp(pixs, &pixas, connectivity);
     pixad = pixaSelectByAreaFraction(pixas, thresh, type, &changed);
     boxaDestroy(&boxa);
     pixaDestroy(&pixas);
@@ -584,14 +596,14 @@ PIXA    *pixas, *pixad;
         type != L_SELECT_IF_LTE && type != L_SELECT_IF_GTE)
         return (PIX *)ERROR_PTR("invalid type", procName, NULL);
     if (pchanged) *pchanged = FALSE;
-    
+
         /* Check if any components exist */
     pixZero(pixs, &empty);
     if (empty)
         return pixCopy(NULL, pixs);
 
         /* Filter components */
-    boxa = pixConnComp(pixs, &pixas, connectivity); 
+    boxa = pixConnComp(pixs, &pixas, connectivity);
     pixad = pixaSelectByWidthHeightRatio(pixas, thresh, type, &changed);
     boxaDestroy(&boxa);
     pixaDestroy(&pixas);
@@ -827,6 +839,55 @@ PIX     *pix;
 }
 
 
+/*!
+ *  pixaRenderComponent()
+ *
+ *      Input:  pixs (1 bpp pix; can be null)
+ *              pixa (of connected components, one of which will be put
+ *                    into pixs)
+ *              index (of component to be rendered)
+ *      Return: pixd, or null on error
+ *
+ *  Notes:
+ *      (1) If pixs is null, this generates an empty pix.
+ *      (2) The selected component is blitted into pixs.
+ */
+PIX *
+pixaRenderComponent(PIX     *pixs,
+                    PIXA    *pixa,
+                    l_int32  index)
+{
+l_int32  n, x, y, w, h;
+BOX     *box;
+BOXA    *boxa;
+PIX     *pix;
+
+    PROCNAME("pixRenderComponent");
+
+    if (!pixa)
+        return (PIX *)ERROR_PTR("pixa not defined", procName, pixs);
+    n = pixaGetCount(pixa);
+    if (index < 0 || index >= n)
+        return (PIX *)ERROR_PTR("invalid index", procName, pixs);
+
+    boxa = pixaGetBoxa(pixa, L_CLONE);
+    if (!pixs) {
+        boxaGetExtent(boxa, &w, &h, NULL);
+        pixs = pixCreate(w, h, 1);
+    }
+
+    pix = pixaGetPix(pixa, index, L_CLONE);
+    box = boxaGetBox(boxa, index, L_CLONE);
+    boxGetGeometry(box, &x, &y, &w, &h);
+    pixRasterop(pixs, x, y, w, h, PIX_SRC | PIX_DST, pix, 0, 0);
+    boxDestroy(&box);
+    pixDestroy(&pix);
+    boxaDestroy(&boxa);
+
+    return pixs;
+}
+
+
 /*---------------------------------------------------------------------*
  *                              Sort functions                         *
  *---------------------------------------------------------------------*/
@@ -868,7 +929,7 @@ PIXA    *pixad;
     if (pnaindex) *pnaindex = NULL;
     if (!pixas)
         return (PIXA *)ERROR_PTR("pixas not defined", procName, NULL);
-    if (sorttype != L_SORT_BY_X && sorttype != L_SORT_BY_Y && 
+    if (sorttype != L_SORT_BY_X && sorttype != L_SORT_BY_Y &&
         sorttype != L_SORT_BY_WIDTH && sorttype != L_SORT_BY_HEIGHT &&
         sorttype != L_SORT_BY_MIN_DIMENSION &&
         sorttype != L_SORT_BY_MAX_DIMENSION &&
@@ -991,7 +1052,7 @@ PIXA    *pixad;
     if (pnaindex) *pnaindex = NULL;
     if (!pixas)
         return (PIXA *)ERROR_PTR("pixas not defined", procName, NULL);
-    if (sorttype != L_SORT_BY_X && sorttype != L_SORT_BY_Y && 
+    if (sorttype != L_SORT_BY_X && sorttype != L_SORT_BY_Y &&
         sorttype != L_SORT_BY_WIDTH && sorttype != L_SORT_BY_HEIGHT &&
         sorttype != L_SORT_BY_PERIMETER)
         return (PIXA *)ERROR_PTR("invalid sort type", procName, NULL);
@@ -1053,7 +1114,7 @@ PIXA    *pixad;
 
 /*!
  *  pixaSortByIndex()
- * 
+ *
  *      Input:  pixas
  *              naindex (na that maps from the new pixa to the input pixa)
  *              copyflag (L_COPY, L_CLONE)
@@ -1094,7 +1155,7 @@ PIXA    *pixad;
 
 /*!
  *  pixaSort2dByIndex()
- * 
+ *
  *      Input:  pixas
  *              naa (numaa that maps from the new pixaa to the input pixas)
  *              copyflag (L_CLONE or L_COPY)
@@ -1298,7 +1359,7 @@ PIXA    *pixa, *pixat;
  *                                          dimensions of pix in the array)
  *      Return: 0 if OK, 1 on error
  */
-l_int32  
+l_int32
 pixaSizeRange(PIXA     *pixa,
               l_int32  *pminw,
               l_int32  *pminh,
@@ -1314,7 +1375,7 @@ PIX     *pix;
         return ERROR_INT("pixa not defined", procName, 1);
     if (!pminw && !pmaxw && !pminh && !pmaxh)
         return ERROR_INT("no data can be returned", procName, 1);
-    
+
     minw = minh = 1000000;
     maxw = maxh = 0;
     n = pixaGetCount(pixa);
@@ -1394,7 +1455,7 @@ PIXA    *pixad;
 
     return pixad;
 }
-    
+
 
 /*!
  *  pixaAnyColormaps()
@@ -1572,5 +1633,3 @@ PIX      *pix1, *pix2;
         numaDestroy(&na);
     return 0;
 }
-
-

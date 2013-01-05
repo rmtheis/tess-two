@@ -1,21 +1,32 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
  *  tiffio.c
- *                     
+ *
  *     Reading tiff:
  *             PIX       *pixReadTiff()    [ special top level ]
  *             PIX       *pixReadStreamTiff()
@@ -104,7 +115,7 @@ static l_int32   writeCustomTiffTags(TIFF *tif, NUMA *natags,
 static l_int32   pixWriteToTiffStream(TIFF *tif, PIX *pix, l_int32 comptype,
                                       NUMA *natags, SARRAY *savals,
                                       SARRAY *satypes, NUMA *nasizes);
-static TIFF     *fopenTiff(FILE *fp, const char *modestring); 
+static TIFF     *fopenTiff(FILE *fp, const char *modestring);
 static TIFF     *openTiff(const char *filename, const char *modestring);
 
     /* Static helper for tiff compression type */
@@ -299,7 +310,7 @@ PIXCMAP   *cmap;
     if (spp == 1) {
         if ((linebuf = (l_uint8 *)CALLOC(tiffbpl + 1, sizeof(l_uint8))) == NULL)
             return (PIX *)ERROR_PTR("calloc fail for linebuf", procName, NULL);
-        
+
         for (i = 0 ; i < h ; i++) {
             if (TIFFReadScanline(tif, linebuf, i, 0) < 0) {
                 FREE(linebuf);
@@ -337,7 +348,7 @@ PIXCMAP   *cmap;
                 bval = TIFFGetB(tiffword);
                 composeRGBPixel(rval, gval, bval, ppixel);
                 ppixel++;
-            } 
+            }
         }
         FREE(tiffdata);
     }
@@ -406,7 +417,7 @@ PIXCMAP   *cmap;
 /*--------------------------------------------------------------*
  *                       Writing to file                        *
  *--------------------------------------------------------------*/
-/*! 
+/*!
  *  pixWriteTiff()
  *
  *      Input:  filename (to write to)
@@ -432,7 +443,7 @@ pixWriteTiff(const char  *filename,
 }
 
 
-/*! 
+/*!
  *  pixWriteTiffCustom()
  *
  *      Input:  filename (to write to)
@@ -457,7 +468,7 @@ pixWriteTiff(const char  *filename,
  *              either NULL or defined and of equal size.
  *          (b) If they are defined, the tags are an array of integers,
  *              the vals are an array of values in string format, and
- *              the types are an array of types in string format. 
+ *              the types are an array of types in string format.
  *          (c) All valid tags are definined in tiff.h.
  *          (d) The types allowed are the set of strings:
  *                "char*"
@@ -472,7 +483,7 @@ pixWriteTiff(const char  *filename,
  *          (e) The last array, nasizes, is also optional.  It is for
  *              tags that take an array of bytes for a value, a number of
  *              elements in the array, and a type that is either "char*"
- *              or "l_uint8*" (probably either will work). 
+ *              or "l_uint8*" (probably either will work).
  *              Use NULL if there are no such tags.
  *          (f) VERY IMPORTANT: if there are any tags that require the
  *              extra size value, stored in nasizes, they must be
@@ -561,7 +572,7 @@ TIFF  *tif;
         TIFFCleanup(tif);
         return ERROR_INT("tif write error", procName, 1);
     }
-    
+
     TIFFCleanup(tif);
     return 0;
 }
@@ -642,7 +653,7 @@ char      *text;
 
     if ((text = pixGetText(pix)) != NULL)
         TIFFSetField(tif, TIFFTAG_IMAGEDESCRIPTION, text);
-        
+
     if (d == 1)
         TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISWHITE);
     else if (d == 32 || d == 24) {
@@ -685,7 +696,7 @@ char      *text;
         TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, (l_uint16)1);
     }
 
-    TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG); 
+    TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
     if (comptype == IFF_TIFF)  /* no compression */
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
     else if (comptype == IFF_TIFF_G4)
@@ -700,7 +711,7 @@ char      *text;
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
     else if (comptype == IFF_TIFF_ZIP)
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_ADOBE_DEFLATE);
-    else { 
+    else {
         L_WARNING("unknown tiff compression; using none", procName);
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
     }
@@ -748,7 +759,7 @@ char      *text;
                 linebuf[k++] = GET_DATA_BYTE(ppixel, COLOR_GREEN);
                 linebuf[k++] = GET_DATA_BYTE(ppixel, COLOR_BLUE);
                 ppixel++;
-            } 
+            }
             if (TIFFWriteScanline(tif, linebuf, i, 0) < 0)
                 break;
         }
@@ -771,7 +782,7 @@ char      *text;
  *              nasizes (<optional> NUMA of sizes)
  *      Return: 0 if OK, 1 on error
  *
- *  Notes: 
+ *  Notes:
  *      (1) This static function should be called indirectly through
  *          higher level functions, such as pixWriteTiffCustom(),
  *          which call pixWriteToTiffStream().  See details in
@@ -781,7 +792,7 @@ char      *text;
  *          of equal size.
  *      (4) The fourth array is always optional.
  *      (5) The most commonly used types are "char*" and "u_int16".
- *          See tiff.h for a full listing of the tiff tags. 
+ *          See tiff.h for a full listing of the tiff tags.
  *          Note that many of these tags, in particular the bit tags,
  *          are intended to be private, and cannot be set by this function.
  *          Examples are the STRIPOFFSETS and STRIPBYTECOUNTS tags,
@@ -888,7 +899,7 @@ l_uint32   uval, uval2;
     }
     return 0;
 }
-    
+
 
 /*--------------------------------------------------------------*
  *               Reading and writing multipage tiff             *
@@ -1036,14 +1047,14 @@ PIX         *pix, *pixt;
 
     return 0;
 }
-        
+
 
 /*--------------------------------------------------------------*
  *                    Print info to stream                      *
  *--------------------------------------------------------------*/
 /*
  *  fprintTiffInfo()
- * 
+ *
  *      Input:  stream (for output of tag data)
  *              tiffile (input)
  *      Return: 0 if OK; 1 on error
@@ -1076,7 +1087,7 @@ TIFF  *tif;
  *--------------------------------------------------------------*/
 /*
  *  tiffGetCount()
- * 
+ *
  *      Input:  stream (opened for read)
  *              &n (<return> number of images)
  *      Return: 0 if OK; 1 on error
@@ -1114,7 +1125,7 @@ TIFF    *tif;
  *--------------------------------------------------------------*/
 /*
  *  getTiffResolution()
- * 
+ *
  *      Input:  stream (opened for read)
  *              &xres, &yres (<return> resolution in ppi)
  *      Return: 0 if OK; 1 on error
@@ -1148,7 +1159,7 @@ TIFF  *tif;
 
 /*
  *  getTiffStreamResolution()
- * 
+ *
  *      Input:  tiff stream (opened for read)
  *              &xres, &yres (<return> resolution in ppi)
  *      Return: 0 if OK; 1 on error
@@ -1263,7 +1274,7 @@ FILE    *fp;
  *              &cmap (<optional return>; colormap exists; input NULL to ignore)
  *              &format (<optional return>; tiff format; input NULL to ignore)
  *      Return: 0 if OK, 1 on error
- * 
+ *
  *  Notes:
  *      (1) If there is a colormap, cmap is returned as 1; else 0.
  *      (2) If @n is equal to or greater than the number of images, returns 1.
@@ -1361,7 +1372,7 @@ TIFF     *tif;
     if (pres) *pres = 0;
     if (pcmap) *pcmap = 0;
     if (pformat) *pformat = 0;
-    
+
         /* Open a tiff stream to memory */
     data = (l_uint8 *)cdata;  /* we're really not going to change this */
     if ((tif = fopenTiffMemstream("tifferror", "r", &data, &size)) == NULL)
@@ -1429,7 +1440,7 @@ l_uint32   w, h;
         if (getTiffStreamResolution(tif, &xres, &yres) == 0)
             *pres = (l_int32)xres;
     }
-            
+
     if (pcmap) {
         *pcmap = 0;
         if (TIFFGetField(tif, TIFFTAG_COLORMAP, &rmap, &gmap, &bmap))
@@ -1452,7 +1463,7 @@ l_uint32   w, h;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) The returned compression type is that defined in 
+ *      (1) The returned compression type is that defined in
  *          the enum in imageio.h.  It is not the tiff flag value.
  *      (2) The compression type is initialized to IFF_UNKNOWN.
  *          If it is not one of the specified types, the returned
@@ -1475,7 +1486,7 @@ TIFF     *tif;
     *pcomptype = IFF_UNKNOWN;  /* init */
     if (!fp)
         return ERROR_INT("stream not defined", procName, 1);
-    
+
     if ((tif = fopenTiff(fp, "rb")) == NULL)
         return ERROR_INT("tif not opened", procName, 1);
     TIFFGetFieldDefaulted(tif, TIFFTAG_COMPRESSION, &tiffcomp);
@@ -1915,7 +1926,7 @@ L_MEMSTREAM  *mstream;
     *data = mstream->buffer;
     *length = mstream->hw;
     return 0;
-} 
+}
 
 
 static void
@@ -1924,7 +1935,7 @@ tiffUnmapCallback(thandle_t  handle,
                   toff_t     length)
 {
     return;
-} 
+}
 
 
 /*!
@@ -2033,7 +2044,7 @@ TIFF     *tif;
 }
 
 
-/*! 
+/*!
  *  pixWriteMemTiff()
  *
  *      Input:  &data (<return> data of tiff compressed image)
@@ -2059,7 +2070,7 @@ pixWriteMemTiff(l_uint8  **pdata,
 }
 
 
-/*! 
+/*!
  *  pixWriteMemTiffCustom()
  *
  *      Input:  &data (<return> data of tiff compressed image)

@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -20,23 +31,26 @@
  *     of a sampled function.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
+#ifndef  _WIN32
+#include <unistd.h>
+#else
+#include <windows.h>   /* for Sleep() */
+#endif  /* _WIN32 */
 #include "allheaders.h"
-
 
 main(int    argc,
 char **argv)
 {
-l_int32      i, ival, n;
-l_float32    f, val;
-GPLOT       *gplot;
-NUMA        *na1, *na2, *na3;
-static char  mainName[] = "extrema_reg";
+l_int32       i, ival, n;
+l_float32     f, val;
+GPLOT        *gplot;
+NUMA         *na1, *na2, *na3;
+PIX          *pixt;
+L_REGPARAMS  *rp;
 
-    if (argc != 1)
-        return ERROR_INT("Syntax: extrema_reg", mainName, 1);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
 
         /* Generate a 1D signal and plot it */
     na1 = numaCreate(500);
@@ -45,7 +59,7 @@ static char  mainName[] = "extrema_reg";
 	f += 63.4 * cos(0.21 * (l_float32)i);
 	numaAddNumber(na1, f);
     }
-    gplot = gplotCreate("/tmp/junktest", GPLOT_X11, "Extrema test", "x", "y");
+    gplot = gplotCreate("/tmp/extrema", GPLOT_PNG, "Extrema test", "x", "y");
     gplotAddPlot(gplot, NULL, na1, GPLOT_LINES, "plot 1");
 
         /* Find the local min and max and plot them */
@@ -59,10 +73,20 @@ static char  mainName[] = "extrema_reg";
     }
     gplotAddPlot(gplot, na2, na3, GPLOT_POINTS, "plot 2");
     gplotMakeOutput(gplot);
+#ifndef  _WIN32
+    sleep(1);
+#else
+    Sleep(1000);
+#endif  /* _WIN32 */
+
+    regTestCheckFile(rp, "/tmp/extrema.png");  /* 0 */
+    pixt = pixRead("/tmp/extrema.png");
+    pixDisplayWithTitle(pixt, 100, 100, "Extrema test", rp->display);
+    pixDestroy(&pixt);
+
     gplotDestroy(&gplot);
     numaDestroy(&na1);
     numaDestroy(&na2);
     numaDestroy(&na3);
-
-    return 0;
+    return regTestCleanup(rp);
 }

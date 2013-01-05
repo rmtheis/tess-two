@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -51,6 +62,7 @@
  *          l_int32       pixCopyColormap()
  *          l_int32       pixSizesEqual()
  *          l_int32       pixTransferAllData()
+ *          l_int32       pixSwapAndDestroy()
  *
  *    Pix accessors
  *          l_int32       pixGetWidth()
@@ -97,7 +109,7 @@
  *
  *
  *  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- *      Important notes on direct management of pix image data 
+ *      Important notes on direct management of pix image data
  *  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  *
  *  Custom allocator and deallocator
@@ -145,7 +157,12 @@
  *      But if the refcount of pixs is greater than 1, it just copies
  *      the data and decrements the ref count.
  *
- *  (3) Use pixExtractData() to extract the image data from the pix
+ *  (3) Use pixSwapAndDestroy(pixd, &pixs) to replace pixs by an
+ *      existing pixd.  This is similar to pixTransferAllData(), but
+ *      simpler, in that it never makes any copies and if pixs is
+ *      cloned, the other references are not changed by this operation.
+ *
+ *  (4) Use pixExtractData() to extract the image data from the pix
  *      without copying if possible.  This could be used, for example,
  *      to convert from a pix to some other data structure with minimal
  *      heap allocation.  After the data is extracated, the pixels can
@@ -166,8 +183,6 @@
  *  the pix considers itself the owner of all its heap data.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "allheaders.h"
 
@@ -195,7 +210,7 @@ static struct PixMemoryManager  pix_mem_manager = {
     &malloc,
     &free
 };
-    
+
 static void *
 pix_malloc(size_t  size)
 {
@@ -305,8 +320,10 @@ l_uint32  *data;
     if ((pixd = pixCreateHeader(width, height, depth)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     wpl = pixGetWpl(pixd);
-    if ((data = (l_uint32 *)pix_malloc(4 * wpl * height)) == NULL)
+    if ((data = (l_uint32 *)pix_malloc(4 * wpl * height)) == NULL) {
+        pixDestroy(&pixd);
         return (PIX *)ERROR_PTR("pix_malloc fail for data", procName, NULL);
+    }
     pixSetData(pixd, data);
     pixSetPadBits(pixd, 0);
     return pixd;
@@ -782,7 +799,7 @@ PIX     *pixs;
         if (copytext)
             pixCopyText(pixd, pixs);
     }
-  
+
     pixCopyResolution(pixd, pixs);
     pixCopyDimensions(pixd, pixs);
     if (copyformat)
@@ -793,7 +810,60 @@ PIX     *pixs;
     pixDestroy(ppixs);
     return 0;
 }
-        
+
+
+/*!
+ *  pixSwapAndDestroy()
+ *
+ *      Input:  &pixd (<optional, return> input pixd can be null,
+ *                     and it must be different from pixs)
+ *              &pixs (will be nulled after the swap)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) Simple operation to change the handle name safely.
+ *          After this operation, the original image in pixd has
+ *          been destroyed, pixd points to what was pixs, and
+ *          the input pixs ptr has been nulled.
+ *      (2) This works safely whether or not pixs and pixd are cloned.
+ *          If pixs is cloned, the other handles still point to
+ *          the original image, with the ref count reduced by 1.
+ *      (3) Usage example:
+ *            Pix *pix1 = pixRead("...");
+ *            Pix *pix2 = function(pix1, ...);
+ *            pixSwapAndDestroy(&pix1, &pix2);
+ *            pixDestroy(&pix1);  // holds what was in pix2
+ *          Example with clones ([] shows ref count of image generated
+ *                               by the function):
+ *            Pix *pixs = pixRead("...");
+ *            Pix *pix1 = pixClone(pixs);
+ *            Pix *pix2 = function(pix1, ...);   [1]
+ *            Pix *pix3 = pixClone(pix2);   [1] --> [2]
+ *            pixSwapAndDestroy(&pix1, &pix2);
+ *            pixDestroy(&pixs);  // still holds read image
+ *            pixDestroy(&pix1);  // holds what was in pix2  [2] --> [1]
+ *            pixDestroy(&pix3);  // holds what was in pix2  [1] --> [0]
+ */
+l_int32
+pixSwapAndDestroy(PIX  **ppixd,
+                  PIX  **ppixs)
+{
+    PROCNAME("pixSwapAndDestroy");
+
+    if (!ppixd)
+        return ERROR_INT("&pixd not defined", procName, 1);
+    if (!ppixs)
+        return ERROR_INT("&pixs not defined", procName, 1);
+    if (*ppixs == NULL)
+        return ERROR_INT("pixs not defined", procName, 1);
+    if (ppixs == ppixd)  /* no-op */
+        return ERROR_INT("&pixd == &pixs", procName, 1);
+
+    pixDestroy(ppixd);
+    *ppixd = pixClone(*ppixs);
+    pixDestroy(ppixs);
+    return 0;
+}
 
 
 /*--------------------------------------------------------------------*

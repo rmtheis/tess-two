@@ -1,21 +1,32 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
  *  colorquant2.c
- *                     
+ *
  *  Modified median cut color quantization
  *
  *      High level
@@ -155,8 +166,6 @@
  *         dividing the color space up in the most heavily populated regions.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "allheaders.h"
@@ -239,7 +248,7 @@ static const l_int32  DIF_CAP = 100;
  *  Notes:
  *      (1) Simple interface.  See pixMedianCutQuantGeneral() for
  *          use of defaulted parameters.
- */ 
+ */
 PIX *
 pixMedianCutQuant(PIX     *pixs,
                   l_int32  ditherflag)
@@ -288,7 +297,7 @@ pixMedianCutQuant(PIX     *pixs,
  *          reason is that median cut divides the color space into rectangular
  *          regions, and it does a very poor job if all the pixels are
  *          near the diagonal of the color space cube.
- */ 
+ */
 PIX *
 pixMedianCutQuantGeneral(PIX     *pixs,
                          l_int32  ditherflag,
@@ -374,7 +383,7 @@ PIXCMAP   *cmap;
                 outdepth = 2;
             else if (ncolors <= 16)
                 outdepth = 4;
-            else 
+            else
                 outdepth = 8;
         }
         cmap = pixcmapGenerateFromHisto(pixs, outdepth,
@@ -492,7 +501,7 @@ PIXCMAP   *cmap;
             outdepth = 2;
         else if (ncolors <= 16)
             outdepth = 4;
-        else 
+        else
             outdepth = 8;
     }
     pixd = pixQuantizeWithColormap(pixs, ditherflag, outdepth, cmap,
@@ -833,7 +842,7 @@ l_uint32  *data, *line;
     data = pixGetData(pixs);
     wpl = pixGetWpl(pixs);
     for (i = 0; i < h; i += subsample) {
-        line = data + i * wpl; 
+        line = data + i * wpl;
         for (j = 0; j < w; j += subsample) {
             pixel = line[j];
 	    getColorIndexMedianCut(pixel, rshift, mask, sigbits, &index);
@@ -1256,11 +1265,11 @@ L_BOX3D  *vbox1, *vbox2;
 
     PROCNAME("medianCutApply");
 
-    if (!histo) 
+    if (!histo)
         return ERROR_INT("histo not defined", procName, 1);
-    if (!vbox) 
+    if (!vbox)
         return ERROR_INT("vbox not defined", procName, 1);
-    if (!pvbox1 || !pvbox2) 
+    if (!pvbox1 || !pvbox2)
         return ERROR_INT("&vbox1 and &vbox2 not both defined", procName, 1);
 
     *pvbox1 = *pvbox2 = NULL;
@@ -1429,9 +1438,9 @@ PIXCMAP  *cmap;
 
     PROCNAME("pixcmapGenerateFromMedianCuts");
 
-    if (!lh) 
+    if (!lh)
         return (PIXCMAP *)ERROR_PTR("lh not defined", procName, NULL);
-    if (!histo) 
+    if (!histo)
         return (PIXCMAP *)ERROR_PTR("histo not defined", procName, NULL);
 
     rval = gval = bval = 0;  /* make compiler happy */
@@ -1479,9 +1488,9 @@ l_int32  i, j, k, ntot, mult, histoindex, rsum, gsum, bsum;
 
     PROCNAME("vboxGetAverageColor");
 
-    if (!vbox) 
+    if (!vbox)
         return ERROR_INT("vbox not defined", procName, 1);
-    if (!histo) 
+    if (!histo)
         return ERROR_INT("histo not defined", procName, 1);
     if (!prval || !pgval || !pbval)
         return ERROR_INT("&p*val not all defined", procName, 1);
@@ -1543,9 +1552,9 @@ l_int32  i, j, k, npix, index;
 
     PROCNAME("vboxGetCount");
 
-    if (!vbox) 
+    if (!vbox)
         return ERROR_INT("vbox not defined", procName, 0);
-    if (!histo) 
+    if (!histo)
         return ERROR_INT("histo not defined", procName, 0);
 
     npix = 0;
@@ -1573,7 +1582,7 @@ vboxGetVolume(L_BOX3D  *vbox)
 {
     PROCNAME("vboxGetVolume");
 
-    if (!vbox) 
+    if (!vbox)
         return ERROR_INT("vbox not defined", procName, 0);
 
     return ((vbox->r2 - vbox->r1 + 1) * (vbox->g2 - vbox->g1 + 1) *
@@ -1612,7 +1621,7 @@ L_BOX3D  *vboxc;
 
     PROCNAME("box3dCopy");
 
-    if (!vbox) 
+    if (!vbox)
         return (L_BOX3D *)ERROR_PTR("vbox not defined", procName, NULL);
 
     vboxc = box3dCreate(vbox->r1, vbox->r2, vbox->g1, vbox->g2,
@@ -1621,5 +1630,3 @@ L_BOX3D  *vboxc;
     vboxc->vol = vbox->vol;
     return vboxc;
 }
-    
-

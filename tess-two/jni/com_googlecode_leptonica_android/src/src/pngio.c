@@ -1,21 +1,32 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
  *  pngio.c
- *                     
+ *
  *    Read png from file
  *          PIX        *pixReadStreamPng()
  *          l_int32     readHeaderPng()
@@ -26,7 +37,7 @@
  *    Write png to file
  *          l_int32     pixWritePng()  [ special top level ]
  *          l_int32     pixWriteStreamPng()
- *          
+ *
  *    Read and write of png to/from RGBA pix
  *          PIX        *pixReadRGBAPng();
  *          l_int32     pixWriteRGBAPng();
@@ -79,7 +90,7 @@
  *    These use two of the special flags, setting to the non-default
  *    value before use and resetting to default afterwards.
  *    In leptonica, we make almost no explicit use of the alpha channel.
- *        
+ *
  *    Another special flag, var_ZLIB_COMPRESSION, is used to determine
  *    the compression level.  Default is for standard png compression.
  *    The zlib compression value can be set [0 ... 9], with
@@ -103,9 +114,10 @@
 #endif  /* HAVE_CONFIG_H */
 
 /* --------------------------------------------*/
-#if  HAVE_LIBPNG   /* defined in environ.h */
+#if  HAVE_LIBPNG && HAVE_LIBZ   /* defined in environ.h */
 /* --------------------------------------------*/
 
+#include "zlib.h"
 #include "png.h"
 
 /* ----------------Set defaults for read/write options ----------------- */
@@ -226,6 +238,7 @@ PIXCMAP     *cmap;
         /* Remove if/when this is implemented for all bit_depths */
     if (spp == 3 && bit_depth != 8) {
         fprintf(stderr, "Help: spp = 3 and depth = %d != 8\n!!", bit_depth);
+        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
         return (PIX *)ERROR_PTR("not implemented for this depth",
             procName, NULL);
     }
@@ -288,7 +301,7 @@ PIXCMAP     *cmap;
         /* If there is no colormap, PNG defines black = 0 and
          * white = 1 by default for binary monochrome.  Therefore,
          * since we use the opposite definition, we must invert
-         * the image in either of these cases:
+         * the image colors in either of these cases:
          *    (i) there is no colormap (default)
          *    (ii) there is a colormap which defines black to
          *         be 0 and white to be 1.
@@ -298,7 +311,7 @@ PIXCMAP     *cmap;
          * (It also doesn't work if there is a colormap.)
          * If there is a colormap that defines black = 1 and
          * white = 0, we don't need to do anything.
-         * 
+         *
          * How do we check the polarity of the colormap?
          * The colormap determines the values of black and
          * white pixels in the following way:
@@ -307,10 +320,17 @@ PIXCMAP     *cmap;
          *     if black = 0, white = 1 (255)
          *          0, 0, 0, 0, 255, 255, 255, 0
          * So we test the first byte to see if it is 0;
-         * if so, invert the data.  */
+         * if so, invert the colors.
+         *
+         * If there is a colormap, after inverting the pixels it is
+         * necessary to destroy the colormap.  Otherwise, if someone were
+         * to call pixRemoveColormap(), this would cause the pixel
+         * values to be inverted again!
+         */
     if (d == 1 && (!cmap || (cmap && ((l_uint8 *)(cmap->array))[0] == 0x0))) {
 /*        fprintf(stderr, "Inverting binary data on png read\n"); */
         pixInvert(pix, pix);
+        pixDestroyColormap(pix);
     }
 
     xres = png_get_x_pixels_per_meter(png_ptr, info_ptr);
@@ -398,7 +418,7 @@ l_uint8  *data;
         return ERROR_INT("stream not defined", procName, 1);
     if (!pwidth || !pheight || !pbps || !pspp)
         return ERROR_INT("input ptr(s) not defined", procName, 1);
-    
+
     nbytes = fnbytesInFile(fp);
     if (nbytes < 40)
         return ERROR_INT("file too small to be png", procName, 1);
@@ -448,7 +468,7 @@ l_uint32  *pword;
     *pwidth = *pheight = *pbps = *pspp = 0;
     if (piscmap)
       *piscmap = 0;
-    
+
         /* Check password */
     if (data[0] != 137 || data[1] != 80 || data[2] != 78 ||
         data[3] != 71 || data[4] != 13 || data[5] != 10 ||
@@ -803,7 +823,7 @@ char        *text;
             pixt = pixInvert(NULL, pix);
             pixEndianByteSwap(pixt);
         }
-        else 
+        else
             pixt = pixEndianByteSwapNew(pix);
         if (!pixt) {
             png_destroy_write_struct(&png_ptr, &info_ptr);
@@ -1140,6 +1160,5 @@ pixWriteMemPng(l_uint8  **pdata,
 #endif  /* HAVE_FMEMOPEN */
 
 /* --------------------------------------------*/
-#endif  /* HAVE_LIBPNG */
+#endif  /* HAVE_LIBPNG && HAVE_LIBZ */
 /* --------------------------------------------*/
-

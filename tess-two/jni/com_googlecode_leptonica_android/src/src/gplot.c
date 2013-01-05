@@ -1,21 +1,32 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
  *  gplot.c
- *                     
+ *
  *     Basic plotting functions
  *          GPLOT      *gplotCreate()
  *          void        gplotDestroy()
@@ -92,7 +103,7 @@ const char  *gplotstylenames[] = {"with lines",
                                   "with dots"};
 const char  *gplotfilestyles[] = {"LINES",
                                   "POINTS",
-                                  "IMPULSES", 
+                                  "IMPULSES",
                                   "LINESPOINTS",
                                   "DOTS"};
 const char  *gplotfileoutputs[] = {"",
@@ -193,7 +204,7 @@ GPLOT  *gplot;
         return;
     }
 
-    if ((gplot = *pgplot) == NULL)        
+    if ((gplot = *pgplot) == NULL)
         return;
 
     FREE(gplot->rootname);
@@ -297,7 +308,7 @@ SARRAY    *sa;
     datastr = sarrayToString(sa, 0);
     sarrayAddString(gplot->plotdata, datastr, L_INSERT);
     sarrayDestroy(&sa);
-            
+
     return 0;
 }
 
@@ -668,7 +679,7 @@ NUMA    *na;
  *-----------------------------------------------------------------*/
 /*!
  *  gplotRead()
- * 
+ *
  *      Input:  filename
  *      Return: gplot, or NULL on error
  */
@@ -751,7 +762,7 @@ GPLOT   *gplot;
 
 /*!
  *  gplotWrite()
- * 
+ *
  *      Input:  filename
  *              gplot
  *      Return: 0 if OK; 1 on error
@@ -798,5 +809,3 @@ FILE  *fp;
     fclose(fp);
     return 0;
 }
-
-

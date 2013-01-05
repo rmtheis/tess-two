@@ -1,18 +1,28 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
-
 
 
 /*
@@ -34,7 +44,7 @@
  *          static PIX      *pixGenerateBarcodeMask()
  *
  *      Extraction and deskew
- *          PIXA            *pixDeskewBarcodes()  
+ *          PIXA            *pixDeskewBarcodes()
  *
  *      Process to get line widths
  *          NUMA            *pixExtractBarcodeWidths1()
@@ -42,7 +52,7 @@
  *          NUMA            *pixExtractBarcodeCrossings()
  *
  *      Average adjacent rasters
- *          static NUMA     *pixAverageRasterScans() 
+ *          static NUMA     *pixAverageRasterScans()
  *
  *      Signal processing for barcode widths
  *          NUMA            *numaQuantizeCrossingsByWidth()
@@ -68,8 +78,6 @@
  *  (image --> decoded data).
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "allheaders.h"
 #include "readbarcode.h"
@@ -140,7 +148,7 @@ SARRAY  *sad;
         return (SARRAY *)ERROR_PTR("unsupported format", procName, NULL);
     if (method != L_USE_WIDTHS && method != L_USE_WINDOWS)
         return (SARRAY *)ERROR_PTR("invalid method", procName, NULL);
-    
+
         /* Get an 8 bpp image, no cmap */
     if (pixGetDepth(pixs) == 8 && !pixGetColormap(pixs))
         pixg = pixClone(pixs);
@@ -152,7 +160,7 @@ SARRAY  *sad;
         return (SARRAY *)ERROR_PTR("no barcode(s) found", procName, NULL);
     }
 
-    sad = pixReadBarcodes(pixa, format, method, psaw, debugflag); 
+    sad = pixReadBarcodes(pixa, format, method, psaw, debugflag);
 
     pixDestroy(&pixg);
     pixaDestroy(&pixa);
@@ -264,7 +272,7 @@ SARRAY    *saw, *sad;
         return (SARRAY *)ERROR_PTR("unsupported format", procName, NULL);
     if (method != L_USE_WIDTHS && method != L_USE_WINDOWS)
         return (SARRAY *)ERROR_PTR("invalid method", procName, NULL);
-    
+
     n = pixaGetCount(pixa);
     saw = sarrayCreate(n);
     sad = sarrayCreate(n);
@@ -338,7 +346,7 @@ NUMA      *na;
         return (NUMA *)ERROR_PTR("pixs not 8 bpp", procName, NULL);
     if (method != L_USE_WIDTHS && method != L_USE_WINDOWS)
         return (NUMA *)ERROR_PTR("invalid method", procName, NULL);
-    
+
         /* Extract the widths of the lines in each barcode */
     if (method == L_USE_WIDTHS)
         na = pixExtractBarcodeWidths1(pixs, 120, 0.25, NULL, NULL,
@@ -384,7 +392,7 @@ PIX   *pix8, *pixe, *pixb, *pixm;
 
     if (!pixs)
         return (BOXA *)ERROR_PTR("pixs not defined", procName, NULL);
-    
+
         /* Get an 8 bpp image, no cmap */
     if (pixGetDepth(pixs) == 8 && !pixGetColormap(pixs))
         pix8 = pixClone(pixs);
@@ -506,7 +514,7 @@ PIX       *pixt1, *pixt2, *pixt3, *pixt4, *pixt5, *pixt6, *pixd;
         return (PIX *)ERROR_PTR("pixb undefined or not 1 bpp", procName, NULL);
     if (!box)
         return (PIX *)ERROR_PTR("box not defined or 1 bpp", procName, NULL);
-    
+
         /* Clip out */
     deg2rad = 3.1415926535 / 180.;
     boxGetGeometry(box, &x, &y, &w, &h);
@@ -576,10 +584,10 @@ PIX       *pixt1, *pixt2, *pixt3, *pixt4, *pixt5, *pixt6, *pixd;
     boxDestroy(&boxe);
     boxaDestroy(&boxa);
     boxaDestroy(&boxat);
-    
+
     if (pangle) *pangle = angle;
     if (pconf) *pconf = conf;
-        
+
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
     pixDestroy(&pixt5);
@@ -792,7 +800,7 @@ NUMA       *nad;
 
     return nad;
 }
-        
+
 
 /*------------------------------------------------------------------------*
  *                   Signal processing for barcode widths                 *
@@ -908,7 +916,7 @@ NUMA      *naerange, *naorange, *naelut, *naolut, *nad;
     width = (l_int32)(factor * val);
     numaGetIValue(naelut, width, &iw);
     numaAddNumber(nad, iw);
-    
+
     if (debugflag) {
         fprintf(stderr, " ---- Black bar widths (pixels) ------ \n");
         numaWriteStream(stderr, naedist);
@@ -1011,7 +1019,7 @@ NUMA      *naedist, *naodist;
     numaGetFValue(nas, 0, &val);
     for (i = 1; i < n; i++) {
         numaGetFValue(nas, i, &newval);
-        if (i % 2) 
+        if (i % 2)
             numaAddNumber(naedist, newval - val);
         else
             numaAddNumber(naodist, newval - val);
@@ -1053,7 +1061,7 @@ NUMA      *naedist, *naodist;
  *
  *  Notes:
  *      (1) Units of @minsep are the index into nas.
- *          This puts useful constraints on peak-finding. 
+ *          This puts useful constraints on peak-finding.
  *      (2) If maxmin == 0.0, the value of nas[i] must go to 0.0 (or less)
  *          between peaks.
  *      (3) All calculations are done in units of the index into nas.
@@ -1444,7 +1452,7 @@ numaEvalSyncError(NUMA       *nas,
 {
 l_int32    i, n, nc, nw, ival;
 l_int32    iw;  /* cell in which transition occurs */
-l_float32  score, xfirst, xlast, xleft, xc, xwc; 
+l_float32  score, xfirst, xlast, xleft, xc, xwc;
 NUMA      *nad;
 
     PROCNAME("numaEvalSyncError");
@@ -1486,4 +1494,3 @@ NUMA      *nad;
 
     return 0;
 }
-

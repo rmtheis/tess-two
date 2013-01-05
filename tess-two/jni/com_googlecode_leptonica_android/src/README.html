@@ -51,25 +51,35 @@ This work is licensed under a <a rel="license" href="http://creativecommons.org/
 <pre>
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-
-README  (10 Mar 2011)
+README  (12 Jan 2012)
 --------------------
 
-gunzip leptonica-1.68.tar.gz
-tar -xvf leptonica-1.68.tar
+gunzip leptonica-1.69.tar.gz
+tar -xvf leptonica-1.69.tar
 
 </pre>
 
@@ -106,7 +116,7 @@ Building leptonica
   Libraries, executables and prototypes are easily made, as described below.
 
   When you extract from the archive, all files are put in a
-  subdirectory 'leptonica-1.68'.  In that directory you will
+  subdirectory 'leptonica-1.69'.  In that directory you will
   find a src directory containing the source files for the library,
   and a prog directory containing source files for various
   testing and example programs.
@@ -183,9 +193,10 @@ Building leptonica
              the behavior of small sets of functions, and for
              providing example code.
          (3) Programs that are useful applications in their own right.
-             Examples of these are the PostScript conversion programs
-             converttops, convertfilestops, convertsegfilestops,
-             printimage and printsplitimage.
+             Examples of these are the PostScript and pdf conversion
+             programs converttops, convertfilestops, convertsegfilestops,
+             printimage, printsplitimage, convertfilestopdf and
+             convertsegfilestopdf.
 
     (2) Building using autoconf  (Thanks to James Le Cuirot)
 
@@ -198,7 +209,7 @@ Building leptonica
                          and all the progs into /usr/local/bin/ ]
 
        Configure also supports building in a separate directory from the
-       source.  Run "/(path-to)/leptonica-1.68/configure" and then "make"
+       source.  Run "/(path-to)/leptonica-1.69/configure" and then "make"
        from the desired build directory.
 
        Configure has a number of useful options; run "configure --help" for
@@ -212,6 +223,9 @@ Building leptonica
        want these, use "CFLAGS=-O2 ./configure" to eliminate symbols for
        subsequent compilations, or "make CFLAGS=-O2" to override for this
        compilation only. 
+
+       For the debian distribution, we only build a small subset of
+       the programs in the prog directory..
 
     (3) Cross-compiling for windows
 
@@ -358,28 +372,35 @@ You are encouraged to use the static makefiles if you are developing
 applications using leptonica.  The following instructions assume
 that you are using the static makefiles and customizing environ.h.
 
-1. Prototype header file
+1. Automatic generation of prototypes
 
-   The prototype header file leptprotos.h (supplied) can be
-   automatically generated using xtractprotos.
-   To generate leptprotos.h, first make xtractprotos (all in src):
-       make  (to make liblept)
+   The prototypes are automatically generated by the program xtractprotos.
+   They can either be put in-line into allheaders.h, or they can be
+   written to a file leptprotos.h, which is #included in allheaders.h.
+   Note: (1) We supply the former version of allheaders.h.
+         (2) all .c files simply include allheaders.h.
+
+   First, make xtractprotos:
        make xtractprotos
-   Then run it:
-       make allprotos   (generates leptprotos.h)
 
+   Then to generate the prototypes and make allheaders.h, do one of
+   these two things:
+       make allheaders  [puts everything into allheaders.h]
+       make allprotos   [generates a file leptprotos.h and includes it
+                         in allheaders.h]
+   
    Things to note about xtractprotos, assuming that you are developing
-   in Leptonica and need to regenerate the prototype file leptprotos.h:
+   in Leptonica and need to regenerate the prototypes in allheaders.h:
 
      (1) xtractprotos is part of Leptonica.  You can 'make' it in either
          src or prog (see the makefile).
-     (2) You can output the prototypes for any C file by running:
+     (2) You can output the prototypes for any C file to stdout by running:
              xtractprotos <cfile>     or
              xtractprotos -prestring=[string] <cfile>
      (3) The source for xtractprotos has been packaged up into a tar
          containing just the Leptonica files necessary for building it
          in linux.  The tar file is available at:
-             www.leptonica.com/source/xtractlib-1.4.tar.gz
+             www.leptonica.com/source/xtractlib-1.5.tar.gz
 
 2. GNU runtime functions for stream redirection to memory
 

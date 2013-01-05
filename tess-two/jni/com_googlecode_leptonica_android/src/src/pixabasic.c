@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -65,6 +76,7 @@
  *           l_int32   pixaaGetCount()
  *           PIXA     *pixaaGetPixa()
  *           BOXA     *pixaaGetBoxa()
+ *           PIX      *pixaaGetPix()
  *
  *      Pixa serialized I/O  (requires png support)
  *           PIXA     *pixaRead()
@@ -78,7 +90,7 @@
  *           l_int32   pixaaWrite()
  *           l_int32   pixaaWriteStream()
  *
- *   
+ *
  *   Important note on reference counting:
  *     Reference counting for the Pixa is analogous to that for the Boxa.
  *     See pix.h for details.   pixaCopy() provides three possible modes
@@ -117,7 +129,7 @@ PIXA  *pixa;
     pixa->n = 0;
     pixa->nalloc = n;
     pixa->refcount = 1;
-    
+
     if ((pixa->pix = (PIX **)CALLOC(n, sizeof(PIX *))) == NULL)
         return (PIXA *)ERROR_PTR("pix ptrs not made", procName, NULL);
     if ((pixa->boxa = boxaCreate(n)) == NULL)
@@ -246,7 +258,7 @@ PIXA    *pixad;
 
     return pixad;
 }
-    
+
 
 /*!
  *  pixaSplitPix()
@@ -681,7 +693,7 @@ pixaGetBoxaCount(PIXA  *pixa)
 
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 0);
-    
+
     return boxaGetCount(pixa->boxa);
 }
 
@@ -1127,7 +1139,7 @@ PIXAA  *pixaa;
         return (PIXAA *)ERROR_PTR("pixaa not made", procName, NULL);
     pixaa->n = 0;
     pixaa->nalloc = n;
-    
+
     if ((pixaa->pixa = (PIXA **)CALLOC(n, sizeof(PIXA *))) == NULL)
         return (PIXAA *)ERROR_PTR("pixa ptrs not made", procName, NULL);
     pixaa->boxa = boxaCreate(n);
@@ -1437,6 +1449,35 @@ pixaaGetBoxa(PIXAA   *pixaa,
         return (BOXA *)ERROR_PTR("invalid access type", procName, NULL);
 
     return boxaCopy(pixaa->boxa, accesstype);
+}
+
+
+/*!
+ *  pixaaGetPix()
+ *
+ *      Input:  paa
+ *              ipixa  (index into the pixa array in the pixaa)
+ *              ipix  (index into the pix array in the pixa)
+ *              accessflag  (L_COPY or L_CLONE)
+ *      Return: pix, or null on error
+ */
+PIX *
+pixaaGetPix(PIXAA   *paa,
+            l_int32  ipixa,
+            l_int32  ipix,
+            l_int32  accessflag)
+{
+PIX   *pix;
+PIXA  *pixa;
+
+    PROCNAME("pixaaGetPix");
+
+    if ((pixa = pixaaGetPixa(paa, ipixa, L_CLONE)) == NULL)
+        return (PIX *)ERROR_PTR("pixa not retrieved", procName, NULL);
+    if ((pix = pixaGetPix(pixa, ipix, accessflag)) == NULL)
+        L_ERROR("pix not retrieved", procName);
+    pixaDestroy(&pixa);
+    return pix;
 }
 
 
@@ -1800,5 +1841,3 @@ PIXA    *pixa;
     }
     return 0;
 }
-
-

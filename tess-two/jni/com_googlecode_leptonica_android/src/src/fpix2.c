@@ -1,58 +1,87 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
  *  fpix2.c
  *
  *    This file has these FPix utilities:
- *       - interconversion with pix
- *       - interconversion with dpix
+ *       - interconversions with pix, fpix, dpix
  *       - min and max values
- *       - border functions
- *       - simple rasterop (source --> dest)
  *       - integer scaling
  *       - arithmetic operations
+ *       - set all
+ *       - border functions
+ *       - simple rasterop (source --> dest)
+ *       - geometric transforms
  *
- *    Interconversions between Pix and FPix
+ *    Interconversions between Pix, FPix and DPix
  *          FPIX          *pixConvertToFPix()
+ *          DPIX          *pixConvertToDPix()
  *          PIX           *fpixConvertToPix()
  *          PIX           *fpixDisplayMaxDynamicRange()  [useful for debugging]
- *
- *    Interconversions between FPix and DPix
  *          DPIX          *fpixConvertToDPix()
+ *          PIX           *dpixConvertToPix()
  *          FPIX          *dpixConvertToFPix()
  *
- *    FPix min/max value
+ *    Min/max value
  *          l_int32        fpixGetMin()
  *          l_int32        fpixGetMax()
- *
- *    FPix border functions
- *          FPIX          *fpixAddBorder()
- *          FPIX          *fpixRemoveBorder()
- *          FPIX          *fpixAddMirroredBorder()
- *
- *    FPix simple rasterop
- *          l_int32        fpixRasterop()
+ *          l_int32        dpixGetMin()
+ *          l_int32        dpixGetMax()
  *
  *    Integer scaling
  *          FPIX          *fpixScaleByInteger()
  *          DPIX          *dpixScaleByInteger()
  *
- *    FPix arithmetic operations
+ *    Arithmetic operations
  *          FPIX          *fpixLinearCombination()
  *          l_int32        fpixAddMultConstant()
+ *          DPIX          *dpixLinearCombination()
+ *          l_int32        dpixAddMultConstant()
+ *
+ *    Set all
+ *          l_int32        fpixSetAllArbitrary()
+ *          l_int32        dpixSetAllArbitrary()
+ *
+ *    FPix border functions
+ *          FPIX          *fpixAddBorder()
+ *          FPIX          *fpixRemoveBorder()
+ *          FPIX          *fpixAddMirroredBorder()
+ *          FPIX          *fpixAddContinuedBorder()
+ *          FPIX          *fpixAddSlopeBorder()
+ *
+ *    FPix simple rasterop
+ *          l_int32        fpixRasterop()
+ *
+ *    FPix affine and projective interpolated transforms
+ *          FPIX          *fpixAffinePta()
+ *          FPIX          *fpixAffine()
+ *          FPIX          *fpixProjectivePta()
+ *          FPIX          *fpixProjective()
+ *          l_int32        linearInterpolatePixelFloat()
  */
 
 #include "allheaders.h"
@@ -89,14 +118,19 @@ FPIX       *fpixd;
     if (!pixs)
         return (FPIX *)ERROR_PTR("pixs not defined", procName, NULL);
 
+           /* Convert to a single component */
     if (pixGetColormap(pixs))
         pixt = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
     else if (pixGetDepth(pixs) == 32 && ncomps == 3)
         pixt = pixConvertRGBToLuminance(pixs);
     else
         pixt = pixClone(pixs);
-
     pixGetDimensions(pixt, &w, &h, &d);
+    if (d != 1 && d != 2 && d != 4 && d != 8 && d != 16 && d != 32) {
+        pixDestroy(&pixt);
+        return (FPIX *)ERROR_PTR("invalid depth", procName, NULL);
+    }
+
     if ((fpixd = fpixCreate(w, h)) == NULL)
         return (FPIX *)ERROR_PTR("fpixd not made", procName, NULL);
     datat = pixGetData(pixt);
@@ -136,7 +170,7 @@ FPIX       *fpixd;
                 lined[j] = (l_float32)val;
             }
         }
-        else if (d == 32) {
+        else {  /* d == 32 */
             for (j = 0; j < w; j++) {
                 uval = GET_DATA_FOUR_BYTES(linet, j);
                 lined[j] = (l_float32)uval;
@@ -146,6 +180,100 @@ FPIX       *fpixd;
 
     pixDestroy(&pixt);
     return fpixd;
+}
+
+
+/*!
+ *  pixConvertToDPix()
+ *
+ *      Input:  pix (1, 2, 4, 8, 16 or 32 bpp)
+ *              ncomps (number of components: 3 for RGB, 1 otherwise)
+ *      Return: dpix, or null on error
+ *
+ *  Notes:
+ *      (1) If colormapped, remove to grayscale.
+ *      (2) If 32 bpp and @ncomps == 3, this is RGB; convert to luminance.
+ *          In all other cases the src image is treated as having a single
+ *          component of pixel values.
+ */
+DPIX *
+pixConvertToDPix(PIX     *pixs,
+                 l_int32  ncomps)
+{
+l_int32     w, h, d, i, j, val, wplt, wpld;
+l_uint32    uval;
+l_uint32   *datat, *linet;
+l_float64  *datad, *lined;
+PIX        *pixt;
+DPIX       *dpixd;
+
+    PROCNAME("pixConvertToDPix");
+
+    if (!pixs)
+        return (DPIX *)ERROR_PTR("pixs not defined", procName, NULL);
+
+           /* Convert to a single component */
+    if (pixGetColormap(pixs))
+        pixt = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
+    else if (pixGetDepth(pixs) == 32 && ncomps == 3)
+        pixt = pixConvertRGBToLuminance(pixs);
+    else
+        pixt = pixClone(pixs);
+    pixGetDimensions(pixt, &w, &h, &d);
+    if (d != 1 && d != 2 && d != 4 && d != 8 && d != 16 && d != 32) {
+        pixDestroy(&pixt);
+        return (DPIX *)ERROR_PTR("invalid depth", procName, NULL);
+    }
+
+    if ((dpixd = dpixCreate(w, h)) == NULL)
+        return (DPIX *)ERROR_PTR("dpixd not made", procName, NULL);
+    datat = pixGetData(pixt);
+    wplt = pixGetWpl(pixt);
+    datad = dpixGetData(dpixd);
+    wpld = dpixGetWpl(dpixd);
+    for (i = 0; i < h; i++) {
+        linet = datat + i * wplt;
+        lined = datad + i * wpld;
+        if (d == 1) {
+            for (j = 0; j < w; j++) {
+                val = GET_DATA_BIT(linet, j);
+                lined[j] = (l_float64)val;
+            }
+        }
+        else if (d == 2) {
+            for (j = 0; j < w; j++) {
+                val = GET_DATA_DIBIT(linet, j);
+                lined[j] = (l_float64)val;
+            }
+        }
+        else if (d == 4) {
+            for (j = 0; j < w; j++) {
+                val = GET_DATA_QBIT(linet, j);
+                lined[j] = (l_float64)val;
+            }
+        }
+        else if (d == 8) {
+            for (j = 0; j < w; j++) {
+                val = GET_DATA_BYTE(linet, j);
+                lined[j] = (l_float64)val;
+            }
+        }
+        else if (d == 16) {
+            for (j = 0; j < w; j++) {
+                val = GET_DATA_TWO_BYTES(linet, j);
+                lined[j] = (l_float64)val;
+            }
+        }
+        else {  /* d == 32 */
+            for (j = 0; j < w; j++) {
+                uval = GET_DATA_FOUR_BYTES(linet, j);
+                lined[j] = (l_float64)uval;
+            }
+        }
+    }
+
+    pixDestroy(&pixt);
+    return dpixd;
 }
 
 
@@ -199,17 +327,14 @@ PIX        *pixd;
         /* Adaptive determination of output depth */
     if (outdepth == 0) {
         outdepth = 8;
-        for (i = 0; i < h; i++) {
+        for (i = 0; i < h && outdepth < 32; i++) {
             lines = datas + i * wpls;
-            for (j = 0; j < w; j++) {
-                if (lines[j] > 65535.5) {
+            for (j = 0; j < w && outdepth < 32; j++) {
+                if (lines[j] > 65535.5)
                     outdepth = 32;
-                    break;
-                }
-                if (lines[j] > 255.5)
+                else if (lines[j] > 255.5)
                     outdepth = 16;
             }
-            if (outdepth == 32) break;
         }
     }
     maxval = (1 << outdepth) - 1;
@@ -324,9 +449,6 @@ PIX        *pixd;
 }
 
 
-/*--------------------------------------------------------------------*
- *                     FPix  <-->  DPix conversions                   *
- *--------------------------------------------------------------------*/
 /*!
  *  fpixConvertToDPix()
  *
@@ -365,6 +487,121 @@ DPIX       *dpix;
     }
 
     return dpix;
+}
+
+
+/*!
+ *  dpixConvertToPix()
+ *
+ *      Input:  dpixs
+ *              outdepth (0, 8, 16 or 32 bpp)
+ *              negvals (L_CLIP_TO_ZERO, L_TAKE_ABSVAL)
+ *              errorflag (1 to output error stats; 0 otherwise)
+ *      Return: pixd, or null on error
+ *
+ *  Notes:
+ *      (1) Use @outdepth = 0 to programmatically determine the
+ *          output depth.  If no values are greater than 255,
+ *          it will set outdepth = 8; otherwise to 16 or 32.
+ *      (2) Because we are converting a float to an unsigned int
+ *          with a specified dynamic range (8, 16 or 32 bits), errors
+ *          can occur.  If errorflag == TRUE, output the number
+ *          of values out of range, both negative and positive.
+ *      (3) If a pixel value is positive and out of range, clip to
+ *          the maximum value represented at the outdepth of 8, 16
+ *          or 32 bits.
+ */
+PIX *
+dpixConvertToPix(DPIX    *dpixs,
+                 l_int32  outdepth,
+                 l_int32  negvals,
+                 l_int32  errorflag)
+{
+l_int32     w, h, i, j, wpls, wpld, maxval;
+l_uint32    vald;
+l_float64   val;
+l_float64  *datas, *lines;
+l_uint32   *datad, *lined;
+PIX        *pixd;
+
+    PROCNAME("dpixConvertToPix");
+
+    if (!dpixs)
+        return (PIX *)ERROR_PTR("dpixs not defined", procName, NULL);
+    if (negvals != L_CLIP_TO_ZERO && negvals != L_TAKE_ABSVAL)
+        return (PIX *)ERROR_PTR("invalid negvals", procName, NULL);
+    if (outdepth != 0 && outdepth != 8 && outdepth != 16 && outdepth != 32)
+        return (PIX *)ERROR_PTR("outdepth not in {0,8,16,32}", procName, NULL);
+
+    dpixGetDimensions(dpixs, &w, &h);
+    datas = dpixGetData(dpixs);
+    wpls = dpixGetWpl(dpixs);
+
+        /* Adaptive determination of output depth */
+    if (outdepth == 0) {
+        outdepth = 8;
+        for (i = 0; i < h && outdepth < 32; i++) {
+            lines = datas + i * wpls;
+            for (j = 0; j < w && outdepth < 32; j++) {
+                if (lines[j] > 65535.5)
+                    outdepth = 32;
+                else if (lines[j] > 255.5)
+                    outdepth = 16;
+            }
+        }
+    }
+    maxval = (1 << outdepth) - 1;
+
+        /* Gather statistics if @errorflag = TRUE */
+    if (errorflag) {
+        l_int32  negs = 0;
+        l_int32  overvals = 0;
+        for (i = 0; i < h; i++) {
+            lines = datas + i * wpls;
+            for (j = 0; j < w; j++) {
+                val = lines[j];
+                if (val < 0.0)
+                    negs++;
+                else if (val > maxval)
+                    overvals++;
+            }
+        }
+        if (negs > 0)
+            L_ERROR_INT("Number of negative values: %d", procName, negs);
+        if (overvals > 0)
+            L_ERROR_INT("Number of too-large values: %d", procName, overvals);
+    }
+
+        /* Make the pix and convert the data */
+    if ((pixd = pixCreate(w, h, outdepth)) == NULL)
+        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    datad = pixGetData(pixd);
+    wpld = pixGetWpl(pixd);
+    for (i = 0; i < h; i++) {
+        lines = datas + i * wpls;
+        lined = datad + i * wpld;
+        for (j = 0; j < w; j++) {
+            val = lines[j];
+            if (val >= 0.0)
+                vald = (l_uint32)(val + 0.5);
+            else {  /* val < 0.0 */
+                if (negvals == L_CLIP_TO_ZERO)
+                    vald = 0;
+                else
+                    vald = (l_uint32)(-val + 0.5);
+            }
+            if (vald > maxval)
+                vald = maxval;
+            if (outdepth == 8)
+                SET_DATA_BYTE(lined, j, vald);
+            else if (outdepth == 16)
+                SET_DATA_TWO_BYTES(lined, j, vald);
+            else  /* outdepth == 32 */
+                SET_DATA_FOUR_BYTES(lined, j, vald);
+        }
+    }
+
+    return pixd;
 }
 
 
@@ -504,7 +741,7 @@ l_float32   maxval;
     for (i = 0; i < h; i++) {
         line = data + i * wpl;
         for (j = 0; j < w; j++) {
-            if (line[j] < maxval) {
+            if (line[j] > maxval) {
                 maxval = line[j];
                 xmaxloc = j;
                 ymaxloc = i;
@@ -515,6 +752,595 @@ l_float32   maxval;
     if (pmaxval) *pmaxval = maxval;
     if (pxmaxloc) *pxmaxloc = xmaxloc;
     if (pymaxloc) *pymaxloc = ymaxloc;
+    return 0;
+}
+
+
+/*!
+ *  dpixGetMin()
+ *
+ *      Input:  dpix
+ *              &minval (<optional return> min value)
+ *              &xminloc (<optional return> x location of min)
+ *              &yminloc (<optional return> y location of min)
+ *      Return: 0 if OK; 1 on error
+ */
+l_int32
+dpixGetMin(DPIX       *dpix,
+           l_float64  *pminval,
+           l_int32    *pxminloc,
+           l_int32    *pyminloc)
+{
+l_int32     i, j, w, h, wpl, xminloc, yminloc;
+l_float64  *data, *line;
+l_float64   minval;
+
+    PROCNAME("dpixGetMin");
+
+    if (!pminval && !pxminloc && !pyminloc)
+        return ERROR_INT("nothing to do", procName, 1);
+    if (pminval) *pminval = 0.0;
+    if (pxminloc) *pxminloc = 0;
+    if (pyminloc) *pyminloc = 0;
+    if (!dpix)
+        return ERROR_INT("dpix not defined", procName, 1);
+
+    minval = +1.0e300;
+    xminloc = 0;
+    yminloc = 0;
+    dpixGetDimensions(dpix, &w, &h);
+    data = dpixGetData(dpix);
+    wpl = dpixGetWpl(dpix);
+    for (i = 0; i < h; i++) {
+        line = data + i * wpl;
+        for (j = 0; j < w; j++) {
+            if (line[j] < minval) {
+                minval = line[j];
+                xminloc = j;
+                yminloc = i;
+            }
+        }
+    }
+
+    if (pminval) *pminval = minval;
+    if (pxminloc) *pxminloc = xminloc;
+    if (pyminloc) *pyminloc = yminloc;
+    return 0;
+}
+
+
+/*!
+ *  dpixGetMax()
+ *
+ *      Input:  dpix
+ *              &maxval (<optional return> max value)
+ *              &xmaxloc (<optional return> x location of max)
+ *              &ymaxloc (<optional return> y location of max)
+ *      Return: 0 if OK; 1 on error
+ */
+l_int32
+dpixGetMax(DPIX       *dpix,
+           l_float64  *pmaxval,
+           l_int32    *pxmaxloc,
+           l_int32    *pymaxloc)
+{
+l_int32     i, j, w, h, wpl, xmaxloc, ymaxloc;
+l_float64  *data, *line;
+l_float64   maxval;
+
+    PROCNAME("dpixGetMax");
+
+    if (!pmaxval && !pxmaxloc && !pymaxloc)
+        return ERROR_INT("nothing to do", procName, 1);
+    if (pmaxval) *pmaxval = 0.0;
+    if (pxmaxloc) *pxmaxloc = 0;
+    if (pymaxloc) *pymaxloc = 0;
+    if (!dpix)
+        return ERROR_INT("dpix not defined", procName, 1);
+
+    maxval = -1.0e20;
+    xmaxloc = 0;
+    ymaxloc = 0;
+    dpixGetDimensions(dpix, &w, &h);
+    data = dpixGetData(dpix);
+    wpl = dpixGetWpl(dpix);
+    for (i = 0; i < h; i++) {
+        line = data + i * wpl;
+        for (j = 0; j < w; j++) {
+            if (line[j] > maxval) {
+                maxval = line[j];
+                xmaxloc = j;
+                ymaxloc = i;
+            }
+        }
+    }
+
+    if (pmaxval) *pmaxval = maxval;
+    if (pxmaxloc) *pxmaxloc = xmaxloc;
+    if (pymaxloc) *pymaxloc = ymaxloc;
+    return 0;
+}
+
+
+/*--------------------------------------------------------------------*
+ *                       Special integer scaling                      *
+ *--------------------------------------------------------------------*/
+/*!
+ *  fpixScaleByInteger()
+ *
+ *      Input:  fpixs (low resolution, subsampled)
+ *              factor (scaling factor)
+ *      Return: fpixd (interpolated result), or null on error
+ *
+ *  Notes:
+ *      (1) The width wd of fpixd is related to ws of fpixs by:
+ *              wd = factor * (ws - 1) + 1   (and ditto for the height)
+ *          We avoid special-casing boundary pixels in the interpolation
+ *          by constructing fpixd by inserting (factor - 1) interpolated
+ *          pixels between each pixel in fpixs.  Then
+ *               wd = ws + (ws - 1) * (factor - 1)    (same as above)
+ *          This also has the advantage that if we subsample by @factor,
+ *          throwing out all the interpolated pixels, we regain the
+ *          original low resolution fpix.
+ */
+FPIX *
+fpixScaleByInteger(FPIX    *fpixs,
+                   l_int32  factor)
+{
+l_int32     i, j, k, m, ws, hs, wd, hd, wpls, wpld;
+l_float32   val0, val1, val2, val3;
+l_float32  *datas, *datad, *lines, *lined, *fract;
+FPIX       *fpixd;
+
+    PROCNAME("fpixScaleByInteger");
+
+    if (!fpixs)
+        return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+
+    fpixGetDimensions(fpixs, &ws, &hs);
+    wd = factor * (ws - 1) + 1;
+    hd = factor * (hs - 1) + 1;
+    fpixd = fpixCreate(wd, hd);
+    datas = fpixGetData(fpixs);
+    datad = fpixGetData(fpixd);
+    wpls = fpixGetWpl(fpixs);
+    wpld = fpixGetWpl(fpixd);
+    fract = (l_float32 *)CALLOC(factor, sizeof(l_float32));
+    for (i = 0; i < factor; i++)
+        fract[i] = i / (l_float32)factor;
+    for (i = 0; i < hs - 1; i++) {
+        lines = datas + i * wpls;
+        for (j = 0; j < ws - 1; j++) {
+            val0 = lines[j];
+            val1 = lines[j + 1];
+            val2 = lines[wpls + j];
+            val3 = lines[wpls + j + 1];
+            for (k = 0; k < factor; k++) {  /* rows of sub-block */
+                lined = datad + (i * factor + k) * wpld;
+                for (m = 0; m < factor; m++) {  /* cols of sub-block */
+                     lined[j * factor + m] =
+                            val0 * (1.0 - fract[m]) * (1.0 - fract[k]) +
+                            val1 * fract[m] * (1.0 - fract[k]) +
+                            val2 * (1.0 - fract[m]) * fract[k] +
+                            val3 * fract[m] * fract[k];
+                }
+            }
+        }
+    }
+
+        /* Do the right-most column of fpixd, skipping LR corner */
+    for (i = 0; i < hs - 1; i++) {
+        lines = datas + i * wpls;
+        val0 = lines[ws - 1];
+        val1 = lines[wpls + ws - 1];
+        for (k = 0; k < factor; k++) {
+            lined = datad + (i * factor + k) * wpld;
+            lined[wd - 1] = val0 * (1.0 - fract[k]) + val1 * fract[k];
+        }
+    }
+
+        /* Do the bottom-most row of fpixd */
+    lines = datas + (hs - 1) * wpls;
+    lined = datad + (hd - 1) * wpld;
+    for (j = 0; j < ws - 1; j++) {
+        val0 = lines[j];
+        val1 = lines[j + 1];
+        for (m = 0; m < factor; m++)
+            lined[j * factor + m] = val0 * (1.0 - fract[m]) + val1 * fract[m];
+        lined[wd - 1] = lines[ws - 1];  /* LR corner */
+    }
+
+    FREE(fract);
+    return fpixd;
+}
+
+
+/*!
+ *  dpixScaleByInteger()
+ *
+ *      Input:  dpixs (low resolution, subsampled)
+ *              factor (scaling factor)
+ *      Return: dpixd (interpolated result), or null on error
+ *
+ *  Notes:
+ *      (1) The width wd of dpixd is related to ws of dpixs by:
+ *              wd = factor * (ws - 1) + 1   (and ditto for the height)
+ *          We avoid special-casing boundary pixels in the interpolation
+ *          by constructing fpixd by inserting (factor - 1) interpolated
+ *          pixels between each pixel in fpixs.  Then
+ *               wd = ws + (ws - 1) * (factor - 1)    (same as above)
+ *          This also has the advantage that if we subsample by @factor,
+ *          throwing out all the interpolated pixels, we regain the
+ *          original low resolution dpix.
+ */
+DPIX *
+dpixScaleByInteger(DPIX    *dpixs,
+                   l_int32  factor)
+{
+l_int32     i, j, k, m, ws, hs, wd, hd, wpls, wpld;
+l_float64   val0, val1, val2, val3;
+l_float64  *datas, *datad, *lines, *lined, *fract;
+DPIX       *dpixd;
+
+    PROCNAME("dpixScaleByInteger");
+
+    if (!dpixs)
+        return (DPIX *)ERROR_PTR("dpixs not defined", procName, NULL);
+
+    dpixGetDimensions(dpixs, &ws, &hs);
+    wd = factor * (ws - 1) + 1;
+    hd = factor * (hs - 1) + 1;
+    dpixd = dpixCreate(wd, hd);
+    datas = dpixGetData(dpixs);
+    datad = dpixGetData(dpixd);
+    wpls = dpixGetWpl(dpixs);
+    wpld = dpixGetWpl(dpixd);
+    fract = (l_float64 *)CALLOC(factor, sizeof(l_float64));
+    for (i = 0; i < factor; i++)
+        fract[i] = i / (l_float64)factor;
+    for (i = 0; i < hs - 1; i++) {
+        lines = datas + i * wpls;
+        for (j = 0; j < ws - 1; j++) {
+            val0 = lines[j];
+            val1 = lines[j + 1];
+            val2 = lines[wpls + j];
+            val3 = lines[wpls + j + 1];
+            for (k = 0; k < factor; k++) {  /* rows of sub-block */
+                lined = datad + (i * factor + k) * wpld;
+                for (m = 0; m < factor; m++) {  /* cols of sub-block */
+                     lined[j * factor + m] =
+                            val0 * (1.0 - fract[m]) * (1.0 - fract[k]) +
+                            val1 * fract[m] * (1.0 - fract[k]) +
+                            val2 * (1.0 - fract[m]) * fract[k] +
+                            val3 * fract[m] * fract[k];
+                }
+            }
+        }
+    }
+
+        /* Do the right-most column of dpixd, skipping LR corner */
+    for (i = 0; i < hs - 1; i++) {
+        lines = datas + i * wpls;
+        val0 = lines[ws - 1];
+        val1 = lines[wpls + ws - 1];
+        for (k = 0; k < factor; k++) {
+            lined = datad + (i * factor + k) * wpld;
+            lined[wd - 1] = val0 * (1.0 - fract[k]) + val1 * fract[k];
+        }
+    }
+
+        /* Do the bottom-most row of dpixd */
+    lines = datas + (hs - 1) * wpls;
+    lined = datad + (hd - 1) * wpld;
+    for (j = 0; j < ws - 1; j++) {
+        val0 = lines[j];
+        val1 = lines[j + 1];
+        for (m = 0; m < factor; m++)
+            lined[j * factor + m] = val0 * (1.0 - fract[m]) + val1 * fract[m];
+        lined[wd - 1] = lines[ws - 1];  /* LR corner */
+    }
+
+    FREE(fract);
+    return dpixd;
+}
+
+
+/*--------------------------------------------------------------------*
+ *                        Arithmetic operations                       *
+ *--------------------------------------------------------------------*/
+/*!
+ *  fpixLinearCombination()
+ *
+ *      Input:  fpixd (<optional>; this can be null, equal to fpixs1, or
+ *                     different from fpixs1)
+ *              fpixs1 (can be == to fpixd)
+ *              fpixs2
+ *      Return: fpixd always
+ *
+ *  Notes:
+ *      (1) Computes pixelwise linear combination: a * src1 + b * src2
+ *      (2) Alignment is to UL corner.
+ *      (3) There are 3 cases.  The result can go to a new dest,
+ *          in-place to fpixs1, or to an existing input dest:
+ *          * fpixd == null:   (src1 + src2) --> new fpixd
+ *          * fpixd == fpixs1:  (src1 + src2) --> src1  (in-place)
+ *          * fpixd != fpixs1: (src1 + src2) --> input fpixd
+ *      (4) fpixs2 must be different from both fpixd and fpixs1.
+ */
+FPIX *
+fpixLinearCombination(FPIX      *fpixd,
+                      FPIX      *fpixs1,
+                      FPIX      *fpixs2,
+                      l_float32  a,
+                      l_float32  b)
+{
+l_int32     i, j, ws, hs, w, h, wpls, wpld;
+l_float32  *datas, *datad, *lines, *lined;
+
+    PROCNAME("fpixLinearCombination");
+
+    if (!fpixs1)
+        return (FPIX *)ERROR_PTR("fpixs1 not defined", procName, fpixd);
+    if (!fpixs2)
+        return (FPIX *)ERROR_PTR("fpixs2 not defined", procName, fpixd);
+    if (fpixs1 == fpixs2)
+        return (FPIX *)ERROR_PTR("fpixs1 == fpixs2", procName, fpixd);
+    if (fpixs2 == fpixd)
+        return (FPIX *)ERROR_PTR("fpixs2 == fpixd", procName, fpixd);
+
+    if (fpixs1 != fpixd)
+        fpixd = fpixCopy(fpixd, fpixs1);
+
+    datas = fpixGetData(fpixs2);
+    datad = fpixGetData(fpixd);
+    wpls = fpixGetWpl(fpixs2);
+    wpld = fpixGetWpl(fpixd);
+    fpixGetDimensions(fpixs2, &ws, &hs);
+    fpixGetDimensions(fpixd, &w, &h);
+    w = L_MIN(ws, w);
+    h = L_MIN(hs, h);
+    for (i = 0; i < h; i++) {
+        lines = datas + i * wpls;
+        lined = datad + i * wpld;
+        for (j = 0; j < w; j++)
+            lined[j] = a * lined[j] + b * lines[j];
+    }
+
+    return fpixd;
+}
+
+
+/*!
+ *  fpixAddMultConstant()
+ *
+ *      Input:  fpix
+ *              addc  (use 0.0 to skip the operation)
+ *              multc (use 1.0 to skip the operation)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This is an in-place operation.
+ *      (2) It can be used to multiply each pixel by a constant,
+ *          and also to add a constant to each pixel.  Multiplication
+ *          is done first.
+ */
+l_int32
+fpixAddMultConstant(FPIX      *fpix,
+                    l_float32  addc,
+                    l_float32  multc)
+{
+l_int32     i, j, w, h, wpl;
+l_float32  *line, *data;
+
+    PROCNAME("fpixAddMultConstant");
+
+    if (!fpix)
+        return ERROR_INT("fpix not defined", procName, 1);
+
+    if (addc == 0.0 && multc == 1.0)
+        return 0;
+
+    fpixGetDimensions(fpix, &w, &h);
+    data = fpixGetData(fpix);
+    wpl = fpixGetWpl(fpix);
+    for (i = 0; i < h; i++) {
+        line = data + i * wpl;
+        if (addc == 0.0) {
+            for (j = 0; j < w; j++)
+                line[j] *= multc;
+        }
+        else if (multc == 1.0) {
+            for (j = 0; j < w; j++)
+                line[j] += addc;
+        }
+        else  {
+            for (j = 0; j < w; j++) {
+                line[j] = multc * line[j] + addc;
+            }
+        }
+    }
+
+    return 0;
+}
+
+
+/*!
+ *  dpixLinearCombination()
+ *
+ *      Input:  dpixd (<optional>; this can be null, equal to dpixs1, or
+ *                     different from dpixs1)
+ *              dpixs1 (can be == to dpixd)
+ *              dpixs2
+ *      Return: dpixd always
+ *
+ *  Notes:
+ *      (1) Computes pixelwise linear combination: a * src1 + b * src2
+ *      (2) Alignment is to UL corner.
+ *      (3) There are 3 cases.  The result can go to a new dest,
+ *          in-place to dpixs1, or to an existing input dest:
+ *          * dpixd == null:   (src1 + src2) --> new dpixd
+ *          * dpixd == dpixs1:  (src1 + src2) --> src1  (in-place)
+ *          * dpixd != dpixs1: (src1 + src2) --> input dpixd
+ *      (4) dpixs2 must be different from both dpixd and dpixs1.
+ */
+DPIX *
+dpixLinearCombination(DPIX      *dpixd,
+                      DPIX      *dpixs1,
+                      DPIX      *dpixs2,
+                      l_float32  a,
+                      l_float32  b)
+{
+l_int32     i, j, ws, hs, w, h, wpls, wpld;
+l_float64  *datas, *datad, *lines, *lined;
+
+    PROCNAME("dpixLinearCombination");
+
+    if (!dpixs1)
+        return (DPIX *)ERROR_PTR("dpixs1 not defined", procName, dpixd);
+    if (!dpixs2)
+        return (DPIX *)ERROR_PTR("dpixs2 not defined", procName, dpixd);
+    if (dpixs1 == dpixs2)
+        return (DPIX *)ERROR_PTR("dpixs1 == dpixs2", procName, dpixd);
+    if (dpixs2 == dpixd)
+        return (DPIX *)ERROR_PTR("dpixs2 == dpixd", procName, dpixd);
+
+    if (dpixs1 != dpixd)
+        dpixd = dpixCopy(dpixd, dpixs1);
+
+    datas = dpixGetData(dpixs2);
+    datad = dpixGetData(dpixd);
+    wpls = dpixGetWpl(dpixs2);
+    wpld = dpixGetWpl(dpixd);
+    dpixGetDimensions(dpixs2, &ws, &hs);
+    dpixGetDimensions(dpixd, &w, &h);
+    w = L_MIN(ws, w);
+    h = L_MIN(hs, h);
+    for (i = 0; i < h; i++) {
+        lines = datas + i * wpls;
+        lined = datad + i * wpld;
+        for (j = 0; j < w; j++)
+            lined[j] = a * lined[j] + b * lines[j];
+    }
+
+    return dpixd;
+}
+
+
+/*!
+ *  dpixAddMultConstant()
+ *
+ *      Input:  dpix
+ *              addc  (use 0.0 to skip the operation)
+ *              multc (use 1.0 to skip the operation)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This is an in-place operation.
+ *      (2) It can be used to multiply each pixel by a constant,
+ *          and also to add a constant to each pixel.  Multiplication
+ *          is done first.
+ */
+l_int32
+dpixAddMultConstant(DPIX      *dpix,
+                    l_float64  addc,
+                    l_float64  multc)
+{
+l_int32     i, j, w, h, wpl;
+l_float64  *line, *data;
+
+    PROCNAME("dpixAddMultConstant");
+
+    if (!dpix)
+        return ERROR_INT("dpix not defined", procName, 1);
+
+    if (addc == 0.0 && multc == 1.0)
+        return 0;
+
+    dpixGetDimensions(dpix, &w, &h);
+    data = dpixGetData(dpix);
+    wpl = dpixGetWpl(dpix);
+    for (i = 0; i < h; i++) {
+        line = data + i * wpl;
+        if (addc == 0.0) {
+            for (j = 0; j < w; j++)
+                line[j] *= multc;
+        }
+        else if (multc == 1.0) {
+            for (j = 0; j < w; j++)
+                line[j] += addc;
+        }
+        else  {
+            for (j = 0; j < w; j++) {
+                line[j] = multc * line[j] + addc;
+            }
+        }
+    }
+
+    return 0;
+}
+
+
+/*--------------------------------------------------------------------*
+ *                              Set all                               *
+ *--------------------------------------------------------------------*/
+/*!
+ *  fpixSetAllArbitrary()
+ *
+ *      Input:  fpix
+ *              val (to set at each pixel)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+fpixSetAllArbitrary(FPIX      *fpix,
+                    l_float32  inval)
+{
+l_int32     i, j, w, h;
+l_float32  *data, *line;
+
+    PROCNAME("fpixSetAllArbitrary");
+
+    if (!fpix)
+        return ERROR_INT("fpix not defined", procName, 1);
+
+    fpixGetDimensions(fpix, &w, &h);
+    data = fpixGetData(fpix);
+    for (i = 0; i < h; i++) {
+        line = data + i * w;
+        for (j = 0; j < w; j++)
+            *(line + j) = inval;
+    }
+
+    return 0;
+}
+
+
+/*!
+ *  dpixSetAllArbitrary()
+ *
+ *      Input:  dpix
+ *              val (to set at each pixel)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+dpixSetAllArbitrary(DPIX      *dpix,
+                    l_float64  inval)
+{
+l_int32     i, j, w, h;
+l_float64  *data, *line;
+
+    PROCNAME("dpixSetAllArbitrary");
+
+    if (!dpix)
+        return ERROR_INT("dpix not defined", procName, 1);
+
+    dpixGetDimensions(dpix, &w, &h);
+    data = dpixGetData(dpix);
+    for (i = 0; i < h; i++) {
+        line = data + i * w;
+        for (j = 0; j < w; j++)
+            *(line + j) = inval;
+    }
+
     return 0;
 }
 
@@ -644,6 +1470,121 @@ FPIX    *fpixd;
 }
 
 
+/*!
+ *  fpixAddContinuedBorder()
+ *
+ *      Input:  fpixs
+ *              left, right, top, bot (pixels on each side to be added)
+ *      Return: fpixd, or null on error
+ *
+ *  Notes:
+ *      (1) This adds pixels on each side whose values are equal to
+ *          the value on the closest boundary pixel.
+ */
+FPIX *
+fpixAddContinuedBorder(FPIX    *fpixs,
+                       l_int32  left,
+                       l_int32  right,
+                       l_int32  top,
+                       l_int32  bot)
+{
+l_int32  i, j, w, h;
+FPIX    *fpixd;
+
+    PROCNAME("fpixAddContinuedBorder");
+
+    if (!fpixs)
+        return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+
+    fpixd = fpixAddBorder(fpixs, left, right, top, bot);
+    fpixGetDimensions(fpixs, &w, &h);
+    for (j = 0; j < left; j++)
+        fpixRasterop(fpixd, j, top, 1, h, fpixd, left, top);
+    for (j = 0; j < right; j++)
+        fpixRasterop(fpixd, left + w + j, top, 1, h, fpixd, left + w - 1, top);
+    for (i = 0; i < top; i++)
+        fpixRasterop(fpixd, 0, i, left + w + right, 1, fpixd, 0, top);
+    for (i = 0; i < bot; i++)
+        fpixRasterop(fpixd, 0, top + h + i, left + w + right, 1,
+                     fpixd, 0, top + h - 1);
+
+    return fpixd;
+}
+
+
+/*!
+ *  fpixAddSlopeBorder()
+ *
+ *      Input:  fpixs
+ *              left, right, top, bot (pixels on each side to be added)
+ *      Return: fpixd, or null on error
+ *
+ *  Notes:
+ *      (1) This adds pixels on each side whose values have a normal
+ *          derivative equal to the normal derivative at the boundary
+ *          of fpixs.
+ */
+FPIX *
+fpixAddSlopeBorder(FPIX    *fpixs,
+                   l_int32  left,
+                   l_int32  right,
+                   l_int32  top,
+                   l_int32  bot)
+{
+l_int32    i, j, w, h, fullw, fullh;
+l_float32  val1, val2, del;
+FPIX      *fpixd;
+
+    PROCNAME("fpixAddSlopeBorder");
+
+    if (!fpixs)
+        return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+
+    fpixd = fpixAddBorder(fpixs, left, right, top, bot);
+    fpixGetDimensions(fpixs, &w, &h);
+
+        /* Left */
+    for (i = top; i < top + h; i++) {
+        fpixGetPixel(fpixd, left, i, &val1);
+        fpixGetPixel(fpixd, left + 1, i, &val2);
+        del = val1 - val2;
+        for (j = 0; j < left; j++)
+            fpixSetPixel(fpixd, j, i, val1 + del * (left - j));
+    }
+
+        /* Right */
+    fullw = left + w + right;
+    for (i = top; i < top + h; i++) {
+        fpixGetPixel(fpixd, left + w - 1, i, &val1);
+        fpixGetPixel(fpixd, left + w - 2, i, &val2);
+        del = val1 - val2;
+        for (j = left + w; j < fullw; j++)
+            fpixSetPixel(fpixd, j, i, val1 + del * (j - left - w + 1));
+    }
+
+        /* Top */
+    for (j = 0; j < fullw; j++) {
+        fpixGetPixel(fpixd, j, top, &val1);
+        fpixGetPixel(fpixd, j, top + 1, &val2);
+        del = val1 - val2;
+        for (i = 0; i < top; i++)
+            fpixSetPixel(fpixd, j, i, val1 + del * (top - i));
+    }
+
+        /* Bottom */
+    fullh = top + h + bot;
+    for (j = 0; j < fullw; j++) {
+        fpixGetPixel(fpixd, j, top + h - 1, &val1);
+        fpixGetPixel(fpixd, j, top + h - 2, &val2);
+        del = val1 - val2;
+        for (i = top + h; i < fullh; i++)
+            fpixSetPixel(fpixd, j, i, val1 + del * (i - top - h + 1));
+    }
+
+    return fpixd;
+}
+
+
 /*--------------------------------------------------------------------*
  *                          Simple rasterop                           *
  *--------------------------------------------------------------------*/
@@ -761,269 +1702,120 @@ l_float32  *datas, *datad, *lines, *lined;
 
 
 /*--------------------------------------------------------------------*
- *                       Special integer scaling                      *
+ *            Affine and projective interpolated transforms           *
  *--------------------------------------------------------------------*/
 /*!
- *  fpixScaleByInteger()
+ *  fpixAffinePta()
  *
- *      Input:  fpixs (low resolution, subsampled)
- *              factor (scaling factor)
- *      Return: fpixd (interpolated result), or null on error
+ *      Input:  fpixs (8 bpp)
+ *              ptad  (4 pts of final coordinate space)
+ *              ptas  (4 pts of initial coordinate space)
+ *              border (size of extension with constant normal derivative)
+ *              inval (value brought in; typ. 0)
+ *      Return: fpixd, or null on error
  *
  *  Notes:
- *      (1) The width wd of fpixd is related to ws of fpixs by:
- *              wd = factor * (ws - 1) + 1   (and ditto for the height)
- *          We avoid special-casing boundary pixels in the interpolation
- *          by constructing fpixd by inserting (factor - 1) interpolated
- *          pixels between each pixel in fpixs.  Then
- *               wd = ws + (ws - 1) * (factor - 1)    (same as above)
- *          This also has the advantage that if we subsample by @factor,
- *          throwing out all the interpolated pixels, we regain the
- *          original low resolution fpix.
+ *      (1) If @border > 0, all four sides are extended by that distance,
+ *          and removed after the transformation is finished.  Pixels
+ *          that would be brought in to the trimmed result from outside
+ *          the extended region are assigned @inval.  The purpose of
+ *          extending the image is to avoid such assignments.
+ *      (2) On the other hand, you may want to give all pixels that
+ *          are brought in from outside fpixs a specific value.  In that
+ *          case, set @border == 0.
  */
 FPIX *
-fpixScaleByInteger(FPIX    *fpixs,
-                   l_int32  factor)
+fpixAffinePta(FPIX      *fpixs,
+              PTA       *ptad,
+              PTA       *ptas,
+              l_int32    border,
+              l_float32  inval)
 {
-l_int32     i, j, k, m, ws, hs, wd, hd, wpls, wpld;
-l_float32   val0, val1, val2, val3;
-l_float32  *datas, *datad, *lines, *lined, *fract;
-FPIX       *fpixd;
+l_float32  *vc;
+PTA        *ptas2, *ptad2;
+FPIX       *fpixs2, *fpixd, *fpixd2;
 
-    PROCNAME("fpixScaleByInteger");
+    PROCNAME("fpixAffinePta");
 
     if (!fpixs)
         return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+    if (!ptas)
+        return (FPIX *)ERROR_PTR("ptas not defined", procName, NULL);
+    if (!ptad)
+        return (FPIX *)ERROR_PTR("ptad not defined", procName, NULL);
 
-    fpixGetDimensions(fpixs, &ws, &hs);
-    wd = factor * (ws - 1) + 1;
-    hd = factor * (hs - 1) + 1;
-    fpixd = fpixCreate(wd, hd);
-    datas = fpixGetData(fpixs);
-    datad = fpixGetData(fpixd);
-    wpls = fpixGetWpl(fpixs);
-    wpld = fpixGetWpl(fpixd);
-    fract = (l_float32 *)CALLOC(factor, sizeof(l_float32));
-    for (i = 0; i < factor; i++)
-        fract[i] = i / (l_float32)factor;
-    for (i = 0; i < hs - 1; i++) {
-        lines = datas + i * wpls;
-        for (j = 0; j < ws - 1; j++) {
-            val0 = lines[j];
-            val1 = lines[j + 1];
-            val2 = lines[wpls + j];
-            val3 = lines[wpls + j + 1];
-            for (k = 0; k < factor; k++) {  /* rows of sub-block */
-                lined = datad + (i * factor + k) * wpld;
-                for (m = 0; m < factor; m++) {  /* cols of sub-block */
-                     *(lined + j * factor + m) =
-                            val0 * (1.0 - fract[m]) * (1.0 - fract[k]) +
-                            val1 * fract[m] * (1.0 - fract[k]) +
-                            val2 * (1.0 - fract[m]) * fract[k] +
-                            val3 * fract[m] * fract[k];
-                }
-            }
-        }
+        /* If a border is to be added, also translate the ptas */
+    if (border > 0) {
+        ptas2 = ptaTransform(ptas, border, border, 1.0, 1.0);
+        ptad2 = ptaTransform(ptad, border, border, 1.0, 1.0);
+        fpixs2 = fpixAddSlopeBorder(fpixs, border, border, border, border);
+    }
+    else {
+        ptas2 = ptaClone(ptas);
+        ptad2 = ptaClone(ptad);
+        fpixs2 = fpixClone(fpixs);
     }
 
-        /* Do the right-most column of fpixd, skipping LR corner */
-    for (i = 0; i < hs - 1; i++) {
-        lines = datas + i * wpls;
-        val0 = lines[ws - 1];
-        val1 = lines[wpls + ws - 1];
-        for (k = 0; k < factor; k++) {
-            lined = datad + (i * factor + k) * wpld;
-            lined[wd - 1] = val0 * (1.0 - fract[k]) + val1 * fract[k];
-        }
-    }
+        /* Get backwards transform from dest to src, and apply it */
+    getAffineXformCoeffs(ptad2, ptas2, &vc);
+    fpixd2 = fpixAffine(fpixs2, vc, inval);
+    fpixDestroy(&fpixs2);
+    ptaDestroy(&ptas2);
+    ptaDestroy(&ptad2);
+    FREE(vc);
 
-        /* Do the bottom-most row of fpixd */
-    lines = datas + (hs - 1) * wpls;
-    lined = datad + (hd - 1) * wpld;
-    for (j = 0; j < ws - 1; j++) {
-        val0 = lines[j];
-        val1 = lines[j + 1];
-        for (m = 0; m < factor; m++)
-            lined[j * factor + m] = val0 * (1.0 - fract[m]) + val1 * fract[m];
-        lined[wd - 1] = lines[ws - 1];  /* LR corner */
-    }
+    if (border == 0)
+        return fpixd2;
 
-    FREE(fract);
+        /* Remove the added border */
+    fpixd = fpixRemoveBorder(fpixd2, border, border, border, border);
+    fpixDestroy(&fpixd2);
     return fpixd;
 }
 
 
 /*!
- *  dpixScaleByInteger()
+ *  fpixAffine()
  *
- *      Input:  dpixs (low resolution, subsampled)
- *              factor (scaling factor)
- *      Return: dpixd (interpolated result), or null on error
- *
- *  Notes:
- *      (1) The width wd of dpixd is related to ws of dpixs by:
- *              wd = factor * (ws - 1) + 1   (and ditto for the height)
- *          We avoid special-casing boundary pixels in the interpolation
- *          by constructing fpixd by inserting (factor - 1) interpolated
- *          pixels between each pixel in fpixs.  Then
- *               wd = ws + (ws - 1) * (factor - 1)    (same as above)
- *          This also has the advantage that if we subsample by @factor,
- *          throwing out all the interpolated pixels, we regain the
- *          original low resolution dpix.
- */
-DPIX *
-dpixScaleByInteger(DPIX    *dpixs,
-                   l_int32  factor)
-{
-l_int32     i, j, k, m, ws, hs, wd, hd, wpls, wpld;
-l_float64   val0, val1, val2, val3;
-l_float64  *datas, *datad, *lines, *lined, *fract;
-DPIX       *dpixd;
-
-    PROCNAME("dpixScaleByInteger");
-
-    if (!dpixs)
-        return (DPIX *)ERROR_PTR("dpixs not defined", procName, NULL);
-
-    dpixGetDimensions(dpixs, &ws, &hs);
-    wd = factor * (ws - 1) + 1;
-    hd = factor * (hs - 1) + 1;
-    dpixd = dpixCreate(wd, hd);
-    datas = dpixGetData(dpixs);
-    datad = dpixGetData(dpixd);
-    wpls = dpixGetWpl(dpixs);
-    wpld = dpixGetWpl(dpixd);
-    fract = (l_float64 *)CALLOC(factor, sizeof(l_float64));
-    for (i = 0; i < factor; i++)
-        fract[i] = i / (l_float64)factor;
-    for (i = 0; i < hs - 1; i++) {
-        lines = datas + i * wpls;
-        for (j = 0; j < ws - 1; j++) {
-            val0 = lines[j];
-            val1 = lines[j + 1];
-            val2 = lines[wpls + j];
-            val3 = lines[wpls + j + 1];
-            for (k = 0; k < factor; k++) {  /* rows of sub-block */
-                lined = datad + (i * factor + k) * wpld;
-                for (m = 0; m < factor; m++) {  /* cols of sub-block */
-                     *(lined + j * factor + m) =
-                            val0 * (1.0 - fract[m]) * (1.0 - fract[k]) +
-                            val1 * fract[m] * (1.0 - fract[k]) +
-                            val2 * (1.0 - fract[m]) * fract[k] +
-                            val3 * fract[m] * fract[k];
-                }
-            }
-        }
-    }
-
-        /* Do the right-most column of dpixd, skipping LR corner */
-    for (i = 0; i < hs - 1; i++) {
-        lines = datas + i * wpls;
-        val0 = lines[ws - 1];
-        val1 = lines[wpls + ws - 1];
-        for (k = 0; k < factor; k++) {
-            lined = datad + (i * factor + k) * wpld;
-            lined[wd - 1] = val0 * (1.0 - fract[k]) + val1 * fract[k];
-        }
-    }
-
-        /* Do the bottom-most row of dpixd */
-    lines = datas + (hs - 1) * wpls;
-    lined = datad + (hd - 1) * wpld;
-    for (j = 0; j < ws - 1; j++) {
-        val0 = lines[j];
-        val1 = lines[j + 1];
-        for (m = 0; m < factor; m++)
-            lined[j * factor + m] = val0 * (1.0 - fract[m]) + val1 * fract[m];
-        lined[wd - 1] = lines[ws - 1];  /* LR corner */
-    }
-
-    FREE(fract);
-    return dpixd;
-}
-
-
-/*--------------------------------------------------------------------*
- *                        Arithmetic operations                       *
- *--------------------------------------------------------------------*/
-/*!
- *  fpixLinearCombo()
- *
- *      Input:  fpixd (<optional>; this can be null, equal to fpixs1, or
- *                     different from fpixs1)
- *              fpixs1 (can be == to fpixd)
- *              fpixs2
- *      Return: pixd always
- *
- *  Notes:
- *      (1) Computes pixelwise linear combination: a * src1 + b * src2
- *      (2) Alignment is to UL corner.
- *      (3) There are 3 cases.  The result can go to a new dest,
- *          in-place to fpixs1, or to an existing input dest:
- *          * fpixd == null:   (src1 + src2) --> new fpixd
- *          * fpixd == fpixs1:  (src1 + src2) --> src1  (in-place)
- *          * fpixd != fpixs1: (src1 + src2) --> input fpixd
- *      (4) fpixs2 must be different from both fpixd and fpixs1.
+ *      Input:  fpixs (8 bpp)
+ *              vc  (vector of 8 coefficients for projective transformation)
+ *              inval (value brought in; typ. 0)
+ *      Return: fpixd, or null on error
  */
 FPIX *
-fpixLinearCombination(FPIX      *fpixd,
-                      FPIX      *fpixs1,
-                      FPIX      *fpixs2,
-                      l_float32  a,
-                      l_float32  b)
+fpixAffine(FPIX       *fpixs,
+           l_float32  *vc,
+           l_float32   inval)
 {
-l_int32     i, j, ws, hs, w, h, wpls, wpld;
+l_int32     i, j, w, h, wpls, wpld;
 l_float32   val;
-l_float32  *datas, *datad, *lines, *lined;
+l_float32  *datas, *datad, *lined;
+l_float32   x, y;
+FPIX       *fpixd;
 
-    PROCNAME("fpixLinearCombination");
+    PROCNAME("fpixAffine");
 
-    if (!fpixs1)
-        return (FPIX *)ERROR_PTR("fpixs1 not defined", procName, fpixd);
-    if (!fpixs2)
-        return (FPIX *)ERROR_PTR("fpixs2 not defined", procName, fpixd);
-    if (fpixs1 == fpixs2)
-        return (FPIX *)ERROR_PTR("fpixs1 == fpixs2", procName, fpixd);
-    if (fpixs2 == fpixd)
-        return (FPIX *)ERROR_PTR("fpixs2 == fpixd", procName, fpixd);
+    if (!fpixs)
+        return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+    fpixGetDimensions(fpixs, &w, &h);
+    if (!vc)
+        return (FPIX *)ERROR_PTR("vc not defined", procName, NULL);
 
-    if (fpixs1 != fpixd)
-        fpixd = fpixCopy(fpixd, fpixs1);
-
-    datas = fpixGetData(fpixs2);
+    datas = fpixGetData(fpixs);
+    wpls = fpixGetWpl(fpixs);
+    fpixd = fpixCreateTemplate(fpixs);
+    fpixSetAllArbitrary(fpixd, inval);
     datad = fpixGetData(fpixd);
-    wpls = fpixGetWpl(fpixs2);
     wpld = fpixGetWpl(fpixd);
-    fpixGetDimensions(fpixs2, &ws, &hs);
-    fpixGetDimensions(fpixd, &w, &h);
-    w = L_MIN(ws, w);
-    h = L_MIN(hs, h);
+
+        /* Iterate over destination pixels */
     for (i = 0; i < h; i++) {
-        lines = datas + i * wpls;
         lined = datad + i * wpld;
-        if (a == 1.0 && b == 1.0) {  /* sum */
-            for (j = 0; j < w; j++)
-                *(lined + j) += *(lines + j);
-        }
-        else if (a == 1.0 && b == -1.0) {  /* diff */
-            for (j = 0; j < w; j++)
-                *(lined + j) -= *(lines + j);
-        }
-        else if (a == -1.0 && b == 1.0) {  /* diff */
-            for (j = 0; j < w; j++) {
-                val = *(lined + j);
-                *(lined + j) = -val + *(lines + j);
-            }
-        }
-        else if (a == -1.0 && b == -1.0) {
-            for (j = 0; j < w; j++) {
-                val = *(lined + j);
-                *(lined + j) = -val - *(lines + j);
-            }
-        }
-        else {
-            for (j = 0; j < w; j++)
-                *(lined + j) = a * lined[j] + b * lines[j];
+        for (j = 0; j < w; j++) {
+                /* Compute float src pixel location corresponding to (i,j) */
+            affineXformPt(vc, j, i, &x, &y);
+            linearInterpolatePixelFloat(datas, w, h, x, y, inval, &val);
+            *(lined + j) = val;
         }
     }
 
@@ -1032,57 +1824,184 @@ l_float32  *datas, *datad, *lines, *lined;
 
 
 /*!
- *  fpixAddMultConstant()
+ *  fpixProjectivePta()
  *
- *      Input:  fpix
- *              addc  (use 0.0 to skip the operation)
- *              multc (use 1.0 to skip the operation)
+ *      Input:  fpixs (8 bpp)
+ *              ptad  (4 pts of final coordinate space)
+ *              ptas  (4 pts of initial coordinate space)
+ *              border (size of extension with constant normal derivative)
+ *              inval (value brought in; typ. 0)
+ *      Return: fpixd, or null on error
+ *
+ *  Notes:
+ *      (1) If @border > 0, all four sides are extended by that distance,
+ *          and removed after the transformation is finished.  Pixels
+ *          that would be brought in to the trimmed result from outside
+ *          the extended region are assigned @inval.  The purpose of
+ *          extending the image is to avoid such assignments.
+ *      (2) On the other hand, you may want to give all pixels that
+ *          are brought in from outside fpixs a specific value.  In that
+ *          case, set @border == 0.
+ */
+FPIX *
+fpixProjectivePta(FPIX      *fpixs,
+                  PTA       *ptad,
+                  PTA       *ptas,
+                  l_int32    border,
+                  l_float32  inval)
+{
+l_float32  *vc;
+PTA        *ptas2, *ptad2;
+FPIX       *fpixs2, *fpixd, *fpixd2;
+
+    PROCNAME("fpixProjectivePta");
+
+    if (!fpixs)
+        return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+    if (!ptas)
+        return (FPIX *)ERROR_PTR("ptas not defined", procName, NULL);
+    if (!ptad)
+        return (FPIX *)ERROR_PTR("ptad not defined", procName, NULL);
+
+        /* If a border is to be added, also translate the ptas */
+    if (border > 0) {
+        ptas2 = ptaTransform(ptas, border, border, 1.0, 1.0);
+        ptad2 = ptaTransform(ptad, border, border, 1.0, 1.0);
+        fpixs2 = fpixAddSlopeBorder(fpixs, border, border, border, border);
+    }
+    else {
+        ptas2 = ptaClone(ptas);
+        ptad2 = ptaClone(ptad);
+        fpixs2 = fpixClone(fpixs);
+    }
+
+        /* Get backwards transform from dest to src, and apply it */
+    getProjectiveXformCoeffs(ptad2, ptas2, &vc);
+    fpixd2 = fpixProjective(fpixs2, vc, inval);
+    fpixDestroy(&fpixs2);
+    ptaDestroy(&ptas2);
+    ptaDestroy(&ptad2);
+    FREE(vc);
+
+    if (border == 0)
+        return fpixd2;
+
+        /* Remove the added border */
+    fpixd = fpixRemoveBorder(fpixd2, border, border, border, border);
+    fpixDestroy(&fpixd2);
+    return fpixd;
+}
+
+
+/*!
+ *  fpixProjective()
+ *
+ *      Input:  fpixs (8 bpp)
+ *              vc  (vector of 8 coefficients for projective transformation)
+ *              inval (value brought in; typ. 0)
+ *      Return: fpixd, or null on error
+ */
+FPIX *
+fpixProjective(FPIX       *fpixs,
+               l_float32  *vc,
+               l_float32   inval)
+{
+l_int32     i, j, w, h, wpls, wpld;
+l_float32   val;
+l_float32  *datas, *datad, *lined;
+l_float32   x, y;
+FPIX       *fpixd;
+
+    PROCNAME("fpixProjective");
+
+    if (!fpixs)
+        return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+    fpixGetDimensions(fpixs, &w, &h);
+    if (!vc)
+        return (FPIX *)ERROR_PTR("vc not defined", procName, NULL);
+
+    datas = fpixGetData(fpixs);
+    wpls = fpixGetWpl(fpixs);
+    fpixd = fpixCreateTemplate(fpixs);
+    fpixSetAllArbitrary(fpixd, inval);
+    datad = fpixGetData(fpixd);
+    wpld = fpixGetWpl(fpixd);
+
+        /* Iterate over destination pixels */
+    for (i = 0; i < h; i++) {
+        lined = datad + i * wpld;
+        for (j = 0; j < w; j++) {
+                /* Compute float src pixel location corresponding to (i,j) */
+            projectiveXformPt(vc, j, i, &x, &y);
+            linearInterpolatePixelFloat(datas, w, h, x, y, inval, &val);
+            *(lined + j) = val;
+        }
+    }
+
+    return fpixd;
+}
+
+
+/*!
+ *  linearInterpolatePixelFloat()
+ *
+ *      Input:  datas (ptr to beginning of float image data)
+ *              wpls (32-bit word/line for this data array)
+ *              w, h (of image)
+ *              x, y (floating pt location for evaluation)
+ *              inval (float value brought in from the outside when the
+ *                     input x,y location is outside the image)
+ *              &val (<return> interpolated float value)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) This is an in-place operation.
- *      (2) It can be used to multiply each pixel by a constant,
- *          and also to add a constant to each pixel.  Multiplication
- *          is done first.
+ *      (1) This is a standard linear interpolation function.  It is
+ *          equivalent to area weighting on each component, and
+ *          avoids "jaggies" when rendering sharp edges.
  */
 l_int32
-fpixAddMultConstant(FPIX      *fpix,
-                    l_float32  addc,
-                    l_float32  multc)
+linearInterpolatePixelFloat(l_float32  *datas,
+                            l_int32     w,
+                            l_int32     h,
+                            l_float32   x,
+                            l_float32   y,
+                            l_float32   inval,
+                            l_float32  *pval)
 {
-l_int32     i, j, w, h, wpl;
-l_float32   val;
-l_float32  *line, *data;
+l_int32     xpm, ypm, xp, yp, xf, yf;
+l_float32   v00, v01, v10, v11;
+l_float32  *lines;
 
-    PROCNAME("fpixAddMultConstant");
+    PROCNAME("linearInterpolatePixelFloat");
 
-    if (!fpix)
-        return ERROR_INT("fpix not defined", procName, 1);
+    if (!pval)
+        return ERROR_INT("&val not defined", procName, 1);
+    *pval = inval;
+    if (!datas)
+        return ERROR_INT("datas not defined", procName, 1);
 
-    if (addc == 0.0 && multc == 1.0)
+        /* Skip if off the edge */
+    if (x < 0.0 || y < 0.0 || x > w - 2.0 || y > h - 2.0)
         return 0;
 
-    fpixGetDimensions(fpix, &w, &h);
-    data = fpixGetData(fpix);
-    wpl = fpixGetWpl(fpix);
-    for (i = 0; i < h; i++) {
-        line = data + i * wpl;
-        if (addc == 0.0) {
-            for (j = 0; j < w; j++)
-                *(line + j) *= multc;
-        }
-        else if (multc == 1.0) {
-            for (j = 0; j < w; j++)
-                *(line + j) += addc;
-        }
-        else  {
-            for (j = 0; j < w; j++) {
-                val = *(line + j);
-                *(line + j) = multc * val + addc;
-            }
-        }
-    }
+    xpm = (l_int32)(16.0 * x + 0.5);
+    ypm = (l_int32)(16.0 * y + 0.5);
+    xp = xpm >> 4;
+    yp = ypm >> 4;
+    xf = xpm & 0x0f;
+    yf = ypm & 0x0f;
 
+#if  DEBUG
+    if (xf < 0 || yf < 0)
+        fprintf(stderr, "xp = %d, yp = %d, xf = %d, yf = %d\n", xp, yp, xf, yf);
+#endif  /* DEBUG */
+
+        /* Interpolate by area weighting. */
+    lines = datas + yp * w;
+    v00 = (16.0 - xf) * (16.0 - yf) * (*(lines + xp));
+    v10 = xf * (16.0 - yf) * (*(lines + xp + 1));
+    v01 = (16.0 - xf) * yf * (*(lines + w + xp));
+    v11 = xf * yf * (*(lines + w + xp + 1));
+    *pval = (v00 + v01 + v10 + v11) / 256.0;
     return 0;
 }
-

@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -218,7 +229,7 @@ l_int32    i, j;
         /* determine the direction of flow from the shift
          * If the shift >= 0, data flows downard from src
          * to dest, starting at the bottom and working up.
-         * If shift < 0, data flows upward from src to 
+         * If shift < 0, data flows upward from src to
          * dest, starting at the top and working down. */
     dirwpl = (shift >= 0) ? -wpl : wpl;
     absshift = L_ABS(shift);
@@ -274,7 +285,7 @@ l_int32    i, j;
             *pdlwpart = COMBINE_PARTIAL(*pdlwpart, 0x0, lwmask);
             pdlwpart += dirwpl;
         }
-    } 
+    }
 
     return;
 }
@@ -284,7 +295,7 @@ l_int32    i, j;
 /*--------------------------------------------------------------------*
  *                 Low-level Horizontal In-place Rasterop             *
  *--------------------------------------------------------------------*/
-/*! 
+/*!
  *  rasteropHipLow()
  *
  *      Input:  data   (ptr to image data)
@@ -299,7 +310,7 @@ l_int32    i, j;
  *  Notes:
  *      (1) This clears the pixels that are left exposed after the rasterop.
  *          Therefore, for Pix with depth > 1, these pixels become black,
- *          and must be subsequently SET if they are to be white.  
+ *          and must be subsequently SET if they are to be white.
  *          For example, see pixRasteropHip().
  *      (2) This function performs clipping and calls shiftDataHorizontalLine()
  *          to do the in-place rasterop on each line.
@@ -429,4 +440,3 @@ l_uint32  *lined, *lines;
 
     return;
 }
-

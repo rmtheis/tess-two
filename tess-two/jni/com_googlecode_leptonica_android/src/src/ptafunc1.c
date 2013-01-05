@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 
@@ -21,8 +32,11 @@
  *           PTA      *ptaSubsample()
  *           l_int32   ptaJoin()
  *           PTA      *ptaReverse()
+ *           PTA      *ptaTranspose()
  *           PTA      *ptaCyclicPerm()
  *           PTA      *ptaSort()
+ *           l_int32   ptaGetSortIndex()
+ *           PTA      *ptaSortByIndex()
  *           PTA      *ptaRemoveDuplicates()
  *           PTAA     *ptaaSortByIndex()
  *
@@ -40,6 +54,8 @@
  *           l_int32   ptaGetQuadraticLSF()
  *           l_int32   ptaGetCubicLSF()
  *           l_int32   ptaGetQuarticLSF()
+ *           l_int32   ptaNoisyLinearLSF()
+ *           l_int32   ptaNoisyQuadraticLSF()
  *           l_int32   applyLinearFit()
  *           l_int32   applyQuadraticFit()
  *           l_int32   applyCubicFit()
@@ -54,6 +70,9 @@
  *
  *      Display Pta and Ptaa
  *           PIX      *pixDisplayPta()
+ *           PIX      *pixDisplayPtaaPattern()
+ *           PIX      *pixDisplayPtaPattern()
+ *           PTA      *ptaReplicatePattern()
  *           PIX      *pixDisplayPtaa()
  */
 
@@ -188,6 +207,36 @@ PTA       *ptad;
 
 
 /*!
+ *  ptaTranspose()
+ *
+ *      Input:  ptas
+ *      Return: ptad (with x and y values swapped), or null on error
+ */
+PTA  *
+ptaTranspose(PTA  *ptas)
+{
+l_int32    n, i;
+l_float32  x, y;
+PTA       *ptad;
+
+    PROCNAME("ptaTranspose");
+
+    if (!ptas)
+        return (PTA *)ERROR_PTR("ptas not defined", procName, NULL);
+
+    n = ptaGetCount(ptas);
+    if ((ptad = ptaCreate(n)) == NULL)
+        return (PTA *)ERROR_PTR("ptad not made", procName, NULL);
+    for (i = 0; i < n; i++) {
+        ptaGetPt(ptas, i, &x, &y);
+        ptaAddPt(ptad, y, x);
+    }
+
+    return ptad;
+}
+
+
+/*!
  *  ptaCyclicPerm()
  *
  *      Input:  ptas
@@ -265,13 +314,12 @@ ptaSort(PTA     *ptas,
         l_int32  sortorder,
         NUMA   **pnaindex)
 {
-l_int32    i, index, n;
-l_float32  x, y;
-PTA       *ptad;
-NUMA      *na, *naindex;
+PTA   *ptad;
+NUMA  *naindex;
 
     PROCNAME("ptaSort");
 
+    if (pnaindex) *pnaindex = NULL;
     if (!ptas)
         return (PTA *)ERROR_PTR("ptas not defined", procName, NULL);
     if (sorttype != L_SORT_BY_X && sorttype != L_SORT_BY_Y)
@@ -279,10 +327,56 @@ NUMA      *na, *naindex;
     if (sortorder != L_SORT_INCREASING && sortorder != L_SORT_DECREASING)
         return (PTA *)ERROR_PTR("invalid sort order", procName, NULL);
 
+    if (ptaGetSortIndex(ptas, sorttype, sortorder, &naindex) != 0)
+        return (PTA *)ERROR_PTR("naindex not made", procName, NULL);
+
+    ptad = ptaSortByIndex(ptas, naindex);
+    if (pnaindex)
+        *pnaindex = naindex;
+    else
+        numaDestroy(&naindex);
+    if (!ptad)
+        return (PTA *)ERROR_PTR("ptad not made", procName, NULL);
+    return ptad;
+}
+
+
+/*!
+ *  ptaGetSortIndex()
+ *
+ *      Input:  ptas
+ *              sorttype (L_SORT_BY_X, L_SORT_BY_Y)
+ *              sortorder  (L_SORT_INCREASING, L_SORT_DECREASING)
+ *              &naindex (<return> index of sorted order into
+ *                        original array)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+ptaGetSortIndex(PTA     *ptas,
+                l_int32  sorttype,
+                l_int32  sortorder,
+                NUMA   **pnaindex)
+{
+l_int32    i, n;
+l_float32  x, y;
+NUMA      *na;
+
+    PROCNAME("ptaGetSortIndex");
+
+    if (!pnaindex)
+        return ERROR_INT("&naindex not defined", procName, 1);
+    *pnaindex = NULL;
+    if (!ptas)
+        return ERROR_INT("ptas not defined", procName, 1);
+    if (sorttype != L_SORT_BY_X && sorttype != L_SORT_BY_Y)
+        return ERROR_INT("invalid sort type", procName, 1);
+    if (sortorder != L_SORT_INCREASING && sortorder != L_SORT_DECREASING)
+        return ERROR_INT("invalid sort order", procName, 1);
+
         /* Build up numa of specific data */
     n = ptaGetCount(ptas);
     if ((na = numaCreate(n)) == NULL)
-        return (PTA *)ERROR_PTR("na not made", procName, NULL);
+        return ERROR_INT("na not made", procName, 1);
     for (i = 0; i < n; i++) {
         ptaGetPt(ptas, i, &x, &y);
         if (sorttype == L_SORT_BY_X)
@@ -292,10 +386,38 @@ NUMA      *na, *naindex;
     }
 
         /* Get the sort index for data array */
-    if ((naindex = numaGetSortIndex(na, sortorder)) == NULL)
-        return (PTA *)ERROR_PTR("naindex not made", procName, NULL);
+    *pnaindex = numaGetSortIndex(na, sortorder);
+    numaDestroy(&na);
+    if (!*pnaindex)
+        return ERROR_INT("naindex not made", procName, 1);
+    return 0;
+}
+
+
+/*!
+ *  ptaSortByIndex()
+ *
+ *      Input:  ptas
+ *              naindex (na that maps from the new pta to the input pta)
+ *      Return: ptad (sorted), or null on  error
+ */
+PTA *
+ptaSortByIndex(PTA   *ptas,
+               NUMA  *naindex)
+{
+l_int32    i, index, n;
+l_float32  x, y;
+PTA       *ptad;
+
+    PROCNAME("ptaSortByIndex");
+
+    if (!ptas)
+        return (PTA *)ERROR_PTR("ptas not defined", procName, NULL);
+    if (!naindex)
+        return (PTA *)ERROR_PTR("naindex not defined", procName, NULL);
 
         /* Build up sorted pta using sort index */
+    n = numaGetCount(naindex);
     if ((ptad = ptaCreate(n)) == NULL)
         return (PTA *)ERROR_PTR("ptad not made", procName, NULL);
     for (i = 0; i < n; i++) {
@@ -304,11 +426,6 @@ NUMA      *na, *naindex;
         ptaAddPt(ptad, x, y);
     }
 
-    if (pnaindex)
-        *pnaindex = naindex;
-    else
-        numaDestroy(&naindex);
-    numaDestroy(&na);
     return ptad;
 }
 
@@ -772,7 +889,8 @@ PTA     *ptad;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) At least one of: &a and &b must not be null.
+ *      (1) Either or both &a and &b must be input.  They determine the
+ *          type of line that is fit.
  *      (2) If both &a and &b are defined, this returns a and b that minimize:
  *
  *              sum (yi - axi -b)^2
@@ -804,20 +922,20 @@ l_float32  *xa, *ya;
     PROCNAME("ptaGetLinearLSF");
 
     if (!pa && !pb)
-        return ERROR_INT("&a and/or &b not defined", procName, 1);
+        return ERROR_INT("neither &a nor &b are defined", procName, 1);
     if (pa) *pa = 0.0;
     if (pb) *pb = 0.0;
     if (pnafit) *pnafit = NULL;
     if (!pta)
         return ERROR_INT("pta not defined", procName, 1);
-
     if ((n = ptaGetCount(pta)) < 2)
-        return ERROR_INT("less than 2 pts not found", procName, 1);
+        return ERROR_INT("less than 2 pts found", procName, 1);
+
     xa = pta->x;  /* not a copy */
     ya = pta->y;  /* not a copy */
 
     sx = sy = sxx = sxy = 0.;
-    if (pa && pb) {
+    if (pa && pb) {  /* general line */
         for (i = 0; i < n; i++) {
             sx += xa[i];
             sy += ya[i];
@@ -832,7 +950,7 @@ l_float32  *xa, *ya;
         *pa = factor * ((l_float32)n * sxy - sx * sy);
         *pb = factor * (sxx * sy - sx * sxy);
     }
-    else if (pa) {  /* line through origin */
+    else if (pa) {  /* b = 0; line through origin */
         for (i = 0; i < n; i++) {
             sxx += xa[i] * xa[i];
             sxy += xa[i] * ya[i];
@@ -914,7 +1032,7 @@ NUMA       *nafit;
         return ERROR_INT("pta not defined", procName, 1);
 
     if ((n = ptaGetCount(pta)) < 3)
-        return ERROR_INT("less than 3 pts not found", procName, 1);
+        return ERROR_INT("less than 3 pts found", procName, 1);
     xa = pta->x;  /* not a copy */
     ya = pta->y;  /* not a copy */
 
@@ -1030,7 +1148,7 @@ NUMA       *nafit;
         return ERROR_INT("pta not defined", procName, 1);
 
     if ((n = ptaGetCount(pta)) < 4)
-        return ERROR_INT("less than 4 pts not found", procName, 1);
+        return ERROR_INT("less than 4 pts found", procName, 1);
     xa = pta->x;  /* not a copy */
     ya = pta->y;  /* not a copy */
 
@@ -1164,7 +1282,7 @@ NUMA       *nafit;
         return ERROR_INT("pta not defined", procName, 1);
 
     if ((n = ptaGetCount(pta)) < 5)
-        return ERROR_INT("less than 5 pts not found", procName, 1);
+        return ERROR_INT("less than 5 pts found", procName, 1);
     xa = pta->x;  /* not a copy */
     ya = pta->y;  /* not a copy */
 
@@ -1245,6 +1363,186 @@ NUMA       *nafit;
     }
 
     return 0;
+}
+
+
+/*!
+ *  ptaNoisyLinearLSF()
+ *
+ *      Input:  pta
+ *              factor (reject outliers with error greater than this
+ *                      number of medians; typically ~ 3)
+ *              &ptad (<optional return> with outliers removed)
+ *              &a  (<optional return> slope a of least square fit: y = ax + b)
+ *              &b  (<optional return> intercept b of least square fit)
+ *              &mederr (<optional return> median error)
+ *              &nafit (<optional return> numa of least square fit to ptad)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This does a linear least square fit to the set of points
+ *          in @pta.  It then evaluates the errors and removes points
+ *          whose error is >= factor * median_error.  It then re-runs
+ *          the linear LSF on the resulting points.
+ *      (2) Either or both &a and &b must be input.  They determine the
+ *          type of line that is fit.
+ *      (3) The median error can give an indication of how good the fit
+ *          is likely to be.
+ */
+l_int32
+ptaNoisyLinearLSF(PTA        *pta,
+                  l_float32   factor,
+                  PTA       **pptad,
+                  l_float32  *pa,
+                  l_float32  *pb,
+                  l_float32  *pmederr,
+                  NUMA      **pnafit)
+{
+l_int32    n, i, ret;
+l_float32  x, y, yf, val, mederr;
+NUMA      *nafit, *naerror;
+PTA       *ptad;
+
+    PROCNAME("ptaNoisyLinearLSF");
+
+    if (!pa && !pb)
+        return ERROR_INT("neither &a nor &b are defined", procName, 1);
+    if (pptad) *pptad = NULL;
+    if (pa) *pa = 0.0;
+    if (pb) *pb = 0.0;
+    if (pmederr) *pmederr = 0.0;
+    if (pnafit) *pnafit = NULL;
+    if (!pta)
+        return ERROR_INT("pta not defined", procName, 1);
+    if (factor <= 0.0)
+        return ERROR_INT("factor must be > 0.0", procName, 1);
+    if ((n = ptaGetCount(pta)) < 3)
+        return ERROR_INT("less than 2 pts found", procName, 1);
+
+    if (ptaGetLinearLSF(pta, pa, pb, &nafit) != 0)
+        return ERROR_INT("error in linear LSF", procName, 1);
+
+        /* Get the median error */
+    naerror = numaCreate(n);
+    for (i = 0; i < n; i++) {
+        ptaGetPt(pta, i, &x, &y);
+        numaGetFValue(nafit, i, &yf);
+        numaAddNumber(naerror, L_ABS(y - yf));
+    }
+    numaGetMedian(naerror, &mederr);
+    if (pmederr) *pmederr = mederr;
+    numaDestroy(&nafit);
+
+        /* Remove outliers */
+    ptad = ptaCreate(n);
+    for (i = 0; i < n; i++) {
+        ptaGetPt(pta, i, &x, &y);
+        numaGetFValue(naerror, i, &val);
+        if (val <= factor * mederr)  /* <= in case mederr = 0 */
+            ptaAddPt(ptad, x, y);
+    }
+    numaDestroy(&naerror);
+
+       /* Do LSF again */
+    ret = ptaGetLinearLSF(ptad, pa, pb, pnafit);
+    if (pptad)
+        *pptad = ptad;
+    else
+        ptaDestroy(&ptad);
+
+    return ret;
+}
+
+
+/*!
+ *  ptaNoisyQuadraticLSF()
+ *
+ *      Input:  pta
+ *              factor (reject outliers with error greater than this
+ *                      number of medians; typically ~ 3)
+ *              &ptad (<optional return> with outliers removed)
+ *              &a  (<optional return> coeff a of LSF: y = ax^2 + bx + c)
+ *              &b  (<optional return> coeff b of LSF: y = ax^2 + bx + c)
+ *              &c  (<optional return> coeff c of LSF: y = ax^2 + bx + c)
+ *              &mederr (<optional return> median error)
+ *              &nafit (<optional return> numa of least square fit to ptad)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This does a quadratic least square fit to the set of points
+ *          in @pta.  It then evaluates the errors and removes points
+ *          whose error is >= factor * median_error.  It then re-runs
+ *          a quadratic LSF on the resulting points.
+ */
+l_int32
+ptaNoisyQuadraticLSF(PTA        *pta,
+                     l_float32   factor,
+                     PTA       **pptad,
+                     l_float32  *pa,
+                     l_float32  *pb,
+                     l_float32  *pc,
+                     l_float32  *pmederr,
+                     NUMA      **pnafit)
+{
+l_int32    n, i, ret;
+l_float32  x, y, yf, val, mederr;
+NUMA      *nafit, *naerror;
+PTA       *ptad;
+
+    PROCNAME("ptaNoisyQuadraticLSF");
+
+    if (!pptad && !pa && !pb && !pc && !pnafit)
+        return ERROR_INT("no output requested", procName, 1);
+    if (pptad) *pptad = NULL;
+    if (pa) *pa = 0.0;
+    if (pb) *pb = 0.0;
+    if (pc) *pc = 0.0;
+    if (pmederr) *pmederr = 0.0;
+    if (pnafit) *pnafit = NULL;
+    if (factor <= 0.0)
+        return ERROR_INT("factor must be > 0.0", procName, 1);
+    if (!pta)
+        return ERROR_INT("pta not defined", procName, 1);
+    if ((n = ptaGetCount(pta)) < 3)
+        return ERROR_INT("less than 3 pts found", procName, 1);
+
+    if (ptaGetQuadraticLSF(pta, NULL, NULL, NULL, &nafit) != 0)
+        return ERROR_INT("error in quadratic LSF", procName, 1);
+
+        /* Get the median error */
+    naerror = numaCreate(n);
+    for (i = 0; i < n; i++) {
+        ptaGetPt(pta, i, &x, &y);
+        numaGetFValue(nafit, i, &yf);
+        numaAddNumber(naerror, L_ABS(y - yf));
+    }
+    numaGetMedian(naerror, &mederr);
+    if (pmederr) *pmederr = mederr;
+    numaDestroy(&nafit);
+
+        /* Remove outliers */
+    ptad = ptaCreate(n);
+    for (i = 0; i < n; i++) {
+        ptaGetPt(pta, i, &x, &y);
+        numaGetFValue(naerror, i, &val);
+        if (val <= factor * mederr)  /* <= in case mederr = 0 */
+            ptaAddPt(ptad, x, y);
+    }
+    numaDestroy(&naerror);
+    n = ptaGetCount(ptad);
+    if ((n = ptaGetCount(ptad)) < 3) {
+        ptaDestroy(&ptad);
+        return ERROR_INT("less than 3 pts found", procName, 1);
+    }
+
+       /* Do LSF again */
+    ret = ptaGetQuadraticLSF(ptad, pa, pb, pc, pnafit);
+    if (pptad)
+        *pptad = ptad;
+    else
+        ptaDestroy(&ptad);
+
+    return ret;
 }
 
 
@@ -1677,35 +1975,37 @@ PTAA    *ptaa;
  *      Input:  pixd (can be same as pixs or null; 32 bpp if in-place)
  *              pixs (1, 2, 4, 8, 16 or 32 bpp)
  *              pta (of path to be plotted)
- *      Return: pixd (32 bpp RGB version of pixs, with path in green),
- *              or null on error
+ *      Return: pixd (32 bpp RGB version of pixs, with path in green).
  *
  *  Notes:
  *      (1) To write on an existing pixs, pixs must be 32 bpp and
  *          call with pixd == pixs:
  *             pixDisplayPta(pixs, pixs, pta);
- *          To write on a new pix, set pixd == NULL and call:
+ *          To write to a new pix, use pixd == NULL and call:
  *             pixd = pixDisplayPta(NULL, pixs, pta);
+ *      (2) On error, returns pixd to avoid losing pixs if called as
+ *             pixs = pixDisplayPta(pixs, pixs, pta);
  */
 PIX *
 pixDisplayPta(PIX  *pixd,
               PIX  *pixs,
               PTA  *pta)
 {
-l_int32   i, n, x, y;
+l_int32   i, n, w, h, x, y;
 l_uint32  rpixel, gpixel, bpixel;
 
     PROCNAME("pixDisplayPta");
 
     if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+        return (PIX *)ERROR_PTR("pixs not defined", procName, pixd);
     if (!pta)
-        return (PIX *)ERROR_PTR("pta not defined", procName, NULL);
+        return (PIX *)ERROR_PTR("pta not defined", procName, pixd);
     if (pixd && (pixd != pixs || pixGetDepth(pixd) != 32))
-        return (PIX *)ERROR_PTR("invalid pixd", procName, NULL);
+        return (PIX *)ERROR_PTR("invalid pixd", procName, pixd);
 
     if (!pixd)
         pixd = pixConvertTo32(pixs);
+    pixGetDimensions(pixd, &w, &h, NULL);
     composeRGBPixel(255, 0, 0, &rpixel);  /* start point */
     composeRGBPixel(0, 255, 0, &gpixel);
     composeRGBPixel(0, 0, 255, &bpixel);  /* end point */
@@ -1713,6 +2013,8 @@ l_uint32  rpixel, gpixel, bpixel;
     n = ptaGetCount(pta);
     for (i = 0; i < n; i++) {
         ptaGetIPt(pta, i, &x, &y);
+        if (x < 0 || x >= w || y < 0 || y >= h)
+            continue;
         if (i == 0)
             pixSetPixel(pixd, x, y, rpixel);
         else if (i < n - 1)
@@ -1722,6 +2024,188 @@ l_uint32  rpixel, gpixel, bpixel;
     }
 
     return pixd;
+}
+
+
+/*!
+ *  pixDisplayPtaaPattern()
+ *
+ *      Input:  pixd (32 bpp)
+ *              pixs (1, 2, 4, 8, 16 or 32 bpp; 32 bpp if in place)
+ *              ptaa (giving locations at which the pattern is displayed)
+ *              pixp (1 bpp pattern to be placed such that its reference
+ *                    point co-locates with each point in pta)
+ *              cx, cy (reference point in pattern)
+ *      Return: pixd (32 bpp RGB version of pixs).
+ *
+ *  Notes:
+ *      (1) To write on an existing pixs, pixs must be 32 bpp and
+ *          call with pixd == pixs:
+ *             pixDisplayPtaPattern(pixs, pixs, pta, ...);
+ *          To write to a new pix, use pixd == NULL and call:
+ *             pixd = pixDisplayPtaPattern(NULL, pixs, pta, ...);
+ *      (2) Puts a random color on each pattern associated with a pta.
+ *      (3) On error, returns pixd to avoid losing pixs if called as
+ *             pixs = pixDisplayPtaPattern(pixs, pixs, pta, ...);
+ *      (4) A typical pattern to be used is a circle, generated with
+ *             generatePtaFilledCircle()
+ */
+PIX *
+pixDisplayPtaaPattern(PIX      *pixd,
+                      PIX      *pixs,
+                      PTAA     *ptaa,
+                      PIX      *pixp,
+                      l_int32   cx,
+                      l_int32   cy)
+{
+l_int32   i, n;
+l_uint32  color;
+PIXCMAP  *cmap;
+PTA      *pta;
+
+    PROCNAME("pixDisplayPtaaPattern");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, pixd);
+    if (!ptaa)
+        return (PIX *)ERROR_PTR("ptaa not defined", procName, pixd);
+    if (pixd && (pixd != pixs || pixGetDepth(pixd) != 32))
+        return (PIX *)ERROR_PTR("invalid pixd", procName, pixd);
+    if (!pixp)
+        return (PIX *)ERROR_PTR("pixp not defined", procName, pixd);
+
+    if (!pixd)
+        pixd = pixConvertTo32(pixs);
+
+        /* Use 256 random colors */
+    cmap = pixcmapCreateRandom(8, 0, 0);
+    n = ptaaGetCount(ptaa);
+    for (i = 0; i < n; i++) {
+        pixcmapGetColor32(cmap, i % 256, &color);
+        pta = ptaaGetPta(ptaa, i, L_CLONE);
+        pixDisplayPtaPattern(pixd, pixd, pta, pixp, cx, cy, color);
+        ptaDestroy(&pta);
+    }
+
+    pixcmapDestroy(&cmap);
+    return pixd;
+}
+
+
+/*!
+ *  pixDisplayPtaPattern()
+ *
+ *      Input:  pixd (can be same as pixs or null; 32 bpp if in-place)
+ *              pixs (1, 2, 4, 8, 16 or 32 bpp)
+ *              pta (giving locations at which the pattern is displayed)
+ *              pixp (1 bpp pattern to be placed such that its reference
+ *                    point co-locates with each point in pta)
+ *              cx, cy (reference point in pattern)
+ *              color (in 0xrrggbb00 format)
+ *      Return: pixd (32 bpp RGB version of pixs).
+ *
+ *  Notes:
+ *      (1) To write on an existing pixs, pixs must be 32 bpp and
+ *          call with pixd == pixs:
+ *             pixDisplayPtaPattern(pixs, pixs, pta, ...);
+ *          To write to a new pix, use pixd == NULL and call:
+ *             pixd = pixDisplayPtaPattern(NULL, pixs, pta, ...);
+ *      (2) On error, returns pixd to avoid losing pixs if called as
+ *             pixs = pixDisplayPtaPattern(pixs, pixs, pta, ...);
+ *      (3) A typical pattern to be used is a circle, generated with
+ *             generatePtaFilledCircle()
+ */
+PIX *
+pixDisplayPtaPattern(PIX      *pixd,
+                     PIX      *pixs,
+                     PTA      *pta,
+                     PIX      *pixp,
+                     l_int32   cx,
+                     l_int32   cy,
+                     l_uint32  color)
+{
+l_int32  i, n, w, h, x, y;
+PTA     *ptat;
+
+    PROCNAME("pixDisplayPtaPattern");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, pixd);
+    if (!pta)
+        return (PIX *)ERROR_PTR("pta not defined", procName, pixd);
+    if (pixd && (pixd != pixs || pixGetDepth(pixd) != 32))
+        return (PIX *)ERROR_PTR("invalid pixd", procName, pixd);
+    if (!pixp)
+        return (PIX *)ERROR_PTR("pixp not defined", procName, pixd);
+
+    if (!pixd)
+        pixd = pixConvertTo32(pixs);
+    pixGetDimensions(pixs, &w, &h, NULL);
+    ptat = ptaReplicatePattern(pta, pixp, cx, cy, w, h);
+
+    n = ptaGetCount(ptat);
+    for (i = 0; i < n; i++) {
+        ptaGetIPt(ptat, i, &x, &y);
+        if (x < 0 || x >= w || y < 0 || y >= h)
+            continue;
+        pixSetPixel(pixd, x, y, color);
+    }
+
+    ptaDestroy(&ptat);
+    return pixd;
+}
+
+
+/*!
+ *  ptaReplicatePattern()
+ *
+ *      Input:  ptas ("sparse" input pta)
+ *              pixp (1 bpp pattern, to be replicated in output pta)
+ *              cx, cy (reference point in pattern)
+ *              w, h (clipping sizes for output pta)
+ *      Return: ptad (with all points of replicated pattern), or null on error
+ *
+ *  Notes:
+ *      (1) The pattern is placed with its reference point at each point
+ *          in ptas, and all the fg pixels are colleced into ptad.
+ *          This is equivalent to blitting pix at each point in ptas,
+ *          and then converting the resulting pix to a pta.
+ */
+PTA *
+ptaReplicatePattern(PTA     *ptas,
+                    PIX     *pixp,
+                    l_int32  cx,
+                    l_int32  cy,
+                    l_int32  w,
+                    l_int32  h)
+{
+l_int32  i, j, n, np, x, y, xp, yp, xf, yf;
+PTA     *ptap, *ptad;
+
+    PROCNAME("ptaReplicatePattern");
+
+    if (!ptas)
+        return (PTA *)ERROR_PTR("ptas not defined", procName, NULL);
+    if (!pixp)
+        return (PTA *)ERROR_PTR("pixp not defined", procName, NULL);
+
+    n = ptaGetCount(ptas);
+    ptad = ptaCreate(n);
+    ptap = ptaGetPixelsFromPix(pixp, NULL);
+    np = ptaGetCount(ptap);
+    for (i = 0; i < n; i++) {
+        ptaGetIPt(ptas, i, &x, &y);
+        for (j = 0; j < np; j++) {
+            ptaGetIPt(ptap, j, &xp, &yp);
+            xf = x - cx + xp;
+            yf = y - cy + yp;
+            if (xf >= 0 && xf < w && yf >= 0 && yf < h)
+                ptaAddPt(ptad, xf, yf);
+        }
+    }
+
+    ptaDestroy(&ptap);
+    return ptad;
 }
 
 
@@ -1737,7 +2221,7 @@ PIX *
 pixDisplayPtaa(PIX   *pixs,
                PTAA  *ptaa)
 {
-l_int32    i, j, npta, npt, x, y, rv, gv, bv;
+l_int32    i, j, w, h, npta, npt, x, y, rv, gv, bv;
 l_uint32  *pixela;
 NUMA      *na1, *na2, *na3;
 PIX       *pixd;
@@ -1755,6 +2239,7 @@ PTA       *pta;
 
     if ((pixd = pixConvertTo32(pixs)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixGetDimensions(pixd, &w, &h, NULL);
 
         /* Make a colormap for the paths */
     if ((pixela = (l_uint32 *)CALLOC(npta, sizeof(l_uint32))) == NULL)
@@ -1777,6 +2262,8 @@ PTA       *pta;
         npt = ptaGetCount(pta);
         for (j = 0; j < npt; j++) {
             ptaGetIPt(pta, j, &x, &y);
+            if (x < 0 || x >= w || y < 0 || y >= h)
+                continue;
             pixSetPixel(pixd, x, y, pixela[i]);
         }
         ptaDestroy(&pta);
@@ -1785,5 +2272,3 @@ PTA       *pta;
     FREE(pixela);
     return pixd;
 }
-
-

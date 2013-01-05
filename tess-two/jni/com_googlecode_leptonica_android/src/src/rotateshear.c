@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -31,7 +42,7 @@
  *
  *  Rotation is measured in radians; clockwise rotations are positive.
  *
- *  Rotation by shear works on images of any depth, 
+ *  Rotation by shear works on images of any depth,
  *  including 8 bpp color paletted images and 32 bpp
  *  rgb images.  It works by translating each src pixel
  *  value to the appropriate pixel in the rotated dest.
@@ -52,7 +63,7 @@
  *  shears on a pixel lattice that we have here) give
  *  a rotated image that has a distortion in the lengths
  *  of the two rotated and still-perpendicular axes.  The
- *  length/width ratio changes by a fraction 
+ *  length/width ratio changes by a fraction
  *
  *       0.5 * (angle)**2
  *
@@ -89,7 +100,7 @@
  *  does not work well for large rotation angles.  In fact, for
  *  rotation angles greater than about 7 degrees, more pixels are
  *  lost at the edges than when using pixRotationBySampling(), which
- *  only loses pixels because they are rotated out of the image. 
+ *  only loses pixels because they are rotated out of the image.
  *  For large rotations, use pixRotationBySampling() or, for
  *  more accuracy when d > 1 bpp, pixRotateAM().
  *
@@ -123,12 +134,12 @@
  *  a square pixel lattice.  They also use integers to specify
  *  the rotation angle and center offset, but that makes
  *  little sense on a machine where you have a few GFLOPS
- *  and only a few hundred floating point operations to do (!) 
+ *  and only a few hundred floating point operations to do (!)
  *  They also allow subpixel specification of the center of
  *  rotation, which I haven't bothered with, and claim that
  *  better results are possible if each of the 4 quadrants is
  *  handled separately.
- * 
+ *
  *  But the bottom line is that for binary images, the quality
  *  of the simple 3-shear rotation is about as good as you can do,
  *  visually, without dithering the result.  The effect of dither
@@ -137,10 +148,8 @@
  *  dither the pixels on the block boundaries!
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include "allheaders.h"
 
 static const l_float32  VERY_SMALL_ANGLE = 0.001;  /* radians; ~0.06 degrees */
@@ -227,7 +236,7 @@ PIX  *pixt, *pixd;
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
     if (incolor != L_BRING_IN_WHITE && incolor != L_BRING_IN_BLACK)
         return (PIX *)(PIX *)ERROR_PTR("invalid incolor value", procName, NULL);
-    
+
     if (L_ABS(angle) < VERY_SMALL_ANGLE)
         return pixClone(pixs);
 
@@ -284,7 +293,7 @@ PIX              *pixt, *pixd;
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
     if (incolor != L_BRING_IN_WHITE && incolor != L_BRING_IN_BLACK)
         return (PIX *)(PIX *)ERROR_PTR("invalid incolor value", procName, NULL);
-    
+
     if (L_ABS(angle) < VERY_SMALL_ANGLE)
         return pixClone(pixs);
 
@@ -346,7 +355,7 @@ l_float32  hangle;
 
     if (angle == 0.0)
         return 0;
-    
+
     hangle = atan(sin(angle));
     pixHShearIP(pixs, ycen, angle / 2., incolor);
     pixVShearIP(pixs, xcen, hangle, incolor);
@@ -376,7 +385,7 @@ pixRotateShearCenter(PIX       *pixs,
 
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    
+
     return pixRotateShear(pixs, pixGetWidth(pixs) / 2,
                           pixGetHeight(pixs) / 2, angle, incolor);
 }
@@ -399,8 +408,7 @@ pixRotateShearCenterIP(PIX       *pixs,
 
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
-    
+
     return pixRotateShearIP(pixs, pixGetWidth(pixs) / 2,
                             pixGetHeight(pixs) / 2, angle, incolor);
 }
-

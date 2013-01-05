@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -52,9 +63,6 @@
  *      Ptraa conversion
  *          L_PTRA      *ptraaFlattenToPtra()
  *
- *      Functions using L_PTRA
- *          NUMA        *numaGetBinSortIndex()
- *
  *    Notes on the Ptra:
  *
  *    (1) The Ptra is a struct, not an array.  Always use the accessors
@@ -90,7 +98,7 @@
  *        are general:
  *         * You can insert an item into any ptr location in the
  *           allocated ptr array, as well as into the next ptr address
- *           beyond the allocated array (in which case a realloc will occur).   
+ *           beyond the allocated array (in which case a realloc will occur).
  *         * You can remove or replace an item from any ptr location
  *           in the allocated ptr array.
  *         * When inserting into an occupied location, you have
@@ -109,8 +117,6 @@
  *        and each Ptra is an array of all the Pix at a specific x location.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "allheaders.h"
 
 static const l_int32 INITIAL_PTR_ARRAYSIZE = 20;      /* n'importe quoi */
@@ -237,7 +243,7 @@ l_int32  imax;
         return ERROR_INT("pa not defined", procName, 1);
     if (!item)
         return ERROR_INT("item not defined", procName, 1);
-    
+
     ptraGetMaxIndex(pa, &imax);
     if (imax >= pa->nalloc - 1 && ptraExtendArray(pa))
         return ERROR_INT("extension failure", procName, 1);
@@ -251,7 +257,7 @@ l_int32  imax;
 /*!
  *  ptraExtendArray()
  *
- *      Input:  ptra 
+ *      Input:  ptra
  *      Return: 0 if OK, 1 on error
  */
 l_int32
@@ -275,7 +281,7 @@ ptraExtendArray(L_PTRA  *pa)
 /*!
  *  ptraInsert()
  *
- *      Input:  ptra 
+ *      Input:  ptra
  *              index (location in ptra to insert new value)
  *              item  (generic ptr to a struct; can be null)
  *              shiftflag (L_AUTO_DOWNSHIFT, L_MIN_DOWNSHIFT, L_FULL_DOWNSHIFT)
@@ -463,7 +469,7 @@ void    *item;
     if (item)
         pa->nactual--;
     pa->array[index] = NULL;
-  
+
         /* If we took the last item, need to reduce pa->n */
     fromend = (index == imax);
     if (fromend) {
@@ -591,7 +597,7 @@ void    *item;
 /*!
  *  ptraCompactArray()
  *
- *      Input:  ptra 
+ *      Input:  ptra
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -676,7 +682,7 @@ void    *item;
         item = ptraRemove(pa2, i, L_NO_COMPACTION);
         ptraAdd(pa1, item);
     }
-    
+
     return 0;
 }
 
@@ -718,7 +724,7 @@ ptraGetMaxIndex(L_PTRA   *pa,
     *pmaxindex = pa->imax;
     return 0;
 }
-        
+
 
 /*!
  *  ptraGetActualCount()
@@ -992,83 +998,3 @@ L_PTRA    *pat, *pad;
 
     return pad;
 }
-
-
-/*--------------------------------------------------------------------------*
- *                          Functions using L_PTRA                          *
- *--------------------------------------------------------------------------*/
-/*!
- *  numaGetBinSortIndex()
- *
- *      Input:  na (of non-negative integers with a max that is typically
- *                  less than 50,000)
- *              sortorder (L_SORT_INCREASING or L_SORT_DECREASING)
- *      Return: na (sorted), or null on error
- *
- *  Notes:
- *      (1) This creates an array (or lookup table) that gives the
- *          sorted position of the elements in the input Numa.
- *      (2) Because it uses a bin sort with buckets of size 1, it
- *          is not appropriate for sorting either small arrays or
- *          arrays containing very large integer values.  For such
- *          arrays, use a standard general sort function like
- *          numaGetSortIndex().
- */
-NUMA *
-numaGetBinSortIndex(NUMA    *nas,
-                    l_int32  sortorder)
-{
-l_int32    i, n, isize, ival, imax;
-l_float32  size;
-NUMA      *na, *nai, *nad;
-L_PTRA    *paindex;
-
-    PROCNAME("numaGetBinSortIndex");
-
-    if (!nas)
-        return (NUMA *)ERROR_PTR("nas not defined", procName, NULL);
-    if (sortorder != L_SORT_INCREASING && sortorder != L_SORT_DECREASING)
-        return (NUMA *)ERROR_PTR("invalid sort order", procName, NULL);
-
-        /* Set up a ptra holding numa at indices for which there
-         * are values in nas.  This effectively sorts the input
-         * numbers. */
-    numaGetMax(nas, &size, NULL);
-    isize = (l_int32)size;
-    if (isize > 50000)
-        L_WARNING_INT("large array: %d elements", procName, isize);
-    paindex = ptraCreate(isize + 1);
-    n = numaGetCount(nas);
-    for (i = 0; i < n; i++) {
-        numaGetIValue(nas, i, &ival);
-        nai = (NUMA *)ptraGetHandle(paindex, ival);
-        if (!nai) {  /* make it; no shifting will occur */
-            nai = numaCreate(1);
-            ptraInsert(paindex, ival, nai, L_MIN_DOWNSHIFT);
-        }
-        numaAddNumber(nai, i);
-    }
-
-        /* Sort by pulling the numbers out of the numas, taken
-         * successively in requested order. */
-    ptraGetMaxIndex(paindex, &imax);
-    nad = numaCreate(0);
-    if (sortorder == L_SORT_INCREASING) {
-        for (i = 0; i <= imax; i++) {
-            na = (NUMA *)ptraRemove(paindex, i, L_NO_COMPACTION);
-            numaJoin(nad, na, 0, 0);
-            numaDestroy(&na);
-        }
-    } else {  /* L_SORT_DECREASING */
-        for (i = imax; i >= 0; i--) {
-            na = (NUMA *)ptraRemove(paindex, i, L_NO_COMPACTION);
-            numaJoin(nad, na, 0, 0);
-            numaDestroy(&na);
-        }
-    }
-
-    ptraDestroy(&paindex, FALSE, FALSE);
-    return nad;
-}
-
-

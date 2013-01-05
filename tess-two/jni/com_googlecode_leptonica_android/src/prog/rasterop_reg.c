@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -25,16 +36,7 @@
  *     that extends to the edges.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "allheaders.h"
-
-    /* choose these variably to explore range of widths and heights */
-#define    MINW            1
-#define    MAXW            35
-#define    MINH            1
-#define    MAXH            1
-
 
 main(int    argc,
      char **argv)
@@ -46,22 +48,20 @@ SEL         *sel;
 static char  mainName[] = "rasterop_reg";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax:  rasterop_reg", mainName, 1));
+	return ERROR_INT(" Syntax:  rasterop_reg", mainName, 1);
+    pixs = pixRead("feyn.tif");
 
-    if ((pixs = pixRead("feyn.tif")) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
-
-    for (width = MINW; width <= MAXW; width++) {
-	for (height = MINH; height <= MAXH; height++) {
+    for (width = 1; width <= 25; width += 3) {
+	for (height = 1; height <= 25; height += 4) {
 
 	    cx = width / 2;
 	    cy = height / 2;
 
-		/* dilate using an actual sel */
+		/* Dilate using an actual sel */
 	    sel = selCreateBrick(height, width, cy, cx, SEL_HIT);
 	    pixd1 = pixDilate(NULL, pixs, sel);
 
-		/* dilate using a pix as a sel */
+		/* Dilate using a pix as a sel */
 	    pixse = pixCreate(width, height, 1);
 	    pixSetAll(pixse);
 	    pixd2 = pixCopy(NULL, pixs);
@@ -75,17 +75,16 @@ static char  mainName[] = "rasterop_reg";
 				    PIX_SRC | PIX_DST, pixse, 0, 0);
 		}
 	    }
-	    
+
 	    pixEqual(pixd1, pixd2, &same);
 	    if (same == 1)
-		fprintf(stderr, "Correct: results for (%d,%d) are identical!\n",
-		                 width, height);
+		fprintf(stderr, "Correct for (%d,%d)\n", width, height);
 	    else {
 		fprintf(stderr, "Error: results are different!\n");
 		fprintf(stderr, "SE: width = %d, height = %d\n", width, height);
-		pixWrite("/tmp/junkout1.png", pixd1, IFF_PNG);
-		pixWrite("/tmp/junkout2.png", pixd2, IFF_PNG);
-		exit(1);
+		pixWrite("/tmp/junkout1", pixd1, IFF_PNG);
+		pixWrite("/tmp/junkout2", pixd2, IFF_PNG);
+                return 1;
 	    }
 
 	    pixDestroy(&pixse);
@@ -95,7 +94,5 @@ static char  mainName[] = "rasterop_reg";
 	}
     }
     pixDestroy(&pixs);
-
-    exit(0);
+    return 0;
 }
-

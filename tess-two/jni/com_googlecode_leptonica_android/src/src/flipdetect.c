@@ -1,17 +1,28 @@
 /*====================================================================*
-  -  Copyright (C) 2001 Leptonica.  All rights reserved.
-  -  This software is distributed in the hope that it will be
-  -  useful, but with NO WARRANTY OF ANY KIND.
-  -  No author or distributor accepts responsibility to anyone for the
-  -  consequences of using this software, or for whether it serves any
-  -  particular purpose or works at all, unless he or she says so in
-  -  writing.  Everyone is granted permission to copy, modify and
-  -  redistribute this source code, for commercial or non-commercial
-  -  purposes, with the following restrictions: (1) the origin of this
-  -  source code must not be misrepresented; (2) modified versions must
-  -  be plainly marked as such; and (3) this notice may not be removed
-  -  or altered from any source or modified source distribution.
-  *====================================================================*/
+ -  Copyright (C) 2001 Leptonica.  All rights reserved.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *====================================================================*/
 
 /*
  *  flipdetect.c
@@ -32,27 +43,27 @@
  *      Static debug helper
  *          void         pixDebugFlipDetect()
  *
- *  ===================================================================    
+ *  ===================================================================
  *
  *  Page transformation detection:
  *
  *  Once a page is deskewed, there are 8 possible states that it
  *  can be in, shown symbolically below.  Suppose state 0 is correct.
- *      
+ *
  *      0: correct     1          2          3
- *      +------+   +------+   +------+   +------+      
- *      | **** |   | *    |   | **** |   |    * |       
- *      | *    |   | *    |   |    * |   |    * |      
- *      | *    |   | **** |   |    * |   | **** |      
- *      +------+   +------+   +------+   +------+      
+ *      +------+   +------+   +------+   +------+
+ *      | **** |   | *    |   | **** |   |    * |
+ *      | *    |   | *    |   |    * |   |    * |
+ *      | *    |   | **** |   |    * |   | **** |
+ *      +------+   +------+   +------+   +------+
  *
  *         4          5          6          7
- *      +-----+    +-----+    +-----+    +-----+   
- *      | *** |    |   * |    | *** |    | *   |   
- *      |   * |    |   * |    | *   |    | *   |   
- *      |   * |    |   * |    | *   |    | *   |   
- *      |   * |    | *** |    | *   |    | *** |   
- *      +-----+    +-----+    +-----+    +-----+   
+ *      +-----+    +-----+    +-----+    +-----+
+ *      | *** |    |   * |    | *** |    | *   |
+ *      |   * |    |   * |    | *   |    | *   |
+ *      |   * |    |   * |    | *   |    | *   |
+ *      |   * |    | *** |    | *   |    | *** |
+ *      +-----+    +-----+    +-----+    +-----+
  *
  *  Each of the other seven can be derived from state 0 by applying some
  *  combination of a 90 degree clockwise rotation, a flip about
@@ -72,7 +83,7 @@
  *      101  -> 5
  *      110  -> 6
  *      111  -> 7
- *      
+ *
  *  Note that in four of these, the sum of H and V is 1 (odd).
  *  For these four, we have a change in parity (handedness) of
  *  the image, and the transformation cannot be performed by
@@ -151,8 +162,6 @@
  *      confidence will be large and negative.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
 #include "allheaders.h"
 
@@ -174,7 +183,7 @@ static const char *textsel3 = "xxxxxx"
                               "x  o  "
                               "x oOo "
                               "x  oo ";
-                          
+
 static const char *textsel4 = "xxxxxx"
                               "     x"
                               "  o  x"
@@ -244,7 +253,7 @@ static void pixDebugFlipDetect(const char *filename, PIX *pixs,
  *          (in absolute value), giving the correct orientation.
  *      (5) If you compute both upconf and leftconf, and there is
  *          sufficient signal, the following table determines the
- *          cw angle necessary to rotate pixs so that the text is 
+ *          cw angle necessary to rotate pixs so that the text is
  *          rightside-up:
  *             0 deg :           upconf >> 1,    abs(upconf) >> abs(leftconf)
  *             90 deg :          leftconf >> 1,  abs(leftconf) >> abs(upconf)
@@ -414,7 +423,7 @@ pixUpDownDetect(PIX        *pixs,
  *          is either rightside-up or upside-down and not rotated
  *          at a 90 degree angle.
  *      (3) The typical mode of operation is @npixels == 0.
- *          If @npixels > 0, this removes HMT matches at the 
+ *          If @npixels > 0, this removes HMT matches at the
  *          beginning and ending of "words."  This is useful for
  *          pages that may have mostly digits, because if npixels == 0,
  *          leading "1" and "3" digits can register as having
@@ -885,7 +894,7 @@ SEL       *sel1, *sel2;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) We assume the text is horizontally oriented, with 
+ *      (1) We assume the text is horizontally oriented, with
  *          ascenders going up.
  *      (2) See notes in pixMirrorDetect().
  */
@@ -989,5 +998,3 @@ PIX  *pixt, *pixthm;
     pixDestroy(&pixt);
     return;
 }
-
-

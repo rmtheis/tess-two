@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -116,8 +127,6 @@
  *          dwamorph1_reg also builds and runs the application program.)
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "allheaders.h"
 
 #ifndef  NO_CONSOLE_IO
@@ -137,7 +146,7 @@
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *  Notes:
  *      (1) These implement 2D brick Sels, using linear Sels generated
  *          with selaAddBasic().
@@ -236,7 +245,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *  Notes:
  *      (1) These implement 2D brick Sels, using linear Sels generated
  *          with selaAddBasic().
@@ -338,7 +347,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *  Notes:
  *      (1) These implement 2D brick Sels, using linear Sels generated
  *          with selaAddBasic().
@@ -443,7 +452,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *  Notes:
  *      (1) This is a 'safe' closing; we add an extra border of 32 OFF
  *          pixels for the standard asymmetric b.c.
@@ -512,7 +521,7 @@ PIX     *pixt1, *pixt2, *pixt3;
     }
 
         /* For "safe closing" with ASYMMETRIC_MORPH_BC, we always need
-         * an extra 32 OFF pixels around the image (in addition to 
+         * an extra 32 OFF pixels around the image (in addition to
 	 * the 32 added pixels for all dwa operations), whereas with
          * SYMMETRIC_MORPH_BC this is not necessary. */
     bordercolor = getMorphBorderPixelColor(L_MORPH_ERODE, 1);
@@ -563,7 +572,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *  Notes:
  *      (1) These implement a separable composite dilation with 2D brick Sels.
  *      (2) For efficiency, it may decompose each linear morphological
@@ -638,7 +647,7 @@ PIX     *pixt1, *pixt2, *pixt3;
 
     pixt1 = pixAddBorder(pixs, 64, 0);
     if (vsize == 1) {
-        if (hsize2 == 1) 
+        if (hsize2 == 1)
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
         else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
@@ -647,7 +656,7 @@ PIX     *pixt1, *pixt2, *pixt3;
         }
     }
     else if (hsize == 1) {
-        if (vsize2 == 1) 
+        if (vsize2 == 1)
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnamev1);
         else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnamev1);
@@ -656,14 +665,14 @@ PIX     *pixt1, *pixt2, *pixt3;
         }
     }
     else {  /* vsize and hsize both > 1 */
-        if (hsize2 == 1) 
+        if (hsize2 == 1)
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
         else {
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
             pixt3 = pixFMorphopGen_2(NULL, pixt2, L_MORPH_DILATE, selnameh2);
             pixDestroy(&pixt2);
         }
-        if (vsize2 == 1) 
+        if (vsize2 == 1)
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_DILATE, selnamev1);
         else {
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_DILATE, selnamev1);
@@ -696,7 +705,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *  Notes:
  *      (1) These implement a separable composite erosion with 2D brick Sels.
  *      (2) For efficiency, it may decompose each linear morphological
@@ -767,7 +776,7 @@ PIX     *pixt1, *pixt2, *pixt3;
     pixt1 = pixAddBorder(pixs, 64, bordercolor);
 
     if (vsize == 1) {
-        if (hsize2 == 1) 
+        if (hsize2 == 1)
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
         else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
@@ -776,7 +785,7 @@ PIX     *pixt1, *pixt2, *pixt3;
         }
     }
     else if (hsize == 1) {
-        if (vsize2 == 1) 
+        if (vsize2 == 1)
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnamev1);
         else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnamev1);
@@ -785,14 +794,14 @@ PIX     *pixt1, *pixt2, *pixt3;
         }
     }
     else {  /* vsize and hsize both > 1 */
-        if (hsize2 == 1) 
+        if (hsize2 == 1)
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
         else {
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
             pixt3 = pixFMorphopGen_2(NULL, pixt2, L_MORPH_ERODE, selnameh2);
             pixDestroy(&pixt2);
         }
-        if (vsize2 == 1) 
+        if (vsize2 == 1)
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_ERODE, selnamev1);
         else {
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_ERODE, selnamev1);
@@ -825,7 +834,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *  Notes:
  *      (1) These implement a separable composite opening with 2D brick Sels.
  *      (2) For efficiency, it may decompose each linear morphological
@@ -996,7 +1005,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *  Notes:
  *      (1) This implements a separable composite safe closing with 2D
  *          brick Sels.
@@ -1164,7 +1173,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *  Notes:
  *      (1) Ankur Jain suggested and implemented extending the composite
  *          DWA operations beyond the 63 pixel limit.  This is a
@@ -1299,7 +1308,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *  Notes:
  *      (1) See pixDilateCompBrickExtendDwa() for usage.
  *      (2) There is no need to call this directly:  pixErodeCompBrickDwa()
@@ -1421,7 +1430,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *      (1) There are three cases:
  *          (a) pixd == null   (result into new pixd)
  *          (b) pixd == pixs   (in-place; writes result back to pixs)
@@ -1462,7 +1471,7 @@ PIX     *pixt;
  *              hsize (width of brick Sel)
  *              vsize (height of brick Sel)
  *      Return: pixd
- * 
+ *
  *      (1) There are three cases:
  *          (a) pixd == null   (result into new pixd)
  *          (b) pixd == pixs   (in-place; writes result back to pixs)
@@ -1489,7 +1498,7 @@ PIX     *pixt1, *pixt2, *pixt3;
         return (PIX *)ERROR_PTR("hsize and vsize not >= 1", procName, pixd);
 
         /* For "safe closing" with ASYMMETRIC_MORPH_BC, we always need
-         * an extra 32 OFF pixels around the image (in addition to 
+         * an extra 32 OFF pixels around the image (in addition to
          * the 32 added pixels for all dwa operations), whereas with
          * SYMMETRIC_MORPH_BC this is not necessary. */
     bordercolor = getMorphBorderPixelColor(L_MORPH_ERODE, 1);
@@ -1588,5 +1597,3 @@ l_int32  n, extra, fact1, fact2;
     *pextra = extra;
     return 0;
 }
-
-

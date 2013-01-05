@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -21,7 +32,7 @@
  *           PIX      *pixProjectiveSampledPta()
  *           PIX      *pixProjectiveSampled()
  *
- *      Projective (4 pt) image transformation using interpolation 
+ *      Projective (4 pt) image transformation using interpolation
  *      (or area mapping) for anti-aliasing images that are
  *      2, 4, or 8 bpp gray, or colormapped, or 32 bpp RGB
  *           PIX      *pixProjectivePta()
@@ -95,8 +106,6 @@
  *      for 8 bpp and 32 bpp, for both sampled and interpolated.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "allheaders.h"
@@ -312,7 +321,7 @@ PIX      *pixt1, *pixt2, *pixd;
         else  /* d == 32 */
             colorval = 0xffffff00;
     }
-    
+
     if (d == 8)
         pixd = pixProjectivePtaGray(pixt2, ptad, ptas, colorval);
     else  /* d == 32 */
@@ -371,7 +380,7 @@ PIX      *pixt1, *pixt2, *pixd;
         else  /* d == 32 */
             colorval = 0xffffff00;
     }
-    
+
     if (d == 8)
         pixd = pixProjectiveGray(pixt2, vc, colorval);
     else  /* d == 32 */
@@ -764,16 +773,16 @@ PIX  *pixg, *pixd;
  *          y3' = (c[3]*x3 + c[4]*y3 + c[5]) / (c[6]*x3 + c[7]*y3 + 1)
  *          x4' = (c[0]*x4 + c[1]*y4 + c[2]) / (c[6]*x4 + c[7]*y4 + 1)
  *          y4' = (c[3]*x4 + c[4]*y4 + c[5]) / (c[6]*x4 + c[7]*y4 + 1)
- *    
+ *
  *  Multiplying both sides of each eqn by the denominator, we get
  *
  *           AC = B
  *
  *  where B and C are column vectors
- *    
+ *
  *         B = [ x1' y1' x2' y2' x3' y3' x4' y4' ]
  *         C = [ c[0] c[1] c[2] c[3] c[4] c[5] c[6] c[7] ]
- *    
+ *
  *  and A is the 8x8 matrix
  *
  *             x1   y1     1     0   0    0   -x1*x1'  -y1*x1'
@@ -814,7 +823,7 @@ l_float32  *a[8];  /* 8x8 matrix A  */
         return ERROR_INT("ptad not defined", procName, 1);
     if (!pvc)
         return ERROR_INT("&vc not defined", procName, 1);
-        
+
     if ((b = (l_float32 *)CALLOC(8, sizeof(l_float32))) == NULL)
         return ERROR_INT("b not made", procName, 1);
     *pvc = b;
@@ -947,5 +956,3 @@ l_float32  factor;
     *pyp = factor * (vc[3] * x + vc[4] * y + vc[5]);
     return 0;
 }
-
-

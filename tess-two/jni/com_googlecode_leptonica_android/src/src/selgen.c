@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -41,7 +52,7 @@
  *            SEL     *pixGenerateSelWithRuns()
  *            SEL     *pixGenerateSelRandom()
  *            SEL     *pixGenerateSelBoundary()
- *      
+ *
  *      Accumulate data on runs along lines
  *            NUMA    *pixGetRunCentersOnLine()
  *            NUMA    *pixGetRunsOnLine()
@@ -54,8 +65,6 @@
  *            PIX     *pixDisplayHitMissSel()
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "allheaders.h"
 
 
@@ -113,7 +122,7 @@ static const l_int32  MAX_SEL_SCALEFACTOR = 31;  /* should be big enough */
  *    (4) The pixels added to a side allow you to have miss elements there.
  *        There is a constraint between distance, minlength, and
  *        the added pixels for this to work.  We illustrate using the
- *        default values.  If you add 5 pixels to the top, and use a 
+ *        default values.  If you add 5 pixels to the top, and use a
  *        distance of 1, then you end up with a vertical run of at least
  *        4 bg pixels along the top edge of the image.  If you use a
  *        minimum runlength of 3, each vertical line will always find
@@ -122,7 +131,7 @@ static const l_int32  MAX_SEL_SCALEFACTOR = 31;  /* should be big enough */
  *        line.  As another example, if you have 7 added pixels and a
  *        distance of 2, you can use a runlength up to 5 to guarantee
  *        that the miss element is recorded.  We give a warning if the
- *        contraint does not guarantee a miss element outside the 
+ *        contraint does not guarantee a miss element outside the
  *        image proper.
  *    (5) The input pix, as extended by the extra pixels on selected sides,
  *        can optionally be returned.  For debugging, call
@@ -227,7 +236,7 @@ SEL       *seld, *sel;
     if (nhlines >= 1) {
         delh = (l_float32)h / (l_float32)(nhlines + 1);
         for (i = 0, y = 0; i < nhlines; i++) {
-            y += (l_int32)(delh + 0.5); 
+            y += (l_int32)(delh + 0.5);
             nah = pixGetRunCentersOnLine(pixfg, -1, y, minlength);
             nam = pixGetRunCentersOnLine(pixbg, -1, y, minlength);
             nh = numaGetCount(nah);
@@ -247,7 +256,7 @@ SEL       *seld, *sel;
     if (nvlines >= 1) {
         delw = (l_float32)w / (l_float32)(nvlines + 1);
         for (i = 0, x = 0; i < nvlines; i++) {
-            x += (l_int32)(delw + 0.5); 
+            x += (l_int32)(delw + 0.5);
             nah = pixGetRunCentersOnLine(pixfg, x, -1, minlength);
             nam = pixGetRunCentersOnLine(pixbg, x, -1, minlength);
             nh = numaGetCount(nah);
@@ -342,7 +351,7 @@ SEL       *seld, *sel;
         return (SEL *)ERROR_PTR("pixs not 1 bpp", procName, NULL);
     if (hitfract <= 0.0 && missfract <= 0.0)
         return (SEL *)ERROR_PTR("no hits or misses", procName, NULL);
-    if (hitfract > 1.0 || missfract > 1.0) 
+    if (hitfract > 1.0 || missfract > 1.0)
         return (SEL *)ERROR_PTR("fraction can't be > 1.0", procName, NULL);
 
     if (distance <= 0)
@@ -483,7 +492,7 @@ pixGenerateSelBoundary(PIX     *pixs,
 l_int32  ws, hs, w, h, x, y, ix, iy, i, npt;
 PIX     *pixt1, *pixt2, *pixt3, *pixfg, *pixbg;
 SEL     *selh, *selm, *sel_3, *sel;
-PTA     *ptah, *ptam; 
+PTA     *ptah, *ptam;
 
     PROCNAME("pixGenerateSelBoundary");
 
@@ -492,7 +501,7 @@ PTA     *ptah, *ptam;
         return (SEL *)ERROR_PTR("pixs not defined", procName, NULL);
     if (pixGetDepth(pixs) != 1)
         return (SEL *)ERROR_PTR("pixs not 1 bpp", procName, NULL);
-    if (hitdist < 0 || hitdist > 4 || missdist < 0 || missdist > 4) 
+    if (hitdist < 0 || hitdist > 4 || missdist < 0 || missdist > 4)
         return (SEL *)ERROR_PTR("dist not in {0 .. 4}", procName, NULL);
     if (hitskip < 0 && missskip < 0)
         return (SEL *)ERROR_PTR("no hits or misses", procName, NULL);
@@ -675,7 +684,7 @@ NUMA     *naruns, *nad;
  *  pixGetRunsOnLine()
  *
  *      Input:  pixs (1 bpp)
- *              x1, y1, x2, y2 
+ *              x1, y1, x2, y2
  *      Return: numa, or null on error
  *
  *  Notes:
@@ -765,12 +774,12 @@ PTA      *pta;
  *
  *  Notes:
  *      (1) If skip = 0, we take all the fg pixels.
- *      (2) We try to traverse the boundaries in a regular way. 
+ *      (2) We try to traverse the boundaries in a regular way.
  *          Some pixels may be missed, and these are then subsampled
  *          randomly with a fraction determined by 'skip'.
  *      (3) The most natural approach is to use a depth first (stack-based)
  *          method to find the fg pixels.  However, the pixel runs are
- *          4-connected and there are relatively few branches.  So 
+ *          4-connected and there are relatively few branches.  So
  *          instead of doing a proper depth-first search, we get nearly
  *          the same result using two nested while loops: the outer
  *          one continues a raster-based search for the next fg pixel,
@@ -793,11 +802,11 @@ PTA     *pta;
         return (PTA *)ERROR_PTR("pixs not 1 bpp", procName, NULL);
     if (skip < 0)
         return (PTA *)ERROR_PTR("skip < 0", procName, NULL);
-        
+
     if (skip == 0)
         return ptaGetPixelsFromPix(pixs, NULL);
 
-    pta = ptaCreate(0);    
+    pta = ptaCreate(0);
     pixt = pixCopy(NULL, pixs);
     xs = ys = 0;
     while (nextOnPixelInRaster(pixt, xs, ys, &xn, &yn)) {  /* new series */
@@ -923,7 +932,7 @@ PIXCMAP   *cmap;
     if (scalefactor <= 0)
         scalefactor = DEFAULT_SEL_SCALEFACTOR;
     if (scalefactor > MAX_SEL_SCALEFACTOR) {
-        L_WARNING("scalefactor too large; using max value", procName); 
+        L_WARNING("scalefactor too large; using max value", procName);
         scalefactor = MAX_SEL_SCALEFACTOR;
     }
 
@@ -952,10 +961,9 @@ PIXCMAP   *cmap;
     }
 
         /* Scale it up */
-    fscale = (l_float32)scalefactor; 
+    fscale = (l_float32)scalefactor;
     pixd = pixScaleBySampling(pixt, fscale, fscale);
 
     pixDestroy(&pixt);
     return pixd;
 }
-

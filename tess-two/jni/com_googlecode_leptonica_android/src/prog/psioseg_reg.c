@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -40,7 +51,7 @@ main(int    argc,
 {
 char          buf[512];
 char         *psname, *pdfname;
-l_int32       i, j, w, h, wc, hc, ret;
+l_int32       i, j, w, h, wc, hc, ret, ret2;
 l_float32     scalefactor;
 PIX          *pixs, *pixc, *pixht, *pixtxt, *pixmfull;
 PIX          *pix4c, *pix8c, *pix8g, *pix32, *pixcs, *pixcs2;
@@ -70,21 +81,21 @@ L_REGPARAMS  *rp;
     regTestWritePixAndCheck(rp, pixcs2, IFF_JFIF_JPEG);  /* 0 */
     pixmfull = pixCreate(w, h, 1);
     pixSetAll(pixmfull);  /* use as mask to render the color image */
-    
+
          /* Now make a 32 bpp input image, taking text parts from the
           * page image and image parts from pixcs2. */
     pix32 = pixConvertTo32(pixtxt);
     pixCombineMasked(pix32, pixcs2, pixht);
     regTestWritePixAndCheck(rp, pix32, IFF_JFIF_JPEG);  /* 1 */
-    
+
          /* Make an 8 bpp gray version */
     pix8g = pixConvertRGBToLuminance(pix32);
     regTestWritePixAndCheck(rp, pix8g, IFF_JFIF_JPEG);  /* 2 */
-    
+
          /* Make an 8 bpp colormapped version */
     pix8c = pixOctreeColorQuant(pix32, 240, 0);
     regTestWritePixAndCheck(rp, pix8c, IFF_PNG);  /* 3 */
-    
+
          /* Make a 4 bpp colormapped version */
     pix4c = pixOctreeQuantNumColors(pix32, 16, 4);
     regTestWritePixAndCheck(rp, pix4c, IFF_PNG);  /* 4 */
@@ -116,7 +127,7 @@ L_REGPARAMS  *rp;
     pixDestroy(&pix8g);
     pixDestroy(&pix8c);
     pixDestroy(&pix4c);
-    
+
         /* Generate the 8 page ps and pdf files */
     convertSegmentedPagesToPS("/tmp/imagedir", NULL,
                               "/tmp/maskdir", NULL,
@@ -131,7 +142,6 @@ L_REGPARAMS  *rp;
     lept_free(pdfname);
     fprintf(stderr, "pdf file made: /tmp/junkseg.pdf\n");
 
-    regTestCleanup(rp);
-    return ret;
+    ret2 = regTestCleanup(rp);
+    return (ret + ret2);
 }
-

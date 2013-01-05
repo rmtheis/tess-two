@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 
@@ -54,7 +65,7 @@
  *           l_int32    stringFindSubstr()
  *           char      *stringReplaceSubstr()
  *           char      *stringReplaceEachSubstr()
- *           NUMA      *arrayFindEachSequence()
+ *           L_DNA     *arrayFindEachSequence()
  *           l_int32    arrayFindSequence()
  *
  *       Safe realloc
@@ -97,6 +108,7 @@
  *       Cross-platform file system operations
  *           l_int32    lept_mkdir()
  *           l_int32    lept_rmdir()
+ *           l_int32    lept_direxists()
  *           l_int32    lept_mv()
  *           l_int32    lept_rm()
  *           l_int32    lept_cp()
@@ -111,6 +123,9 @@
  *
  *       Generate random integer in given range
  *           l_int32    genRandomIntegerInRange()
+ *
+ *       Simple math function
+ *           l_int32    lept_roundftoi()
  *
  *       Leptonica version number
  *           char      *getLeptonicaVersion()
@@ -145,6 +160,9 @@
 
 #include <string.h>
 #include <time.h>
+#ifndef _WIN32
+#include <dirent.h>     /* unix only */
+#endif  /* ! _WIN32 */
 #ifdef _MSC_VER
 #include <process.h>
 #else
@@ -183,8 +201,8 @@ static const char sepchar = '/';
  *      Return: ival (typically 1)
  */
 l_int32
-returnErrorInt(const char  *msg, 
-               const char  *procname, 
+returnErrorInt(const char  *msg,
+               const char  *procname,
                l_int32      ival)
 {
     fprintf(stderr, "Error in %s: %s\n", procname, msg);
@@ -201,8 +219,8 @@ returnErrorInt(const char  *msg,
  *      Return: fval
  */
 l_float32
-returnErrorFloat(const char  *msg, 
-                 const char  *procname, 
+returnErrorFloat(const char  *msg,
+                 const char  *procname,
                  l_float32    fval)
 {
     fprintf(stderr, "Error in %s: %s\n", procname, msg);
@@ -220,7 +238,7 @@ returnErrorFloat(const char  *msg,
  */
 void *
 returnErrorPtr(const char  *msg,
-               const char  *procname, 
+               const char  *procname,
                void        *pval)
 {
     fprintf(stderr, "Error in %s: %s\n", procname, msg);
@@ -592,7 +610,7 @@ char    *charbuf;
  */
 void
 l_infoInt(const char  *msg,
-          const char  *procname, 
+          const char  *procname,
           l_int32      ival)
 {
 l_int32  bufsize;
@@ -626,7 +644,7 @@ char    *charbuf;
  */
 void
 l_infoInt2(const char  *msg,
-           const char  *procname, 
+           const char  *procname,
            l_int32      ival1,
            l_int32      ival2)
 {
@@ -661,7 +679,7 @@ char    *charbuf;
  */
 void
 l_infoFloat(const char  *msg,
-            const char  *procname, 
+            const char  *procname,
             l_float32    fval)
 {
 l_int32  bufsize;
@@ -695,7 +713,7 @@ char    *charbuf;
  */
 void
 l_infoFloat2(const char  *msg,
-             const char  *procname, 
+             const char  *procname,
              l_float32    fval1,
              l_float32    fval2)
 {
@@ -741,7 +759,7 @@ char    *dest;
 
     if (!src)
         return (char *)ERROR_PTR("src not defined", procName, NULL);
-    
+
     len = strlen(src);
     if ((dest = (char *)CALLOC(len + 1, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("dest not made", procName, NULL);
@@ -788,7 +806,7 @@ l_int32  i;
         dest[i] = '\0';
     return 0;
 }
-    
+
 
 /*!
  *  stringReplace()
@@ -816,7 +834,7 @@ l_int32  len;
 
     if (*pdest)
         FREE(*pdest);
-    
+
     if (src) {
         len = strlen(src);
         if ((scopy = (char *)CALLOC(len + 1, sizeof(char))) == NULL)
@@ -829,7 +847,7 @@ l_int32  len;
 
     return 0;
 }
-    
+
 
 /*!
  *  stringLength()
@@ -931,7 +949,7 @@ l_int32  lendest, lensrc;
  *          are empty, or if either or both of the pointers are null.
  */
 char *
-stringJoin(const char  *src1, 
+stringJoin(const char  *src1,
            const char  *src2)
 {
 char    *dest;
@@ -1139,7 +1157,7 @@ char  *saveptr;
  */
 char *
 stringRemoveChars(const char  *src,
-                  const char  *remchars) 
+                  const char  *remchars)
 {
 char     ch;
 char    *dest;
@@ -1151,7 +1169,7 @@ l_int32  nsrc, i, k;
         return (char *)ERROR_PTR("src not defined", procName, NULL);
     if (!remchars)
         return stringNew(src);
-    
+
     if ((dest = (char *)CALLOC(strlen(src) + 1, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("dest not made", procName, NULL);
     nsrc = strlen(src);
@@ -1248,7 +1266,7 @@ l_int32  nsrc, nsub1, nsub2, len, npre, loc;
         return (char *)ERROR_PTR("sub1 not defined", procName, NULL);
     if (!sub2)
         return (char *)ERROR_PTR("sub2 not defined", procName, NULL);
-    
+
     if (pfound)
         *pfound = 0;
     if (ploc)
@@ -1339,7 +1357,7 @@ l_int32  loc;
  *              datalen (length of data, in bytes)
  *              sequence (subarray of bytes to find in data)
  *              seqlen (length of sequence, in bytes)
- *      Return: numa of offsets where the sequence is found, or null if
+ *      Return: dna of offsets where the sequence is found, or null if
  *              none are found or on error
  *
  *  Notes:
@@ -1348,29 +1366,29 @@ l_int32  loc;
  *          we must give the length of the array.
  *      (2) This finds every occurrence in @data of @sequence.
  */
-NUMA *
+L_DNA *
 arrayFindEachSequence(const l_uint8  *data,
                       l_int32         datalen,
                       const l_uint8  *sequence,
                       l_int32         seqlen)
 {
 l_int32  start, offset, realoffset, found;
-NUMA    *na;
+L_DNA   *da;
 
     PROCNAME("arrayFindEachSequence");
 
     if (!data || !sequence)
-        return (NUMA *)ERROR_PTR("data & sequence not both defined",
-                                 procName, NULL);
+        return (L_DNA *)ERROR_PTR("data & sequence not both defined",
+                                  procName, NULL);
 
-    na = numaCreate(0);
+    da = l_dnaCreate(0);
     start = 0;
     while (1) {
         arrayFindSequence(data + start, datalen - start, sequence, seqlen,
                           &offset, &found);
         if (found == TRUE) {
             realoffset = start + offset;
-            numaAddNumber(na, realoffset);
+            l_dnaAddNumber(da, realoffset);
             start = realoffset + seqlen;
             if (start >= datalen) break;
         }
@@ -1378,9 +1396,9 @@ NUMA    *na;
             break;
     }
 
-    if (numaGetCount(na) == 0)
-        numaDestroy(&na);
-    return na;
+    if (l_dnaGetCount(da) == 0)
+        l_dnaDestroy(&da);
+    return da;
 }
 
 
@@ -1479,7 +1497,7 @@ reallocNew(void   **pindata,
            l_int32  newsize)
 {
 l_int32  minsize;
-void    *indata; 
+void    *indata;
 void    *newdata;
 
     PROCNAME("reallocNew");
@@ -1514,7 +1532,7 @@ void    *newdata;
 
     return newdata;
 }
-    
+
 
 
 /*--------------------------------------------------------------------*
@@ -1528,7 +1546,7 @@ void    *newdata;
  *      Return: data, or null on error
  */
 l_uint8 *
-l_binaryRead(const char  *filename, 
+l_binaryRead(const char  *filename,
              size_t      *pnbytes)
 {
 l_uint8  *data;
@@ -1566,7 +1584,7 @@ FILE     *fp;
  *          beginning of the file.
  */
 l_uint8 *
-l_binaryReadStream(FILE    *fp, 
+l_binaryReadStream(FILE    *fp,
                    size_t  *pnbytes)
 {
 l_int32   ignore;
@@ -1858,7 +1876,7 @@ l_uint8  *array1, *array2;
 
 /*--------------------------------------------------------------------------*
  *   16 and 32 bit byte-swapping on big endian and little  endian machines  *
- *                                                                          * 
+ *                                                                          *
  *   These are typically used for I/O conversions:                          *
  *      (1) endian conversion for data that was read from a file            *
  *      (2) endian conversion on data before it is written to a file        *
@@ -1941,7 +1959,7 @@ convertOnBigEnd32(l_uint32  wordin)
 /*!
  *  fopenReadStream()
  *
- *      Input:  filename 
+ *      Input:  filename
  *      Return: stream, or null on error
  *
  *  Notes:
@@ -1970,7 +1988,7 @@ FILE  *fp;
     splitPathAtDirectory(filename, NULL, &tail);
     fp = fopen(tail, "rb");
     FREE(tail);
-    
+
     if (!fp)
         return (FILE *)ERROR_PTR("file not found", procName, NULL);
     return fp;
@@ -1980,7 +1998,7 @@ FILE  *fp;
 /*!
  *  fopenWriteStream()
  *
- *      Input:  filename 
+ *      Input:  filename
  *              modestring
  *      Return: stream, or null on error
  *
@@ -2173,7 +2191,7 @@ l_uint32  attributes;
     FREE(dir);
     return ret;
 }
-    
+
 
 /*!
  *  lept_rmdir()
@@ -2187,14 +2205,12 @@ l_uint32  attributes;
  *      (2) Use unix pathname separators.
  *      (3) On Windows, the affected directory is a subdirectory
  *          of <Temp>/leptonica, where <Temp> is the Windows temp dir.
- *      (4) TODO: Use a new function lept_dirExists(path) to test
- *          if the directory exists, and if not, fail silently.
  */
 l_int32
 lept_rmdir(const char  *subdir)
 {
 char    *dir, *fname, *fullname;
-l_int32  ret, i, nfiles;
+l_int32  exists, ret, i, nfiles;
 SARRAY  *sa;
 #ifdef _WIN32
 char    *newpath;
@@ -2209,10 +2225,15 @@ char    *newpath;
 
     if ((dir = pathJoin("/tmp", subdir)) == NULL)
         return ERROR_INT("dir not made", procName, 1);
+    lept_direxists(dir, &exists);
+    if (!exists) {  /* fail silently */
+        FREE(dir);
+        return 0;
+    }
 
         /* List all the files in temp subdir */
     if ((sa = getFilenamesInDirectory(dir)) == NULL) {
-        L_WARNING_STRING("directory %s does not exist", procName, dir);
+        L_ERROR_STRING("directory %s does not exist!!", procName, dir);
         FREE(dir);
         return 1;
     }
@@ -2242,7 +2263,51 @@ char    *newpath;
     FREE(dir);
     return ret;
 }
-    
+
+
+/*!
+ *  lept_direxists()
+ *
+ *      Input:  dirname
+ *              &exists (<return> 1 on success, 0 on failure)
+ *      Return: void
+ *
+ *  Notes:
+ *      (1) For Windows, use windows pathname separators.
+ */
+void
+lept_direxists(const char  *dirname,
+               l_int32     *pexists)
+{
+    PROCNAME("lept_direxists");
+
+    if (!pexists) return;
+    *pexists = 0;
+    if (!dirname) return;
+
+#ifndef _WIN32
+    {
+    DIR  *pdir = opendir(dirname);
+        if (pdir) {
+            *pexists = 1;
+            closedir(pdir);
+        }
+    }
+#else  /* _WIN32 */
+    {
+    HANDLE  hFind = INVALID_HANDLE_VALUE;
+    WIN32_FIND_DATAA  ffd;
+        hFind = FindFirstFileA(dirname, &ffd);
+        if (hfind != INVALID_HANDLE_VALUE) {
+            *pexists = 1;
+            FindClose(hFind);
+        }
+    }
+#endif  /* _WIN32 */
+
+    return;
+}
+
 
 /*!
  *  lept_rm()
@@ -2302,7 +2367,7 @@ char    *newpath;
     FREE(pathname);
     return ret;
 }
-    
+
 
 /*!
  *  lept_mv()
@@ -2354,7 +2419,7 @@ l_uint32  attributes;
     srcpath = genPathname(srcfile, NULL);
     newpath = genPathname(newfileplus, NULL);
     attributes = GetFileAttributes(newpath);
-    if (attributes != INVALID_FILE_ATTRIBUTES && 
+    if (attributes != INVALID_FILE_ATTRIBUTES &&
         (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
         if (splitPathAtDirectory(srcpath, NULL, &tail)) {
             FREE(srcpath);
@@ -2369,7 +2434,7 @@ l_uint32  attributes;
 
         /* New file overwritten if it already exists */
     ret = (MoveFileEx(srcpath, newpath,
-                      MOVEFILE_COPY_ALLOWED | 
+                      MOVEFILE_COPY_ALLOWED |
                       MOVEFILE_REPLACE_EXISTING) ? 0 : 1);
     FREE(srcpath);
     FREE(newpath);
@@ -2433,7 +2498,7 @@ l_uint32  attributes;
     srcpath = genPathname(srcfile, NULL);
     newpath = genPathname(newfileplus, NULL);
     attributes = GetFileAttributes(newpath);
-    if (attributes != INVALID_FILE_ATTRIBUTES && 
+    if (attributes != INVALID_FILE_ATTRIBUTES &&
         (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
         if (splitPathAtDirectory(srcpath, NULL, &tail)) {
             FREE(srcpath);
@@ -2470,7 +2535,7 @@ l_uint32  attributes;
  *                     the file name within the root directory or
  *                     the last sub-directory in the path)
  *      Return: 0 if OK, 1 on error
- *       
+ *
  *  Notes:
  *      (1) If you only want the tail, input null for the root directory ptr.
  *      (2) If you only want the root directory name, input null for the
@@ -2533,7 +2598,7 @@ char  *cpathname, *lastslash;
  *                        the last dot and the characters after it.  If
  *                        there is no extension, it returns the empty string)
  *      Return: 0 if OK, 1 on error
- *       
+ *
  *  Notes:
  *      (1) If you only want the extension, input null for the basename ptr.
  *      (2) If you only want the basename without extension, input null
@@ -2681,7 +2746,7 @@ L_BYTEA  *ba;
 }
 
 
-/*! 
+/*!
  *  genPathname()
  *
  *      Input:  dir (directory name, with or without trailing '/')
@@ -2710,7 +2775,7 @@ genPathname(const char  *dir,
 {
 char    *cdir, *pathout;
 l_int32  dirlen, namelen, size;
-    
+
     PROCNAME("genPathname");
 
     if (!dir)
@@ -2771,7 +2836,7 @@ l_int32  dirlen, namelen, size;
 }
 
 
-/*! 
+/*!
  *  genTempFilename()
  *
  *      Input:  dir (directory name; use '.' for local dir;
@@ -2825,7 +2890,7 @@ char    *newpath;
 l_uint32 attributes;
 l_int32  ret;
 #endif  /* !_WIN32 */
-    
+
     PROCNAME("genTempFilename");
 
     if (!dir)
@@ -2886,7 +2951,7 @@ l_int32  ret;
 }
 
 
-/*! 
+/*!
  *  extractNumberFromFilename()
  *
  *      Input:  fname
@@ -2910,7 +2975,7 @@ extractNumberFromFilename(const char  *fname,
 {
 char    *tail, *basename;
 l_int32  len, nret, num;
-    
+
     PROCNAME("extractNumberFromFilename");
 
     if (!fname)
@@ -2969,6 +3034,28 @@ genRandomIntegerInRange(l_int32   range,
     *pval = (l_int32)((l_float64)range *
                        ((l_float64)rand() / (l_float64)RAND_MAX));
     return 0;
+}
+
+
+/*---------------------------------------------------------------------*
+ *                         Simple math function                        *
+ *---------------------------------------------------------------------*/
+/*!
+ *  lept_roundftoi()
+ *
+ *      Input:  fval
+ *      Return: value rounded to int
+ *
+ *  Notes:
+ *      (1) For fval >= 0, fval --> round(fval) == floor(fval + 0.5)
+ *          For fval < 0, fval --> -round(-fval))
+ *          This is symmetric around 0.
+ *          e.g., for fval in (-0.5 ... 0.5), fval --> 0
+ */
+l_int32
+lept_roundftoi(l_float32  fval)
+{
+    return (fval >= 0.0) ? (l_int32)(fval + 0.5) : (l_int32)(fval - 0.5);
 }
 
 
@@ -3133,7 +3220,7 @@ startTimer(void)
 {
 HANDLE    this_process;
 FILETIME  start, stop, kernel, user;
-    
+
     this_process = GetCurrentProcess();
 
     GetProcessTimes(this_process, &start, &stop, &kernel, &user);
@@ -3148,7 +3235,7 @@ stopTimer(void)
 HANDLE     this_process;
 FILETIME   start, stop, kernel, user;
 ULONGLONG  hnsec;  /* in units of hecto-nanosecond (100 ns) intervals */
-    
+
     this_process = GetCurrentProcess();
 
     GetProcessTimes(this_process, &start, &stop, &kernel, &user);
@@ -3310,4 +3397,3 @@ l_uint8  *data;
     ignore = fread(data, 1, *pnbytes, fp);
     return data;
 }
-

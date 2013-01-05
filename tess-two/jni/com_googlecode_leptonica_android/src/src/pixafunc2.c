@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -119,7 +130,7 @@ PIX     *pixt, *pixd;
 
     if (!pixa)
         return (PIX *)ERROR_PTR("pixa not defined", procName, NULL);
-    
+
     n = pixaGetCount(pixa);
     if (n == 0 && w == 0 && h == 0)
         return (PIX *)ERROR_PTR("no components; no size", procName, NULL);
@@ -220,7 +231,7 @@ PIXA    *pixat;
             pixDestroy(&pixt1);
         }
     }
-    else 
+    else
         pixat = pixaCopy(pixa, L_CLONE);
 
         /* Make the output pix and set the background color */
@@ -281,7 +292,7 @@ PIXCMAP  *cmap;
 
     if (!pixa)
         return (PIX *)ERROR_PTR("pixa not defined", procName, NULL);
-    
+
     n = pixaGetCount(pixa);
     if (n == 0)
         return (PIX *)ERROR_PTR("no components", procName, NULL);
@@ -352,7 +363,7 @@ PIXA    *pixat;
 
     if (!pixa)
         return (PIX *)ERROR_PTR("pixa not defined", procName, NULL);
-    
+
         /* If any pix have colormaps, generate rgb */
     if ((n = pixaGetCount(pixa)) == 0)
         return (PIX *)ERROR_PTR("no components", procName, NULL);
@@ -381,7 +392,7 @@ PIXA    *pixat;
         pixaDestroy(&pixat);
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     }
-    
+
     index = 0;
     for (i = 0; i < nh; i++) {
         for (j = 0; j < nw && index < n; j++, index++) {
@@ -392,7 +403,7 @@ PIXA    *pixat;
                 pixDestroy(&pixt);
                 continue;
             }
-            pixRasterop(pixd, j * xspace, i * yspace, wt, ht, 
+            pixRasterop(pixd, j * xspace, i * yspace, wt, ht,
                         PIX_PAINT, pixt, 0, 0);
             pixDestroy(&pixt);
         }
@@ -644,7 +655,7 @@ PIXA    *pixan;
     if (border < 0)
         border = 0;
     if (scalefactor <= 0.0) scalefactor = 1.0;
-    
+
     if ((n = pixaGetCount(pixa)) == 0)
         return (PIX *)ERROR_PTR("no components", procName, NULL);
 
@@ -695,8 +706,8 @@ PIXA    *pixan;
         pixaGetPixDimensions(pixan, i, &wt, &ht, NULL);
         wtry = w + wt + spacing;
         if (wtry > maxwidth) {  /* end the current row and start next one */
-            numaAddNumber(nainrow, irow); 
-            numaAddNumber(namaxh, maxh); 
+            numaAddNumber(nainrow, irow);
+            numaAddNumber(namaxh, maxh);
             wmaxrow = L_MAX(wmaxrow, w);
             h += maxh + spacing;
             irow = 0;
@@ -709,11 +720,11 @@ PIXA    *pixan;
     }
 
         /* Enter the parameters for the last row */
-    numaAddNumber(nainrow, irow); 
-    numaAddNumber(namaxh, maxh); 
+    numaAddNumber(nainrow, irow);
+    numaAddNumber(namaxh, maxh);
     wmaxrow = L_MAX(wmaxrow, w);
     h += maxh + spacing;
-            
+
     if ((pixd = pixCreate(wmaxrow, h, outdepth)) == NULL) {
         numaDestroy(&nainrow);
         numaDestroy(&namaxh);
@@ -796,7 +807,7 @@ PIXA      *pixan;
         return (PIX *)ERROR_PTR("outdepth not in {1, 8, 32}", procName, NULL);
     if (border < 0 || border > tilewidth / 5)
         border = 0;
-    
+
     if ((n = pixaGetCount(pixa)) == 0)
         return (PIX *)ERROR_PTR("no components", procName, NULL);
 
@@ -923,7 +934,7 @@ PIXA    *pixa;
 
     if (!pixaa)
         return (PIX *)ERROR_PTR("pixaa not defined", procName, NULL);
-    
+
     n = pixaaGetCount(pixaa);
     if (n == 0)
         return (PIX *)ERROR_PTR("no components", procName, NULL);
@@ -960,7 +971,7 @@ PIXA    *pixa;
 
     if ((pixd = pixCreate(w, h, d)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
-    
+
     x = y = 0;
     for (i = 0; i < n; i++) {
         pixa = pixaaGetPixa(pixaa, i, L_CLONE);
@@ -1016,7 +1027,7 @@ PIXA    *pixa;
 
     if (!pixaa)
         return (PIX *)ERROR_PTR("pixaa not defined", procName, NULL);
-    
+
     if ((npixa = pixaaGetCount(pixaa)) == 0)
         return (PIX *)ERROR_PTR("no components", procName, NULL);
 
@@ -1117,7 +1128,7 @@ PIXA    *pixa, *pixad;
         return (PIXA *)ERROR_PTR("outdepth not in {1, 8, 32}", procName, NULL);
     if (border < 0 || border > tilewidth / 5)
         border = 0;
-    
+
     if ((n = pixaaGetCount(pixaa)) == 0)
         return (PIXA *)ERROR_PTR("no components", procName, NULL);
 

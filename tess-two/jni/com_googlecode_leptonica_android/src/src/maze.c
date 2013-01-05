@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 
@@ -273,7 +284,7 @@ mazeelCreate(l_int32  x,
              l_int32  dir)
 {
 MAZEEL *el;
-  
+
     el = (MAZEEL *)CALLOC(1, sizeof(MAZEEL));
     el->x = x;
     el->y = y;
@@ -331,7 +342,7 @@ MAZEEL *el;
 PTA *
 pixSearchBinaryMaze(PIX     *pixs,
                     l_int32  xi,
-                    l_int32  yi, 
+                    l_int32  yi,
                     l_int32  xf,
                     l_int32  yf,
                     PIX    **ppixd)
@@ -397,7 +408,7 @@ PTA       *pta;
             FREE(elp);
             break;
         }
-            
+
         if (x > 0) {  /* check to west */
             val = GET_DATA_BIT(linem1[y], x - 1);
             if (val == 0) {  /* not yet visited */
@@ -580,7 +591,7 @@ l_uint32  val;
  *      but the cost is higher (say, an increment of 3 to go into
  *      a wall pixel rather than 1)?  You're still trying to find
  *      the shortest path.  One way to do this is with an ordered
- *      queue, and a simple way to visualize an ordered queue is as 
+ *      queue, and a simple way to visualize an ordered queue is as
  *      a set of stacks, each stack being marked with the distance
  *      of each pixel in the stack from the start.  We place the
  *      start pixel in stack 0, pop it, and process its 4 children.
@@ -628,7 +639,7 @@ l_uint32  val;
  *      of stacks to avoid ordering the queue (e.g., by using a heap sort.)
  *      This is a neat problem, because you don't even have to build a
  *      maze -- you can can use it on any grayscale image!
- *    
+ *
  *      Rather than using an array of stacks, a more practical
  *      approach is to implement with a priority queue, which is
  *      a queue that is sorted so that the elements with the largest
@@ -784,7 +795,7 @@ PTA      *pta;
         distparent = (l_int32)elp->distance;
         val = elp->val;
         sival = val;
-            
+
         if (x > 0) {  /* check to west */
             vals = GET_DATA_BYTE(lines8[y], x - 1);
             valr = GET_DATA_FOUR_BYTES(liner32[y], x - 1);
@@ -1064,7 +1075,7 @@ PIX       *pixw, *pixh;  /* keeps the width and height for the largest */
         pixWrite(debugfile, pixdb, IFF_PNG);
         pixDestroy(&pixdb);
     }
- 
+
     FREE(linew);
     FREE(lineh);
     FREE(lowestfg);
@@ -1072,5 +1083,3 @@ PIX       *pixw, *pixh;  /* keeps the width and height for the largest */
     pixDestroy(&pixh);
     return 0;
 }
-
-

@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 
@@ -81,8 +92,6 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "allheaders.h"
 
@@ -99,7 +108,7 @@
  *  scaleColorLILow()
  *
  *  We choose to divide each pixel into 16 x 16 sub-pixels.
- *  Linear interpolation is equivalent to finding the 
+ *  Linear interpolation is equivalent to finding the
  *  fractional area (i.e., number of sub-pixels divided
  *  by 256) associated with each of the four nearest src pixels,
  *  and weighting each pixel value by this fractional area.
@@ -209,7 +218,7 @@ l_float32  scx, scy;
  *  scaleGrayLILow()
  *
  *  We choose to divide each pixel into 16 x 16 sub-pixels.
- *  Linear interpolation is equivalent to finding the 
+ *  Linear interpolation is equivalent to finding the
  *  fractional area (i.e., number of sub-pixels divided
  *  by 256) associated with each of the four nearest src pixels,
  *  and weighting each pixel value by this fractional area.
@@ -353,7 +362,7 @@ l_uint32  *lines, *lined;
          * and for each src line, we're computing 2 dest lines.
          * Call these 2 dest lines:  destline1 and destline2.
          * The first src line is used for destline 1.
-         * On all but the last src line, both src lines are 
+         * On all but the last src line, both src lines are
          * used in the linear interpolation for destline2.
          * On the last src line, both destline1 and destline2
          * are computed using only that src line (because there
@@ -365,7 +374,7 @@ l_uint32  *lines, *lined;
         lined = datad + 2 * i * wpld;
         scaleColor2xLILineLow(lined, wpld, lines, ws, wpls, 0);
     }
-    
+
         /* last src line */
     lines = datas + hsm * wpls;
     lined = datad + 2 * hsm * wpld;
@@ -446,11 +455,11 @@ l_uint32  *linesp, *linedp;
                      (((gval1 + gval3) << 15) & 0x00ff0000) |
                      (((bval1 + bval3) << 7) & 0x0000ff00));
             *(linedp + jd) = pixel;                              /* pix 3 */
-            pixel = ((((rval1 + rval2 + rval3 + rval4) << 22) & 0xff000000) | 
+            pixel = ((((rval1 + rval2 + rval3 + rval4) << 22) & 0xff000000) |
                      (((gval1 + gval2 + gval3 + gval4) << 14) & 0x00ff0000) |
                      (((bval1 + bval2 + bval3 + bval4) << 6) & 0x0000ff00));
             *(linedp + jd + 1) = pixel;                          /* pix 4 */
-        }  
+        }
             /* last src pixel on line */
         rval1 = rval2;
         gval1 = gval2;
@@ -489,7 +498,7 @@ l_uint32  *linesp, *linedp;
                      (((bval1 + bval2) << 7) & 0x0000ff00));
             *(lined + jd + 1) = pixel;                        /* pix 3 */
             *(linedp + jd + 1) = pixel;                       /* pix 4 */
-        }  
+        }
         rval1 = rval2;
         gval1 = gval2;
         bval1 = bval2;
@@ -499,7 +508,7 @@ l_uint32  *linesp, *linedp;
         *(linedp + 2 * wsm) = pixel;                          /* pix 3 */
         *(linedp + 2 * wsm + 1) = pixel;                      /* pix 4 */
     }
-        
+
     return;
 }
 
@@ -559,7 +568,7 @@ l_uint32  *lines, *lined;
          * and for each src line, we're computing 2 dest lines.
          * Call these 2 dest lines:  destline1 and destline2.
          * The first src line is used for destline 1.
-         * On all but the last src line, both src lines are 
+         * On all but the last src line, both src lines are
          * used in the linear interpolation for destline2.
          * On the last src line, both destline1 and destline2
          * are computed using only that src line (because there
@@ -571,7 +580,7 @@ l_uint32  *lines, *lined;
         lined = datad + 2 * i * wpld;
         scaleGray2xLILineLow(lined, wpld, lines, ws, wpls, 0);
     }
-    
+
         /* last src line */
     lines = datas + hsm * wpls;
     lined = datad + 2 * hsm * wpld;
@@ -719,14 +728,14 @@ l_uint32   words, wordsp, wordd, worddp;
             SET_DATA_BYTE(linedp, jd, sval1);                      /* pix 3 */
             SET_DATA_BYTE(lined, jd + 1, (sval1 + sval2) / 2);     /* pix 2 */
             SET_DATA_BYTE(linedp, jd + 1, (sval1 + sval2) / 2);    /* pix 4 */
-        }  
+        }
         sval1 = sval2;
         SET_DATA_BYTE(lined, 2 * wsm, sval1);                     /* pix 1 */
         SET_DATA_BYTE(lined, 2 * wsm + 1, sval1);                 /* pix 2 */
         SET_DATA_BYTE(linedp, 2 * wsm, sval1);                    /* pix 3 */
         SET_DATA_BYTE(linedp, 2 * wsm + 1, sval1);                /* pix 4 */
     }
-        
+
     return;
 }
 
@@ -769,17 +778,17 @@ l_uint32   words, wordsp, wordd, worddp;
  *           dp3    =  (sp1 + sp2) / 2
  *           dp4    =  (sp1 + 3 * sp2) / 4
  *           dp5    =  (3 * sp1 + sp3) / 4
- *           dp6    =  (9 * sp1 + 3 * sp2 + 3 * sp3 + sp4) / 16 
+ *           dp6    =  (9 * sp1 + 3 * sp2 + 3 * sp3 + sp4) / 16
  *           dp7    =  (3 * sp1 + 3 * sp2 + sp3 + sp4) / 8
- *           dp8    =  (3 * sp1 + 9 * sp2 + 1 * sp3 + 3 * sp4) / 16 
+ *           dp8    =  (3 * sp1 + 9 * sp2 + 1 * sp3 + 3 * sp4) / 16
  *           dp9    =  (sp1 + sp3) / 2
  *           dp10   =  (3 * sp1 + sp2 + 3 * sp3 + sp4) / 8
- *           dp11   =  (sp1 + sp2 + sp3 + sp4) / 4 
+ *           dp11   =  (sp1 + sp2 + sp3 + sp4) / 4
  *           dp12   =  (sp1 + 3 * sp2 + sp3 + 3 * sp4) / 8
  *           dp13   =  (sp1 + 3 * sp3) / 4
- *           dp14   =  (3 * sp1 + sp2 + 9 * sp3 + 3 * sp4) / 16 
+ *           dp14   =  (3 * sp1 + sp2 + 9 * sp3 + 3 * sp4) / 16
  *           dp15   =  (sp1 + sp2 + 3 * sp3 + 3 * sp4) / 8
- *           dp16   =  (sp1 + 3 * sp2 + 3 * sp3 + 9 * sp4) / 16 
+ *           dp16   =  (sp1 + 3 * sp2 + 3 * sp3 + 9 * sp4) / 16
  *
  *  We iterate over the src pixels, and unroll the calculation
  *  for each set of 16 dest pixels corresponding to that src
@@ -812,7 +821,7 @@ l_uint32  *lines, *lined;
         lined = datad + 4 * i * wpld;
         scaleGray4xLILineLow(lined, wpld, lines, ws, wpls, 0);
     }
-    
+
         /* last src line */
     lines = datas + hsm * wpls;
     lined = datad + 4 * hsm * wpld;
@@ -880,7 +889,7 @@ l_uint32  *linesp, *linedp1, *linedp2, *linedp3;
             SET_DATA_BYTE(linedp3, jd + 1, (s1t + s2 + 9*s3 + s4t) / 16);/*d14*/
             SET_DATA_BYTE(linedp3, jd + 2, (s1 + s2 + s3t + s4t) / 8); /* d15 */
             SET_DATA_BYTE(linedp3, jd + 3, (s1 + s2t + s3t + 9*s4) / 16);/*d16*/
-        }  
+        }
         s1 = s2;
         s3 = s4;
         s1t = 3 * s1;
@@ -928,7 +937,7 @@ l_uint32  *linesp, *linedp1, *linedp2, *linedp3;
             SET_DATA_BYTE(linedp3, jd + 1, (s1t + s2) / 4 );         /* d14 */
             SET_DATA_BYTE(linedp3, jd + 2, (s1 + s2) / 2 );          /* d15 */
             SET_DATA_BYTE(linedp3, jd + 3, (s1 + s2t) / 4 );         /* d16 */
-        }  
+        }
         s1 = s2;
         SET_DATA_BYTE(lined, wsm4, s1);                              /* d1 */
         SET_DATA_BYTE(lined, wsm4 + 1, s1);                          /* d2 */
@@ -947,7 +956,7 @@ l_uint32  *linesp, *linedp1, *linedp2, *linedp3;
         SET_DATA_BYTE(linedp3, wsm4 + 2, s1);                        /* d15 */
         SET_DATA_BYTE(linedp3, wsm4 + 3, s1);                        /* d16 */
     }
-        
+
     return;
 }
 
@@ -991,7 +1000,7 @@ l_float32  wratio, hratio;
         /* clear dest */
     bpld = 4 * wpld;
     memset((char *)datad, 0, hd * bpld);
-    
+
         /* the source row corresponding to dest row i ==> srow[i]
          * the source col corresponding to dest col j ==> scol[j]  */
     if ((srow = (l_int32 *)CALLOC(hd, sizeof(l_int32))) == NULL)
@@ -1130,7 +1139,7 @@ l_float32  wratio, hratio, norm;
 
         /* Clear dest */
     memset((char *)datad, 0, 4 * wpld * hd);
-    
+
         /* Each dest pixel at (j,i) is computed as the average
            of size^2 corresponding src pixels.
            We store the UL corner location of the square of
@@ -1626,7 +1635,7 @@ l_float32  wratio, hratio;
         /* clear dest */
     bpld = 4 * wpld;
     memset((char *)datad, 0, hd * bpld);
-    
+
         /* The source row corresponding to dest row i ==> srow[i]
          * The source col corresponding to dest col j ==> scol[j]  */
     if ((srow = (l_int32 *)CALLOC(hd, sizeof(l_int32))) == NULL)
@@ -1720,7 +1729,7 @@ l_uint32  *lines, *lined;
     extra = wd - wd4;
     for (i = 0, l = 0; i < hd; i++, l += 2) {
         lines = datas + l * wpls;
-        lined = datad + i * wpld; 
+        lined = datad + i * wpld;
         for (j = 0, k = 0; j < wd4; j += 4, k++) {
             sbyte1 = GET_DATA_BYTE(lines, k);
             sbyte2 = GET_DATA_BYTE(lines + wpls, k);
@@ -1739,7 +1748,7 @@ l_uint32  *lines, *lined;
                               valtab[((sum >> (24 - 8 * m)) & 0xff)]);
             }
         }
-        
+
     }
 
     return;
@@ -1748,7 +1757,7 @@ l_uint32  *lines, *lined;
 
 /*!
  *  makeSumTabSG2()
- *         
+ *
  *  Returns a table of 256 l_uint32s, giving the four output
  *  8-bit grayscale sums corresponding to 8 input bits of a binary
  *  image, for a 2x scale-to-gray op.  The sums from two
@@ -1779,7 +1788,7 @@ l_uint32  *tab;
 
 /*!
  *  makeValTabSG2()
- *         
+ *
  *  Returns an 8 bit value for the sum of ON pixels
  *  in a 2x2 square, according to
  *
@@ -1859,7 +1868,7 @@ l_uint32  *lines, *lined;
          * into 8 bytes of the dest (8 8bpp pixels in one line)   */
     for (i = 0, l = 0; i < hd; i++, l += 3) {
         lines = datas + l * wpls;
-        lined = datad + i * wpld; 
+        lined = datad + i * wpld;
         for (j = 0, k = 0; j < wd; j += 8, k += 3) {
             threebytes1 = (GET_DATA_BYTE(lines, k) << 16) |
                           (GET_DATA_BYTE(lines, k + 1) << 8) |
@@ -1904,7 +1913,7 @@ l_uint32  *lines, *lined;
 
 /*!
  *  makeSumTabSG3()
- *         
+ *
  *  Returns a table of 64 l_uint32s, giving the two output
  *  8-bit grayscale sums corresponding to 6 input bits of a binary
  *  image, for a 3x scale-to-gray op.  In practice, this would
@@ -1935,7 +1944,7 @@ l_uint32  *tab;
 
 /*!
  *  makeValTabSG3()
- *         
+ *
  *  Returns an 8 bit value for the sum of ON pixels
  *  in a 3x3 square, according to
  *      val = 255 - (255 * sum)/9
@@ -2002,7 +2011,7 @@ l_uint32  *lines, *lined;
          * each) and convert it into two 8 bpp bytes of the dest. */
     for (i = 0, l = 0; i < hd; i++, l += 4) {
         lines = datas + l * wpls;
-        lined = datad + i * wpld; 
+        lined = datad + i * wpld;
         for (j = 0, k = 0; j < wd; j += 2, k++) {
             sbyte1 = GET_DATA_BYTE(lines, k);
             sbyte2 = GET_DATA_BYTE(lines + wpls, k);
@@ -2021,7 +2030,7 @@ l_uint32  *lines, *lined;
 
 /*!
  *  makeSumTabSG4()
- *         
+ *
  *  Returns a table of 256 l_uint32s, giving the two output
  *  8-bit grayscale sums corresponding to 8 input bits of a binary
  *  image, for a 4x scale-to-gray op.  The sums from four
@@ -2051,7 +2060,7 @@ l_uint32  *tab;
 
 /*!
  *  makeValTabSG4()
- *         
+ *
  *  Returns an 8 bit value for the sum of ON pixels
  *  in a 4x4 square, according to
  *
@@ -2132,7 +2141,7 @@ l_uint32  *lines, *lined;
          * into 4 bytes of the dest (four 8 bpp pixels in one line)   */
     for (i = 0, l = 0; i < hd; i++, l += 6) {
         lines = datas + l * wpls;
-        lined = datad + i * wpld; 
+        lined = datad + i * wpld;
         for (j = 0, k = 0; j < wd; j += 4, k += 3) {
                 /* First grab the 18 bytes, 3 at a time, and put each set
                  * of 3 bytes into the LS bytes of a 32-bit word. */
@@ -2197,7 +2206,7 @@ l_uint32  *lines, *lined;
 
 /*!
  *  makeValTabSG6()
- *         
+ *
  *  Returns an 8 bit value for the sum of ON pixels
  *  in a 6x6 square, according to
  *      val = 255 - (255 * sum)/36
@@ -2261,7 +2270,7 @@ l_uint32  *lines, *lined;
          * each) and convert it into one 8 bpp byte of the dest. */
     for (i = 0, k = 0; i < hd; i++, k += 8) {
         lines = datas + k * wpls;
-        lined = datad + i * wpld; 
+        lined = datad + i * wpld;
         for (j = 0; j < wd; j++) {
             sbyte0 = GET_DATA_BYTE(lines, j);
             sbyte1 = GET_DATA_BYTE(lines + wpls, j);
@@ -2285,7 +2294,7 @@ l_uint32  *lines, *lined;
 
 /*!
  *  makeValTabSG8()
- *         
+ *
  *  Returns an 8 bit value for the sum of ON pixels
  *  in an 8x8 square, according to
  *      val = 255 - (255 * sum)/64
@@ -2348,7 +2357,7 @@ l_uint32  *lines, *lined;
          * each) and convert it into one 8 bpp byte of the dest. */
     for (i = 0, k = 0; i < hd; i++, k += 16) {
         lines = datas + k * wpls;
-        lined = datad + i * wpld; 
+        lined = datad + i * wpld;
         for (j = 0; j < wd; j++) {
             m = 2 * j;
             sum = tab8[GET_DATA_BYTE(lines, m)];
@@ -2423,7 +2432,7 @@ l_float32  ratio, w1, w2;
 
         /* Clear dest */
     memset((char *)datad, 0, 4 * wpld * hd);
-    
+
         /* Each dest pixel at (j,i) is computed by interpolating
            between the two src images at the corresponding location.
            We store the UL corner locations of the square of

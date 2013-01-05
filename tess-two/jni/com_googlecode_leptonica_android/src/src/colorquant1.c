@@ -1,21 +1,32 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
  *  colorquant1.c
- *                     
+ *
  *  Octcube color quantization
  *
  *  There are several different octcube/octree based quantizations.
@@ -44,7 +55,7 @@
  *
  *        which calls
  *          static l_int32    octreeFindColorCell()
- *          
+ *
  *      Helper cqcell functions
  *          static CQCELL  ***cqcellTreeCreate()
  *          static void       cqcellTreeDestroy()
@@ -86,7 +97,7 @@
  *
  *      Generation of octcube histogram
  *          NUMA             *pixOctcubeHistogram()
- *          
+ *
  *      Get filled octcube table from colormap
  *          l_int32          *pixcmapToOctcubeLUT()
  *
@@ -100,8 +111,6 @@
  *        form of median cut.  See colorquant2.c for details.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "allheaders.h"
 
@@ -162,7 +171,7 @@ static const l_int32  MIN_DITHER_SIZE = 250;  /* don't dither if smaller */
  *  a color octree that adjusts in a simple way to the to the color
  *  distribution in the image that is being quantized.  It outputs
  *  colormapped images, either 4 bpp or 8 bpp, depending on the
- *  max number of colors and the compression desired. 
+ *  max number of colors and the compression desired.
  *
  *  The number of samples is saved as a float in the first location,
  *  because this is required to use it as the key that orders the
@@ -295,11 +304,11 @@ static l_int32 pixDitherOctindexWithCmap(PIX *pixs, PIX *pixd, l_uint32 *rtab,
  *
  *  Instead of dividing the color space into 256 equal-sized
  *  regions, we initially divide it into 2^12 or 2^15 or 2^18
- *  equal-sized octcubes.  Suppose we choose to use 2^18 octcubes.  
+ *  equal-sized octcubes.  Suppose we choose to use 2^18 octcubes.
  *  This gives us 6 octree levels.  We then prune back,
  *  starting from level 6.  For every cube at level 6, there
  *  are 8 cubes at level 5.  Call the operation of putting a
- *  cube aside as a color table entry (CTE) a "saving." 
+ *  cube aside as a color table entry (CTE) a "saving."
  *  We use a (in general) level-dependent threshold, and save
  *  those level 6 cubes that are above threshold.
  *  The rest are combined into the containing level 5 cube.
@@ -317,7 +326,7 @@ static l_int32 pixDitherOctindexWithCmap(PIX *pixs, PIX *pixd, l_uint32 *rtab,
  *  condition in which they are made as either being "threshold"
  *  or "residual."  They are "threshold" CTEs if no subcubes
  *  are CTEs (that is, they contain every pixel within the cube)
- *  and the number of pixels exceeds the threshold for making 
+ *  and the number of pixels exceeds the threshold for making
  *  a CTE.  They are "residual" CTEs if at least one but not more
  *  than 7 of the subcubes have already been determined to be CTEs;
  *  this happens automatically -- no threshold is applied.
@@ -327,7 +336,7 @@ static l_int32 pixDitherOctindexWithCmap(PIX *pixs, PIX *pixd, l_uint32 *rtab,
  *
  *  We stop the pruning at level 2, at which there are 64
  *  sub-cubes.  Any pixels not already claimed in a CTE are
- *  put in these cubes.  
+ *  put in these cubes.
  *
  *  As the cubes are saved as color samples in the color table,
  *  the number of remaining pixels P and the number of
@@ -337,10 +346,10 @@ static l_int32 pixDitherOctindexWithCmap(PIX *pixs, PIX *pixd, l_uint32 *rtab,
  *  used to set the threshold at the current level.
  *
  *  Because we are going to very small cubes at levels 6 or 5,
- *  and will dither the colors for errors, it is not necessary 
+ *  and will dither the colors for errors, it is not necessary
  *  to compute the color center of each cluster; we can simply
  *  use the center of the cube.  This gives us a minimax error
- *  condition: the maximum error is half the width of the 
+ *  condition: the maximum error is half the width of the
  *  level 2 cubes -- 32 color values out of 256 -- for each color
  *  sample.  In practice, most of the pixels will be very much
  *  closer to the center of their cells.  And with dithering,
@@ -357,7 +366,7 @@ static l_int32 pixDitherOctindexWithCmap(PIX *pixs, PIX *pixd, l_uint32 *rtab,
  *  level 6, etc.  From various experiments, it appears that
  *  the results do not vary appreciably for threshold values near 1.0.
  *  If you want more colors in smaller cubes, the threshold
- *  factors can be set lower than 1.0 for cubes at levels 4 and 5. 
+ *  factors can be set lower than 1.0 for cubes at levels 4 and 5.
  *  However, if the factor is set much lower than 1.0 for
  *  levels 2 and 3, we can easily run out of colors.
  *  We put aside 64 colors in the calculation of the threshold
@@ -370,7 +379,7 @@ static l_int32 pixDitherOctindexWithCmap(PIX *pixs, PIX *pixd, l_uint32 *rtab,
  *  Remember, the residual CTEs are mandatory, and are formed
  *  without using the threshold, regardless of the number of
  *  pixels that are absorbed.
- *      
+ *
  *  The implementation logically has four parts:
  *
  *       (1) accumulation into small, fixed cells
@@ -393,13 +402,13 @@ static l_int32 pixDitherOctindexWithCmap(PIX *pixs, PIX *pixd, l_uint32 *rtab,
  *      to lowest, and traverse the list looking for the deepest
  *      match.  To make this more efficient, so that we know when
  *      to stop looking, any cube that has separate CTE subcubes
- *      would be marked as such, so that we know when we hit a 
+ *      would be marked as such, so that we know when we hit a
  *      true leaf.
  *
  *  (b) Alternatively, we can order the cubes by highest
  *      occupancy separately each level, and work upward,
  *      starting at level 5, so that when we find a match we
- *      know that it will be correct. 
+ *      know that it will be correct.
  *
  *  (c) Another approach would be to order the cubes by
  *      "address" and use a hash table to find the cube
@@ -437,7 +446,7 @@ static l_int32 pixDitherOctindexWithCmap(PIX *pixs, PIX *pixd, l_uint32 *rtab,
  *
  *     -  We can navigate the pruned tree quickly to classify
  *        each pixel in the image.
- *      
+ *
  *  Canonical addressing guarantees that the i-th node at level k
  *  has 8 subnodes given by the 8*i ... 8*i+7 nodes at level k+1.
  *
@@ -490,7 +499,7 @@ static l_int32 pixDitherOctindexWithCmap(PIX *pixs, PIX *pixd, l_uint32 *rtab,
  *      with small images, because the estimation we use for the
  *      number of pixels available is not accurate.
  *  (4) In the unlikely event that we run out of colors, the dithered
- *      image can be very poor.  As this would only happen with very 
+ *      image can be very poor.  As this would only happen with very
  *      small images, and dithering is not particularly noticeable with
  *      such images, turn it off.
  */
@@ -632,7 +641,7 @@ PIXCMAP   *cmap;
     }
 
         /* Traverse tree from root, looking for lowest cube
-         * that is a leaf, and set dest pix value to its 
+         * that is a leaf, and set dest pix value to its
          * colortable index */
     if ((pixd = pixOctreeQuantizePixels(pixs, cqcaa, ditherflag)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
@@ -766,7 +775,7 @@ NUMA      *nar;  /* accumulates levels for residual cells */
                     cqcsub->bleaf = 1;
                     if (cmap->n < 256) {
                         cqcsub->index = cmap->n;  /* assign the color index */
-                        getRGBFromOctcube(isub, level + 1, &rv, &gv, &bv); 
+                        getRGBFromOctcube(isub, level + 1, &rv, &gv, &bv);
                         pixcmapAddColor(cmap, rv, gv, bv);
 #if 1   /* save values */
                         cqcsub->rc = rv;
@@ -820,7 +829,7 @@ NUMA      *nar;  /* accumulates levels for residual cells */
                     }
                     if (cmap->n < 256) {
                         cqc->index = cmap->n;  /* assign the color index */
-                        getRGBFromOctcube(i, level, &rv, &gv, &bv); 
+                        getRGBFromOctcube(i, level, &rv, &gv, &bv);
                         pixcmapAddColor(cmap, rv, gv, bv);
 #if 1   /* save values */
                         cqc->rc = rv;
@@ -969,7 +978,7 @@ PIX       *pixd;
     wpld = pixGetWpl(pixd);
 
         /* Traverse tree from root, looking for lowest cube
-         * that is a leaf, and set dest pix to its 
+         * that is a leaf, and set dest pix to its
          * colortable index value.  The results are far
          * better when dithering to get a more accurate
          * average color.  */
@@ -1124,7 +1133,7 @@ PIX       *pixd;
 /*!
  *  octreeFindColorCell()
  *
- *      Input:  octindex 
+ *      Input:  octindex
  *              cqcaa
  *              &index   (<return> index of CTE; returned to set pixel value)
  *              &rval    (<return> of CTE)
@@ -1217,7 +1226,7 @@ static CQCELL ***
 cqcellTreeCreate(void)
 {
 l_int32    level, ncells, i;
-CQCELL  ***cqcaa;  
+CQCELL  ***cqcaa;
 CQCELL   **cqca;   /* one array for each octree level */
 
     PROCNAME("cqcellTreeCreate");
@@ -1300,7 +1309,7 @@ CQCELL   **cqca;
  *      index = (0  0   0   0   r7  g7  b7  r6  g6  b6  r5  g5  b5  r4  g4  b4)
  *
  *  This may look a bit strange.  The notation 'r7' means the MSBit of
- *  the r value (which has 8 bits, going down from r7 to r0).  
+ *  the r value (which has 8 bits, going down from r7 to r0).
  *  Keep in mind that r7 is actually the r component bit for level 1 of
  *  the octtree.  Level 1 is composed of 8 octcubes, represented by
  *  the bits (r7 g7 b7), which divide the entire color space into
@@ -1333,7 +1342,7 @@ l_uint32  *rtab, *gtab, *btab;
     *prtab = rtab;
     *pgtab = gtab;
     *pbtab = btab;
-        
+
     switch (cqlevels)
     {
     case 1:
@@ -1444,7 +1453,7 @@ getOctcubeIndexFromRGB(l_int32    rval,
  *          specific point in color space: namely, the location
  *          of the 'upper-left' corner of the cube, where indices
  *          increase down and to the right.  The upper left corner
- *          of the color space is then 00000.... 
+ *          of the color space is then 00000....
  *      (2) The 'rgbindex' is a 24-bit representation of the location,
  *          in octcube notation, at the center of the octcube.
  *          To get to the center of an octcube, you choose the 111
@@ -1499,7 +1508,7 @@ l_int32  rgbindex;
     return;
 }
 
-    
+
 /*!
  *  getOctcubeIndices()
  *
@@ -1636,7 +1645,7 @@ octcubeGetCount(l_int32   level,
  *      (9) Dithering shows artifacts on some images.  If you plan to
  *          dither, pixOctreeColorQuant() and pixFixedOctcubeQuant256()
  *          usually give better results.
- */     
+ */
 PIX *
 pixOctreeQuantByPopulation(PIX     *pixs,
                            l_int32  level,
@@ -1746,7 +1755,7 @@ PIXCMAP        *cmap;
             for (j = 0; j < w; j++) {
                 extractRGBValues(lines[j], &rval, &gval, &bval);
                 octindex = rtab[rval] | gtab[gval] | btab[bval];
-                switch (depth) 
+                switch (depth)
                 {
                 case 8:
                     SET_DATA_BYTE(lined, j, narray[octindex] - 1);
@@ -2194,7 +2203,7 @@ PIXCMAP   *cmap;
  *  example, in use one often finds that the pixels in an image
  *  occupy less than 192 octcubes at level 3, so they can be represented
  *  by a colormap for octcubes at level 3 only.
- */     
+ */
 PIX *
 pixOctreeQuantNumColors(PIX     *pixs,
                         l_int32  maxcolors,
@@ -2316,7 +2325,7 @@ PIXCMAP   *cmap;
                 oqc->gval = (l_int32)(oqc->gcum / oqc->n);
                 oqc->bval = (l_int32)(oqc->bcum / oqc->n);
             }
-            else 
+            else
                 getRGBFromOctcube(i, maxlevel - 1, &oqc->rval,
                                   &oqc->gval, &oqc->bval);
             pixcmapAddColor(cmap, oqc->rval, oqc->gval, oqc->bval);
@@ -2331,7 +2340,7 @@ PIXCMAP   *cmap;
         FREE(btab);
         return pixd;
     }
-            
+
         /*------------------------------------------------------------*
          * General case: we will use colors in octcubes at maxlevel.  *
          * We also remove any colors that are not populated from      *
@@ -2403,7 +2412,7 @@ PIXCMAP   *cmap;
             lut1[index] = index >> 3;  /* remove the least significant bits */
 /*        fprintf(stderr, "lut1[%d] = %d\n", index, lut1[index]); */
     }
-        
+
         /* Go through the entire image, gathering statistics and
          * assigning pixels to their quantized value */
     datad = pixGetData(pixd);
@@ -2435,7 +2444,7 @@ PIXCMAP   *cmap;
             oqca[val]->bcum += bval;
         }
     }
-    
+
         /* Compute averages, set up a colormap, and make a second
          * lut that converts from the color values currently in
          * the image to a minimal set */
@@ -2519,7 +2528,7 @@ PIXCMAP   *cmap;
  *          = 64 cubes).
  *      (5) Consequently, we have the following constraint on the number
  *          of allowed gray levels: for 4 bpp, 8; for 8 bpp, 192.
- */     
+ */
 PIX *
 pixOctcubeQuantMixedWithGray(PIX     *pixs,
                              l_int32  depth,
@@ -2556,7 +2565,7 @@ PIXCMAP   *cmap;
     }
     else
         return (PIX *)ERROR_PTR("output depth not 4 or 8 bpp", procName, NULL);
-    
+
         /* Make octcube index tables */
     if (makeRGBToIndexTables(&rtab, &gtab, &btab, octlevels))
         return (PIX *)ERROR_PTR("tables not made", procName, NULL);
@@ -2692,13 +2701,13 @@ PIXCMAP   *cmap;
  *  blue because the eye is least sensitive to blue.  This
  *  division of the color space is into two levels of octrees,
  *  followed by a further division by 4 (not 8), where both
- *  blue octrees have been combined in the third level. 
+ *  blue octrees have been combined in the third level.
  *
  *  The color map is generated from the 256 color centers by
  *  taking the representative color to be the center of the
  *  cell volume.  This gives a maximum error in the red and
  *  green values of 16 levels, and a maximum error in the
- *  blue sample of 32 levels. 
+ *  blue sample of 32 levels.
  *
  *  Each pixel in the 24-bit color image is placed in its containing
  *  cell, given by the relevant MSbits of the red, green and blue
@@ -2723,7 +2732,7 @@ PIXCMAP   *cmap;
  *  3/8, 3/8 and 1/4, respectively.  The results should be nearly
  *  as good, and a bit faster, with propagation only to the right
  *  and down.
- * 
+ *
  *  The algorithm is very fast, because there is no search,
  *  only fast generation of the cell index for each pixel.
  *  We use a simple mapping from the three 8 bit rgb samples
@@ -2865,7 +2874,7 @@ PIXCMAP   *cmap;
  *          uses the average value of pixels in the octcube rather
  *          than the first found pixel.  It is also simpler to use,
  *          because it generates the histogram internally.
- */     
+ */
 PIX *
 pixFewColorsOctcubeQuant1(PIX     *pixs,
                           l_int32  level)
@@ -2963,7 +2972,7 @@ PIXCMAP   *cmap;
             pspixel = lines + j;
             extractRGBValues(*pspixel, &rval, &gval, &bval);
             octindex = rtab[rval] | gtab[gval] | btab[bval];
-            switch (depth) 
+            switch (depth)
             {
             case 2:
                 SET_DATA_DIBIT(lined, j, carray[octindex] - 1);
@@ -3032,7 +3041,7 @@ array_cleanup:
  *          it is expected that most of the pixels within a leaf
  *          octcube have exactly the same color, and quantization to
  *          that color is lossless.
- */     
+ */
 PIX *
 pixFewColorsOctcubeQuant2(PIX      *pixs,
                           l_int32   level,
@@ -3055,7 +3064,7 @@ PIXCMAP   *cmap;
 
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (pixGetDepth(pixs) != 32)        
+    if (pixGetDepth(pixs) != 32)
         return (PIX *)ERROR_PTR("pixs not 32 bpp", procName, NULL);
     if (level < 3 || level > 6)
         return (PIX *)ERROR_PTR("level not in {4, 5, 6}", procName, NULL);
@@ -3079,7 +3088,7 @@ PIXCMAP   *cmap;
         depth = 4;
     else  /* ncolors <= 256 */
         depth = 8;
-        
+
     if ((pixd = pixCreate(w, h, depth)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
@@ -3102,12 +3111,12 @@ PIXCMAP   *cmap;
         /* For each pixel, get the octree index for its leaf octcube.
          * Check if a pixel has already been found in this octcube.
          *   - If not yet found, save that color in the colorarray
-         *     and save the cindex in the octarray.  
+         *     and save the cindex in the octarray.
          *   - If already found, compare the pixel color with the
          *     color in the colorarray, and note if it differs.
          * Then set the dest pixel value to the cindex - 1, which
          * will be the cmap index for this color.  */
-    cindex = 1;  /* start with 1 */ 
+    cindex = 1;  /* start with 1 */
     nerrors = 0;
     for (i = 0; i < h; i++) {
         lines = datas + i * wpls;
@@ -3214,7 +3223,7 @@ PIXCMAP   *cmap;
  *          there are a relatively small number of solid colors.  It usually
  *          gives results that are better than pixOctcubeQuantMixedWithGray(),
  *          both in size and appearance.  But it is a bit slower.
- */     
+ */
 PIX *
 pixFewColorsOctcubeQuantMixed(PIX       *pixs,
                               l_int32    level,
@@ -3224,7 +3233,7 @@ pixFewColorsOctcubeQuantMixed(PIX       *pixs,
                               l_float32  minfract,
                               l_int32    maxspan)
 {
-l_int32    i, j, w, h, wplc, wplm, wpld, ncolors, index; 
+l_int32    i, j, w, h, wplc, wplm, wpld, ncolors, index;
 l_int32    rval, gval, bval, val, minval, maxval;
 l_int32   *lut;
 l_uint32  *datac, *datam, *datad, *linec, *linem, *lined;
@@ -3236,7 +3245,7 @@ PIXCMAP   *cmap, *cmapd;
     if (!pixs || pixGetDepth(pixs) != 32)
         return (PIX *)ERROR_PTR("pixs undefined or not 32 bpp", procName, NULL);
     if (level <= 0) level = 3;
-    if (level > 6) 
+    if (level > 6)
         return (PIX *)ERROR_PTR("invalid level", procName, NULL);
     if (darkthresh <= 0) darkthresh = 20;
     if (lightthresh <= 0) lightthresh = 244;
@@ -3330,7 +3339,7 @@ PIXCMAP   *cmap, *cmapd;
  *      (2) The pixel values are quantized to the center of each octcube
  *          (at the specified level) containing the pixel.  They are
  *          not quantized to the average of the pixels in that octcube.
- */     
+ */
 PIX *
 pixFixedOctcubeQuantGenRGB(PIX     *pixs,
                            l_int32  level)
@@ -3440,7 +3449,7 @@ l_int32  d;
  *      Return: pixd  (2, 4 or 8 bpp, colormapped), or null on error
  *
  *  Notes:
- *      (1) In typical use, we are doing an operation, such as 
+ *      (1) In typical use, we are doing an operation, such as
  *          interpolative scaling, on a colormapped pix, where it is
  *          necessary to remove the colormap before the operation.
  *          We then want to re-quantize the RGB result using the same
@@ -3457,7 +3466,7 @@ l_int32  d;
  *          increases by a factor of 8 for each increase of 1 level.
  *          The time required to acquire a level 4 mapping table, which has
  *          about 4K entries, is less than 1 msec, so that is the
- *          recommended minimum size to be used.  At that size, the 
+ *          recommended minimum size to be used.  At that size, the
  *          octcubes have their centers 16 units apart in each (r,g,b)
  *          direction.  If two colors are in the same octcube, the one
  *          closest to the center will always be chosen.  The maximum
@@ -3635,7 +3644,7 @@ PIXCMAP   *cmapc;
  *
  *  Notes:
  *      (1) Input NULL for &ncolors to prevent computation and return value.
- */     
+ */
 NUMA *
 pixOctcubeHistogram(PIX      *pixs,
                     l_int32   level,
@@ -3952,7 +3961,7 @@ PIXCMAP    *cmap, *cmapd;
             }
         }
     }
-        
+
     FREE(histo);
     FREE(map1);
     FREE(map2);
@@ -4044,4 +4053,3 @@ l_uint32  *data, *line, *rtab, *gtab, *btab;
     FREE(btab);
     return 0;
 }
-

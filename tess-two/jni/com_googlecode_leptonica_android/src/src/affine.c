@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 
@@ -22,7 +33,7 @@
  *           PIX        *pixAffineSampledPta()
  *           PIX        *pixAffineSampled()
  *
- *      Affine (3 pt) image transformation using interpolation 
+ *      Affine (3 pt) image transformation using interpolation
  *      (or area mapping) for anti-aliasing images that are
  *      2, 4, or 8 bpp gray, or colormapped, or 32 bpp RGB
  *           PIX        *pixAffinePta()
@@ -49,7 +60,7 @@
  *      Gauss-jordan linear equation solver
  *           l_int32     gaussjordan()
  *
- *      Affine image transformation using a sequence of 
+ *      Affine image transformation using a sequence of
  *      shear/scale/translation operations
  *           PIX        *pixAffineSequential()
  *
@@ -60,7 +71,7 @@
  *
  *      For the general case, we can define the affine transform using
  *      two sets of three (noncollinear) points in a plane.  One set
- *      corresponds to the input (src) coordinate space; the other to the 
+ *      corresponds to the input (src) coordinate space; the other to the
  *      transformed (dest) coordinate space.  Each point in the
  *      src corresponds to one of the points in the dest.  With two
  *      sets of three points, we get a set of 6 equations in 6 unknowns
@@ -125,7 +136,7 @@
  *      (2) horizontal and vertical shear about any horizontal and vertical
  *      line, respectively, and (3) non-isotropic scaling by two
  *      arbitrary x and y scaling factors.  We also have rotation
- *      about an arbitrary point, but this is equivalent to a set 
+ *      about an arbitrary point, but this is equivalent to a set
  *      of three shears so we do not need to use it.
  *
  *      Why might we do this?  For binary images, it is usually
@@ -204,7 +215,7 @@
  *              quality results result from using the pointwise
  *              interpolated function pixAffinePta() or pixAffine();
  *              the cost is less than a doubling of the computation time
- *              with respect to the sampled function.  If you use 
+ *              with respect to the sampled function.  If you use
  *              interpolation on colormapped images, the colormap will
  *              be removed, resulting in either a grayscale or color
  *              image, depending on the values in the colormap.
@@ -220,8 +231,6 @@
  */
 
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "allheaders.h"
@@ -452,7 +461,7 @@ PIX      *pixt1, *pixt2, *pixd;
         else  /* d == 32 */
             colorval = 0xffffff00;
     }
-    
+
     if (d == 8)
         pixd = pixAffinePtaGray(pixt2, ptad, ptas, colorval);
     else  /* d == 32 */
@@ -511,7 +520,7 @@ PIX      *pixt1, *pixt2, *pixd;
         else  /* d == 32 */
             colorval = 0xffffff00;
     }
-    
+
     if (d == 8)
         pixd = pixAffineGray(pixt2, vc, colorval);
     else  /* d == 32 */
@@ -899,16 +908,16 @@ PIX  *pixg, *pixd;
  *          y2' = c[3]*x2 + c[4]*y2 + c[5]
  *          x3' = c[0]*x3 + c[1]*y3 + c[2]
  *          y3' = c[3]*x3 + c[4]*y3 + c[5]
- *    
+ *
  *  This can be represented as
  *
  *          AC = B
  *
  *  where B and C are column vectors
- *    
+ *
  *          B = [ x1' y1' x2' y2' x3' y3' ]
  *          C = [ c[0] c[1] c[2] c[3] c[4] c[5] c[6] ]
- *    
+ *
  *  and A is the 6x6 matrix
  *
  *          x1   y1   1   0    0    0
@@ -968,7 +977,7 @@ l_float32  *a[6];  /* 6x6 matrix A  */
         return ERROR_INT("ptad not defined", procName, 1);
     if (!pvc)
         return ERROR_INT("&vc not defined", procName, 1);
-        
+
     if ((b = (l_float32 *)CALLOC(6, sizeof(l_float32))) == NULL)
         return ERROR_INT("b not made", procName, 1);
     *pvc = b;
@@ -1373,7 +1382,7 @@ l_float32  big, dum, pivinv, temp;
                 }
         }
         ++(ipiv[icol]);
-        
+
         if (irow != icol) {
             for (l = 0; l < n; l++)
                 SWAP(a[irow][l], a[icol][l]);
@@ -1390,7 +1399,7 @@ l_float32  big, dum, pivinv, temp;
             a[icol][l] *= pivinv;
         b[icol] *= pivinv;
 
-        for (ll = 0; ll < n; ll++) 
+        for (ll = 0; ll < n; ll++)
             if (ll != icol) {
                 dum = a[ll][icol];
                 a[ll][icol] = 0.0;
@@ -1483,7 +1492,7 @@ PIX       *pixt1, *pixt2, *pixd;
         return (PIX *)ERROR_PTR("y1 == y3!", procName, NULL);
     if (y1p == y3p)
         return (PIX *)ERROR_PTR("y1p == y3p!", procName, NULL);
-        
+
     if (bw != 0 || bh != 0) {
             /* resize all points and add border to pixs */
         x1 = x1 + bw;
@@ -1556,7 +1565,7 @@ PIX       *pixt1, *pixt2, *pixd;
 #endif  /* DEBUG */
 
     /*-------------------------------------------------------------*
-        Scaling moves the 1st src point, which is the origin. 
+        Scaling moves the 1st src point, which is the origin.
         It must now be moved again to coincide with the origin
         (1st point) of the dest.  After this is done, the 2nd
         and 3rd points must be sheared back to the original
@@ -1586,5 +1595,3 @@ PIX       *pixt1, *pixt2, *pixd;
     pixDestroy(&pixt2);
     return pixd;
 }
-
-

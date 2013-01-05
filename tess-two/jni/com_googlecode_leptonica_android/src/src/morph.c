@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -45,7 +56,7 @@
  *     Functions associated with boundary conditions
  *         void     resetMorphBoundaryCondition()
  *         l_int32  getMorphBorderPixelColor()
- *      
+ *
  *     Static helpers for arg processing
  *         static PIX     *processMorphArgs1()
  *         static PIX     *processMorphArgs2()
@@ -126,7 +137,7 @@
  *      All pixels outside the image are assumed to be OFF
  *      for both dilation and erosion.
  *  To use a symmetric definition, see comments in pixErode()
- *  and reset MORPH_BC to SYMMETRIC_MORPH_BC, using 
+ *  and reset MORPH_BC to SYMMETRIC_MORPH_BC, using
  *  resetMorphBoundaryCondition().
  *
  *  Boundary artifacts are possible in closing when the non-symmetric
@@ -149,7 +160,6 @@
  *  prog/binmorph2_reg.c, and prog/binmorph3_reg.c.
  */
 
-#include <stdio.h>
 #include <math.h>
 #include "allheaders.h"
 
@@ -420,8 +430,8 @@ PIX  *pixt;
 
     return pixd;
 }
-    
-    
+
+
 /*!
  *  pixClose()
  *
@@ -465,8 +475,8 @@ PIX  *pixt;
 
     return pixd;
 }
-    
-    
+
+
 /*!
  *  pixCloseSafe()
  *
@@ -534,8 +544,8 @@ PIX     *pixt1, *pixt2;
     pixDestroy(&pixt2);
     return pixd;
 }
-    
-    
+
+
 /*!
  *  pixOpenGeneralized()
  *
@@ -578,8 +588,8 @@ PIX  *pixt;
     pixDestroy(&pixt);
     return pixd;
 }
-    
-    
+
+
 /*!
  *  pixCloseGeneralized()
  *
@@ -1075,7 +1085,7 @@ l_int32  diff[256];  /* diff between product (sel size) and input size */
         return ERROR_INT("size < 1", procName, 1);
     if (!pfactor1 || !pfactor2)
         return ERROR_INT("&factor1 or &factor2 not defined", procName, 1);
-    
+
     midval = (l_int32)(sqrt((l_float64)size) + 0.001);
     if (midval * midval == size) {
         *pfactor1 = *pfactor2 = midval;
@@ -1195,11 +1205,11 @@ SEL  *selh1, *selh2, *selv1, *selv2;
     if (vsize == 1) {
         pixt2 = pixDilate(NULL, pixt1, selh1);
         pixt3 = pixDilate(NULL, pixt2, selh2);
-    } 
+    }
     else if (hsize == 1) {
         pixt2 = pixDilate(NULL, pixt1, selv1);
         pixt3 = pixDilate(NULL, pixt2, selv2);
-    } 
+    }
     else {
         pixt2 = pixDilate(NULL, pixt1, selh1);
         pixt3 = pixDilate(NULL, pixt2, selh2);
@@ -1293,11 +1303,11 @@ SEL  *selh1, *selh2, *selv1, *selv2;
     if (vsize == 1) {
         pixt = pixErode(NULL, pixs, selh1);
         pixd = pixErode(pixd, pixt, selh2);
-    } 
+    }
     else if (hsize == 1) {
         pixt = pixErode(NULL, pixs, selv1);
         pixd = pixErode(pixd, pixt, selv2);
-    } 
+    }
     else {
         pixt = pixErode(NULL, pixs, selh1);
         pixd = pixErode(pixd, pixt, selh2);
@@ -1386,13 +1396,13 @@ SEL  *selh1, *selh2, *selv1, *selv2;
         pixd = pixErode(pixd, pixt, selh2);
         pixDilate(pixt, pixd, selh1);
         pixDilate(pixd, pixt, selh2);
-    } 
+    }
     else if (hsize == 1) {
         pixt = pixErode(NULL, pixs, selv1);
         pixd = pixErode(pixd, pixt, selv2);
         pixDilate(pixt, pixd, selv1);
         pixDilate(pixd, pixt, selv2);
-    } 
+    }
     else {  /* do separably */
         pixt = pixErode(NULL, pixs, selh1);
         pixd = pixErode(pixd, pixt, selh2);
@@ -1485,14 +1495,14 @@ SEL  *selh1, *selh2, *selv1, *selv2;
         pixd = pixDilate(pixd, pixt, selh2);
         pixErode(pixt, pixd, selh1);
         pixErode(pixd, pixt, selh2);
-    } 
+    }
     else if (hsize == 1) {
         pixt = pixDilate(NULL, pixs, selv1);
         pixd = pixDilate(pixd, pixt, selv2);
         pixErode(pixt, pixd, selv1);
         pixErode(pixd, pixt, selv2);
-    } 
-    else {  /* do separably */ 
+    }
+    else {  /* do separably */
         pixt = pixDilate(NULL, pixs, selh1);
         pixd = pixDilate(pixd, pixt, selh2);
         pixDilate(pixt, pixd, selv1);
@@ -1599,14 +1609,14 @@ SEL     *selh1, *selh2, *selv1, *selv2;
         pixdb = pixDilate(NULL, pixt, selh2);
         pixErode(pixt, pixdb, selh1);
         pixErode(pixdb, pixt, selh2);
-    } 
+    }
     else if (hsize == 1) {
         pixt = pixDilate(NULL, pixsb, selv1);
         pixdb = pixDilate(NULL, pixt, selv2);
         pixErode(pixt, pixdb, selv1);
         pixErode(pixdb, pixt, selv2);
-    } 
-    else {  /* do separably */ 
+    }
+    else {  /* do separably */
         pixt = pixDilate(NULL, pixsb, selh1);
         pixdb = pixDilate(NULL, pixt, selh2);
         pixDilate(pixt, pixdb, selv1);
@@ -1668,7 +1678,7 @@ resetMorphBoundaryCondition(l_int32  bc)
 /*!
  *  getMorphBorderPixelColor()
  *
- *      Input:  type (L_MORPH_DILATE, L_MORPH_ERODE) 
+ *      Input:  type (L_MORPH_DILATE, L_MORPH_ERODE)
  *              depth (of pix)
  *      Return: color of border pixels for this operation
  */

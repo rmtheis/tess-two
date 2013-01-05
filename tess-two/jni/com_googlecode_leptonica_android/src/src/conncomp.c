@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -75,10 +86,7 @@
  *  keep track of the bounding rectangles for each c.c.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "allheaders.h"
-
 
 /*
  *  The struct FillSeg is used by the Heckbert seedfill algorithm to
@@ -97,13 +105,13 @@ typedef struct FillSeg    FILLSEG;
 
 
     /* Static accessors for FillSegs on a stack */
-static void pushFillsegBB(L_STACK *lstack, l_int32 xleft, l_int32 xright,
+static void pushFillsegBB(L_STACK *stack, l_int32 xleft, l_int32 xright,
                           l_int32 y, l_int32 dy, l_int32 ymax,
                           l_int32 *pminx, l_int32 *pmaxx,
                           l_int32 *pminy, l_int32 *pmaxy);
-static void pushFillseg(L_STACK *lstack, l_int32 xleft, l_int32 xright,
+static void pushFillseg(L_STACK *stack, l_int32 xleft, l_int32 xright,
                         l_int32 y, l_int32 dy, l_int32 ymax);
-static void popFillseg(L_STACK *lstack, l_int32 *pxleft, l_int32 *pxright,
+static void popFillseg(L_STACK *stack, l_int32 *pxleft, l_int32 *pxright,
                        l_int32 *py, l_int32 *pdy);
 
 
@@ -183,7 +191,7 @@ PIX      *pixt1, *pixt2, *pixt3, *pixt4;
 PIXA     *pixa;
 BOX      *box;
 BOXA     *boxa;
-L_STACK  *lstack, *auxstack;
+L_STACK  *stack, *auxstack;
 
     PROCNAME("pixConnCompPixa");
 
@@ -207,11 +215,11 @@ L_STACK  *lstack, *auxstack;
         return (BOXA *)ERROR_PTR("pixt2 not made", procName, NULL);
 
     h = pixGetHeight(pixs);
-    if ((lstack = lstackCreate(h)) == NULL)
-        return (BOXA *)ERROR_PTR("lstack not made", procName, NULL);
+    if ((stack = lstackCreate(h)) == NULL)
+        return (BOXA *)ERROR_PTR("stack not made", procName, NULL);
     if ((auxstack = lstackCreate(0)) == NULL)
         return (BOXA *)ERROR_PTR("auxstack not made", procName, NULL);
-    lstack->auxstack = auxstack;
+    stack->auxstack = auxstack;
     if ((boxa = boxaCreate(0)) == NULL)
         return (BOXA *)ERROR_PTR("boxa not made", procName, NULL);
 
@@ -222,7 +230,7 @@ L_STACK  *lstack, *auxstack;
         if (!nextOnPixelInRaster(pixt1, xstart, ystart, &x, &y))
             break;
 
-        if ((box = pixSeedfillBB(pixt1, lstack, x, y, connectivity)) == NULL)
+        if ((box = pixSeedfillBB(pixt1, stack, x, y, connectivity)) == NULL)
             return (BOXA *)ERROR_PTR("box not made", procName, NULL);
         boxaAddBox(boxa, box, L_INSERT);
 
@@ -250,7 +258,7 @@ L_STACK  *lstack, *auxstack;
     pixa->boxa = boxaCopy(boxa, L_CLONE);
 
         /* Cleanup, freeing the fillsegs on each stack */
-    lstackDestroy(&lstack, TRUE);
+    lstackDestroy(&stack, TRUE);
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
 
@@ -281,7 +289,7 @@ l_int32   x, y, xstart, ystart;
 PIX      *pixt;
 BOX      *box;
 BOXA     *boxa;
-L_STACK  *lstack, *auxstack;
+L_STACK  *stack, *auxstack;
 
     PROCNAME("pixConnCompBB");
 
@@ -298,11 +306,11 @@ L_STACK  *lstack, *auxstack;
         return (BOXA *)ERROR_PTR("pixt not made", procName, NULL);
 
     h = pixGetHeight(pixs);
-    if ((lstack = lstackCreate(h)) == NULL)
-        return (BOXA *)ERROR_PTR("lstack not made", procName, NULL);
+    if ((stack = lstackCreate(h)) == NULL)
+        return (BOXA *)ERROR_PTR("stack not made", procName, NULL);
     if ((auxstack = lstackCreate(0)) == NULL)
         return (BOXA *)ERROR_PTR("auxstack not made", procName, NULL);
-    lstack->auxstack = auxstack;
+    stack->auxstack = auxstack;
     if ((boxa = boxaCreate(0)) == NULL)
         return (BOXA *)ERROR_PTR("boxa not made", procName, NULL);
 
@@ -313,7 +321,7 @@ L_STACK  *lstack, *auxstack;
         if (!nextOnPixelInRaster(pixt, xstart, ystart, &x, &y))
             break;
 
-        if ((box = pixSeedfillBB(pixt, lstack, x, y, connectivity)) == NULL)
+        if ((box = pixSeedfillBB(pixt, stack, x, y, connectivity)) == NULL)
             return (BOXA *)ERROR_PTR("box not made", procName, NULL);
         boxaAddBox(boxa, box, L_INSERT);
 
@@ -328,7 +336,7 @@ L_STACK  *lstack, *auxstack;
 #endif  /* DEBUG */
 
         /* Cleanup, freeing the fillsegs on each stack */
-    lstackDestroy(&lstack, TRUE);
+    lstackDestroy(&stack, TRUE);
     pixDestroy(&pixt);
 
     return boxa;
@@ -357,7 +365,7 @@ pixCountConnComp(PIX      *pixs,
 l_int32   h, iszero;
 l_int32   x, y, xstart, ystart;
 PIX      *pixt;
-L_STACK  *lstack, *auxstack;
+L_STACK  *stack, *auxstack;
 
     PROCNAME("pixCountConnComp");
 
@@ -377,11 +385,11 @@ L_STACK  *lstack, *auxstack;
         return ERROR_INT("pixt not made", procName, 1);
 
     h = pixGetDepth(pixs);
-    if ((lstack = lstackCreate(h)) == NULL)
-        return ERROR_INT("lstack not made", procName, 1);
+    if ((stack = lstackCreate(h)) == NULL)
+        return ERROR_INT("stack not made", procName, 1);
     if ((auxstack = lstackCreate(0)) == NULL)
         return ERROR_INT("auxstack not made", procName, 1);
-    lstack->auxstack = auxstack;
+    stack->auxstack = auxstack;
 
     xstart = 0;
     ystart = 0;
@@ -390,14 +398,14 @@ L_STACK  *lstack, *auxstack;
         if (!nextOnPixelInRaster(pixt, xstart, ystart, &x, &y))
             break;
 
-        pixSeedfill(pixt, lstack, x, y, connectivity);
+        pixSeedfill(pixt, stack, x, y, connectivity);
         (*pcount)++;
         xstart = x;
         ystart = y;
     }
 
         /* Cleanup, freeing the fillsegs on each stack */
-    lstackDestroy(&lstack, TRUE);
+    lstackDestroy(&stack, TRUE);
     pixDestroy(&pixt);
 
     return 0;
@@ -502,7 +510,7 @@ l_uint32  *line, *pword;
  *  pixSeedfillBB()
  *
  *      Input:  pixs (1 bpp)
- *              lstack (for holding fillsegs)
+ *              stack (for holding fillsegs)
  *              x,y   (location of seed pixel)
  *              connectivity  (4 or 8)
  *      Return: box or null on error
@@ -513,7 +521,7 @@ l_uint32  *line, *pword;
  */
 BOX *
 pixSeedfillBB(PIX      *pixs,
-              L_STACK  *lstack,
+              L_STACK  *stack,
               l_int32   x,
               l_int32   y,
               l_int32   connectivity)
@@ -524,17 +532,17 @@ BOX  *box;
 
     if (!pixs || pixGetDepth(pixs) != 1)
         return (BOX *)ERROR_PTR("pixs undefined or not 1 bpp", procName, NULL);
-    if (!lstack)
-        return (BOX *)ERROR_PTR("lstack not defined", procName, NULL);
+    if (!stack)
+        return (BOX *)ERROR_PTR("stack not defined", procName, NULL);
     if (connectivity != 4 && connectivity != 8)
         return (BOX *)ERROR_PTR("connectivity not 4 or 8", procName, NULL);
 
     if (connectivity == 4) {
-        if ((box = pixSeedfill4BB(pixs, lstack, x, y)) == NULL)
+        if ((box = pixSeedfill4BB(pixs, stack, x, y)) == NULL)
             return (BOX *)ERROR_PTR("box not made", procName, NULL);
     }
     else if (connectivity == 8) {
-        if ((box = pixSeedfill8BB(pixs, lstack, x, y)) == NULL)
+        if ((box = pixSeedfill8BB(pixs, stack, x, y)) == NULL)
             return (BOX *)ERROR_PTR("box not made", procName, NULL);
     }
     else
@@ -548,7 +556,7 @@ BOX  *box;
  *  pixSeedfill4BB()
  *
  *      Input:  pixs (1 bpp)
- *              lstack (for holding fillsegs)
+ *              stack (for holding fillsegs)
  *              x,y   (location of seed pixel)
  *      Return: box or null on error.
  *
@@ -570,12 +578,12 @@ BOX  *box;
  *          will overrun the stack and crash.   The stack utility
  *          here grows dynamically as needed, and the fillseg
  *          structures that are not in use are stored in another
- *          stack for reuse.  It should be noted that the 
+ *          stack for reuse.  It should be noted that the
  *          overhead in the function calls (vs. macros) is negligible.
  */
 BOX *
 pixSeedfill4BB(PIX      *pixs,
-               L_STACK  *lstack,
+               L_STACK  *stack,
                l_int32   x,
                l_int32   y)
 {
@@ -589,8 +597,10 @@ BOX       *box;
 
     if (!pixs || pixGetDepth(pixs) != 1)
         return (BOX *)ERROR_PTR("pixs undefined or not 1 bpp", procName, NULL);
-    if (!lstack)
-        return (BOX *)ERROR_PTR("lstack not defined", procName, NULL);
+    if (!stack)
+        return (BOX *)ERROR_PTR("stack not defined", procName, NULL);
+    if (!stack->auxstack)
+        stack->auxstack = lstackCreate(0);
 
     pixGetDimensions(pixs, &w, &h, NULL);
     xmax = w - 1;
@@ -608,24 +618,24 @@ BOX       *box;
          * then init b.b. boundaries correctly to seed.  */
     minx = miny = 100000;
     maxx = maxy = 0;
-    pushFillsegBB(lstack, x, x, y, 1, ymax, &minx, &maxx, &miny, &maxy);
-    pushFillsegBB(lstack, x, x, y + 1, -1, ymax, &minx, &maxx, &miny, &maxy);
+    pushFillsegBB(stack, x, x, y, 1, ymax, &minx, &maxx, &miny, &maxy);
+    pushFillsegBB(stack, x, x, y + 1, -1, ymax, &minx, &maxx, &miny, &maxy);
     minx = maxx = x;
     miny = maxy = y;
 
-    while (lstackGetCount(lstack) > 0)
+    while (lstackGetCount(stack) > 0)
     {
             /* Pop segment off stack and fill a neighboring scan line */
-        popFillseg(lstack, &x1, &x2, &y, &dy);
+        popFillseg(stack, &x1, &x2, &y, &dy);
         line = data + y * wpl;
 
             /* A segment of scanline y - dy for x1 <= x <= x2 was
-             * previously filled.  We now explore adjacent pixels 
+             * previously filled.  We now explore adjacent pixels
              * in scan line y.  There are three regions: to the
              * left of x1 - 1, between x1 and x2, and to the right of x2.
              * These regions are handled differently.  Leaks are
              * possible expansions beyond the previous segment and
-             * going back in the -dy direction.  These can happen 
+             * going back in the -dy direction.  These can happen
              * for x < x1 - 1 and for x > x2 + 1.  Any "leak" segments
              * are plugged with a push in the -dy (opposite) direction.
              * And any segments found anywhere are always extended
@@ -636,17 +646,17 @@ BOX       *box;
             goto skip;
         xstart = x + 1;
         if (xstart < x1 - 1)   /* leak on left? */
-            pushFillsegBB(lstack, xstart, x1 - 1, y, -dy,
+            pushFillsegBB(stack, xstart, x1 - 1, y, -dy,
                           ymax, &minx, &maxx, &miny, &maxy);
 
         x = x1 + 1;
         do {
             for (; x <= xmax && (GET_DATA_BIT(line, x) == 1); x++)
                 CLEAR_DATA_BIT(line, x);
-            pushFillsegBB(lstack, xstart, x - 1, y, dy,
+            pushFillsegBB(stack, xstart, x - 1, y, dy,
                           ymax, &minx, &maxx, &miny, &maxy);
             if (x > x2 + 1)   /* leak on right? */
-                pushFillsegBB(lstack, x2 + 1, x - 1, y, -dy,
+                pushFillsegBB(stack, x2 + 1, x - 1, y, -dy,
                               ymax, &minx, &maxx, &miny, &maxy);
     skip:   for (x++; x <= x2 &&
                       x <= xmax &&
@@ -661,13 +671,13 @@ BOX       *box;
         return (BOX *)ERROR_PTR("box not made", procName, NULL);
     return box;
 }
-            
+
 
 /*!
  *  pixSeedfill8BB()
  *
  *      Input:  pixs (1 bpp)
- *              lstack (for holding fillsegs)
+ *              stack (for holding fillsegs)
  *              x,y   (location of seed pixel)
  *      Return: box or null on error.
  *
@@ -687,7 +697,7 @@ BOX       *box;
  */
 BOX *
 pixSeedfill8BB(PIX      *pixs,
-               L_STACK  *lstack,
+               L_STACK  *stack,
                l_int32   x,
                l_int32   y)
 {
@@ -701,8 +711,10 @@ BOX       *box;
 
     if (!pixs || pixGetDepth(pixs) != 1)
         return (BOX *)ERROR_PTR("pixs undefined or not 1 bpp", procName, NULL);
-    if (!lstack)
-        return (BOX *)ERROR_PTR("lstack not defined", procName, NULL);
+    if (!stack)
+        return (BOX *)ERROR_PTR("stack not defined", procName, NULL);
+    if (!stack->auxstack)
+        stack->auxstack = lstackCreate(0);
 
     pixGetDimensions(pixs, &w, &h, NULL);
     xmax = w - 1;
@@ -720,24 +732,24 @@ BOX       *box;
          * then init b.b. boundaries correctly to seed.  */
     minx = miny = 100000;
     maxx = maxy = 0;
-    pushFillsegBB(lstack, x, x, y, 1, ymax, &minx, &maxx, &miny, &maxy);
-    pushFillsegBB(lstack, x, x, y + 1, -1, ymax, &minx, &maxx, &miny, &maxy);
+    pushFillsegBB(stack, x, x, y, 1, ymax, &minx, &maxx, &miny, &maxy);
+    pushFillsegBB(stack, x, x, y + 1, -1, ymax, &minx, &maxx, &miny, &maxy);
     minx = maxx = x;
     miny = maxy = y;
 
-    while (lstackGetCount(lstack) > 0)
+    while (lstackGetCount(stack) > 0)
     {
             /* Pop segment off stack and fill a neighboring scan line */
-        popFillseg(lstack, &x1, &x2, &y, &dy);
+        popFillseg(stack, &x1, &x2, &y, &dy);
         line = data + y * wpl;
 
             /* A segment of scanline y - dy for x1 <= x <= x2 was
-             * previously filled.  We now explore adjacent pixels 
+             * previously filled.  We now explore adjacent pixels
              * in scan line y.  There are three regions: to the
              * left of x1, between x1 and x2, and to the right of x2.
              * These regions are handled differently.  Leaks are
              * possible expansions beyond the previous segment and
-             * going back in the -dy direction.  These can happen 
+             * going back in the -dy direction.  These can happen
              * for x < x1 and for x > x2.  Any "leak" segments
              * are plugged with a push in the -dy (opposite) direction.
              * And any segments found anywhere are always extended
@@ -748,19 +760,19 @@ BOX       *box;
             goto skip;
         xstart = x + 1;
         if (xstart < x1)   /* leak on left? */
-            pushFillsegBB(lstack, xstart, x1 - 1, y, -dy,
+            pushFillsegBB(stack, xstart, x1 - 1, y, -dy,
                           ymax, &minx, &maxx, &miny, &maxy);
 
         x = x1;
         do {
             for (; x <= xmax && (GET_DATA_BIT(line, x) == 1); x++)
                 CLEAR_DATA_BIT(line, x);
-            pushFillsegBB(lstack, xstart, x - 1, y, dy,
+            pushFillsegBB(stack, xstart, x - 1, y, dy,
                           ymax, &minx, &maxx, &miny, &maxy);
             if (x > x2)   /* leak on right? */
-                pushFillsegBB(lstack, x2 + 1, x - 1, y, -dy,
+                pushFillsegBB(stack, x2 + 1, x - 1, y, -dy,
                               ymax, &minx, &maxx, &miny, &maxy);
-    skip:   for (x++; x <= x2 + 1 && 
+    skip:   for (x++; x <= x2 + 1 &&
                       x <= xmax &&
                       (GET_DATA_BIT(line, x) == 0); x++)
                 ;
@@ -773,13 +785,13 @@ BOX       *box;
         return (BOX *)ERROR_PTR("box not made", procName, NULL);
     return box;
 }
-            
+
 
 /*!
  *  pixSeedfill()
  *
  *      Input:  pixs (1 bpp)
- *              lstack (for holding fillsegs)
+ *              stack (for holding fillsegs)
  *              x,y   (location of seed pixel)
  *              connectivity  (4 or 8)
  *      Return: 0 if OK, 1 on error
@@ -790,7 +802,7 @@ BOX       *box;
  */
 l_int32
 pixSeedfill(PIX      *pixs,
-            L_STACK  *lstack,
+            L_STACK  *stack,
             l_int32   x,
             l_int32   y,
             l_int32   connectivity)
@@ -801,15 +813,15 @@ l_int32  retval;
 
     if (!pixs || pixGetDepth(pixs) != 1)
         return ERROR_INT("pixs not defined or not 1 bpp", procName, 1);
-    if (!lstack)
-        return ERROR_INT("lstack not defined", procName, 1);
+    if (!stack)
+        return ERROR_INT("stack not defined", procName, 1);
     if (connectivity != 4 && connectivity != 8)
         return ERROR_INT("connectivity not 4 or 8", procName, 1);
 
     if (connectivity == 4)
-        retval = pixSeedfill4(pixs, lstack, x, y);
+        retval = pixSeedfill4(pixs, stack, x, y);
     else  /* connectivity == 8  */
-        retval = pixSeedfill8(pixs, lstack, x, y);
+        retval = pixSeedfill8(pixs, stack, x, y);
 
     return retval;
 }
@@ -819,7 +831,7 @@ l_int32  retval;
  *  pixSeedfill4()
  *
  *      Input:  pixs (1 bpp)
- *              lstack (for holding fillsegs)
+ *              stack (for holding fillsegs)
  *              x,y   (location of seed pixel)
  *      Return: 0 if OK, 1 on error
  *
@@ -832,7 +844,7 @@ l_int32  retval;
  */
 l_int32
 pixSeedfill4(PIX      *pixs,
-             L_STACK  *lstack,
+             L_STACK  *stack,
              l_int32   x,
              l_int32   y)
 {
@@ -844,8 +856,10 @@ l_uint32  *data, *line;
 
     if (!pixs || pixGetDepth(pixs) != 1)
         return ERROR_INT("pixs not defined or not 1 bpp", procName, 1);
-    if (!lstack)
-        return ERROR_INT("lstack not defined", procName, 1);
+    if (!stack)
+        return ERROR_INT("stack not defined", procName, 1);
+    if (!stack->auxstack)
+        stack->auxstack = lstackCreate(0);
 
     pixGetDimensions(pixs, &w, &h, NULL);
     xmax = w - 1;
@@ -859,22 +873,22 @@ l_uint32  *data, *line;
         return 0;
 
         /* Init stack to seed */
-    pushFillseg(lstack, x, x, y, 1, ymax);
-    pushFillseg(lstack, x, x, y + 1, -1, ymax);
+    pushFillseg(stack, x, x, y, 1, ymax);
+    pushFillseg(stack, x, x, y + 1, -1, ymax);
 
-    while (lstackGetCount(lstack) > 0)
+    while (lstackGetCount(stack) > 0)
     {
             /* Pop segment off stack and fill a neighboring scan line */
-        popFillseg(lstack, &x1, &x2, &y, &dy);
+        popFillseg(stack, &x1, &x2, &y, &dy);
         line = data + y * wpl;
 
             /* A segment of scanline y - dy for x1 <= x <= x2 was
-             * previously filled.  We now explore adjacent pixels 
+             * previously filled.  We now explore adjacent pixels
              * in scan line y.  There are three regions: to the
              * left of x1 - 1, between x1 and x2, and to the right of x2.
              * These regions are handled differently.  Leaks are
              * possible expansions beyond the previous segment and
-             * going back in the -dy direction.  These can happen 
+             * going back in the -dy direction.  These can happen
              * for x < x1 - 1 and for x > x2 + 1.  Any "leak" segments
              * are plugged with a push in the -dy (opposite) direction.
              * And any segments found anywhere are always extended
@@ -885,15 +899,15 @@ l_uint32  *data, *line;
             goto skip;
         xstart = x + 1;
         if (xstart < x1 - 1)   /* leak on left? */
-            pushFillseg(lstack, xstart, x1 - 1, y, -dy, ymax);
+            pushFillseg(stack, xstart, x1 - 1, y, -dy, ymax);
 
         x = x1 + 1;
         do {
             for (; x <= xmax && (GET_DATA_BIT(line, x) == 1); x++)
                 CLEAR_DATA_BIT(line, x);
-            pushFillseg(lstack, xstart, x - 1, y, dy, ymax);
+            pushFillseg(stack, xstart, x - 1, y, dy, ymax);
             if (x > x2 + 1)   /* leak on right? */
-                pushFillseg(lstack, x2 + 1, x - 1, y, -dy, ymax);
+                pushFillseg(stack, x2 + 1, x - 1, y, -dy, ymax);
     skip:   for (x++; x <= x2 &&
                       x <= xmax &&
                       (GET_DATA_BIT(line, x) == 0); x++)
@@ -904,13 +918,13 @@ l_uint32  *data, *line;
 
     return 0;
 }
-            
+
 
 /*!
  *  pixSeedfill8()
  *
  *      Input:  pixs (1 bpp)
- *              lstack (for holding fillsegs)
+ *              stack (for holding fillsegs)
  *              x,y   (location of seed pixel)
  *      Return: 0 if OK, 1 on error
  *
@@ -923,7 +937,7 @@ l_uint32  *data, *line;
  */
 l_int32
 pixSeedfill8(PIX      *pixs,
-             L_STACK  *lstack,
+             L_STACK  *stack,
              l_int32   x,
              l_int32   y)
 {
@@ -935,8 +949,10 @@ l_uint32  *data, *line;
 
     if (!pixs || pixGetDepth(pixs) != 1)
         return ERROR_INT("pixs not defined or not 1 bpp", procName, 1);
-    if (!lstack)
-        return ERROR_INT("lstack not defined", procName, 1);
+    if (!stack)
+        return ERROR_INT("stack not defined", procName, 1);
+    if (!stack->auxstack)
+        stack->auxstack = lstackCreate(0);
 
     pixGetDimensions(pixs, &w, &h, NULL);
     xmax = w - 1;
@@ -950,22 +966,22 @@ l_uint32  *data, *line;
         return 0;
 
         /* Init stack to seed */
-    pushFillseg(lstack, x, x, y, 1, ymax);
-    pushFillseg(lstack, x, x, y + 1, -1, ymax);
+    pushFillseg(stack, x, x, y, 1, ymax);
+    pushFillseg(stack, x, x, y + 1, -1, ymax);
 
-    while (lstackGetCount(lstack) > 0)
+    while (lstackGetCount(stack) > 0)
     {
             /* Pop segment off stack and fill a neighboring scan line */
-        popFillseg(lstack, &x1, &x2, &y, &dy);
+        popFillseg(stack, &x1, &x2, &y, &dy);
         line = data + y * wpl;
 
             /* A segment of scanline y - dy for x1 <= x <= x2 was
-             * previously filled.  We now explore adjacent pixels 
+             * previously filled.  We now explore adjacent pixels
              * in scan line y.  There are three regions: to the
              * left of x1, between x1 and x2, and to the right of x2.
              * These regions are handled differently.  Leaks are
              * possible expansions beyond the previous segment and
-             * going back in the -dy direction.  These can happen 
+             * going back in the -dy direction.  These can happen
              * for x < x1 and for x > x2.  Any "leak" segments
              * are plugged with a push in the -dy (opposite) direction.
              * And any segments found anywhere are always extended
@@ -976,16 +992,16 @@ l_uint32  *data, *line;
             goto skip;
         xstart = x + 1;
         if (xstart < x1)   /* leak on left? */
-            pushFillseg(lstack, xstart, x1 - 1, y, -dy, ymax);
+            pushFillseg(stack, xstart, x1 - 1, y, -dy, ymax);
 
         x = x1;
         do {
             for (; x <= xmax && (GET_DATA_BIT(line, x) == 1); x++)
                 CLEAR_DATA_BIT(line, x);
-            pushFillseg(lstack, xstart, x - 1, y, dy, ymax);
+            pushFillseg(stack, xstart, x - 1, y, dy, ymax);
             if (x > x2)   /* leak on right? */
-                pushFillseg(lstack, x2 + 1, x - 1, y, -dy, ymax);
-    skip:   for (x++; x <= x2 + 1 && 
+                pushFillseg(stack, x2 + 1, x - 1, y, -dy, ymax);
+    skip:   for (x++; x <= x2 + 1 &&
                       x <= xmax &&
                       (GET_DATA_BIT(line, x) == 0); x++)
                 ;
@@ -995,7 +1011,7 @@ l_uint32  *data, *line;
 
     return 0;
 }
-            
+
 
 
 /*-----------------------------------------------------------------------*
@@ -1004,7 +1020,7 @@ l_uint32  *data, *line;
 /*!
  *  pushFillsegBB()
  *
- *      Input:  lstack
+ *      Input:  stack
  *              xleft, xright
  *              y
  *              dy
@@ -1022,7 +1038,7 @@ l_uint32  *data, *line;
  *          fillsegs if the auxiliary stack is empty.
  */
 static void
-pushFillsegBB(L_STACK  *lstack,
+pushFillsegBB(L_STACK  *stack,
               l_int32   xleft,
               l_int32   xright,
               l_int32   y,
@@ -1038,8 +1054,8 @@ L_STACK  *auxstack;
 
     PROCNAME("pushFillsegBB");
 
-    if (!lstack) {
-        L_ERROR(procName, "lstack not defined");
+    if (!stack) {
+        L_ERROR(procName, "stack not defined");
         return;
     }
 
@@ -1049,7 +1065,7 @@ L_STACK  *auxstack;
     *pmaxy = L_MAX(*pmaxy, y);
 
     if (y + dy >= 0 && y + dy <= ymax) {
-        if ((auxstack = lstack->auxstack) == NULL) {
+        if ((auxstack = stack->auxstack) == NULL) {
             L_ERROR("auxstack not defined", procName);
             return;
         }
@@ -1068,7 +1084,7 @@ L_STACK  *auxstack;
         fseg->xright = xright;
         fseg->y = y;
         fseg->dy = dy;
-        lstackAdd(lstack, fseg);
+        lstackAdd(stack, fseg);
     }
     return;
 }
@@ -1077,7 +1093,7 @@ L_STACK  *auxstack;
 /*!
  *  pushFillseg()
  *
- *      Input:  lstack
+ *      Input:  stack
  *              xleft, xright
  *              y
  *              dy
@@ -1091,7 +1107,7 @@ L_STACK  *auxstack;
  *          fillsegs if the auxiliary stack is empty.
  */
 static void
-pushFillseg(L_STACK  *lstack,
+pushFillseg(L_STACK  *stack,
             l_int32   xleft,
             l_int32   xright,
             l_int32   y,
@@ -1103,13 +1119,13 @@ L_STACK  *auxstack;
 
     PROCNAME("pushFillseg");
 
-    if (!lstack) {
-        L_ERROR(procName, "lstack not defined");
+    if (!stack) {
+        L_ERROR(procName, "stack not defined");
         return;
     }
 
     if (y + dy >= 0 && y + dy <= ymax) {
-        if ((auxstack = lstack->auxstack) == NULL) {
+        if ((auxstack = stack->auxstack) == NULL) {
             L_ERROR("auxstack not defined", procName);
             return;
         }
@@ -1128,7 +1144,7 @@ L_STACK  *auxstack;
         fseg->xright = xright;
         fseg->y = y;
         fseg->dy = dy;
-        lstackAdd(lstack, fseg);
+        lstackAdd(stack, fseg);
     }
     return;
 }
@@ -1136,8 +1152,8 @@ L_STACK  *auxstack;
 
 /*!
  *  popFillseg()
- * 
- *      Input:  lstack
+ *
+ *      Input:  stack
  *              &xleft (<return>)
  *              &xright (<return>)
  *              &y (<return>)
@@ -1150,7 +1166,7 @@ L_STACK  *auxstack;
  *          for future use.
  */
 static void
-popFillseg(L_STACK  *lstack,
+popFillseg(L_STACK  *stack,
            l_int32  *pxleft,
            l_int32  *pxright,
            l_int32  *py,
@@ -1161,16 +1177,16 @@ L_STACK  *auxstack;
 
     PROCNAME("popFillseg");
 
-    if (!lstack) {
-        L_ERROR("lstack not defined", procName);
+    if (!stack) {
+        L_ERROR("stack not defined", procName);
         return;
     }
-    if ((auxstack = lstack->auxstack) == NULL) {
+    if ((auxstack = stack->auxstack) == NULL) {
         L_ERROR("auxstack not defined", procName);
         return;
     }
 
-    if ((fseg = (FILLSEG *)lstackRemove(lstack)) == NULL)
+    if ((fseg = (FILLSEG *)lstackRemove(stack)) == NULL)
         return;
 
     *pxleft = fseg->xleft;
@@ -1182,6 +1198,3 @@ L_STACK  *auxstack;
     lstackAdd(auxstack, fseg);
     return;
 }
-
-
-

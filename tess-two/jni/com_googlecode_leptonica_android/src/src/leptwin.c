@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -45,7 +56,7 @@
 
   RETURNS:
     DWORD    - the size, in bytes, of the DIB's image bits
-    
+
   REMARKS:
     Calculates and returns the size, in bytes, of the image bits for
     the DIB described by the BITMAPINFO.
@@ -79,7 +90,7 @@ DSImageBitsSize(LPBITMAPINFO pbmi)
 
   RETURNS:
     DWORD    - the size, in bytes, of the HBITMAP's image bits
-    
+
   REMARKS:
     Calculates and returns the size, in bytes, of the image bits for
     the DIB described by the HBITMAP.
@@ -134,7 +145,7 @@ l_int32  i, nColors, rval, gval, bval;
 }
 
 /* **********************************************************************
-  HBITMAP DSCreateBitmapInfo(l_int32 width, l_int32 height, l_int32 depth, 
+  HBITMAP DSCreateBitmapInfo(l_int32 width, l_int32 height, l_int32 depth,
                              PIXCMAP *cmap)
 
   PARAMETERS:
@@ -146,7 +157,7 @@ l_int32  i, nColors, rval, gval, bval;
   RETURNS:
     LPBITMAPINFO - a ptr to BITMAPINFO of the desired size and bit-depth
                    NULL on failure
-    
+
   REMARKS:
     Creates a BITMAPINFO based on the criteria passed in as parameters.
 
@@ -166,7 +177,7 @@ LPDWORD       pMasks;
         nInfoSize += sizeof(RGBQUAD) * (1 << depth);
     if((depth == 16) || (depth == 32))
         nInfoSize += (3 * sizeof(DWORD));
-    
+
         /* Create the header big enough to contain color table and
          * bitmasks if needed. */
     pbmi = (LPBITMAPINFO)malloc(nInfoSize);
@@ -217,7 +228,7 @@ LPDWORD       pMasks;
             pMasks[1] = 0x00ff0000;
             pMasks[2] = 0x0000ff00;
 
-            pbmi->bmiHeader.biCompression = BI_BITFIELDS; 
+            pbmi->bmiHeader.biCompression = BI_BITFIELDS;
             break;
         case 8:
         case 4:
@@ -229,7 +240,7 @@ LPDWORD       pMasks;
 }
 
 /* **********************************************************************
-  HBITMAP DSCreateDIBSection(l_int32 width, l_int32 height, l_int32 depth, 
+  HBITMAP DSCreateDIBSection(l_int32 width, l_int32 height, l_int32 depth,
                              PIXCMAP *cmap)
 
   PARAMETERS:
@@ -241,7 +252,7 @@ LPDWORD       pMasks;
   RETURNS:
     HBITMAP      - a DIBSection HBITMAP of the desired size and bit-depth
                    NULL on failure
-    
+
   REMARKS:
     Creates a DIBSection based on the criteria passed in as parameters.
 
@@ -301,7 +312,7 @@ PIXCMAP   *cmap;
 
     pixGetDimensions(pix, &width, &height, &depth);
     cmap = pixGetColormap(pix);
-    
+
     if (depth == 24) depth = 32;
     if (depth == 2) {
         pixt = pixConvert2To8(pix, 0, 85, 170, 255, TRUE);
@@ -323,7 +334,7 @@ PIXCMAP   *cmap;
 
         /* By default, Windows assumes bottom up images */
     if (pixt)
-        pixt = pixFlipTB(pixt, pixt); 
+        pixt = pixFlipTB(pixt, pixt);
     else
         pixt = pixFlipTB(NULL, pix);
 

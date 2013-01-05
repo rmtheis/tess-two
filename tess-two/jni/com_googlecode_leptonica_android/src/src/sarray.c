@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 
@@ -76,6 +87,7 @@
  *      Directory filenames
  *          SARRAY    *getNumberedPathnamesInDirectory()
  *          SARRAY    *getSortedPathnamesInDirectory()
+ *          SARRAY    *convertSortedToNumberedPathnames()
  *          SARRAY    *getFilenamesInDirectory()
  *
  *      Comments on usage:
@@ -346,7 +358,7 @@ SARRAY  *sa;
     return;
 }
 
-        
+
 /*!
  *  sarrayCopy()
  *
@@ -422,7 +434,7 @@ l_int32  n;
         return ERROR_INT("string not defined", procName, 1);
     if (copyflag != L_INSERT && copyflag != L_COPY)
         return ERROR_INT("invalid copyflag", procName, 1);
-    
+
     n = sarrayGetCount(sa);
     if (n >= sa->nalloc)
         sarrayExtendArray(sa);
@@ -480,7 +492,7 @@ l_int32  i, n, nalloc;
 
     if (!sa)
         return (char *)ERROR_PTR("sa not defined", procName, NULL);
-    
+
     if ((array = sarrayGetArray(sa, &nalloc, &n)) == NULL)
         return (char *)ERROR_PTR("array not returned", procName, NULL);
 
@@ -571,7 +583,7 @@ l_int32  i;
     return 0;
 }
 
-        
+
 /*----------------------------------------------------------------------*
  *                               Accessors                              *
  *----------------------------------------------------------------------*/
@@ -590,7 +602,7 @@ sarrayGetCount(SARRAY  *sa)
         return ERROR_INT("sa not defined", procName, 0);
     return sa->n;
 }
-        
+
 
 /*!
  *  sarrayGetArray()
@@ -868,12 +880,13 @@ l_int32  n, i;
  *      Input:  sa1  (to be added to)
  *              sa2  (append specified range of strings in sa2 to sa1)
  *              start (index of first string of sa2 to append)
- *              end (index of last string of sa2 to append)
+ *              end (index of last string of sa2 to append; -1 to end of array)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
  *      (1) Copies of the strings in sarray2 are added to sarray1.
  *      (2) The [start ... end] range is truncated if necessary.
+ *      (3) Use end == -1 to append to the end of sa2.
  */
 l_int32
 sarrayAppendRange(SARRAY  *sa1,
@@ -893,7 +906,7 @@ l_int32  n, i;
     if (start < 0)
         start = 0;
     n = sarrayGetCount(sa2);
-    if (end >= n)
+    if (end == -1 || end >= n)
         end = n - 1;
     if (start > end)
         return ERROR_INT("start > end", procName, 1);
@@ -954,7 +967,7 @@ l_int32  i, n1, n2;
 /*----------------------------------------------------------------------*
  *                   Convert word sarray to line sarray                 *
  *----------------------------------------------------------------------*/
-/*! 
+/*!
  *  sarrayConvertWordsToLines()
  *
  *      Input:  sa  (sa of individual words)
@@ -965,7 +978,7 @@ l_int32  i, n1, n2;
  *  line length.  The individual words in the input sarray
  *  are concatenated into textlines.  An input word string of zero
  *  length is taken to be a paragraph separator.  Each time
- *  such a string is found, the current line is ended and 
+ *  such a string is found, the current line is ended and
  *  a new line is also produced that contains just the
  *  string of zero length ("").  When the output sarray
  *  of lines is eventually converted to a string with newlines
@@ -1514,7 +1527,7 @@ FILE  *fp;
 
     if (sarrayWriteStream(fp, sa))
         return ERROR_INT("sa not written to stream", procName, 1);
-    
+
     fclose(fp);
     return 0;
 }
@@ -1582,7 +1595,7 @@ FILE  *fp;
 
     if (sarrayWriteStream(fp, sa))
         return ERROR_INT("sa not appended to stream", procName, 1);
-    
+
     fclose(fp);
     return 0;
 }
@@ -1597,11 +1610,10 @@ FILE  *fp;
  *      Input:  directory name
  *              substr (<optional> substring filter on filenames; can be NULL)
  *              numpre (number of characters in name before number)
- *              numpost (number of characters in name after number, up
- *                       to a dot before an extension)
- *                       including an extension and the dot separator)
+ *              numpost (number of characters in name after the number,
+ *                       up to a dot before an extension)
  *              maxnum (only consider page numbers up to this value)
- *      Return: sarray of sorted pathnames, or NULL on error
+ *      Return: sarray of numbered pathnames, or NULL on error
  *
  *  Notes:
  *      (1) Returns the full pathnames of the numbered filenames in
@@ -1622,7 +1634,9 @@ FILE  *fp;
  *          preceeding the actual page number; @numpost is the number
  *          following the page number, up to either the end of the
  *          basename or a ".", whichever comes first.
- *      (5) To use a O(n) matching algorithm, the largest page number
+ *      (5) This is useful when all filenames contain numbers that are
+ *          not necessarily consecutive.  0-padding is not required.
+ *      (6) To use a O(n) matching algorithm, the largest page number
  *          is found and two internal arrays of this size are created.
  *          This maximum is constrained not to exceed @maxsum,
  *          to make sure that an unrealistically large number is not
@@ -1635,8 +1649,7 @@ getNumberedPathnamesInDirectory(const char  *dirname,
                                 l_int32      numpost,
                                 l_int32      maxnum)
 {
-char    *fname, *str;
-l_int32  i, nfiles, num, index;
+l_int32  nfiles;
 SARRAY  *sa, *saout;
 
     PROCNAME("getNumberedPathnamesInDirectory");
@@ -1649,36 +1662,7 @@ SARRAY  *sa, *saout;
     if ((nfiles = sarrayGetCount(sa)) == 0)
         return sarrayCreate(1);
 
-        /* Find the last file in the sorted array that has a number
-         * that (a) matches the count pattern and (b) does not
-         * exceed @maxnum.  @maxnum sets an upper limit on the size
-         * of the sarray.  */
-    num = 0;
-    for (i = nfiles - 1; i >= 0; i--) {
-      fname = sarrayGetString(sa, i, L_NOCOPY);
-      num = extractNumberFromFilename(fname, numpre, numpost);
-      if (num < 0) continue;
-      num = L_MIN(num + 1, maxnum);
-      break;
-    }
-
-    if (num <= 0)  /* none found */
-        return sarrayCreate(1);
-
-        /* Insert pathnames into the output sarray.
-         * Ignore numbers that are out of the range of sarray. */
-    saout = sarrayCreateInitialized(num, (char *)"");
-    for (i = 0; i < nfiles; i++) {
-      fname = sarrayGetString(sa, i, L_NOCOPY);
-      index = extractNumberFromFilename(fname, numpre, numpost);
-      if (index < 0 || index >= num) continue;
-      str = sarrayGetString(saout, index, L_NOCOPY);
-      if (str[0] != '\0')
-          L_WARNING_INT("\n  Multiple files with same number: %d",
-                        procName, index);
-      sarrayReplaceString(saout, index, fname, L_COPY);
-    }
-
+    saout = convertSortedToNumberedPathnames(sa, numpre, numpost, maxnum);
     sarrayDestroy(&sa);
     return saout;
 }
@@ -1747,6 +1731,71 @@ SARRAY  *sa, *safiles, *saout;
 
 
 /*!
+ *  convertSortedToNumberedPathnames()
+ *
+ *      Input:  sorted pathnames (including zero-padded integers)
+ *              numpre (number of characters in name before number)
+ *              numpost (number of characters in name after the number,
+ *                       up to a dot before an extension)
+ *              maxnum (only consider page numbers up to this value)
+ *      Return: sarray of numbered pathnames, or NULL on error
+ *
+ *  Notes:
+ *      (1) Typically, numpre = numpost = 0; e.g., when the filename
+ *          just has a number followed by an optional extension.
+ */
+SARRAY *
+convertSortedToNumberedPathnames(SARRAY   *sa,
+                                 l_int32   numpre,
+                                 l_int32   numpost,
+                                 l_int32   maxnum)
+{
+char    *fname, *str;
+l_int32  i, nfiles, num, index;
+SARRAY  *saout;
+
+    PROCNAME("convertSortedToNumberedPathnames");
+
+    if (!sa)
+        return (SARRAY *)ERROR_PTR("sa not defined", procName, NULL);
+    if ((nfiles = sarrayGetCount(sa)) == 0)
+        return sarrayCreate(1);
+
+        /* Find the last file in the sorted array that has a number
+         * that (a) matches the count pattern and (b) does not
+         * exceed @maxnum.  @maxnum sets an upper limit on the size
+         * of the sarray.  */
+    num = 0;
+    for (i = nfiles - 1; i >= 0; i--) {
+      fname = sarrayGetString(sa, i, L_NOCOPY);
+      num = extractNumberFromFilename(fname, numpre, numpost);
+      if (num < 0) continue;
+      num = L_MIN(num + 1, maxnum);
+      break;
+    }
+
+    if (num <= 0)  /* none found */
+        return sarrayCreate(1);
+
+        /* Insert pathnames into the output sarray.
+         * Ignore numbers that are out of the range of sarray. */
+    saout = sarrayCreateInitialized(num, (char *)"");
+    for (i = 0; i < nfiles; i++) {
+      fname = sarrayGetString(sa, i, L_NOCOPY);
+      index = extractNumberFromFilename(fname, numpre, numpost);
+      if (index < 0 || index >= num) continue;
+      str = sarrayGetString(saout, index, L_NOCOPY);
+      if (str[0] != '\0')
+          L_WARNING_INT("\n  Multiple files with same number: %d",
+                        procName, index);
+      sarrayReplaceString(saout, index, fname, L_COPY);
+    }
+
+    return saout;
+}
+
+
+/*!
  *  getFilenamesInDirectory()
  *
  *      Input:  directory name
@@ -1796,7 +1845,7 @@ struct dirent  *pdirentry;
 
         /* It's nice to ignore directories.  For this it is necessary to
          * define _BSD_SOURCE in the CC command, because the DT_DIR
-         * flag is non-standard.  */ 
+         * flag is non-standard.  */
 #if !defined(__SOLARIS__)
         if (pdirentry->d_type == DT_DIR)
             continue;
@@ -1866,4 +1915,3 @@ WIN32_FIND_DATAA  ffd;
 }
 
 #endif  /* _WIN32 */
-

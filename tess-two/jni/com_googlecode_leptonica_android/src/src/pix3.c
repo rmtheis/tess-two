@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -44,6 +55,7 @@
  *
  *    Foreground pixel counting in 1 bpp images
  *           l_int32     pixZero()
+ *           l_int32     pixForegroundFraction()
  *           l_int32     pixCountPixels()
  *           NUMA       *pixaCountPixels()
  *           l_int32     pixCountPixelsInRow()
@@ -55,6 +67,9 @@
  *           l_int32    *makePixelSumTab8()
  *           l_int32    *makePixelCentroidTab8()
  *
+ *    Pixel counting in gray and colormapped images
+ *           l_int32     pixCountArbInRect()
+ *
  *    Sum of pixel values
  *           l_int32     pixSumPixelValues()
  *
@@ -65,8 +80,6 @@
  *           static l_int32  findTilePatchCenter()
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "allheaders.h"
 
@@ -161,7 +174,7 @@ l_uint32  *datad, *datam, *lined, *linem;
             pixRasterop(pixd, 0, 0, wm, hm, PIX_PAINT, pixm, 0, 0);
         return 0;
     }
-    
+
         /* For d < 32, use rasterop for val == 0 (black); ~3x faster. */
     if (d < 32 && val == 0) {
         PIX *pixmd = pixUnpackBinary(pixm, d, 1);
@@ -614,7 +627,7 @@ l_uint32  *data, *datam, *line, *linem;
             pixRasterop(pixd, x, y, wm, hm, PIX_PAINT, pixm, 0, 0);
         return 0;
     }
-    
+
         /* For d < 32, use rasterop if val == 0 (black); ~3x faster. */
     if (d < 32 && val == 0) {
         PIX *pixmd = pixUnpackBinary(pixm, d, 1);
@@ -670,7 +683,7 @@ l_uint32  *data, *datam, *line, *linem;
 
     return 0;
 }
-    
+
 
 /*!
  *  pixPaintSelfThroughMask()
@@ -782,7 +795,7 @@ PIXA     *pixa;
             continue;
         }
 
-            /* Extract the selected square from pixd, and generate 
+            /* Extract the selected square from pixd, and generate
              * an image the size of the b.b. of the c.c., which
              * is then painted through the c.c. mask.  */
         boxt = boxCreate(L_MAX(0, xc - dist / 2), L_MAX(0, yc - dist / 2),
@@ -898,6 +911,11 @@ PIX       *pixd;
  *          we issue a warning and return a copy of the input pix.
  *          If you really want to set every pixel to the same value,
  *          use pixSetAllArbitrary().
+ *      (7) This is useful for compressing an RGBA image where the part
+ *          of the image that is fully transparent is random; compression
+ *          is typically improved by setting that region to a constant.
+ *          For rendering as a 3 component RGB image over a uniform
+ *          background, use pixAlphaBlendUniform().
  */
 PIX *
 pixSetUnderTransparency(PIX      *pixs,
@@ -1091,7 +1109,7 @@ pixOr(PIX  *pixd,
  *
  *  Notes:
  *      (1) This gives the intersection of two images with equal depth,
- *          aligning them to the the UL corner.  pixs1 and pixs2 
+ *          aligning them to the the UL corner.  pixs1 and pixs2
  *          need not have the same width and height.
  *      (2) There are 3 cases:
  *            (a) pixd == null,   (src1 & src2) --> new pixd
@@ -1293,7 +1311,7 @@ l_int32  w, h;
  *      (1) For a binary image, if there are no fg (black) pixels, empty = 1.
  *      (2) For a grayscale image, if all pixels are black (0), empty = 1.
  *      (3) For an RGB image, if all 4 components in every pixel is 0,
- *          empty = 1. 
+ *          empty = 1.
  */
 l_int32
 pixZero(PIX      *pix,
@@ -1336,6 +1354,34 @@ l_uint32  *data, *line;
         }
     }
 
+    return 0;
+}
+
+
+/*!
+ *  pixForegroundFraction()
+ *
+ *      Input:  pix (1 bpp)
+ *              &fract (<return> fraction of ON pixels)
+ *      Return: 0 if OK; 1 on error
+ */
+l_int32
+pixForegroundFraction(PIX        *pix,
+                      l_float32  *pfract)
+{
+l_int32  w, h, count;
+
+    PROCNAME("pixForegroundFraction");
+
+    if (!pfract)
+        return ERROR_INT("pfract not defined", procName, 1);
+    *pfract = 0.0;
+    if (!pix || pixGetDepth(pix) != 1)
+        return ERROR_INT("pix not defined or not 1 bpp", procName, 1);
+
+    pixCountPixels(pix, &count, NULL);
+    pixGetDimensions(pix, &w, &h, NULL);
+    *pfract = (l_float32)count / (l_float32)(w * h);
     return 0;
 }
 
@@ -1445,7 +1491,7 @@ PIX      *pix;
         numaAddNumber(na, count);
         pixDestroy(&pix);
     }
-        
+
     FREE(tab);
     return na;
 }
@@ -1887,6 +1933,81 @@ l_int32  *tab;
 
 
 /*-------------------------------------------------------------*
+ *        Pixel counting in gray and colormapped images        *
+ *-------------------------------------------------------------*/
+/*!
+ *  pixCountArbInRect()
+ *
+ *      Input:  pixs (8 bpp, or colormapped)
+ *              box (<optional>) over which count is made;
+ *                   use entire image null)
+ *              val (pixel value to count)
+ *              factor (subsampling factor; integer >= 1)
+ *              &count (<return> count; estimate it if factor > 1)
+ *      Return: na (histogram), or null on error
+ *
+ *  Notes:
+ *      (1) If pixs is cmapped, @val is compared to the colormap index;
+ *          otherwise, @val is compared to the grayscale value.
+ *      (2) Set the subsampling @factor > 1 to reduce the amount of computation.
+ *          If @factor > 1, multiply the count by @factor * @factor.
+ */
+l_int32
+pixCountArbInRect(PIX      *pixs,
+                  BOX      *box,
+                  l_int32   val,
+                  l_int32   factor,
+                  l_int32  *pcount)
+{
+l_int32    i, j, bx, by, bw, bh, w, h, wpl, pixval;
+l_uint32  *data, *line;
+
+    PROCNAME("pixCountArbInRect");
+
+    if (!pcount)
+        return ERROR_INT("&count not defined", procName, 1);
+    *pcount = 0;
+    if (!pixs)
+        return ERROR_INT("pixs not defined", procName, 1);
+    if (pixGetDepth(pixs) != 8 && !pixGetColormap(pixs))
+        return ERROR_INT("pixs neither 8 bpp nor colormapped",
+                                 procName, 1);
+    if (factor < 1)
+        return ERROR_INT("sampling factor < 1", procName, 1);
+
+    pixGetDimensions(pixs, &w, &h, NULL);
+    data = pixGetData(pixs);
+    wpl = pixGetWpl(pixs);
+
+    if (!box) {
+        for (i = 0; i < h; i += factor) {
+            line = data + i * wpl;
+            for (j = 0; j < w; j += factor) {
+                pixval = GET_DATA_BYTE(line, j);
+                if (pixval == val) (*pcount)++;
+            }
+        }
+    }
+    else {
+        boxGetGeometry(box, &bx, &by, &bw, &bh);
+        for (i = 0; i < bh; i += factor) {
+            if (by + i < 0 || by + i >= h) continue;
+            line = data + (by + i) * wpl;
+            for (j = 0; j < bw; j += factor) {
+                if (bx + j < 0 || bx + j >= w) continue;
+                pixval = GET_DATA_BYTE(line, bx + j);
+                if (pixval == val) (*pcount)++;
+            }
+        }
+    }
+
+    if (factor > 1)  /* assume pixel color is randomly distributed */
+        *pcount = *pcount * factor * factor;
+    return 0;
+}
+
+
+/*-------------------------------------------------------------*
  *                       Sum of pixel values                   *
  *-------------------------------------------------------------*/
 /*!
@@ -2162,4 +2283,3 @@ l_uint32  val, maxval;
     pixGetPixel(pixs, *pxc, *pyc, pdist);
     return 0;
 }
-

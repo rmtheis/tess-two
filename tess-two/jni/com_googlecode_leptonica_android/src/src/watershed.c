@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -43,7 +54,7 @@
  *  critical to getting meaningful results.
  *
  *  How are the markers selected?  You can't simply use the local
- *  minima, because a typical image has sufficient noise so that 
+ *  minima, because a typical image has sufficient noise so that
  *  a useful catch basin can easily have multiple local minima.  However
  *  they are selected, the question for the watershed function is
  *  how to handle local minima that are not markers.  The reason
@@ -99,8 +110,6 @@
  *      wshedDestroy(&wshed);
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "allheaders.h"
 
 #ifndef  NO_CONSOLE_IO
@@ -265,7 +274,7 @@ L_WSHED  *wshed;
          FREE(wshed->lut);
     if (wshed->links) {
         for (i = 0; i < wshed->arraysize; i++)
-            numaDestroy(&wshed->links[i]); 
+            numaDestroy(&wshed->links[i]);
         FREE(wshed->links);
     }
     FREE(wshed);
@@ -317,7 +326,7 @@ PTA      *ptas, *ptao;
     if (!wshed)
         return ERROR_INT("wshed not defined", procName, 1);
 
-    /* ------------------------------------------------------------ * 
+    /* ------------------------------------------------------------ *
      *  Initialize priority queue and pixlab with seeds and minima  *
      * ------------------------------------------------------------ */
 
@@ -360,7 +369,7 @@ PTA      *ptas, *ptao;
     }
     wshed->namh = namh;
 
-    /* ------------------------------------------------------------ * 
+    /* ------------------------------------------------------------ *
      *                Initialize merging lookup tables              *
      * ------------------------------------------------------------ */
 
@@ -378,7 +387,7 @@ PTA      *ptas, *ptao;
     wshed->links = links;  /* wshed owns this */
     nindex = nseeds + nother;  /* the next unused index value */
 
-    /* ------------------------------------------------------------ * 
+    /* ------------------------------------------------------------ *
      *              Fill the basins, using the priority queue       *
      * ------------------------------------------------------------ */
 
@@ -447,9 +456,9 @@ PTA      *ptas, *ptao;
 
                     if (wshed->debug) fprintf(stderr, "nindex = %d\n", nindex);
                     debugPrintLUT(lut, nindex, wshed->debug);
-                    mergeLookup(wshed, clabel, nindex); 
+                    mergeLookup(wshed, clabel, nindex);
                     debugPrintLUT(lut, nindex, wshed->debug);
-                    mergeLookup(wshed, cindex, nindex); 
+                    mergeLookup(wshed, cindex, nindex);
                     debugPrintLUT(lut, nindex, wshed->debug);
                     nindex++;
                 }
@@ -472,32 +481,32 @@ PTA      *ptas, *ptao;
                                 x, y, clabel, cindex);
                 wshedSaveBasin(wshed, clabel, val - 1);
                 numaSetValue(nasi, clabel, 0);
-                mergeLookup(wshed, clabel, cindex); 
+                mergeLookup(wshed, clabel, cindex);
             }
             else if (cindex < nseeds && clabel >= nboth) {
                 debugWshedMerge(wshed, one_new_watershed_index,
                                 x, y, clabel, cindex);
                 wshedSaveBasin(wshed, cindex, val - 1);
                 numaSetValue(nasi, cindex, 0);
-                mergeLookup(wshed, cindex, clabel); 
+                mergeLookup(wshed, cindex, clabel);
             }
                 /* If one index is a seed and the other is from a minimum,
                  * merge the minimum wshed into the seed wshed. */
             else if (clabel < nseeds) {  /* cindex from minima; absorb */
                 debugWshedMerge(wshed, minima_absorbed_into_seeded_basin,
                                 x, y, clabel, cindex);
-                mergeLookup(wshed, cindex, clabel); 
+                mergeLookup(wshed, cindex, clabel);
             }
             else if (cindex < nseeds) {  /* clabel from minima; absorb */
                 debugWshedMerge(wshed, minima_absorbed_into_seeded_basin,
                                 x, y, clabel, cindex);
-                mergeLookup(wshed, clabel, cindex); 
+                mergeLookup(wshed, clabel, cindex);
             }
                 /* If neither index is a seed, just merge */
             else {
                 debugWshedMerge(wshed, minima_absorbed_by_filler_or_another,
                                 x, y, clabel, cindex);
-                mergeLookup(wshed, clabel, cindex); 
+                mergeLookup(wshed, clabel, cindex);
             }
         }
     }
@@ -507,7 +516,7 @@ PTA      *ptas, *ptao;
          *  to the maximum value.  This seems to screw things up!  */
     for (i = 0; i < nseeds; i++) {
         numaGetIValue(nasi, i, &ival);
-        if (ival == 1) { 
+        if (ival == 1) {
             wshedSaveBasin(wshed, lut[i], val - 1);
             numaSetValue(nasi, i, 0);
         }
@@ -1104,4 +1113,3 @@ PIXA    *pixa;
     pixaDestroy(&pixa);
     return pixd;
 }
-

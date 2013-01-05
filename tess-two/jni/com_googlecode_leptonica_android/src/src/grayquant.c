@@ -1,21 +1,32 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
  *  grayquant.c
- *                     
+ *
  *      Thresholding from 8 bpp to 1 bpp
  *
  *          Floyd-Steinberg dithering to binary
@@ -74,8 +85,6 @@
  *              PIX      *pixGrayQuantFromCmap()
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "allheaders.h"
@@ -98,10 +107,10 @@ static l_int32 numaFillCmapFromHisto(NUMA *na, PIXCMAP *cmap,
  *  The Floyd-Steinberg error diffusion dithering algorithm
  *  binarizes an 8 bpp grayscale image to a threshold of 128.
  *  If a pixel has a value above 127, it is binarized to white
- *  and the excess (below 255) is subtracted from three 
+ *  and the excess (below 255) is subtracted from three
  *  neighboring pixels in the fractions 3/8 to (i, j+1),
  *  3/8 to (i+1, j) and 1/4 to (i+1,j+1), truncating to 0
- *  if necessary.  Likewise, if it the pixel has a value 
+ *  if necessary.  Likewise, if it the pixel has a value
  *  below 128, it is binarized to black and the excess above 0
  *  is added to the neighboring pixels, truncating to 255 if necessary.
  *
@@ -542,7 +551,7 @@ PIX       *pixg, *pixd;
             if (inband) {
                 if (val >= lower && val <= upper)
                     SET_DATA_BIT(lined, j);
-            } 
+            }
             else {  /* out of band */
                 if (val < lower || val > upper)
                     SET_DATA_BIT(lined, j);
@@ -977,7 +986,7 @@ PIXCMAP   *cmap;
  *                    or null on error
  *
  *  Notes:
- *      (1) This function allows exact specification of the quantization bins.  
+ *      (1) This function allows exact specification of the quantization bins.
  *          The string @edgevals is a space-separated set of values
  *          specifying the dividing points between output quantization bins.
  *          These threshold values are assigned to the bin with higher
@@ -986,7 +995,7 @@ PIXCMAP   *cmap;
  *          number of bins is the number of edgevals + 1.  The
  *          relation between outdepth and the number of bins is:
  *               outdepth = 2       nbins <= 4
- *               outdepth = 4       nbins <= 16 
+ *               outdepth = 4       nbins <= 16
  *               outdepth = 8       nbins <= 256
  *          With @outdepth == 0, the minimum required depth for the
  *          given number of bins is used.
@@ -1257,7 +1266,7 @@ PIXCMAP  *cmap;
         /* Last bin */
     ave = (jstart + 255) / 2;
     pixcmapAddColor(cmap, ave, ave, ave);
-    for (j = jstart; j < 256; j++) 
+    for (j = jstart; j < 256; j++)
         tab[j] = n;
 
     return 0;
@@ -1356,7 +1365,7 @@ l_uint32  *line, *data;
     FREE(binstart);
     return 0;
 }
-	    
+
 
 /*--------------------------------------------------------------------*
  *                 Thresholding from 32 bpp rgb to 1 bpp              *
@@ -1593,7 +1602,7 @@ PIXCMAP   *cmap;
             return (PIX *)ERROR_PTR("pixm not 1 bpp", procName, NULL);
         if ((cmap = pixGetColormap(pixd)) == NULL)
             return (PIX *)ERROR_PTR("pixd not cmapped", procName, NULL);
-        pixGetDimensions(pixd, &wd, &hd, NULL); 
+        pixGetDimensions(pixd, &wd, &hd, NULL);
         if (w != wd || h != hd)
             return (PIX *)ERROR_PTR("pixs, pixd sizes differ", procName, NULL);
         nc = pixcmapGetCount(cmap);
@@ -1603,7 +1612,7 @@ PIXCMAP   *cmap;
             L_ERROR_INT("Estimate %d colors!", procName, nestim);
             return (PIX *)ERROR_PTR("probably too many colors", procName, NULL);
         }
-        pixGetDimensions(pixm, &wm, &hm, NULL); 
+        pixGetDimensions(pixm, &wm, &hm, NULL);
         if (w != wm || h != hm) {  /* resize the mask */
             L_WARNING("mask and dest sizes not equal", procName);
             pixmr = pixCreateNoInit(w, h, 1);
@@ -1666,7 +1675,7 @@ PIXCMAP   *cmap;
     FREE(lut);
     return pixd;
 }
-                 
+
 
 /*!
  *  numaFillCmapFromHisto()
@@ -1706,7 +1715,7 @@ l_float32  total;
         return ERROR_INT("na not defined", procName, 1);
     if (!cmap)
         return ERROR_INT("cmap not defined", procName, 1);
-   
+
     numaGetSum(na, &total);
     mincount = (l_int32)(minfract * total);
     iahisto = numaGetIArray(na);
@@ -1734,7 +1743,7 @@ l_float32  total;
         wtsum += i * iahisto[i];
         span = i - istart + 1;
         if (sum < mincount && span < maxsize)
-            continue; 
+            continue;
 
         if (sum == 0) {  /* empty span; don't save */
             istart = i + 1;
@@ -1823,7 +1832,7 @@ PIX       *pixd;
 
     pixcmapGetMinDepth(cmap, &depth);
     depth = L_MAX(depth, mindepth);
-    pixd = pixCreate(w, h, depth); 
+    pixd = pixCreate(w, h, depth);
     pixSetColormap(pixd, cmapd);
     pixCopyResolution(pixd, pixs);
     pixCopyInputFormat(pixd, pixs);
@@ -1849,5 +1858,3 @@ PIX       *pixd;
     FREE(tab);
     return pixd;
 }
-
-

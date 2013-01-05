@@ -1,19 +1,30 @@
 #/*====================================================================*
 # -  Copyright (C) 2001 Leptonica.  All rights reserved.
-# -  This software is distributed in the hope that it will be
-# -  useful, but with NO WARRANTY OF ANY KIND.
-# -  No author or distributor accepts responsibility to anyone for the
-# -  consequences of using this software, or for whether it serves any
-# -  particular purpose or works at all, unless he or she says so in
-# -  writing.  Everyone is granted permission to copy, modify and
-# -  redistribute this source code, for commercial or non-commercial
-# -  purposes, with the following restrictions: (1) the origin of this
-# -  source code must not be misrepresented; (2) modified versions must
-# -  be plainly marked as such; and (3) this notice may not be removed
-# -  or altered from any source or modified source distribution.
+# -
+# -  Redistribution and use in source and binary forms, with or without
+# -  modification, are permitted provided that the following conditions
+# -  are met:
+# -  1. Redistributions of source code must retain the above copyright
+# -     notice, this list of conditions and the following disclaimer.
+# -  2. Redistributions in binary form must reproduce the above
+# -     copyright notice, this list of conditions and the following
+# -     disclaimer in the documentation and/or other materials
+# -     provided with the distribution.
+# -
+# -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+# -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # *====================================================================*/
 
-#   Makefile  (for linux)
+#   makefile  (for linux)
 #
 #   For a nodebug version:             make
 #   For a debug version:               make DEBUG=yes
@@ -134,16 +145,17 @@ ALL_LIBS =	$(LEPTLIB) -ltiff -ljpeg -lpng -lz -lm
 #########################################################################
 
 SRC =		adaptnorm_reg.c affine_reg.c \
-		alltests_reg.c alphaclean_reg.c alphaxform_reg.c \
+		alltests_reg.c alphaops_reg.c alphaxform_reg.c \
 		bilinear_reg.c binarize_reg.c \
 		binmorph1_reg.c binmorph2_reg.c \
 		binmorph3_reg.c binmorph4_reg.c binmorph5_reg.c \
 		blend_reg.c blend2_reg.c \
 		ccthin1_reg.c ccthin2_reg.c \
-		cmapquant_reg.c colormask_reg.c colorquant_reg.c \
-		colorseg_reg.c compfilter_reg.c \
+		cmapquant_reg.c coloring_reg.c \
+		colormask_reg.c colorquant_reg.c \
+		colorseg_reg.c compare_reg.c compfilter_reg.c \
 		conncomp_reg.c conversion_reg.c convolve_reg.c \
-		dewarp_reg.c distance_reg.c \
+		dewarp_reg.c distance_reg.c dna_reg.c \
 		dwamorph1_reg.c dwamorph2_reg.c \
 		enhance_reg.c equal_reg.c \
 		expand_reg.c extrema_reg.c \
@@ -171,7 +183,8 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		shear_reg.c shear2_reg.c skew_reg.c \
 		smallpix_reg.c smoothedge_reg.c splitcomp_reg.c \
 		string_reg.c subpixel_reg.c threshnorm_reg.c \
-		translate_reg.c warper_reg.c writetext_reg.c xformbox_reg.c \
+		translate_reg.c warper_reg.c webpio_reg.c \
+		writetext_reg.c xformbox_reg.c \
 		adaptmaptest.c arithtest.c \
 		barcodetest.c baselinetest.c \
 		bincompare.c blendcmaptest.c \
@@ -185,12 +198,13 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		convertsegfilestopdf.c convertsegfilestops.c \
 		converttogray.c converttops.c \
 		convolvetest.c cornertest.c \
-		croptext.c dewarptest.c digitprep1.c dithertest.c \
+		croptext.c dewarptest1.c dewarptest2.c dewarptest3.c \
+		digitprep1.c dithertest.c \
 		dwalineargen.c edgetest.c falsecolortest.c \
 		fcombautogen.c fhmtautogen.c fileinfo.c \
 		findpattern1.c findpattern2.c findpattern3.c \
-		flipselgen.c \
-		fmorphautogen.c gammatest.c \
+		flipselgen.c fmorphautogen.c \
+		fpixcontours.c gammatest.c \
 		genfonts.c graphicstest.c graymorphtest.c \
 		histotest.c iotest.c inserttest.c \
 		jbcorrelation.c jbrankhaus.c jbwords.c \
@@ -209,13 +223,13 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		removecmap.c renderfonts.c \
 		rotatefastalt.c rotateorthtest1.c \
 		rotatetest1.c runlengthtest.c \
-		scaletest1.c scaletest2.c \
+		scaleandtile.c scaletest1.c scaletest2.c \
 		seedfilltest.c sharptest.c \
 		sheartest.c showedges.c \
 		skewtest.c snapcolortest.c \
 		sorttest.c splitimage2pdf.c \
 		sudokutest.c textlinemask.c trctest.c \
-		viewertest.c watershedtest.c \
+		viewertest.c warpertest.c watershedtest.c \
 		wordsinorder.c writemtiff.c \
 		xtractprotos.c xvdisp.c yuvtest.c
 
@@ -226,33 +240,38 @@ SRC2 =		dwalinear.3.c dwalinearlow.3.c
 
 all:	$(SRC:%.c=%)
 
-debian:	binarize_reg \
-	binmorph1_reg binmorph2_reg binmorph3_reg \
-	binmorph4_reg binmorph5_reg \
-	blend_reg blend2_reg buffertest comparetest \
-	cctest1 ccthin1_reg \
-	colormorphtest colorquant_reg colorspacetest \
-	conncomp_reg conversion_reg \
-	convertfilestopdf convertfilestops convertformat \
-	convertsegfilestops converttops distance_reg \
-	dithertest edgetest enhance_reg \
-	equal_reg expand_reg extrema_reg \
-	fhmtauto_reg fhmtautogen fileinfo \
-	flipdetect_reg flipselgen fmorphauto_reg fmorphautogen \
-	fpix_reg gammatest graphicstest grayfill_reg \
-	graymorph1_reg \
-	grayquant_reg hardlight_reg heap_reg histotest ioformats_reg \
-	jbcorrelation jbrankhaus jbwords \
-	kernel_reg lineremoval locminmax_reg \
-	lowaccess_reg maze_reg numaranktest numa_reg pagesegtest1 \
-	pagesegtest2 paint_reg paintmask_reg \
-	partitiontest pixalloc_reg pixmem_reg plottest \
-	printimage printsplitimage printtiff \
-	ranktest rank_reg removecmap rotate1_reg rotate2_reg \
-	scale_reg selio_reg \
-	sharptest shear_reg smallpix_reg \
-	splitcomp_reg splitimage2pdf \
-	viewertest warper_reg writetext_reg xtractprotos
+
+#    Jan 2012
+debian:	binarize_reg binmorph2_reg ccthin2_reg colorquant_reg \
+	colorseg_reg convolve_reg dewarp_reg \
+	dwamorph1_reg dwamorph2_reg \
+	distance_reg enhance_reg ioformats_reg \
+	maze_reg paintmask_reg \
+	rotate1_reg rotate2_reg scale_reg \
+	seedspread_reg splitcomp_reg threshnorm_reg \
+	warper_reg convertfilestopdf convertfilestops \
+	converttops dewarptest1 \
+	fcombautogen fhmtautogen fileinfo \
+	fmorphautogen pdfiotest \
+	printimage printsplitimage splitimage2pdf \
+	sudokutest watershedtest xtractprotos
+
+
+#   Jan 2011
+#debian:	binarize_reg cctest1 ccthin1_reg \
+#	colormorphtest colorquant_reg colorspacetest \
+#	comparetest convertfilestopdf convertfilestops \
+#	convertformat converttops dewarp_reg \
+#	distance_reg dithertest fileinfo \
+#	flipdetect_reg fmorphauto_reg  gammatest \
+#	grayfill_reg graymorph1_reg grayquant_reg \
+#	hardlight_reg  ioformats_reg jbcorrelation \
+#	kernel_reg lineremoval maze_reg \
+#	pagesegtest1 paint_reg paintmask_reg \
+#	printimage printsplitimage printtiff \
+#	rank_reg ranktest scale_reg \
+#	skewtest splitcomp_reg warper_reg \
+#	watershedtest xtractprotos
 
 ######################################################################
 
@@ -265,8 +284,8 @@ affine_reg:	affine_reg.o $(LEPTLIB)
 alltests_reg:	alltests_reg.o $(LEPTLIB)
 	$(CC) -o alltests_reg alltests_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
-alphaclean_reg:	alphaclean_reg.o $(LEPTLIB)
-	$(CC) -o alphaclean_reg alphaclean_reg.o $(ALL_LIBS) $(EXTRALIBS)
+alphaops_reg:	alphaops_reg.o $(LEPTLIB)
+	$(CC) -o alphaops_reg alphaops_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
 alphaxform_reg:	alphaxform_reg.o $(LEPTLIB)
 	$(CC) -o alphaxform_reg alphaxform_reg.o $(ALL_LIBS) $(EXTRALIBS)
@@ -307,6 +326,9 @@ ccthin2_reg:	ccthin2_reg.o $(LEPTLIB)
 cmapquant_reg:	cmapquant_reg.o $(LEPTLIB)
 	$(CC) -o cmapquant_reg cmapquant_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
+coloring_reg:	coloring_reg.o $(LEPTLIB)
+	$(CC) -o coloring_reg coloring_reg.o $(ALL_LIBS) $(EXTRALIBS)
+
 colormask_reg:	colormask_reg.o $(LEPTLIB)
 	$(CC) -o colormask_reg colormask_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -315,6 +337,9 @@ colorquant_reg:	colorquant_reg.o $(LEPTLIB)
 
 colorseg_reg:	colorseg_reg.o $(LEPTLIB)
 	$(CC) -o colorseg_reg colorseg_reg.o $(ALL_LIBS) $(EXTRALIBS)
+
+compare_reg: compare_reg.o $(LEPTLIB)
+	$(CC) -o compare_reg compare_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
 compfilter_reg: compfilter_reg.o $(LEPTLIB)
 	$(CC) -o compfilter_reg compfilter_reg.o $(ALL_LIBS) $(EXTRALIBS)
@@ -333,6 +358,9 @@ dewarp_reg:	dewarp_reg.o $(LEPTLIB)
 
 distance_reg:	distance_reg.o $(LEPTLIB)
 	$(CC) -o distance_reg distance_reg.o $(ALL_LIBS) $(EXTRALIBS)
+
+dna_reg:	dna_reg.o $(LEPTLIB)
+	$(CC) -o dna_reg dna_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
 dwamorph1_reg:  dwamorph1_reg.o dwalinear.3.o dwalinearlow.3.o $(LEPTLIB)
 	$(CC) -o dwamorph1_reg dwamorph1_reg.o dwalinear.3.o dwalinearlow.3.o $(ALL_LIBS) $(EXTRALIBS)
@@ -538,6 +566,9 @@ translate_reg:	translate_reg.o $(LEPTLIB)
 warper_reg:	warper_reg.o $(LEPTLIB)
 	$(CC) -o warper_reg warper_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
+webpio_reg:	webpio_reg.o $(LEPTLIB)
+	$(CC) -o webpio_reg webpio_reg.o $(ALL_LIBS) $(EXTRALIBS)
+
 writetext_reg:	writetext_reg.o $(LEPTLIB)
 	$(CC) -o writetext_reg writetext_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -628,8 +659,14 @@ cornertest:	cornertest.o $(LEPTLIB)
 croptext:	croptext.o $(LEPTLIB)
 	$(CC) -o croptext croptext.o $(ALL_LIBS) $(EXTRALIBS)
 
-dewarptest:	dewarptest.o $(LEPTLIB)
-	$(CC) -o dewarptest dewarptest.o $(ALL_LIBS) $(EXTRALIBS)
+dewarptest1:	dewarptest1.o $(LEPTLIB)
+	$(CC) -o dewarptest1 dewarptest1.o $(ALL_LIBS) $(EXTRALIBS)
+
+dewarptest2:	dewarptest2.o $(LEPTLIB)
+	$(CC) -o dewarptest2 dewarptest2.o $(ALL_LIBS) $(EXTRALIBS)
+
+dewarptest3:	dewarptest3.o $(LEPTLIB)
+	$(CC) -o dewarptest3 dewarptest3.o $(ALL_LIBS) $(EXTRALIBS)
 
 digitprep1:	digitprep1.o $(LEPTLIB)
 	$(CC) -o digitprep1 digitprep1.o $(ALL_LIBS) $(EXTRALIBS)
@@ -669,6 +706,9 @@ fcombautogen:	fcombautogen.o $(LEPTLIB)
 
 fmorphautogen:	fmorphautogen.o $(LEPTLIB)
 	$(CC) -o fmorphautogen fmorphautogen.o $(ALL_LIBS) $(EXTRALIBS)
+
+fpixcontours:	fpixcontours.o $(LEPTLIB)
+	$(CC) -o fpixcontours fpixcontours.o $(ALL_LIBS) $(EXTRALIBS)
 
 gammatest:	gammatest.o $(LEPTLIB)
 	$(CC) -o gammatest gammatest.o $(ALL_LIBS) $(EXTRALIBS)
@@ -804,6 +844,9 @@ rotatetest1:	rotatetest1.o $(LEPTLIB)
 
 runlengthtest:	runlengthtest.o $(LEPTLIB)
 	$(CC) -o runlengthtest runlengthtest.o $(ALL_LIBS) $(EXTRALIBS)
+
+scaleandtile:	scaleandtile.o $(LEPTLIB)
+	$(CC) -o scaleandtile scaleandtile.o $(ALL_LIBS) $(EXTRALIBS)
 
 scaletest1:	scaletest1.o $(LEPTLIB)
 	$(CC) -o scaletest1 scaletest1.o $(ALL_LIBS) $(EXTRALIBS)

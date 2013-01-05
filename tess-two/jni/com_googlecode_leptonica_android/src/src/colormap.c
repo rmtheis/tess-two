@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -66,6 +77,7 @@
  *           l_int32     pixcmapGammaTRC()
  *           l_int32     pixcmapContrastTRC()
  *           l_int32     pixcmapShiftIntensity()
+ *           l_int32     pixcmapShiftByComponent()
  */
 
 #include <string.h>
@@ -120,7 +132,7 @@ PIXCMAP    *cmap;
  *          chosen randomly.
  *      (2) The number of randomly chosen colors is:
  *               2^(depth) - haswhite - hasblack
- *      (3) Because rand() is seeded, it might disrupt otherwise 
+ *      (3) Because rand() is seeded, it might disrupt otherwise
  *          deterministic results if also used elsewhere in a program.
  *      (4) rand() is not threadsafe, and will generate garbage if run
  *          on multiple threads at once -- though garbage is generally
@@ -200,7 +212,7 @@ PIXCMAP  *cmap;
 /*!
  *  pixcmapCopy()
  *
- *      Input:  cmaps 
+ *      Input:  cmaps
  *      Return: cmapd, or null on error
  */
 PIXCMAP *
@@ -432,7 +444,7 @@ l_int32  index;
  *  pixcmapAddBlackOrWhite()
  *
  *      Input:  cmap
- *              color (0 for black, 1 for white) 
+ *              color (0 for black, 1 for white)
  *              &index (<optional return> index of color; can be null)
  *      Return: 0 if OK, 1 on error
  *
@@ -936,7 +948,7 @@ RGBA_QUAD  *cta;
         delta = cta[i].blue - bval;
         dist += delta * delta;
         if (dist < mindist) {
-            *pindex = i; 
+            *pindex = i;
             if (dist == 0)
                 break;
             mindist = dist;
@@ -1197,7 +1209,7 @@ PIXCMAP   *cmapd;
         val = (l_int32)(rwt * rval + gwt * gval + bwt * bval + 0.5);
         pixcmapResetColor(cmapd, i, val, val, val);
     }
-        
+
     return cmapd;
 }
 
@@ -1361,7 +1373,7 @@ l_uint32  *tab;
     if ((tab = (l_uint32 *)CALLOC(ncolors, sizeof(l_uint32))) == NULL)
         return ERROR_INT("tab not made", procName, 1);
     *ptab = tab;
-   
+
     for (i = 0; i < ncolors; i++) {
         pixcmapGetColor(cmap, i, &rval, &gval, &bval);
         composeRGBPixel(rval, gval, bval, &tab[i]);
@@ -1554,9 +1566,9 @@ char     buf[4];
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
- *      - in-place transform
- *      - see pixGammaTRC() and numaGammaTRC() in enhance.c for
- *        description and use of transform
+ *      (1) This is an in-place transform
+ *      (2) See pixGammaTRC() and numaGammaTRC() in enhance.c
+ *          for description and use of transform
  */
 l_int32
 pixcmapGammaTRC(PIXCMAP   *cmap,
@@ -1564,8 +1576,8 @@ pixcmapGammaTRC(PIXCMAP   *cmap,
                 l_int32    minval,
                 l_int32    maxval)
 {
-l_int32   rval, gval, bval, trval, tgval, tbval, i, ncolors;
-NUMA     *nag;
+l_int32  rval, gval, bval, trval, tgval, tbval, i, ncolors;
+NUMA    *nag;
 
     PROCNAME("pixcmapGammaTRC");
 
@@ -1607,16 +1619,16 @@ NUMA     *nag;
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
- *      - in-place transform
- *      - see pixContrastTRC() and numaContrastTRC() in enhance.c for
- *        description and use of transform
+ *      (1) This is an in-place transform
+ *      (2) See pixContrastTRC() and numaContrastTRC() in enhance.c
+ *          for description and use of transform
  */
 l_int32
 pixcmapContrastTRC(PIXCMAP   *cmap,
                    l_float32  factor)
 {
-l_int32   i, ncolors, rval, gval, bval, trval, tgval, tbval;
-NUMA     *nac;
+l_int32  i, ncolors, rval, gval, bval, trval, tgval, tbval;
+NUMA    *nac;
 
     PROCNAME("pixcmapContrastTRC");
 
@@ -1652,20 +1664,20 @@ NUMA     *nac;
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
- *      - in-place transform
- *      - This does a proportional shift of the intensity for each color.
- *      - If fraction < 0.0, it moves all colors towards (0,0,0).
- *        This darkens the image.
- *      - If fraction > 0.0, it moves all colors towards (255,255,255)
- *        This fades the image.
- *      - The equivalent transform can be accomplished with pixcmapGammaTRC(),
- *        but it is considerably more difficult (see numaGammaTRC()).
+ *      (1) This is an in-place transform
+ *      (2) It does a proportional shift of the intensity for each color.
+ *      (3) If fraction < 0.0, it moves all colors towards (0,0,0).
+ *          This darkens the image.
+ *          If fraction > 0.0, it moves all colors towards (255,255,255)
+ *          This fades the image.
+ *      (4) The equivalent transform can be accomplished with pixcmapGammaTRC(),
+ *          but it is considerably more difficult (see numaGammaTRC()).
  */
 l_int32
 pixcmapShiftIntensity(PIXCMAP   *cmap,
                       l_float32  fraction)
 {
-l_int32   i, ncolors, rval, gval, bval;
+l_int32  i, ncolors, rval, gval, bval;
 
     PROCNAME("pixcmapShiftIntensity");
 
@@ -1692,3 +1704,43 @@ l_int32   i, ncolors, rval, gval, bval;
     return 0;
 }
 
+
+/*!
+ *  pixcmapShiftByComponent()
+ *
+ *      Input:  colormap
+ *              srcval (source color: 0xrrggbb00)
+ *              dstval (target color: 0xrrggbb00)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) This is an in-place transform
+ *      (2) It implements pixelShiftByComponent() for each color.
+ *          The mapping is specified by srcval and dstval.
+ *      (3) If a component decreases, the component in the colormap
+ *          decreases by the same ratio.  Likewise for increasing, except
+ *          all ratios are taken with respect to the distance from 255.
+ */
+l_int32
+pixcmapShiftByComponent(PIXCMAP  *cmap,
+                        l_uint32  srcval,
+                        l_uint32  dstval)
+{
+l_int32   i, ncolors, rval, gval, bval;
+l_uint32  newval;
+
+    PROCNAME("pixcmapShiftByComponent");
+
+    if (!cmap)
+        return ERROR_INT("cmap not defined", procName, 1);
+
+    ncolors = pixcmapGetCount(cmap);
+    for (i = 0; i < ncolors; i++) {
+        pixcmapGetColor(cmap, i, &rval, &gval, &bval);
+        pixelShiftByComponent(rval, gval, bval, srcval, dstval, &newval);
+        extractRGBValues(newval, &rval, &gval, &bval);
+        pixcmapResetColor(cmap, i, rval, gval, bval);
+    }
+
+    return 0;
+}

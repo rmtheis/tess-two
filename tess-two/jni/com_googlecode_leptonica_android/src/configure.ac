@@ -1,5 +1,5 @@
 AC_PREREQ([2.50])
-AC_INIT([leptonica], [1.68], [dan.bloomberg@gmail.com])
+AC_INIT([leptonica], [1.69], [dan.bloomberg@gmail.com])
 AC_CONFIG_AUX_DIR([config])
 AM_CONFIG_HEADER([config_auto.h:config/config.h.in])
 AC_CONFIG_SRCDIR([src/adaptmap.c])
@@ -64,7 +64,8 @@ AS_IF([test "x$with_giflib" != xno],
 AS_IF([test "x$with_libtiff" != xno],
   AC_CHECK_LIB([tiff], [TIFFOpen],
     AC_DEFINE([HAVE_LIBTIFF], 1, [Define to 1 if you have libtiff.]) AC_SUBST([LIBTIFF_LIBS], [-ltiff]),
-    AS_IF([test "x$with_libtiff" = xyes], AC_MSG_ERROR([libtiff support requested but library not found]))
+    AS_IF([test "x$with_libtiff" = xyes], AC_MSG_ERROR([libtiff support requested but library not found])),
+    ${ZLIB_LIBS} ${JPEG_LIBS}
   )
 )
 

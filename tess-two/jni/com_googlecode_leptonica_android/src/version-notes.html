@@ -22,6 +22,25 @@ They are <i>not</i> a complete listing of the modifications.
 
 <pre>
 
+1.69   30 Jan 12
+       Fixed bug in pdf generation for large files, using a new
+        double array (dnabasic.c).  Added several new modes for pdf
+        generation from sets of images.
+       Dewarp based on image content now aligns to left and right margins;
+        works at book level; is more robust to bad disparity models;
+        version 2 serialization.
+       Fixed regutils to return the actual number of errors.
+       Improved sorting efficiency of numas in cases where binning,
+        which is order N, makes sense.
+       Fixed fpix serialization (now version 2).
+       New version (5) of xtractprotos, allows putting prototypes in-line in
+        allheaders.h.  Having them separately in leptprotos.h still an option
+       New copyright (BDS, 2 clause) on src files.
+       Removed all trailing whitespace in src files.
+       New src files: boxfunc4.c coloring.c, dnabasic.c
+       New prog files: dna_reg.c, alphaops_reg.c
+       Removed prog file: alphaclean_reg.c
+
 1.68   10 Mar 11
        Fixed windows issues with passing pointers across C-runtime boundaries
        when using dlls, by providing special functions (e.g., lept_fopen()).

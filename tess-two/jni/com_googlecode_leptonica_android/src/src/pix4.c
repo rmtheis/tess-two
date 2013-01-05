@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -25,12 +36,16 @@
  *    Pixel histogram, rank val, averaging and min/max
  *           NUMA       *pixGetGrayHistogram()
  *           NUMA       *pixGetGrayHistogramMasked()
+ *           NUMA       *pixGetGrayHistogramInRect()
  *           l_int32     pixGetColorHistogram()
  *           l_int32     pixGetColorHistogramMasked()
  *           NUMA       *pixGetCmapHistogram()
  *           NUMA       *pixGetCmapHistogramMasked()
+ *           NUMA       *pixGetCmapHistogramInRect()
+ *           l_int32     pixGetRankValue()
  *           l_int32     pixGetRankValueMaskedRGB()
  *           l_int32     pixGetRankValueMasked()
+ *           l_int32     pixGetAverageValue()
  *           l_int32     pixGetAverageMaskedRGB()
  *           l_int32     pixGetAverageMasked()
  *           l_int32     pixGetAverageTiledRGB()
@@ -246,6 +261,76 @@ PIX        *pixg;
 
 
 /*!
+ *  pixGetGrayHistogramInRect()
+ *
+ *      Input:  pixs (8 bpp, or colormapped)
+ *              box (<optional>) over which histogram is to be computed;
+ *                   use full image if null)
+ *              factor (subsampling factor; integer >= 1)
+ *      Return: na (histogram), or null on error
+ *
+ *  Notes:
+ *      (1) If pixs is cmapped, it is converted to 8 bpp gray.
+ *          If you want a histogram of the colormap indices, use
+ *          pixGetCmapHistogramInRect().
+ *      (2) This always returns a 256-value histogram of pixel values.
+ *      (3) Set the subsampling @factor > 1 to reduce the amount of computation.
+ */
+NUMA *
+pixGetGrayHistogramInRect(PIX     *pixs,
+                          BOX     *box,
+                          l_int32  factor)
+{
+l_int32     i, j, bx, by, bw, bh, w, h, wplg, val;
+l_uint32   *datag, *lineg;
+l_float32  *array;
+NUMA       *na;
+PIX        *pixg;
+
+    PROCNAME("pixGetGrayHistogramInRect");
+
+    if (!box)
+        return pixGetGrayHistogram(pixs, factor);
+
+    if (!pixs)
+        return (NUMA *)ERROR_PTR("pixs not defined", procName, NULL);
+    if (pixGetDepth(pixs) != 8 && !pixGetColormap(pixs))
+        return (NUMA *)ERROR_PTR("pixs neither 8 bpp nor colormapped",
+                                 procName, NULL);
+    if (factor < 1)
+        return (NUMA *)ERROR_PTR("sampling factor < 1", procName, NULL);
+
+    if ((na = numaCreate(256)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    numaSetCount(na, 256);  /* all initialized to 0.0 */
+    array = numaGetFArray(na, L_NOCOPY);
+
+    if (pixGetColormap(pixs))
+        pixg = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
+    else
+        pixg = pixClone(pixs);
+    pixGetDimensions(pixg, &w, &h, NULL);
+    datag = pixGetData(pixg);
+    wplg = pixGetWpl(pixg);
+    boxGetGeometry(box, &bx, &by, &bw, &bh);
+
+        /* Generate the histogram */
+    for (i = 0; i < bh; i += factor) {
+        if (by + i < 0 || by + i >= h) continue;
+        lineg = datag + (by + i) * wplg;
+        for (j = 0; j < bw; j += factor) {
+            if (bx + j < 0 || bx + j >= w) continue;
+            val = GET_DATA_BYTE(lineg, bx + j);
+            array[val] += 1.0;
+        }
+    }
+
+    pixDestroy(&pixg);
+    return na;
+}
+
+
+/*!
  *  pixGetColorHistogram()
  *
  *      Input:  pixs (rgb or colormapped)
@@ -258,7 +343,7 @@ PIX        *pixg;
  *  Notes:
  *      (1) This generates a set of three 256 entry histograms,
  *          one for each color component (r,g,b).
- *      (2) Set the subsampling factor > 1 to reduce the amount of computation.
+ *      (2) Set the subsampling @factor > 1 to reduce the amount of computation.
  */
 l_int32
 pixGetColorHistogram(PIX     *pixs,
@@ -355,7 +440,7 @@ PIXCMAP    *cmap;
  *
  *  Notes:
  *      (1) This generates a set of three 256 entry histograms,
- *      (2) Set the subsampling factor > 1 to reduce the amount of computation.
+ *      (2) Set the subsampling @factor > 1 to reduce the amount of computation.
  *      (3) Clipping of pixm (if it exists) to pixs is done in the inner loop.
  *      (4) Input x,y are ignored unless pixm exists.
  */
@@ -469,7 +554,7 @@ PIXCMAP    *cmap;
  *  Notes:
  *      (1) This generates a histogram of colormap pixel indices,
  *          and is of size 2^d.
- *      (2) Set the subsampling factor > 1 to reduce the amount of computation.
+ *      (2) Set the subsampling @factor > 1 to reduce the amount of computation.
  */
 NUMA *
 pixGetCmapHistogram(PIX     *pixs,
@@ -531,7 +616,7 @@ NUMA       *na;
  *  Notes:
  *      (1) This generates a histogram of colormap pixel indices,
  *          and is of size 2^d.
- *      (2) Set the subsampling factor > 1 to reduce the amount of computation.
+ *      (2) Set the subsampling @factor > 1 to reduce the amount of computation.
  *      (3) Clipping of pixm to pixs is done in the inner loop.
  */
 NUMA *
@@ -598,6 +683,134 @@ NUMA       *na;
 
 
 /*!
+ *  pixGetCmapHistogramInRect()
+ *
+ *      Input:  pixs (colormapped: d = 2, 4 or 8)
+ *              box (<optional>) over which histogram is to be computed;
+ *                   use full image if null)
+ *              factor (subsampling factor; integer >= 1)
+ *      Return: na (histogram), or null on error
+ *
+ *  Notes:
+ *      (1) This generates a histogram of colormap pixel indices,
+ *          and is of size 2^d.
+ *      (2) Set the subsampling @factor > 1 to reduce the amount of computation.
+ *      (3) Clipping to the box is done in the inner loop.
+ */
+NUMA *
+pixGetCmapHistogramInRect(PIX     *pixs,
+                          BOX     *box,
+                          l_int32  factor)
+{
+l_int32     i, j, bx, by, bw, bh, w, h, d, wpls, val, size;
+l_uint32   *datas, *lines;
+l_float32  *array;
+NUMA       *na;
+
+    PROCNAME("pixGetCmapHistogramInRect");
+
+    if (!box)
+        return pixGetCmapHistogram(pixs, factor);
+
+    if (!pixs)
+        return (NUMA *)ERROR_PTR("pixs not defined", procName, NULL);
+    if (pixGetColormap(pixs) == NULL)
+        return (NUMA *)ERROR_PTR("pixs not cmapped", procName, NULL);
+    if (factor < 1)
+        return (NUMA *)ERROR_PTR("sampling factor < 1", procName, NULL);
+    pixGetDimensions(pixs, &w, &h, &d);
+    if (d != 2 && d != 4 && d != 8)
+        return (NUMA *)ERROR_PTR("d not 2, 4 or 8", procName, NULL);
+
+    size = 1 << d;
+    if ((na = numaCreate(size)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    numaSetCount(na, size);  /* all initialized to 0.0 */
+    array = numaGetFArray(na, L_NOCOPY);
+
+    datas = pixGetData(pixs);
+    wpls = pixGetWpl(pixs);
+    boxGetGeometry(box, &bx, &by, &bw, &bh);
+
+    for (i = 0; i < bh; i += factor) {
+        if (by + i < 0 || by + i >= h) continue;
+        lines = datas + (by + i) * wpls;
+        for (j = 0; j < bw; j += factor) {
+            if (bx + j < 0 || bx + j >= w) continue;
+            if (d == 8)
+                val = GET_DATA_BYTE(lines, bx + j);
+            else if (d == 4)
+                val = GET_DATA_QBIT(lines, bx + j);
+            else  /* d == 2 */
+                val = GET_DATA_DIBIT(lines, bx + j);
+            array[val] += 1.0;
+        }
+    }
+
+    return na;
+}
+
+
+/*!
+ *  pixGetRankValue()
+ *
+ *      Input:  pixs (8 bpp, 32 bpp or colormapped)
+ *              factor (subsampling factor; integer >= 1)
+ *              rank (between 0.0 and 1.0; 1.0 is brightest, 0.0 is darkest)
+ *              &value (<return> pixel value corresponding to input rank)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) Simple function to get rank values of an image.
+ *          For a color image, the median value (rank = 0.5) can be
+ *          used to linearly remap the colors based on the median
+ *          of a target image, using pixLinearMapToTargetColor().
+ */
+l_int32
+pixGetRankValue(PIX       *pixs,
+                l_int32    factor,
+                l_float32  rank,
+                l_uint32  *pvalue)
+{
+l_int32    d;
+l_float32  val, rval, gval, bval;
+PIX       *pixt;
+PIXCMAP   *cmap;
+
+    PROCNAME("pixGetRankValue");
+
+    if (!pvalue)
+        return ERROR_INT("&value not defined", procName, 1);
+    *pvalue = 0;
+    if (!pixs)
+        return ERROR_INT("pixs not defined", procName, 1);
+    d = pixGetDepth(pixs);
+    cmap = pixGetColormap(pixs);
+    if (d != 8 && d != 32 && !cmap)
+        return ERROR_INT("pixs not 8 or 32 bpp, or cmapped", procName, 1);
+    if (cmap)
+        pixt = pixRemoveColormap(pixs, REMOVE_CMAP_BASED_ON_SRC);
+    else
+        pixt = pixClone(pixs);
+    d = pixGetDepth(pixt);
+
+    if (d == 8) {
+        pixGetRankValueMasked(pixt, NULL, 0, 0, factor, rank, &val, NULL);
+        *pvalue = lept_roundftoi(val);
+    }
+    else {
+        pixGetRankValueMaskedRGB(pixt, NULL, 0, 0, factor, rank,
+                                 &rval, &gval, &bval);
+        composeRGBPixel(lept_roundftoi(rval), lept_roundftoi(gval),
+                        lept_roundftoi(bval), pvalue);
+    }
+
+    pixDestroy(&pixt);
+    return 0;
+}
+
+
+/*!
  *  pixGetRankValueMaskedRGB()
  *
  *      Input:  pixs (32 bpp)
@@ -616,7 +829,7 @@ NUMA       *na;
  *      (1) Computes the rank component values of pixels in pixs that
  *          are under the fg of the optional mask.  If the mask is null, it
  *          computes the average of the pixels in pixs.
- *      (2) Set the subsampling factor > 1 to reduce the amount of
+ *      (2) Set the subsampling @factor > 1 to reduce the amount of
  *          computation.
  *      (4) Input x,y are ignored unless pixm exists.
  *      (5) The rank must be in [0.0 ... 1.0], where the brightest pixel
@@ -697,7 +910,7 @@ PIX       *pixmt, *pixt;
  *      (1) Computes the rank value of pixels in pixs that are under
  *          the fg of the optional mask.  If the mask is null, it
  *          computes the average of the pixels in pixs.
- *      (2) Set the subsampling factor > 1 to reduce the amount of
+ *      (2) Set the subsampling @factor > 1 to reduce the amount of
  *          computation.
  *      (3) Clipping of pixm (if it exists) to pixs is done in the inner loop.
  *      (4) Input x,y are ignored unless pixm exists.
@@ -747,6 +960,63 @@ NUMA  *na;
     else
         numaDestroy(&na);
 
+    return 0;
+}
+
+
+/*!
+ *  pixGetAverageValue()
+ *
+ *      Input:  pixs (8 bpp, 32 bpp or colormapped)
+ *              factor (subsampling factor; integer >= 1)
+ *              type (L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE,
+ *                    L_STANDARD_DEVIATION, L_VARIANCE)
+ *              &value (<return> pixel value corresponding to input rank)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) Simple function to get average statistical values of an image.
+ */
+l_int32
+pixGetAverageValue(PIX       *pixs,
+                   l_int32    factor,
+                   l_int32    type,
+                   l_uint32  *pvalue)
+{
+l_int32    d;
+l_float32  val, rval, gval, bval;
+PIX       *pixt;
+PIXCMAP   *cmap;
+
+    PROCNAME("pixGetAverageValue");
+
+    if (!pvalue)
+        return ERROR_INT("&value not defined", procName, 1);
+    *pvalue = 0;
+    if (!pixs)
+        return ERROR_INT("pixs not defined", procName, 1);
+    d = pixGetDepth(pixs);
+    cmap = pixGetColormap(pixs);
+    if (d != 8 && d != 32 && !cmap)
+        return ERROR_INT("pixs not 8 or 32 bpp, or cmapped", procName, 1);
+    if (cmap)
+        pixt = pixRemoveColormap(pixs, REMOVE_CMAP_BASED_ON_SRC);
+    else
+        pixt = pixClone(pixs);
+    d = pixGetDepth(pixt);
+
+    if (d == 8) {
+        pixGetAverageMasked(pixt, NULL, 0, 0, factor, type, &val);
+        *pvalue = lept_roundftoi(val);
+    }
+    else {
+        pixGetAverageMaskedRGB(pixt, NULL, 0, 0, factor, type,
+                               &rval, &gval, &bval);
+        composeRGBPixel(lept_roundftoi(rval), lept_roundftoi(gval),
+                        lept_roundftoi(bval), pvalue);
+    }
+
+    pixDestroy(&pixt);
     return 0;
 }
 
@@ -859,7 +1129,7 @@ PIXCMAP  *cmap;
  *          expected value.  The variance is the square of the stdev.
  *          For the standard deviation, we use
  *              sqrt(<(<x> - x)>^2) = sqrt(<x^2> - <x>^2)
- *      (3) Set the subsampling factor > 1 to reduce the amount of
+ *      (3) Set the subsampling @factor > 1 to reduce the amount of
  *          computation.
  *      (4) Clipping of pixm (if it exists) to pixs is done in the inner loop.
  *      (5) Input x,y are ignored unless pixm exists.
@@ -2650,5 +2920,3 @@ PIX       *pixg;
     numaDestroy(&na);
     return 0;
 }
-
-

@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -100,7 +111,7 @@
  *      to the foo object.  No casts are required for foo in
  *      either direction in ANSI C.  (However, casts are
  *      required for ANSI C++).
- *      
+ *
  *      We use lists that are composed of doubly-linked
  *      cells with data structures hanging off the cells.
  *      We use doubly-linked cells to simplify insertion
@@ -110,8 +121,8 @@
  *      to the tail of the list and tail->next to the head.
  *      The circular list costs nothing extra in storage, and
  *      allows operations to proceed from either end of the list
- *      with equal speed.  However, the circular link adds 
- *      cognitive overhead for the application programmer in 
+ *      with equal speed.  However, the circular link adds
+ *      cognitive overhead for the application programmer in
  *      general, and it greatly complicates list traversal when
  *      arbitrary list elements can be added or removed as you
  *      move through.  It can be done, but in the spirit of
@@ -173,7 +184,7 @@
  *      When removing an arbitrary element from a list, use
  *
  *              obj = listRemoveElement(&head, elem);
- *  
+ *
  *      All the listRemove*() functions hand you the object,
  *      destroy the list cell to which it was attached, and
  *      reset the list pointers if necessary.
@@ -197,8 +208,6 @@
  *      in stack.c).
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "allheaders.h"
 
@@ -256,7 +265,7 @@ DLLIST  *elem, *next, *head;
  *      (1) This makes a new cell, attaches the data, and adds the
  *          cell to the head of the list.
  *      (2) When consing from NULL, be sure to initialize head to NULL
- *          before calling this function.  
+ *          before calling this function.
  */
 l_int32
 listAddToHead(DLLIST  **phead,
@@ -340,7 +349,7 @@ DLLIST  *cell, *head, *tail;
         *ptail = cell;
     }
     else {
-        if ((tail = *ptail) == NULL) 
+        if ((tail = *ptail) == NULL)
             tail = listFindTail(head);
         cell->prev = tail;
         cell->next = NULL;
@@ -361,7 +370,7 @@ DLLIST  *cell, *head, *tail;
  *               data  (void*  address, to be added)
  *      Return: 0 if OK; 1 on error
  *
- *  Notes: 
+ *  Notes:
  *      (1) This can be called on a null list, in which case both
  *          head and elem must be null.
  *      (2) If you are searching through a list, looking for a condition
@@ -370,7 +379,7 @@ DLLIST  *cell, *head, *tail;
  *                <identify an elem to insert before>
  *                listInsertBefore(&head, elem, data);
  *            L_END_LIST
- *                  
+ *
  */
 l_int32
 listInsertBefore(DLLIST  **phead,
@@ -577,7 +586,7 @@ void    *data;
  *      Return: data  (void* struct on cell) or null on error
  *
  *  Notes:
- *      (1) We include &head so that it can be set to NULL if 
+ *      (1) We include &head so that it can be set to NULL if
  *          if the only element in the list is removed.
  *      (2) The function is relying on the fact that if tail is
  *          not NULL, then is is a valid address.  You can use
@@ -709,7 +718,7 @@ DLLIST  *elem;
     count = 0;
     for (elem = head; elem; elem = elem->next)
         count++;
-    
+
     return count;
 }
 
@@ -792,5 +801,3 @@ DLLIST  *head1, *head2, *tail1;
     *phead2 = NULL;
     return 0;
 }
-
-

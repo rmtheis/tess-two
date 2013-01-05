@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -72,8 +83,8 @@ static l_int32 getOffsetForMatchingRP(SARRAY *sa, l_int32 start,
  *
  *  Notes:
  *      (1) We parse the output of cpp:
- *              cpp -ansi <filein> 
- *          Three plans were attempted, with success on the third. 
+ *              cpp -ansi <filein>
+ *          Three plans were attempted, with success on the third.
  *      (2) Plan 1.  A cursory examination of the cpp output indicated that
  *          every function was preceeded by a cpp comment statement.
  *          So we just need to look at statements beginning after comments.
@@ -199,7 +210,7 @@ SARRAY  *sa, *saout, *satest;
 }
 
 
-/* 
+/*
  *  getNextNonCommentLine()
  *
  *      Input:  sa (output from cpp, by line)
@@ -244,7 +255,7 @@ l_int32  i, n;
 }
 
 
-/* 
+/*
  *  getNextNonBlankLine()
  *
  *      Input:  sa (output from cpp, by line)
@@ -294,7 +305,7 @@ l_int32  i, j, n, len;
 }
 
 
-/* 
+/*
  *  getNextNonDoubleSlashLine()
  *
  *      Input:  sa (output from cpp, by line)
@@ -446,7 +457,7 @@ l_int32  toffsetlp, toffsetrp, toffsetlb, toffsetsc;
 
             /* Check if a left brace occurs before a left parenthesis;
              * if so, skip it */
-        if (toffsetlb < toffsetlp) {  
+        if (toffsetlb < toffsetlp) {
             skipToMatchingBrace(sa, next + soffsetlb, boffsetlb,
                 &rbline, &rbindex);
             skipToSemicolon(sa, rbline, rbindex, &scline);
@@ -457,7 +468,7 @@ l_int32  toffsetlp, toffsetrp, toffsetlb, toffsetsc;
             /* Check if a semicolon occurs before a left brace or
              * a left parenthesis; if so, skip it */
         if ((soffsetsc != -1) &&
-            (toffsetsc < toffsetlb || toffsetsc < toffsetlp)) {  
+            (toffsetsc < toffsetlb || toffsetsc < toffsetlp)) {
             skipToSemicolon(sa, next, 0, &scline);
             begin = scline + 1;
             continue;
@@ -569,7 +580,7 @@ SARRAY  *sa, *saout;
                 buf[index++] = ' ';
                 buf[index++] = ')';
             }
-            else 
+            else
                 buf[index++] = str[j];
         }
         buf[index] = '\0';
@@ -806,7 +817,7 @@ l_int32  i, j, n, nchars, totchars, found;
     *ptoffset = 100000000;
 
     n = sarrayGetCount(sa);
-    found = FALSE; 
+    found = FALSE;
     totchars = 0;
     for (i = start; i < n; i++) {
         if ((str = sarrayGetString(sa, i, 0)) == NULL)
@@ -895,7 +906,7 @@ l_int32  i, j, n, nchars, totchars, leftmatch, firstline, jstart, found;
     *ptoffset = 100000000;
 
     n = sarrayGetCount(sa);
-    found = FALSE; 
+    found = FALSE;
     totchars = toffsetlp;
     leftmatch = 1;  /* count of (LP - RP); we're finished when it goes to 0. */
     firstline = start + soffsetlp;
@@ -932,4 +943,3 @@ l_int32  i, j, n, nchars, totchars, leftmatch, firstline, jstart, found;
 
     return 0;
 }
-

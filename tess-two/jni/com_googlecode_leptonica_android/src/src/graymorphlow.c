@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 
@@ -22,10 +33,10 @@
  *            void     dilateGrayLow()
  *            void     erodeGrayLow()
  *
- *      
+ *
  *      We use the van Herk/Gil-Werman (vHGW) algorithm, [van Herk,
  *      Patt. Recog. Let. 13, pp. 517-521, 1992; Gil and Werman,
- *      IEEE Trans PAMI 15(5), pp. 504-507, 1993.] 
+ *      IEEE Trans PAMI 15(5), pp. 504-507, 1993.]
  *      This was the first grayscale morphology
  *      algorithm to compute dilation and erosion with
  *      complexity independent of the size of the structuring
@@ -68,7 +79,7 @@
  *      values to the right of center get the maxima(minima) to
  *      the pixels from the center one and going to the right
  *      an equal distance.  These are computed sequentially starting
- *      from the center one.  The SE (of length "size") can slide over this 
+ *      from the center one.  The SE (of length "size") can slide over this
  *      window (of length 2 * "size + 1) at "size" different places.
  *      At each place, the maxima(minima) of the values in the window
  *      that correspond to the end points of the SE give the extremal
@@ -76,13 +87,10 @@
  *      pixel corresponding to the SE center.  A picture is worth
  *      at least this many words, so if this isn't clear, see the
  *      leptonica documentation on grayscale morphology.
- *      
+ *
  */
 
-#include <stdio.h>
-
 #include "allheaders.h"
-
 
 
 /*-----------------------------------------------------------------*
@@ -98,7 +106,7 @@
  *           buffer  (holds full line or column of src image pixels)
  *           maxarray  (array of dimension 2*size+1)
  *    Return: void
- *           
+ *
  *    Note: To eliminate border effects on the actual image, these images
  *          are prepared with an additional border of dimensions:
  *             leftpix = 0.5 * size
@@ -162,7 +170,7 @@ l_uint32  *lines, *lined;
             }
         }
     }
-    else {   /* direction == L_VERT */ 
+    else {   /* direction == L_VERT */
         hsize = size / 2;
         nsteps = (h - 2 * hsize) / size;
         for (j = 0; j < w; j++) {
@@ -198,7 +206,7 @@ l_uint32  *lines, *lined;
             }
         }
     }
-            
+
     return;
 }
 
@@ -213,7 +221,7 @@ l_uint32  *lines, *lined;
  *           buffer  (holds full line or column of src image pixels)
  *           minarray  (array of dimension 2*size+1)
  *    Return: void
- *           
+ *
  *    Note: To eliminate border effects on the actual image, these images
  *          are prepared with an additional border of dimensions:
  *             leftpix = 0.5 * size
@@ -278,7 +286,7 @@ l_uint32  *lines, *lined;
             }
         }
     }
-    else {   /* direction == L_VERT */ 
+    else {   /* direction == L_VERT */
         hsize = size / 2;
         nsteps = (h - 2 * hsize) / size;
         for (j = 0; j < w; j++) {
@@ -314,8 +322,6 @@ l_uint32  *lines, *lined;
             }
         }
     }
-            
+
     return;
 }
-
-

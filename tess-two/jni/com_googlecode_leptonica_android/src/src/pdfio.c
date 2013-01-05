@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -25,24 +36,45 @@
  *    | in environ.h.  This will link pdfiostub.c                   |
  *    |=============================================================|
  *
- *     The first set of functions converts a set of images to a multi-page
- *     pdf file, with one image on each page.  All images are rendered
- *     at the same (input) resolution.  The images can be specified as
- *     being in a directory, or they can be in an sarray.  The output
- *     pdf can be either a file or an array of bytes in memory.
+ *     The first set of functions below converts a set of image files
+ *     to a multi-page pdf file, with one image on each page.
+ *     All images are rendered at the same (input) resolution.
+ *     The images can be specified as being in a directory, or they
+ *     can be in an sarray.  The output pdf can be either a file
+ *     or an array of bytes in memory.
  *
- *     The second set of functions implements a pdf output "device driver"
+ *     The second set of functions converts a set of images in memory
+ *     to a multi-page pdf, with one image on each page.  The pdf
+ *     output can be either a file or an array of bytes in memory.
+ *
+ *     The third set of functions implements a pdf output "device driver"
  *     for wrapping (encoding) any number of images on a single page
- *     in pdf.  The images can be rendered using a pdf viewer,
+ *     in pdf.  The input can be either an image file or a Pix;
+ *     the pdf output can be either a file or an array of bytes in memory.
+ *
+ *     The fourth set of functions (segmented) converts a set of image
+ *     files, along with optional segmentation information, and
+ *     generates a multi-page pdf file, where each page consists
+ *     in general of a mixed raster pdf of image and non-image regions.
+ *     The segmentation information for each page can be input as
+ *     either a mask over the image parts, or as a Boxa of those
+ *     regions.
+ *
+ *     The fifth set of functions (segmented) converts an image and
+ *     an optional Boxa of image regions into a mixed raster pdf file
+ *     for the page.  The input image can be either a file or a Pix.
+ *
+ *     The sixth set of functions takes a set of single-page
+ *     pdf files and concatenates them into a multi-page pdf.
+ *     The input can be a set of single page pdf files, or of
+ *     pdf 'strings' in memory.  The output can be either a file or
+ *     an array of bytes in memory.
+ *
+ *     The images in the pdf file can be rendered using a pdf viewer,
  *     such as gv, evince, xpdf or acroread.
- *     See: http://www.adobe.com/devnet/pdf/pdf_reference_archive.html
  *
- *     The third set of functions (segmented) takes an image, an
- *     optional binary mask, an encoding flag, and some other parameters,
- *     and generates a single-page mixed raster pdf.
- *
- *     The fourth set of functions (concatenated) takes a set of single-page
- *     pdf files and concatenates them into a multi-page pdf
+ *     Reference on the pdf file format:
+ *         http://www.adobe.com/devnet/pdf/pdf_reference_archive.html
  *
  *     1. Convert specified image files to Pdf (one image file per page)
  *          l_int32             convertFilesToPdf()
@@ -50,7 +82,11 @@
  *          l_int32             saConvertFilesToPdfData()
  *          l_int32             selectDefaultPdfEncoding()
  *
- *     2. Single page, multi-image converters
+ *     2. Convert multiple images to Pdf (one image per page)
+ *          l_int32             pixaConvertToPdf()
+ *          l_int32             pixaConvertToPdfData()
+ *
+ *     3. Single page, multi-image converters
  *          l_int32             convertToPdf()
  *          l_int32             convertImageDataToPdf()
  *          l_int32             convertToPdfData()
@@ -59,10 +95,11 @@
  *          l_int32             pixConvertToPdfData()
  *          l_int32             pixWriteStreamPdf()
  *
- *     3. Segmented multi-page, multi-image converter
+ *     4. Segmented multi-page, multi-image converter
  *          l_int32             convertSegmentedFilesToPdf()
+ *          BOXAA              *convertNumberedMasksToBoxaa()
  *
- *     4. Segmented single page, multi-image converters
+ *     5. Segmented single page, multi-image converters
  *          l_int32             convertToPdfSegmented()
  *          l_int32             pixConvertToPdfSegmented()
  *          l_int32             convertToPdfDataSegmented()
@@ -80,7 +117,7 @@
  *          static l_int32      makeTrailerStringPdf()
  *          static l_int32      generateOutputDataPdf()
  *
- *     5. Multi-page concatenation
+ *     6. Multi-page concatenation
  *          l_int32             concatenatePdf()
  *          l_int32             saConcatenatePdf()
  *          l_int32             ptraConcatenatePdf()
@@ -139,7 +176,7 @@
 /* --------------------------------------------*/
 #if  USE_PDFIO   /* defined in environ.h */
  /* --------------------------------------------*/
- 
+
     /* Typical scan resolution in ppi (pixels/inch) */
 static const l_int32  DEFAULT_INPUT_RES = 300;
 
@@ -153,11 +190,11 @@ static l_int32   generateContentStringPdf(L_PDF_DATA *lpd);
 static l_int32   generatePreXStringsPdf(L_PDF_DATA *lpd);
 static l_int32   generateColormapStringsPdf(L_PDF_DATA *lpd);
 static void      generateTrailerPdf(L_PDF_DATA *lpd);
-static char     *makeTrailerStringPdf(NUMA *naloc);
+static char     *makeTrailerStringPdf(L_DNA *daloc);
 static l_int32   generateOutputDataPdf(l_uint8 **pdata, size_t *pnbytes,
                                        L_PDF_DATA *lpd);
 
-static l_int32   parseTrailerPdf(L_BYTEA *bas, NUMA **pna);
+static l_int32   parseTrailerPdf(L_BYTEA *bas, L_DNA **pda);
 static char     *generatePagesObjStringPdf(NUMA *napage);
 static L_BYTEA  *substituteObjectNumbers(L_BYTEA *bas, NUMA *na_objs);
 
@@ -190,7 +227,9 @@ static l_int32   var_WRITE_DATE_AND_VERSION = 1;
  *      Input:  directory name (containing images)
  *              substr (<optional> substring filter on filenames; can be NULL)
  *              res (input resolution of all images)
- *              scalefactor (scaling factor applied to each image)
+ *              scalefactor (scaling factor applied to each image; > 0.0)
+ *              type (encoding type (L_JPEG_ENCODE, L_G4_ENCODE,
+ *                    L_FLATE_ENCODE, or 0 for default)
  *              quality (used for JPEG only; 0 for default (75))
  *              title (<optional> pdf title; if null, taken from the first
  *                     image filename)
@@ -204,14 +243,19 @@ static l_int32   var_WRITE_DATE_AND_VERSION = 1;
  *      (2) The files in the directory, after optional filtering by
  *          the substring, are lexically sorted in increasing order
  *          before concatenation.
- *      (3) The images are encoded with G4 if 1 bpp; JPEG if 8 bpp without
- *          colormap and many colors, or 32 bpp; FLATE for anything else.
+ *      (3) The scalefactor is applied to each image before encoding.
+ *          If you enter a value <= 0.0, it will be set to 1.0.
+ *      (4) Specifying one of the three encoding types for @type forces
+ *          all images to be compressed with that type.  Use 0 to have
+ *          the type determined for each image based on depth and whether
+ *          or not it has a colormap.
  */
 l_int32
 convertFilesToPdf(const char  *dirname,
                   const char  *substr,
                   l_int32      res,
                   l_float32    scalefactor,
+                  l_int32      type,
                   l_int32      quality,
                   const char  *title,
                   const char  *fileout)
@@ -228,7 +272,8 @@ SARRAY  *sa;
 
     if ((sa = getSortedPathnamesInDirectory(dirname, substr, 0, 0)) == NULL)
         return ERROR_INT("sa not made", procName, 1);
-    ret = saConvertFilesToPdf(sa, res, scalefactor, quality, title, fileout);
+    ret = saConvertFilesToPdf(sa, res, scalefactor, type, quality,
+                              title, fileout);
     sarrayDestroy(&sa);
     return ret;
 }
@@ -239,7 +284,9 @@ SARRAY  *sa;
  *
  *      Input:  sarray (of pathnames for images)
  *              res (input resolution of all images)
- *              scalefactor (scaling factor applied to each image)
+ *              scalefactor (scaling factor applied to each image; > 0.0)
+ *              type (encoding type (L_JPEG_ENCODE, L_G4_ENCODE,
+ *                    L_FLATE_ENCODE, or 0 for default)
  *              quality (used for JPEG only; 0 for default (75))
  *              title (<optional> pdf title; if null, taken from the first
  *                     image filename)
@@ -247,13 +294,13 @@ SARRAY  *sa;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) The images are encoded with G4 if 1 bpp; JPEG if 8 bpp without
- *          colormap and many colors, or 32 bpp; FLATE for anything else.
+ *      (1) See convertFilesToPdf().
  */
 l_int32
 saConvertFilesToPdf(SARRAY      *sa,
                     l_int32      res,
                     l_float32    scalefactor,
+                    l_int32      type,
                     l_int32      quality,
                     const char  *title,
                     const char  *fileout)
@@ -267,8 +314,8 @@ size_t    nbytes;
     if (!sa)
         return ERROR_INT("sa not defined", procName, 1);
 
-    ret = saConvertFilesToPdfData(sa, res, scalefactor, quality, title,
-                                  &data, &nbytes);
+    ret = saConvertFilesToPdfData(sa, res, scalefactor, type, quality,
+                                  title, &data, &nbytes);
     if (ret) {
         if (data) FREE(data);
         return ERROR_INT("pdf data not made", procName, 1);
@@ -287,7 +334,9 @@ size_t    nbytes;
  *
  *      Input:  sarray (of pathnames for images)
  *              res (input resolution of all images)
- *              scalefactor (scaling factor applied to each image)
+ *              scalefactor (scaling factor applied to each image; > 0.0)
+ *              type (encoding type (L_JPEG_ENCODE, L_G4_ENCODE,
+ *                    L_FLATE_ENCODE, or 0 for default)
  *              quality (used for JPEG only; 0 for default (75))
  *              title (<optional> pdf title; if null, taken from the first
  *                     image filename)
@@ -296,13 +345,13 @@ size_t    nbytes;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) The images are encoded with G4 if 1 bpp; JPEG if 8 bpp without
- *          colormap and many colors, or 32 bpp; FLATE for anything else.
+ *      (1) See convertFilesToPdf().
  */
 l_int32
 saConvertFilesToPdfData(SARRAY      *sa,
                         l_int32      res,
                         l_float32    scalefactor,
+                        l_int32      type,
                         l_int32      quality,
                         const char  *title,
                         l_uint8    **pdata,
@@ -310,7 +359,7 @@ saConvertFilesToPdfData(SARRAY      *sa,
 {
 char     *fname;
 l_uint8  *imdata;
-l_int32   i, n, ret, type, npages, scaledres;
+l_int32   i, n, ret, pagetype, npages, scaledres;
 size_t    imbytes;
 L_BYTEA  *ba;
 PIX      *pixs, *pix;
@@ -318,14 +367,25 @@ L_PTRA   *pa_data;
 
     PROCNAME("saConvertFilesToPdfData");
 
+    if (!pdata)
+        return ERROR_INT("&data not defined", procName, 1);
+    *pdata = NULL;
+    if (!pnbytes)
+        return ERROR_INT("&nbytes not defined", procName, 1);
+    *pnbytes = 0;
     if (!sa)
         return ERROR_INT("sa not defined", procName, 1);
     if (scalefactor <= 0.0) scalefactor = 1.0;
+    if (type < 0 || type > L_FLATE_ENCODE) {
+        L_WARNING("invalid compression type; using per-page default", procName);
+        type = 0;
+    }
 
         /* Generate all the encoded pdf strings */
     n = sarrayGetCount(sa);
     pa_data = ptraCreate(n);
     for (i = 0; i < n; i++) {
+        if (i && (i % 10 == 0)) fprintf(stderr, ".. %d ", i);
         fname = sarrayGetString(sa, i, L_NOCOPY);
         if ((pixs = pixRead(fname)) == NULL) {
             L_ERROR_STRING("image not readable from file %s", procName, fname);
@@ -336,13 +396,14 @@ L_PTRA   *pa_data;
         else
             pix = pixClone(pixs);
         scaledres = (l_int32)(res * scalefactor);
-        if (selectDefaultPdfEncoding(pix, &type)) {
+        if (type != 0)
+            pagetype = type;
+        else if (selectDefaultPdfEncoding(pix, &pagetype) != 0) {
             L_ERROR_STRING("encoding type selection failed for file %s",
                            procName, fname);
-            pixDestroy(&pix);
             continue;
         }
-        ret = pixConvertToPdfData(pix, type, quality, &imdata, &imbytes,
+        ret = pixConvertToPdfData(pix, pagetype, quality, &imdata, &imbytes,
                                   0, 0, scaledres, NULL, 0, title);
         pixDestroy(&pix);
         pixDestroy(&pixs);
@@ -362,7 +423,9 @@ L_PTRA   *pa_data;
     }
 
         /* Concatenate them */
+    fprintf(stderr, "\nconcatenating ... ");
     ret = ptraConcatenatePdfToData(pa_data, NULL, pdata, pnbytes);
+    fprintf(stderr, "done\n");
 
     ptraGetActualCount(pa_data, &npages);  /* recalculate in case it changes */
     for (i = 0; i < npages; i++) {
@@ -425,6 +488,170 @@ PIXCMAP  *cmap;
         return ERROR_INT("type selection failure", procName, 1);
 
     return 0;
+}
+
+
+/*---------------------------------------------------------------------*
+ *          Convert multiple images to Pdf (one image per page)        *
+ *---------------------------------------------------------------------*/
+/*!
+ *  pixaConvertToPdf()
+ *
+ *      Input:  pixa (containing images all at the same resolution)
+ *              res (override the resolution of each input image, in ppi;
+ *                   use 0 to respect the resolution embedded in the input)
+ *              scalefactor (scaling factor applied to each image; > 0.0)
+ *              type (encoding type (L_JPEG_ENCODE, L_G4_ENCODE,
+ *                    L_FLATE_ENCODE, or 0 for default)
+ *              quality (used for JPEG only; 0 for default (75))
+ *              title (<optional> pdf title; if null, taken from the first
+ *                     image filename)
+ *              fileout (pdf file of all images)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) The images are encoded with G4 if 1 bpp; JPEG if 8 bpp without
+ *          colormap and many colors, or 32 bpp; FLATE for anything else.
+ *      (2) The scalefactor must be > 0.0; otherwise it is set to 1.0.
+ *      (3) Specifying one of the three encoding types for @type forces
+ *          all images to be compressed with that type.  Use 0 to have
+ *          the type determined for each image based on depth and whether
+ *          or not it has a colormap.
+ */
+l_int32
+pixaConvertToPdf(PIXA        *pixa,
+                 l_int32      res,
+                 l_float32    scalefactor,
+                 l_int32      type,
+                 l_int32      quality,
+                 const char  *title,
+                 const char  *fileout)
+{
+l_uint8  *data;
+l_int32   ret;
+size_t    nbytes;
+
+    PROCNAME("pixaConvertToPdf");
+
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+
+    ret = pixaConvertToPdfData(pixa, res, scalefactor, type, quality, title,
+                               &data, &nbytes);
+    if (ret) {
+        FREE(data);
+        return ERROR_INT("conversion to pdf failed", procName, 1);
+    }
+
+    ret = l_binaryWrite(fileout, "w", data, nbytes);
+    FREE(data);
+    if (ret)
+        L_ERROR("pdf data not written to file", procName);
+    return ret;
+}
+
+
+/*!
+ *  pixaConvertToPdfData()
+ *
+ *      Input:  pixa (containing images all at the same resolution)
+ *              res (input resolution of all images)
+ *              scalefactor (scaling factor applied to each image; > 0.0)
+ *              type (encoding type (L_JPEG_ENCODE, L_G4_ENCODE,
+ *                    L_FLATE_ENCODE, or 0 for default)
+ *              quality (used for JPEG only; 0 for default (75))
+ *              title (<optional> pdf title; if null, taken from the first
+ *                     image filename)
+ *              &data (<return> output pdf data (of all images)
+ *              &nbytes (<return> size of output pdf data)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) See pixaConvertToPdf().
+ */
+l_int32
+pixaConvertToPdfData(PIXA        *pixa,
+                     l_int32      res,
+                     l_float32    scalefactor,
+                     l_int32      type,
+                     l_int32      quality,
+                     const char  *title,
+                     l_uint8    **pdata,
+                     size_t      *pnbytes)
+{
+l_uint8  *imdata;
+l_int32   i, n, ret, scaledres, pagetype;
+size_t    imbytes;
+L_BYTEA  *ba;
+PIX      *pixs, *pix;
+L_PTRA   *pa_data;
+
+    PROCNAME("pixaConvertToPdfData");
+
+    if (!pdata)
+        return ERROR_INT("&data not defined", procName, 1);
+    *pdata = NULL;
+    if (!pnbytes)
+        return ERROR_INT("&nbytes not defined", procName, 1);
+    *pnbytes = 0;
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+    if (scalefactor <= 0.0) scalefactor = 1.0;
+    if (type < 0 || type > L_FLATE_ENCODE) {
+        L_WARNING("invalid compression type; using per-page default", procName);
+        type = 0;
+    }
+
+        /* Generate all the encoded pdf strings */
+    n = pixaGetCount(pixa);
+    pa_data = ptraCreate(n);
+    for (i = 0; i < n; i++) {
+        if ((pixs = pixaGetPix(pixa, i, L_CLONE)) == NULL) {
+            L_ERROR_INT("pix[%d] not retrieved", procName, i);
+            continue;
+        }
+        if (scalefactor != 1.0)
+            pix = pixScale(pixs, scalefactor, scalefactor);
+        else
+            pix = pixClone(pixs);
+        pixDestroy(&pixs);
+        scaledres = (l_int32)(res * scalefactor);
+        if (type != 0)
+            pagetype = type;
+        else if (selectDefaultPdfEncoding(pix, &pagetype) != 0) {
+            L_ERROR_INT("encoding type selection failed for pix[%d]",
+                        procName, i);
+            pixDestroy(&pix);
+            continue;
+        }
+        ret = pixConvertToPdfData(pix, pagetype, quality, &imdata, &imbytes,
+                                  0, 0, scaledres, NULL, 0, title);
+        pixDestroy(&pix);
+        if (ret) {
+            L_ERROR_INT("pdf encoding failed for pix[%d]", procName, i);
+            continue;
+        }
+        ba = l_byteaInitFromMem(imdata, imbytes);
+        if (imdata) FREE(imdata);
+        ptraAdd(pa_data, ba);
+    }
+    ptraGetActualCount(pa_data, &n);
+    if (n == 0) {
+        L_ERROR("no pdf files made", procName);
+        ptraDestroy(&pa_data, FALSE, FALSE);
+        return 1;
+    }
+
+        /* Concatenate them */
+    ret = ptraConcatenatePdfToData(pa_data, NULL, pdata, pnbytes);
+
+    ptraGetActualCount(pa_data, &n);  /* recalculate in case it changes */
+    for (i = 0; i < n; i++) {
+        ba = (L_BYTEA *)ptraRemove(pa_data, i, L_NO_COMPACTION);
+        l_byteaDestroy(&ba);
+    }
+    ptraDestroy(&pa_data, FALSE, FALSE);
+    return ret;
 }
 
 
@@ -705,14 +932,14 @@ PIX     *pix;
 
     PROCNAME("convertImageDataToPdfData");
 
-    if (!imdata)
-        return ERROR_INT("image data not defined", procName, 1);
     if (!pdata)
         return ERROR_INT("&data not defined", procName, 1);
     *pdata = NULL;
     if (!pnbytes)
         return ERROR_INT("&nbytes not defined", procName, 1);
     *pnbytes = 0;
+    if (!imdata)
+        return ERROR_INT("image data not defined", procName, 1);
     if (plpd) {  /* part of multi-page invocation */
         if (position == L_FIRST_IMAGE)
             *plpd = NULL;
@@ -1012,7 +1239,7 @@ PIXCMAP  *cmap;
  *              type (compression type for non-image regions; the
  *                    image regions are always compressed with L_JPEG_ENCODE)
  *              thresh (used for converting gray --> 1 bpp with L_G4_ENCODE)
- *              boxaa (of image regions)
+ *              boxaa (<optional> of image regions)
  *              quality (used for JPEG only; 0 for default (75))
  *              scalefactor (scaling factor applied to each image region)
  *              title (<optional> pdf title; if null, taken from the first
@@ -1029,15 +1256,18 @@ PIXCMAP  *cmap;
  *          before concatenation.
  *      (3) The images are encoded with G4 if 1 bpp; JPEG if 8 bpp without
  *          colormap and many colors, or 32 bpp; FLATE for anything else.
- *      (4) The boxaa contains one boxa of "image regions" for each
- *          image file.  The boxa must all exist, but they can be empty.
- *          They must be aligned with the sorted set of images.
+ *      (4) The boxaa, if it exists, contains one boxa of "image regions"
+ *          for each image file.  The boxa must be aligned with the
+ *          sorted set of images.
  *      (5) The scalefactor is applied to each image region.  It is
  *          typically < 1.0, to save bytes in the final pdf, because
  *          the resolution is often not critical in non-text regions.
- *      (6) The non-image regions are automatically scaled up by 2x and
- *          thresholded if the encoding type is G4.  If the non-image
- *          regions are not encoded with G4, no scaling is performed on them.
+ *      (6) If the non-image regions have pixel depth > 1 and the encoding
+ *          type is G4, they are automatically scaled up by 2x and
+ *          thresholded.  Otherwise, no scaling is performed on them.
+ *      (7) Note that this function can be used to generate multipage
+ *          G4 compressed pdf from any input, by using @boxaa == NULL
+ *          and @type == L_G4_ENCODE.
  */
 l_int32
 convertSegmentedFilesToPdf(const char  *dirname,
@@ -1064,28 +1294,37 @@ SARRAY   *sa;
 
     if (!dirname)
         return ERROR_INT("dirname not defined", procName, 1);
-    if (!baa)
-        return ERROR_INT("baa not defined", procName, 1);
     if (!fileout)
         return ERROR_INT("fileout not defined", procName, 1);
 
-    if ((sa = getSortedPathnamesInDirectory(dirname, substr, 0, 0)) == NULL)
+    if ((sa = getNumberedPathnamesInDirectory(dirname, substr, 0, 0, 10000))
+            == NULL)
         return ERROR_INT("sa not made", procName, 1);
 
-        /* Generate and save all the encoded pdf strings */
     npages = sarrayGetCount(sa);
-    nboxa = boxaaGetCount(baa);
-    if (npages != nboxa) {
-        sarrayDestroy(&sa);
-        return ERROR_INT("npages != nboxa", procName, 1);
+        /* If necessary, extend the boxaa, which is page-aligned with
+         * the image files, to be as large as the set of images. */
+    if (baa) {
+        nboxa = boxaaGetCount(baa);
+        if (nboxa < npages) {
+            boxa = boxaCreate(1);
+            boxaaExtendWithInit(baa, npages, boxa);
+            boxaDestroy(&boxa);
+        }
     }
+
+        /* Generate and save all the encoded pdf strings */
     pa_data = ptraCreate(npages);
     for (i = 0; i < npages; i++) {
         fname = sarrayGetString(sa, i, L_NOCOPY);
-        boxa = boxaaGetBoxa(baa, i, L_CLONE);
-        nboxes = boxaGetCount(boxa);
-        if (nboxes == 0)
-            boxaDestroy(&boxa);
+        if (!strcmp(fname, "")) continue;
+        boxa = NULL;
+        if (baa) {
+            boxa = boxaaGetBoxa(baa, i, L_CLONE);
+            nboxes = boxaGetCount(boxa);
+            if (nboxes == 0)
+                boxaDestroy(&boxa);
+        }
         ret = convertToPdfDataSegmented(fname, res, type, thresh, boxa,
                                         quality, scalefactor,
                                         &imdata, &imbytes);
@@ -1131,6 +1370,68 @@ SARRAY   *sa;
 }
 
 
+/*!
+ *  convertNumberedMasksToBoxaa()
+ *
+ *      Input:  directory name (containing mask images)
+ *              substr (<optional> substring filter on filenames; can be NULL)
+ *              numpre (number of characters in name before number)
+ *              numpost (number of characters in name after number, up
+ *                       to a dot before an extension)
+ *                       including an extension and the dot separator)
+ *      Return: boxaa of mask regions, or null on error
+ *
+ *  Notes:
+ *      (1) This is conveniently used to generate the input boxaa
+ *          for convertSegmentedFilesToPdf().  It guarantees that the
+ *          boxa will be aligned with the page images, even if some
+ *          of the boxa are empty.
+ */
+BOXAA *
+convertNumberedMasksToBoxaa(const char  *dirname,
+                            const char  *substr,
+                            l_int32      numpre,
+                            l_int32      numpost)
+{
+char    *fname;
+l_int32  i, n;
+BOXA    *boxa;
+BOXAA   *baa;
+PIX     *pix;
+SARRAY  *sa;
+
+    PROCNAME("convertNumberedMasksToBoxaa");
+
+    if (!dirname)
+        return (BOXAA *)ERROR_PTR("dirname not defined", procName, NULL);
+
+    if ((sa = getNumberedPathnamesInDirectory(dirname, substr, numpre,
+                                              numpost, 10000)) == NULL)
+        return (BOXAA *)ERROR_PTR("sa not made", procName, NULL);
+
+        /* Generate and save all the encoded pdf strings */
+    n = sarrayGetCount(sa);
+    baa = boxaaCreate(n);
+    boxa = boxaCreate(1);
+    boxaaInitFull(baa, boxa);
+    boxaDestroy(&boxa);
+    for (i = 0; i < n; i++) {
+        fname = sarrayGetString(sa, i, L_NOCOPY);
+        if (!strcmp(fname, "")) continue;
+        if ((pix = pixRead(fname)) == NULL) {
+            L_WARNING_INT("invalid image on page %d", procName, i);
+            continue;
+        }
+        boxa = pixConnComp(pix, NULL, 8);
+        boxaaReplaceBoxa(baa, i, boxa);
+        pixDestroy(&pix);
+    }
+
+    sarrayDestroy(&sa);
+    return baa;
+}
+
+
 /*---------------------------------------------------------------------*
  *            Segmented single page, multi-image converters            *
  *---------------------------------------------------------------------*/
@@ -1142,7 +1443,7 @@ SARRAY   *sa;
  *              type (compression type for non-image regions; the
  *                    image regions are always compressed with L_JPEG_ENCODE)
  *              thresh (used for converting gray --> 1 bpp with L_G4_ENCODE)
- *              boxa (of image regions; can be null)
+ *              boxa (<optional> of image regions; can be null)
  *              quality (used for jpeg image regions; 0 for default)
  *              scalefactor (used for jpeg regions; must be <= 1.0)
  *              fileout (output pdf file)
@@ -1236,7 +1537,7 @@ PIX     *pixs;
  *              type (compression type for non-image regions; the
  *                    image regions are always compressed with L_JPEG_ENCODE)
  *              thresh (used for converting gray --> 1 bpp with L_G4_ENCODE)
- *              boxa (of image regions; can be null)
+ *              boxa (<optional> of image regions; can be null)
  *              quality (used for jpeg image regions; 0 for default)
  *              scalefactor (used for jpeg regions; must be <= 1.0)
  *              fileout (output pdf file)
@@ -1295,7 +1596,7 @@ size_t    nbytes;
  *              type (compression type for non-image regions; the
  *                    image regions are always compressed with L_JPEG_ENCODE)
  *              thresh (used for converting gray --> 1 bpp with L_G4_ENCODE)
- *              boxa (of image regions; can be null)
+ *              boxa (<optional> image regions; can be null)
  *              quality (used for jpeg image regions; 0 for default)
  *              scalefactor (used for jpeg regions; must be <= 1.0)
  *              &data (<return> pdf data in memory)
@@ -1358,7 +1659,7 @@ PIX     *pixs;
  *              type (compression type for non-image regions; the
  *                    image regions are always compressed with L_JPEG_ENCODE)
  *              thresh (used for converting gray --> 1 bpp with L_G4_ENCODE)
- *              boxa (of image regions; can be null)
+ *              boxa (<optional> of image regions; can be null)
  *              quality (used for jpeg image regions; 0 for default)
  *              scalefactor (used for jpeg regions; must be <= 1.0)
  *              &data (<return> pdf data in memory)
@@ -1573,7 +1874,7 @@ SARRAY  *sa;
 
         /* Accumulate data for the header and objects 1-3 */
     lpd->id = stringNew("%PDF-1.2\n");
-    numaAddNumber(lpd->objsize, strlen(lpd->id));
+    l_dnaAddNumber(lpd->objsize, strlen(lpd->id));
 
     lpd->obj1 = stringNew("1 0 obj\n"
                           "<<\n"
@@ -1581,7 +1882,7 @@ SARRAY  *sa;
                           "/Pages 3 0 R\n"
                           ">>\n"
                           "endobj\n");
-    numaAddNumber(lpd->objsize, strlen(lpd->obj1));
+    l_dnaAddNumber(lpd->objsize, strlen(lpd->obj1));
 
     sa = sarrayCreate(0);
     sarrayAddString(sa, (char *)"2 0 obj\n"
@@ -1608,7 +1909,7 @@ SARRAY  *sa;
     sarrayAddString(sa, (char *)">>\n"
                                 "endobj\n", L_COPY);
     lpd->obj2 = sarrayToString(sa, 0);
-    numaAddNumber(lpd->objsize, strlen(lpd->obj2));
+    l_dnaAddNumber(lpd->objsize, strlen(lpd->obj2));
     sarrayDestroy(&sa);
 
     lpd->obj3 = stringNew("3 0 obj\n"
@@ -1617,7 +1918,7 @@ SARRAY  *sa;
                           "/Kids [ 4 0 R ]\n"
                           "/Count 1\n"
                           ">>\n");
-    numaAddNumber(lpd->objsize, strlen(lpd->obj3));
+    l_dnaAddNumber(lpd->objsize, strlen(lpd->obj3));
 
         /* Do the post-datastream string */
     lpd->poststream = stringNew("\n"
@@ -1667,7 +1968,7 @@ char    *buf;
 char    *xstr;
 l_int32  bufsize, i, wpt, hpt;
 SARRAY  *sa;
-    
+
     PROCNAME("generatePageStringPdf");
 
         /* Allocate 1000 bytes for the boilerplate text, and
@@ -1686,7 +1987,7 @@ SARRAY  *sa;
     if ((xstr = sarrayToString(sa, 0)) == NULL)
         return ERROR_INT("xstr not found", procName, 1);
     sarrayDestroy(&sa);
-        
+
     snprintf(buf, bufsize, "4 0 obj\n"
                            "<<\n"
                            "/Type /Page\n"
@@ -1703,7 +2004,7 @@ SARRAY  *sa;
                            0, 0, wpt, hpt, xstr);
 
     lpd->obj4 = stringNew(buf);
-    numaAddNumber(lpd->objsize, strlen(lpd->obj4));
+    l_dnaAddNumber(lpd->objsize, strlen(lpd->obj4));
     sarrayDestroy(&sa);
     FREE(buf);
     FREE(xstr);
@@ -1719,7 +2020,7 @@ char      *cstr;
 l_int32    i, bufsize;
 l_float32  xpt, ypt, wpt, hpt;
 SARRAY    *sa;
-    
+
     PROCNAME("generateContentStringPdf");
 
     bufsize = 1000 + 200 * lpd->n;
@@ -1738,7 +2039,7 @@ SARRAY    *sa;
     if ((cstr = sarrayToString(sa, 0)) == NULL)
         return ERROR_INT("cstr not found", procName, 1);
     sarrayDestroy(&sa);
-        
+
     snprintf(buf, bufsize, "5 0 obj\n"
                            "<< /Length %d >>\n"
                            "stream\n"
@@ -1748,7 +2049,7 @@ SARRAY    *sa;
                            (l_int32)strlen(cstr), cstr);
 
     lpd->obj5 = stringNew(buf);
-    numaAddNumber(lpd->objsize, strlen(lpd->obj5));
+    l_dnaAddNumber(lpd->objsize, strlen(lpd->obj5));
     sarrayDestroy(&sa);
     FREE(buf);
     FREE(cstr);
@@ -1765,7 +2066,7 @@ char               *cstr, *bstr, *fstr, *xstr;
 l_int32             i, cmindex;
 L_COMPRESSED_DATA  *cid;
 SARRAY             *sa;
-    
+
     PROCNAME("generatePreXStringsPdf");
 
     sa = lpd->saprex;
@@ -1815,7 +2116,7 @@ SARRAY             *sa;
                     cstr = stringNew("/ColorSpace /DeviceGray");
                 else if (cid->spp == 3)
                     cstr = stringNew("/ColorSpace /DeviceRGB");
-                else 
+                else
                     L_ERROR("unknown colorspace", procName);
             }
             snprintf(buff, sizeof(buff), "/BitsPerComponent %d", cid->bps);
@@ -1823,7 +2124,7 @@ SARRAY             *sa;
             fstr = stringNew("/Filter /FlateDecode");
         }
 
-        snprintf(buf, sizeof(buf), 
+        snprintf(buf, sizeof(buf),
                  "%d 0 obj\n"
                  "<<\n"
                  "/Length %ld\n"
@@ -1838,7 +2139,7 @@ SARRAY             *sa;
                  6 + i, cid->nbytescomp, cstr, cid->w, cid->h, bstr, fstr);
         xstr = stringNew(buf);
         sarrayAddString(sa, xstr, L_INSERT);
-        numaAddNumber(lpd->objsize,
+        l_dnaAddNumber(lpd->objsize,
                       strlen(xstr) + cid->nbytescomp + strlen(lpd->poststream));
         FREE(cstr);
         FREE(bstr);
@@ -1857,7 +2158,7 @@ char               *cmstr;
 l_int32             i, cmindex, ncmap;
 L_COMPRESSED_DATA  *cid;
 SARRAY             *sa;
-    
+
     PROCNAME("generateColormapStringsPdf");
 
         /* In our canonical format, we have 5 objects, followed
@@ -1881,7 +2182,7 @@ SARRAY             *sa;
                                    cmindex, cid->ncolors - 1, cid->cmapdatahex);
         cmindex++;
         cmstr = stringNew(buf);
-        numaAddNumber(lpd->objsize, strlen(cmstr));
+        l_dnaAddNumber(lpd->objsize, strlen(cmstr));
         sarrayAddString(sa, cmstr, L_INSERT);
     }
 
@@ -1894,7 +2195,7 @@ static void
 generateTrailerPdf(L_PDF_DATA  *lpd)
 {
 l_int32  i, n, size, linestart;
-NUMA    *naloc, *nasize;
+L_DNA   *daloc, *dasize;
 
         /* Let nobj be the number of numbered objects.  These numbered
          * objects are indexed by their pdf number in arrays naloc[]
@@ -1907,32 +2208,32 @@ NUMA    *naloc, *nasize;
          *
          *     Object number         Starting location         Size
          *     -------------         -----------------     --------------
-         *          0                   naloc[0] = 0       nasize[0] = 9
-         *          1                   naloc[1] = 9       nasize[1] = 49
-         *          n                   naloc[n]           nasize[n] 
-         *          xref                naloc[n+1] 
+         *          0                   daloc[0] = 0       dasize[0] = 9
+         *          1                   daloc[1] = 9       dasize[1] = 49
+         *          n                   daloc[n]           dasize[n]
+         *          xref                daloc[n+1]
          *
-         * We first generate naloc.
+         * We first generate daloc.
          */
-    nasize = lpd->objsize;
-    naloc = lpd->objloc;
+    dasize = lpd->objsize;
+    daloc = lpd->objloc;
     linestart = 0;
-    numaAddNumber(naloc, linestart);  /* header */
-    n = numaGetCount(nasize);
+    l_dnaAddNumber(daloc, linestart);  /* header */
+    n = l_dnaGetCount(dasize);
     for (i = 0; i < n; i++) {
-        numaGetIValue(nasize, i, &size);
+        l_dnaGetIValue(dasize, i, &size);
         linestart += size;
-        numaAddNumber(naloc, linestart);
+        l_dnaAddNumber(daloc, linestart);
     }
-    numaGetIValue(naloc, n, &lpd->xrefloc);  /* save it */
+    l_dnaGetIValue(daloc, n, &lpd->xrefloc);  /* save it */
 
         /* Now make the actual trailer string */
-    lpd->trailer = makeTrailerStringPdf(naloc);
+    lpd->trailer = makeTrailerStringPdf(daloc);
 }
 
 
 static char *
-makeTrailerStringPdf(NUMA  *naloc)
+makeTrailerStringPdf(L_DNA  *daloc)
 {
 char    *outstr;
 char     buf[L_BIGBUF];
@@ -1941,9 +2242,9 @@ SARRAY  *sa;
 
     PROCNAME("makeTrailerStringPdf");
 
-    if (!naloc)
-        return (char *)ERROR_PTR("naloc not defined", procName, NULL);
-    n = numaGetCount(naloc) - 1;  /* numbered objects + 1 (yes, +1) */
+    if (!daloc)
+        return (char *)ERROR_PTR("daloc not defined", procName, NULL);
+    n = l_dnaGetCount(daloc) - 1;  /* numbered objects + 1 (yes, +1) */
 
     sa = sarrayCreate(0);
     snprintf(buf, sizeof(buf), "xref\n"
@@ -1951,12 +2252,12 @@ SARRAY  *sa;
                                "0000000000 65535 f \n", n);
     sarrayAddString(sa, (char *)buf, L_COPY);
     for (i = 1; i < n; i++) {
-        numaGetIValue(naloc, i, &linestart);
+        l_dnaGetIValue(daloc, i, &linestart);
         snprintf(buf, sizeof(buf), "%010d 00000 n \n", linestart);
         sarrayAddString(sa, (char *)buf, L_COPY);
     }
 
-    numaGetIValue(naloc, n, &xrefloc);
+    l_dnaGetIValue(daloc, n, &xrefloc);
     snprintf(buf, sizeof(buf), "trailer\n"
                                "<<\n"
                                "/Size %d\n"
@@ -2009,8 +2310,8 @@ L_COMPRESSED_DATA  *cid;
         return ERROR_INT("calloc fail for data", procName, 1);
     *pdata = data;
 
-    sizes = numaGetIArray(lpd->objsize);
-    locs = numaGetIArray(lpd->objloc);
+    sizes = l_dnaGetIArray(lpd->objsize);
+    locs = l_dnaGetIArray(lpd->objloc);
     memcpy((char *)data, lpd->id, sizes[0]);
     memcpy((char *)(data + locs[1]), lpd->obj1, sizes[1]);
     memcpy((char *)(data + locs[2]), lpd->obj2, sizes[2]);
@@ -2303,8 +2604,9 @@ l_int32   i, j, index, nobj, npages;
 l_int32  *sizes, *locs;
 size_t    size;
 L_BYTEA  *bas, *bad, *bat1, *bat2;
-NUMA     *na, *na_locs, *na_objs, *napage, *na_sizes, *na_outlocs;
-NUMAA    *naa_locs;  /* object locations on each page */
+L_DNA    *da_locs, *da_sizes, *da_outlocs, *da;
+L_DNAA   *daa_locs;  /* object locations on each page */
+NUMA     *na_objs, *napage;
 NUMAA    *naa_objs;  /* object mapping numbers to new values */
 
     PROCNAME("ptraConcatenatePdfToData");
@@ -2321,10 +2623,10 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
         /* Parse the files and find the object locations.
          * Remove file data that cannot be parsed. */
     ptraGetActualCount(pa_data, &npages);
-    naa_locs = numaaCreate(npages);
+    daa_locs = l_dnaaCreate(npages);
     for (i = 0; i < npages; i++) {
         bas = (L_BYTEA *)ptraGetHandle(pa_data, i);
-        if (parseTrailerPdf(bas, &na_locs) != 0) {
+        if (parseTrailerPdf(bas, &da_locs) != 0) {
             bas = (L_BYTEA *)ptraRemove(pa_data, i, L_NO_COMPACTION);
             l_byteaDestroy(&bas);
             if (sa) {
@@ -2337,7 +2639,7 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
             }
         }
         else {
-            numaaAddNuma(naa_locs, na_locs, L_INSERT);
+            l_dnaaAddDna(daa_locs, da_locs, L_INSERT);
         }
     }
 
@@ -2345,7 +2647,7 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
     ptraCompactArray(pa_data);
     ptraGetActualCount(pa_data, &npages);
     if (npages == 0) {
-        numaaDestroy(&naa_locs);
+        l_dnaaDestroy(&daa_locs);
         return ERROR_INT("no parsable pdf files found", procName, 1);
     }
 
@@ -2354,8 +2656,8 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
     napage = numaCreate(npages);  /* stores "Page" object numbers */
     index = 0;
     for (i = 0; i < npages; i++) {
-        na = numaaGetNuma(naa_locs, i, L_CLONE);
-        nobj = numaGetCount(na);
+        da = l_dnaaGetDna(daa_locs, i, L_CLONE);
+        nobj = l_dnaGetCount(da);
         if (i == 0) {
             numaAddNumber(napage, 4);  /* object 4 on first page */
             na_objs = numaMakeSequence(0.0, 1.0, nobj - 1);
@@ -2369,7 +2671,7 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
                 numaSetValue(na_objs, j, index++);
         }
         numaaAddNuma(naa_objs, na_objs, L_INSERT);
-        numaDestroy(&na);
+        l_dnaDestroy(&da);
     }
 
         /* Make the Pages object (#3) */
@@ -2377,26 +2679,26 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
 
         /* Build the output */
     bad = l_byteaCreate(5000);
-    na_outlocs = numaCreate(0);  /* locations of all output objects */
+    da_outlocs = l_dnaCreate(0);  /* locations of all output objects */
     for (i = 0; i < npages; i++) {
         bas = (L_BYTEA *)ptraGetHandle(pa_data, i);
         pdfdata = l_byteaGetData(bas, &size);
-        na_locs = numaaGetNuma(naa_locs, i, L_CLONE);  /* locs on this page */
+        da_locs = l_dnaaGetDna(daa_locs, i, L_CLONE);  /* locs on this page */
         na_objs = numaaGetNuma(naa_objs, i, L_CLONE);  /* obj # on this page */
-        nobj = numaGetCount(na_locs) - 1;
-        na_sizes = numaMakeDelta(na_locs);  /* object sizes on this page */
-        sizes = numaGetIArray(na_sizes);
-        locs = numaGetIArray(na_locs);
+        nobj = l_dnaGetCount(da_locs) - 1;
+        da_sizes = l_dnaMakeDelta(da_locs);  /* object sizes on this page */
+        sizes = l_dnaGetIArray(da_sizes);
+        locs = l_dnaGetIArray(da_locs);
         if (i == 0) {
             l_byteaAppendData(bad, pdfdata, sizes[0]);
             l_byteaAppendData(bad, pdfdata + locs[1], sizes[1]);
             l_byteaAppendData(bad, pdfdata + locs[2], sizes[2]);
             l_byteaAppendString(bad, str_pages);
             for (j = 0; j < 4; j++)
-                numaAddNumber(na_outlocs, locs[j]);
+                l_dnaAddNumber(da_outlocs, locs[j]);
         }
         for (j = 4; j < nobj; j++) {
-            numaAddNumber(na_outlocs, l_byteaGetSize(bad));
+            l_dnaAddNumber(da_outlocs, l_byteaGetSize(bad));
             bat1 = l_byteaInitFromMem(pdfdata + locs[j], sizes[j]);
             bat2 = substituteObjectNumbers(bat1, na_objs);
             data = l_byteaGetData(bat2, &size);
@@ -2405,16 +2707,16 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
             l_byteaDestroy(&bat2);
         }
         if (i == npages - 1)  /* last one */
-            numaAddNumber(na_outlocs, l_byteaGetSize(bad));
+            l_dnaAddNumber(da_outlocs, l_byteaGetSize(bad));
         FREE(sizes);
         FREE(locs);
-        numaDestroy(&na_locs);
+        l_dnaDestroy(&da_locs);
         numaDestroy(&na_objs);
-        numaDestroy(&na_sizes);
+        l_dnaDestroy(&da_sizes);
     }
 
         /* Add the trailer */
-    str_trailer = makeTrailerStringPdf(na_outlocs);
+    str_trailer = makeTrailerStringPdf(da_outlocs);
     l_byteaAppendString(bad, str_trailer);
 
         /* Transfer the output data */
@@ -2432,10 +2734,10 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
     fprintf(stderr, "%s\n", str_pages);
 #endif  /* DEBUG_MULTIPAGE */
 
-    numaaDestroy(&naa_locs);
-    numaaDestroy(&naa_objs);
     numaDestroy(&napage);
-    numaDestroy(&na_outlocs);
+    numaaDestroy(&naa_objs);
+    l_dnaDestroy(&da_outlocs);
+    l_dnaaDestroy(&daa_locs);
     FREE(str_pages);
     FREE(str_trailer);
     return 0;
@@ -2449,26 +2751,26 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
  *  parseTrailerPdf()
  *
  *  Input:  bas (lba of a pdf file)
- *          na (<return> byte locations of the beginning of each object)
+ *          da (<return> byte locations of the beginning of each object)
  *  Return: 0 if OK, 1 on error
  */
 static l_int32
 parseTrailerPdf(L_BYTEA  *bas,
-                NUMA    **pna)
+                L_DNA   **pda)
 {
 char     *str;
 l_uint8   nl = '\n';
 l_uint8  *data;
 l_int32   i, j, start, startloc, xrefloc, found, loc, nobj, objno, trailer_ok;
 size_t    size;
-NUMA     *na, *naobj, *naxref;
+L_DNA    *da, *daobj, *daxref;
 SARRAY   *sa;
 
     PROCNAME("parseTrailerPdf");
 
-    if (!pna)
-        return ERROR_INT("&na not defined", procName, 1);
-    *pna = NULL;
+    if (!pda)
+        return ERROR_INT("&da not defined", procName, 1);
+    *pda = NULL;
     if (!bas)
         return ERROR_INT("bas not defined", procName, 1);
     data = l_byteaGetData(bas, &size);
@@ -2494,14 +2796,14 @@ SARRAY   *sa;
 
         /* Get starting locations.  The numa index is the
          * object number.  loc[0] is the ID; loc[nobj + 1] is xrefloc.  */
-    na = numaCreate(nobj + 1);
-    *pna = na;
+    da = l_dnaCreate(nobj + 1);
+    *pda = da;
     for (i = 0; i < nobj; i++) {
         str = sarrayGetString(sa, i + 2, L_NOCOPY);
         sscanf(str, "%d", &startloc);
-        numaAddNumber(na, startloc);
+        l_dnaAddNumber(da, startloc);
     }
-    numaAddNumber(na, xrefloc);
+    l_dnaAddNumber(da, xrefloc);
 
 #if  DEBUG_MULTIPAGE
     fprintf(stderr, "************** Trailer string ************\n");
@@ -2509,14 +2811,14 @@ SARRAY   *sa;
     sarrayWriteStream(stderr, sa);
 
     fprintf(stderr, "************** Object locations ************");
-    numaWriteStream(stderr, na);
+    l_dnaWriteStream(stderr, da);
 #endif  /* DEBUG_MULTIPAGE */
     sarrayDestroy(&sa);
 
         /* Verify correct parsing */
     trailer_ok = TRUE;
     for (i = 1; i < nobj; i++) {
-        numaGetIValue(na, i, &startloc);
+        l_dnaGetIValue(da, i, &startloc);
         if ((sscanf((char *)(data + startloc), "%d 0 obj", &objno)) != 1) {
             L_ERROR_INT("bad trailer for object %d", procName, i);
             trailer_ok = FALSE;
@@ -2527,23 +2829,23 @@ SARRAY   *sa;
         /* If the trailer is broken, reconstruct the correct obj locations */
     if (!trailer_ok) {
         L_INFO("rebuilding pdf trailer", procName);
-        numaEmpty(na);
-        numaAddNumber(na, 0);
-        l_byteaFindEachSequence(bas, (l_uint8 *)" 0 obj\n", 7, &naobj);
-        nobj = numaGetCount(naobj);
+        l_dnaEmpty(da);
+        l_dnaAddNumber(da, 0);
+        l_byteaFindEachSequence(bas, (l_uint8 *)" 0 obj\n", 7, &daobj);
+        nobj = l_dnaGetCount(daobj);
         for (i = 0; i < nobj; i++) {
-            numaGetIValue(naobj, i, &loc);
+            l_dnaGetIValue(daobj, i, &loc);
             for (j = loc - 1; j > 0; j--) {
                 if (data[j] == nl)
                     break;
             }
-            numaAddNumber(na, j + 1);
+            l_dnaAddNumber(da, j + 1);
         }
-        l_byteaFindEachSequence(bas, (l_uint8 *)"xref", 4, &naxref);
-        numaGetIValue(naxref, 0, &loc);
-        numaAddNumber(na, loc);
-        numaDestroy(&naobj);
-        numaDestroy(&naxref);
+        l_byteaFindEachSequence(bas, (l_uint8 *)"xref", 4, &daxref);
+        l_dnaGetIValue(daxref, 0, &loc);
+        l_dnaAddNumber(da, loc);
+        l_dnaDestroy(&daobj);
+        l_dnaDestroy(&daxref);
     }
 
     return 0;
@@ -2614,7 +2916,7 @@ l_int32   start, nrepl, i, j, objin, objout;
 l_int32  *objs, *matches;
 size_t    size;
 L_BYTEA  *bad;
-NUMA     *na_match;
+L_DNA    *da_match;
 
     datas = l_byteaGetData(bas, &size);
     bad = l_byteaCreate(100);
@@ -2628,16 +2930,16 @@ NUMA     *na_match;
 
         /* Find the set of matching locations for object references */
     arrayFindSequence(datas, size, &space, 1, &start, NULL);
-    na_match = arrayFindEachSequence(datas, size, (l_uint8 *)" 0 R", 4);
-    if (!na_match) {
+    da_match = arrayFindEachSequence(datas, size, (l_uint8 *)" 0 R", 4);
+    if (!da_match) {
         l_byteaAppendData(bad, datas + start, size - start);
         FREE(objs);
         return bad;
     }
 
         /* Substitute all the object reference numbers */
-    nrepl = numaGetCount(na_match);
-    matches = numaGetIArray(na_match);
+    nrepl = l_dnaGetCount(da_match);
+    matches = l_dnaGetIArray(da_match);
     for (i = 0; i < nrepl; i++) {
             /* Find the first space before the object number */
         for (j = matches[i] - 1; j > 0; j--) {
@@ -2656,7 +2958,7 @@ NUMA     *na_match;
 
     FREE(objs);
     FREE(matches);
-    numaDestroy(&na_match);
+    l_dnaDestroy(&da_match);
     return bad;
 }
 
@@ -2676,8 +2978,8 @@ L_PDF_DATA *lpd;
     lpd->wh = ptaCreate(10);
     lpd->saprex = sarrayCreate(10);
     lpd->sacmap = sarrayCreate(10);
-    lpd->objsize = numaCreate(20);
-    lpd->objloc = numaCreate(20);
+    lpd->objsize = l_dnaCreate(20);
+    lpd->objloc = l_dnaCreate(20);
     return lpd;
 }
 
@@ -2717,8 +3019,8 @@ L_PDF_DATA         *lpd;
     if (lpd->mediabox) boxDestroy(&lpd->mediabox);
     if (lpd->saprex) sarrayDestroy(&lpd->saprex);
     if (lpd->sacmap) sarrayDestroy(&lpd->sacmap);
-    if (lpd->objsize) numaDestroy(&lpd->objsize);
-    if (lpd->objloc) numaDestroy(&lpd->objloc);
+    if (lpd->objsize) l_dnaDestroy(&lpd->objsize);
+    if (lpd->objloc) l_dnaDestroy(&lpd->objloc);
     FREE(lpd);
     *plpd = NULL;
     return;
@@ -2785,4 +3087,3 @@ l_pdfSetDateAndVersion(l_int32  flag)
 /* --------------------------------------------*/
 #endif  /* USE_PDFIO */
 /* --------------------------------------------*/
-

@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 
@@ -20,6 +31,7 @@
  *       Regression test utilities
  *           l_int32    regTestSetup()
  *           l_int32    regTestCleanup()
+ *           l_int32    regTestCompareValues()
  *           l_int32    regTestComparePix()
  *           l_int32    regTestCompareSimilarPix()
  *           l_int32    regTestCheckFile()
@@ -32,7 +44,6 @@
 
 #include <string.h>
 #include "allheaders.h"
-
 
 extern l_int32 NumImageFileFormatExtensions;
 extern const char *ImageFileFormatExtensions[];
@@ -161,10 +172,11 @@ L_REGPARAMS  *rp;
 l_int32
 regTestCleanup(L_REGPARAMS  *rp)
 {
-char    result[512];
-char   *results_file;  /* success/failure output in 'compare' mode */
-char   *text, *message;
-size_t  nbytes;
+char     result[512];
+char    *results_file;  /* success/failure output in 'compare' mode */
+char    *text, *message;
+l_int32  retval;
+size_t   nbytes;
 
     PROCNAME("regTestCleanup");
 
@@ -201,11 +213,55 @@ size_t  nbytes;
     FREE(text);
     results_file = genPathname("/tmp", "reg_results.txt");
     fileAppendString(results_file, message);
+    retval = (rp->success) ? 0 : 1;
     FREE(results_file);
     FREE(message);
 
     FREE(rp->testname);
     FREE(rp);
+    return retval;
+}
+
+
+/*!
+ *  regTestCompareValues()
+ *
+ *      Input:  rp (regtest parameters)
+ *              val1 (typ. the golden value)
+ *              val2 (typ. the value computed)
+ *              delta (allowed max absolute difference)
+ *      Return: 0 if OK, 1 on error (a failure in comparison is not an error)
+ */
+l_int32
+regTestCompareValues(L_REGPARAMS  *rp,
+                     l_float32     val1,
+                     l_float32     val2,
+                     l_float32     delta)
+{
+l_float32  diff;
+
+    PROCNAME("regTestCompareValues");
+
+    if (!rp)
+        return ERROR_INT("rp not defined", procName, 1);
+
+    rp->index++;
+    diff = L_ABS(val2 - val1);
+
+        /* Record on failure */
+    if (diff > delta) {
+        if (rp->fp) {
+            fprintf(rp->fp,
+                    "Failure in %s_reg: value comparison for index %d\n"
+                    "difference = %f but allowed delta = %f\n",
+                    rp->testname, rp->index, diff, delta);
+        }
+        fprintf(stderr,
+                    "Failure in %s_reg: value comparison for index %d\n"
+                    "difference = %f but allowed delta = %f\n",
+                    rp->testname, rp->index, diff, delta);
+        rp->success = FALSE;
+    }
     return 0;
 }
 
@@ -574,5 +630,3 @@ char    *root;
     root[len - 4] = '\0';  /* remove the suffix */
     return root;
 }
-
-

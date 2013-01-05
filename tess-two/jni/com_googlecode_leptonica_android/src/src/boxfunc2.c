@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 /*
@@ -35,14 +46,18 @@
  *           BOX             *boxaGetRankSize()
  *           BOX             *boxaGetMedian()
  *
- *      Other boxaa functions
+ *      Boxa array extraction
+ *           l_int32          boxaExtractAsNuma()
+ *           l_int32          boxaExtractAsPta()
+ *
+ *      Other Boxaa functions
  *           l_int32          boxaaGetExtent()
  *           BOXA            *boxaaFlattenToBoxa()
+ *           BOXA            *boxaaFlattenAligned()
+ *           BOXAA           *boxaEncapsulateAligned()
  *           l_int32          boxaaAlignBox()
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
 #include "allheaders.h"
 
@@ -57,7 +72,7 @@ static const l_int32   MIN_COMPS_FOR_BIN_SORT = 500;
  *---------------------------------------------------------------------*/
 /*!
  *  boxaTransform()
- * 
+ *
  *      Input:  boxa
  *              shiftx, shifty
  *              scalex, scaley
@@ -98,7 +113,7 @@ BOXA    *boxad;
 
 /*!
  *  boxTransform()
- * 
+ *
  *      Input:  box
  *              shiftx, shifty
  *              scalex, scaley
@@ -106,6 +121,7 @@ BOXA    *boxad;
  *
  *  Notes:
  *      (1) This is a very simple function that first shifts, then scales.
+ *      (2) If the box is invalid, a new invalid box is returned.
  */
 BOX *
 boxTransform(BOX       *box,
@@ -118,18 +134,21 @@ boxTransform(BOX       *box,
 
     if (!box)
         return (BOX *)ERROR_PTR("box not defined", procName, NULL);
-    return boxCreate((l_int32)(scalex * (box->x + shiftx) + 0.5),
-                     (l_int32)(scaley * (box->y + shifty) + 0.5),
-                     (l_int32)(L_MAX(1.0, scalex * box->w + 0.5)),
-                     (l_int32)(L_MAX(1.0, scaley * box->h + 0.5)));
+    if (box->w <= 0 || box->h <= 0)
+        return boxCreate(0, 0, 0, 0);
+    else
+        return boxCreate((l_int32)(scalex * (box->x + shiftx) + 0.5),
+                         (l_int32)(scaley * (box->y + shifty) + 0.5),
+                         (l_int32)(L_MAX(1.0, scalex * box->w + 0.5)),
+                         (l_int32)(L_MAX(1.0, scaley * box->h + 0.5)));
 }
 
 
 /*!
  *  boxaTransformOrdered()
- * 
+ *
  *      Input:  boxa
- *              shiftx, shifty 
+ *              shiftx, shifty
  *              scalex, scaley
  *              xcen, ycen (center of rotation)
  *              angle (in radians; clockwise is positive)
@@ -194,9 +213,9 @@ BOXA    *boxad;
 
 /*!
  *  boxTransformOrdered()
- * 
+ *
  *      Input:  boxs
- *              shiftx, shifty 
+ *              shiftx, shifty
  *              scalex, scaley
  *              xcen, ycen (center of rotation)
  *              angle (in radians; clockwise is positive)
@@ -266,6 +285,8 @@ BOX       *boxd;
         return (BOX *)ERROR_PTR("order invalid", procName, NULL);
 
     boxGetGeometry(boxs, &bx, &by, &bw, &bh);
+    if (bw <= 0 || bh <= 0)  /* invalid */
+        return boxCreate(0, 0, 0, 0);
     if (angle != 0.0) {
         sina = sin(angle);
         cosa = cos(angle);
@@ -410,7 +431,7 @@ BOX       *boxd;
 
 /*!
  *  boxaRotateOrth()
- * 
+ *
  *      Input:  boxa
  *              w, h (of image in which the boxa is embedded)
  *              rotation (0 = noop, 1 = 90 deg, 2 = 180 deg, 3 = 270 deg;
@@ -456,7 +477,7 @@ BOXA    *boxad;
 
 /*!
  *  boxRotateOrth()
- * 
+ *
  *      Input:  box
  *              w, h (of image in which the box is embedded)
  *              rotation (0 = noop, 1 = 90 deg, 2 = 180 deg, 3 = 270 deg;
@@ -484,7 +505,10 @@ l_int32  bx, by, bw, bh, xdist, ydist;
         return boxCopy(box);
     if (rotation < 1 || rotation > 3)
         return (BOX *)ERROR_PTR("rotation not in {0,1,2,3}", procName, NULL);
+
     boxGetGeometry(box, &bx, &by, &bw, &bh);
+    if (bw <= 0 || bh <= 0)  /* invalid */
+        return boxCreate(0, 0, 0, 0);
     ydist = h - by - bh;  /* below box */
     xdist = w - bx - bw;  /* to right of box */
     if (rotation == 1)   /* 90 deg cw */
@@ -501,7 +525,7 @@ l_int32  bx, by, bw, bh, xdist, ydist;
  *---------------------------------------------------------------------*/
 /*!
  *  boxaSort()
- * 
+ *
  *      Input:  boxa
  *              sorttype (L_SORT_BY_X, L_SORT_BY_Y, L_SORT_BY_WIDTH,
  *                        L_SORT_BY_HEIGHT, L_SORT_BY_MIN_DIMENSION,
@@ -527,7 +551,7 @@ NUMA      *na, *naindex;
     if (pnaindex) *pnaindex = NULL;
     if (!boxas)
         return (BOXA *)ERROR_PTR("boxas not defined", procName, NULL);
-    if (sorttype != L_SORT_BY_X && sorttype != L_SORT_BY_Y && 
+    if (sorttype != L_SORT_BY_X && sorttype != L_SORT_BY_Y &&
         sorttype != L_SORT_BY_WIDTH && sorttype != L_SORT_BY_HEIGHT &&
         sorttype != L_SORT_BY_MIN_DIMENSION &&
         sorttype != L_SORT_BY_MAX_DIMENSION &&
@@ -540,8 +564,8 @@ NUMA      *na, *naindex;
 
         /* Use O(n) binsort if possible */
     n = boxaGetCount(boxas);
-    if (n > MIN_COMPS_FOR_BIN_SORT && 
-        ((sorttype == L_SORT_BY_X) || (sorttype == L_SORT_BY_Y) || 
+    if (n > MIN_COMPS_FOR_BIN_SORT &&
+        ((sorttype == L_SORT_BY_X) || (sorttype == L_SORT_BY_Y) ||
          (sorttype == L_SORT_BY_WIDTH) || (sorttype == L_SORT_BY_HEIGHT) ||
          (sorttype == L_SORT_BY_PERIMETER)))
         return boxaBinSort(boxas, sorttype, sortorder, pnaindex);
@@ -607,7 +631,7 @@ NUMA      *na, *naindex;
 
 /*!
  *  boxaBinSort()
- * 
+ *
  *      Input:  boxa
  *              sorttype (L_SORT_BY_X, L_SORT_BY_Y, L_SORT_BY_WIDTH,
  *                        L_SORT_BY_HEIGHT, L_SORT_BY_PERIMETER)
@@ -638,7 +662,7 @@ NUMA    *na, *naindex;
     if (pnaindex) *pnaindex = NULL;
     if (!boxas)
         return (BOXA *)ERROR_PTR("boxas not defined", procName, NULL);
-    if (sorttype != L_SORT_BY_X && sorttype != L_SORT_BY_Y && 
+    if (sorttype != L_SORT_BY_X && sorttype != L_SORT_BY_Y &&
         sorttype != L_SORT_BY_WIDTH && sorttype != L_SORT_BY_HEIGHT &&
         sorttype != L_SORT_BY_PERIMETER)
         return (BOXA *)ERROR_PTR("invalid sort type", procName, NULL);
@@ -691,7 +715,7 @@ NUMA    *na, *naindex;
 
 /*!
  *  boxaSortByIndex()
- * 
+ *
  *      Input:  boxas
  *              naindex (na that maps from the new boxa to the input boxa)
  *      Return: boxad (sorted), or null on error
@@ -725,7 +749,7 @@ BOXA    *boxad;
 
 /*!
  *  boxaSort2d()
- * 
+ *
  *      Input:  boxas
  *              &naa (<optional return> numaa with sorted indices
  *                    whose values are the indices of the input array)
@@ -863,7 +887,7 @@ NUMAA   *naa, *naad;
     baad = boxaaCreate(m);
     for (i = 0; i < m; i++) {
         boxat1 = boxaaGetBoxa(baa, i, L_CLONE);
-        box = boxaGetBox(boxat1, 0, L_CLONE); 
+        box = boxaGetBox(boxat1, 0, L_CLONE);
         boxaAddBox(boxav, box, L_INSERT);
         boxaDestroy(&boxat1);
     }
@@ -895,7 +919,7 @@ NUMAA   *naa, *naad;
 
 /*!
  *  boxaSort2dByIndex()
- * 
+ *
  *      Input:  boxas
  *              naa (numaa that maps from the new baa to the input boxa)
  *      Return: baa (sorted boxaa), or null on error
@@ -943,6 +967,117 @@ NUMA    *na;
 
 
 /*---------------------------------------------------------------------*
+ *                        Boxa array extraction                        *
+ *---------------------------------------------------------------------*/
+/*!
+ *  boxaExtractAsNuma()
+ *
+ *      Input:  boxa
+ *              &nax (<optional return> array of x locations)
+ *              &nay (<optional return> array of y locations)
+ *              &naw (<optional return> array of w locations)
+ *              &nah (<optional return> array of h locations)
+ *              keepinvalid (1 to keep invalid boxes; 0 to remove them)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+boxaExtractAsNuma(BOXA    *boxa,
+                  NUMA   **pnax,
+                  NUMA   **pnay,
+                  NUMA   **pnaw,
+                  NUMA   **pnah,
+                  l_int32  keepinvalid)
+{
+l_int32  i, n, x, y, w, h;
+
+    PROCNAME("boxaExtractAsNuma");
+
+    if (!pnax && !pnay && !pnaw && !pnah)
+        return ERROR_INT("no output requested", procName, 1);
+    if (pnax) *pnax = NULL;
+    if (pnay) *pnay = NULL;
+    if (pnaw) *pnaw = NULL;
+    if (pnah) *pnah = NULL;
+    if (!boxa)
+        return ERROR_INT("boxa not defined", procName, 1);
+    if (!keepinvalid && boxaGetValidCount(boxa) == 0)
+        return ERROR_INT("no valid boxes", procName, 1);
+
+    n = boxaGetCount(boxa);
+    if (pnax) *pnax = numaCreate(n);
+    if (pnay) *pnay = numaCreate(n);
+    if (pnaw) *pnaw = numaCreate(n);
+    if (pnah) *pnah = numaCreate(n);
+    for (i = 0; i < n; i++) {
+        boxaGetBoxGeometry(boxa, i, &x, &y, &w, &h);
+        if (!keepinvalid && (w <= 0 || h <= 0))
+            continue;
+        if (pnax) numaAddNumber(*pnax, x);
+        if (pnay) numaAddNumber(*pnay, y);
+        if (pnaw) numaAddNumber(*pnaw, w);
+        if (pnah) numaAddNumber(*pnah, h);
+    }
+
+    return 0;
+}
+
+
+/*!
+ *  boxaExtractAsPta()
+ *
+ *      Input:  boxa
+ *              &ptal (<optional return> array of left locations vs. index)
+ *              &ptat (<optional return> array of top locations vs. index)
+ *              &ptar (<optional return> array of right locations vs. index)
+ *              &ptab (<optional return> array of bottom locations vs. index)
+ *              keepinvalid (1 to keep invalid boxes; 0 to remove them)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+boxaExtractAsPta(BOXA    *boxa,
+                 PTA    **pptal,
+                 PTA    **pptat,
+                 PTA    **pptar,
+                 PTA    **pptab,
+                 l_int32  keepinvalid)
+{
+l_int32  i, n, left, top, right, bot, w, h;
+
+    PROCNAME("boxaExtractAsPta");
+
+    if (!pptal && !pptar && !pptat && !pptab)
+        return ERROR_INT("no output requested", procName, 1);
+    if (pptal) *pptal = NULL;
+    if (pptat) *pptat = NULL;
+    if (pptar) *pptar = NULL;
+    if (pptab) *pptab = NULL;
+    if (!boxa)
+        return ERROR_INT("boxa not defined", procName, 1);
+    if (!keepinvalid && boxaGetValidCount(boxa) == 0)
+        return ERROR_INT("no valid boxes", procName, 1);
+
+    n = boxaGetCount(boxa);
+    if (pptal) *pptal = ptaCreate(n);
+    if (pptat) *pptat = ptaCreate(n);
+    if (pptar) *pptar = ptaCreate(n);
+    if (pptab) *pptab = ptaCreate(n);
+    for (i = 0; i < n; i++) {
+        boxaGetBoxGeometry(boxa, i, &left, &top, &w, &h);
+        if (!keepinvalid && (w <= 0 || h <= 0))
+            continue;
+        right = left + w - 1;
+        bot = top + h - 1;
+        if (pptal) ptaAddPt(*pptal, i, left);
+        if (pptat) ptaAddPt(*pptat, i, top);
+        if (pptar) ptaAddPt(*pptar, i, right);
+        if (pptab) ptaAddPt(*pptab, i, bot);
+    }
+
+    return 0;
+}
+
+
+/*---------------------------------------------------------------------*
  *                            Boxa statistics                          *
  *---------------------------------------------------------------------*/
 /*!
@@ -955,8 +1090,14 @@ NUMA    *na;
  *
  *  Notes:
  *      (1) This function does not assume that all boxes in the boxa are valid
- *      (2) The four box parameters are sorted independently.  To assure
- *          that the resulting box size is sorted in increasing order:
+ *      (2) The four box parameters are sorted independently.
+ *          For rank order, the width and height are sorted in increasing
+ *          order.  But what does it mean to sort x and y in "rank order"?
+ *          If the boxes are of comparable size and somewhat
+ *          aligned (e.g., from multiple images), it makes some sense
+ *          to give a "rank order" for x and y by sorting them in
+ *          decreasing order.  But in general, the interpretation of a rank
+ *          order on x and y is highly application dependent.  In summary:
  *             - x and y are sorted in decreasing order
  *             - w and h are sorted in increasing order
  */
@@ -964,7 +1105,6 @@ BOX *
 boxaGetRankSize(BOXA      *boxa,
                 l_float32  fract)
 {
-l_int32    i, n, x, y, w, h;
 l_float32  xval, yval, wval, hval;
 NUMA      *nax, *nay, *naw, *nah;
 BOX       *box;
@@ -975,25 +1115,15 @@ BOX       *box;
         return (BOX *)ERROR_PTR("boxa not defined", procName, NULL);
     if (fract < 0.0 || fract > 1.0)
         return (BOX *)ERROR_PTR("fract not in [0.0 ... 1.0]", procName, NULL);
-    if ((n = boxaGetCount(boxa)) == 0)
-        return (BOX *)ERROR_PTR("boxa is empty", procName, NULL);
+    if (boxaGetValidCount(boxa) == 0)
+        return (BOX *)ERROR_PTR("no valid boxes in boxa", procName, NULL);
 
-    nax = numaCreate(n);
-    nay = numaCreate(n);
-    naw = numaCreate(n);
-    nah = numaCreate(n);
-    for (i = 0; i < n; i++) {
-        boxaGetBoxGeometry(boxa, i, &x, &y, &w, &h);
-        if (w == 0 || h == 0) continue;
-        numaAddNumber(nax, x);
-        numaAddNumber(nay, y);
-        numaAddNumber(naw, w);
-        numaAddNumber(nah, h);
-    }
-    numaGetRankValue(nax, 1.0 - fract, &xval);
-    numaGetRankValue(nay, 1.0 - fract, &yval);
-    numaGetRankValue(naw, fract, &wval);
-    numaGetRankValue(nah, fract, &hval);
+    boxaExtractAsNuma(boxa, &nax, &nay, &naw, &nah, 0);  /* valid boxes only */
+
+    numaGetRankValue(nax, 1.0 - fract, NULL, 1, &xval);
+    numaGetRankValue(nay, 1.0 - fract, NULL, 1, &yval);
+    numaGetRankValue(naw, fract, NULL, 1, &wval);
+    numaGetRankValue(nah, fract, NULL, 1, &hval);
     box = boxCreate((l_int32)xval, (l_int32)yval, (l_int32)wval, (l_int32)hval);
 
     numaDestroy(&nax);
@@ -1051,7 +1181,7 @@ boxaaGetExtent(BOXAA    *boxaa,
                l_int32  *ph,
                BOX     **pbox)
 {
-l_int32  i, j, n, m, x, y, w, h, xmax, ymax, xmin, ymin;
+l_int32  i, j, n, m, x, y, w, h, xmax, ymax, xmin, ymin, found;
 BOXA    *boxa;
 
     PROCNAME("boxaaGetExtent");
@@ -1070,17 +1200,23 @@ BOXA    *boxa;
 
     xmax = ymax = 0;
     xmin = ymin = 100000000;
+    found = FALSE;
     for (i = 0; i < n; i++) {
         boxa = boxaaGetBoxa(boxaa, i, L_CLONE);
         m = boxaGetCount(boxa);
         for (j = 0; j < m; j++) {
             boxaGetBoxGeometry(boxa, j, &x, &y, &w, &h);
+            if (w <= 0 || h <= 0)
+                continue;
+            found = TRUE;
             xmin = L_MIN(xmin, x);
             ymin = L_MIN(ymin, y);
             xmax = L_MAX(xmax, x + w);
             ymax = L_MAX(ymax, y + h);
         }
     }
+    if (!found)
+        return ERROR_INT("no valid boxes in boxaa", procName, 1);
     if (pw) *pw = xmax;
     if (ph) *ph = ymax;
     if (pbox)
@@ -1101,7 +1237,12 @@ BOXA    *boxa;
  *  Notes:
  *      (1) This 'flattens' the boxaa to a boxa, taking the boxes in
  *          order in the first boxa, then the second, etc.
- *      (2) If &naindex is defined, we generate a Numa that gives, for
+ *      (2) If a boxa is empty, we generate an invalid, placeholder box
+ *          of zero size.  This is useful when converting from a boxaa
+ *          where each boxa has either 0 or 1 boxes, and it is necessary
+ *          to maintain a 1:1 correspondence between the initial
+ *          boxa array and the resulting box array.
+ *      (3) If &naindex is defined, we generate a Numa that gives, for
  *          each box in the boxaa, the index of the boxa to which it belongs.
  */
 BOXA *
@@ -1131,11 +1272,19 @@ NUMA    *naindex;
     for (i = 0; i < n; i++) {
         boxat = boxaaGetBoxa(baa, i, L_CLONE);
         m = boxaGetCount(boxat);
-        for (j = 0; j < m; j++) {
-            box = boxaGetBox(boxat, j, copyflag);
+        if (m == 0) {  /* placeholder box */
+            box = boxCreate(0, 0, 0, 0);
             boxaAddBox(boxa, box, L_INSERT);
             if (pnaindex)
                 numaAddNumber(naindex, i);  /* save 'row' number */
+        }
+        else {
+            for (j = 0; j < m; j++) {
+                box = boxaGetBox(boxat, j, copyflag);
+                boxaAddBox(boxa, box, L_INSERT);
+                if (pnaindex)
+                    numaAddNumber(naindex, i);  /* save 'row' number */
+            }
         }
         boxaDestroy(&boxat);
     }
@@ -1145,8 +1294,109 @@ NUMA    *naindex;
 
 
 /*!
+ *  boxaaFlattenAligned()
+ *
+ *      Input:  boxaa
+ *              num (number extracted from each)
+ *              copyflag  (L_COPY or L_CLONE)
+ *      Return: boxa, or null on error
+ *
+ *  Notes:
+ *      (1) This 'flattens' the boxaa to a boxa, taking the first @num
+ *          boxes from each boxa.
+ *      (2) If less than @num boxes are in a boxa, we add invalid placeholder
+ *          boxes to preserve the alignment between the input boxaa
+ *          and the output boxa.
+ */
+BOXA *
+boxaaFlattenAligned(BOXAA   *baa,
+                    l_int32  num,
+                    l_int32  copyflag)
+{
+l_int32  i, j, m, n, mval, nshort;
+BOXA    *boxat, *boxad;
+BOX     *box;
+
+    PROCNAME("boxaaFlattenAligned");
+
+    if (!baa)
+        return (BOXA *)ERROR_PTR("baa not defined", procName, NULL);
+    if (copyflag != L_COPY && copyflag != L_CLONE)
+        return (BOXA *)ERROR_PTR("invalid copyflag", procName, NULL);
+
+    n = boxaaGetCount(baa);
+    boxad = boxaCreate(n);
+    for (i = 0; i < n; i++) {
+        boxat = boxaaGetBoxa(baa, i, L_CLONE);
+        m = boxaGetCount(boxat);
+        mval = L_MIN(m, num);
+        nshort = num - mval;
+        for (j = 0; j < mval; j++) {  /* take the first @num if possible */
+            box = boxaGetBox(boxat, j, copyflag);
+            boxaAddBox(boxad, box, L_INSERT);
+        }
+        for (j = 0; j < nshort; j++) {  /* add placeholders if necessary */
+            box = boxCreate(0, 0, 0, 0);
+            boxaAddBox(boxad, box, L_INSERT);
+        }
+        boxaDestroy(&boxat);
+    }
+
+    return boxad;
+}
+
+
+/*!
+ *  boxaEncapsulateAligned()
+ *
+ *      Input:  boxa
+ *              num (number put into each boxa in the baa)
+ *              copyflag  (L_COPY or L_CLONE)
+ *      Return: boxaa, or null on error
+ *
+ *  Notes:
+ *      (1) This puts @num boxes from the input @boxa into each of a
+ *          set of boxa within an output boxaa.
+ *      (2) This assumes that the boxes in @boxa are in sets of @num each.
+ */
+BOXAA *
+boxaEncapsulateAligned(BOXA    *boxa,
+                       l_int32  num,
+                       l_int32  copyflag)
+{
+l_int32  i, j, n, nbaa, index;
+BOX     *box;
+BOXA    *boxat;
+BOXAA   *baa;
+
+    PROCNAME("boxaEncapsulateAligned");
+
+    if (!boxa)
+        return (BOXAA *)ERROR_PTR("boxa not defined", procName, NULL);
+    if (copyflag != L_COPY && copyflag != L_CLONE)
+        return (BOXAA *)ERROR_PTR("invalid copyflag", procName, NULL);
+
+    n = boxaGetCount(boxa);
+    nbaa = (n + num - 1) / num;
+    if (n / num != nbaa)
+        L_ERROR("inconsistent alignment: n / num not an integer", procName);
+    baa = boxaaCreate(nbaa);
+    for (i = 0, index = 0; i < nbaa; i++) {
+        boxat = boxaCreate(num);
+        for (j = 0; j < num; j++, index++) {
+            box = boxaGetBox(boxa, index, copyflag);
+            boxaAddBox(boxat, box, L_INSERT);
+        }
+        boxaaAddBoxa(baa, boxat, L_INSERT);
+    }
+
+    return baa;
+}
+
+
+/*!
  *  boxaaAlignBox()
- * 
+ *
  *      Input:  boxaa
  *              box (to be aligned with the last of one of the boxa
  *                   in boxaa, if possible)
@@ -1207,5 +1457,3 @@ BOXA    *boxa;
         *pindex = n;
     return 0;
 }
-
-

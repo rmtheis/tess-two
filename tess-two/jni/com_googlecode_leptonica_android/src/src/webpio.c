@@ -1,18 +1,29 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
- -  Author: krish@google.com (krish Chaudhury)
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
+
 
 /*
  *  webpio.c
@@ -24,9 +35,6 @@
  *    Write WebP to file
  *          l_int32          pixWriteWebP()  [ special top level ]
  *          l_int32          pixWriteStreamWebP()
- *
- *    Write WebP to file with target psnr
- *          l_int32          pixWriteWebPwithTargetPSNR
  *
  */
 
@@ -96,6 +104,8 @@ PIX       *pix;
         pixDestroy(&pix);
         return (PIX *)ERROR_PTR("WebP decode failed", procName, NULL);
     }
+
+        /* Webp decoder emits opposite byte order for RGBA components */
     pixEndianByteSwap(pix);
 
     return pix;
@@ -214,18 +224,20 @@ PIX       *pix, *pixt, *pix32;
 
     if ((pixt = pixRemoveColormap(pixs, REMOVE_CMAP_TO_FULL_COLOR)) == NULL)
         return ERROR_INT("failure to remove color map", procName, 1);
-    pix = pixEndianByteSwapNew(pixt);
-    pixDestroy(&pixt);
-    pixGetDimensions(pix, &w, &h, &d);
+    pixGetDimensions(pixt, &w, &h, &d);
 
         /* Convert to rgb if not 32 bpp */
     if (d != 32) {
-        if ((pix32 = pixConvertTo32(pix)) != NULL) {
-            pixDestroy(&pix);
-            pix = pix32;
-            d = pixGetDepth(pix);
+        if ((pix32 = pixConvertTo32(pixt)) != NULL) {
+            pixDestroy(&pixt);
+            pixt = pix32;
+            d = pixGetDepth(pixt);
         }
     }
+
+        /* Webp encoder assumes opposite byte order for RGBA components */
+    pix = pixEndianByteSwapNew(pixt);
+    pixDestroy(&pixt);
 
     wpl = pixGetWpl(pix);
     data = pixGetData(pix);
@@ -246,141 +258,6 @@ PIX       *pix, *pixt, *pix32;
     rewind(fp);
 
     ret = (fwrite(filedata, 1, nbytes, fp) != nbytes);
-    free(filedata);
-    pixDestroy(&pix);
-    if (ret)
-        return ERROR_INT("Write error", procName, 1);
-
-    return 0;
-}
-
-
-/*!
- *  pixWriteWebPwithTargetPSNR()
- *
- *      Input:  filename
- *              pix  (all depths)
- *              target_psnr (target psnr to control the quality [1 ... 100])
- *              pquality (<optional return> final quality value used to obtain
- *                   the target_psnr; can be null)
- *      Return: 0 if OK, 1 on error
- *
- *  Notes:
- *      (1) The parameter to control quality while encoding WebP is quality.
- *          This function does a line search over the quality values between
- *          MIN_QUALITY and MAX_QUALITY to achieve the target PSNR as close as
- *          possible.
- */
-l_int32
-pixWriteWebPwithTargetPSNR(const char  *filename,
-                           PIX         *pixs,
-                           l_float64    target_psnr,
-                           l_int32     *pquality)
-{
-l_uint8   *filedata = NULL;
-l_uint8   *tmp_filedata = NULL;
-l_int32    MIN_QUALITY = 1;    /* min allowed value of quality */
-l_int32    MAX_QUALITY = 100;  /* max allowed value of quality */
-l_int32    w, h, d, wpl, stride, ret;
-l_int32    quality, delta_quality, quality_test, accept;
-l_uint32  *data;
-l_float64  psnr, psnr_test;
-size_t     nbytes, tmp_nbytes = 0;
-FILE      *fp;
-PIX       *pix, *pix32;
-
-    PROCNAME("pixWriteWebPwithTargetPSNR");
-
-    if (!filename)
-        return ERROR_INT("filename not defined", procName, 1);
-    if (!pixs)
-        return ERROR_INT("pixs not defined", procName, 1);
-    if (target_psnr <= 0 || target_psnr >= 100)
-        return ERROR_INT("Target psnr out of range", procName, 1);
-
-    if ((pix = pixRemoveColormap(pixs, REMOVE_CMAP_TO_FULL_COLOR)) == NULL)
-        return ERROR_INT("cannot remove color map", procName, 1);
-    pixGetDimensions(pix, &w, &h, &d);
-
-        /* Convert to rgb if not 32 bpp */
-    if (d != 32) {
-        if ((pix32 = pixConvertTo32(pix)) != NULL) {
-            pixDestroy(&pix);
-            pix = pix32;
-            d = pixGetDepth(pix);
-        }
-    }
-
-    wpl = pixGetWpl(pix);
-    data = pixGetData(pix);
-    if (d != 32 || w <= 0 || h <= 0 || wpl <= 0 || !data) {
-        pixDestroy(&pix);
-        return ERROR_INT("bad or empty input pix", procName, 1);
-    }
-
-        /* Set the initial value of the Quality parameter.  In each iteration
-         * it will then increase or decrease the Quality value, based on
-         * whether the achieved psnr is higher or lower than the target_psnr */
-    quality = 75;
-    stride = wpl * 4;
-
-    nbytes = WebPEncodeRGBA((uint8_t *)data, w, h, stride, quality, &filedata);
-
-    if (nbytes == 0) {
-        if (filedata) free(filedata);
-        pixDestroy(&pix);
-        return ERROR_INT("WebPEncode failed", procName, 1);
-    }
-
-        /* Rationale about the delta_quality being limited: we expect optimal
-         * quality to be not too far from target quality in practice.
-         * So instead of a full dichotomy for the whole range we cap
-         * |delta_quality| to only explore quickly around the starting value
-         * and maximize the return in investment. */
-    delta_quality = (psnr > target_psnr) ?
-        L_MAX((MAX_QUALITY - quality) / 4, 1) :
-        L_MIN((MIN_QUALITY - quality) / 4, -1);
-
-    while (delta_quality != 0) {
-            /* Advance quality and clip to valid range */
-        quality_test = L_MIN(L_MAX(quality + delta_quality, MIN_QUALITY),
-                             MAX_QUALITY);
-            /* Re-adjust delta value after Quality-clipping. */
-        delta_quality = quality_test - quality;
-
-        tmp_nbytes = WebPEncodeRGBA((uint8_t *)data, w, h, stride, quality_test,
-                                    &tmp_filedata);
-        if (tmp_nbytes == 0) {
-            free(filedata);
-            if (tmp_filedata) free(tmp_filedata);
-            pixDestroy(&pix);
-            return ERROR_INT("WebPEncode failed", procName, 1);
-        }
-
-            /* Accept or reject new settings */
-        accept = (psnr_test > target_psnr) ^ (delta_quality < 0);
-        if (accept) {
-            free(filedata);
-            filedata = tmp_filedata;
-            nbytes = tmp_nbytes;
-            quality = quality_test;
-            psnr = psnr_test;
-        }
-        else {
-            delta_quality /= 2;
-            free(tmp_filedata);
-        }
-    }
-    if (pquality) *pquality = quality;
-
-    if ((fp = fopenWriteStream(filename, "wb+")) == NULL) {
-        free(filedata);
-        pixDestroy(&pix);
-        return ERROR_INT("stream not opened", procName, 1);
-    }
-
-    ret = (fwrite(filedata, 1, nbytes, fp) != nbytes);
-    fclose(fp);
     free(filedata);
     pixDestroy(&pix);
     if (ret)
