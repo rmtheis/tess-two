@@ -66,6 +66,25 @@ jint Java_com_googlecode_leptonica_android_Binarize_nativeOtsuAdaptiveThreshold(
   return (jint) pixd;
 }
 
+jint Java_com_googlecode_leptonica_android_Binarize_nativeSauvolaBinarizeTiled(JNIEnv *env,
+                                                                                jclass clazz,
+                                                                                jint nativePix,
+                                                                                jint whsize,
+                                                                                jfloat factor,
+                                                                                jint nx,
+                                                                                jint ny) {
+
+  PIX *pixs = (PIX *) nativePix;
+  PIX *pixd;
+
+  if (pixSauvolaBinarizeTiled(pixs, (l_int32) whsize, (l_float32) factor, (l_int32) nx,
+                               (l_int32) ny, NULL, &pixd)) {
+    return (jint) 0;
+  }
+
+  return (jint) pixd;
+}
+
 /***********
  * Convert *
  ***********/
