@@ -58,6 +58,16 @@
 #include "otsuthr.h"
 #include "osdetect.h"
 #include "params.h"
+#include "strngs.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#include <stdlib.h>
+#else
+#include <dirent.h>
+#include <libgen.h>
+#include <string.h>
+#endif
 
 #if defined(_WIN32) && !defined(VERSION)
 #include "version.h"
@@ -276,6 +286,53 @@ void TessBaseAPI::GetLoadedLanguagesAsVector(
     int num_subs = tesseract_->num_sub_langs();
     for (int i = 0; i < num_subs; ++i)
       langs->push_back(tesseract_->get_sub_lang(i)->lang);
+  }
+}
+
+/**
+ * Returns the available languages in the vector of STRINGs.
+ */
+void TessBaseAPI::GetAvailableLanguagesAsVector(
+    GenericVector<STRING>* langs) const {
+  langs->clear();
+  if (tesseract_ != NULL) {
+#ifdef _WIN32
+    STRING pattern = tesseract_->datadir + "/*." + kTrainedDataSuffix;
+    char fname[_MAX_FNAME];
+    WIN32_FIND_DATA data;
+    BOOL result = TRUE;
+    HANDLE handle = FindFirstFile(pattern.string(), &data);
+    if (handle != INVALID_HANDLE_VALUE) {
+      for (; result; result = FindNextFile(handle, &data)) {
+        _splitpath(data.cFileName, NULL, NULL, fname, NULL);
+        langs->push_back(STRING(fname));
+      }
+      FindClose(handle);
+    }
+#else
+    DIR *dir;
+    struct dirent *dirent;
+    char *dot;
+
+    STRING extension = STRING(".") + kTrainedDataSuffix;
+
+    dir = opendir(tesseract_->datadir.string());
+    if (dir != NULL) {
+      while ((dirent = readdir(dir))) {
+        // Skip '.', '..', and hidden files
+        if(dirent->d_name[0] != '.') {
+          if(strstr(dirent->d_name, extension.string()) != NULL) {
+            dot = strrchr(dirent->d_name, '.');
+            // This ensures that .traineddata is at the end of the file name
+            if (strncmp(dot, extension.string(), strlen(extension.string())) == 0) {
+              *dot = '\0';
+              langs->push_back(STRING(dirent->d_name));
+            }
+          }
+        }
+      }
+    }
+#endif
   }
 }
 
@@ -636,8 +693,7 @@ PageIterator* TessBaseAPI::AnalyseLayout() {
     page_res_ = new PAGE_RES(block_list_, NULL);
     DetectParagraphs(false);
     return new PageIterator(
-        page_res_, tesseract_,
-        thresholder_->GetScaleFactor(),
+        page_res_, tesseract_, thresholder_->GetScaleFactor(),
         thresholder_->GetScaledYResolution(),
         rect_left_, rect_top_, rect_width_, rect_height_);
   }
@@ -655,6 +711,10 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
     return -1;
   if (page_res_ != NULL)
     delete page_res_;
+  if (block_list_->empty()) {
+    page_res_ = new PAGE_RES(block_list_, &tesseract_->prev_word_best_choice_);
+    return 0; // Empty page.
+  }
 
   tesseract_->SetBlackAndWhitelist();
   recognition_done_ = true;
@@ -768,12 +828,17 @@ bool TessBaseAPI::ProcessPages(const char* filename,
 
   if (tesseract_->tessedit_create_hocr) {
     *text_out =
-        "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\""
-        " \"http://www.w3.org/TR/html4/loose.dtd\">\n"
-        "<html>\n<head>\n<title></title>\n"
-        "<meta http-equiv=\"Content-Type\" content=\"text/html;"
-        "charset=utf-8\" />\n<meta name='ocr-system' content='tesseract'/>\n"
-        "</head>\n<body>\n";
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n"
+        "    \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
+        "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" "
+        "lang=\"en\">\n <head>\n  <title></title>\n"
+        "  <meta http-equiv=\"Content-Type\" content=\"text/html; "
+		"charset=utf-8\" />\n"
+        "  <meta name='ocr-system' content='tesseract " VERSION "' />\n"
+        "  <meta name='ocr-capabilities' content='ocr_page ocr_carea ocr_par"
+        " ocr_line ocrx_word'/>\n"
+        " </head>\n <body>\n";
   } else {
     *text_out = "";
   }
@@ -833,7 +898,7 @@ bool TessBaseAPI::ProcessPages(const char* filename,
     }
   }
   if (tesseract_->tessedit_create_hocr)
-    *text_out += "</body>\n</html>\n";
+    *text_out += " </body>\n</html>\n";
   return success;
 }
 
@@ -1011,17 +1076,18 @@ char* TessBaseAPI::GetHOCRText(int page_number) {
   if (input_file_ == NULL)
       SetInputName(NULL);
 
-  hocr_str.add_str_int("<div class='ocr_page' id='page_", page_id);
+  hocr_str.add_str_int("  <div class='ocr_page' id='page_", page_id);
   hocr_str += "' title='image \"";
   hocr_str += input_file_ ? *input_file_ : "unknown";
   hocr_str.add_str_int("\"; bbox ", rect_left_);
   hocr_str.add_str_int(" ", rect_top_);
   hocr_str.add_str_int(" ", rect_width_);
   hocr_str.add_str_int(" ", rect_height_);
+  hocr_str.add_str_int("; ppageno ", page_number);
   hocr_str += "'>\n";
 
   ResultIterator *res_it = GetIterator();
-  for (; !res_it->Empty(RIL_BLOCK); wcnt++) {
+  while (!res_it->Empty(RIL_BLOCK)) {
     if (res_it->Empty(RIL_WORD)) {
       res_it->Next(RIL_WORD);
       continue;
@@ -1029,26 +1095,33 @@ char* TessBaseAPI::GetHOCRText(int page_number) {
 
     // Open any new block/paragraph/textline.
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
-      hocr_str.add_str_int("<div class='ocr_carea' id='block_", bcnt);
+      hocr_str.add_str_int("   <div class='ocr_carea' id='block_", bcnt);
       hocr_str.add_str_int("_", bcnt);
       AddBoxTohOCR(res_it, RIL_BLOCK, &hocr_str);
     }
     if (res_it->IsAtBeginningOf(RIL_PARA)) {
       if (res_it->ParagraphIsLtr()) {
-        hocr_str.add_str_int("\n<p class='ocr_par' dir='ltr' id='par_", pcnt);
+        hocr_str.add_str_int("\n    <p class='ocr_par' dir='ltr' id='par_", pcnt);
       } else {
-        hocr_str.add_str_int("\n<p class='ocr_par' dir='rtl' id='par_", pcnt);
+        hocr_str.add_str_int("\n    <p class='ocr_par' dir='rtl' id='par_", pcnt);
       }
       AddBoxTohOCR(res_it, RIL_PARA, &hocr_str);
     }
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
-      hocr_str.add_str_int("<span class='ocr_line' id='line_", lcnt);
+      hocr_str.add_str_int("\n     <span class='ocr_line' id='line_", lcnt);
       AddBoxTohOCR(res_it, RIL_TEXTLINE, &hocr_str);
     }
 
     // Now, process the word...
-    hocr_str.add_str_int("<span class='ocr_word' id='word_", wcnt);
-    AddBoxTohOCR(res_it, RIL_WORD, &hocr_str);
+    hocr_str.add_str_int("<span class='ocrx_word' id='word_", wcnt);
+	int left, top, right, bottom;
+    res_it->BoundingBox(RIL_WORD, &left, &top, &right, &bottom);
+    hocr_str.add_str_int("' title=\"bbox ", left);
+    hocr_str.add_str_int(" ", top);
+    hocr_str.add_str_int(" ", right);
+    hocr_str.add_str_int(" ", bottom);
+    hocr_str.add_str_int("; x_wconf ", res_it->Confidence(RIL_WORD));
+    hocr_str += "\">";
     const char *font_name;
     bool bold, italic, underlined, monospace, serif, smallcaps;
     int pointsize, font_id;
@@ -1085,19 +1158,19 @@ char* TessBaseAPI::GetHOCRText(int page_number) {
     wcnt++;
     // Close any ending block/paragraph/textline.
     if (last_word_in_line) {
-      hocr_str += "</span>\n";
+      hocr_str += "\n     </span>";
       lcnt++;
     }
     if (last_word_in_para) {
-      hocr_str += "</p>\n";
+      hocr_str += "\n    </p>\n";
       pcnt++;
     }
     if (last_word_in_block) {
-      hocr_str += "</div>\n";
+      hocr_str += "   </div>\n";
       bcnt++;
     }
   }
-  hocr_str += "</div>\n";
+  hocr_str += "  </div>\n";
 
   char *ret = new char[hocr_str.length() + 1];
   strcpy(ret, hocr_str.string());
@@ -1144,6 +1217,7 @@ char* TessBaseAPI::GetBoxText(int page_number) {
   int total_length = blob_count * kBytesPerBoxFileLine + utf8_length +
       kMaxBytesPerLine;
   char* result = new char[total_length];
+  strcpy(result, "\0");
   int output_length = 0;
   LTRResultIterator* it = GetLTRIterator();
   do {
@@ -2192,5 +2266,6 @@ Pixa* TessBaseAPI::GetCharacters() {
 
   return pixa;
 }
+
 
 }  // namespace tesseract.

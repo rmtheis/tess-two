@@ -36,11 +36,6 @@
 
 #include <stdio.h>
 
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
-#endif
-
 class ScrollView;
 class SVNetwork;
 class SVMutex;
@@ -159,6 +154,8 @@ class ScrollView {
     GREEN_YELLOW  // Make sure this one is last.
 };
 
+  ~ScrollView();
+
 #ifndef GRAPHICS_DISABLED
 
 // Create a window. The pixel size of the window may be 0,0, in which case
@@ -173,8 +170,6 @@ class ScrollView {
   ScrollView(const char* name, int x_pos, int y_pos, int x_size, int y_size,
              int x_canvas_size, int y_canvas_size, bool y_axis_reversed,
              const char* server_name);
-  ~ScrollView();
-
 /*******************************************************************************
 * Event handling
 * To register as listener, the class has to derive from the SVEventHandler

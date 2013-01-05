@@ -16,6 +16,11 @@
 //            training data of whole, partial or multiple characters.
 //  Author:   Ray Smith
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif
+
 #ifndef USE_STD_NAMESPACE
 #include "base/commandlineflags.h"
 #endif
@@ -46,6 +51,9 @@ int main(int argc, char **argv) {
   STRING file_prefix;
   tesseract::MasterTrainer* trainer = tesseract::LoadTrainingData(
       argc, argv, false, NULL, &file_prefix);
+
+  if (!trainer)
+    return 1;
 
   if (FLAGS_display_cloud_font >= 0) {
 	#ifndef GRAPHICS_DISABLED 

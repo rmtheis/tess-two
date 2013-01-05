@@ -23,6 +23,11 @@
 #include "linlsq.h"
 #include "werd.h"
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif
+
 #define FIRST_COLOUR    ScrollView::RED         //< first rainbow colour
 #define LAST_COLOUR     ScrollView::AQUAMARINE  //< last rainbow colour
 #define CHILD_COLOUR    ScrollView::BROWN       //< colour of children
@@ -286,7 +291,6 @@ void WERD::plot(ScrollView *window, ScrollView::Color colour) {
   }
   plot_rej_blobs(window);
 }
-#endif  // GRAPHICS_DISABLED
 
 // Get the next color in the (looping) rainbow.
 ScrollView::Color WERD::NextColor(ScrollView::Color colour) {
@@ -296,7 +300,6 @@ ScrollView::Color WERD::NextColor(ScrollView::Color colour) {
   return next;
 }
 
-#ifndef GRAPHICS_DISABLED
 /**
  * WERD::plot
  *

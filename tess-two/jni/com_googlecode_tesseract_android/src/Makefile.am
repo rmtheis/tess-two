@@ -1,10 +1,6 @@
 ## run autogen.sh to create Makefile.in from this file
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = ccutil viewer cutil image ccstruct dict classify wordrec neural_networks/runtime textord cube ccmain api . tessdata testing doc training
-
-if !GRAPHICS_DISABLED
-SUBDIRS += java
-endif
+SUBDIRS = ccutil viewer cutil image ccstruct dict classify wordrec neural_networks/runtime textord cube ccmain api . training java doc tessdata testing   
 
 #if USING_GETTEXT
 #SUBDIRS += po
@@ -12,7 +8,8 @@ endif
 #endif
 
 EXTRA_DIST = eurotext.tif phototest.tif ReleaseNotes \
-	aclocal.m4 config configure.ac autogen.sh tesseract.spec contrib
+	aclocal.m4 config configure.ac autogen.sh tesseract.spec contrib \
+	tesseract.pc.in
 
 #EXTRA_DIST = doc/html doc/@PACKAGE_NAME@_@PACKAGE_VERSION@.pdf doc/@PACKAGE_NAME@_@PACKAGE_VERSION@.ps.gz
 
@@ -25,7 +22,6 @@ dist-hook:
 # theory suffice.
 	rm -rf `find $(distdir) -name .svn`
 	rm -rf `find $(distdir) -name .deps`
-	rm -rf `find $(distdir) -name Makefile.in`
 
 # 'make install' will install only libraries and programs (no language 
 #       data files)
@@ -63,3 +59,6 @@ doc-pack: doc
 
 doc-clean:
 	rm -rf $(top_srcdir)/doc/html/*
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = tesseract.pc

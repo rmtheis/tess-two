@@ -31,11 +31,6 @@
 #include "textord.h"
 #include "wordrec.h"
 
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
-#endif
-
 class PAGE_RES;
 class PAGE_RES_IT;
 class BLOCK_LIST;
@@ -244,7 +239,7 @@ class Tesseract : public Wordrec {
   int SegmentPage(const STRING* input_file, BLOCK_LIST* blocks,
                   Tesseract* osd_tess, OSResults* osr);
   void SetupWordScripts(BLOCK_LIST* blocks);
-  int AutoPageSeg(bool single_column, bool osd, bool only_osd,
+  int AutoPageSeg(PageSegMode pageseg_mode,
                   BLOCK_LIST* blocks, TO_BLOCK_LIST* to_blocks,
                   Tesseract* osd_tess, OSResults* osr);
   ColumnFinder* SetupPageSegAndDetectOrientation(
@@ -431,9 +426,9 @@ class Tesseract : public Wordrec {
   BOOL8 word_bln_display(BLOCK* block, ROW* row, WERD_RES* word_res);
   BOOL8 word_blank_and_set_display(BLOCK* block, ROW* row, WERD_RES* word_res);
   BOOL8 word_set_display(BLOCK* block, ROW* row, WERD_RES* word_res);
-  //#ifndef GRAPHICS_DISABLED
+  // #ifndef GRAPHICS_DISABLED
   BOOL8 word_dumper(BLOCK* block, ROW* row, WERD_RES* word_res);
-  //#endif  // GRAPHICS_DISABLED
+  // #endif  // GRAPHICS_DISABLED
   //// reject.h //////////////////////////////////////////////////////////
   void make_reject_map(            //make rej map for wd //detailed results
                        WERD_RES *word,

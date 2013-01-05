@@ -32,9 +32,6 @@ import java.io.File;
  * JNI methods, but does implement enough to be useful. Comments are adapted
  * from original Tesseract source.
  * 
- * Modified from the original version. Added getRegions(), getTextlines(),
- * getWords(), and getCharacters(), and modified finalize().
- *
  * @author alanv@google.com (Alan Viverette)
  */
 public class TessBaseAPI {

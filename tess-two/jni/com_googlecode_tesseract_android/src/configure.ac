@@ -7,7 +7,7 @@
 # ----------------------------------------
 
 AC_PREREQ(2.50)
-AC_INIT([tesseract], [3.02], [http://code.google.com/p/tesseract-ocr/issues/list])
+AC_INIT([tesseract], [3.02.02], [http://code.google.com/p/tesseract-ocr/issues/list])
 AC_CONFIG_MACRO_DIR([m4])
 AC_REVISION($Id: configure.ac,v 1.4 2007/02/02 22:38:17 theraysmith Exp $)
 AC_CONFIG_AUX_DIR(config)
@@ -18,7 +18,7 @@ AC_PREFIX_DEFAULT(/usr/local)
 # documentation.
 # TODO(luc) Generate good documentation using doxygen or equivalent
 PACKAGE_YEAR=2012
-PACKAGE_DATE="02/01"
+PACKAGE_DATE="10/23"
 
 AC_DEFINE_UNQUOTED(PACKAGE_NAME,["${PACKAGE_NAME}"],[Name of package])
 AC_DEFINE_UNQUOTED(PACKAGE_VERSION,["${PACKAGE_VERSION}"],[Version number])
@@ -35,7 +35,7 @@ GENERIC_LIBRARY_NAME=tesseract
 # Release versioning
 GENERIC_MAJOR_VERSION=3
 GENERIC_MINOR_VERSION=2
-GENERIC_MICRO_VERSION=0
+GENERIC_MICRO_VERSION=2
 
 # API version (often = GENERIC_MAJOR_VERSION.GENERIC_MINOR_VERSION)
 GENERIC_API_VERSION=$GENERIC_MAJOR_VERSION.$GENERIC_MINOR_VERSION
@@ -65,14 +65,11 @@ case $host_os in
     mingw32*)
         AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
         AM_CONDITIONAL(MINGW, true)
-        #AC_SUBST([AM_CPPFLAGS], ["-DWINDLLNAME=\"lib$GENERIC_LIBRARY_NAME\""])
-        #AC_SUBST([AM_CPPFLAGS], ["-D__BLOB_T_DEFINED -DWINDLLNAME=\"lib$GENERIC_LIBRARY_NAME\""])
         AC_SUBST([AM_CPPFLAGS], ["-D__BLOB_T_DEFINED"])
         AC_SUBST([AM_LDFLAGS], ['-Wl,-no-undefined -Wl,--as-needed'])
-        #AM_LDFLAGS='-Wl,-no-undefined -Wl,--as-needed'
         ;;
      *)
-		# default
+        # default
         ;;
 esac
 
@@ -143,11 +140,27 @@ AM_CONDITIONAL([USING_MULTIPLELIBS], [test "$enable_mlibs" = "yes"])
 # Check if tessdata-prefix is disabled
 AC_MSG_CHECKING(whether to use tessdata-prefix)
 AC_ARG_ENABLE(tessdata-prefix,
-	[AC_HELP_STRING([--disable-tessdata-prefix],
-			[dont set TESSDATA-PREFIX during compile])],
-	[tessdata_prefix="no"], [tessdata_prefix="yes"])
+    [AC_HELP_STRING([--disable-tessdata-prefix],
+            [dont set TESSDATA-PREFIX during compile])],
+    [tessdata_prefix="no"], [tessdata_prefix="yes"])
 AC_MSG_RESULT($tessdata_prefix)
 AM_CONDITIONAL([NO_TESSDATA_PREFIX], [test "$tessdata_prefix" = "no"])
+
+# Check whether enable debuging
+AC_MSG_CHECKING(whether to enable debugging)
+AC_ARG_ENABLE([debug],
+    [AC_HELP_STRING([--enable-debug],
+        [turn on debugging (default=no)])],
+    [debug=$enableval],
+    [debug="no"])
+AC_MSG_RESULT($debug)
+if test x"$debug" = x"yes"; then
+    AM_CXXFLAGS="$AM_CXXFLAGS -g -Wall -Wno-uninitialized -O0 -DDEBUG"
+    AM_CPPFLAGS="$AM_CPPFLAGS -g -Wall -Wno-uninitialized -O0 -DDEBUG"
+else
+    AM_CXXFLAGS="$AM_CXXFLAGS -O3 -DNDEBUG"
+    AM_CPPFLAGS="$AM_CPPFLAGS -O3 -DNDEBUG"
+fi
 
 #localedir='${prefix}/share/locale'
 
@@ -331,7 +344,8 @@ AC_LANG_CPLUSPLUS
 # which causes unnecessary warnings with Visual C++.
 # Comment it out for now.
 #AC_CHECK_LIB(m,sqrt)
-AC_CHECK_LIB(pthread,sem_init)
+AC_SEARCH_LIBS(sem_init,pthread rt)
+#AC_CHECK_LIB(pthread,sem_init)
 
 # ----------------------------------------
 # Checks for header files.
@@ -415,7 +429,7 @@ fi
 # AC_DEFINE_UNQUOTED(TESSERACT_VERSION,["${PACKAGE_VERSION}"],[version string])
 
 # Output files
-AC_CONFIG_FILES(Makefile)
+AC_CONFIG_FILES([Makefile tesseract.pc])
 #if test "$enable_gettext" = "yes"; then
 #AC_CONFIG_FILES(po/Makefile.in)
 #fi
@@ -437,14 +451,12 @@ AC_CONFIG_FILES(tessdata/Makefile)
 AC_CONFIG_FILES(tessdata/configs/Makefile)
 AC_CONFIG_FILES(tessdata/tessconfigs/Makefile)
 AC_CONFIG_FILES(testing/Makefile)
-if test "$enable_graphics" = "yes"; then
 AC_CONFIG_FILES(java/Makefile)
 AC_CONFIG_FILES(java/com/Makefile)
 AC_CONFIG_FILES(java/com/google/Makefile)
 AC_CONFIG_FILES(java/com/google/scrollview/Makefile)
 AC_CONFIG_FILES(java/com/google/scrollview/events/Makefile)
 AC_CONFIG_FILES(java/com/google/scrollview/ui/Makefile)
-fi
 AC_CONFIG_FILES(doc/Makefile)
 # AC_CONFIG_FILES(doc/Doxyfile)
 # AC_CONFIG_FILES(doc/header.html)

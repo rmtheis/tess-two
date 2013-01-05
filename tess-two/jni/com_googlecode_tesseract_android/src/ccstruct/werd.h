@@ -27,11 +27,6 @@
 #include          "blckerr.h"
 #include          "stepblob.h"
 
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
-#endif
-
 enum WERD_FLAGS
 {
   W_SEGMENTED,                   //< correctly segmented
@@ -149,12 +144,10 @@ class WERD : public ELIST2_LINK {
     #ifndef GRAPHICS_DISABLED
     // plot word on window in a uniform colour
     void plot(ScrollView *window, ScrollView::Color colour);
-    #endif  // GRAPHICS_DISABLED
 
     // Get the next color in the (looping) rainbow.
     static ScrollView::Color NextColor(ScrollView::Color colour);
 
-    #ifndef GRAPHICS_DISABLED
     // plot word on window in a rainbow of colours
     void plot(ScrollView *window);
 
