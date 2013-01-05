@@ -16,8 +16,68 @@
 
 package com.googlecode.leptonica.android.test;
 
+import com.googlecode.leptonica.android.Pix;
+import com.googlecode.leptonica.android.ReadFile;
+import com.googlecode.leptonica.android.Rotate;
+import com.googlecode.leptonica.android.WriteFile;
+
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Paint.Style;
+import android.test.suitebuilder.annotation.SmallTest;
+
 import junit.framework.TestCase;
 
 public class RotateTest extends TestCase {
+    @SmallTest
+    public void testRotate() {
+        Bitmap bmp = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bmp);
+        Paint paint = new Paint();
 
+        // Paint the background white
+        canvas.drawColor(Color.WHITE);
+
+        // Paint a black circle in the center
+        paint.setColor(Color.BLACK);
+        paint.setStyle(Style.FILL);
+        canvas.drawCircle(50, 50, 10, paint);
+
+        Pix pixs = ReadFile.readBitmap(bmp);
+        Pix pixd = Rotate.rotate(pixs, 180);
+        pixs.recycle();
+
+        Bitmap rotated = WriteFile.writeBitmap(pixd);
+        pixd.recycle();
+
+        float match = TestUtils.compareBitmaps(bmp, rotated);
+        bmp.recycle();
+        rotated.recycle();
+
+        assertTrue("Bitmaps match", (match > 0.99f));
+    }
+
+    @SmallTest
+    public void testRotateResize() {
+        Bitmap bmp = Bitmap.createBitmap(100, 10, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bmp);
+        Paint paint = new Paint();
+
+        // Paint the background white
+        canvas.drawColor(Color.BLACK);
+
+        // Paint a black circle in the center
+        paint.setColor(Color.BLACK);
+        paint.setStyle(Style.FILL);
+        canvas.drawCircle(50, 50, 10, paint);
+
+        Pix pixs = ReadFile.readBitmap(bmp);
+        Pix pixd = Rotate.rotate(pixs, 180);
+        pixs.recycle();
+
+        assertTrue("Rotated width is 100", (pixd.getWidth() == 100));
+        pixd.recycle();
+    }
 }
