@@ -100,7 +100,7 @@ public class TessBaseAPITest extends TestCase {
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
         baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
-        baseApi.setPageSegMode(TessBaseAPI.PSM_SINGLE_LINE);
+        baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
         baseApi.setImage(bmp);
 
         // Ensure that the result is correct.

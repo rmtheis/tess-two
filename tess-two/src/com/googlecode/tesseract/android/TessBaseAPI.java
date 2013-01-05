@@ -47,35 +47,49 @@ public class TessBaseAPI {
         nativeClassInit();
     }
 
-    /** Orientation and script detection only. */
-    public static final int PSM_OSD_ONLY = 0;
-    
-    /** Automatic page segmentation with orientation and script detection. (OSD) */
-    public static final int PSM_AUTO_OSD = 1;
-    
-    /** Fully automatic page segmentation, but no OSD, or OCR. */
-    public static final int PSM_AUTO_ONLY = 2;
-    
-    /** Fully automatic page segmentation, but no OSD. */
-    public static final int PSM_AUTO = 3;
-    
-    /** Assume a single column of text of variable sizes. */
-    public static final int PSM_SINGLE_COLUMN = 4;
-    
-    /** Assume a single uniform block of vertically aligned text. */
-    public static final int PSM_SINGLE_BLOCK_VERT_TEXT = 5;
-    
-    /** Assume a single uniform block of text. (Default.) */
-    public static final int PSM_SINGLE_BLOCK = 6;
-    
-    /** Treat the image as a single text line. */
-    public static final int PSM_SINGLE_LINE = 7;
-    
-    /** Treat the image as a single word. */
-    public static final int PSM_SINGLE_WORD = 8;
-    
-    /** Treat the image as a single character. */
-    public static final int PSM_SINGLE_CHAR = 9;
+    public static final class PageSegMode {
+    	/** Orientation and script detection only. */
+    	public static final int PSM_OSD_ONLY = 0;
+
+    	/** Automatic page segmentation with orientation and script detection. (OSD) */
+    	public static final int PSM_AUTO_OSD = 1;
+
+    	/** Fully automatic page segmentation, but no OSD, or OCR. */
+    	public static final int PSM_AUTO_ONLY = 2;
+
+    	/** Fully automatic page segmentation, but no OSD. */
+    	public static final int PSM_AUTO = 3;
+
+    	/** Assume a single column of text of variable sizes. */
+    	public static final int PSM_SINGLE_COLUMN = 4;
+
+    	/** Assume a single uniform block of vertically aligned text. */
+    	public static final int PSM_SINGLE_BLOCK_VERT_TEXT = 5;
+
+    	/** Assume a single uniform block of text. (Default.) */
+    	public static final int PSM_SINGLE_BLOCK = 6;
+
+    	/** Treat the image as a single text line. */
+    	public static final int PSM_SINGLE_LINE = 7;
+
+    	/** Treat the image as a single word. */
+    	public static final int PSM_SINGLE_WORD = 8;
+
+    	/** Treat the image as a single word in a circle. */
+    	public static final int PSM_CIRCLE_WORD = 9;
+
+    	/** Treat the image as a single character. */
+    	public static final int PSM_SINGLE_CHAR = 10;
+
+    	/** Find as much text as possible in no particular order. */
+    	public static final int PSM_SPARSE_TEXT = 11;
+
+    	/** Sparse text with orientation and script detection. */
+    	public static final int PSM_SPARSE_TEXT_OSD = 12;
+
+    	/** Number of enum entries. */
+    	public static final int PSM_COUNT = 13;
+    }
     
     /** Whitelist of characters to recognize. */
     public static final String VAR_CHAR_WHITELIST = "tessedit_char_whitelist";
@@ -95,6 +109,7 @@ public class TessBaseAPI {
     /** Default OCR engine mode. */
     public static final int OEM_DEFAULT = 3;
 
+    
     /**
      * Elements of the page hierarchy, used in {@link ResultIterator} to provide
      * functions that operate on each level without having to have 5x as many

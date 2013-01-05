@@ -74,7 +74,7 @@ public class OcrQueue {
         boolean success = mOcrAPI.init(mTessdata, mLanguage);
 
         if (success) {
-            mOcrAPI.setPageSegMode(TessBaseAPI.PSM_SINGLE_LINE);
+            mOcrAPI.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
             mOcrAPI.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, DEFAULT_WHITELIST);
 
             mInitialized = true;
