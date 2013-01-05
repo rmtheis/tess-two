@@ -5,25 +5,13 @@ A fork of Tesseract Tools for Android ([tesseract-android-tools](http://code.goo
 additional functions. Tesseract Tools for Android is a set of Android APIs and
 build files for the [Tesseract OCR](https://code.google.com/p/tesseract-ocr/) and [Leptonica](http://www.leptonica.com/) image processing libraries.
 
-This project works with Tesseract v3.02. The required source code for Tesseract 3.02 and
-Leptonica 1.68 is included within the `tess-two/jni` folder.
+This project works with Tesseract v3.02.02. The required source code for Tesseract 3.02.02 and
+Leptonica 1.69 is included within the `tess-two/jni` folder.
 
 The `tess-two` subdirectory contains tools for compiling the Tesseract and Leptonica
 libraries for use on the Android platform. It contains an Eclipse Android
-[library project](http://developer.android.com/guide/developing/projects/projects-eclipse.html#SettingUpLibraryProject)
+[library project](http://developer.android.com/tools/projects/projects-eclipse.html#ReferencingLibraryProject)
 that provides a Java API for accessing natively-compiled Tesseract and Leptonica APIs.
-
-This project adds the following methods on top of tesseract-android-tools to enable retrieving 
-bounding boxes for words and characters recognized using OCR:
-
-* TessBaseAPI::GetRegions()
-* TessBaseAPI::GetTextlines()
-* TessBaseAPI::GetStrips()
-* TessBaseAPI::GetWords()
-* TessBaseAPI::GetCharacters()
-
-Note: GetTextlines(), GetStrips(), GetWords() and GetCharacters() work well, but I have not gotten good 
-results from Tesseract when calling GetRegions().
 
 ## Requires
 
@@ -44,7 +32,7 @@ convenience due to its dependency on Leptonica.
 Build
 =====
 
-This project is set up to build on Android SDK Tools r19 and Android NDK r7c. The build works on Linux, Mac OS X, and Windows 7. See [Issues](https://github.com/rmtheis/tess-two/issues) for reported build issues.
+This project is set up to build on Android SDK Tools r19+ and Android NDK r7c+. The build works on Linux, Mac OS X, and Windows 7. See [Issues](https://github.com/rmtheis/tess-two/issues) for reported build issues.
 
 On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility library.
 
