@@ -178,7 +178,7 @@ jint Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetSourc
 
   HydrogenTextDetector *ptr = (HydrogenTextDetector *) nativePtr;
   PIX *pix = ptr->GetSourceImage();
-  jint w = pixGetWidth(pix);
+  jint w = pixGetHeight(pix);
 
   pixDestroy(&pix);
 
