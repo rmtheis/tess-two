@@ -479,8 +479,12 @@ public class TessBaseAPI {
     /**
      * Returns the character bounding boxes as a Pixa, in reading order.
      * 
+     * @deprecated Replaced by {@link #getResultIterator()}. The bounding
+     * boxes returned by getCharacters() don't correspond to the text well.
+     * 
      * @return Pixa containing character bounding boxes
      */
+    @Deprecated
     public Pixa getCharacters() {
         return new Pixa(nativeGetCharacters(), 0, 0);
     }
