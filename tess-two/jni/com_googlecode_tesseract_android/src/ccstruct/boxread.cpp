@@ -17,10 +17,10 @@
  *
  **********************************************************************/
 
-#include "mfcpch.h"
 #include "boxread.h"
 #include <string.h>
 
+#include "fileerr.h"
 #include "rect.h"
 #include "strngs.h"
 #include "tprintf.h"

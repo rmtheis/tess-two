@@ -5,21 +5,24 @@ AM_CPPFLAGS += \
     -I$(top_srcdir)/classify  -I$(top_srcdir)/dict \
     -I$(top_srcdir)/wordrec -I$(top_srcdir)/cutil \
     -I$(top_srcdir)/neural_networks/runtime -I$(top_srcdir)/cube \
-    -I$(top_srcdir)/textord
-    
+    -I$(top_srcdir)/textord -I$(top_srcdir)/opencl
+if USE_OPENCL
+AM_CPPFLAGS += -I$(OPENCL_HDR_PATH)
+endif
 if VISIBILITY
 AM_CPPFLAGS += -DTESS_EXPORTS \
     -fvisibility=hidden -fvisibility-inlines-hidden
 endif
 
 include_HEADERS = \
-	thresholder.h ltrresultiterator.h pageiterator.h resultiterator.h
+	thresholder.h ltrresultiterator.h pageiterator.h resultiterator.h \
+	osdetect.h 
 noinst_HEADERS = \
     control.h cube_reco_context.h cubeclassifier.h docqual.h \
-    equationdetect.h fixspace.h imgscale.h mutableiterator.h osdetect.h \
+    equationdetect.h fixspace.h imgscale.h mutableiterator.h \
     output.h paragraphs.h paragraphs_internal.h paramsd.h pgedit.h \
     reject.h scaleimg.h tessbox.h tessedit.h tesseractclass.h \
-    tesseract_cube_combiner.h tessvars.h tfacep.h tfacepp.h werdit.h
+    tesseract_cube_combiner.h tessvars.h werdit.h
 
 if !USING_MULTIPLELIBS
 noinst_LTLIBRARIES = libtesseract_main.la
@@ -35,7 +38,8 @@ libtesseract_main_la_LIBADD = \
 	../dict/libtesseract_dict.la \
 	../classify/libtesseract_classify.la \
 	../cutil/libtesseract_cutil.la \
-	../cube/libtesseract_cube.la 
+	../cube/libtesseract_cube.la \
+	../opencl/libtesseract_opencl.la 
 
 endif
 
@@ -45,8 +49,8 @@ libtesseract_main_la_SOURCES = \
     docqual.cpp equationdetect.cpp fixspace.cpp fixxht.cpp \
     imgscale.cpp ltrresultiterator.cpp \
     osdetect.cpp output.cpp pageiterator.cpp pagesegmain.cpp \
-    pagewalk.cpp paragraphs.cpp paramsd.cpp pgedit.cpp recogtraining.cpp \
-    reject.cpp resultiterator.cpp scaleimg.cpp \
+    pagewalk.cpp par_control.cpp paragraphs.cpp paramsd.cpp pgedit.cpp recogtraining.cpp \
+    reject.cpp resultiterator.cpp scaleimg.cpp superscript.cpp \
     tesseract_cube_combiner.cpp \
     tessbox.cpp tessedit.cpp tesseractclass.cpp tessvars.cpp \
     tfacepp.cpp thresholder.cpp \

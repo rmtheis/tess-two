@@ -2,6 +2,8 @@
 #   define TESS_CAPI_INCLUDE_BASEAPI
 #endif
 #include "capi.h"
+#include "genericvector.h"
+#include "strngs.h"
 
 TESS_API const char* TESS_CALL TessVersion()
 {
@@ -202,7 +204,7 @@ TESS_API void TESS_CALL TessBaseAPISetImage(TessBaseAPI* handle, const unsigned 
     handle->SetImage(imagedata, width, height, bytes_per_pixel, bytes_per_line);
 }
 
-TESS_API void TESS_CALL TessBaseAPISetImage2(TessBaseAPI* handle, const Pix* pix)
+TESS_API void TESS_CALL TessBaseAPISetImage2(TessBaseAPI* handle, const struct Pix* pix)
 {
     return handle->SetImage(pix);
 }
@@ -222,37 +224,37 @@ TESS_API void TESS_CALL TessBaseAPISetThresholder(TessBaseAPI* handle, TessImage
     handle->SetThresholder(thresholder);
 }
 
-TESS_API Pix* TESS_CALL TessBaseAPIGetThresholdedImage(TessBaseAPI* handle)
+TESS_API struct Pix* TESS_CALL TessBaseAPIGetThresholdedImage(TessBaseAPI* handle)
 {
     return handle->GetThresholdedImage();
 }
 
-TESS_API Boxa* TESS_CALL TessBaseAPIGetRegions(TessBaseAPI* handle, Pixa** pixa)
+TESS_API struct Boxa* TESS_CALL TessBaseAPIGetRegions(TessBaseAPI* handle, struct Pixa** pixa)
 {
     return handle->GetRegions(pixa);
 }
 
-TESS_API Boxa* TESS_CALL TessBaseAPIGetTextlines(TessBaseAPI* handle, Pixa** pixa, int** blockids)
+TESS_API struct Boxa* TESS_CALL TessBaseAPIGetTextlines(TessBaseAPI* handle, struct Pixa** pixa, int** blockids)
 {
     return handle->GetTextlines(pixa, blockids);
 }
 
-TESS_API BOXA* TESS_CALL TessBaseAPIGetStrips(TessBaseAPI* handle, PIXA** pixa, int** blockids)
+TESS_API struct Boxa* TESS_CALL TessBaseAPIGetStrips(TessBaseAPI* handle, struct Pixa** pixa, int** blockids)
 {
     return handle->GetStrips(pixa, blockids);
 }
 
-TESS_API Boxa* TESS_CALL TessBaseAPIGetWords(TessBaseAPI* handle, Pixa** pixa)
+TESS_API struct Boxa* TESS_CALL TessBaseAPIGetWords(TessBaseAPI* handle, struct Pixa** pixa)
 {
     return handle->GetWords(pixa);
 }
 
-TESS_API Boxa* TESS_CALL TessBaseAPIGetConnectedComponents(TessBaseAPI* handle, Pixa** cc)
+TESS_API struct Boxa* TESS_CALL TessBaseAPIGetConnectedComponents(TessBaseAPI* handle, struct Pixa** cc)
 {
     return handle->GetConnectedComponents(cc);
 }
 
-TESS_API Boxa* TESS_CALL TessBaseAPIGetComponentImages(TessBaseAPI* handle, TessPageIteratorLevel level, BOOL text_only, Pixa** pixa, int** blockids)
+TESS_API struct Boxa* TESS_CALL TessBaseAPIGetComponentImages(TessBaseAPI* handle, TessPageIteratorLevel level, BOOL text_only, struct Pixa** pixa, int** blockids)
 {
     return handle->GetComponentImages(level, text_only != FALSE, pixa, blockids);
 }
@@ -292,12 +294,12 @@ TESS_API char* TESS_CALL TessBaseAPIProcessPages(TessBaseAPI* handle, const char
         return NULL;
 }
 
-TESS_API char* TESS_CALL TessBaseAPIProcessPage(TessBaseAPI* handle, Pix* pix, int page_index, const char* filename,
+TESS_API char* TESS_CALL TessBaseAPIProcessPage(TessBaseAPI* handle, struct Pix* pix, int page_index, const char* filename,
                                                 const char* retry_config, int timeout_millisec)
 {
     STRING text_out;
     if (handle->ProcessPage(pix, page_index, filename, retry_config, timeout_millisec, &text_out))
-        return text_out.strdup();    
+        return text_out.strdup();
     else
         return NULL;
 }
@@ -382,10 +384,10 @@ TESS_API BOOL TESS_CALL TessBaseAPIDetectOS(TessBaseAPI* handle, OSResults* resu
     return handle->DetectOS(results) ? TRUE : FALSE;
 }
 
-TESS_API void TESS_CALL TessBaseAPIGetFeaturesForBlob(TessBaseAPI* handle, TBLOB* blob, const DENORM* denorm, INT_FEATURE_ARRAY int_features,
+TESS_API void TESS_CALL TessBaseAPIGetFeaturesForBlob(TessBaseAPI* handle, TBLOB* blob, INT_FEATURE_STRUCT* int_features,
                                                             int* num_features, int* FeatureOutlineIndex)
 {
-    handle->GetFeaturesForBlob(blob, *denorm, int_features, num_features, FeatureOutlineIndex);
+    handle->GetFeaturesForBlob(blob, int_features, num_features, FeatureOutlineIndex);
 }
 
 TESS_API ROW* TESS_CALL TessFindRowForBox(BLOCK_LIST* blocks, int left, int top, int right, int bottom)
@@ -393,10 +395,10 @@ TESS_API ROW* TESS_CALL TessFindRowForBox(BLOCK_LIST* blocks, int left, int top,
     return TessBaseAPI::FindRowForBox(blocks, left, top, right, bottom);
 }
 
-TESS_API void TESS_CALL TessBaseAPIRunAdaptiveClassifier(TessBaseAPI* handle, TBLOB* blob, const DENORM* denorm, int num_max_matches,
+TESS_API void TESS_CALL TessBaseAPIRunAdaptiveClassifier(TessBaseAPI* handle, TBLOB* blob, int num_max_matches,
                                                                int* unichar_ids, float* ratings, int* num_matches_returned)
 {
-    handle->RunAdaptiveClassifier(blob, *denorm, num_max_matches, unichar_ids, ratings, num_matches_returned);
+    handle->RunAdaptiveClassifier(blob, num_max_matches, unichar_ids, ratings, num_matches_returned);
 }
 
 TESS_API const char* TESS_CALL TessBaseAPIGetUnichar(TessBaseAPI* handle, int unichar_id)
@@ -419,14 +421,14 @@ TESS_API ROW* TESS_CALL TessMakeTessOCRRow(float baseline, float xheight, float 
     return TessBaseAPI::MakeTessOCRRow(baseline, xheight, descender, ascender);
 }
 
-TESS_API TBLOB* TESS_CALL TessMakeTBLOB(Pix *pix)
+TESS_API TBLOB* TESS_CALL TessMakeTBLOB(struct Pix *pix)
 {
     return TessBaseAPI::MakeTBLOB(pix);
 }
 
-TESS_API void TESS_CALL TessNormalizeTBLOB(TBLOB *tblob, ROW *row, BOOL numeric_mode, DENORM *denorm)
+TESS_API void TESS_CALL TessNormalizeTBLOB(TBLOB *tblob, ROW *row, BOOL numeric_mode)
 {
-    TessBaseAPI::NormalizeTBLOB(tblob, row, numeric_mode != FALSE, denorm);
+    TessBaseAPI::NormalizeTBLOB(tblob, row, numeric_mode != FALSE);
 }
 
 TESS_API TessOcrEngineMode TESS_CALL TessBaseAPIOem(const TessBaseAPI* handle)
@@ -501,12 +503,12 @@ TESS_API TessPolyBlockType TESS_CALL TessPageIteratorBlockType(const TessPageIte
     return handle->BlockType();
 }
 
-TESS_API Pix* TESS_CALL TessPageIteratorGetBinaryImage(const TessPageIterator* handle, TessPageIteratorLevel level)
+TESS_API struct Pix* TESS_CALL TessPageIteratorGetBinaryImage(const TessPageIterator* handle, TessPageIteratorLevel level)
 {
     return handle->GetBinaryImage(level);
 }
 
-TESS_API Pix* TESS_CALL TessPageIteratorGetImage(const TessPageIterator* handle, TessPageIteratorLevel level, int padding,
+TESS_API struct Pix* TESS_CALL TessPageIteratorGetImage(const TessPageIterator* handle, TessPageIteratorLevel level, int padding,
                                                        int* left, int* top)
 {
     return handle->GetImage(level, padding, left, top);
@@ -532,7 +534,7 @@ TESS_API void TESS_CALL TessResultIteratorDelete(TessResultIterator* handle)
 
 TESS_API TessResultIterator* TESS_CALL TessResultIteratorCopy(const TessResultIterator* handle)
 {
-    return static_cast<TessResultIterator*>(new TessPageIterator(*handle));
+    return new TessResultIterator(*handle);
 }
 
 TESS_API TessPageIterator* TESS_CALL TessResultIteratorGetPageIterator(TessResultIterator* handle)
