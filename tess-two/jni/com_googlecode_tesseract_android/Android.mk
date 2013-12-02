@@ -50,6 +50,8 @@ LOCAL_CFLAGS := \
   -D'VERSION="Android"' \
   -include ctype.h \
   -include unistd.h \
+  -fpermissive \
+  -Wno-deprecated
 
 # jni
 
