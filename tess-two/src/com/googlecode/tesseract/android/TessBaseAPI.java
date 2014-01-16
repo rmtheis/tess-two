@@ -475,19 +475,6 @@ public class TessBaseAPI {
     public Pixa getWords() {
         return new Pixa(nativeGetWords(), 0, 0);
     }
-    
-    /**
-     * Returns the character bounding boxes as a Pixa, in reading order.
-     * 
-     * @deprecated Replaced by {@link #getResultIterator()}. The bounding
-     * boxes returned by getCharacters() don't correspond to the text well.
-     * 
-     * @return Pixa containing character bounding boxes
-     */
-    @Deprecated
-    public Pixa getCharacters() {
-        return new Pixa(nativeGetCharacters(), 0, 0);
-    }
 
     public ResultIterator getResultIterator() {
         int nativeResultIterator = nativeGetResultIterator();
@@ -554,8 +541,6 @@ public class TessBaseAPI {
     private native int nativeGetStrips();
 
     private native int nativeGetWords();
-    
-    private native int nativeGetCharacters();
 
     private native int nativeGetResultIterator();
 }

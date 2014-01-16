@@ -415,13 +415,6 @@ jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetWords(JNIEnv *en
   return reinterpret_cast<jint>(pixa);
 }
 
-jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetCharacters(JNIEnv *env,
-                                                                           jobject thiz) {
-
-  native_data_t *nat = get_native_data(env, thiz);
-  return reinterpret_cast<jint>(nat->api.GetCharacters());
-}
-
 jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetResultIterator(JNIEnv *env,
     jobject thiz) {
   native_data_t *nat = get_native_data(env, thiz);
