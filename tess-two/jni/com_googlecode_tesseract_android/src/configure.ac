@@ -18,8 +18,8 @@ AC_PREFIX_DEFAULT(/usr/local)
 # Define date of package, etc. Could be useful in auto-generated
 # documentation.
 # TODO(luc) Generate good documentation using doxygen or equivalent
-PACKAGE_YEAR=2013
-PACKAGE_DATE="08/13"
+PACKAGE_YEAR=2014
+PACKAGE_DATE="01/14"
 
 AC_DEFINE_UNQUOTED(PACKAGE_NAME,["${PACKAGE_NAME}"],[Name of package])
 AC_DEFINE_UNQUOTED(PACKAGE_VERSION,["${PACKAGE_VERSION}"],[Version number])
@@ -53,12 +53,20 @@ GENERIC_RELEASE=$GENERIC_MAJOR_VERSION.$GENERIC_MINOR_VERSION
 AC_SUBST(GENERIC_RELEASE)
 AC_SUBST(GENERIC_VERSION)
 
+# ----------------------------------------
+# Automake configuration
+# ----------------------------------------
+
+AM_INIT_AUTOMAKE
+AC_CONFIG_HEADERS(config_auto.h:config/config.h.in)
+AM_MAINTAINER_MODE
+
 # default conditional
 AM_CONDITIONAL(MINGW, false)
 AM_CONDITIONAL(GRAPHICS_DISABLED, false)
 
-OPENCL_HDR_PATH=""
-OPENCL_LIB=""
+OPENCL_INC="/opt/AMDAPP/include"
+OPENCL_LIBS="-lOpenCL"
 #############################
 #
 # Platform specific setup
@@ -73,6 +81,14 @@ case "${host_os}" in
         ;;
     solaris*)
         LIBS="-lsocket -lnsl -lrt -lxnet"
+        ;;
+    powerpc-*-darwin*)
+        OPENCL_LIBS=""
+        OPENCL_INC=""
+        ;;
+    *-*-darwin*)
+        OPENCL_LIBS="-framework OpenCL"
+        OPENCL_INC=""
         ;;
      *)
         # default
@@ -126,15 +142,15 @@ fi
 # check whether to build opencl version
 AC_MSG_CHECKING(--enable-opencl argument)
 AC_ARG_ENABLE([opencl],
-    [  --enable-opencl       enable opencl build (default=no)],
+    [  --enable-opencl         enable opencl build (default=no)],
     [enable_opencl=$enableval],
     [enable_opencl="no"])
 AC_MSG_RESULT($enable_opencl)
 AM_CONDITIONAL([USE_OPENCL], [test "$enable_opencl" = "yes"])
 if test "$enable_opencl" = "yes"; then
   AC_SUBST([AM_CPPFLAGS], [-DUSE_OPENCL])
-  AC_SUBST([OPENCL_HDR_PATH],["/opt/AMDAPP/include"])
-  AC_SUBST([OPENCL_LIB],["-lOpenCL"])
+  AC_SUBST([OPENCL_HDR_PATH],[$OPENCL_INC])
+  AC_SUBST([OPENCL_LIB],[$OPENCL_LIBS])
 fi
 
 # check whether to build tesseract with -fvisibility=hidden -fvisibility-inlines-hidden
@@ -216,14 +232,6 @@ esac
 AC_PROG_CXX(g++)
 
 AC_PROG_LIBTOOL
-
-# ----------------------------------------
-# Automake configuration
-# ----------------------------------------
-
-AM_INIT_AUTOMAKE
-AC_CONFIG_HEADERS(config_auto.h:config/config.h.in)
-AM_MAINTAINER_MODE
 
 # ----------------------------------------
 # Additional checking of compiler characteristics
@@ -348,6 +356,28 @@ if !($have_icu); then
 fi
 AM_CONDITIONAL(ENABLE_TRAINING, $have_icu)
 
+# Check location of pango headers
+have_pango=false
+AC_CHECK_HEADERS(pango-1.0/pango/pango-features.h, have_pango=true, have_pango=false)
+if !($have_pango); then
+        AC_MSG_WARN(Training tools WILL NOT be built because of missing pango library.)
+        AC_MSG_WARN(Try to install libpango1.0-dev package.)
+else
+      CPPFLAGS="$CPPFLAGS $(pkg-config --cflags pango)"
+fi
+AM_CONDITIONAL(ENABLE_TRAINING, $have_pango)
+
+# Check location of cairo headers
+have_cairo=false
+AC_CHECK_HEADERS(cairo/cairo-version.h, have_cairo=true, have_cairo=false)
+if !($have_cairo); then
+        AC_MSG_WARN(Training tools WILL NOT be built because of missing cairo library.)
+        AC_MSG_WARN(Try to install libcairo-dev?? package.)
+else
+      CPPFLAGS="$CPPFLAGS $(pkg-config --cflags cairo)"
+fi
+AM_CONDITIONAL(ENABLE_TRAINING, $have_cairo)
+
 # ----------------------------------------
 # Final Tasks and Output
 # ----------------------------------------
@@ -363,7 +393,6 @@ AC_CONFIG_FILES(classify/Makefile)
 AC_CONFIG_FILES(cube/Makefile)
 AC_CONFIG_FILES(cutil/Makefile)
 AC_CONFIG_FILES(dict/Makefile)
-AC_CONFIG_FILES(image/Makefile)
 AC_CONFIG_FILES(neural_networks/runtime/Makefile)
 AC_CONFIG_FILES(textord/Makefile)
 AC_CONFIG_FILES(viewer/Makefile)

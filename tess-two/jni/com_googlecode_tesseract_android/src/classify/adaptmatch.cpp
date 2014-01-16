@@ -19,6 +19,10 @@
 /*-----------------------------------------------------------------------------
           Include Files and Type Defines
 -----------------------------------------------------------------------------*/
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif
+
 #include <ctype.h>
 #include "ambigs.h"
 #include "blobclass.h"
@@ -56,11 +60,6 @@
 #include <math.h>
 #ifdef __UNIX__
 #include <assert.h>
-#endif
-
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
 #endif
 
 #define ADAPT_TEMPLATE_SUFFIX ".a"
@@ -1689,7 +1688,10 @@ UNICHAR_ID *Classify::GetAmbiguities(TBLOB *Blob,
   TrainingSample* sample =
       BlobToTrainingSample(*Blob, classify_nonlinear_norm, &fx_info,
                            &bl_features);
-  if (sample == NULL) return NULL;
+  if (sample == NULL) {
+    delete Results;
+    return NULL;
+  }
 
   CharNormClassifier(Blob, *sample, Results);
   delete sample;
@@ -2260,9 +2262,11 @@ void Classify::SetAdaptiveThreshold(FLOAT32 Threshold) {
  * @note Exceptions: none
  * @note History: Fri Mar 22 08:43:52 1991, DSJ, Created.
  */
+
 void Classify::ShowBestMatchFor(int shape_id,
                                 const INT_FEATURE_STRUCT* features,
                                 int num_features) {
+#ifndef GRAPHICS_DISABLED
   uinT32 config_mask;
   if (UnusedClassIdIn(PreTrainedTemplates, shape_id)) {
     tprintf("No built-in templates for class/shape %d\n", shape_id);
@@ -2291,6 +2295,7 @@ void Classify::ShowBestMatchFor(int shape_id,
             matcher_debug_flags,
             matcher_debug_separate_windows);
   UpdateMatchDisplay();
+#endif  // GRAPHICS_DISABLED
 }                              /* ShowBestMatchFor */
 
 // Returns a string for the classifier class_id: either the corresponding

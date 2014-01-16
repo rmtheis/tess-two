@@ -32,35 +32,43 @@ const int kMaxNumThreadPixes = 32768;
 Pix* global_crash_pixes[kMaxNumThreadPixes];
 
 void SavePixForCrash(int resolution, Pix* pix) {
-//#ifdef __linux__
-//  int thread_id = syscall(SYS_gettid) % kMaxNumThreadPixes;
-//  pixDestroy(&global_crash_pixes[thread_id]);
-//  if (pix != NULL) {
-//    Pix* clone = pixClone(pix);
-//    pixSetXRes(clone, resolution);
-//    pixSetYRes(clone, resolution);
-//    global_crash_pixes[thread_id] = clone;
-//  }
-//#endif
+#ifdef __linux__
+#ifndef ANDROID
+  int thread_id = syscall(SYS_gettid) % kMaxNumThreadPixes;
+#else
+  int thread_id = gettid() % kMaxNumThreadPixes;
+#endif
+  pixDestroy(&global_crash_pixes[thread_id]);
+  if (pix != NULL) {
+    Pix* clone = pixClone(pix);
+    pixSetXRes(clone, resolution);
+    pixSetYRes(clone, resolution);
+    global_crash_pixes[thread_id] = clone;
+  }
+#endif
 }
 
 // CALL ONLY from a signal handler! Writes a crash image to stderr.
 void signal_exit(int signal_code) {
   tprintf("Received signal %d!\n", signal_code);
-//#ifdef __linux__
-//  int thread_id = syscall(SYS_gettid) % kMaxNumThreadPixes;
-//  if (global_crash_pixes[thread_id] != NULL) {
-//    fprintf(stderr, "Crash caused by image with resolution %d\n",
-//            pixGetYRes(global_crash_pixes[thread_id]));
-//    fprintf(stderr, "<Cut here>\n");
-//    pixWriteStreamPng(stderr, global_crash_pixes[thread_id], 0.0);
-//    fprintf(stderr, "\n<End cut>\n");
-//  }
-//  // Raise an uncaught signal, so as to get a useful stack trace.
-//  raise(SIGILL);
-//#else
+#ifdef __linux__ 
+#ifndef ANDROID
+  int thread_id = syscall(SYS_gettid) % kMaxNumThreadPixes;
+#else
+  int thread_id = gettid() % kMaxNumThreadPixes;
+#endif
+  if (global_crash_pixes[thread_id] != NULL) {
+    fprintf(stderr, "Crash caused by image with resolution %d\n",
+            pixGetYRes(global_crash_pixes[thread_id]));
+    fprintf(stderr, "<Cut here>\n");
+    pixWriteStreamPng(stderr, global_crash_pixes[thread_id], 0.0);
+    fprintf(stderr, "\n<End cut>\n");
+  }
+  // Raise an uncaught signal, so as to get a useful stack trace.
+  raise(SIGILL);
+#else
   abort();
-//#endif
+#endif
 }
 
 void err_exit() {

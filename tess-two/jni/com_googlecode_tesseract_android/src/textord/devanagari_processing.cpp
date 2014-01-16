@@ -18,10 +18,13 @@
  *
  **********************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif
+
 #include "devanagari_processing.h"
 #include "allheaders.h"
 #include "tordmain.h"
-#include "img.h"
 #include "statistc.h"
 
 // Flags controlling the debugging information for shiro-rekha splitting

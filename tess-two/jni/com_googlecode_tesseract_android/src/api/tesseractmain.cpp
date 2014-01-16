@@ -22,11 +22,19 @@
 #include "config_auto.h"
 #endif
 
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif  // _WIN32
+#include <iostream>
+
 #include "allheaders.h"
 #include "baseapi.h"
+#include "basedir.h"
 #include "renderer.h"
 #include "strngs.h"
 #include "tprintf.h"
+#include "openclwrapper.h"
 
 /**********************************************************************
  *  main()
@@ -48,6 +56,29 @@ int main(int argc, char **argv) {
     fprintf(stderr, "  %s\n", versionStrP);
     lept_free(versionStrP);
 
+#ifdef USE_OPENCL
+    cl_platform_id platform;
+    cl_uint num_platforms;
+    cl_device_id devices[2];
+    cl_uint num_devices;
+    cl_int err;
+    char info[256];
+    int i;
+
+    fprintf(stderr, " OpenCL info:\n");
+    clGetPlatformIDs(1, &platform, &num_platforms);
+    fprintf(stderr, "  Found %d platforms.\n", num_platforms);
+    clGetPlatformInfo(platform, CL_PLATFORM_NAME, 256, info, 0);
+    fprintf(stderr, "  Platform name: %s.\n", info);
+    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 256, info, 0);
+    fprintf(stderr, "  Version: %s.\n", info);
+    clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 2, devices, &num_devices);
+    fprintf(stderr, "  Found %d devices.\n", num_devices);
+    for (i = 0; i < num_devices; ++i) {
+      clGetDeviceInfo(devices[i], CL_DEVICE_NAME, 256, info, 0);
+      fprintf(stderr, "    Device %d name: %s.\n", i+1, info);
+    }
+#endif
     exit(0);
   }
 
@@ -95,8 +126,8 @@ int main(int argc, char **argv) {
   }
 
   if (output == NULL && noocr == false) {
-    fprintf(stderr, "Usage:\n  %s imagename outputbase|stdout [options...] "
-                       "[configfile...]\n\n", argv[0]);
+    fprintf(stderr, "Usage:\n  %s imagename|stdin outputbase|stdout "
+            "[options...] [configfile...]\n\n", argv[0]);
 
     fprintf(stderr, "OCR options:\n");
     fprintf(stderr, "  --tessdata-dir /path\tspecify location of tessdata"
@@ -107,18 +138,18 @@ int main(int argc, char **argv) {
     fprintf(stderr, "  -psm pagesegmode\tspecify page segmentation mode.\n");
     fprintf(stderr, "These options must occur before any configfile.\n\n");
     fprintf(stderr,
-              "pagesegmode values are:\n"
-              "  0 = Orientation and script detection (OSD) only.\n"
-              "  1 = Automatic page segmentation with OSD.\n"
-              "  2 = Automatic page segmentation, but no OSD, or OCR\n"
-              "  3 = Fully automatic page segmentation, but no OSD. (Default)\n"
-              "  4 = Assume a single column of text of variable sizes.\n"
-              "  5 = Assume a single uniform block of vertically aligned text.\n"
-              "  6 = Assume a single uniform block of text.\n"
-              "  7 = Treat the image as a single text line.\n"
-              "  8 = Treat the image as a single word.\n"
-              "  9 = Treat the image as a single word in a circle.\n"
-              "  10 = Treat the image as a single character.\n\n");
+            "pagesegmode values are:\n"
+            "  0 = Orientation and script detection (OSD) only.\n"
+            "  1 = Automatic page segmentation with OSD.\n"
+            "  2 = Automatic page segmentation, but no OSD, or OCR\n"
+            "  3 = Fully automatic page segmentation, but no OSD. (Default)\n"
+            "  4 = Assume a single column of text of variable sizes.\n"
+            "  5 = Assume a single uniform block of vertically aligned text.\n"
+            "  6 = Assume a single uniform block of text.\n"
+            "  7 = Treat the image as a single text line.\n"
+            "  8 = Treat the image as a single word.\n"
+            "  9 = Treat the image as a single word in a circle.\n"
+            "  10 = Treat the image as a single character.\n\n");
     fprintf(stderr, "Single options:\n");
     fprintf(stderr, "  -v --version: version info\n");
     fprintf(stderr, "  --list-langs: list available languages for tesseract "
@@ -128,6 +159,9 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  tprintf("Tesseract Open Source OCR Engine v%s with Leptonica\n",
+           tesseract::TessBaseAPI::Version());
+  PERF_COUNT_START("Tesseract:main")
   tesseract::TessBaseAPI api;
 
   api.SetOutputName(output);
@@ -188,54 +222,103 @@ int main(int argc, char **argv) {
   // It would be simpler if we could set the value before Init,
   // but that doesn't work.
   if (api.GetPageSegMode() == tesseract::PSM_SINGLE_BLOCK)
-    api.SetPageSegMode(pagesegmode);
-  tprintf("Tesseract Open Source OCR Engine v%s with Leptonica\n",
-           tesseract::TessBaseAPI::Version());
+     api.SetPageSegMode(pagesegmode);
 
+  bool stdInput = !strcmp(image, "stdin") || !strcmp(image, "-");
+  Pix* pixs = NULL;
+  if (stdInput) {
+    char byt;
+    GenericVector<l_uint8> ch_data;
+    std::istream file(std::cin.rdbuf());
 
-  FILE* fin = fopen(image, "rb");
-  if (fin == NULL) {
-    fprintf(stderr, "Cannot open input file: %s\n", image);
-    exit(2);
+#ifdef WIN32
+    if (_setmode(_fileno(stdin), _O_BINARY) == -1)
+      tprintf("ERROR: cin to binary: %s", strerror(errno));
+#endif  // WIN32
+
+    while (file.get(byt)) {
+      ch_data.push_back(byt);
+    }
+    std::cin.ignore(std::cin.rdbuf()->in_avail() + 1);
+
+    pixs = pixReadMem(&ch_data[0], ch_data.size());
   }
-  fclose(fin);
 
-  tesseract::TessResultRenderer* renderer = new tesseract::TessTextRenderer();
+  if (pagesegmode == tesseract::PSM_AUTO_OSD) {
+    tesseract::Orientation orientation;
+    tesseract::WritingDirection direction;
+    tesseract::TextlineOrder order;
+    float deskew_angle;
+    int ret_val = 0;
+
+    if (!pixs)
+      pixs = pixRead(image);
+    api.SetImage(pixs);
+    tesseract::PageIterator* it =  api.AnalyseLayout();
+    if (it) {
+      it->Orientation(&orientation, &direction, &order, &deskew_angle);
+      tprintf("Orientation: %d\nWritingDirection: %d\nTextlineOrder: %d\n" \
+              "Deskew angle: %.4f\n",
+               orientation, direction, order, deskew_angle);
+    } else {
+      ret_val = 1;
+    }
+    pixDestroy(&pixs);
+    delete it;
+    exit(ret_val);
+  }
+
+  tesseract::TessResultRenderer* renderer = NULL;
   bool b;
   api.GetBoolVariable("tessedit_create_hocr", &b);
-  if (b) renderer->insert(new tesseract::TessHOcrRenderer());
+  if (b && renderer == NULL) renderer = new tesseract::TessHOcrRenderer();
+
+  api.GetBoolVariable("tessedit_create_pdf", &b);
+  if (b && renderer == NULL)
+    renderer = new tesseract::TessPDFRenderer(api.GetDatapath());
 
   api.GetBoolVariable("tessedit_create_boxfile", &b);
-  if (b) renderer->insert(new tesseract::TessBoxTextRenderer());
+  if (b && renderer == NULL) renderer = new tesseract::TessBoxTextRenderer();
 
-  if (!api.ProcessPages(image, NULL, 0, renderer)) {
-    fprintf(stderr, "Error during processing.\n");
+  if (renderer == NULL) renderer = new tesseract::TessTextRenderer();
+
+  if (pixs) {
+    api.ProcessPage(pixs, 0, NULL, NULL, 0, renderer);
+    pixDestroy(&pixs);
   } else {
-    for (tesseract::TessResultRenderer* r = renderer; r != NULL;
-         r = r->next()) {
-      FILE* fout = stdout;
-      if (strcmp(output, "-") && strcmp(output, "stdout")) {
-        STRING outfile = STRING(output)
-            + STRING(".")
-            + STRING(r->file_extension());
-        fout = fopen(outfile.string(), "wb");
-        if (fout == NULL) {
-          fprintf(stderr, "Cannot create output file %s\n", outfile.string());
-          exit(1);
-        }
-      }
-
-      const char* data;
-      inT32 data_len;
-      if (r->GetOutput(&data, &data_len)) {
-        fwrite(data, 1, data_len, fout);
-        if (fout != stdout)
-          fclose(fout);
-        else
-          clearerr(fout);
-      }
+    FILE* fin = fopen(image, "rb");
+    if (fin == NULL) {
+      fprintf(stderr, "Cannot open input file: %s\n", image);
+      exit(2);
+    }
+    fclose(fin);
+    if (!api.ProcessPages(image, NULL, 0, renderer)) {
+      fprintf(stderr, "Error during processing.\n");
+      exit(1);
     }
   }
 
+  FILE* fout = stdout;
+  if (strcmp(output, "-") && strcmp(output, "stdout")) {
+    STRING outfile = STRING(output)
+        + STRING(".")
+        + STRING(renderer->file_extension());
+    fout = fopen(outfile.string(), "wb");
+    if (fout == NULL) {
+      fprintf(stderr, "Cannot create output file %s\n", outfile.string());
+      exit(1);
+    }
+  }
+
+  const char* data;
+  inT32 data_len;
+  if (renderer->GetOutput(&data, &data_len)) {
+    fwrite(data, 1, data_len, fout);
+    if (fout != stdout)
+      fclose(fout);
+    else
+      clearerr(fout);
+  }
+  PERF_COUNT_END
   return 0;                      // Normal exit
 }

@@ -3,10 +3,8 @@
 // Description: Simple API for calling tesseract.
 // Author:      Ray Smith
 // Created:     Fri Oct 06 15:35:01 PDT 2006
-// Modified:    2011 by Robert Theis to add TessBaseAPI::GetCharacters()
 //
 // (C) Copyright 2006, Google Inc.
-// (C) Copyright 2011, Robert Theis
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -89,7 +87,8 @@ typedef void (Wordrec::*FillLatticeFunc)(const MATRIX &ratings,
                                          const WERD_CHOICE_LIST &best_choices,
                                          const UNICHARSET &unicharset,
                                          BlamerBundle *blamer_bundle);
-typedef TessCallback4<const UNICHARSET &, int, PageIterator *, Pix *> TruthCallback;
+typedef TessCallback4<const UNICHARSET &, int, PageIterator *, Pix *>
+    TruthCallback;
 
 /**
  * Base class for all tesseract APIs.
@@ -110,16 +109,37 @@ class TESS_API TessBaseAPI {
   static const char* Version();
 
   /**
+   * If compiled with OpenCL AND an available OpenCL
+   * device is deemed faster than serial code, then
+   * "device" is populated with the cl_device_id
+   * and returns sizeof(cl_device_id)
+   * otherwise *device=NULL and returns 0.
+   */
+  static size_t getOpenCLDevice(void **device);
+
+  /**
    * Writes the thresholded image to stderr as a PBM file on receipt of a
    * SIGSEGV, SIGFPE, or SIGBUS signal. (Linux/Unix only).
    */
   static void CatchSignals();
 
   /**
-   * Set the name of the input file. Needed only for training and
-   * reading a UNLV zone file.
+   * Set the name of the input file. Needed for training and
+   * reading a UNLV zone file, and for searchable PDF output.
    */
   void SetInputName(const char* name);
+  /**
+   * These functions are required for searchable PDF output.
+   * We need our hands on the input file so that we can include
+   * it in the PDF without transcoding. If that is not possible,
+   * we need the original image. Finally, resolution metadata
+   * is stored in the PDF so we need that as well.
+   */
+  const char* GetInputName();
+  void SetInputImage(Pix *pix);
+  Pix* GetInputImage();
+  int GetSourceYResolution();
+  const char* GetDatapath();
 
   /** Set the name of the bonus output files. Needed only for debugging. */
   void SetOutputName(const char* name);
@@ -560,6 +580,7 @@ class TESS_API TessBaseAPI {
    * page_number is 0-based but will appear in the output as 1-based.
    */
   char* GetHOCRText(int page_number);
+
   /**
    * The recognized text is returned as a char* which is coded in the same
    * format as a box file used in training. Returned string must be freed with
@@ -683,9 +704,6 @@ class TESS_API TessBaseAPI {
 
   /** Return the number of dawgs loaded into tesseract_ object. */
   int NumDawgs() const;
-
-  /** Get the characters as a Pixa, in reading order. */
-  Pixa* GetCharacters();
 
   /** Return the language used in the last valid initialization. */
   const char* GetLastInitLanguage() const;
@@ -812,6 +830,7 @@ class TESS_API TessBaseAPI {
   };
   /* @} */
 
+
  protected:
   Tesseract*        tesseract_;       ///< The underlying data object.
   Tesseract*        osd_tesseract_;   ///< For orientation & script detection.
@@ -821,6 +840,7 @@ class TESS_API TessBaseAPI {
   BLOCK_LIST*       block_list_;      ///< The page layout.
   PAGE_RES*         page_res_;        ///< The page-level data.
   STRING*           input_file_;      ///< Name used by training code.
+  Pix*              input_image_;     ///< Image used for searchable PDF
   STRING*           output_file_;     ///< Name used by debug code.
   STRING*           datapath_;        ///< Current location of tessdata.
   STRING*           language_;        ///< Last initialized language.

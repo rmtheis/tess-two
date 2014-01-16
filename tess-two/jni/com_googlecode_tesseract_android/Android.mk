@@ -19,7 +19,7 @@ TESSERACT_SRC_FILES := \
   $(wildcard $(TESSERACT_PATH)/cube/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/cutil/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/dict/*.cpp) \
-  $(wildcard $(TESSERACT_PATH)/image/*.cpp) \
+  $(wildcard $(TESSERACT_PATH)/opencl/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/neural_networks/runtime/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/textord/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/viewer/*.cpp) \
@@ -37,7 +37,7 @@ LOCAL_C_INCLUDES := \
   $(TESSERACT_PATH)/cube \
   $(TESSERACT_PATH)/cutil \
   $(TESSERACT_PATH)/dict \
-  $(TESSERACT_PATH)/image \
+  $(TESSERACT_PATH)/opencl \
   $(TESSERACT_PATH)/neural_networks/runtime \
   $(TESSERACT_PATH)/textord \
   $(TESSERACT_PATH)/viewer \
@@ -46,12 +46,15 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_CFLAGS := \
   -DHAVE_LIBLEPT \
+  -DGRAPHICS_DISABLED \
+  --std=c++11 \
   -DUSE_STD_NAMESPACE \
   -D'VERSION="Android"' \
   -include ctype.h \
   -include unistd.h \
   -fpermissive \
-  -Wno-deprecated
+  -Wno-deprecated \
+  -D_GLIBCXX_PERMIT_BACKWARD_HASH   # fix for android-ndk-r8e/sources/cxx-stl/gnu-libstdc++/4.6/include/ext/hash_map:61:30: fatal error: backward_warning.h: No such file or directory
 
 # jni
 

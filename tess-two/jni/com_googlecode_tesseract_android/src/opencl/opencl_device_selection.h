@@ -11,7 +11,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
 
 #define DS_DEVICE_NAME_LENGTH 256
 
@@ -328,6 +333,7 @@ static ds_status readProFile(const char* fileName, char** content, size_t* conte
   rewind(input);
   binary = (char*)malloc(size);
   if(binary == NULL) {
+    fclose(input);
     return DS_FILE_ERROR;
   }
   fread(binary, sizeof(char), size, input);

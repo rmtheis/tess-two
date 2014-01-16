@@ -3,10 +3,8 @@
  * Description: Simple API for calling tesseract.
  * Author:      Ray Smith
  * Created:     Fri Oct 06 15:35:01 PDT 2006
- * Modified:    2011 by Robert Theis to add TessBaseAPI::GetCharacters()
  *
  * (C) Copyright 2006, Google Inc.
- * (C) Copyright 2011, Robert Theis
  ** Licensed under the Apache License, Version 2.0 (the "License");
  ** you may not use this file except in compliance with the License.
  ** You may obtain a copy of the License at
@@ -48,21 +46,18 @@
 #include "edgblob.h"
 #include "equationdetect.h"
 #include "tessbox.h"
-#include "imgs.h"
 #include "makerow.h"
 #include "otsuthr.h"
 #include "osdetect.h"
 #include "params.h"
 #include "renderer.h"
 #include "strngs.h"
-
-#ifdef USE_OPENCL
 #include "openclwrapper.h"
-#endif
 
 #ifdef _WIN32
 #include <windows.h>
 #include <stdlib.h>
+#include "mathfix.h"
 #else
 #include <dirent.h>
 #include <libgen.h>
@@ -114,6 +109,7 @@ TessBaseAPI::TessBaseAPI()
     block_list_(NULL),
     page_res_(NULL),
     input_file_(NULL),
+    input_image_(NULL),
     output_file_(NULL),
     datapath_(NULL),
     language_(NULL),
@@ -133,6 +129,34 @@ TessBaseAPI::~TessBaseAPI() {
  */
 const char* TessBaseAPI::Version() {
   return VERSION;
+}
+
+/**
+ * If compiled with OpenCL AND an available OpenCL
+ * device is deemed faster than serial code, then
+ * "device" is populated with the cl_device_id
+ * and returns sizeof(cl_device_id)
+ * otherwise *device=NULL and returns 0.
+ */
+#ifdef USE_OPENCL
+#if USE_DEVICE_SELECTION
+#include "opencl_device_selection.h"
+#endif
+#endif
+size_t TessBaseAPI::getOpenCLDevice(void **data) {
+#ifdef USE_OPENCL
+#if USE_DEVICE_SELECTION
+  ds_device device = OpenclDevice::getDeviceSelection();
+  if (device.type == DS_DEVICE_OPENCL_DEVICE) {
+    *data = reinterpret_cast<void*>(new cl_device_id);
+    memcpy(*data, &device.oclDeviceID, sizeof(cl_device_id));
+    return sizeof(cl_device_id);
+  }
+#endif
+#endif
+
+  *data = NULL;
+  return 0;
 }
 
 /**
@@ -238,6 +262,7 @@ int TessBaseAPI::Init(const char* datapath, const char* language,
                       const GenericVector<STRING> *vars_vec,
                       const GenericVector<STRING> *vars_values,
                       bool set_only_non_debug_params) {
+  PERF_COUNT_START("TessBaseAPI::Init")
   // Default language is "eng".
   if (language == NULL) language = "eng";
   // If the datapath, OcrEngineMode or the language have changed - start again.
@@ -252,30 +277,31 @@ int TessBaseAPI::Init(const char* datapath, const char* language,
     delete tesseract_;
     tesseract_ = NULL;
   }
-
+  // PERF_COUNT_SUB("delete tesseract_")
 #ifdef USE_OPENCL
   OpenclDevice od;
   od.InitEnv();
 #endif
-
+  PERF_COUNT_SUB("OD::InitEnv()")
   bool reset_classifier = true;
   if (tesseract_ == NULL) {
     reset_classifier = false;
     tesseract_ = new Tesseract;
     if (tesseract_->init_tesseract(
-            datapath, output_file_ != NULL ? output_file_->string() : NULL,
-            language, oem, configs, configs_size, vars_vec, vars_values,
-            set_only_non_debug_params) != 0) {
+        datapath, output_file_ != NULL ? output_file_->string() : NULL,
+        language, oem, configs, configs_size, vars_vec, vars_values,
+        set_only_non_debug_params) != 0) {
       return -1;
     }
   }
+  PERF_COUNT_SUB("update tesseract_")
   // Update datapath and language requested for the last valid initialization.
   if (datapath_ == NULL)
     datapath_ = new STRING(datapath);
   else
     *datapath_ = datapath;
   if ((strcmp(datapath_->string(), "") == 0) &&
-       (strcmp(tesseract_->datadir.string(), "") != 0))
+      (strcmp(tesseract_->datadir.string(), "") != 0))
      *datapath_ = tesseract_->datadir;
 
   if (language_ == NULL)
@@ -283,10 +309,13 @@ int TessBaseAPI::Init(const char* datapath, const char* language,
   else
     *language_ = language;
   last_oem_requested_ = oem;
-
+  // PERF_COUNT_SUB("update last_oem_requested_")
   // For same language and datapath, just reset the adaptive classifier.
-  if (reset_classifier) tesseract_->ResetAdaptiveClassifier();
-
+  if (reset_classifier) {
+    tesseract_->ResetAdaptiveClassifier();
+    PERF_COUNT_SUB("tesseract_->ResetAdaptiveClassifier()")
+  }
+  PERF_COUNT_END
   return 0;
 }
 
@@ -362,6 +391,7 @@ void TessBaseAPI::GetAvailableLanguagesAsVector(
           }
         }
       }
+      closedir(dir);
     }
 #endif
   }
@@ -912,9 +942,34 @@ bool TessBaseAPI::ProcessPages(const char* filename,
   return success;
 }
 
+void TessBaseAPI::SetInputImage(Pix *pix) {
+  if (input_image_)
+    pixDestroy(&input_image_);
+  input_image_ = pixClone(pix);
+}
+
+Pix* TessBaseAPI::GetInputImage() {
+  return input_image_;
+}
+
+const char * TessBaseAPI::GetInputName() {
+  if (input_file_)
+    return input_file_->c_str();
+  return NULL;
+}
+
+const char *  TessBaseAPI::GetDatapath() {
+  return tesseract_->datadir.c_str();
+}
+
+int TessBaseAPI::GetSourceYResolution() {
+  return thresholder_->GetSourceYResolution();
+}
+
 bool TessBaseAPI::ProcessPages(const char* filename,
                                const char* retry_config, int timeout_millisec,
                                TessResultRenderer* renderer) {
+  PERF_COUNT_START("ProcessPages")
   int page = tesseract_->tessedit_page_number;
   if (page < 0)
     page = 0;
@@ -929,8 +984,10 @@ bool TessBaseAPI::ProcessPages(const char* filename,
   Pix *pix;
   pix = pixRead(filename);
   format = pixGetInputFormat(pix);
-  if (format == IFF_TIFF || format == IFF_TIFF_G4 ||
-      format == IFF_TIFF_G3 || format == IFF_TIFF_PACKBITS)
+  if (format == IFF_TIFF || format == IFF_TIFF_PACKBITS ||
+      format == IFF_TIFF_RLE || format == IFF_TIFF_G3 ||
+      format == IFF_TIFF_G4 || format == IFF_TIFF_LZW ||
+      format == IFF_TIFF_ZIP)
     tiffGetCount(fp, &npages);
   fclose(fp);
 
@@ -947,12 +1004,17 @@ bool TessBaseAPI::ProcessPages(const char* filename,
   if (npages > 0) {
     pixDestroy(&pix);
     for (; page < npages; ++page) {
-
+      // only use opencl if compiled w/ OpenCL and selected device is opencl
 #ifdef USE_OPENCL
+      if ( od.selectedDeviceIsOpenCL() ) {
         pix = od.pixReadTiffCl(filename, page);
-#else
-        pix = pixReadTiff(filename, page);
+      } else {
 #endif
+        pix = pixReadTiff(filename, page);
+#ifdef USE_OPENCL
+      }
+#endif
+
       if (pix == NULL) break;
 
       if ((page >= 0) && (npages > 1))
@@ -1008,7 +1070,7 @@ bool TessBaseAPI::ProcessPages(const char* filename,
   if (renderer && !renderer->EndDocument()) {
     all_ok = false;
   }
-
+  PERF_COUNT_END
   return all_ok;
 }
 
@@ -1062,8 +1124,10 @@ bool TessBaseAPI::ProcessPage(Pix* pix, int page_index, const char* filename,
 bool TessBaseAPI::ProcessPage(Pix* pix, int page_index, const char* filename,
                               const char* retry_config, int timeout_millisec,
                               TessResultRenderer* renderer) {
+  PERF_COUNT_START("ProcessPage")
   SetInputName(filename);
   SetImage(pix);
+  SetInputImage(pix);
   bool failed = false;
   if (timeout_millisec > 0) {
     // Running with a timeout.
@@ -1081,6 +1145,7 @@ bool TessBaseAPI::ProcessPage(Pix* pix, int page_index, const char* filename,
       failed = true;
     } else {
       delete it;
+      PERF_COUNT_END
       return true;
     }
   } else {
@@ -1108,9 +1173,10 @@ bool TessBaseAPI::ProcessPage(Pix* pix, int page_index, const char* filename,
     if (failed) {
       renderer->AddError(this);
     } else {
-      renderer->AddImage(this);
+      failed = !renderer->AddImage(this);
     }
   }
+  PERF_COUNT_END
   return !failed;
 }
 
@@ -1236,8 +1302,8 @@ static void AddBaselineCoordsTohOCR(const PageIterator *it,
   p1 = (y2 - y1) / static_cast<double>(x2 - x1);
   p0 = y1 - static_cast<double>(p1 * x1);
 
-  hocr_str->add_str_double("; baseline ", p1);
-  hocr_str->add_str_double(" ", p0);
+  hocr_str->add_str_double("; baseline ", round(p1 * 1000.0) / 1000.0);
+  hocr_str->add_str_double(" ", round(p0 * 1000.0) / 1000.0);
 }
 
 static void AddBoxTohOCR(const PageIterator *it,
@@ -2487,15 +2553,13 @@ CubeRecoContext *TessBaseAPI::GetCubeRecoContext() const {
 }
 
 TessResultRenderer* TessBaseAPI::NewRenderer() {
-  TessTextRenderer utf8_renderer;
-  TessHOcrRenderer hocr_renderer;
-  TessUnlvRenderer unlv_renderer;
-  TessBoxTextRenderer boxtext_renderer;
   if (tesseract_->tessedit_create_boxfile
       || tesseract_->tessedit_make_boxes_from_boxes) {
     return new TessBoxTextRenderer();
   } else if (tesseract_->tessedit_create_hocr) {
     return new TessHOcrRenderer();
+  } else if (tesseract_->tessedit_create_pdf) {
+    return new TessPDFRenderer(tesseract_->datadir.c_str());
   } else if (tesseract_->tessedit_write_unlv) {
     return new TessUnlvRenderer();
   } else if (tesseract_->tessedit_create_boxfile) {
@@ -2504,51 +2568,4 @@ TessResultRenderer* TessBaseAPI::NewRenderer() {
     return new TessTextRenderer();
   }
 }
-
-// Get the characters as a Pixa, in reading order.
-// Can be called before or after Recognize.
-Pixa* TessBaseAPI::GetCharacters() {
-  int im_height = pixGetHeight(tesseract_->pix_binary());
-
-  if (tesseract_ == NULL ||
-      (page_res_ == NULL &&
-       Recognize(NULL) < 0))
-    return NULL;
-
-  TESS_CHAR_LIST  tess_chars;
-  TESS_CHAR_IT    tess_chars_it(&tess_chars);
-
-  extract_result(&tess_chars_it, page_res_);
-  tess_chars_it.move_to_first();
-
-  Pixa *pixa = pixaCreate(tess_chars.length());
-
-  for (tess_chars_it.mark_cycle_pt();
-       !tess_chars_it.cycled_list();
-       tess_chars_it.forward())
-    {
-      TESS_CHAR *tc = tess_chars_it.data();
-
-      TBOX box  = tc->box;
-
-      if (box.null_box())
-        continue;
-
-      Box* lbox = boxCreate(box.left(), im_height - box.top(),
-                            box.width(), box.height());
-
-      Pix* pix  = pixCreate(box.width(), box.height(), 1);
-
-      // Copy the whole word bounding box to the output pix.
-      pixRasterop(pix, 0, 0, box.width(), box.height(),
-                  PIX_SRC, tesseract_->pix_binary(),
-                  box.left(), im_height - box.top());
-
-      pixaAddPix(pixa, pix, L_INSERT);
-      pixaAddBox(pixa, lbox, L_INSERT);
-    }
-
-  return pixa;
-}
-
 }  // namespace tesseract.
