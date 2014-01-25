@@ -29,7 +29,7 @@
  *
  *    Tests all the reg tests:
  *
- *        alltests_reg  command
+ *        alltests_reg command
  *
  *    where
  *        <command> == "generate" to make the golden files in /tmp/golden
@@ -38,7 +38,8 @@
  *        <command> == "display" to make local files and display
  *
  *    You can also run each test individually with any one of these
- *    arguments.
+ *    arguments.  Warning: if you run this with "display", a very
+ *    large number of images will be displayed on the screen.
  */
 
 #include <string.h>
@@ -48,9 +49,14 @@ static const char *tests[] = {
                               "alphaops_reg",
                               "alphaxform_reg",
                               "binarize_reg",
+                              "blackwhite_reg",
+                              "blend3_reg",
+                              "blend4_reg",
+                              "colorcontent_reg",
                               "coloring_reg",
                               "colormask_reg",
                               "colorquant_reg",
+                              "colorspace_reg",
                               "compare_reg",
                               "convolve_reg",
                               "dewarp_reg",
@@ -58,15 +64,25 @@ static const char *tests[] = {
                               "dna_reg",
                               "dwamorph1_reg",
                               "enhance_reg",
+                              "findcorners_reg",
                               "findpattern_reg",
-                              "fpix_reg",
-                              "gifio_reg",
+                              "fpix1_reg",
+                              "fpix2_reg",
+                         /*   "gifio_reg",  */
                               "graymorph2_reg",
                               "hardlight_reg",
+                              "insert_reg",
                               "ioformats_reg",
+                              "jpegio_reg",
                               "kernel_reg",
+                              "label_reg",
                               "maze_reg",
+                              "multitype_reg",
+                              "nearline_reg",
+                              "newspaper_reg",
                               "overlap_reg",
+                              "paint_reg",
+                              "paintmask_reg",
                               "pdfseg_reg",
                               "pixa2_reg",
                               "pixserial_reg",
@@ -83,7 +99,7 @@ static const char *tests[] = {
                               "scale_reg",
                               "seedspread_reg",
                               "selio_reg",
-                              "shear_reg",
+                              "shear1_reg",
                               "shear2_reg",
                               "skew_reg",
                               "splitcomp_reg",
@@ -92,22 +108,21 @@ static const char *tests[] = {
                               "translate_reg",
                               "warper_reg",
                               "writetext_reg",
+                              "xformbox_reg",
                              };
 
 static const char *header = {"\n=======================\n"
                              "Regression Test Results\n"
                              "======================="};
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *str, *results_file;
 char         command[256], buf[256];
 l_int32      i, ntests, dotest, nfail, ret, start, stop;
 SARRAY      *sa;
-L_TIMER      timer;
 static char  mainName[] = "alltests_reg";
-
 
     if (argc != 2)
         return ERROR_INT(" Syntax alltests_reg [generate | compare | display]",
@@ -135,7 +150,11 @@ static char  mainName[] = "alltests_reg";
 
     nfail = 0;
     for (i = 0; i < ntests; i++) {
+#ifndef  _WIN32
         snprintf(command, sizeof(command) - 2, "./%s %s", tests[i], argv[1]);
+#else  /* windows interprets '/' as a commandline flag */
+        snprintf(command, sizeof(command) - 2, "%s %s", tests[i], argv[1]);
+#endif  /* ! _WIN32 */
         ret = system(command);
         if (ret) {
             snprintf(buf, sizeof(buf), "Failed to complete %s\n", tests[i]);

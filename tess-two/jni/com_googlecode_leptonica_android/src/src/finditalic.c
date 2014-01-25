@@ -24,16 +24,16 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-
 /*
  * finditalic.c
  *
- *    Locate italic words.  This is an example of the use of
- *    hit-miss binary morphology with binary reconstruction (filling
- *    from a seed into a mask).
- *    Example: use with prog/italics.png
- *
  *      l_int32   pixItalicWords()
+ *
+ *    Locate italic words.  This is an example of the use of
+ *    hit-miss binary morphology with binary reconstruction
+ *    (filling from a seed into a mask).
+ *
+ *    To see how this works, run with prog/italic.png.
  */
 
 #include "allheaders.h"
@@ -74,14 +74,13 @@ static const char *str_ital3 = " x"
                                "x "
                                "x ";
 
-
 /*!
  *  pixItalicWords()
  *
  *      Input:  pixs (1 bpp)
  *              boxaw (<optional> word bounding boxes; can be NULL)
  *              pixw (<optional> word box mask; can be NULL)
- *              &boxa (<return> boxa of italian words)
+ *              &boxa (<return> boxa of italic words)
  *              debugflag (1 for debug output; 0 otherwise)
  *      Return: 0 if OK, 1 on error
  *
@@ -112,9 +111,11 @@ pixItalicWords(PIX     *pixs,
                BOXA   **pboxa,
                l_int32  debugflag)
 {
-BOXA  *boxa;
-PIX   *pixsd, *pixm, *pixd;
-SEL   *sel_ital1, *sel_ital2, *sel_ital3;
+char     opstring[32];
+l_int32  size;
+BOXA    *boxa;
+PIX     *pixsd, *pixm, *pixd;
+SEL     *sel_ital1, *sel_ital2, *sel_ital3;
 
     PROCNAME("pixItalicWords");
 
@@ -141,12 +142,14 @@ SEL   *sel_ital1, *sel_ital2, *sel_ital3;
     if (boxaw) {
         pixm = pixCreateTemplate(pixs);
         pixMaskBoxa(pixm, pixm, boxaw, L_SET_PIXELS);
-    }
-    else if (pixw) {
+    } else if (pixw) {
         pixm = pixClone(pixw);
+    } else {
+        pixWordMaskByDilation(pixs, 20, NULL, &size);
+        L_INFO("dilation size = %d\n", procName, size);
+        snprintf(opstring, sizeof(opstring), "d1.5 + c%d.1", size);
+        pixm = pixMorphSequence(pixs, opstring, 0);
     }
-    else
-        pixm = pixMorphSequence(pixs, "d1.5 + c6.1", 0);
 
         /* Binary reconstruction to fill in those word mask
          * components for which there is at least one seed pixel. */
@@ -155,37 +158,67 @@ SEL   *sel_ital1, *sel_ital2, *sel_ital3;
     *pboxa = boxa;
 
     if (debugflag) {
-        l_int32  res;
+            /* Save results at at 2x reduction */
+        l_int32  res, upper;
         BOXA  *boxat;
+        GPLOT *gplot;
+        NUMA  *na;
         PIXA  *pad;
-        PIX   *pixt1, *pixt2;
+        PIX   *pix1, *pix2, *pix3;
         pad = pixaCreate(0);
-            /* Save these at 2x reduction */
-        pixSaveTiledOutline(pixs, pad, 2, 1, 20, 2, 32);
-        pixSaveTiledOutline(pixsd, pad, 2, 1, 20, 2, 0);
         boxat = pixConnComp(pixm, NULL, 8);
-        boxaWrite("/tmp/junkital.ba", boxat);
-        pixt1 = pixConvertTo32(pixm);
-        pixRenderBoxaArb(pixt1, boxat, 3, 255, 0, 0);
-        pixSaveTiledOutline(pixt1, pad, 2, 1, 20, 2, 0);
-        pixDestroy(&pixt1);
-        pixSaveTiledOutline(pixd, pad, 2, 1, 20, 2, 0);
-        pixt1 = pixConvertTo32(pixs);
-        pixRenderBoxaArb(pixt1, boxa, 3, 255, 0, 0);
-        pixSaveTiledOutline(pixt1, pad, 2, 1, 20, 2, 0);
-        pixt2 = pixaDisplay(pad, 0, 0);
-        pixWrite("/tmp/junkital.png", pixt2, IFF_PNG);
-            /* The pixs resolution is approximately:
-             *    300 * (width of pixs) / 2000
+        boxaWrite("/tmp/ital.ba", boxat);
+        pixSaveTiledOutline(pixs, pad, 0.5, 1, 20, 2, 32);  /* orig */
+        pixSaveTiledOutline(pixsd, pad, 0.5, 1, 20, 2, 0);  /* seed */
+        pix1 = pixConvertTo32(pixm);
+        pixRenderBoxaArb(pix1, boxat, 3, 255, 0, 0);
+        pixSaveTiledOutline(pix1, pad, 0.5, 1, 20, 2, 0);  /* mask + outline */
+        pixDestroy(&pix1);
+        pixSaveTiledOutline(pixd, pad, 0.5, 1, 20, 2, 0);  /* ital mask */
+        pix1 = pixConvertTo32(pixs);
+        pixRenderBoxaArb(pix1, boxa, 3, 255, 0, 0);
+        pixSaveTiledOutline(pix1, pad, 0.5, 1, 20, 2, 0);  /* orig + outline */
+        pixDestroy(&pix1);
+        pix1 = pixCreateTemplate(pixs);
+        pix2 = pixSetBlackOrWhiteBoxa(pix1, boxa, L_SET_BLACK);
+        pixCopy(pix1, pixs);
+        pix3 = pixDilateBrick(NULL, pixs, 3, 3);
+        pixCombineMasked(pix1, pix3, pix2);
+        pixSaveTiledOutline(pix1, pad, 0.5, 1, 20, 2, 0);  /* ital bolded */
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+        pixDestroy(&pix3);
+        pix2 = pixaDisplay(pad, 0, 0);
+        pixWrite("/tmp/ital.png", pix2, IFF_PNG);
+        pixDestroy(&pix2);
+
+            /* Assuming the image represents 6 inches of actual page width,
+             * the pixs resolution is approximately
+             *    (width of pixs in pixels) / 6
              * and the images have been saved at half this resolution.   */
-        res = (150 * pixGetWidth(pixs)) / 2000;
-        L_INFO_INT("resolution = %d", procName, res);
-        pixaConvertToPdf(pad, res, 1.0, 3, 75, "Italic Finder",
-                         "/tmp/junkital.pdf");
+        res = pixGetWidth(pixs) / 12;
+        L_INFO("resolution = %d\n", procName, res);
+        pixaConvertToPdf(pad, res, 1.0, L_FLATE_ENCODE, 75, "Italic Finder",
+                         "/tmp/ital.pdf");
         pixaDestroy(&pad);
-        pixDestroy(&pixt1);
-        pixDestroy(&pixt2);
         boxaDestroy(&boxat);
+
+            /* Plot histogram of horizontal white run sizes.  A small
+             * initial vertical dilation removes most runs that are neither
+             * inter-character nor inter-word.  The larger first peak is
+             * from inter-character runs, and the smaller second peak is
+             * from inter-word runs. */
+        pix1 = pixDilateBrick(NULL, pixs, 1, 15);
+        upper = L_MAX(30, 3 * size);
+        na = pixRunHistogramMorph(pix1, L_RUN_OFF, L_HORIZ, upper);
+        pixDestroy(&pix1);
+        gplot = gplotCreate("/tmp/runhisto", GPLOT_PNG,
+                "Histogram of horizontal runs of white pixels, vs length",
+                "run length", "number of runs");
+        gplotAddPlot(gplot, NULL, na, GPLOT_LINES, "plot1");
+        gplotMakeOutput(gplot);
+        gplotDestroy(&gplot);
+        numaDestroy(&na);
     }
 
     selDestroy(&sel_ital1);

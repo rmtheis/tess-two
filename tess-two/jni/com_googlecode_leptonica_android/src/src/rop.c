@@ -279,7 +279,7 @@ PIXCMAP  *cmap;
     if (incolor != L_BRING_IN_WHITE && incolor != L_BRING_IN_BLACK)
         return ERROR_INT("invalid value for incolor", procName, 1);
     if (bw <= 0)
-        return ERROR_INT("width must be > 1", procName, 1);
+        return ERROR_INT("bw must be > 0", procName, 1);
 
     if (vshift == 0)
         return 0;

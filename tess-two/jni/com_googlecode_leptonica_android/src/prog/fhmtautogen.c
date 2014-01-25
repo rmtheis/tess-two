@@ -43,8 +43,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filename;
 l_int32      index;
@@ -52,7 +52,7 @@ SELA        *sela;
 static char  mainName[] = "fhmtautogen";
 
     if (argc != 2 && argc != 3)
-	exit(ERROR_INT(" Syntax:  fhmtautogen index <filename>", mainName, 1));
+        return ERROR_INT(" Syntax:  fhmtautogen index <filename>", mainName, 1);
 
     index = atoi(argv[1]);
     filename = NULL;
@@ -61,7 +61,7 @@ static char  mainName[] = "fhmtautogen";
 
     sela = selaAddHitMiss(NULL);
     if (fhmtautogen(sela, index, filename))
-	return 1;
+        return 1;
 
     selaDestroy(&sela);
     return 0;

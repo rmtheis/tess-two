@@ -309,8 +309,7 @@ l_int32    i, j;
     if ((dx & 31) == 0) {  /* if not */
         dfwpartb = 0;
         dfwbits = 0;
-    }
-    else {  /* if so */
+    } else {  /* if so */
         dfwpartb = 1;
         dfwbits = 32 - (dx & 31);
         dfwmask = rmask32[dfwbits];
@@ -318,9 +317,9 @@ l_int32    i, j;
     }
 
         /* is the first word doubly partial? */
-    if (dw >= dfwbits)  /* if not */
+    if (dw >= dfwbits) {  /* if not */
         dfwpart2b = 0;
-    else {  /* if so */
+    } else {  /* if so */
         dfwpart2b = 1;
         dfwmask &= lmask32[32 - dfwbits + dw];
     }
@@ -329,12 +328,11 @@ l_int32    i, j;
     if (dfwpart2b == 1) {  /* not */
         dfwfullb = 0;
         dnfullw = 0;
-    }
-    else {
+    } else {
         dnfullw = (dw - dfwbits) >> 5;
-        if (dnfullw == 0)  /* if not */
+        if (dnfullw == 0) {  /* if not */
             dfwfullb = 0;
-        else {  /* if so */
+        } else {  /* if so */
             dfwfullb = 1;
             if (dfwpartb)
                 pdfwfull = pdfwpart + 1;
@@ -345,9 +343,9 @@ l_int32    i, j;
 
         /* is the last word partial? */
     dlwbits = (dx + dw) & 31;
-    if (dfwpart2b == 1 || dlwbits == 0)  /* if not */
+    if (dfwpart2b == 1 || dlwbits == 0) {  /* if not */
         dlwpartb = 0;
-    else {
+    } else {
         dlwpartb = 1;
         dlwmask = lmask32[dlwbits];
         if (dfwpartb)
@@ -861,8 +859,7 @@ l_int32    i, j;
     if ((dx & 31) == 0) {  /* if not */
         dfwpartb = 0;
         dfwbits = 0;
-    }
-    else {  /* if so */
+    } else {  /* if so */
         dfwpartb = 1;
         dfwbits = 32 - (dx & 31);
         dfwmask = rmask32[dfwbits];
@@ -871,9 +868,9 @@ l_int32    i, j;
     }
 
         /* is the first word doubly partial? */
-    if (dw >= dfwbits)  /* if not */
+    if (dw >= dfwbits) {  /* if not */
         dfwpart2b = 0;
-    else {  /* if so */
+    } else {  /* if so */
         dfwpart2b = 1;
         dfwmask &= lmask32[32 - dfwbits + dw];
     }
@@ -882,18 +879,16 @@ l_int32    i, j;
     if (dfwpart2b == 1) {  /* not */
         dfwfullb = 0;
         dnfullw = 0;
-    }
-    else {
+    } else {
         dnfullw = (dw - dfwbits) >> 5;
-        if (dnfullw == 0)  /* if not */
+        if (dnfullw == 0) {  /* if not */
             dfwfullb = 0;
-        else {  /* if so */
+        } else {  /* if so */
             dfwfullb = 1;
             if (dfwpartb) {
                 pdfwfull = pdfwpart + 1;
                 psfwfull = psfwpart + 1;
-            }
-            else {
+            } else {
                 pdfwfull = datad + dwpl * dy + (dx >> 5);
                 psfwfull = datas + swpl * sy + (sx >> 5);
             }
@@ -902,16 +897,15 @@ l_int32    i, j;
 
         /* is the last word partial? */
     dlwbits = (dx + dw) & 31;
-    if (dfwpart2b == 1 || dlwbits == 0)  /* if not */
+    if (dfwpart2b == 1 || dlwbits == 0) {  /* if not */
         dlwpartb = 0;
-    else {
+    } else {
         dlwpartb = 1;
         dlwmask = lmask32[dlwbits];
         if (dfwpartb) {
             pdlwpart = pdfwpart + 1 + dnfullw;
             pslwpart = psfwpart + 1 + dnfullw;
-        }
-        else {
+        } else {
             pdlwpart = datad + dwpl * dy + (dx >> 5) + dnfullw;
             pslwpart = datas + swpl * sy + (sx >> 5) + dnfullw;
         }
@@ -1420,8 +1414,7 @@ l_int32    i, j;
         sleftshift = 0;
         srightshift = 0;
         srightmask = rmask32[0];
-    }
-    else {
+    } else {
         if (dhang > shang)
             sleftshift = dhang - shang;
         else
@@ -1434,8 +1427,7 @@ l_int32    i, j;
     if ((dx & 31) == 0) {  /* if not */
         dfwpartb = 0;
         dfwbits = 0;
-    }
-    else {  /* if so */
+    } else {  /* if so */
         dfwpartb = 1;
         dfwbits = 32 - (dx & 31);
         dfwmask = rmask32[dfwbits];
@@ -1448,15 +1440,15 @@ l_int32    i, j;
                 sfwaddb = 0;
             else
                 sfwaddb = 1;   /* and rshift in next src word by srightshift */
-        }
-        else
+        } else {
             sfwshiftdir = SHIFT_RIGHT;  /* and shift by srightshift */
+        }
     }
 
         /* is the first dest word doubly partial? */
-    if (dw >= dfwbits)  /* if not */
+    if (dw >= dfwbits) {  /* if not */
         dfwpart2b = 0;
-    else {  /* if so */
+    } else {  /* if so */
         dfwpart2b = 1;
         dfwmask &= lmask32[32 - dfwbits + dw];
     }
@@ -1465,12 +1457,11 @@ l_int32    i, j;
     if (dfwpart2b == 1) {  /* not */
         dfwfullb = 0;
         dnfullw = 0;
-    }
-    else {
+    } else {
         dnfullw = (dw - dfwbits) >> 5;
-        if (dnfullw == 0)  /* if not */
+        if (dnfullw == 0) {  /* if not */
             dfwfullb = 0;
-        else {  /* if so */
+        } else {  /* if so */
             dfwfullb = 1;
             pdfwfull = datad + dwpl * dy + ((dx + dhang) >> 5);
             psfwfull = datas + swpl * sy + ((sx + dhang) >> 5); /* yes, dhang */
@@ -1479,9 +1470,9 @@ l_int32    i, j;
 
         /* is the last dest word partial? */
     dlwbits = (dx + dw) & 31;
-    if (dfwpart2b == 1 || dlwbits == 0)  /* if not */
+    if (dfwpart2b == 1 || dlwbits == 0) {  /* if not */
         dlwpartb = 0;
-    else {
+    } else {
         dlwpartb = 1;
         dlwmask = lmask32[dlwbits];
         pdlwpart = datad + dwpl * dy + ((dx + dhang) >> 5) + dnfullw;
@@ -1509,9 +1500,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart, sword, dfwmask);
                 pdfwpart += dwpl;
@@ -1559,9 +1550,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart, ~sword, dfwmask);
                 pdfwpart += dwpl;
@@ -1609,9 +1600,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart,
                                  (sword | *pdfwpart), dfwmask);
@@ -1661,9 +1652,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart,
                                  (sword & *pdfwpart), dfwmask);
@@ -1713,9 +1704,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart,
                                  (sword ^ *pdfwpart), dfwmask);
@@ -1765,9 +1756,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart,
                                  (~sword | *pdfwpart), dfwmask);
@@ -1817,9 +1808,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart,
                                  (~sword & *pdfwpart), dfwmask);
@@ -1869,9 +1860,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart,
                                  (sword | ~(*pdfwpart)), dfwmask);
@@ -1921,9 +1912,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart,
                                  (sword & ~(*pdfwpart)), dfwmask);
@@ -1973,9 +1964,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart,
                                  ~(sword | *pdfwpart), dfwmask);
@@ -2025,9 +2016,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart,
                                  ~(sword & *pdfwpart), dfwmask);
@@ -2078,9 +2069,9 @@ l_int32    i, j;
                         sword = COMBINE_PARTIAL(sword,
                                       *(psfwpart + 1) >> srightshift,
                                        srightmask);
-                }
-                else /* shift right */
+                } else {  /* shift right */
                     sword = *psfwpart >> srightshift;
+                }
 
                 *pdfwpart = COMBINE_PARTIAL(*pdfwpart,
                                  ~(sword ^ *pdfwpart), dfwmask);

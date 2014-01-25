@@ -48,8 +48,8 @@
 static const l_int32  MaxColors[] = {4, 8, 16};
 static const l_int32  FinalColors[] = {4, 8, 16};
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char         namebuf[256];
 l_int32      i, j, k, maxdist, maxcolors, selsize, finalcolors;
@@ -58,22 +58,21 @@ PIXA        *pixa;
 static char  mainName[] = "colorseg_reg";
 
     if (argc != 1)
-	exit(ERROR_INT("Syntax: colorseg_reg", mainName, 1));
+        return ERROR_INT("Syntax: colorseg_reg", mainName, 1);
 
     pixs = pixRead("tetons.jpg");
-
     for (k = 0; k < 3; k++) {
         maxcolors = MaxColors[k];
         finalcolors = FinalColors[k];
         pixa = pixaCreate(0);
-        pixSaveTiled(pixs, pixa, 1, 1, 15, 32);
+        pixSaveTiled(pixs, pixa, 1.0, 1, 15, 32);
         for (i = 1; i <= 9; i++) {
             maxdist = 20 * i;
             for (j = 0; j <= 6; j++) {
                 selsize = j;
                 pixt = pixColorSegment(pixs, maxdist, maxcolors, selsize,
                                        finalcolors);
-                pixSaveTiled(pixt, pixa, 1, j == 0 ? 1 : 0, 15, 32);
+                pixSaveTiled(pixt, pixa, 1.0, j == 0 ? 1 : 0, 15, 32);
                 pixDestroy(&pixt);
             }
         }

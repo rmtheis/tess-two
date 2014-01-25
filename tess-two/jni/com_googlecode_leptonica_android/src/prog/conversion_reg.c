@@ -35,12 +35,12 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *errorstr;
 l_int32      same, error;
-PIX         *pixs1, *pixs2, *pixs4, *pixs8, *pixs16, *pixs32,  *pixd;
+PIX         *pixs1, *pixs2, *pixs4, *pixs8, *pixs16, *pixs32;
 PIX         *pixc2, *pixc4, *pixc8;
 PIX         *pixt1, *pixt2, *pixt3, *pixt4, *pixt5, *pixt6;
 PIXCMAP     *cmap;
@@ -48,26 +48,17 @@ SARRAY      *sa;
 static char  mainName[] = "convert_reg";
 
     if (argc != 1)
-        exit(ERROR_INT(" Syntax:  convert_rt", mainName, 1));
+        return ERROR_INT(" Syntax:  convert_reg", mainName, 1);
 
-    if ((pixs1 = pixRead("test1.png")) == NULL)
-	exit(ERROR_INT("pixs1 not made", mainName, 1));
-    if ((pixs2 = pixRead("dreyfus2.png")) == NULL)
-	exit(ERROR_INT("pixs2 not made", mainName, 1));
-    if ((pixc2 = pixRead("weasel2.4c.png")) == NULL)
-	exit(ERROR_INT("pixc2 not made", mainName, 1));
-    if ((pixs4 = pixRead("weasel4.16g.png")) == NULL)
-	exit(ERROR_INT("pixs4 not made", mainName, 1));
-    if ((pixc4 = pixRead("weasel4.11c.png")) == NULL)
-	exit(ERROR_INT("pixc4 not made", mainName, 1));
-    if ((pixs8 = pixRead("karen8.jpg")) == NULL)
-	exit(ERROR_INT("pixs8 not made", mainName, 1));
-    if ((pixc8 = pixRead("weasel8.240c.png")) == NULL)
-	exit(ERROR_INT("pixc8 not made", mainName, 1));
-    if ((pixs16 = pixRead("test16.tif")) == NULL)
-	exit(ERROR_INT("pixs16 not made", mainName, 1));
-    if ((pixs32 = pixRead("marge.jpg")) == NULL)
-	exit(ERROR_INT("pixs32 not made", mainName, 1));
+    pixs1 = pixRead("test1.png");
+    pixs2 = pixRead("dreyfus2.png");
+    pixc2 = pixRead("weasel2.4c.png");
+    pixs4 = pixRead("weasel4.16g.png");
+    pixc4 = pixRead("weasel4.11c.png");
+    pixs8 = pixRead("karen8.jpg");
+    pixc8 = pixRead("weasel8.240c.png");
+    pixs16 = pixRead("test16.tif");
+    pixs32 = pixRead("marge.jpg");
     error = FALSE;
     sa = sarrayCreate(0);
 

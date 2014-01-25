@@ -34,8 +34,8 @@
 
 #define   NBLOCKS     11
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
 l_uint8     *array1, *array2, *dataout, *dataout2;
@@ -46,14 +46,14 @@ FILE        *fp;
 static char  mainName[] = "buffertest";
 
     if (argc != 3)
-	exit(ERROR_INT(" Syntax:  buffertest filein fileout", mainName, 1));
+        return ERROR_INT(" Syntax:  buffertest filein fileout", mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
 
     if ((array1 = l_binaryRead(filein, &nbytes)) == NULL)
-	exit(ERROR_INT("array not made", mainName, 1));
-    fprintf(stderr, " Bytes read from file: %ld\n", nbytes);
+        return ERROR_INT("array not made", mainName, 1);
+    fprintf(stderr, " Bytes read from file: %lu\n", (unsigned long)nbytes);
 
         /* Application of byte buffer ops: compress/decompress in memory */
 #if 1
@@ -64,8 +64,8 @@ static char  mainName[] = "buffertest";
     l_binaryWrite("/tmp/junktest", "w", dataout2, nout2);
 
     fprintf(stderr,
-            "nbytes in = %ld, nbytes comp = %ld, nbytes uncomp = %ld\n",
-            nbytes, nout, nout2);
+            "nbytes in = %lu, nbytes comp = %lu, nbytes uncomp = %lu\n",
+            (unsigned long)nbytes, (unsigned long)nout, (unsigned long)nout2);
     lept_free(dataout);
     lept_free(dataout2);
 #endif
@@ -81,8 +81,8 @@ static char  mainName[] = "buffertest";
 
     blocksize = (2 * nbytes) / NBLOCKS;
     for (i = 0; i <= NBLOCKS; i++) {
-	bbufferWrite(bb, array2, blocksize, &nout);
-	fprintf(stderr, " block %d: wrote %d bytes\n", i + 1, nout);
+        bbufferWrite(bb, array2, blocksize, &nout);
+        fprintf(stderr, " block %d: wrote %d bytes\n", i + 1, nout);
     }
 
     fprintf(stderr, " Bytes left in buffer: %d\n", bb->n);
@@ -101,4 +101,3 @@ static char  mainName[] = "buffertest";
     lept_free(array1);
     return 0;
 }
-

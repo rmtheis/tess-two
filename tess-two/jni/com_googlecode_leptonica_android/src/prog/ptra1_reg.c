@@ -45,10 +45,10 @@ static void DisplayResult(PIXA *pixac, PIXA **ppixa, l_int32 w, l_int32 h,
 #define  CHOOSE_RECON    2    /* 1 or 2 */
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-l_int32      i, n, w, h, nactual, j, imax;
+l_int32      i, n, w, h, nactual, imax;
 BOX         *box;
 BOXA        *boxa;
 PIX         *pixs, *pixd, *pix;
@@ -57,12 +57,12 @@ L_PTRA      *papix, *pabox, *papix2, *pabox2;
 static char  mainName[] = "ptra1_reg";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax: ptra1_reg", mainName, 1));
+        return ERROR_INT(" Syntax: ptra1_reg", mainName, 1);
 
     pixac = pixaCreate(0);
 
     if ((pixs = pixRead("lucasta.1.300.tif")) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
     pixGetDimensions(pixs, &w, &h, NULL);
     boxa = pixConnComp(pixs, &pixas, 8);
     pixDestroy(&pixs);
@@ -390,5 +390,4 @@ PIX   *pixd;
     pixaDestroy(ppixa);
     return;
 }
-
 

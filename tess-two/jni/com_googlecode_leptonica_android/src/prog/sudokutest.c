@@ -42,8 +42,8 @@ static const char *startsol = "3 8 7 2 6 4 1 9 5 "
                               "4 3 1 6 7 9 5 2 8 "
                               "6 5 8 4 2 3 9 7 1";
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      unique;
 l_int32     *array;

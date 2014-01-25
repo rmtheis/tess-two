@@ -36,8 +36,8 @@ static void pixCompare(PIX *pix, PIX *pix2, const char *msg1, const char *msg2);
 #define L_BUF_SIZE    256
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein;
 char         buf[L_BUF_SIZE];
@@ -46,15 +46,13 @@ PIX         *pixs, *pixt1, *pixt2;
 static char  mainName[] = "colormorphtest";
 
     if (argc != 3)
-        exit(ERROR_INT(" Syntax:  colormorphtest filein size",
-             mainName, 1));
+        return ERROR_INT(" Syntax:  colormorphtest filein size", mainName, 1);
 
     filein = argv[1];
     size = atoi(argv[2]);
     if (size % 2 == 0) size++;
-
     if ((pixs = pixRead(filein)) == NULL)
-        exit(ERROR_INT("pixs not read", mainName, 1));
+        return ERROR_INT("pixs not read", mainName, 1);
 
     pixt1 = pixColorMorph(pixs, L_MORPH_DILATE, size, size);
     sprintf(buf, "d%d.%d", size, size);
@@ -84,7 +82,7 @@ static char  mainName[] = "colormorphtest";
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
 
-    pixDisplayMultiple("/tmp/junk_write_display*");
+    pixDisplayMultiple("/tmp/display/file*");
 
     pixDestroy(&pixs);
     return 0;

@@ -39,8 +39,8 @@ static void AddTestSet(PIXA *pixa, PIX *pixs,
                        l_float32 gamma, l_int32 minval,
                        l_int32 maxval, l_int32 targetthresh);
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 PIX          *pixs, *pixd;
 PIXA         *pixa;
@@ -51,7 +51,7 @@ L_REGPARAMS  *rp;
 
     pixs = pixRead("stampede2.jpg");
     pixa = pixaCreate(0);
-    pixSaveTiled(pixs, pixa, 1, 1, 20, 8);
+    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 8);
 
     AddTestSet(pixa, pixs, L_SOBEL_EDGE, 18, 40, 40, 0.7, -25, 280, 128);
     AddTestSet(pixa, pixs, L_TWO_SIDED_EDGE, 18, 40, 40, 0.7, -25, 280, 128);
@@ -88,19 +88,19 @@ PIX  *pixb, *pixd, *pixth;
     pixThresholdSpreadNorm(pixs, filtertype, edgethresh,
                            smoothx, smoothy, gamma, minval,
                            maxval, targetthresh, &pixth, NULL, &pixd);
-    pixSaveTiled(pixth, pixa, 1, 1, 20, 0);
-    pixSaveTiled(pixd, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixth, pixa, 1.0, 1, 20, 0);
+    pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
     pixb = pixThresholdToBinary(pixd, targetthresh - 20);
-    pixSaveTiled(pixb, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixb, pixa, 1.0, 0, 20, 0);
     pixDestroy(&pixb);
     pixb = pixThresholdToBinary(pixd, targetthresh);
-    pixSaveTiled(pixb, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixb, pixa, 1.0, 0, 20, 0);
     pixDestroy(&pixb);
     pixb = pixThresholdToBinary(pixd, targetthresh + 20);
-    pixSaveTiled(pixb, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixb, pixa, 1.0, 0, 20, 0);
     pixDestroy(&pixb);
     pixb = pixThresholdToBinary(pixd, targetthresh + 40);
-    pixSaveTiled(pixb, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixb, pixa, 1.0, 0, 20, 0);
     pixDestroy(&pixb);
     pixDestroy(&pixth);
     pixDestroy(&pixd);

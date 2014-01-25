@@ -31,7 +31,7 @@
  *           PIX             *pixMaskConnComp()
  *           PIX             *pixMaskBoxa()
  *           PIX             *pixPaintBoxa()
- *           PIX             *pixSetWhiteOrBlackBoxa()
+ *           PIX             *pixSetBlackOrWhiteBoxa()
  *           PIX             *pixPaintBoxaRandom()
  *           PIX             *pixBlendBoxaRandom()
  *           PIX             *pixDrawBoxa()
@@ -42,6 +42,9 @@
  *           BOXA            *pixSplitIntoBoxa()
  *           BOXA            *pixSplitComponentIntoBoxa()
  *           static l_int32   pixSearchForRectangle()
+ *
+ *      Comparison between boxa
+ *           l_int32          boxaCompareRegions()
  *
  *  See summary in pixPaintBoxa() of various ways to paint and draw
  *  boxes on images.
@@ -150,7 +153,7 @@ BOX     *box;
 
     pixd = pixCopy(pixd, pixs);
     if ((n = boxaGetCount(boxa)) == 0) {
-        L_WARNING("no boxes to mask", procName);
+        L_WARNING("no boxes to mask\n", procName);
         return pixd;
     }
 
@@ -212,7 +215,7 @@ PIXCMAP  *cmap;
         return (PIX *)ERROR_PTR("boxa not defined", procName, NULL);
 
     if ((n = boxaGetCount(boxa)) == 0) {
-        L_WARNING("no boxes to paint; returning a copy", procName);
+        L_WARNING("no boxes to paint; returning a copy\n", procName);
         return pixCopy(NULL, pixs);
     }
 
@@ -295,18 +298,17 @@ PIXCMAP  *cmap;
     if (cmap) {
         color = (op == L_SET_WHITE) ? 1 : 0;
         pixcmapAddBlackOrWhite(cmap, color, &index);
-    }
-    else if (d == 8)
+    } else if (d == 8) {
         color = (op == L_SET_WHITE) ? 0xff : 0x0;
-    else if (d == 32)
+    } else if (d == 32) {
         color = (op == L_SET_WHITE) ? 0xffffff00 : 0x0;
-    else if (d == 2)
+    } else if (d == 2) {
         color = (op == L_SET_WHITE) ? 0x3 : 0x0;
-    else if (d == 4)
+    } else if (d == 4) {
         color = (op == L_SET_WHITE) ? 0xf : 0x0;
-    else if (d == 16)
+    } else if (d == 16) {
         color = (op == L_SET_WHITE) ? 0xffff : 0x0;
-    else {
+    } else {
         pixDestroy(&pixd);
         return (PIX *)ERROR_PTR("invalid depth", procName, NULL);
     }
@@ -355,7 +357,7 @@ PIXCMAP  *cmap;
         return (PIX *)ERROR_PTR("boxa not defined", procName, NULL);
 
     if ((n = boxaGetCount(boxa)) == 0) {
-        L_WARNING("no boxes to paint; returning a copy", procName);
+        L_WARNING("no boxes to paint; returning a copy\n", procName);
         return pixCopy(NULL, pixs);
     }
 
@@ -374,9 +376,9 @@ PIXCMAP  *cmap;
     for (i = 0; i < n; i++) {
         box = boxaGetBox(boxa, i, L_CLONE);
         index = 1 + (i % 254);
-        if (d == 8)
+        if (d == 8) {
             pixSetInRectArbitrary(pixd, box, index);
-        else {  /* d == 32 */
+        } else {  /* d == 32 */
             pixcmapGetColor(cmap, index, &rval, &gval, &bval);
             composeRGBPixel(rval, gval, bval, &val);
             pixSetInRectArbitrary(pixd, box, val);
@@ -424,12 +426,12 @@ PIXCMAP  *cmap;
     if (!boxa)
         return (PIX *)ERROR_PTR("boxa not defined", procName, NULL);
     if (fract < 0.0 || fract > 1.0) {
-        L_WARNING("fract must be in [0.0, 1.0]; setting to 0.5", procName);
+        L_WARNING("fract must be in [0.0, 1.0]; setting to 0.5\n", procName);
         fract = 0.5;
     }
 
     if ((n = boxaGetCount(boxa)) == 0) {
-        L_WARNING("no boxes to paint; returning a copy", procName);
+        L_WARNING("no boxes to paint; returning a copy\n", procName);
         return pixCopy(NULL, pixs);
     }
 
@@ -486,7 +488,7 @@ PIXCMAP  *cmap;
         return (PIX *)ERROR_PTR("width must be >= 1", procName, NULL);
 
     if (boxaGetCount(boxa) == 0) {
-        L_WARNING("no boxes to draw; returning a copy", procName);
+        L_WARNING("no boxes to draw; returning a copy\n", procName);
         return pixCopy(NULL, pixs);
     }
 
@@ -548,7 +550,7 @@ PTAA     *ptaa;
         return (PIX *)ERROR_PTR("width must be >= 1", procName, NULL);
 
     if ((n = boxaGetCount(boxa)) == 0) {
-        L_WARNING("no boxes to draw; returning a copy", procName);
+        L_WARNING("no boxes to draw; returning a copy\n", procName);
         return pixCopy(NULL, pixs);
     }
 
@@ -578,17 +580,17 @@ PTAA     *ptaa;
 /*!
  *  boxaaDisplay()
  *
- *      Input:  boxaa
+ *      Input:  baa
  *              linewba (line width to display boxa)
  *              linewb (line width to display box)
  *              colorba (color to display boxa)
  *              colorb (color to display box)
- *              w (of pix; use 0 if determined by boxaa)
- *              h (of pix; use 0 if determined by boxaa)
+ *              w (of pix; use 0 if determined by baa)
+ *              h (of pix; use 0 if determined by baa)
  *      Return: 0 if OK, 1 on error
  */
 PIX *
-boxaaDisplay(BOXAA    *boxaa,
+boxaaDisplay(BOXAA    *baa,
              l_int32   linewba,
              l_int32   linewb,
              l_uint32  colorba,
@@ -604,10 +606,10 @@ PIXCMAP  *cmap;
 
     PROCNAME("boxaaDisplay");
 
-    if (!boxaa)
-        return (PIX *)ERROR_PTR("boxaa not defined", procName, NULL);
+    if (!baa)
+        return (PIX *)ERROR_PTR("baa not defined", procName, NULL);
     if (w == 0 || h == 0)
-        boxaaGetExtent(boxaa, &w, &h, NULL);
+        boxaaGetExtent(baa, &w, &h, NULL, NULL);
 
     pix = pixCreate(w, h, 8);
     cmap = pixcmapCreate(8);
@@ -618,9 +620,9 @@ PIXCMAP  *cmap;
     pixcmapAddColor(cmap, rbox, gbox, bbox);
     pixcmapAddColor(cmap, rboxa, gboxa, bboxa);
 
-    n = boxaaGetCount(boxaa);
+    n = boxaaGetCount(baa);
     for (i = 0; i < n; i++) {
-        boxa = boxaaGetBoxa(boxaa, i, L_CLONE);
+        boxa = boxaaGetBoxa(baa, i, L_CLONE);
         boxaGetExtent(boxa, NULL, NULL, &box);
         pixRenderBoxArb(pix, box, linewba, rboxa, gboxa, bboxa);
         boxDestroy(&box);
@@ -657,7 +659,7 @@ PIXCMAP  *cmap;
  *          the fg of a mask.  For each 8-connected component in pixs,
  *          it does a greedy partitioning, choosing the largest
  *          rectangle found from each of the four directions at each iter.
- *          See pixSplitComponentsIntoBoxa() for details.
+ *          See pixSplitComponentIntoBoxa() for details.
  *      (2) The input parameters give some flexibility for boundary
  *          noise.  The resulting set of rectangles may cover some
  *          bg pixels.
@@ -700,7 +702,7 @@ PIXA    *pixas;
         box = boxaGetBox(boxas, i, L_CLONE);
         boxa = pixSplitComponentIntoBoxa(pix, box, minsum, skipdist,
                                          delta, maxbg, maxcomps, remainder);
-        boxaJoin(boxad, boxa, 0, 0);
+        boxaJoin(boxad, boxa, 0, -1);
         pixDestroy(&pix);
         boxDestroy(&box);
         boxaDestroy(&boxa);
@@ -844,8 +846,7 @@ PIX     *pixs;
                 if (bw < 2 || bh < 2)
                     boxDestroy(&boxs);  /* we're done */
             }
-        }
-        else {  /* no more valid rectangles can be found */
+        } else {  /* no more valid rectangles can be found */
             if (remainder == 1) {  /* save the last box */
                 boxt1 = boxTransform(boxs, boxx, boxy, 1.0, 1.0);
                 boxaAddBox(boxad, boxt1, L_INSERT);
@@ -886,9 +887,9 @@ PIX     *pixs;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) See pixSplitByRectangles() for an explanation of the algorithm.
+ *      (1) See pixSplitComponentIntoBoxa() for an explanation of the algorithm.
  *          This does the sweep from a single side.  For each iteration
- *          in pixSplitByRectangles(), this will be called 4 times,
+ *          in pixSplitComponentIntoBoxa(), this will be called 4 times,
  *          for @sideflag = {0, 1, 2, 3}.
  *      (2) If a valid rectangle is not found, add a score of 0 and
  *          input a minimum box.
@@ -979,8 +980,7 @@ BOX     *boxr;
             minval = L_MIN(minval, minincol);
         }
         goto failure;
-    }
-    else if (sideflag == L_FROM_RIGHT) {
+    } else if (sideflag == L_FROM_RIGHT) {
         for (x = bx + bw - 1; x >= bx; x--) {
             colsum = 0;
             maxincol = 0;
@@ -1022,8 +1022,7 @@ BOX     *boxr;
             minval = L_MIN(minval, minincol);
         }
         goto failure;
-    }
-    else if (sideflag == L_FROM_TOP) {
+    } else if (sideflag == L_FROM_TOP) {
         for (y = by; y < by + bh; y++) {
             rowsum = 0;
             maxinrow = 0;
@@ -1064,7 +1063,7 @@ BOX     *boxr;
             minval = L_MIN(minval, mininrow);
         }
         goto failure;
-    } else if (sideflag == L_FROM_BOTTOM) {
+    } else if (sideflag == L_FROM_BOT) {
         for (y = by + bh - 1; y >= by; y--) {
             rowsum = 0;
             maxinrow = 0;
@@ -1120,3 +1119,153 @@ success:
     FREE(lines1);
     return 0;
 }
+
+
+/*---------------------------------------------------------------------*
+ *                        Comparison between boxa                      *
+ *---------------------------------------------------------------------*/
+/*!
+ *  boxaCompareRegions()
+ *
+ *      Input:  boxa1, boxa2
+ *              areathresh (minimum area of boxes to be considered)
+ *              &pnsame  (<return> true if same number of boxes)
+ *              &pdiffarea (<return> fractional difference in total area)
+ *              &pdiffxor (<optional return> fractional difference
+ *                         in xor of regions)
+ *              &pixdb (<optional return> debug pix showing two boxa)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This takes 2 boxa, removes all boxes smaller than a given area,
+ *          and compares the remaining boxes between the boxa.
+ *      (2) The area threshold is introduced to help remove noise from
+ *          small components.  Any box with a smaller value of w * h
+ *          will be removed from consideration.
+ *      (3) The xor difference is the most stringent test, requiring alignment
+ *          of the corresponding boxes.  It is also more computationally
+ *          intensive and is optionally returned.  Alignment is to the
+ *          UL corner of each region containing all boxes, as given by
+ *          boxaGetExtent().
+ *      (4) Both fractional differences are with respect to the total
+ *          area in the two boxa.  They range from 0.0 to 1.0.
+ *          A perfect match has value 0.0.  If both boxa are empty,
+ *          we return 0.0; if one is empty we return 1.0.
+ *      (5) An example input might be the rectangular regions of a
+ *          segmentation mask for text or images from two pages.
+ */
+l_int32
+boxaCompareRegions(BOXA       *boxa1,
+                   BOXA       *boxa2,
+                   l_int32     areathresh,
+                   l_int32    *pnsame,
+                   l_float32  *pdiffarea,
+                   l_float32  *pdiffxor,
+                   PIX       **ppixdb)
+{
+l_int32   w, h, x3, y3, w3, h3, x4, y4, w4, h4, n3, n4, area1, area2;
+l_int32   count3, count4, countxor;
+l_int32  *tab;
+BOX      *box3, *box4;
+BOXA     *boxa3, *boxa4, *boxa3t, *boxa4t;
+PIX      *pix1, *pix2, *pix3, *pix4, *pix5;
+PIXA     *pixa;
+
+    PROCNAME("boxaCompareRegions");
+
+    if (!pnsame)
+        return ERROR_INT("&nsame not defined", procName, 1);
+    *pnsame = FALSE;
+    if (!pdiffarea)
+        return ERROR_INT("&diffarea not defined", procName, 1);
+    *pdiffarea = 1.0;
+    if (!boxa1 || !boxa2)
+        return ERROR_INT("boxa1 and boxa2 not both defined", procName, 1);
+    if (pdiffxor) *pdiffxor = 1.0;
+    if (ppixdb) *ppixdb = NULL;
+
+    boxa3 = boxaSelectByArea(boxa1, areathresh, L_SELECT_IF_GTE, NULL);
+    boxa4 = boxaSelectByArea(boxa2, areathresh, L_SELECT_IF_GTE, NULL);
+    n3 = boxaGetCount(boxa3);
+    n4 = boxaGetCount(boxa4);
+    if (n3 == n4)
+        *pnsame = TRUE;
+
+        /* There are no boxes in one or both */
+    if (n3 == 0 || n4 == 0) {
+        boxaDestroy(&boxa3);
+        boxaDestroy(&boxa4);
+        if (n3 == 0 && n4 == 0) { /* they are both empty: we say they are the
+                                   * same; otherwise, they differ maximally
+                                   * and retain the default value. */
+            *pdiffarea = 0.0;
+            if (pdiffxor) *pdiffxor = 0.0;
+        }
+        return 0;
+    }
+
+        /* There are boxes in both */
+    boxaGetArea(boxa3, &area1);
+    boxaGetArea(boxa4, &area2);
+    *pdiffarea = (l_float32)L_ABS(area1 - area2) / (l_float32)(area1 + area2);
+    if (!pdiffxor) {
+        boxaDestroy(&boxa3);
+        boxaDestroy(&boxa4);
+        return 0;
+    }
+
+        /* The easiest way to get the xor of aligned boxes is to work
+         * with images of each boxa.  This is done by translating each
+         * boxa so that the UL corner of the region that includes all
+         * boxes in the boxa is placed at the origin of each pix. */
+    boxaGetExtent(boxa3, &w, &h, &box3);
+    boxaGetExtent(boxa4, &w, &h, &box4);
+    boxGetGeometry(box3, &x3, &y3, &w3, &h3);
+    boxGetGeometry(box4, &x4, &y4, &w4, &h4);
+    boxa3t = boxaTransform(boxa3, -x3, -y3, 1.0, 1.0);
+    boxa4t = boxaTransform(boxa4, -x4, -y4, 1.0, 1.0);
+    w = L_MAX(x3 + w3, x4 + w4);
+    h = L_MAX(y3 + h3, y4 + h4);
+    pix3 = pixCreate(w, h, 1);  /* use the max to keep everything in the xor */
+    pix4 = pixCreate(w, h, 1);
+    pixMaskBoxa(pix3, pix3, boxa3t, L_SET_PIXELS);
+    pixMaskBoxa(pix4, pix4, boxa4t, L_SET_PIXELS);
+    tab = makePixelSumTab8();
+    pixCountPixels(pix3, &count3, tab);
+    pixCountPixels(pix4, &count4, tab);
+    pix5 = pixXor(NULL, pix3, pix4);
+    pixCountPixels(pix5, &countxor, tab);
+    FREE(tab);
+    *pdiffxor = (l_float32)countxor / (l_float32)(count3 + count4);
+
+    if (ppixdb) {
+        pixa = pixaCreate(2);
+        pix1 = pixCreate(w, h, 32);
+        pixSetAll(pix1);
+        pixRenderHashBoxaBlend(pix1, boxa3, 5, 1, L_POS_SLOPE_LINE, 2,
+                               255, 0, 0, 0.5);
+        pixRenderHashBoxaBlend(pix1, boxa4, 5, 1, L_NEG_SLOPE_LINE, 2,
+                               0, 255, 0, 0.5);
+        pixaAddPix(pixa, pix1, L_INSERT);
+        pix2 = pixCreate(w, h, 32);
+        pixPaintThroughMask(pix2, pix3, x3, y3, 0xff000000);
+        pixPaintThroughMask(pix2, pix4, x4, y4, 0x00ff0000);
+        pixAnd(pix3, pix3, pix4);
+        pixPaintThroughMask(pix2, pix3, x3, y3, 0x0000ff00);
+        pixaAddPix(pixa, pix2, L_INSERT);
+        *ppixdb = pixaDisplayTiledInRows(pixa, 32, 1000, 1.0, 0, 30, 2);
+        pixaDestroy(&pixa);
+    }
+
+    boxDestroy(&box3);
+    boxDestroy(&box4);
+    boxaDestroy(&boxa3);
+    boxaDestroy(&boxa3t);
+    boxaDestroy(&boxa4);
+    boxaDestroy(&boxa4t);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
+    return 0;
+}
+

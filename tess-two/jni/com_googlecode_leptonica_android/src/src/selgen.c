@@ -172,7 +172,7 @@ SEL       *seld, *sel;
     if (minlength <= 0)
         minlength = DEFAULT_MIN_RUNLENGTH;
     if (distance > MAX_DISTANCE_TO_BOUNDARY) {
-        L_WARNING("distance too large; setting to max value", procName);
+        L_WARNING("distance too large; setting to max value\n", procName);
         distance = MAX_DISTANCE_TO_BOUNDARY;
     }
 
@@ -193,29 +193,29 @@ SEL       *seld, *sel;
             h += toppix;
             y = toppix;
             if (toppix < distance + minlength)
-                L_WARNING("no miss elements in added top pixels", procName);
+                L_WARNING("no miss elements in added top pixels\n", procName);
         }
         if (botpix) {
             h += botpix;
             if (botpix < distance + minlength)
-                L_WARNING("no miss elements in added bot pixels", procName);
+                L_WARNING("no miss elements in added bot pixels\n", procName);
         }
         if (leftpix) {
             w += leftpix;
             x = leftpix;
             if (leftpix < distance + minlength)
-                L_WARNING("no miss elements in added left pixels", procName);
+                L_WARNING("no miss elements in added left pixels\n", procName);
         }
         if (rightpix) {
             w += rightpix;
             if (rightpix < distance + minlength)
-                L_WARNING("no miss elements in added right pixels", procName);
+                L_WARNING("no miss elements in added right pixels\n", procName);
         }
         pixt2 = pixCreate(w, h, 1);
         pixRasterop(pixt2, x, y, ws, hs, PIX_SRC, pixt1, 0, 0);
-    }
-    else
+    } else {
         pixt2 = pixClone(pixt1);
+    }
     if (ppixe)
         *ppixe = pixClone(pixt2);
     pixDestroy(&pixt1);
@@ -357,7 +357,7 @@ SEL       *seld, *sel;
     if (distance <= 0)
         distance = DEFAULT_DISTANCE_TO_BOUNDARY;
     if (distance > MAX_DISTANCE_TO_BOUNDARY) {
-        L_WARNING("distance too large; setting to max value", procName);
+        L_WARNING("distance too large; setting to max value\n", procName);
         distance = MAX_DISTANCE_TO_BOUNDARY;
     }
 
@@ -388,9 +388,9 @@ SEL       *seld, *sel;
             w += rightpix;
         pixt2 = pixCreate(w, h, 1);
         pixRasterop(pixt2, x, y, ws, hs, PIX_SRC, pixt1, 0, 0);
-    }
-    else
+    } else {
         pixt2 = pixClone(pixt1);
+    }
     if (ppixe)
         *ppixe = pixClone(pixt2);
     pixDestroy(&pixt1);
@@ -533,8 +533,7 @@ PTA     *ptah, *ptam;
             w += missdist + 1;
         pixt2 = pixCreate(w, h, 1);
         pixRasterop(pixt2, x, y, ws, hs, PIX_SRC, pixt1, 0, 0);
-    }
-    else {
+    } else {
         pixt2 = pixClone(pixt1);
     }
     if (ppixe)
@@ -651,8 +650,7 @@ NUMA     *naruns, *nad;
         if (y < 0 || y >= h)
             return nad;
         naruns = pixGetRunsOnLine(pixs, 0, y, w - 1, y);
-    }
-    else {  /* vertical run */
+    } else {  /* vertical run */
         if (x < 0 || x >= w)
             return nad;
         naruns = pixGetRunsOnLine(pixs, x, 0, x, h - 1);
@@ -666,8 +664,7 @@ NUMA     *naruns, *nad;
             numaGetIValue(naruns, i, &len);
             r += len;
             continue;
-        }
-        else {
+        } else {
             numaGetIValue(naruns, i, &len);
             if (len >= minlength)
                 numaAddNumber(nad, r + len / 2);
@@ -748,8 +745,7 @@ PTA      *pta;
         if (val == preval) {  /* extend current run */
             preval = val;
             runlen++;
-        }
-        else {  /* end previous run */
+        } else {  /* end previous run */
             numaAddNumber(numa, runlen);
             preval = val;
             runlen = 1;
@@ -828,8 +824,7 @@ PTA     *pta;
             if (count == skip) {
                 ptaAddPt(pta, x, y);
                 count = 0;
-            }
-            else {
+            } else {
                 count++;
             }
         }
@@ -932,7 +927,7 @@ PIXCMAP   *cmap;
     if (scalefactor <= 0)
         scalefactor = DEFAULT_SEL_SCALEFACTOR;
     if (scalefactor > MAX_SEL_SCALEFACTOR) {
-        L_WARNING("scalefactor too large; using max value", procName);
+        L_WARNING("scalefactor too large; using max value\n", procName);
         scalefactor = MAX_SEL_SCALEFACTOR;
     }
 

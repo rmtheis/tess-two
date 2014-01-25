@@ -34,13 +34,12 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
 char         error_msg[] = " ps level = {1,2,3}; level 2 is default";
 l_int32      level;
-PIX         *pix, *pixs;
 static char  mainName[] = "converttops";
 
     if (argc != 3 && argc != 4) {
@@ -55,10 +54,10 @@ static char  mainName[] = "converttops";
     level = 2;
     if (argc == 4) {
         level = atoi(argv[3]);
-	if (level != 1 && level != 2 && level != 3) {
-	    L_WARNING("ps level must be 1, 2 or 3; setting to 2", mainName);
-	    level = 2;
-	}
+        if (level != 1 && level != 2 && level != 3) {
+            L_WARNING("ps level must be 1, 2 or 3; setting to 2\n", mainName);
+            level = 2;
+        }
     }
 
     convertToPSEmbed(filein, fileout, level);

@@ -32,8 +32,8 @@
 #include <math.h>
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i, j, w, h, empty;
 l_uint32     redval, greenval;
@@ -47,10 +47,9 @@ PTA         *pta;
 static char  mainName[] = "watershedtest";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax:  watershedtest", mainName, 1));
+        return ERROR_INT(" Syntax:  watershedtest", mainName, 1);
 
     pixac = pixaCreate(0);
-
     pixs = pixCreate(500, 500, 8);
     pixGetDimensions(pixs, &w, &h, NULL);
     for (i = 0; i < 500; i++) {
@@ -69,8 +68,8 @@ static char  mainName[] = "watershedtest";
             pixSetPixel(pixs, j, i, (l_int32)f);
         }
     }
-    pixSaveTiled(pixs, pixac, 1, 1, 10, 32);
-    pixWrite("/tmp/junkpattern.png", pixs, IFF_PNG);
+    pixSaveTiled(pixs, pixac, 1.0, 1, 10, 32);
+    pixWrite("/tmp/pattern.png", pixs, IFF_PNG);
     startTimer();
     pixLocalExtrema(pixs, 0, 0, &pixt1, &pixt2);
     fprintf(stderr, "Time for extrema: %7.3f\n", stopTimer());
@@ -80,19 +79,19 @@ static char  mainName[] = "watershedtest";
     pixc = pixConvertTo32(pixs);
     pixPaintThroughMask(pixc, pixt2, 0, 0, greenval);
     pixPaintThroughMask(pixc, pixt1, 0, 0, redval);
-    pixSaveTiled(pixc, pixac, 1, 0, 10, 32);
-    pixWrite("/tmp/junkpixc.png", pixc, IFF_PNG);
-    pixSaveTiled(pixt1, pixac, 1, 0, 10, 32);
-    pta = pixSelectMinInConnComp(pixs, pixt1, NULL);
+    pixSaveTiled(pixc, pixac, 1.0, 0, 10, 32);
+    pixWrite("/tmp/pixc.png", pixc, IFF_PNG);
+    pixSaveTiled(pixt1, pixac, 1.0, 0, 10, 32);
+    pixSelectMinInConnComp(pixs, pixt1, &pta, NULL);
 /*    ptaWriteStream(stderr, pta, 1); */
     pixt3 = pixGenerateFromPta(pta, w, h);
-    pixSaveTiled(pixt3, pixac, 1, 1, 10, 32);
+    pixSaveTiled(pixt3, pixac, 1.0, 1, 10, 32);
 
     pixt4 = pixConvertTo32(pixs);
     pixPaintThroughMask(pixt4, pixt3, 0, 0, greenval);
-    pixSaveTiled(pixt4, pixac, 1, 0, 10, 32);
+    pixSaveTiled(pixt4, pixac, 1.0, 0, 10, 32);
     pixt5 = pixRemoveSeededComponents(NULL, pixt3, pixt1, 8, 2);
-    pixSaveTiled(pixt5, pixac, 1, 0, 10, 32);
+    pixSaveTiled(pixt5, pixac, 1.0, 0, 10, 32);
     pixZero(pixt5, &empty);
     fprintf(stderr, "Is empty?  %d\n", empty);
     pixDestroy(&pixt4);
@@ -103,17 +102,17 @@ static char  mainName[] = "watershedtest";
     wshedApply(wshed);
     fprintf(stderr, "Time for wshed: %7.3f\n", stopTimer());
     pixt6 = pixaDisplayRandomCmap(wshed->pixad, w, h);
-    pixSaveTiled(pixt6, pixac, 1, 1, 10, 32);
+    pixSaveTiled(pixt6, pixac, 1.0, 1, 10, 32);
     numaWriteStream(stderr, wshed->nalevels);
     pixt7 = wshedRenderFill(wshed);
-    pixSaveTiled(pixt7, pixac, 1, 0, 10, 32);
+    pixSaveTiled(pixt7, pixac, 1.0, 0, 10, 32);
     pixt8 = wshedRenderColors(wshed);
-    pixSaveTiled(pixt8, pixac, 1, 0, 10, 32);
+    pixSaveTiled(pixt8, pixac, 1.0, 0, 10, 32);
     wshedDestroy(&wshed);
 
     pixd = pixaDisplay(pixac, 0, 0);
     pixDisplay(pixd, 100, 100);
-    pixWrite("/tmp/junkwshed.png", pixd, IFF_PNG);
+    pixWrite("/tmp/wshed.png", pixd, IFF_PNG);
     pixDestroy(&pixd);
     pixaDestroy(&pixac);
 

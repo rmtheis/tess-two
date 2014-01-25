@@ -38,7 +38,7 @@
  *   the corresponding page image file.  Then, for page images that
  *   are not 1 bpp, it generates mixed raster PostScript with
  *   g4 encoding for the text and jpeg ("DCT") encoding for the
- *   remaining image parts.
+ *   maining image parts.
  *
  *   Although not required for 'success' on the regression test,
  *   this program uses ps2pdf to generate the pdf output.
@@ -46,12 +46,12 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char          buf[512];
 char         *psname, *pdfname;
-l_int32       i, j, w, h, wc, hc, ret, ret2;
+l_int32       w, h, wc, hc, ret, ret2;
 l_float32     scalefactor;
 PIX          *pixs, *pixc, *pixht, *pixtxt, *pixmfull;
 PIX          *pix4c, *pix8c, *pix8g, *pix32, *pixcs, *pixcs2;
@@ -140,8 +140,8 @@ L_REGPARAMS  *rp;
     ret = system(buf);
     lept_free(psname);
     lept_free(pdfname);
-    fprintf(stderr, "pdf file made: /tmp/junkseg.pdf\n");
+    if (!ret) fprintf(stderr, "pdf file made: /tmp/junkseg.pdf\n");
 
     ret2 = regTestCleanup(rp);
-    return (ret + ret2);
+    return ret2;
 }

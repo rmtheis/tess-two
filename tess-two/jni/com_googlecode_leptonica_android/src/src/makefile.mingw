@@ -136,7 +136,7 @@ LIBRARIAN_SHARED =	i586-mingw32msvc-gcc -shared
 # Links are created among the files <libname>.X.Y,
 # <libname>.X, and <libname>, where Y is the minor revision number.
 MAJOR_REV = 1
-MINOR_REV = 69
+MINOR_REV = 70
 
 #########################################################
 
@@ -148,11 +148,10 @@ LEPTLIB_SHARED =	liblept.so
 #########################################################
 
 LEPTLIB_C =	adaptmap.c affine.c affinecompose.c \
-		arithlow.c arrayaccess.c \
+		arrayaccess.c \
 		bardecode.c baseline.c bbuffer.c \
-		bilinear.c binarize.c \
-		binexpand.c binexpandlow.c \
-		binreduce.c binreducelow.c \
+		bilateral.c bilinear.c binarize.c \
+		binexpand.c binreduce.c \
 		blend.c bmf.c bmpio.c bmpiostub.c \
 		boxbasic.c boxfunc1.c \
 		boxfunc2.c boxfunc3.c boxfunc4.c \
@@ -191,7 +190,8 @@ LEPTLIB_C =	adaptmap.c affine.c affinecompose.c \
 		psio2.c psio2stub.c \
 		ptabasic.c ptafunc1.c \
                 ptra.c queue.c quadtree.c rank.c \
-		readbarcode.c readfile.c regutils.c \
+		readbarcode.c readfile.c \
+		recogbasic.c recogident.c recogtrain.c regutils.c \
 		rop.c ropiplow.c roplow.c \
 		rotate.c rotateam.c rotateamlow.c \
 		rotateorth.c rotateorthlow.c rotateshear.c \
@@ -215,13 +215,13 @@ LEPTLIB_H =	allheaders.h alltypes.h \
 		jbclass.h jpeglib.h \
 		list.h \
 		morph.h pix.h ptra.h queue.h \
-		readbarcode.h regutils.h stack.h \
+		readbarcode.h recog.h regutils.h stack.h \
 		sudoku.h watershed.h
 
 ##################################################################
 
 #  Main targets
- 
+
 nodebug: dirs $(LEPTLIB:%=$(LIB_NODEBUG)/%)
 
 all:

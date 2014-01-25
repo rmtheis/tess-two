@@ -140,7 +140,6 @@ l_float32  scx, scy;
          * and must find the corresponding set of src pixels. */
     scx = 16. * (l_float32)ws / (l_float32)wd;
     scy = 16. * (l_float32)hs / (l_float32)hd;
-
     wm2 = ws - 2;
     hm2 = hs - 2;
 
@@ -168,17 +167,14 @@ l_float32  scx, scy;
                     pixels2 = *(lines + xp + 1);
                     pixels3 = pixels1;
                     pixels4 = pixels2;
-                }
-                else if (xp > wm2 && yp <= hm2) {  /* pixels near right side */
+                } else if (xp > wm2 && yp <= hm2) {  /* pixels near rt side */
                     pixels2 = pixels1;
                     pixels3 = *(lines + wpls + xp);
                     pixels4 = pixels3;
-                }
-                else {  /* pixels at LR corner */
+                } else {  /* pixels at LR corner */
                     pixels4 = pixels3 = pixels2 = pixels1;
                 }
-            }
-            else {
+            } else {
                 pixels2 = *(lines + xp + 1);
                 pixels3 = *(lines + wpls + xp);
                 pixels4 = *(lines + wpls + xp + 1);
@@ -247,7 +243,6 @@ l_float32  scx, scy;
          * and must find the corresponding set of src pixels. */
     scx = 16. * (l_float32)ws / (l_float32)wd;
     scy = 16. * (l_float32)hs / (l_float32)hd;
-
     wm2 = ws - 2;
     hm2 = hs - 2;
 
@@ -273,17 +268,14 @@ l_float32  scx, scy;
                     v01_val = v00_val;
                     v10_val = GET_DATA_BYTE(lines, xp + 1);
                     v11_val = v10_val;
-                }
-                else if (xp > wm2 && yp <= hm2) {  /* pixels near right side */
+                } else if (xp > wm2 && yp <= hm2) {  /* pixels near rt side */
                     v01_val = GET_DATA_BYTE(lines + wpls, xp);
                     v10_val = v00_val;
                     v11_val = v01_val;
-                }
-                else {  /* pixels at LR corner */
+                } else {  /* pixels at LR corner */
                     v10_val = v01_val = v11_val = v00_val;
                 }
-            }
-            else {
+            } else {
                 v10_val = GET_DATA_BYTE(lines, xp + 1);
                 v01_val = GET_DATA_BYTE(lines + wpls, xp);
                 v11_val = GET_DATA_BYTE(lines + wpls, xp + 1);
@@ -475,8 +467,7 @@ l_uint32  *linesp, *linedp;
                  (((bval1 + bval3) << 7) & 0x0000ff00));
         *(linedp + 2 * wsm) = pixel;                       /* pix 3 */
         *(linedp + 2 * wsm + 1) = pixel;                   /* pix 4 */
-    }
-    else {   /* last row of src pixels: lastlineflag == 1 */
+    } else {   /* last row of src pixels: lastlineflag == 1 */
         linedp = lined + wpld;
         pixels2 = *lines;
         rval2 = pixels2 >> 24;
@@ -585,7 +576,6 @@ l_uint32  *lines, *lined;
     lines = datas + hsm * wpls;
     lined = datad + 2 * hsm * wpld;
     scaleGray2xLILineLow(lined, wpld, lines, ws, wpls, 1);
-
     return;
 }
 
@@ -717,8 +707,7 @@ l_uint32   words, wordsp, wordd, worddp;
         CHECK_BYTE(linedp, 2 * wsm + 1, (sval1 + sval3) / 2);  /* pix 4 */
 #undef CHECK_BYTE
 #endif
-    }
-    else {   /* last row of src pixels: lastlineflag == 1 */
+    } else {  /* last row of src pixels: lastlineflag == 1 */
         linedp = lined + wpld;
         sval2 = GET_DATA_BYTE(lines, 0);
         for (j = 0, jd = 0; j < wsm; j++, jd += 2) {
@@ -826,7 +815,6 @@ l_uint32  *lines, *lined;
     lines = datas + hsm * wpls;
     lined = datad + 4 * hsm * wpld;
     scaleGray4xLILineLow(lined, wpld, lines, ws, wpls, 1);
-
     return;
 }
 
@@ -910,8 +898,7 @@ l_uint32  *linesp, *linedp1, *linedp2, *linedp3;
         SET_DATA_BYTE(linedp3, wsm4 + 1, (s1 + s3t) / 4);             /* d14 */
         SET_DATA_BYTE(linedp3, wsm4 + 2, (s1 + s3t) / 4);             /* d15 */
         SET_DATA_BYTE(linedp3, wsm4 + 3, (s1 + s3t) / 4);             /* d16 */
-    }
-    else {   /* last row of src pixels: lastlineflag == 1 */
+    } else {   /* last row of src pixels: lastlineflag == 1 */
         linedp1 = lined + wpld;
         linedp2 = lined + 2 * wpld;
         linedp3 = lined + 3 * wpld;
@@ -997,6 +984,9 @@ l_float32  wratio, hratio;
 
     PROCNAME("scaleBySamplingLow");
 
+    if (d != 2 && d != 4 && d !=8 && d != 16 && d != 32)
+        return ERROR_INT("pixel depth not supported", procName, 1);
+
         /* clear dest */
     bpld = 4 * wpld;
     memset((char *)datad, 0, hd * bpld);
@@ -1023,74 +1013,63 @@ l_float32  wratio, hratio;
             prevxs = -1;
             sval = 0;
             csval = 0;
-            switch (d)
-            {
-            case 2:
+            if (d == 2) {
                 for (j = 0; j < wd; j++) {
                     xs = scol[j];
                     if (xs != prevxs) {  /* get dest pix from source col */
                         sval = GET_DATA_DIBIT(lines, xs);
                         SET_DATA_DIBIT(lined, j, sval);
                         prevxs = xs;
-                    }
-                    else   /* copy prev dest pix */
+                    } else {  /* copy prev dest pix */
                         SET_DATA_DIBIT(lined, j, sval);
+                    }
                 }
-                break;
-            case 4:
+            } else if (d == 4) {
                 for (j = 0; j < wd; j++) {
                     xs = scol[j];
                     if (xs != prevxs) {  /* get dest pix from source col */
                         sval = GET_DATA_QBIT(lines, xs);
                         SET_DATA_QBIT(lined, j, sval);
                         prevxs = xs;
-                    }
-                    else   /* copy prev dest pix */
+                    } else {  /* copy prev dest pix */
                         SET_DATA_QBIT(lined, j, sval);
+                    }
                 }
-                break;
-            case 8:
+            } else if (d == 8) {
                 for (j = 0; j < wd; j++) {
                     xs = scol[j];
                     if (xs != prevxs) {  /* get dest pix from source col */
                         sval = GET_DATA_BYTE(lines, xs);
                         SET_DATA_BYTE(lined, j, sval);
                         prevxs = xs;
-                    }
-                    else   /* copy prev dest pix */
+                    } else {  /* copy prev dest pix */
                         SET_DATA_BYTE(lined, j, sval);
+                    }
                 }
-                break;
-            case 16:
+            } else if (d == 16) {
                 for (j = 0; j < wd; j++) {
                     xs = scol[j];
                     if (xs != prevxs) {  /* get dest pix from source col */
                         sval = GET_DATA_TWO_BYTES(lines, xs);
                         SET_DATA_TWO_BYTES(lined, j, sval);
                         prevxs = xs;
-                    }
-                    else   /* copy prev dest pix */
+                    } else {  /* copy prev dest pix */
                         SET_DATA_TWO_BYTES(lined, j, sval);
+                    }
                 }
-                break;
-            case 32:
+            } else {  /* d == 32 */
                 for (j = 0; j < wd; j++) {
                     xs = scol[j];
                     if (xs != prevxs) {  /* get dest pix from source col */
                         csval = lines[xs];
                         lined[j] = csval;
                         prevxs = xs;
-                    }
-                    else   /* copy prev dest pix */
+                    } else {  /* copy prev dest pix */
                         lined[j] = csval;
+                    }
                 }
-                break;
-            default:
-                return ERROR_INT("pixel depth not supported", procName, 1);
-                break;
             }
-        }
-        else {  /* lines == prevlines; copy prev dest row */
+        } else {  /* lines == prevlines; copy prev dest row */
             prevlined = lined - wpld;
             memcpy((char *)lined, (char *)prevlined, bpld);
         }
@@ -1099,7 +1078,6 @@ l_float32  wratio, hratio;
 
     FREE(srow);
     FREE(scol);
-
     return 0;
 }
 
@@ -1176,8 +1154,7 @@ l_float32  wratio, hratio, norm;
                 SET_DATA_BYTE(lined, j, val);
             }
         }
-    }
-    else {  /* d == 32 */
+    } else {  /* d == 32 */
         for (i = 0; i < hd; i++) {
             lines = datas + srow[i] * wpls;
             lined = datad + i * wpld;
@@ -1212,8 +1189,9 @@ l_float32  wratio, hratio, norm;
 /*!
  *  scaleRGBToGray2Low()
  *
- *  Note: This function is called with 32 bpp RGB src and 8 bpp,
- *        half-resolution dest.  The weights should add to 1.0.
+ *  Notes:
+ *      (1) This function is called with 32 bpp RGB src and 8 bpp,
+ *          half-resolution dest.  The weights should add to 1.0.
  */
 void
 scaleRGBToGray2Low(l_uint32  *datad,
@@ -1311,7 +1289,6 @@ l_float32  scx, scy;
          * and must find the corresponding set of src pixels. */
     scx = 16. * (l_float32)ws / (l_float32)wd;
     scy = 16. * (l_float32)hs / (l_float32)hd;
-
     wm2 = ws - 2;
     hm2 = hs - 2;
 
@@ -1413,8 +1390,8 @@ l_float32  scx, scy;
             bval = (v00b + v01b + v10b + v11b + vinb + vmidb + 128) / area;
 #if  DEBUG_OVERFLOW
             if (rval > 255) fprintf(stderr, "rval ovfl: %d\n", rval);
-            if (rval > 255) fprintf(stderr, "gval ovfl: %d\n", gval);
-            if (rval > 255) fprintf(stderr, "bval ovfl: %d\n", bval);
+            if (gval > 255) fprintf(stderr, "gval ovfl: %d\n", gval);
+            if (bval > 255) fprintf(stderr, "bval ovfl: %d\n", bval);
 #endif  /* DEBUG_OVERFLOW */
             composeRGBPixel(rval, gval, bval, lined + j);
         }
@@ -1467,7 +1444,6 @@ l_float32  scx, scy;
          * and must find the corresponding set of src pixels. */
     scx = 16. * (l_float32)ws / (l_float32)wd;
     scy = 16. * (l_float32)hs / (l_float32)hd;
-
     wm2 = ws - 2;
     hm2 = hs - 2;
 
@@ -1569,8 +1545,7 @@ l_uint32   pixel;
                 SET_DATA_BYTE(lined, j, val);
             }
         }
-    }
-    else {  /* d == 32 */
+    } else {  /* d == 32 */
         for (i = 0; i < hd; i++) {
             lines = datas + 2 * i * wpls;
             lined = datad + i * wpld;
@@ -1663,14 +1638,12 @@ l_float32  wratio, hratio;
                     if ((sval = GET_DATA_BIT(lines, xs)))
                         SET_DATA_BIT(lined, j);
                     prevxs = xs;
-                }
-                else {  /* copy prev dest pix, if set */
+                } else {  /* copy prev dest pix, if set */
                     if (sval)
                         SET_DATA_BIT(lined, j);
                 }
             }
-        }
-        else {  /* lines == prevlines; copy prev dest row */
+        } else {  /* lines == prevlines; copy prev dest row */
             prevlined = lined - wpld;
             memcpy((char *)lined, (char *)prevlined, bpld);
         }
@@ -1679,7 +1652,6 @@ l_float32  wratio, hratio;
 
     FREE(srow);
     FREE(scol);
-
     return 0;
 }
 
@@ -2313,7 +2285,6 @@ l_uint8  *tab;
 
     for (i = 0; i < 65; i++)
         tab[i] = 0xff - (i * 255) / 64;
-
     return tab;
 }
 

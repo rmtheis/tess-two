@@ -66,8 +66,8 @@ static const char *textsel4 = "xxxxxx"
                               " oOo x"
                               " oo  x";
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 SEL         *sel1, *sel2, *sel3, *sel4;
 SELA        *sela;
@@ -76,7 +76,7 @@ PIXA        *pixa;
 static char  mainName[] = "flipselgen";
 
     if (argc != 1)
-        exit(ERROR_INT(" Syntax: flipselgen", mainName, 1));
+        return ERROR_INT(" Syntax: flipselgen", mainName, 1);
 
     sela = selaCreate(0);
     sel1 = selCreateFromString(textsel1, 5, 6, "flipsel1");
@@ -108,7 +108,7 @@ static char  mainName[] = "flipselgen";
     pixaDestroy(&pixa);
 
     if (fhmtautogen(sela, INDEX, NULL))
-        exit(ERROR_INT(" Generation failed", mainName, 1));
+        return ERROR_INT(" Generation failed", mainName, 1);
 
     selaDestroy(&sela);
     return 0;

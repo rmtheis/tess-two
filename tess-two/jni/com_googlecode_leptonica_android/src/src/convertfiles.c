@@ -100,7 +100,7 @@ SARRAY  *safiles;
     for (i = 0; i < nfiles; i++) {
         fname = sarrayGetString(safiles, i, L_NOCOPY);
         if ((pixs = pixRead(fname)) == NULL) {
-            L_WARNING_STRING("Couldn't read file %s\n", procName, fname);
+            L_WARNING("Couldn't read file %s\n", procName, fname);
             continue;
         }
         if (pixGetDepth(pixs) == 32)
@@ -108,9 +108,9 @@ SARRAY  *safiles;
         else
             pixg1 = pixClone(pixs);
         pixg2 = pixRemoveColormap(pixg1, REMOVE_CMAP_TO_GRAYSCALE);
-        if (pixGetDepth(pixg2) == 1)
+        if (pixGetDepth(pixg2) == 1) {
             pixb = pixClone(pixg2);
-        else {
+        } else {
             if (upscaling == 1)
                 pixb = pixThresholdToBinary(pixg2, thresh);
             else if (upscaling == 2)
@@ -127,8 +127,7 @@ SARRAY  *safiles;
         if (outformat == IFF_TIFF_G4) {
             snprintf(buf, sizeof(buf), "%s/%s.tif", dirout, basename);
             pixWrite(buf, pixb, IFF_TIFF_G4);
-        }
-        else {
+        } else {
             snprintf(buf, sizeof(buf), "%s/%s.png", dirout, basename);
             pixWrite(buf, pixb, IFF_PNG);
         }

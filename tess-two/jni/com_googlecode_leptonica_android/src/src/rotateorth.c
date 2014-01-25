@@ -62,10 +62,10 @@ pixRotateOrth(PIX     *pixs,
 
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (quads < 0 || quads > 4)
-        return (PIX *)ERROR_PTR("quads not in {0,1,2,3,4}", procName, NULL);
+    if (quads < 0 || quads > 3)
+        return (PIX *)ERROR_PTR("quads not in {0,1,2,3}", procName, NULL);
 
-    if (quads == 0 || quads == 4)
+    if (quads == 0)
         return pixCopy(NULL, pixs);
     else if (quads == 1)
         return pixRotate90(pixs, 1);
@@ -115,7 +115,7 @@ l_int32  d;
 
         /* Prepare pixd for in-place operation */
     if ((pixd = pixCopy(pixd, pixs)) == NULL)
-	return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
 
     pixFlipLR(pixd, pixd);
     pixFlipTB(pixd, pixd);
@@ -215,7 +215,7 @@ l_uint32  *datad, *buffer;
 
         /* Prepare pixd for in-place operation */
     if ((pixd = pixCopy(pixd, pixs)) == NULL)
-	return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
 
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
@@ -287,7 +287,7 @@ l_uint32  *datad, *buffer;
 
         /* Prepare pixd for in-place operation */
     if ((pixd = pixCopy(pixd, pixs)) == NULL)
-	return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
 
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);

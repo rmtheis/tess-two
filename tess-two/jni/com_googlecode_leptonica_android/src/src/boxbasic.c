@@ -40,6 +40,7 @@
  *      Box accessors
  *           l_int32   boxGetGeometry()
  *           l_int32   boxSetGeometry()
+ *           l_int32   boxGetSideLocation()
  *           l_int32   boxGetRefcount()
  *           l_int32   boxChangeRefcount()
  *           l_int32   boxIsValid()
@@ -60,11 +61,13 @@
  *           BOX      *boxaGetBox()
  *           BOX      *boxaGetValidBox()
  *           l_int32   boxaGetBoxGeometry()
+ *           l_int32   boxaIsFull()
  *
  *      Boxa array modifiers
  *           l_int32   boxaReplaceBox()
  *           l_int32   boxaInsertBox()
  *           l_int32   boxaRemoveBox()
+ *           l_int32   boxaRemoveBoxAndSave()
  *           l_int32   boxaInitFull()
  *           l_int32   boxaClear()
  *
@@ -84,7 +87,7 @@
  *           BOXA     *boxaaGetBoxa()
  *           BOX      *boxaaGetBox()
  *
- *      Boxa array modifiers
+ *      Boxaa array modifiers
  *           l_int32   boxaaInitFull()
  *           l_int32   boxaaExtendWithInit()
  *           l_int32   boxaaReplaceBoxa()
@@ -93,6 +96,7 @@
  *           l_int32   boxaaAddBox()
  *
  *      Boxaa serialized I/O
+ *           BOXAA    *boxaaReadFromFiles()
  *           BOXAA    *boxaaRead()
  *           BOXAA    *boxaaReadStream()
  *           l_int32   boxaaWrite()
@@ -101,8 +105,10 @@
  *      Boxa serialized I/O
  *           BOXA     *boxaRead()
  *           BOXA     *boxaReadStream()
+ *           BOXA     *boxaReadMem()
  *           l_int32   boxaWrite()
  *           l_int32   boxaWriteStream()
+ *           l_int32   boxaWriteMem()
  *
  *      Box print (for debug)
  *           l_int32   boxPrintStreamInfo()
@@ -262,7 +268,7 @@ BOX  *box;
     PROCNAME("boxDestroy");
 
     if (pbox == NULL) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
     if ((box = *pbox) == NULL)
@@ -331,6 +337,49 @@ boxSetGeometry(BOX     *box,
     if (y != -1) box->y = y;
     if (w != -1) box->w = w;
     if (h != -1) box->h = h;
+    return 0;
+}
+
+
+/*!
+ *  boxGetSideLocation()
+ *
+ *      Input:  box
+ *              side (L_GET_LEFT, L_GET_RIGHT, L_GET_TOP, L_GET_BOT)
+ *              &loc (<return> location)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) All returned values are within the box.  In particular:
+ *            right = left + width - 1
+ *            bottom = top + height - 1
+ */
+l_int32
+boxGetSideLocation(BOX      *box,
+                   l_int32   side,
+                   l_int32  *ploc)
+{
+l_int32  x, y, w, h;
+
+    PROCNAME("boxGetSideLocation");
+
+    if (!ploc)
+        return ERROR_INT("&loc not defined", procName, 1);
+    *ploc = 0;
+    if (!box)
+        return ERROR_INT("box not defined", procName, 1);
+
+    boxGetGeometry(box, &x, &y, &w, &h);
+    if (side == L_GET_LEFT)
+        *ploc = x;
+    else if (side == L_GET_RIGHT)
+        *ploc = x + w - 1;
+    else if (side == L_GET_TOP)
+        *ploc = y;
+    else if (side == L_GET_BOT)
+        *ploc = y + h - 1;
+    else
+        return ERROR_INT("invalid side", procName, 1);
     return 0;
 }
 
@@ -482,7 +531,7 @@ BOXA    *boxa;
     PROCNAME("boxaDestroy");
 
     if (pboxa == NULL) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
 
@@ -748,6 +797,42 @@ BOX  *box;
 }
 
 
+/*!
+ *  boxaIsFull()
+ *
+ *      Input:  boxa
+ *              &full (return> 1 if boxa is full)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+boxaIsFull(BOXA     *boxa,
+           l_int32  *pfull)
+{
+l_int32  i, n, full;
+BOX     *box;
+
+    PROCNAME("boxaIsFull");
+
+    if (!pfull)
+        return ERROR_INT("&full not defined", procName, 1);
+    *pfull = 0;
+    if (!boxa)
+        return ERROR_INT("boxa not defined", procName, 1);
+
+    n = boxaGetCount(boxa);
+    full = 1;
+    for (i = 0; i < n; i++) {
+        if ((box = boxaGetBox(boxa, i, L_CLONE)) == NULL) {
+            full = 0;
+            break;
+        }
+        boxDestroy(&box);
+    }
+    *pfull = full;
+    return 0;
+}
+
+
 /*---------------------------------------------------------------------*
  *                        Boxa array modifiers                         *
  *---------------------------------------------------------------------*/
@@ -869,16 +954,61 @@ BOX    **array;
 
 
 /*!
+ *  boxaRemoveBoxAndSave()
+ *
+ *      Input:  boxa
+ *              index (of box to be removed)
+ *              &box (<optional return> removed box)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This removes box[index] and then shifts
+ *          box[i] --> box[i - 1] for all i > index.
+ *      (2) It should not be used repeatedly to remove boxes from
+ *          large arrays, because the function is O(n).
+ */
+l_int32
+boxaRemoveBoxAndSave(BOXA    *boxa,
+                     l_int32  index,
+                     BOX    **pbox)
+{
+l_int32  i, n;
+BOX    **array;
+
+    PROCNAME("boxaRemoveBoxAndSave");
+
+    if (pbox) *pbox = NULL;
+    if (!boxa)
+        return ERROR_INT("boxa not defined", procName, 1);
+    n = boxaGetCount(boxa);
+    if (index < 0 || index >= n)
+        return ERROR_INT("index not in {0...n - 1}", procName, 1);
+
+    if (pbox)
+        *pbox = boxaGetBox(boxa, index, L_CLONE);
+    array = boxa->box;
+    boxDestroy(&array[index]);
+    for (i = index + 1; i < n; i++)
+        array[i - 1] = array[i];
+    array[n - 1] = NULL;
+    boxa->n--;
+
+    return 0;
+}
+
+
+/*!
  *  boxaInitFull()
  *
  *      Input:  boxa (typically empty)
- *              box (to be replicated into the entire ptr array)
+ *              box (<optional> to be replicated into the entire ptr array)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
  *      (1) This initializes a boxa by filling up the entire box ptr array
- *          with copies of @box.  Any existing boxes are destroyed.
- *          After this oepration, the number of boxes is equal to
+ *          with copies of @box.  If @box == NULL, use a placeholder box
+ *          of zero size.  Any existing boxes are destroyed.
+ *          After this opepration, the number of boxes is equal to
  *          the number of allocated ptrs.
  *      (2) Note that we use boxaReplaceBox() instead of boxaInsertBox().
  *          They both have the same effect when inserting into a NULL ptr
@@ -887,19 +1017,21 @@ BOX    **array;
  *          random insertion (or replacement) of boxes into a boxa.
  *          To randomly insert boxes into a boxa, up to some index "max":
  *             Boxa *boxa = boxaCreate(max);
+ *             boxaInitFull(boxa, NULL);
+ *          If you want placeholder boxes of non-zero size:
+ *             Boxa *boxa = boxaCreate(max);
  *             Box *box = boxCreate(...);
  *             boxaInitFull(boxa, box);
+ *             boxDestroy(&box);
  *          If we have an existing boxa with a smaller ptr array, it can
- *          be reused:
+ *          be reused for up to max boxes:
  *             boxaExtendArrayToSize(boxa, max);
- *             Box *box = boxCreate(...);
- *             boxaInitFull(boxa, box);
+ *             boxaInitFull(boxa, NULL);
  *          The initialization allows the boxa to always be properly
  *          filled, even if all the boxes are not later replaced.
- *          If you want to know which boxes have been replaced, you can
- *          initialize the array with invalid boxes that have
- *          w = 0 and/or h = 0.  Then boxaGetValidBox() will return
- *          NULL for the invalid boxes.
+ *          If you want to know which boxes have been replaced,
+ *          and you initialized with invalid zero-sized boxes,
+ *          use boxaGetValidBox() to return NULL for the invalid boxes.
  */
 l_int32
 boxaInitFull(BOXA  *boxa,
@@ -912,13 +1044,14 @@ BOX     *boxt;
 
     if (!boxa)
         return ERROR_INT("boxa not defined", procName, 1);
-    if (!box)
-        return ERROR_INT("box not defined", procName, 1);
 
     n = boxa->nalloc;
     boxa->n = n;
     for (i = 0; i < n; i++) {
-        boxt = boxCopy(box);
+        if (box)
+            boxt = boxCopy(box);
+        else
+            boxt = boxCreate(0, 0, 0, 0);
         boxaReplaceBox(boxa, i, boxt);
     }
     return 0;
@@ -1037,7 +1170,7 @@ BOXAA   *baa;
     PROCNAME("boxaaDestroy");
 
     if (pbaa == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
 
@@ -1252,7 +1385,7 @@ BOXA  *boxa;
     if ((boxa = boxaaGetBoxa(baa, iboxa, L_CLONE)) == NULL)
         return (BOX *)ERROR_PTR("boxa not retrieved", procName, NULL);
     if ((box = boxaGetBox(boxa, ibox, accessflag)) == NULL)
-        L_ERROR("box not retrieved", procName);
+        L_ERROR("box not retrieved\n", procName);
     boxaDestroy(&boxa);
     return box;
 }
@@ -1515,6 +1648,62 @@ BOXA    *boxa;
  *                        Boxaa serialized I/O                         *
  *---------------------------------------------------------------------*/
 /*!
+ *  boxaaReadFromFiles()
+ *
+ *      Input:  dirname (directory)
+ *              substr (<optional> substring filter on filenames; can be NULL)
+ *              first (0-based)
+ *              nfiles (use 0 for everything from @first to the end)
+ *      Return: baa, or null on error or if no boxa files are found.
+ *
+ *  Notes:
+ *      (1) The files must be serialized boxa files (e.g., *.ba).
+ *          If some files cannot be read, warnings are issued.
+ *      (2) Use @substr to filter filenames in the directory.  If
+ *          @substr == NULL, this takes all files.
+ *      (3) After filtering, use @first and @nfiles to select
+ *          a contiguous set of files, that have been lexically
+ *          sorted in increasing order.
+ */
+BOXAA *
+boxaaReadFromFiles(const char  *dirname,
+                   const char  *substr,
+                   l_int32      first,
+                   l_int32      nfiles)
+{
+char    *fname;
+l_int32  i, n;
+BOXA    *boxa;
+BOXAA   *baa;
+SARRAY  *sa;
+
+  PROCNAME("boxaaReadFromFiles");
+
+  if (!dirname)
+      return (BOXAA *)ERROR_PTR("dirname not defined", procName, NULL);
+
+  sa = getSortedPathnamesInDirectory(dirname, substr, first, nfiles);
+  if (!sa || ((n = sarrayGetCount(sa)) == 0)) {
+      sarrayDestroy(&sa);
+      return (BOXAA *)ERROR_PTR("no pixa files found", procName, NULL);
+  }
+
+  baa = boxaaCreate(n);
+  for (i = 0; i < n; i++) {
+      fname = sarrayGetString(sa, i, L_NOCOPY);
+      if ((boxa = boxaRead(fname)) == NULL) {
+          L_ERROR("boxa not read for %d-th file", procName, i);
+          continue;
+      }
+      boxaaAddBoxa(baa, boxa, L_INSERT);
+  }
+
+  sarrayDestroy(&sa);
+  return baa;
+}
+
+
+/*!
  *  boxaaRead()
  *
  *      Input:  filename
@@ -1730,6 +1919,39 @@ BOXA    *boxa;
 
 
 /*!
+ *  boxaReadMem()
+ *
+ *      Input:  data (ascii)
+ *              size (of data; can use strlen to get it)
+ *      Return: boxa, or null on error
+ */
+BOXA *
+boxaReadMem(const l_uint8  *data,
+            size_t          size)
+{
+FILE  *fp;
+BOXA  *boxa;
+
+    PROCNAME("boxaReadMem");
+
+    if (!data)
+        return (BOXA *)ERROR_PTR("data not defined", procName, NULL);
+
+        /* De-serialize: write serialized data to file and read back as boxa.
+         * We are writing to file first, instead of reading from the memory
+         * buffer, because the gnu extension fmemopen() is not available
+         * with other runtimes. */
+    fp = tmpfile();
+    fwrite(data, 1, size, fp);
+    rewind(fp);
+    boxa = boxaReadStream(fp);
+    fclose(fp);
+    if (!boxa) L_ERROR("boxa not read\n", procName);
+    return boxa;
+}
+
+
+/*!
  *  boxaWrite()
  *
  *      Input:  filename
@@ -1794,6 +2016,43 @@ BOX     *box;
 }
 
 
+/*!
+ *  boxaWriteMem()
+ *
+ *      Input:  &data (<return> data of serialized boxa; ascii)
+ *              &size (<return> size of returned data)
+ *              boxa
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+boxaWriteMem(l_uint8  **pdata,
+             size_t    *psize,
+             BOXA      *boxa)
+{
+l_int32  ret;
+FILE    *fp;
+
+    PROCNAME("boxaWriteMem");
+
+    if (!pdata)
+        return ERROR_INT("&data not defined", procName, 1 );
+    *pdata = NULL;
+    if (!psize)
+        return ERROR_INT("&size not defined", procName, 1 );
+    *psize = 0;
+    if (!boxa)
+        return ERROR_INT("&boxa not defined", procName, 1 );
+
+        /* Serialize: write to file and read serialized data back into memory */
+    fp = tmpfile();
+    ret = boxaWriteStream(fp, boxa);
+    rewind(fp);
+    *pdata = l_binaryReadStream(fp, psize);
+    fclose(fp);
+    return ret;
+}
+
+
 /*---------------------------------------------------------------------*
  *                            Debug printing                           *
  *---------------------------------------------------------------------*/
@@ -1805,9 +2064,8 @@ BOX     *box;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) This outputs information about the box, for debugging.
- *      (2) Use serialization functions to write to file if you want
- *          to read the data back.
+ *      (1) This outputs debug info.  Use serialization functions to
+ *          write to file if you want to read the data back.
  */
 l_int32
 boxPrintStreamInfo(FILE  *fp,
@@ -1820,10 +2078,7 @@ boxPrintStreamInfo(FILE  *fp,
     if (!box)
         return ERROR_INT("box not defined", procName, 1);
 
-    fprintf(fp, " Box x (pixels) =           %d\n", box->x);
-    fprintf(fp, " Box y (pixels) =           %d\n", box->y);
-    fprintf(fp, " Box width (pixels) =       %d\n", box->w);
-    fprintf(fp, " Box height (pixels) =      %d\n", box->h);
-
+    fprintf(fp, " Box: x = %d, y = %d, w = %d, h = %d\n",
+            box->x, box->y, box->w, box->h);
     return 0;
 }

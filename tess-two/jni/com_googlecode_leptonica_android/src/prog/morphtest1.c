@@ -39,8 +39,8 @@
 #define   BASIC_OPS      1.     /* 1 for erosion/dilation; 2 for open/close */
 #define   CPU_SPEED      866.   /* MHz: set it for the machine you're using */
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i, index;
 l_float32    cputime, epo;
@@ -51,13 +51,12 @@ SELA        *sela;
 static char  mainName[] = "morphtest1";
 
     if (argc != 3)
-	exit(ERROR_INT(" Syntax:  morphtest1 filein fileout", mainName, 1));
+        return ERROR_INT(" Syntax:  morphtest1 filein fileout", mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
-
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
+        return ERROR_INT("pix not made", mainName, 1);
     sela = selaAddBasic(NULL);
 
     /* ------------------------   Timing  -------------------------------*/
@@ -68,8 +67,8 @@ static char  mainName[] = "morphtest1";
 
     startTimer();
     for (i = 0; i < NTIMES; i++)  {
-	pixDilate(pixd, pixs, sel);
-/*	if ((i % 10) == 0) fprintf(stderr, "%d iters\n", i); */
+        pixDilate(pixd, pixs, sel);
+/*        if ((i % 10) == 0) fprintf(stderr, "%d iters\n", i); */
     }
     cputime = stopTimer();
         /* Get the elementary pixel operations/sec */
@@ -83,12 +82,12 @@ static char  mainName[] = "morphtest1";
 
     /* ------------------  Example operation from repository --------------*/
 #if 1
-	/* Select a structuring element */
+        /* Select a structuring element */
     selaFindSelByName(sela, "sel_50h", &index, &sel);
     selWriteStream(stderr, sel);
 
         /* Do these operations.  See below for other ops
-	 * that can be substituted here. */
+         * that can be substituted here. */
     pixd = pixOpen(NULL, pixs, sel);
     pixXor(pixd, pixd, pixs);
     pixWrite(fileout, pixd, IFF_PNG);

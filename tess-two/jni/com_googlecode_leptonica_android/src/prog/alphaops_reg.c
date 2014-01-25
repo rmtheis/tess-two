@@ -40,24 +40,34 @@
  *     (3) Blending with a uniform color.  Also tests an alternative
  *         way to "blend" to a color: component-wise multiplication by
  *         the color.
+ *
+ *     (4) Testing RGB and colormapped images with alpha, including
+ *         binary and ascii colormap serialization.
  */
 
 #include "allheaders.h"
 
 static PIX *DoBlendTest(PIX *pix, BOX *box, l_uint32 val, l_float32 gamma,
                         l_int32 minval, l_int32 maxval, l_int32 which);
+void CmapEqual(PIXCMAP *cmap1, PIXCMAP *cmap2, l_int32 *pequal);
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
+l_uint8      *data;
 l_int32       w, h, n1, n2, n, i, minval, maxval;
+l_int32       ncolors, rval, gval, bval, equal;
+l_int32      *rmap, *gmap, *bmap;
 l_uint32      color;
 l_float32     gamma;
 BOX          *box;
-PIX          *pix1, *pix2, *pix3, *pix4;
+FILE         *fp;
+PIX          *pix1, *pix2, *pix3, *pix4, *pix5, *pix6;
 PIX          *pixs, *pixb, *pixg, *pixc, *pixd;
 PIX          *pixg2, *pixcs1, *pixcs2, *pixd1, *pixd2;
 PIXA         *pixa, *pixa2, *pixa3;
+PIXCMAP      *cmap, *cmap2;
+RGBA_QUAD    *cta;
 L_REGPARAMS  *rp;
 
     if (regTestSetup(argc, argv, &rp))
@@ -65,7 +75,7 @@ L_REGPARAMS  *rp;
 
     /* ------------------------ (1) ----------------------------*/
         /* Blend with a white background */
-    pix1 = pixReadRGBAPng("books_logo.png");
+    pix1 = pixRead("books_logo.png");
     pixDisplayWithTitle(pix1, 100, 0, NULL, rp->display);
     pix2 = pixAlphaBlendUniform(pix1, 0xffffff00);
     pixDisplayWithTitle(pix2, 100, 150, NULL, rp->display);
@@ -74,9 +84,11 @@ L_REGPARAMS  *rp;
 
         /* Generate an alpha layer based on the white background */
     pix3 = pixSetAlphaOverWhite(pix2);
-    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 2 */
-    pixWriteRGBAPng("/tmp/alphaplay.3.png", pix3);
-    regTestCheckFile(rp, "/tmp/alphaplay.3.png");   /* 3 */
+    pixSetSpp(pix3, 3);
+    pixWrite("/tmp/alphaops.2.png", pix3, IFF_PNG);  /* without alpha */
+    regTestCheckFile(rp, "/tmp/alphaops.2.png");   /* 2 */
+    pixSetSpp(pix3, 4);
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 3, with alpha */
     pixDisplayWithTitle(pix3, 100, 300, NULL, rp->display);
 
         /* Render on a light yellow background */
@@ -123,9 +135,9 @@ L_REGPARAMS  *rp;
          * transparent part of the alpha layer, and write that result
          * out as well. */
     pixSetRGBComponent(pixcs1, pixg2, L_ALPHA_CHANNEL);
-    pixWriteRGBAPng("/tmp/alpha/pixcs1.png", pixcs1);
+    pixWrite("/tmp/alpha/pixcs1.png", pixcs1, IFF_PNG);
     pixcs2 = pixSetUnderTransparency(pixcs1, 0, 0);
-    pixWriteRGBAPng("/tmp/alpha/pixcs2.png", pixcs2);
+    pixWrite("/tmp/alpha/pixcs2.png", pixcs2, IFF_PNG);
 
         /* What will this look like over a black background?
          * Do the blending explicitly and display.  It should
@@ -141,7 +153,7 @@ L_REGPARAMS  *rp;
          * look the same when viewed through the alpha layer,
          * but have much better compression. */
     pix1 = pixRead("/tmp/alpha/pixcs1.png");  /* just pixcs1 */
-    pix2 = pixRead("/tmp/alpha/pixcs2.png");  /* cleaned out under transparent */
+    pix2 = pixRead("/tmp/alpha/pixcs2.png");  /* cleaned under transparent */
     n1 = nbytesInFile("/tmp/alpha/pixcs1.png");
     n2 = nbytesInFile("/tmp/alpha/pixcs2.png");
     fprintf(stderr, " Original: %d bytes\n Cleaned: %d bytes\n", n1, n2);
@@ -152,12 +164,12 @@ L_REGPARAMS  *rp;
                         rp->display);
 
     pixa = pixaCreate(0);
-    pixSaveTiled(pixg2, pixa, 1, 1, 20, 32);
-    pixSaveTiled(pixcs1, pixa, 1, 1, 20, 0);
-    pixSaveTiled(pix1, pixa, 1, 0, 20, 0);
-    pixSaveTiled(pixd1, pixa, 1, 1, 20, 0);
-    pixSaveTiled(pixd2, pixa, 1, 0, 20, 0);
-    pixSaveTiled(pix2, pixa, 1, 1, 20, 0);
+    pixSaveTiled(pixg2, pixa, 1.0, 1, 20, 32);
+    pixSaveTiled(pixcs1, pixa, 1.0, 1, 20, 0);
+    pixSaveTiled(pix1, pixa, 1.0, 0, 20, 0);
+    pixSaveTiled(pixd1, pixa, 1.0, 1, 20, 0);
+    pixSaveTiled(pixd2, pixa, 1.0, 0, 20, 0);
+    pixSaveTiled(pix2, pixa, 1.0, 1, 20, 0);
     pixd = pixaDisplay(pixa, 0, 0);
     regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 11 */
     pixDisplayWithTitle(pixd, 200, 200, "composite", rp->display);
@@ -222,6 +234,61 @@ L_REGPARAMS  *rp;
     pixaDestroy(&pixa3);
     boxDestroy(&box);
 
+    /* ------------------------ (4) ----------------------------*/
+        /* Use one image as the alpha component for a second image */
+    pix1 = pixRead("test24.jpg");
+    pix2 = pixRead("marge.jpg");
+    pix3 = pixScale(pix2, 1.9, 2.2);
+    pix4 = pixConvertTo8(pix3, 0);
+    pixSetRGBComponent(pix1, pix4, L_ALPHA_CHANNEL);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 24 */
+    pixDisplayWithTitle(pix1, 600, 0, NULL, rp->display);
+
+        /* Set the alpha value in a colormap to bval */
+    pix5 = pixOctreeColorQuant(pix1, 128, 0);
+    cmap = pixGetColormap(pix5);
+    pixcmapToArrays(cmap, &rmap, &gmap, &bmap, NULL);
+    n = pixcmapGetCount(cmap);
+    for (i = 0; i < n; i++) {
+        pixcmapGetColor(cmap, i, &rval, &gval, &bval);
+        cta = (RGBA_QUAD *)cmap->array;
+        cta[i].alpha = bval;
+    }
+
+        /* Test binary serialization/deserialization of colormap with alpha */
+    pixcmapSerializeToMemory(cmap, 4, &ncolors, &data);
+    cmap2 = pixcmapDeserializeFromMemory(data, 4, ncolors);
+    CmapEqual(cmap, cmap2, &equal);
+    regTestCompareValues(rp, TRUE, equal, 0.0);  /* 25 */
+    pixcmapDestroy(&cmap2);
+    lept_free(data);
+
+        /* Test ascii serialization/deserialization of colormap with alpha */
+    fp = fopenWriteStream("/tmp/alpha/cmap.4", "w");
+    pixcmapWriteStream(fp, cmap);
+    fclose(fp);
+    fp = fopenReadStream("/tmp/alpha/cmap.4");
+    cmap2 = pixcmapReadStream(fp);
+    fclose(fp);
+    CmapEqual(cmap, cmap2, &equal);
+    regTestCompareValues(rp, TRUE, equal, 0.0);  /* 26 */
+    pixcmapDestroy(&cmap2);
+
+        /* Test r/w for cmapped pix with non-opaque alpha */
+    pixDisplayWithTitle(pix5, 900, 0, NULL, rp->display);
+    regTestWritePixAndCheck(rp, pix5, IFF_PNG);  /* 27 */
+    pixWrite("/tmp/alpha/fourcomp.png", pix5, IFF_PNG);
+    pix6 = pixRead("/tmp/alpha/fourcomp.png");
+    regTestComparePix(rp, pix5, pix6);  /* 28 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
+    pixDestroy(&pix6);
+    lept_free(rmap);
+    lept_free(gmap);
+    lept_free(bmap);
     return regTestCleanup(rp);
 }
 
@@ -271,3 +338,25 @@ PIXA  *pixa;
   pixaDestroy(&pixa);
   return pixd;
 }
+
+void
+CmapEqual(PIXCMAP *cmap1, PIXCMAP *cmap2, l_int32 *pequal)
+{
+l_int32  n1, n2, i, rval1, gval1, bval1, aval1, rval2, gval2, bval2, aval2;
+
+    *pequal = FALSE;
+    n1 = pixcmapGetCount(cmap1);
+    n2 = pixcmapGetCount(cmap1);
+    if (n1 != n2) return;
+
+    for (i = 0; i < n1; i++) {
+        pixcmapGetRGBA(cmap1, i, &rval1, &gval1, &bval1, &aval1);
+        pixcmapGetRGBA(cmap2, i, &rval2, &gval2, &bval2, &aval2);
+        if ((rval1 != rval2) || (gval1 != gval2) ||
+            (bval1 != bval2) || (aval1 != aval2))
+            return;
+    }
+    *pequal = TRUE;
+    return;
+}
+

@@ -28,21 +28,24 @@
  *   bbuffer.c
  *
  *      Create/Destroy BBuffer
- *          BBUFFER   *bbufferCreate()
- *          void      *bbufferDestroy()
- *          l_uint8   *bbufferDestroyAndSaveData()
+ *          BBUFFER        *bbufferCreate()
+ *          void           *bbufferDestroy()
+ *          l_uint8        *bbufferDestroyAndSaveData()
  *
  *      Operations to read data TO a BBuffer
- *          l_int32    bbufferRead()
- *          l_int32    bbufferReadStream()
- *          l_int32    bbufferExtendArray()
+ *          l_int32         bbufferRead()
+ *          l_int32         bbufferReadStream()
+ *          static l_int32  bbufferExtendArray()
  *
  *      Operations to write data FROM a BBuffer
- *          l_int32    bbufferWrite()
- *          l_int32    bbufferWriteStream()
+ *          l_int32         bbufferWrite()
+ *          l_int32         bbufferWriteStream()
  *
  *      Accessors
- *          l_int32    bbufferBytesToWrite()
+ *          l_int32         bbufferBytesToWrite()
+ *
+ *      Read from stdin to memory
+ *          l_int32         bbufferReadStdin()
  *
  *
  *    The bbuffer is an implementation of a byte queue.
@@ -91,12 +94,20 @@
  *
  *    See zlibmem.c for an example use of bbuffer, where we
  *    compress and decompress an array of bytes in memory.
+ *
+ *    We can also use the bbuffer trivially to read from stdin
+ *    into memory; e.g., to capture bytes piped from the stdout
+ *    of another program.  This is equivalent to repeatedly
+ *    calling bbufferReadStream() until the input queue is empty.
  */
 
 #include <string.h>
 #include "allheaders.h"
 
 static const l_int32  INITIAL_BUFFER_ARRAYSIZE = 1024;   /* n'importe quoi */
+
+    /* Static function */
+static l_int32 bbufferExtendArray(BBUFFER *bb, l_int32 nbytes);
 
 
 /*--------------------------------------------------------------------------*
@@ -136,9 +147,9 @@ BBUFFER  *bb;
     if (indata) {
         memcpy((l_uint8 *)bb->array, indata, nalloc);
         bb->n = nalloc;
-    }
-    else
+    } else {
         bb->n = 0;
+    }
 
     return bb;
 }
@@ -162,7 +173,7 @@ BBUFFER  *bb;
     PROCNAME("bbufferDestroy");
 
     if (pbb == NULL) {
-        L_WARNING("ptr address is NULL", procName);
+        L_WARNING("ptr address is NULL\n", procName);
         return;
     }
 
@@ -199,11 +210,11 @@ BBUFFER  *bb;
     PROCNAME("bbufferDestroyAndSaveData");
 
     if (pbb == NULL) {
-        L_WARNING("ptr address is NULL", procName);
+        L_WARNING("ptr address is NULL\n", procName);
         return NULL;
     }
     if (pnbytes == NULL) {
-        L_WARNING("&nbytes is NULL", procName);
+        L_WARNING("&nbytes is NULL\n", procName);
         bbufferDestroy(pbb);
         return NULL;
     }
@@ -215,7 +226,7 @@ BBUFFER  *bb;
     nbytes = bb->n - bb->nwritten;
     *pnbytes = nbytes;
     if ((array = (l_uint8 *)CALLOC(nbytes, sizeof(l_uint8))) == NULL) {
-        L_WARNING("calloc failure for array", procName);
+        L_WARNING("calloc failure for array\n", procName);
         return NULL;
     }
     memcpy((void *)array, (void *)(bb->array + bb->nwritten), nbytes);
@@ -343,7 +354,7 @@ l_int32  navail, nadd, nread, nwritten;
  *      (1) reallocNew() copies all bb->nalloc bytes, even though
  *          only bb->n are data.
  */
-l_int32
+static l_int32
 bbufferExtendArray(BBUFFER  *bb,
                    l_int32   nbytes)
 {
@@ -495,3 +506,58 @@ bbufferBytesToWrite(BBUFFER  *bb,
     *pnbytes = bb->n - bb->nwritten;
     return 0;
 }
+
+
+/*--------------------------------------------------------------------------*
+ *                           Read from stdin to memory                      *
+ *--------------------------------------------------------------------------*/
+/*!
+ *  bbufferReadStdin()
+ *
+ *      Input:  &data (<return> binary data read in)
+ *              &nbytes (<return>)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) This can be used to capture data piped in from stdin.
+ *          For example, you can read an image from stdin into memory
+ *          using shell redirection, with one of these:
+ *             cat <imagefile> | readprog
+ *             readprog < <imagefile>
+ *          where readprog is:
+ *             bbufferReadStdin(&data, &nbytes);  // l_uint8*, size_t
+ *             Pix *pix = pixReadMem(data, nbytes);
+ */
+l_int32
+bbufferReadStdin(l_uint8  **pdata,
+                 size_t    *pnbytes)
+{
+l_int32   navail, nadd, nread;
+BBUFFER  *bb;
+
+    PROCNAME("bbufferReadStdin");
+
+    if (!pdata)
+        return ERROR_INT("&data not defined", procName, 1);
+    if (!pnbytes)
+        return ERROR_INT("&nbytes not defined", procName, 1);
+
+    bb = bbufferCreate(NULL, 4096);
+    while (1) {
+        navail = bb->nalloc - bb->n;
+        if (navail < 4096) {
+             nadd = L_MAX(bb->nalloc, 4096);
+             bbufferExtendArray(bb, nadd);
+        }
+        nread = fread((void *)(bb->array + bb->n), 1, 4096, stdin);
+        bb->n += nread;
+        if (nread != 4096) break;
+    }
+
+    *pdata = bb->array;
+    *pnbytes = bb->n;
+    bb->array = NULL;
+    bbufferDestroy(&bb);
+    return 0;
+}
+

@@ -114,7 +114,7 @@ l_int32 convertJpegToPSString(const char *filein, char **poutstr,
 
 /* ----------------------------------------------------------------------*/
 
-char * generateJpegPS(const char *filein, L_COMPRESSED_DATA *cid,
+char * generateJpegPS(const char *filein, L_COMP_DATA *cid,
                       l_float32 xpt, l_float32 ypt, l_float32 wpt,
                       l_float32 hpt, l_int32 pageno, l_int32 endpage)
 {
@@ -123,26 +123,26 @@ char * generateJpegPS(const char *filein, L_COMPRESSED_DATA *cid,
 
 /* ----------------------------------------------------------------------*/
 
-L_COMPRESSED_DATA * pixGenerateJpegData(PIX *pixs, l_int32 ascii85flag,
-                                        l_int32 quality)
+L_COMP_DATA * pixGenerateJpegData(PIX *pixs, l_int32 ascii85flag,
+                                  l_int32 quality)
 {
-    return (L_COMPRESSED_DATA *)ERROR_PTR("function not present",
-                                          "pixGenerateJpegData", NULL);
+    return (L_COMP_DATA *)ERROR_PTR("function not present",
+                                    "pixGenerateJpegData", NULL);
 }
 
 /* ----------------------------------------------------------------------*/
 
-L_COMPRESSED_DATA * l_generateJpegData(const char *fname, l_int32 ascii85flag)
+L_COMP_DATA * l_generateJpegData(const char *fname, l_int32 ascii85flag)
 {
-    return (L_COMPRESSED_DATA *)ERROR_PTR("function not present",
-                                          "l_generateJpegData", NULL);
+    return (L_COMP_DATA *)ERROR_PTR("function not present",
+                                    "l_generateJpegData", NULL);
 }
 
 /* ----------------------------------------------------------------------*/
 
-void compressed_dataDestroy(L_COMPRESSED_DATA  **pcid)
+void l_compdataDestroy(L_COMP_DATA  **pcid)
 {
-    L_ERROR("function not present", "compressedDataDestroy");
+    L_ERROR("function not present", "l_compdataDestroy");
     return;
 }
 
@@ -175,7 +175,7 @@ l_int32 convertG4ToPSString(const char *filein, char **poutstr,
 
 /* ----------------------------------------------------------------------*/
 
-char * generateG4PS(const char *filein, L_COMPRESSED_DATA *cid, l_float32 xpt,
+char * generateG4PS(const char *filein, L_COMP_DATA *cid, l_float32 xpt,
                     l_float32 ypt, l_float32 wpt, l_float32 hpt,
                     l_int32 maskflag, l_int32 pageno, l_int32 endpage)
 {
@@ -184,18 +184,18 @@ char * generateG4PS(const char *filein, L_COMPRESSED_DATA *cid, l_float32 xpt,
 
 /* ----------------------------------------------------------------------*/
 
-L_COMPRESSED_DATA * pixGenerateG4Data(PIX *pixs, l_int32 ascii85flag)
+L_COMP_DATA * pixGenerateG4Data(PIX *pixs, l_int32 ascii85flag)
 {
-    return (L_COMPRESSED_DATA *)ERROR_PTR("function not present",
-                                          "pixGenerateG4Data", NULL);
+    return (L_COMP_DATA *)ERROR_PTR("function not present",
+                                    "pixGenerateG4Data", NULL);
 }
 
 /* ----------------------------------------------------------------------*/
 
-L_COMPRESSED_DATA * l_generateG4Data(const char *fname, l_int32 ascii85flag)
+L_COMP_DATA * l_generateG4Data(const char *fname, l_int32 ascii85flag)
 {
-    return (L_COMPRESSED_DATA *)ERROR_PTR("function not present",
-                                          "l_generateG4Data", NULL);
+    return (L_COMP_DATA *)ERROR_PTR("function not present",
+                                    "l_generateG4Data", NULL);
 }
 
 /* ----------------------------------------------------------------------*/
@@ -235,7 +235,7 @@ l_int32 convertFlateToPSString(const char *filein, char **poutstr,
 
 /* ----------------------------------------------------------------------*/
 
-char * generateFlatePS(const char *filein, L_COMPRESSED_DATA *cid,
+char * generateFlatePS(const char *filein, L_COMP_DATA *cid,
                        l_float32 xpt, l_float32 ypt, l_float32 wpt,
                        l_float32 hpt, l_int32 pageno, l_int32 endpage)
 {
@@ -244,19 +244,34 @@ char * generateFlatePS(const char *filein, L_COMPRESSED_DATA *cid,
 
 /* ----------------------------------------------------------------------*/
 
-L_COMPRESSED_DATA * l_generateFlateData(const char *fname,
-                                        l_int32 ascii85flag)
+L_COMP_DATA * l_generateFlateData(const char *fname, l_int32 ascii85flag)
 {
-    return (L_COMPRESSED_DATA *)ERROR_PTR("function not present",
-                                          "l_generateFlateData", NULL);
+    return (L_COMP_DATA *)ERROR_PTR("function not present",
+                                    "l_generateFlateData", NULL);
 }
 
 /* ----------------------------------------------------------------------*/
 
-L_COMPRESSED_DATA * pixGenerateFlateData(PIX *pixs, l_int32 ascii85flag)
+L_COMP_DATA * pixGenerateFlateData(PIX *pixs, l_int32 ascii85flag)
 {
-    return (L_COMPRESSED_DATA *)ERROR_PTR("function not present",
-                                          "pixGenerateFlateData", NULL);
+    return (L_COMP_DATA *)ERROR_PTR("function not present",
+                                    "pixGenerateFlateData", NULL);
+}
+
+/* ----------------------------------------------------------------------*/
+
+l_int32 l_generateCIData(const char *fname, l_int32 type, l_int32 quality,
+                         l_int32 ascii85, L_COMP_DATA **pcid)
+{
+    return ERROR_INT("function not present", "l_generateCIData", 1);
+}
+
+/* ----------------------------------------------------------------------*/
+
+l_int32 pixGenerateCIData(PIX *pixs, l_int32 type, l_int32 quality,
+                         l_int32 ascii85, L_COMP_DATA **pcid)
+{
+    return ERROR_INT("function not present", "pixGenerateCIData", 1);
 }
 
 /* ----------------------------------------------------------------------*/

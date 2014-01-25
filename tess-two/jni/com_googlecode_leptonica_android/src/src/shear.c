@@ -74,7 +74,7 @@ static l_float32 normalizeAngleForShear(l_float32 radang, l_float32 mindif);
  *      Input:  pixd (<optional>, this can be null, equal to pixs,
  *                    or different from pixs)
  *              pixs (no restrictions on depth)
- *              liney  (location of horizontal line, measured from origin)
+ *              yloc (location of horizontal line, measured from origin)
  *              angle (in radians)
  *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
  *      Return: pixd, always
@@ -88,14 +88,14 @@ static l_float32 normalizeAngleForShear(l_float32 radang, l_float32 mindif);
  *              pixd = pixHShear(NULL, pixs, ...);
  *              pixHShear(pixs, pixs, ...);
  *              pixHShear(pixd, pixs, ...);
- *      (3) This shear leaves the horizontal line of pixels at y = liney
+ *      (3) This shear leaves the horizontal line of pixels at y = yloc
  *          invariant.  For a positive shear angle, pixels above this
  *          line are shoved to the right, and pixels below this line
  *          move to the left.
  *      (4) With positive shear angle, this can be used, along with
  *          pixVShear(), to perform a cw rotation, either with 2 shears
  *          (for small angles) or in the general case with 3 shears.
- *      (5) Changing the value of liney is equivalent to translating
+ *      (5) Changing the value of yloc is equivalent to translating
  *          the result horizontally.
  *      (6) This brings in 'incolor' pixels from outside the image.
  *      (7) For in-place operation, pixs cannot be colormapped,
@@ -108,7 +108,7 @@ static l_float32 normalizeAngleForShear(l_float32 radang, l_float32 mindif);
 PIX *
 pixHShear(PIX       *pixd,
           PIX       *pixs,
-          l_int32    liney,
+          l_int32    yloc,
           l_float32  radang,
           l_int32    incolor)
 {
@@ -124,9 +124,9 @@ l_float32  tanangle, invangle;
         return (PIX *)ERROR_PTR("invalid incolor value", procName, pixd);
 
     if (pixd == pixs) {  /* in place */
-        if (pixGetColormap(pixs) != NULL)
+        if (pixGetColormap(pixs))
             return (PIX *)ERROR_PTR("pixs is colormapped", procName, pixd);
-        pixHShearIP(pixd, liney, radang, incolor);
+        pixHShearIP(pixd, yloc, radang, incolor);
         return pixd;
     }
 
@@ -134,9 +134,9 @@ l_float32  tanangle, invangle;
     if (!pixd) {
         if ((pixd = pixCreateTemplate(pixs)) == NULL)
             return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
-    }
-    else  /* pixd != pixs */
+    } else {  /* pixd != pixs */
         pixResizeImageData(pixd, pixs);
+    }
 
         /* Normalize angle.  If no rotation, return a copy */
     radang = normalizeAngleForShear(radang, MIN_DIFF_FROM_HALF_PI);
@@ -152,11 +152,11 @@ l_float32  tanangle, invangle;
     invangle = L_ABS(1. / tanangle);
     inityincr = (l_int32)(invangle / 2.);
     yincr = (l_int32)invangle;
-    pixRasterop(pixd, 0, liney - inityincr, w, 2 * inityincr, PIX_SRC,
-                pixs, 0, liney - inityincr);
+    pixRasterop(pixd, 0, yloc - inityincr, w, 2 * inityincr, PIX_SRC,
+                pixs, 0, yloc - inityincr);
 
-    for (hshift = 1, y = liney + inityincr; y < h; hshift++) {
-        yincr = (l_int32)(invangle * (hshift + 0.5) + 0.5) - (y - liney);
+    for (hshift = 1, y = yloc + inityincr; y < h; hshift++) {
+        yincr = (l_int32)(invangle * (hshift + 0.5) + 0.5) - (y - yloc);
         if (h - y < yincr)  /* reduce for last one if req'd */
             yincr = h - y;
         pixRasterop(pixd, -sign*hshift, y, w, yincr, PIX_SRC, pixs, 0, y);
@@ -166,8 +166,8 @@ l_float32  tanangle, invangle;
         y += yincr;
     }
 
-    for (hshift = -1, y = liney - inityincr; y > 0; hshift--) {
-        yincr = (y - liney) - (l_int32)(invangle * (hshift - 0.5) + 0.5);
+    for (hshift = -1, y = yloc - inityincr; y > 0; hshift--) {
+        yincr = (y - yloc) - (l_int32)(invangle * (hshift - 0.5) + 0.5);
         if (y < yincr)  /* reduce for last one if req'd */
             yincr = y;
         pixRasterop(pixd, -sign*hshift, y - yincr, w, yincr, PIX_SRC,
@@ -189,7 +189,7 @@ l_float32  tanangle, invangle;
  *      Input:  pixd (<optional>, this can be null, equal to pixs,
  *                    or different from pixs)
  *              pixs (no restrictions on depth)
- *              linex  (location of vertical line, measured from origin)
+ *              xloc (location of vertical line, measured from origin)
  *              angle (in radians; not too close to +-(pi / 2))
  *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
  *      Return: pixd, or null on error
@@ -203,14 +203,14 @@ l_float32  tanangle, invangle;
  *              pixd = pixVShear(NULL, pixs, ...);
  *              pixVShear(pixs, pixs, ...);
  *              pixVShear(pixd, pixs, ...);
- *      (3) This shear leaves the vertical line of pixels at x = linex
+ *      (3) This shear leaves the vertical line of pixels at x = xloc
  *          invariant.  For a positive shear angle, pixels to the right
  *          of this line are shoved downward, and pixels to the left
  *          of the line move upward.
  *      (4) With positive shear angle, this can be used, along with
  *          pixHShear(), to perform a cw rotation, either with 2 shears
  *          (for small angles) or in the general case with 3 shears.
- *      (5) Changing the value of linex is equivalent to translating
+ *      (5) Changing the value of xloc is equivalent to translating
  *          the result vertically.
  *      (6) This brings in 'incolor' pixels from outside the image.
  *      (7) For in-place operation, pixs cannot be colormapped,
@@ -223,7 +223,7 @@ l_float32  tanangle, invangle;
 PIX *
 pixVShear(PIX       *pixd,
           PIX       *pixs,
-          l_int32    linex,
+          l_int32    xloc,
           l_float32  radang,
           l_int32    incolor)
 {
@@ -239,9 +239,9 @@ l_float32  tanangle, invangle;
         return (PIX *)ERROR_PTR("invalid incolor value", procName, NULL);
 
     if (pixd == pixs) {  /* in place */
-        if (pixGetColormap(pixs) != NULL)
+        if (pixGetColormap(pixs))
             return (PIX *)ERROR_PTR("pixs is colormapped", procName, pixd);
-        pixVShearIP(pixd, linex, radang, incolor);
+        pixVShearIP(pixd, xloc, radang, incolor);
         return pixd;
     }
 
@@ -249,9 +249,9 @@ l_float32  tanangle, invangle;
     if (!pixd) {
         if ((pixd = pixCreateTemplate(pixs)) == NULL)
             return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
-    }
-    else  /* pixd != pixs */
+    } else {  /* pixd != pixs */
         pixResizeImageData(pixd, pixs);
+    }
 
         /* Normalize angle.  If no rotation, return a copy */
     radang = normalizeAngleForShear(radang, MIN_DIFF_FROM_HALF_PI);
@@ -267,11 +267,11 @@ l_float32  tanangle, invangle;
     invangle = L_ABS(1. / tanangle);
     initxincr = (l_int32)(invangle / 2.);
     xincr = (l_int32)invangle;
-    pixRasterop(pixd, linex - initxincr, 0, 2 * initxincr, h, PIX_SRC,
-                pixs, linex - initxincr, 0);
+    pixRasterop(pixd, xloc - initxincr, 0, 2 * initxincr, h, PIX_SRC,
+                pixs, xloc - initxincr, 0);
 
-    for (vshift = 1, x = linex + initxincr; x < w; vshift++) {
-        xincr = (l_int32)(invangle * (vshift + 0.5) + 0.5) - (x - linex);
+    for (vshift = 1, x = xloc + initxincr; x < w; vshift++) {
+        xincr = (l_int32)(invangle * (vshift + 0.5) + 0.5) - (x - xloc);
         if (w - x < xincr)  /* reduce for last one if req'd */
             xincr = w - x;
         pixRasterop(pixd, x, sign*vshift, xincr, h, PIX_SRC, pixs, x, 0);
@@ -281,8 +281,8 @@ l_float32  tanangle, invangle;
         x += xincr;
     }
 
-    for (vshift = -1, x = linex - initxincr; x > 0; vshift--) {
-        xincr = (x - linex) - (l_int32)(invangle * (vshift - 0.5) + 0.5);
+    for (vshift = -1, x = xloc - initxincr; x > 0; vshift--) {
+        xincr = (x - xloc) - (l_int32)(invangle * (vshift - 0.5) + 0.5);
         if (x < xincr)  /* reduce for last one if req'd */
             xincr = x;
         pixRasterop(pixd, x - xincr, sign*vshift, xincr, h, PIX_SRC,
@@ -426,7 +426,7 @@ pixVShearCenter(PIX       *pixd,
  *  pixHShearIP()
  *
  *      Input:  pixs
- *              liney  (location of horizontal line, measured from origin)
+ *              yloc (location of horizontal line, measured from origin)
  *              angle (in radians)
  *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
  *      Return: 0 if OK; 1 on error
@@ -441,7 +441,7 @@ pixVShearCenter(PIX       *pixd,
  */
 l_int32
 pixHShearIP(PIX       *pixs,
-            l_int32    liney,
+            l_int32    yloc,
             l_float32  radang,
             l_int32    incolor)
 {
@@ -455,7 +455,7 @@ l_float32  tanangle, invangle;
         return ERROR_INT("pixs not defined", procName, 1);
     if (incolor != L_BRING_IN_WHITE && incolor != L_BRING_IN_BLACK)
         return ERROR_INT("invalid incolor value", procName, 1);
-    if (pixGetColormap(pixs) != NULL)
+    if (pixGetColormap(pixs))
         return ERROR_INT("pixs is colormapped", procName, 1);
 
         /* Normalize angle */
@@ -470,18 +470,21 @@ l_float32  tanangle, invangle;
     inityincr = (l_int32)(invangle / 2.);
     yincr = (l_int32)invangle;
 
-    pixRasteropHip(pixs, liney - inityincr, 2 * inityincr, 0, incolor);
+    if (inityincr > 0)
+        pixRasteropHip(pixs, yloc - inityincr, 2 * inityincr, 0, incolor);
 
-    for (hshift = 1, y = liney + inityincr; y < h; hshift++) {
-        yincr = (l_int32)(invangle * (hshift + 0.5) + 0.5) - (y - liney);
+    for (hshift = 1, y = yloc + inityincr; y < h; hshift++) {
+        yincr = (l_int32)(invangle * (hshift + 0.5) + 0.5) - (y - yloc);
+        if (yincr == 0) continue;
         if (h - y < yincr)  /* reduce for last one if req'd */
             yincr = h - y;
         pixRasteropHip(pixs, y, yincr, -sign*hshift, incolor);
         y += yincr;
     }
 
-    for (hshift = -1, y = liney - inityincr; y > 0; hshift--) {
-        yincr = (y - liney) - (l_int32)(invangle * (hshift - 0.5) + 0.5);
+    for (hshift = -1, y = yloc - inityincr; y > 0; hshift--) {
+        yincr = (y - yloc) - (l_int32)(invangle * (hshift - 0.5) + 0.5);
+        if (yincr == 0) continue;
         if (y < yincr)  /* reduce for last one if req'd */
             yincr = y;
         pixRasteropHip(pixs, y - yincr, yincr, -sign*hshift, incolor);
@@ -496,7 +499,7 @@ l_float32  tanangle, invangle;
  *  pixVShearIP()
  *
  *      Input:  pixs (all depths; not colormapped)
- *              linex  (location of vertical line, measured from origin)
+ *              xloc  (location of vertical line, measured from origin)
  *              angle (in radians)
  *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
  *      Return: 0 if OK; 1 on error
@@ -511,7 +514,7 @@ l_float32  tanangle, invangle;
  */
 l_int32
 pixVShearIP(PIX       *pixs,
-            l_int32    linex,
+            l_int32    xloc,
             l_float32  radang,
             l_int32    incolor)
 {
@@ -525,7 +528,7 @@ l_float32  tanangle, invangle;
         return ERROR_INT("pixs not defined", procName, 1);
     if (incolor != L_BRING_IN_WHITE && incolor != L_BRING_IN_BLACK)
         return ERROR_INT("invalid incolor value", procName, 1);
-    if (pixGetColormap(pixs) != NULL)
+    if (pixGetColormap(pixs))
         return ERROR_INT("pixs is colormapped", procName, 1);
 
         /* Normalize angle */
@@ -540,18 +543,21 @@ l_float32  tanangle, invangle;
     initxincr = (l_int32)(invangle / 2.);
     xincr = (l_int32)invangle;
 
-    pixRasteropVip(pixs, linex - initxincr, 2 * initxincr, 0, incolor);
+    if (initxincr > 0)
+        pixRasteropVip(pixs, xloc - initxincr, 2 * initxincr, 0, incolor);
 
-    for (vshift = 1, x = linex + initxincr; x < w; vshift++) {
-        xincr = (l_int32)(invangle * (vshift + 0.5) + 0.5) - (x - linex);
+    for (vshift = 1, x = xloc + initxincr; x < w; vshift++) {
+        xincr = (l_int32)(invangle * (vshift + 0.5) + 0.5) - (x - xloc);
+        if (xincr == 0) continue;
         if (w - x < xincr)  /* reduce for last one if req'd */
             xincr = w - x;
         pixRasteropVip(pixs, x, xincr, sign*vshift, incolor);
         x += xincr;
     }
 
-    for (vshift = -1, x = linex - initxincr; x > 0; vshift--) {
-        xincr = (x - linex) - (l_int32)(invangle * (vshift - 0.5) + 0.5);
+    for (vshift = -1, x = xloc - initxincr; x > 0; vshift--) {
+        xincr = (x - xloc) - (l_int32)(invangle * (vshift - 0.5) + 0.5);
+        if (xincr == 0) continue;
         if (x < xincr)  /* reduce for last one if req'd */
             xincr = x;
         pixRasteropVip(pixs, x - xincr, xincr, sign*vshift, incolor);
@@ -569,7 +575,7 @@ l_float32  tanangle, invangle;
  *  pixHShearLI()
  *
  *      Input:  pixs (8 bpp or 32 bpp, or colormapped)
- *              liney  (location of horizontal line, measured from origin)
+ *              yloc (location of horizontal line, measured from origin)
  *              angle (in radians, in range (-pi/2 ... pi/2))
  *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
  *      Return: pixd (sheared), or null on error
@@ -579,7 +585,7 @@ l_float32  tanangle, invangle;
  *          accurate results on 8 bpp gray, 32 bpp rgb, or cmapped images.
  *          It is relatively slow compared to the sampled version
  *          implemented by rasterop, but the result is much smoother.
- *      (2) This shear leaves the horizontal line of pixels at y = liney
+ *      (2) This shear leaves the horizontal line of pixels at y = yloc
  *          invariant.  For a positive shear angle, pixels above this
  *          line are shoved to the right, and pixels below this line
  *          move to the left.
@@ -589,7 +595,7 @@ l_float32  tanangle, invangle;
  */
 PIX *
 pixHShearLI(PIX       *pixs,
-            l_int32    liney,
+            l_int32    yloc,
             l_float32  radang,
             l_int32    incolor)
 {
@@ -608,8 +614,8 @@ PIX       *pix, *pixd;
         return (PIX *)ERROR_PTR("pixs not 8, 32 bpp, or cmap", procName, NULL);
     if (incolor != L_BRING_IN_WHITE && incolor != L_BRING_IN_BLACK)
         return (PIX *)ERROR_PTR("invalid incolor value", procName, NULL);
-    if (liney < 0 || liney >= h)
-        return (PIX *)ERROR_PTR("liney not in [0 ... h-1]", procName, NULL);
+    if (yloc < 0 || yloc >= h)
+        return (PIX *)ERROR_PTR("yloc not in [0 ... h-1]", procName, NULL);
 
     if (pixGetColormap(pixs))
         pix = pixRemoveColormap(pixs, REMOVE_CMAP_BASED_ON_SRC);
@@ -637,7 +643,7 @@ PIX       *pix, *pixd;
     for (i = 0; i < h; i++) {
         lines = datas + i * wpls;
         lined = datad + i * wpld;
-        xshift = (liney - i) * tanangle;
+        xshift = (yloc - i) * tanangle;
         for (jd = 0; jd < w; jd++) {
             x = (l_int32)(64.0 * (-xshift + jd) + 0.5);
             xp = x / 64;
@@ -645,14 +651,14 @@ PIX       *pix, *pixd;
             wm = w - 1;
             if (xp < 0 || xp > wm) continue;
             if (d == 8) {
-                if (xp < wm)
+                if (xp < wm) {
                     val = ((63 - xf) * GET_DATA_BYTE(lines, xp) +
                            xf * GET_DATA_BYTE(lines, xp + 1) + 31) / 63;
-                else  /* xp == wm */
+                } else {  /* xp == wm */
                     val = GET_DATA_BYTE(lines, xp);
+                }
                 SET_DATA_BYTE(lined, jd, val);
-            }
-            else {  /* d == 32 */
+            } else {  /* d == 32 */
                 if (xp < wm) {
                     word0 = *(lines + xp);
                     word1 = *(lines + xp + 1);
@@ -663,9 +669,9 @@ PIX       *pix, *pixd;
                     bval = ((63 - xf) * ((word0 >> L_BLUE_SHIFT) & 0xff) +
                            xf * ((word1 >> L_BLUE_SHIFT) & 0xff) + 31) / 63;
                     composeRGBPixel(rval, gval, bval, lined + jd);
-                }
-                else  /* xp == wm */
+                } else {  /* xp == wm */
                     lined[jd] = lines[xp];
+                }
             }
         }
     }
@@ -679,7 +685,7 @@ PIX       *pix, *pixd;
  *  pixVShearLI()
  *
  *      Input:  pixs (8 bpp or 32 bpp, or colormapped)
- *              linex  (location of vertical line, measured from origin)
+ *              xloc  (location of vertical line, measured from origin)
  *              angle (in radians, in range (-pi/2 ... pi/2))
  *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
  *      Return: pixd (sheared), or null on error
@@ -689,7 +695,7 @@ PIX       *pix, *pixd;
  *          accurate results on 8 bpp gray, 32 bpp rgb, or cmapped images.
  *          It is relatively slow compared to the sampled version
  *          implemented by rasterop, but the result is much smoother.
- *      (2) This shear leaves the vertical line of pixels at x = linex
+ *      (2) This shear leaves the vertical line of pixels at x = xloc
  *          invariant.  For a positive shear angle, pixels to the right
  *          of this line are shoved downward, and pixels to the left
  *          of the line move upward.
@@ -699,7 +705,7 @@ PIX       *pix, *pixd;
  */
 PIX *
 pixVShearLI(PIX       *pixs,
-            l_int32    linex,
+            l_int32    xloc,
             l_float32  radang,
             l_int32    incolor)
 {
@@ -718,8 +724,8 @@ PIX       *pix, *pixd;
         return (PIX *)ERROR_PTR("pixs not 8, 32 bpp, or cmap", procName, NULL);
     if (incolor != L_BRING_IN_WHITE && incolor != L_BRING_IN_BLACK)
         return (PIX *)ERROR_PTR("invalid incolor value", procName, NULL);
-    if (linex < 0 || linex >= w)
-        return (PIX *)ERROR_PTR("linex not in [0 ... w-1]", procName, NULL);
+    if (xloc < 0 || xloc >= w)
+        return (PIX *)ERROR_PTR("xloc not in [0 ... w-1]", procName, NULL);
 
     if (pixGetColormap(pixs))
         pix = pixRemoveColormap(pixs, REMOVE_CMAP_BASED_ON_SRC);
@@ -745,7 +751,7 @@ PIX       *pix, *pixd;
     wpld = pixGetWpl(pixd);
     tanangle = tan(radang);
     for (j = 0; j < w; j++) {
-        yshift = (j - linex) * tanangle;
+        yshift = (j - xloc) * tanangle;
         for (id = 0; id < h; id++) {
             y = (l_int32)(64.0 * (-yshift + id) + 0.5);
             yp = y / 64;
@@ -755,14 +761,14 @@ PIX       *pix, *pixd;
             lines = datas + yp * wpls;
             lined = datad + id * wpld;
             if (d == 8) {
-                if (yp < hm)
+                if (yp < hm) {
                     val = ((63 - yf) * GET_DATA_BYTE(lines, j) +
                            yf * GET_DATA_BYTE(lines + wpls, j) + 31) / 63;
-                else  /* yp == hm */
+                } else {  /* yp == hm */
                     val = GET_DATA_BYTE(lines, j);
+                }
                 SET_DATA_BYTE(lined, j, val);
-            }
-            else {  /* d == 32 */
+            } else {  /* d == 32 */
                 if (yp < hm) {
                     word0 = *(lines + j);
                     word1 = *(lines + wpls + j);
@@ -773,9 +779,9 @@ PIX       *pix, *pixd;
                     bval = ((63 - yf) * ((word0 >> L_BLUE_SHIFT) & 0xff) +
                            yf * ((word1 >> L_BLUE_SHIFT) & 0xff) + 31) / 63;
                     composeRGBPixel(rval, gval, bval, lined + j);
-                }
-                else  /* yp == hm */
+                } else {  /* yp == hm */
                     lined[j] = lines[j];
+                }
             }
         }
     }
@@ -803,11 +809,10 @@ l_float32  pi2;
 
        /* If angle is too close to pi/2 or -pi/2, move it */
     if (radang > pi2 - mindif) {
-        L_WARNING("angle close to pi/2; shifting away", procName);
+        L_WARNING("angle close to pi/2; shifting away\n", procName);
         radang = pi2 - mindif;
-    }
-    else if (radang < -pi2 + mindif) {
-        L_WARNING("angle close to -pi/2; shifting away", procName);
+    } else if (radang < -pi2 + mindif) {
+        L_WARNING("angle close to -pi/2; shifting away\n", procName);
         radang = -pi2 + mindif;
     }
 

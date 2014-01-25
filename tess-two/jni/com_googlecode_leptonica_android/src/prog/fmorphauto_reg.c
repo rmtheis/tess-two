@@ -42,8 +42,8 @@
 LEPT_DLL extern l_int32 MORPH_BC;
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i, nsels, same, xorcount;
 char        *filein, *selname;
@@ -53,111 +53,110 @@ SELA        *sela;
 static char  mainName[] = "fmorphauto_reg";
 
     if (argc != 2)
-	exit(ERROR_INT(" Syntax:  fmorphauto_reg filein", mainName, 1));
+        return ERROR_INT(" Syntax:  fmorphauto_reg filein", mainName, 1);
 
     filein = argv[1];
-
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
+        return ERROR_INT("pix not made", mainName, 1);
 
     sela = selaAddBasic(NULL);
     nsels = selaGetCount(sela);
 
     for (i = 0; i < nsels; i++)
     {
-	sel = selaGetSel(sela, i);
-	selname = selGetName(sel);
+        sel = selaGetSel(sela, i);
+        selname = selGetName(sel);
 
-	    /*  ---------  dilation  ----------*/
+            /*  ---------  dilation  ----------*/
 
-	pixt1 = pixDilate(NULL, pixs, sel);
+        pixt1 = pixDilate(NULL, pixs, sel);
 
-	pixs1 = pixAddBorder(pixs, 32, 0);
-	pixt2 = pixFMorphopGen_1(NULL, pixs1, L_MORPH_DILATE, selname);
-	pixt3 = pixRemoveBorder(pixt2, 32);
+        pixs1 = pixAddBorder(pixs, 32, 0);
+        pixt2 = pixFMorphopGen_1(NULL, pixs1, L_MORPH_DILATE, selname);
+        pixt3 = pixRemoveBorder(pixt2, 32);
 
-	pixt4 = pixXor(NULL, pixt1, pixt3);
-	pixZero(pixt4, &same);
+        pixt4 = pixXor(NULL, pixt1, pixt3);
+        pixZero(pixt4, &same);
 
-	if (same == 1) {
-	    fprintf(stderr, "dilations are identical for sel %d (%s)\n",
-	            i, selname);
-	}
-	else {
-	    fprintf(stderr, "dilations differ for sel %d (%s)\n", i, selname);
-	    pixCountPixels(pixt4, &xorcount, NULL);
-	    fprintf(stderr, "Number of pixels in XOR: %d\n", xorcount);
-	}
+        if (same == 1) {
+            fprintf(stderr, "dilations are identical for sel %d (%s)\n",
+                    i, selname);
+        }
+        else {
+            fprintf(stderr, "dilations differ for sel %d (%s)\n", i, selname);
+            pixCountPixels(pixt4, &xorcount, NULL);
+            fprintf(stderr, "Number of pixels in XOR: %d\n", xorcount);
+        }
 
-	pixDestroy(&pixt1);
-	pixDestroy(&pixt2);
-	pixDestroy(&pixt3);
-	pixDestroy(&pixt4);
-	pixDestroy(&pixs1);
+        pixDestroy(&pixt1);
+        pixDestroy(&pixt2);
+        pixDestroy(&pixt3);
+        pixDestroy(&pixt4);
+        pixDestroy(&pixs1);
 
-	    /*  ---------  erosion with asymmetric b.c  ----------*/
+            /*  ---------  erosion with asymmetric b.c  ----------*/
 
         resetMorphBoundaryCondition(ASYMMETRIC_MORPH_BC);
         fprintf(stderr, "MORPH_BC = %d ... ", MORPH_BC);
-	pixt1 = pixErode(NULL, pixs, sel);
+        pixt1 = pixErode(NULL, pixs, sel);
 
         if (MORPH_BC == ASYMMETRIC_MORPH_BC)
-	    pixs1 = pixAddBorder(pixs, 32, 0);  /* OFF border pixels */
+            pixs1 = pixAddBorder(pixs, 32, 0);  /* OFF border pixels */
         else
-	    pixs1 = pixAddBorder(pixs, 32, 1);  /* ON border pixels */
-	pixt2 = pixFMorphopGen_1(NULL, pixs1, L_MORPH_ERODE, selname);
-	pixt3 = pixRemoveBorder(pixt2, 32);
+            pixs1 = pixAddBorder(pixs, 32, 1);  /* ON border pixels */
+        pixt2 = pixFMorphopGen_1(NULL, pixs1, L_MORPH_ERODE, selname);
+        pixt3 = pixRemoveBorder(pixt2, 32);
 
-	pixt4 = pixXor(NULL, pixt1, pixt3);
-	pixZero(pixt4, &same);
+        pixt4 = pixXor(NULL, pixt1, pixt3);
+        pixZero(pixt4, &same);
 
-	if (same == 1) {
-	    fprintf(stderr, "erosions are identical for sel %d (%s)\n",
-	            i, selname);
-	}
-	else {
-	    fprintf(stderr, "erosions differ for sel %d (%s)\n", i, selname);
-	    pixCountPixels(pixt4, &xorcount, NULL);
-	    fprintf(stderr, "Number of pixels in XOR: %d\n", xorcount);
-	}
+        if (same == 1) {
+            fprintf(stderr, "erosions are identical for sel %d (%s)\n",
+                    i, selname);
+        }
+        else {
+            fprintf(stderr, "erosions differ for sel %d (%s)\n", i, selname);
+            pixCountPixels(pixt4, &xorcount, NULL);
+            fprintf(stderr, "Number of pixels in XOR: %d\n", xorcount);
+        }
 
-	pixDestroy(&pixt1);
-	pixDestroy(&pixt2);
-	pixDestroy(&pixt3);
-	pixDestroy(&pixt4);
-	pixDestroy(&pixs1);
-	
-	    /*  ---------  erosion with symmetric b.c  ----------*/
+        pixDestroy(&pixt1);
+        pixDestroy(&pixt2);
+        pixDestroy(&pixt3);
+        pixDestroy(&pixt4);
+        pixDestroy(&pixs1);
+
+            /*  ---------  erosion with symmetric b.c  ----------*/
 
         resetMorphBoundaryCondition(SYMMETRIC_MORPH_BC);
         fprintf(stderr, "MORPH_BC = %d ... ", MORPH_BC);
-	pixt1 = pixErode(NULL, pixs, sel);
+        pixt1 = pixErode(NULL, pixs, sel);
 
         if (MORPH_BC == ASYMMETRIC_MORPH_BC)
-	    pixs1 = pixAddBorder(pixs, 32, 0);  /* OFF border pixels */
+            pixs1 = pixAddBorder(pixs, 32, 0);  /* OFF border pixels */
         else
-	    pixs1 = pixAddBorder(pixs, 32, 1);  /* ON border pixels */
-	pixt2 = pixFMorphopGen_1(NULL, pixs1, L_MORPH_ERODE, selname);
-	pixt3 = pixRemoveBorder(pixt2, 32);
+            pixs1 = pixAddBorder(pixs, 32, 1);  /* ON border pixels */
+        pixt2 = pixFMorphopGen_1(NULL, pixs1, L_MORPH_ERODE, selname);
+        pixt3 = pixRemoveBorder(pixt2, 32);
 
-	pixt4 = pixXor(NULL, pixt1, pixt3);
-	pixZero(pixt4, &same);
+        pixt4 = pixXor(NULL, pixt1, pixt3);
+        pixZero(pixt4, &same);
 
-	if (same == 1) {
-	    fprintf(stderr, "erosions are identical for sel %d (%s)\n",
-	            i, selname);
-	}
-	else {
-	    fprintf(stderr, "erosions differ for sel %d (%s)\n", i, selname);
-	    pixCountPixels(pixt4, &xorcount, NULL);
-	    fprintf(stderr, "Number of pixels in XOR: %d\n", xorcount);
-	}
+        if (same == 1) {
+            fprintf(stderr, "erosions are identical for sel %d (%s)\n",
+                    i, selname);
+        }
+        else {
+            fprintf(stderr, "erosions differ for sel %d (%s)\n", i, selname);
+            pixCountPixels(pixt4, &xorcount, NULL);
+            fprintf(stderr, "Number of pixels in XOR: %d\n", xorcount);
+        }
 
-	pixDestroy(&pixt1);
-	pixDestroy(&pixt2);
-	pixDestroy(&pixt3);
-	pixDestroy(&pixt4);
-	pixDestroy(&pixs1);
+        pixDestroy(&pixt1);
+        pixDestroy(&pixt2);
+        pixDestroy(&pixt3);
+        pixDestroy(&pixt4);
+        pixDestroy(&pixs1);
     }
 
     return 0;

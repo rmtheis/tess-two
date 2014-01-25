@@ -151,8 +151,8 @@ l_int32  i, format, valid;
        format = SupportedBarcodeFormat[i];
        barcodeVerifyFormat(barstr, format, &valid, NULL);
        if (valid) {
-           L_INFO_STRING("Barcode format: %s", procName,
-                         SupportedBarcodeFormatName[i]);
+           L_INFO("Barcode format: %s\n", procName,
+                   SupportedBarcodeFormatName[i]);
            return format;
        }
    }
@@ -220,9 +220,9 @@ l_int32  i, start, len, stop, mid;
         start = !strncmp(barstr, Code2of5[C25_START], 3);
         len = strlen(barstr);
         stop = !strncmp(&barstr[len - 5], Code2of5[C25_STOP], 5);
-        if (start && stop)
+        if (start && stop) {
             *pvalid = 1;
-        else {
+        } else {
             revbarstr = stringReverse(barstr);
             start = !strncmp(revbarstr, Code2of5[C25_START], 3);
             stop = !strncmp(&revbarstr[len - 5], Code2of5[C25_STOP], 5);
@@ -237,9 +237,9 @@ l_int32  i, start, len, stop, mid;
         start = !strncmp(barstr, CodeI2of5[CI25_START], 4);
         len = strlen(barstr);
         stop = !strncmp(&barstr[len - 3], CodeI2of5[CI25_STOP], 3);
-        if (start && stop)
+        if (start && stop) {
             *pvalid = 1;
-        else {
+        } else {
             revbarstr = stringReverse(barstr);
             start = !strncmp(revbarstr, CodeI2of5[CI25_START], 4);
             stop = !strncmp(&revbarstr[len - 3], CodeI2of5[CI25_STOP], 3);
@@ -254,9 +254,9 @@ l_int32  i, start, len, stop, mid;
         start = !strncmp(barstr, Code93[C93_START], 6);
         len = strlen(barstr);
         stop = !strncmp(&barstr[len - 7], Code93[C93_STOP], 6);
-        if (start && stop)
+        if (start && stop) {
             *pvalid = 1;
-        else {
+        } else {
             revbarstr = stringReverse(barstr);
             start = !strncmp(revbarstr, Code93[C93_START], 6);
             stop = !strncmp(&revbarstr[len - 7], Code93[C93_STOP], 6);
@@ -271,9 +271,9 @@ l_int32  i, start, len, stop, mid;
         start = !strncmp(barstr, Code39[C39_START], 9);
         len = strlen(barstr);
         stop = !strncmp(&barstr[len - 9], Code39[C39_STOP], 9);
-        if (start && stop)
+        if (start && stop) {
             *pvalid = 1;
-        else {
+        } else {
             revbarstr = stringReverse(barstr);
             start = !strncmp(revbarstr, Code39[C39_START], 9);
             stop = !strncmp(&revbarstr[len - 9], Code39[C39_STOP], 9);
@@ -291,9 +291,9 @@ l_int32  i, start, len, stop, mid;
             start += !strncmp(barstr, Codabar[i], 7);
         for (i = 16; i <= 19; i++)  /* ditto */
             stop += !strncmp(&barstr[len - 7], Codabar[i], 7);
-        if (start && stop)
+        if (start && stop) {
             *pvalid = 1;
-        else {
+        } else {
             start = stop = 0;
             revbarstr = stringReverse(barstr);
             for (i = 16; i <= 19; i++)
@@ -593,7 +593,7 @@ l_int32     *index;
     for (i = 0; i < nsymb - 2; i++)  /* skip the "C" and "K" */
         sum += ((i % 20) + 1) * index[nsymb - 3 - i];
     if (data[nsymb - 2] != Code93Val[sum % 47])
-        L_WARNING("Error for check C", procName);
+        L_WARNING("Error for check C\n", procName);
 
     if (debugflag) {
         checkc = Code93[sum % 47];
@@ -604,7 +604,7 @@ l_int32     *index;
     for (i = 0; i < nsymb - 1; i++)  /* skip the "K" */
         sum += ((i % 15) + 1) * index[nsymb - 2 - i];
     if (data[nsymb - 1] != Code93Val[sum % 47])
-        L_WARNING("Error for check K", procName);
+        L_WARNING("Error for check K\n", procName);
 
     if (debugflag) {
         checkk = Code93[sum % 47];
@@ -881,7 +881,7 @@ l_int32   valid, i, j, len, error, start, found, sum, checkdigit;
     if (checkdigit)  /* not 0 */
         checkdigit = 10 - checkdigit;
     if (checkdigit + 0x30 != data[11])
-        L_WARNING("Error for UPC-A check character", procName);
+        L_WARNING("Error for UPC-A check character\n", procName);
 
     return data;
 }
@@ -999,7 +999,7 @@ l_int32   valid, i, j, len, error, start, found, sum, checkdigit;
     if (checkdigit)  /* not 0 */
         checkdigit = 10 - checkdigit;
     if (checkdigit + 0x30 != data[11])
-        L_WARNING("Error for EAN-13 check character", procName);
+        L_WARNING("Error for EAN-13 check character\n", procName);
 
     return data;
 }

@@ -49,8 +49,8 @@ char *WeaselNames[] = {(char *)"weasel2.4c.png",
                        (char *)"weasel8.240c.png",
                        (char *)"weasel8.png",
                        (char *)"weasel32.png"};
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       i, w, h;
 l_float32     factor, scale;

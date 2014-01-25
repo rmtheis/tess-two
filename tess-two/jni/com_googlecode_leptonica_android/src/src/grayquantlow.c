@@ -162,8 +162,7 @@ l_uint8   fval1, fval2, rval, bval, dval;
                     dval = L_MAX(0, dval - fval2);
                     SET_DATA_BYTE(bufs2, j + 1, dval);
                 }
-            }
-            else {   /* oval <= 127; binarize to ON  */
+            } else {   /* oval <= 127; binarize to ON  */
                 SET_DATA_BIT(lined, j);   /* ON pixel */
                 if (oval > lowerclip) {
                         /* add to neighbors */
@@ -192,8 +191,7 @@ l_uint8   fval1, fval2, rval, bval, dval;
                 bval = L_MAX(0, bval - fval1);
                 SET_DATA_BYTE(bufs2, j, bval);
             }
-        }
-        else {  /*oval <= 127; binarize to ON */
+        } else {  /*oval <= 127; binarize to ON */
             SET_DATA_BIT(lined, j);   /* ON pixel */
             if (oval > lowerclip) {
                     /* add to neighbors */
@@ -203,8 +201,7 @@ l_uint8   fval1, fval2, rval, bval, dval;
                 SET_DATA_BYTE(bufs2, j, bval);
             }
         }
-    }
-    else {   /* lastlineflag == 1 */
+    } else {   /* lastlineflag == 1 */
         for (j = 0; j < w - 1; j++) {
             oval = GET_DATA_BYTE(bufs1, j);
             if (oval > 127) {   /* binarize to OFF */
@@ -215,8 +212,7 @@ l_uint8   fval1, fval2, rval, bval, dval;
                     rval = L_MAX(0, rval - fval1);
                     SET_DATA_BYTE(bufs1, j + 1, rval);
                 }
-            }
-            else {   /* oval <= 127; binarize to ON  */
+            } else {   /* oval <= 127; binarize to ON  */
                 SET_DATA_BIT(lined, j);   /* ON pixel */
                 if (oval > lowerclip) {
                         /* add to neighbors */
@@ -383,7 +379,7 @@ l_uint32 sword, dword;
 #endif
         break;
     default:
-        L_ERROR("src depth not 4 or 8 bpp", procName);
+        L_ERROR("src depth not 4 or 8 bpp\n", procName);
         break;
     }
     return;
@@ -484,8 +480,7 @@ l_uint8  rval, bval, dval;
                 rval = L_MAX(0, rval + tab38val);
                 bval = L_MAX(0, bval + tab38val);
                 dval = L_MAX(0, dval + tab14val);
-            }
-            else  {
+            } else {
                 rval = L_MIN(255, rval + tab38val);
                 bval = L_MIN(255, bval + tab38val);
                 dval = L_MIN(255, dval + tab14val);
@@ -504,13 +499,11 @@ l_uint8  rval, bval, dval;
         if (tab38val < 0) {
             bval = L_MAX(0, bval + tab38val);
             SET_DATA_BYTE(bufs2, j, bval);
-        }
-        else if (tab38val > 0 ) {
+        } else if (tab38val > 0 ) {
             bval = L_MIN(255, bval + tab38val);
             SET_DATA_BYTE(bufs2, j, bval);
         }
-    }
-    else {   /* lastlineflag == 1 */
+    } else {   /* lastlineflag == 1 */
         for (j = 0; j < w - 1; j++) {
             oval = GET_DATA_BYTE(bufs1, j);
             if (tabval[oval])
@@ -578,18 +571,15 @@ l_int32  *tabval, *tab38, *tab14;
             tabval[i] = 1;
             tab38[i] = 0;
             tab14[i] = 0;
-        }
-        else if (i < 128) {
+        } else if (i < 128) {
             tabval[i] = 1;
             tab38[i] = (3 * i + 4) / 8;
             tab14[i] = (i + 2) / 4;
-        }
-        else if (i < 255 - upperclip) {
+        } else if (i < 255 - upperclip) {
             tabval[i] = 0;
             tab38[i] = (3 * (i - 255) + 4) / 8;
             tab14[i] = ((i - 255) + 2) / 4;
-        }
-        else {  /* i >= 255 - upperclip */
+        } else {  /* i >= 255 - upperclip */
             tabval[i] = 0;
             tab38[i] = 0;
             tab14[i] = 0;
@@ -703,8 +693,7 @@ l_uint8  rval, bval, dval;
                 rval = L_MAX(0, rval + tab38val);
                 bval = L_MAX(0, bval + tab38val);
                 dval = L_MAX(0, dval + tab14val);
-            }
-            else {
+            } else {
                 rval = L_MIN(255, rval + tab38val);
                 bval = L_MIN(255, bval + tab38val);
                 dval = L_MIN(255, dval + tab14val);
@@ -724,8 +713,7 @@ l_uint8  rval, bval, dval;
         else
             bval = L_MIN(255, bval + tab38val);
         SET_DATA_BYTE(bufs2, j, bval);
-    }
-    else {   /* lastlineflag == 1 */
+    } else {   /* lastlineflag == 1 */
         for (j = 0; j < w - 1; j++) {
             oval = GET_DATA_BYTE(bufs1, j);
             SET_DATA_DIBIT(lined, j, tabval[oval]);
@@ -786,49 +774,36 @@ l_int32  *tabval, *tab38, *tab14;
             tabval[i] = 0;
             tab38[i] = 0;
             tab14[i] = 0;
-        }
-        else if (i < 43) {
+        } else if (i < 43) {
             tabval[i] = 0;
             tab38[i] = (3 * i + 4) / 8;
             tab14[i] = (i + 2) / 4;
-        }
-        else if (i < 85) {
+        } else if (i < 85) {
             tabval[i] = 1;
             tab38[i] = (3 * (i - 85) - 4) / 8;
             tab14[i] = ((i - 85) - 2) / 4;
-        }
-        else if (i < 128) {
+        } else if (i < 128) {
             tabval[i] = 1;
             tab38[i] = (3 * (i - 85) + 4) / 8;
             tab14[i] = ((i - 85) + 2) / 4;
-        }
-        else if (i < 170) {
+        } else if (i < 170) {
             tabval[i] = 2;
             tab38[i] = (3 * (i - 170) - 4) / 8;
             tab14[i] = ((i - 170) - 2) / 4;
-        }
-        else if (i < 213) {
+        } else if (i < 213) {
             tabval[i] = 2;
             tab38[i] = (3 * (i - 170) + 4) / 8;
             tab14[i] = ((i - 170) + 2) / 4;
-        }
-        else if (i < 255 - cliptowhite) {
+        } else if (i < 255 - cliptowhite) {
             tabval[i] = 3;
             tab38[i] = (3 * (i - 255) - 4) / 8;
             tab14[i] = ((i - 255) - 2) / 4;
-        }
-        else {  /* i >= 255 - cliptowhite */
+        } else {  /* i >= 255 - cliptowhite */
             tabval[i] = 3;
             tab38[i] = 0;
             tab14[i] = 0;
         }
     }
-
-#if 0
-    for (i = 0; i < 256; i++)
-        fprintf(stderr, "tabval[%d] = %d, tab38[%d] = %d, tab14[%d] = %d\n",
-                i, tabval[i], i, tab38[i], i, tab14[i]);
-#endif
 
     return 0;
 }

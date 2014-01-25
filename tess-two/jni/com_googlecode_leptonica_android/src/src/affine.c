@@ -43,9 +43,8 @@
  *           PIX        *pixAffinePtaGray()
  *           PIX        *pixAffineGray()
  *
- *      Affine transform including alpha (blend) component and gamma transform
+ *      Affine transform including alpha (blend) component
  *           PIX        *pixAffinePtaWithAlpha()
- *           PIX        *pixAffinePtaGammaXform()
  *
  *      Affine coordinate transformation
  *           l_int32     getAffineXformCoeffs()
@@ -353,13 +352,13 @@ PIXCMAP    *cmap;
             color = 0;
         pixcmapAddBlackOrWhite(cmap, color, &cmapindex);
         pixSetAllArbitrary(pixd, cmapindex);
-    }
-    else {
+    } else {
         if ((d == 1 && incolor == L_BRING_IN_WHITE) ||
-            (d > 1 && incolor == L_BRING_IN_BLACK))
+            (d > 1 && incolor == L_BRING_IN_BLACK)) {
             pixClearAll(pixd);
-        else
+        } else {
             pixSetAll(pixd);
+        }
     }
 
         /* Scan over the dest pixels */
@@ -377,19 +376,15 @@ PIXCMAP    *cmap;
             if (d == 1) {
                 val = GET_DATA_BIT(lines, x);
                 SET_DATA_BIT_VAL(lined, j, val);
-            }
-            else if (d == 8) {
+            } else if (d == 8) {
                 val = GET_DATA_BYTE(lines, x);
                 SET_DATA_BYTE(lined, j, val);
-            }
-            else if (d == 32) {
+            } else if (d == 32) {
                 lined[j] = lines[x];
-            }
-            else if (d == 2) {
+            } else if (d == 2) {
                 val = GET_DATA_DIBIT(lines, x);
                 SET_DATA_DIBIT(lined, j, val);
-            }
-            else if (d == 4) {
+            } else if (d == 4) {
                 val = GET_DATA_QBIT(lines, x);
                 SET_DATA_QBIT(lined, j, val);
             }
@@ -590,7 +585,7 @@ l_int32    i, j, w, h, d, wpls, wpld;
 l_uint32   val;
 l_uint32  *datas, *datad, *lined;
 l_float32  x, y;
-PIX       *pixd;
+PIX       *pix1, *pix2, *pixd;
 
     PROCNAME("pixAffineColor");
 
@@ -619,6 +614,15 @@ PIX       *pixd;
                                         &val);
             *(lined + j) = val;
         }
+    }
+
+        /* If rgba, transform the pixs alpha channel and insert in pixd */
+    if (pixGetSpp(pixs) == 4) {
+        pix1 = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
+        pix2 = pixAffineGray(pix1, vc, 255);  /* bring in opaque */
+        pixSetRGBComponent(pixd, pix2, L_ALPHA_CHANNEL);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
     }
 
     return pixd;
@@ -761,6 +765,17 @@ PIX       *pixd;
  *              with an image below, and
  *          (b) softens the edges by weakening the aliasing there.
  *          Use l_setAlphaMaskBorder() to change these values.
+ *      (8) A subtle use of gamma correction is to remove gamma correction
+ *          before scaling and restore it afterwards.  This is done
+ *          by sandwiching this function between a gamma/inverse-gamma
+ *          photometric transform:
+ *              pixt = pixGammaTRCWithAlpha(NULL, pixs, 1.0 / gamma, 0, 255);
+ *              pixd = pixAffinePtaWithAlpha(pixg, ptad, ptas, NULL,
+ *                                           fract, border);
+ *              pixGammaTRCWithAlpha(pixd, pixd, gamma, 0, 255);
+ *              pixDestroy(&pixt);
+ *          This has the side-effect of producing artifacts in the very
+ *          dark regions.
  */
 PIX *
 pixAffinePtaWithAlpha(PIX       *pixs,
@@ -782,15 +797,15 @@ PTA     *ptad2, *ptas2;
     if (d != 32 && pixGetColormap(pixs) == NULL)
         return (PIX *)ERROR_PTR("pixs not cmapped or 32 bpp", procName, NULL);
     if (pixg && pixGetDepth(pixg) != 8) {
-        L_WARNING("pixg not 8 bpp; using @fract transparent alpha", procName);
+        L_WARNING("pixg not 8 bpp; using @fract transparent alpha\n", procName);
         pixg = NULL;
     }
     if (!pixg && (fract < 0.0 || fract > 1.0)) {
-        L_WARNING("invalid fract; using 1.0 (fully transparent)", procName);
+        L_WARNING("invalid fract; using 1.0 (fully transparent)\n", procName);
         fract = 1.0;
     }
     if (!pixg && fract == 0.0)
-        L_WARNING("fully opaque alpha; image will not be blended", procName);
+        L_WARNING("fully opaque alpha; image will not be blended\n", procName);
     if (!ptad)
         return (PIX *)ERROR_PTR("ptad not defined", procName, NULL);
     if (!ptas)
@@ -811,9 +826,9 @@ PTA     *ptad2, *ptas2;
             pixSetAll(pixg2);
         else
             pixSetAllArbitrary(pixg2, (l_int32)(255.0 * fract));
-    }
-    else
+    } else {
         pixg2 = pixResizeToMatch(pixg, NULL, ws, hs);
+    }
     if (ws > 10 && hs > 10) {  /* see note 7 */
         pixSetBorderRingVal(pixg2, 1,
                             (l_int32)(255.0 * fract * AlphaMaskBorderVals[0]));
@@ -824,6 +839,7 @@ PTA     *ptad2, *ptas2;
     pixb2 = pixAddBorder(pixg2, border, 0);  /* must be black border */
     pixga = pixAffinePtaGray(pixb2, ptad2, ptas2, 0);
     pixSetRGBComponent(pixd, pixga, L_ALPHA_CHANNEL);
+    pixSetSpp(pixd, 4);
 
     pixDestroy(&pixg2);
     pixDestroy(&pixb1);
@@ -831,58 +847,6 @@ PTA     *ptad2, *ptas2;
     pixDestroy(&pixga);
     ptaDestroy(&ptad2);
     ptaDestroy(&ptas2);
-    return pixd;
-}
-
-
-/*!
- *  pixAffinePtaGammaXform()
- *
- *      Input:  pixs (32 bpp rgb)
- *              gamma (gamma correction; must be > 0.0)
- *              ptad  (3 pts of final coordinate space)
- *              ptas  (3 pts of initial coordinate space)
- *              fract (between 0.0 and 1.0, with 1.0 fully transparent)
- *              border (of pixels to capture transformed source pixels)
- *      Return: pixd, or null on error
- *
- *  Notes:
- *      (1) This wraps a gamma/inverse-gamma photometric transform around
- *          pixAffinePtaWithAlpha().
- *      (2) For usage, see notes in pixAffinePtaWithAlpha() and
- *          pixGammaTRCWithAlpha().
- *      (3) The basic idea of a gamma/inverse-gamma transform is to remove
- *          any gamma correction before the affine transform, and restore
- *          it afterward.  The effects can be subtle, but important for
- *          some applications.  For example, using gamma > 1.0 will
- *          cause the dark areas to become somewhat lighter and slightly
- *          reduce aliasing effects when blending using the alpha channel.
- */
-PIX *
-pixAffinePtaGammaXform(PIX       *pixs,
-                       l_float32  gamma,
-                       PTA       *ptad,
-                       PTA       *ptas,
-                       l_float32  fract,
-                       l_int32    border)
-{
-PIX  *pixg, *pixd;
-
-    PROCNAME("pixAffinePtaGammaXform");
-
-    if (!pixs || (pixGetDepth(pixs) != 32))
-        return (PIX *)ERROR_PTR("pixs undefined or not 32 bpp", procName, NULL);
-    if (fract == 0.0)
-        L_WARNING("fully opaque alpha; image cannot be blended", procName);
-    if (gamma <= 0.0)  {
-        L_WARNING("gamma must be > 0.0; setting to 1.0", procName);
-        gamma = 1.0;
-    }
-
-    pixg = pixGammaTRCWithAlpha(NULL, pixs, 1.0 / gamma, 0, 255);
-    pixd = pixAffinePtaWithAlpha(pixg, ptad, ptas, NULL, fract, border);
-    pixGammaTRCWithAlpha(pixd, pixd, gamma, 0, 255);
-    pixDestroy(&pixg);
     return pixd;
 }
 
@@ -1202,7 +1166,7 @@ linearInterpolatePixelColor(l_uint32  *datas,
                             l_uint32   colorval,
                             l_uint32  *pval)
 {
-l_int32    xpm, ypm, xp, yp, xf, yf;
+l_int32    xpm, ypm, xp, xp2, yp, xf, yf;
 l_int32    rval, gval, bval;
 l_uint32   word00, word01, word10, word11;
 l_uint32  *lines;
@@ -1216,13 +1180,15 @@ l_uint32  *lines;
         return ERROR_INT("datas not defined", procName, 1);
 
         /* Skip if off the edge */
-    if (x < 0.0 || y < 0.0 || x > w - 2.0 || y > h - 2.0)
+    if (x < 0.0 || y < 0.0 || x >= w || y >= h)
         return 0;
 
-    xpm = (l_int32)(16.0 * x + 0.5);
-    ypm = (l_int32)(16.0 * y + 0.5);
+    xpm = (l_int32)(16.0 * x);
+    ypm = (l_int32)(16.0 * y);
     xp = xpm >> 4;
+    xp2 = xp + 1 < w ? xp + 1 : xp;
     yp = ypm >> 4;
+    if (yp + 1 >= h) wpls = 0;
     xf = xpm & 0x0f;
     yf = ypm & 0x0f;
 
@@ -1234,21 +1200,21 @@ l_uint32  *lines;
         /* Do area weighting (eqiv. to linear interpolation) */
     lines = datas + yp * wpls;
     word00 = *(lines + xp);
-    word10 = *(lines + xp + 1);
+    word10 = *(lines + xp2);
     word01 = *(lines + wpls + xp);
-    word11 = *(lines + wpls + xp + 1);
+    word11 = *(lines + wpls + xp2);
     rval = ((16 - xf) * (16 - yf) * ((word00 >> L_RED_SHIFT) & 0xff) +
         xf * (16 - yf) * ((word10 >> L_RED_SHIFT) & 0xff) +
         (16 - xf) * yf * ((word01 >> L_RED_SHIFT) & 0xff) +
-        xf * yf * ((word11 >> L_RED_SHIFT) & 0xff) + 128) / 256;
+        xf * yf * ((word11 >> L_RED_SHIFT) & 0xff)) / 256;
     gval = ((16 - xf) * (16 - yf) * ((word00 >> L_GREEN_SHIFT) & 0xff) +
         xf * (16 - yf) * ((word10 >> L_GREEN_SHIFT) & 0xff) +
         (16 - xf) * yf * ((word01 >> L_GREEN_SHIFT) & 0xff) +
-        xf * yf * ((word11 >> L_GREEN_SHIFT) & 0xff) + 128) / 256;
+        xf * yf * ((word11 >> L_GREEN_SHIFT) & 0xff)) / 256;
     bval = ((16 - xf) * (16 - yf) * ((word00 >> L_BLUE_SHIFT) & 0xff) +
         xf * (16 - yf) * ((word10 >> L_BLUE_SHIFT) & 0xff) +
         (16 - xf) * yf * ((word01 >> L_BLUE_SHIFT) & 0xff) +
-        xf * yf * ((word11 >> L_BLUE_SHIFT) & 0xff) + 128) / 256;
+        xf * yf * ((word11 >> L_BLUE_SHIFT) & 0xff)) / 256;
     *pval = (rval << L_RED_SHIFT) | (gval << L_GREEN_SHIFT) |
           (bval << L_BLUE_SHIFT);
     return 0;
@@ -1282,7 +1248,7 @@ linearInterpolatePixelGray(l_uint32  *datas,
                            l_int32    grayval,
                            l_int32   *pval)
 {
-l_int32    xpm, ypm, xp, yp, xf, yf, v00, v10, v01, v11;
+l_int32    xpm, ypm, xp, xp2, yp, xf, yf, v00, v10, v01, v11;
 l_uint32  *lines;
 
     PROCNAME("linearInterpolatePixelGray");
@@ -1293,14 +1259,16 @@ l_uint32  *lines;
     if (!datas)
         return ERROR_INT("datas not defined", procName, 1);
 
-        /* Skip if off the edge */
-    if (x < 0.0 || y < 0.0 || x > w - 2.0 || y > h - 2.0)
+        /* Skip if really off the edge */
+    if (x < 0.0 || y < 0.0 || x >= w || y >= h)
         return 0;
 
-    xpm = (l_int32)(16.0 * x + 0.5);
-    ypm = (l_int32)(16.0 * y + 0.5);
+    xpm = (l_int32)(16.0 * x);
+    ypm = (l_int32)(16.0 * y);
     xp = xpm >> 4;
+    xp2 = xp + 1 < w ? xp + 1 : xp;
     yp = ypm >> 4;
+    if (yp + 1 >= h) wpls = 0;
     xf = xpm & 0x0f;
     yf = ypm & 0x0f;
 
@@ -1312,10 +1280,10 @@ l_uint32  *lines;
         /* Interpolate by area weighting. */
     lines = datas + yp * wpls;
     v00 = (16 - xf) * (16 - yf) * GET_DATA_BYTE(lines, xp);
-    v10 = xf * (16 - yf) * GET_DATA_BYTE(lines, xp + 1);
+    v10 = xf * (16 - yf) * GET_DATA_BYTE(lines, xp2);
     v01 = (16 - xf) * yf * GET_DATA_BYTE(lines + wpls, xp);
-    v11 = xf * yf * GET_DATA_BYTE(lines + wpls, xp + 1);
-    *pval = (v00 + v01 + v10 + v11 + 128) / 256;
+    v11 = xf * yf * GET_DATA_BYTE(lines + wpls, xp2);
+    *pval = (v00 + v01 + v10 + v11) / 256;
     return 0;
 }
 
@@ -1376,9 +1344,9 @@ l_float32  big, dum, pivinv, temp;
                             irow = j;
                             icol = k;
                         }
-                    }
-                    else if (ipiv[k] > 1)
+                    } else if (ipiv[k] > 1) {
                         return ERROR_INT("singular matrix", procName, 1);
+                    }
                 }
         }
         ++(ipiv[icol]);
@@ -1510,9 +1478,9 @@ PIX       *pixt1, *pixt2, *pixd;
 
         if ((pixt1 = pixAddBorderGeneral(pixs, bw, bw, bh, bh, 0)) == NULL)
             return (PIX *)ERROR_PTR("pixt1 not made", procName, NULL);
-    }
-    else
+    } else {
         pixt1 = pixCopy(NULL, pixs);
+    }
 
     /*-------------------------------------------------------------*
         The horizontal shear is done to move the 3rd point to the
@@ -1587,9 +1555,9 @@ PIX       *pixt1, *pixt2, *pixd;
     if (bw != 0 || bh != 0) {
         if ((pixd = pixRemoveBorderGeneral(pixt2, bw, bw, bh, bh)) == NULL)
             return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
-    }
-    else
+    } else {
         pixd = pixClone(pixt2);
+    }
 
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);

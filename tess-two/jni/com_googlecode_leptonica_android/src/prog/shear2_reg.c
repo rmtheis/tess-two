@@ -165,7 +165,7 @@ PixSave(PIX        **ppixs,
 {
     PROCNAME("PixSave");
     if (!ppixs || !(*ppixs)) {
-        L_ERROR("pixs not defined", procName);
+        L_ERROR("pixs not defined\n", procName);
         return;
     }
 

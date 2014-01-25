@@ -39,8 +39,8 @@ static const char *tempmtiff = "/tmp/junkmtiff";
 static const char *tempnewmtiff = "/tmp/junknewmtiff";
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout, *str, *fname, *filename;
 char         buffer[512];
@@ -54,7 +54,7 @@ SARRAY      *savals, *satypes, *sa;
 static char  mainName[] = "mtifftest";
 
     if (argc != 3)
-	exit(ERROR_INT(" Syntax:  mtifftest filein fileout", mainName, 1));
+        return ERROR_INT(" Syntax:  mtifftest filein fileout", mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
@@ -80,9 +80,9 @@ static char  mainName[] = "mtifftest";
 
 #if 0   /* ------------ Test single-to-multipage I/O  -------------------*/
         /* Use 'filein' to specify a directory of tiff files.
-	 * Read them in and generate a multipage tiff file.
-	 * Then convert that to a G4 compressed and ascii85 encoded
-	 * PS file. */
+         * Read them in and generate a multipage tiff file.
+         * Then convert that to a G4 compressed and ascii85 encoded
+         * PS file. */
     sa = getFilenamesInDirectory(filein);
     sarrayWriteStream(stderr, sa);
     sarraySort(sa, sa, L_SORT_INCREASING);
@@ -92,11 +92,11 @@ static char  mainName[] = "mtifftest";
         fname = sarrayGetString(sa, i, 0);
         filename = genPathname(filein, fname);
         pix = pixRead(filename);
-	if (!pix) continue;
-	if (i == 0)
-	    pixWriteTiff(tempmtiff, pix, IFF_TIFF_G4, "w+");
+        if (!pix) continue;
+        if (i == 0)
+            pixWriteTiff(tempmtiff, pix, IFF_TIFF_G4, "w+");
         else
-	    pixWriteTiff(tempmtiff, pix, IFF_TIFF_G4, "a");
+            pixWriteTiff(tempmtiff, pix, IFF_TIFF_G4, "a");
         pixDestroy(&pix);
         lept_free(filename);
     }
@@ -110,46 +110,46 @@ static char  mainName[] = "mtifftest";
         /* read count of tiff multipage */
     fp = lept_fopen(filein, "rb");
     if (fileFormatIsTiff(fp)) {
-	tiffGetCount(fp, &npages);
-	fprintf(stderr, " Tiff: %d page\n", npages);
+        tiffGetCount(fp, &npages);
+        fprintf(stderr, " Tiff: %d page\n", npages);
     }
     else
-	exit(ERROR_INT(" file not tiff", mainName, 1));
+        return ERROR_INT(" file not tiff", mainName, 1);
     lept_fclose(fp);
 
         /* split into separate page files */
     for (i = 0; i < npages + 1; i++) {   /* read one beyond to catch error */
-	pix = pixReadTiff(filein, i);
-	if (!pix) continue;
-	sprintf(buffer, "/tmp/junkout.%d.tif", i);
-	pixWrite(buffer, pix, IFF_TIFF_G4);
+        pix = pixReadTiff(filein, i);
+        if (!pix) continue;
+        sprintf(buffer, "/tmp/junkout.%d.tif", i);
+        pixWrite(buffer, pix, IFF_TIFF_G4);
         pixDestroy(&pix);
     }
 
         /* read separate page files and write reversed file */
     for (i = npages - 1; i >= 0; i--) {
-	sprintf(buffer, "/tmp/junkout.%d.tif", i);
+        sprintf(buffer, "/tmp/junkout.%d.tif", i);
         pix = pixRead(buffer);
-	if (!pix) continue;
-	if (i == npages - 1)
-	    pixWriteTiff(tempmtiff, pix, IFF_TIFF_G4, "w+");
+        if (!pix) continue;
+        if (i == npages - 1)
+            pixWriteTiff(tempmtiff, pix, IFF_TIFF_G4, "w+");
         else
-	    pixWriteTiff(tempmtiff, pix, IFF_TIFF_G4, "a");
+            pixWriteTiff(tempmtiff, pix, IFF_TIFF_G4, "a");
         pixDestroy(&pix);
     }
 
         /* read reversed file and reverse again */
     pixa = pixaCreate(npages);
     for (i = 0; i < 5; i++) {
-	pix = pixReadTiff(tempmtiff, i);
-	pixaAddPix(pixa, pix, L_INSERT);
+        pix = pixReadTiff(tempmtiff, i);
+        pixaAddPix(pixa, pix, L_INSERT);
     }
     for (i = npages - 1; i >= 0; i--) {
         pix = pixaGetPix(pixa, i, L_CLONE);
-	if (i == npages - 1)
-	    pixWriteTiff(tempnewmtiff, pix, IFF_TIFF_G4, "w+");
+        if (i == npages - 1)
+            pixWriteTiff(tempnewmtiff, pix, IFF_TIFF_G4, "w+");
         else
-	    pixWriteTiff(tempnewmtiff, pix, IFF_TIFF_G4, "a");
+            pixWriteTiff(tempnewmtiff, pix, IFF_TIFF_G4, "a");
         pixDestroy(&pix);
     }
     pixaDestroy(&pixa);

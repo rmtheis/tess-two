@@ -30,7 +30,7 @@
  *
  *      Pixacc creation, destruction
  *           PIXACC   *pixaccCreate()
- *           PIXACC   *pixaccCreateWithPix()
+ *           PIXACC   *pixaccCreateFromPix()
  *           void      pixaccDestroy()
  *
  *      Pixacc finalization
@@ -53,7 +53,7 @@
  *  Suppose you want to make a linear combination of pix1 and pix2:
  *     pixd = 0.4 * pix1 + 0.6 * pix2
  *  where pix1 and pix2 are the same size and have depth 'd'.  Then:
- *     Pixacc *pacc = pixaccCreateWithPix(pix1, 0);  // first; addition only
+ *     Pixacc *pacc = pixaccCreateFromPix(pix1, 0);  // first; addition only
  *     pixaccMultConst(pacc, 0.4);
  *     pixaccMultConstAccumulate(pacc, pix2, 0.6);  // Add in 0.6 of the second
  *     pixd = pixaccFinal(pacc, d);  // Get the result
@@ -109,7 +109,7 @@ PIXACC  *pixacc;
 
 
 /*!
- *  pixaccCreateWithPix()
+ *  pixaccCreateFromPix()
  *
  *      Input:  pix
  *              negflag (0 if only positive numbers are involved;
@@ -120,13 +120,13 @@ PIXACC  *pixacc;
  *      (1) See pixaccCreate()
  */
 PIXACC *
-pixaccCreateWithPix(PIX     *pix,
+pixaccCreateFromPix(PIX     *pix,
                     l_int32  negflag)
 {
 l_int32  w, h;
 PIXACC  *pixacc;
 
-    PROCNAME("pixaccCreateWithPix");
+    PROCNAME("pixaccCreateFromPix");
 
     if (!pix)
         return (PIXACC *)ERROR_PTR("pix not defined", procName, NULL);

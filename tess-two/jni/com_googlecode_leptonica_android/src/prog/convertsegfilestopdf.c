@@ -72,8 +72,8 @@
 #include <string.h>
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *pagedir, *pagesubstr, *maskdir, *masksubstr;
 char        *title, *fileout, *boxaafile, *boxaapath;
@@ -131,7 +131,7 @@ static char  mainName[] = "convertsegfilestopdf";
     if (!strcmp(masksubstr, "allfiles"))
         masksubstr = NULL;
     if (scalefactor <= 0.0 || scalefactor > 1.0) {
-        L_WARNING("invalid scalefactor: setting to 1.0", mainName);
+        L_WARNING("invalid scalefactor: setting to 1.0\n", mainName);
         scalefactor = 1.0;
     }
     if (type != 1 && type != 2 && type != 3)
@@ -146,7 +146,7 @@ static char  mainName[] = "convertsegfilestopdf";
     else if (strcmp(boxaafile, "skip")) {  /* use the boxaafile */
         boxaapath = genPathname(boxaafile, NULL);
         baa = boxaaRead(boxaapath);
-        FREE(boxaapath);
+        lept_free(boxaapath);
     }
     else  /* no maskdir and no input boxaafile */
         baa = NULL;

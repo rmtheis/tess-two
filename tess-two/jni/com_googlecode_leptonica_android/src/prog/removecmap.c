@@ -39,33 +39,34 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
-l_int32      d, type, numcolors;
+l_int32      type, numcolors;
 PIX         *pixs, *pixd;
 PIXCMAP     *cmap;
 static char  mainName[] = "removecmap";
 
     if (argc != 4)
-	exit(ERROR_INT("Syntax:  removecmap filein type fileout", mainName, 1));
+        return ERROR_INT("Syntax:  removecmap filein type fileout",
+                         mainName, 1);
 
     filein = argv[1];
     type = atoi(argv[2]);
     fileout = argv[3];
 
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
 
     fprintf(stderr, " depth = %d\n", pixGetDepth(pixs));
     if ((cmap = pixGetColormap(pixs)) != NULL) {
-	numcolors = pixcmapGetCount(cmap);
-	pixcmapWriteStream(stderr, cmap);
-	fprintf(stderr, " colormap found; num colors = %d\n", numcolors);
+        numcolors = pixcmapGetCount(cmap);
+        pixcmapWriteStream(stderr, cmap);
+        fprintf(stderr, " colormap found; num colors = %d\n", numcolors);
+    } else {
+        fprintf(stderr, " no colormap\n");
     }
-    else
-	fprintf(stderr, " no colormap\n");
 
     pixd = pixRemoveColormap(pixs, type);
     pixWrite(fileout, pixd, IFF_PNG);
@@ -73,4 +74,3 @@ static char  mainName[] = "removecmap";
     pixDestroy(&pixd);
     return 0;
 }
-

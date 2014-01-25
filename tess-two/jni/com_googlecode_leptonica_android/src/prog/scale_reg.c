@@ -54,11 +54,11 @@ static void PixSave32(PIXA *pixa, PIX *pixc);
 static void PixaSaveDisplay(PIXA *pixa, L_REGPARAMS *rp);
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       i;
-PIX          *pixs, *pixc, *pixd;
+PIX          *pixs, *pixc;
 PIXA         *pixa;
 L_REGPARAMS  *rp;
 
@@ -71,7 +71,7 @@ L_REGPARAMS  *rp;
     pixs = pixRead(image[0]);
     pixc = pixScale(pixs, 0.32, 0.32);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);
-    pixSaveTiled(pixc, pixa, 1, 1, SPACE, 32);
+    pixSaveTiled(pixc, pixa, 1.0, 1, SPACE, 32);
     pixDestroy(&pixc);
 
     pixc = pixScaleToGray3(pixs);
@@ -80,7 +80,7 @@ L_REGPARAMS  *rp;
 
     pixc = pixScaleToGray4(pixs);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);
-    pixSaveTiled(pixc, pixa, 1, 1, SPACE, 32);
+    pixSaveTiled(pixc, pixa, 1.0, 1, SPACE, 32);
     pixDestroy(&pixc);
 
     pixc = pixScaleToGray6(pixs);
@@ -107,7 +107,7 @@ L_REGPARAMS  *rp;
     fprintf(stderr, "\n-------------- Testing 2 bpp without cmap ----------\n");
     pixa = pixaCreate(0);
     pixs = pixRead(image[1]);
-    pixSaveTiled(pixs, pixa, 1, 1, SPACE, 32);
+    pixSaveTiled(pixs, pixa, 1.0, 1, SPACE, 32);
     pixc = pixScale(pixs, 2.25, 2.25);
     regTestWritePixAndCheck(rp, pixc, IFF_JFIF_JPEG);
     PixSave32(pixa, pixc);
@@ -124,7 +124,7 @@ L_REGPARAMS  *rp;
     fprintf(stderr, "\n-------------- Testing 2 bpp with cmap ----------\n");
     pixa = pixaCreate(0);
     pixs = pixRead(image[2]);
-    pixSaveTiled(pixs, pixa, 1, 1, SPACE, 32);
+    pixSaveTiled(pixs, pixa, 1.0, 1, SPACE, 32);
     pixc = pixScale(pixs, 2.25, 2.25);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);
     PixSave32(pixa, pixc);
@@ -141,7 +141,7 @@ L_REGPARAMS  *rp;
     fprintf(stderr, "\n-------------- Testing 4 bpp without cmap ----------\n");
     pixa = pixaCreate(0);
     pixs = pixRead(image[3]);
-    pixSaveTiled(pixs, pixa, 1, 1, SPACE, 32);
+    pixSaveTiled(pixs, pixa, 1.0, 1, SPACE, 32);
     pixc = pixScale(pixs, 1.72, 1.72);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);
     PixSave32(pixa, pixc);
@@ -158,7 +158,7 @@ L_REGPARAMS  *rp;
     fprintf(stderr, "\n-------------- Testing 4 bpp with cmap ----------\n");
     pixa = pixaCreate(0);
     pixs = pixRead(image[4]);
-    pixSaveTiled(pixs, pixa, 1, 1, SPACE, 32);
+    pixSaveTiled(pixs, pixa, 1.0, 1, SPACE, 32);
     pixc = pixScale(pixs, 1.72, 1.72);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);
     PixSave32(pixa, pixc);
@@ -175,7 +175,7 @@ L_REGPARAMS  *rp;
     fprintf(stderr, "\n-------------- Testing 8 bpp without cmap ----------\n");
     pixa = pixaCreate(0);
     pixs = pixRead(image[5]);
-    pixSaveTiled(pixs, pixa, 1, 1, SPACE, 32);
+    pixSaveTiled(pixs, pixa, 1.0, 1, SPACE, 32);
     pixc = pixScale(pixs, 1.92, 1.92);
     regTestWritePixAndCheck(rp, pixc, IFF_JFIF_JPEG);
     PixSave32(pixa, pixc);
@@ -192,7 +192,7 @@ L_REGPARAMS  *rp;
     fprintf(stderr, "\n-------------- Testing 8 bpp with cmap ----------\n");
     pixa = pixaCreate(0);
     pixs = pixRead(image[6]);
-    pixSaveTiled(pixs, pixa, 1, 1, SPACE, 32);
+    pixSaveTiled(pixs, pixa, 1.0, 1, SPACE, 32);
     pixc = pixScale(pixs, 1.92, 1.92);
     regTestWritePixAndCheck(rp, pixc, IFF_JFIF_JPEG);
     PixSave32(pixa, pixc);
@@ -209,7 +209,7 @@ L_REGPARAMS  *rp;
     fprintf(stderr, "\n-------------- Testing 16 bpp ------------\n");
     pixa = pixaCreate(0);
     pixs = pixRead(image[7]);
-    pixSaveTiled(pixs, pixa, 1, 1, SPACE, 32);
+    pixSaveTiled(pixs, pixa, 1.0, 1, SPACE, 32);
     pixc = pixScale(pixs, 1.92, 1.92);
     regTestWritePixAndCheck(rp, pixc, IFF_JFIF_JPEG);
     PixSave32(pixa, pixc);
@@ -226,7 +226,7 @@ L_REGPARAMS  *rp;
     fprintf(stderr, "\n-------------- Testing 32 bpp ------------\n");
     pixa = pixaCreate(0);
     pixs = pixRead(image[8]);
-    pixSaveTiled(pixs, pixa, 1, 1, SPACE, 32);
+    pixSaveTiled(pixs, pixa, 1.0, 1, SPACE, 32);
     pixc = pixScale(pixs, 1.42, 1.42);
     regTestWritePixAndCheck(rp, pixc, IFF_JFIF_JPEG);
     PixSave32(pixa, pixc);
@@ -259,9 +259,9 @@ PIX       *pixs, *pixt1, *pixt2, *pix32;
         pixt2 = pixScale(pixt1, scalefactor, scalefactor);
         pix32 = pixConvertTo32(pixt2);
         if (i == 0)
-            pixSaveTiled(pix32, pixa, 1, 1, SPACE, 32);
+            pixSaveTiled(pix32, pixa, 1.0, 1, SPACE, 32);
         else
-            pixSaveTiled(pix32, pixa, 1, 0, SPACE, 32);
+            pixSaveTiled(pix32, pixa, 1.0, 0, SPACE, 32);
         pixDestroy(&pixt1);
         pixDestroy(&pixt2);
         pixDestroy(&pix32);
@@ -275,7 +275,7 @@ PixSave32(PIXA *pixa, PIX *pixc)
 {
 PIX  *pix32;
     pix32 = pixConvertTo32(pixc);
-    pixSaveTiled(pix32, pixa, 1, 0, SPACE, 32);
+    pixSaveTiled(pix32, pixa, 1.0, 0, SPACE, 32);
     pixDestroy(&pixc);
     pixDestroy(&pix32);
     return;

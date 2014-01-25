@@ -146,7 +146,7 @@ PIXTILING  *pt;
         ny = L_MAX(1, height / h);
     h = height / ny;  /* possibly reset */
     if (xoverlap > w || yoverlap > h) {
-        L_INFO_INT2("tile width = %d, tile height = %d", procName, w, h);
+        L_INFO("tile width = %d, tile height = %d\n", procName, w, h);
         return (PIXTILING *)ERROR_PTR("overlap too large", procName, NULL);
     }
 
@@ -178,7 +178,7 @@ PIXTILING  *pt;
     PROCNAME("pixTilingDestroy");
 
     if (ppt == NULL) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
 

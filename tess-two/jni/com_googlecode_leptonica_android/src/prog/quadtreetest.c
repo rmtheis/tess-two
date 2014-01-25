@@ -32,8 +32,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i, j, w, h, error;
 l_float32    val1, val2;

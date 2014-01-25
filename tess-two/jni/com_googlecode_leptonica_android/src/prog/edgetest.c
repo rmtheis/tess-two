@@ -30,8 +30,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i, w, h, d;
 l_float32    time;
@@ -41,16 +41,16 @@ char        *filein, *fileout;
 static char  mainName[] = "edgetest";
 
     if (argc != 3)
-	exit(ERROR_INT(" Syntax:  edgetest filein fileout", mainName, 1));
+        return ERROR_INT(" Syntax:  edgetest filein fileout", mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
 
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
+        return ERROR_INT("pix not made", mainName, 1);
     pixGetDimensions(pixs, &w, &h, &d);
     if (d != 8)
-	exit(ERROR_INT("pix not 8 bpp", mainName, 1));
+        return ERROR_INT("pix not 8 bpp", mainName, 1);
 
         /* Speed: about 12 Mpix/GHz/sec */
     startTimer();
@@ -78,7 +78,7 @@ static char  mainName[] = "edgetest";
     pixDestroy(&pixf);
 
         /* Display tiled */
-    pixa = pixaReadFiles("/tmp", "junk_write_display");
+    pixa = pixaReadFiles("/tmp/display", "file");
     pixd = pixaDisplayTiledAndScaled(pixa, 8, 400, 3, 0, 25, 2);
     pixWrite("/tmp/junktiles.jpg", pixd, IFF_JFIF_JPEG);
     pixDestroy(&pixd);

@@ -52,8 +52,8 @@
 #include "allheaders.h"
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char       textstr[256];
 l_int32    i, thresh, fgval, bgval;
@@ -70,7 +70,7 @@ PIXA      *pixa;
         scorefract = 0.1 * i;
         pixOtsuAdaptiveThreshold(pixg, 2000, 2000, 0, 0, scorefract,
                                  NULL, &pixb);
-        pixSaveTiledOutline(pixb, pixa, 2, 1, 20, 2, 32);
+        pixSaveTiledOutline(pixb, pixa, 0.5, 1, 20, 2, 32);
         pixSplitDistributionFgBg(pixg, scorefract, 1, &thresh, &fgval, &bgval, 1);
         fprintf(stderr, "thresh = %d, fgval = %d, bgval = %d\n", thresh, fgval,
                  bgval);
@@ -83,7 +83,7 @@ PIXA      *pixa;
 #endif  /* _WIN32 */
 
         pixp = pixRead("/tmp/histplot.png");
-        pixSaveTiled(pixp, pixa, 1, 0, 20, 1);
+        pixSaveTiled(pixp, pixa, 1.0, 0, 20, 1);
         pixt1 = pixaDisplay(pixa, 0, 0);
         snprintf(textstr, sizeof(textstr),
              "Scorefract = %3.1f ........... Thresh = %d", scorefract, thresh);
@@ -104,7 +104,7 @@ PIXA      *pixa;
         scorefract = 0.1 * i;
         pixOtsuAdaptiveThreshold(pixg, 300, 300, 0, 0, scorefract,
                                  NULL, &pixb);
-        pixb2 = pixAddBlackBorder(pixb, 2);
+        pixb2 = pixAddBlackOrWhiteBorder(pixb, 2, 2, 2, 2, L_GET_BLACK_VAL);
         snprintf(textstr, sizeof(textstr),
              "Scorefract = %3.1f", scorefract);
         pixb3 = pixAddSingleTextblock(pixb2, bmf, textstr, 1,
@@ -123,4 +123,3 @@ PIXA      *pixa;
     pixDestroy(&pixg);
     return 0;
 }
-

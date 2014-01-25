@@ -54,8 +54,8 @@ static const l_int32  MAX_WORD_HEIGHT = 200;
 #define   RENDER_DEBUG              1
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char         filename[BUF_SIZE];
 char        *dirin, *rootname, *fname;
@@ -70,21 +70,18 @@ PIXA        *pixa, *pixadb;
 static char  mainName[] = "jbwords";
 
     if (argc != 6 && argc != 8)
-	exit(ERROR_INT(
- " Syntax: jbwords dirin reduction thresh weight rootname [firstpage, npages]",
-	     mainName, 1));
+        return ERROR_INT(" Syntax: jbwords dirin reduction thresh "
+                         "weight rootname [firstpage, npages]", mainName, 1);
 
     dirin = argv[1];
     reduction = atoi(argv[2]);
     thresh = atof(argv[3]);
     weight = atof(argv[4]);
     rootname = argv[5];
-
     if (argc == 6) {
         firstpage = 0;
-	npages = 0;
-    }
-    else {
+        npages = 0;
+    } else {
         firstpage = atoi(argv[6]);
         npages = atoi(argv[7]);
     }
@@ -99,30 +96,30 @@ static char  mainName[] = "jbwords";
 
 #if  RENDER_PAGES
         /* Render the pages from the classifier data, and write to file.
-	 * Use debugflag == FALSE to omit outlines of each component. */
+         * Use debugflag == FALSE to omit outlines of each component. */
     pixa = jbDataRender(data, FALSE);
     npages = pixaGetCount(pixa);
     for (i = 0; i < npages; i++) {
         pix = pixaGetPix(pixa, i, L_CLONE);
-	snprintf(filename, BUF_SIZE, "%s.%05d", rootname, i);
-	fprintf(stderr, "filename: %s\n", filename);
-	pixWrite(filename, pix, IFF_PNG);
-	pixDestroy(&pix);
+        snprintf(filename, BUF_SIZE, "%s.%05d", rootname, i);
+        fprintf(stderr, "filename: %s\n", filename);
+        pixWrite(filename, pix, IFF_PNG);
+        pixDestroy(&pix);
     }
     pixaDestroy(&pixa);
 #endif  /* RENDER_PAGES */
 
 #if  RENDER_DEBUG
-	/* Use debugflag == TRUE to see outlines of each component. */
+        /* Use debugflag == TRUE to see outlines of each component. */
     pixadb = jbDataRender(data, TRUE);
         /* Write the debug pages out */
     npages = pixaGetCount(pixadb);
     for (i = 0; i < npages; i++) {
         pix = pixaGetPix(pixadb, i, L_CLONE);
-	snprintf(filename, BUF_SIZE, "%s.db.%05d", rootname, i);
-	fprintf(stderr, "filename: %s\n", filename);
-	pixWrite(filename, pix, IFF_PNG);
-	pixDestroy(&pix);
+        snprintf(filename, BUF_SIZE, "%s.db.%05d", rootname, i);
+        fprintf(stderr, "filename: %s\n", filename);
+        pixWrite(filename, pix, IFF_PNG);
+        pixDestroy(&pix);
     }
     pixaDestroy(&pixadb);
 #endif  /* RENDER_DEBUG */
@@ -130,7 +127,6 @@ static char  mainName[] = "jbwords";
     jbClasserDestroy(&classer);
     jbDataDestroy(&data);
     numaDestroy(&natl);
-
     return 0;
 }
 

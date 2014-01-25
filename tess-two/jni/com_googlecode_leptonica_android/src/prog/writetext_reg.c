@@ -53,15 +53,17 @@ const char  *topstr[] =
             "Text is added over the bottom of each image",
             "Text is added below each image"};
 
+const l_int32  loc[] = {1, 5, 6, 2};
+
 const l_uint32  colors[6] = {0x4090e000, 0x40e09000, 0x9040e000, 0x90e04000,
                              0xe0409000, 0xe0904000};
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-char          outname[256], buf[512];
-l_int32       loc, i;
+char          buf[512];
+l_int32       i;
 L_BMF        *bmf, *bmftop;
 PIX          *pixs, *pixt, *pixd;
 PIX          *pix1, *pix2, *pix3, *pix4, *pix5, *pix6, *pix7, *pix8;
@@ -84,21 +86,21 @@ SARRAY       *sa;
     pix7 = pixThresholdTo2bpp(pix1, 3, 0);    /* 2 bpp not cmapped */
     pix8 = pixThresholdToBinary(pix1, 160);   /* 1 bpp */
 
-    for (loc = 1; loc < 5; loc++) {
+    for (i = 0; i < 4; i++) {
         pixa = pixaCreate(0);
-        AddTextAndSave(pixa, pix1, bmf, textstr[0], loc, 800);
-        AddTextAndSave(pixa, pix2, bmf, textstr[1], loc, 0xff000000);
-        AddTextAndSave(pixa, pix3, bmf, textstr[2], loc, 0x00ff0000);
-        AddTextAndSave(pixa, pix4, bmf, textstr[3], loc, 0x0000ff00);
-        AddTextAndSave(pixa, pix5, bmf, textstr[4], loc, 800);
-        AddTextAndSave(pixa, pix6, bmf, textstr[5], loc, 0xff000000);
-        AddTextAndSave(pixa, pix7, bmf, textstr[6], loc, 800);
-        AddTextAndSave(pixa, pix8, bmf, textstr[7], loc, 800);
+        AddTextAndSave(pixa, pix1, bmf, textstr[0], loc[i], 800);
+        AddTextAndSave(pixa, pix2, bmf, textstr[1], loc[i], 0xff000000);
+        AddTextAndSave(pixa, pix3, bmf, textstr[2], loc[i], 0x00ff0000);
+        AddTextAndSave(pixa, pix4, bmf, textstr[3], loc[i], 0x0000ff00);
+        AddTextAndSave(pixa, pix5, bmf, textstr[4], loc[i], 800);
+        AddTextAndSave(pixa, pix6, bmf, textstr[5], loc[i], 0xff000000);
+        AddTextAndSave(pixa, pix7, bmf, textstr[6], loc[i], 800);
+        AddTextAndSave(pixa, pix8, bmf, textstr[7], loc[i], 800);
         pixt = pixaDisplay(pixa, 0, 0);
-        pixd = pixAddSingleTextblock(pixt, bmftop, topstr[loc - 1],
+        pixd = pixAddSingleTextblock(pixt, bmftop, topstr[i],
                                      0xff00ff00, L_ADD_ABOVE, NULL);
         regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /*  0 - 4 */
-        pixDisplayWithTitle(pixd, 50 * loc, 50, NULL, rp->display);
+        pixDisplayWithTitle(pixd, 50 * i, 50, NULL, rp->display);
         pixDestroy(&pixt);
         pixDestroy(&pixd);
         pixaDestroy(&pixa);

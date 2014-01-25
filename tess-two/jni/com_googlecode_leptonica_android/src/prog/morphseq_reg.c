@@ -42,15 +42,14 @@
 
 #define  DISPLAY_SEPARATION   0   /* use 250 to get images displayed */
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-char        *infile;
 PIX         *pixs, *pixg, *pixc, *pixd;
 static char  mainName[] = "morphseq_reg";
 
     if (argc != 1)
-	return ERROR_INT(" Syntax:  morphseq_reg", mainName, 1);
+        return ERROR_INT(" Syntax:  morphseq_reg", mainName, 1);
 
     pixs = pixRead("feyn.tif");
 
@@ -67,6 +66,9 @@ static char  mainName[] = "morphseq_reg";
     pixWrite("/tmp/morphseq2.png", pixd, IFF_PNG);
     pixDestroy(&pixd);
 
+    fprintf(stderr, "\n ------------------ Error messages -----------------\n");
+    fprintf(stderr, " ------------  DWA v23 Sel doesn't exist -----------\n");
+    fprintf(stderr, " ---------------------------------------------------\n");
     pixd = pixMorphSequenceDwa(pixs, SEQUENCE2, -3);
     pixDestroy(&pixd);
     pixd = pixMorphSequenceDwa(pixs, SEQUENCE2, DISPLAY_SEPARATION);
@@ -101,7 +103,9 @@ static char  mainName[] = "morphseq_reg";
     pixDestroy(&pixd);
 
         /* Syntax error handling */
-    fprintf(stderr, " ------------ Error messages follow ------------------\n");
+    fprintf(stderr, "\n ----------------- Error messages ------------------\n");
+    fprintf(stderr, " ---------------- Invalid sequence -----------------\n");
+    fprintf(stderr, " ---------------------------------------------------\n");
     pixd = pixMorphSequence(pixs, BAD_SEQUENCE, 50);  /* fails; returns null */
     pixd = pixGrayMorphSequence(pixg, BAD_SEQUENCE, 50, 0);  /* this fails */
 

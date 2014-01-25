@@ -199,7 +199,7 @@ LPDWORD       pMasks;
 
     pbmi->bmiHeader.biXPelsPerMeter = 0;
     pbmi->bmiHeader.biYPelsPerMeter = 0;
-    pbmi->bmiHeader.biClrUsed = 0;	/* override below */
+    pbmi->bmiHeader.biClrUsed = 0;  /* override below */
     pbmi->bmiHeader.biClrImportant = 0;
 
     switch(depth)

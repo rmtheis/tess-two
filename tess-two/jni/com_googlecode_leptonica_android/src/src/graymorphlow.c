@@ -99,25 +99,25 @@
 /*!
  *  dilateGrayLow()
  *
- *    Input: datad, w, h, wpld (8 bpp image)
- *           datas, wpls  (8 bpp image, of same dimensions)
- *           size  (full length of SEL; restricted to odd numbers)
- *           direction  (L_HORIZ or L_VERT)
- *           buffer  (holds full line or column of src image pixels)
- *           maxarray  (array of dimension 2*size+1)
+ *    Input:  datad, w, h, wpld (8 bpp image)
+ *            datas, wpls  (8 bpp image, of same dimensions)
+ *            size  (full length of SEL; restricted to odd numbers)
+ *            direction  (L_HORIZ or L_VERT)
+ *            buffer  (holds full line or column of src image pixels)
+ *            maxarray  (array of dimension 2*size+1)
  *    Return: void
  *
- *    Note: To eliminate border effects on the actual image, these images
- *          are prepared with an additional border of dimensions:
- *             leftpix = 0.5 * size
- *             rightpix = 1.5 * size
- *             toppix = 0.5 * size
- *             bottompix = 1.5 * size
- *          and we initialize the src border pixels to 0.
- *          This allows full processing over the actual image; at
- *          the end the border is removed.
- *
- *    Method: Algorithm by van Herk and Gil and Werman
+ *    Notes:
+ *        (1) To eliminate border effects on the actual image, these images
+ *            are prepared with an additional border of dimensions:
+ *               leftpix = 0.5 * size
+ *               rightpix = 1.5 * size
+ *               toppix = 0.5 * size
+ *               bottompix = 1.5 * size
+ *            and we initialize the src border pixels to 0.
+ *            This allows full processing over the actual image; at
+ *            the end the border is removed.
+ *        (2) Uses algorithm of van Herk, Gil and Werman
  */
 void
 dilateGrayLow(l_uint32  *datad,
@@ -147,8 +147,7 @@ l_uint32  *lines, *lined;
             for (j = 0; j < w; j++)
                 buffer[j] = GET_DATA_BYTE(lines, j);
 
-            for (j = 0; j < nsteps; j++)
-            {
+            for (j = 0; j < nsteps; j++) {
                     /* refill the minarray */
                 startmax = (j + 1) * size - 1;
                 maxarray[size - 1] = buffer[startmax];
@@ -169,20 +168,17 @@ l_uint32  *lines, *lined;
                 }
             }
         }
-    }
-    else {   /* direction == L_VERT */
+    } else {  /* direction == L_VERT */
         hsize = size / 2;
         nsteps = (h - 2 * hsize) / size;
         for (j = 0; j < w; j++) {
-
                 /* fill buffer with pixels in byte order */
             for (i = 0; i < h; i++) {
                 lines = datas + i * wpls;
                 buffer[i] = GET_DATA_BYTE(lines, j);
             }
 
-            for (i = 0; i < nsteps; i++)
-            {
+            for (i = 0; i < nsteps; i++) {
                     /* refill the minarray */
                 startmax = (i + 1) * size - 1;
                 maxarray[size - 1] = buffer[startmax];
@@ -214,26 +210,16 @@ l_uint32  *lines, *lined;
 /*!
  *  erodeGrayLow()
  *
- *    Input: datad, w, h, wpld (8 bpp image)
- *           datas, wpls  (8 bpp image, of same dimensions)
- *           size  (full length of SEL; restricted to odd numbers)
- *           direction  (L_HORIZ or L_VERT)
- *           buffer  (holds full line or column of src image pixels)
- *           minarray  (array of dimension 2*size+1)
+ *    Input:  datad, w, h, wpld (8 bpp image)
+ *            datas, wpls  (8 bpp image, of same dimensions)
+ *            size  (full length of SEL; restricted to odd numbers)
+ *            direction  (L_HORIZ or L_VERT)
+ *            buffer  (holds full line or column of src image pixels)
+ *            minarray  (array of dimension 2*size+1)
  *    Return: void
  *
- *    Note: To eliminate border effects on the actual image, these images
- *          are prepared with an additional border of dimensions:
- *             leftpix = 0.5 * size
- *             rightpix = 1.5 * size
- *             toppix = 0.5 * size
- *             bottompix = 1.5 * size
- *          and we initialize the src border pixels to 255.
- *          This allows full processing over the actual image; at
- *          the end the border is removed.
- *
- *    Method: Algorithm by van Herk and Gil and Werman
- *
+ *    Notes:
+ *        (1) See notes in dilateGrayLow()
  */
 void
 erodeGrayLow(l_uint32  *datad,
@@ -263,8 +249,7 @@ l_uint32  *lines, *lined;
             for (j = 0; j < w; j++)
                 buffer[j] = GET_DATA_BYTE(lines, j);
 
-            for (j = 0; j < nsteps; j++)
-            {
+            for (j = 0; j < nsteps; j++) {
                     /* refill the minarray */
                 startmin = (j + 1) * size - 1;
                 minarray[size - 1] = buffer[startmin];
@@ -285,20 +270,17 @@ l_uint32  *lines, *lined;
                 }
             }
         }
-    }
-    else {   /* direction == L_VERT */
+    } else {  /* direction == L_VERT */
         hsize = size / 2;
         nsteps = (h - 2 * hsize) / size;
         for (j = 0; j < w; j++) {
-
                 /* fill buffer with pixels in byte order */
             for (i = 0; i < h; i++) {
                 lines = datas + i * wpls;
                 buffer[i] = GET_DATA_BYTE(lines, j);
             }
 
-            for (i = 0; i < nsteps; i++)
-            {
+            for (i = 0; i < nsteps; i++) {
                     /* refill the minarray */
                 startmin = (i + 1) * size - 1;
                 minarray[size - 1] = buffer[startmin];

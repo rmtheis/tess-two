@@ -37,8 +37,8 @@ static const l_float32  FACTOR = 0.95;
 static const l_float32  GAMMA = 1.0;
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
 l_int32      w, h;
@@ -49,15 +49,15 @@ PIXCMAP     *cmap;
 static char  mainName[] = "dithertest";
 
     if (argc != 3)
-	exit(ERROR_INT(" Syntax:  dithertest filein fileout", mainName, 1));
+        return ERROR_INT(" Syntax:  dithertest filein fileout", mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
 
     if ((pix = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
+        return ERROR_INT("pix not made", mainName, 1);
     if (pixGetDepth(pix) != 8)
-	exit(ERROR_INT("pix not 8 bpp", mainName, 1));
+        return ERROR_INT("pix not 8 bpp", mainName, 1);
     pixs = pixGammaTRC(NULL, pix, GAMMA, 0, 255);
 
     startTimer();
@@ -106,7 +106,7 @@ static char  mainName[] = "dithertest";
     pixDisplayWrite(pixd, 1);
     pixDestroy(&pixd);
 
-    pixDisplayMultiple("/tmp/junk_write_display*");
+    pixDisplayMultiple("/tmp/display/file*");
 
     pixDestroy(&pix);
     pixDestroy(&pixs);

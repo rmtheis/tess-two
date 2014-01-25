@@ -143,8 +143,7 @@ l_uint32  *lines, *lined;
                         if (!word) {
                             lined += 32 * wpld;
                             continue;
-                        }
-                        else {
+                        } else {
                             iend = 32 * (k + 1);
                             for (m = 0, i = 32 * k; i < iend; i++, m++) {
                                 if ((word << m) & 0x80000000)
@@ -161,10 +160,10 @@ l_uint32  *lines, *lined;
                 }
                 break;
             default:
-                L_ERROR("illegal depth", procName);
+                L_ERROR("illegal depth\n", procName);
+                break;
         }
-    }
-    else  {     /* direction counter-clockwise */
+    } else  {     /* direction counter-clockwise */
         switch (d)
         {
             case 32:
@@ -231,8 +230,7 @@ l_uint32  *lines, *lined;
                         if (!word) {
                             lined -= 32 * wpld;
                             continue;
-                        }
-                        else {
+                        } else {
                             iend = 32 * (k + 1);
                             for (m = 0, i = 32 * k; i < iend; i++, m++) {
                                 if ((word << m) & 0x80000000)
@@ -249,7 +247,8 @@ l_uint32  *lines, *lined;
                 }
                 break;
             default:
-                L_ERROR("illegal depth", procName);
+                L_ERROR("illegal depth\n", procName);
+                break;
         }
     }
 
@@ -388,7 +387,7 @@ l_uint32  *line;
             }
             break;
         default:
-            L_ERROR("depth not permitted for LR rot", procName);
+            L_ERROR("depth not permitted for LR rot\n", procName);
             return;
     }
 

@@ -49,16 +49,15 @@ static l_int32 compareResults(PIX *pixs, PIX *pixt1, PIX *pixt2,
                               l_int32 count1, l_int32 count2,
                               const char *descr);
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-l_int32      x, y, i, j, k, w, h, w2, w4, w8, w16, w32, wpl, nerrors;
-l_int32      count1, count2, count3, ret, val1, val2;
-l_uint32     val32;
-l_uint32    *data, *line, *line1, *line2, *data1, *data2;
-void       **lines1, **linet1, **linet2;
-PIX         *pixs, *pixt1, *pixt2;
-static char  mainName[] = "lowaccess_reg";
+l_int32    i, j, k, w, h, w2, w4, w8, w16, w32, wpl, nerrors;
+l_int32    count1, count2, count3, ret, val1, val2;
+l_uint32   val32;
+l_uint32  *data, *line, *line2, *data1, *data2;
+void     **lines1, **linet1, **linet2;
+PIX       *pixs, *pixt1, *pixt2;
 
     pixs = pixRead("feyn.tif");   /* width divisible by 16 */
     pixGetDimensions(pixs, &w, &h, NULL);

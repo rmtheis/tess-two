@@ -35,8 +35,8 @@
 
 static const l_int32  HEIGHT = 32;  /* pixels */
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char         buf[8];
 l_int32      i, n, h;

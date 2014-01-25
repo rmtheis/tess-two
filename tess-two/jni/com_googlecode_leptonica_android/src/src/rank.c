@@ -504,7 +504,7 @@ PIX     *pix1, *pix2, *pixd;
     if (wf == 1 && hf == 1)   /* no-op */
         return pixCopy(NULL, pixs);
     if (scalefactor < 0.2 || scalefactor > 0.7) {
-        L_ERROR("invalid scale factor; no scaling used", procName);
+        L_ERROR("invalid scale factor; no scaling used\n", procName);
         return pixRankFilter(pixs, wf, hf, rank);
     }
 

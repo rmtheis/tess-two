@@ -74,6 +74,9 @@
  *          l_int32       pixGetDimensions()
  *          l_int32       pixSetDimensions()
  *          l_int32       pixCopyDimensions()
+ *          l_int32       pixGetSpp()
+ *          l_int32       pixSetSpp()
+ *          l_int32       pixCopySpp()
  *          l_int32       pixGetWpl()
  *          l_int32       pixSetWpl()
  *          l_int32       pixGetRefcount()
@@ -247,27 +250,27 @@ pix_free(void  *ptr)
  *  Notes:
  *      (1) Use this to change the alloc and/or dealloc functions;
  *          e.g., setPixMemoryManager(my_malloc, my_free).
+ *      (2) The C99 standard (section 6.7.5.3, par. 8) says:
+ *            A declaration of a parameter as "function returning type"
+ *            shall be adjusted to "pointer to function returning type"
+ *          so that it can be in either of these two forms:
+ *            (a) type (function-ptr(type, ...))
+ *            (b) type ((*function-ptr)(type, ...))
+ *          because form (a) is implictly converted to form (b), as in the
+ *          definition of struct PixMemoryManager above.  So, for example,
+ *          we should be able to declare either of these:
+ *            (a) void *(allocator(size_t))
+ *            (b) void *((*allocator)(size_t))
+ *          However, MSVC++ only accepts the second version.
  */
-#ifndef _MSC_VER
-void
-setPixMemoryManager(void  *(allocator(size_t)),
-                    void  (deallocator(void *)))
-{
-    if (allocator) pix_mem_manager.allocator = allocator;
-    if (deallocator) pix_mem_manager.deallocator = deallocator;
-    return;
-}
-#else  /* _MSC_VER */
-    /* MSVC++ wants type (*fun)(types...) syntax */
 void
 setPixMemoryManager(void  *((*allocator)(size_t)),
-                    void  ((*deallocator)(void *)))
+                    void   ((*deallocator)(void *)))
 {
     if (allocator) pix_mem_manager.allocator = allocator;
     if (deallocator) pix_mem_manager.deallocator = deallocator;
     return;
 }
-#endif /* _MSC_VER */
 
 
 /*--------------------------------------------------------------------*
@@ -383,6 +386,7 @@ PIX     *pixd;
     pixGetDimensions(pixs, &w, &h, &d);
     if ((pixd = pixCreateNoInit(w, h, d)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopySpp(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixCopyColormap(pixd, pixs);
     pixCopyText(pixd, pixs);
@@ -397,14 +401,26 @@ PIX     *pixd;
  *
  *      Input:  width, height, depth
  *      Return: pixd (with no data allocated), or null on error
+ *
+ *  Notes:
+ *      (1) It is assumed that all 32 bit pix have 3 spp.  If there is
+ *          a valid alpha channel, this will be set to 4 spp later.
+ *      (2) If the number of bytes to be allocated is larger than the
+ *          maximum value in an int32, we can get overflow, resulting
+ *          in a smaller amount of memory actually being allocated.
+ *          Later, an attempt to access memory that wasn't allocated will
+ *          cause a crash.  So to avoid crashing a program (or worse)
+ *          with bad (or malicious) input, this is where we limit the
+ *          requested allocation of image data in a typesafe way.
  */
 PIX *
 pixCreateHeader(l_int32  width,
                 l_int32  height,
                 l_int32  depth)
 {
-l_int32  wpl;
-PIX     *pixd;
+l_int32   wpl;
+l_uint64  bignum;
+PIX      *pixd;
 
     PROCNAME("pixCreateHeader");
 
@@ -417,13 +433,25 @@ PIX     *pixd;
     if (height <= 0)
         return (PIX *)ERROR_PTR("height must be > 0", procName, NULL);
 
+        /* Avoid overflow in malloc arg, malicious or otherwise */
+    wpl = (width * depth + 31) / 32;
+    bignum = 4L * wpl * height;   /* number of bytes to be requested */
+    if (bignum > ((1LL << 31) - 1)) {
+        L_ERROR("requested w = %d, h = %d, d = %d\n",
+                procName, width, height, depth);
+        return (PIX *)ERROR_PTR("requested bytes >= 2^31", procName, NULL);
+    }
+
     if ((pixd = (PIX *)CALLOC(1, sizeof(PIX))) == NULL)
         return (PIX *)ERROR_PTR("CALLOC fail for pixd", procName, NULL);
     pixSetWidth(pixd, width);
     pixSetHeight(pixd, height);
     pixSetDepth(pixd, depth);
-    wpl = (width * depth + 31) / 32;
     pixSetWpl(pixd, wpl);
+    if (depth == 24 || depth == 32)
+        pixSetSpp(pixd, 3);
+    else
+        pixSetSpp(pixd, 1);
 
     pixd->refcount = 1;
     pixd->informat = IFF_UNKNOWN;
@@ -487,7 +515,7 @@ PIX  *pix;
     PROCNAME("pixDestroy");
 
     if (!ppix) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
 
@@ -594,6 +622,7 @@ l_uint32  *datas, *datad;
 
         /* Copy non-image data fields */
     pixCopyColormap(pixd, pixs);
+    pixCopySpp(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixCopyInputFormat(pixd, pixs);
     pixCopyText(pixd, pixs);
@@ -800,6 +829,7 @@ PIX     *pixs;
             pixCopyText(pixd, pixs);
     }
 
+    pixCopySpp(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixCopyDimensions(pixd, pixs);
     if (copyformat)
@@ -1032,6 +1062,72 @@ pixCopyDimensions(PIX  *pixd,
     pixSetHeight(pixd, pixGetHeight(pixs));
     pixSetDepth(pixd, pixGetDepth(pixs));
     pixSetWpl(pixd, pixGetWpl(pixs));
+    return 0;
+}
+
+
+l_int32
+pixGetSpp(PIX  *pix)
+{
+    PROCNAME("pixGetSpp");
+
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, UNDEF);
+
+    return pix->spp;
+}
+
+
+/*
+ *  pixSetSpp()
+ *      Input:  pix
+ *              spp (1, 3 or 4)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) For a 32 bpp pix, this can be used to ignore the
+ *          alpha sample (spp == 3) or to use it (spp == 4).
+ *          For example, to write a spp == 4 image without the alpha
+ *          sample (as an rgb pix), call pixSetSpp(pix, 3) and
+ *          then write it out as a png.
+ */
+l_int32
+pixSetSpp(PIX     *pix,
+          l_int32  spp)
+{
+    PROCNAME("pixSetSpp");
+
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+    if (spp < 1)
+        return ERROR_INT("spp must be >= 1", procName, 1);
+
+    pix->spp = spp;
+    return 0;
+}
+
+
+/*!
+ *  pixCopySpp()
+ *
+ *      Input:  pixd
+ *              pixs
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+pixCopySpp(PIX  *pixd,
+           PIX  *pixs)
+{
+    PROCNAME("pixCopySpp");
+
+    if (!pixd)
+        return ERROR_INT("pixd not defined", procName, 1);
+    if (!pixs)
+        return ERROR_INT("pixs not defined", procName, 1);
+    if (pixs == pixd)
+        return 0;   /* no-op */
+
+    pixSetSpp(pixd, pixGetSpp(pixs));
     return 0;
 }
 
@@ -1482,8 +1578,7 @@ l_uint32  *data, *datas;
     if (count == 1) {  /* extract */
         data = pixGetData(pixs);
         pixSetData(pixs, NULL);
-    }
-    else {  /* refcount > 1; copy */
+    } else {  /* refcount > 1; copy */
         bytes = 4 * pixGetWpl(pixs) * pixGetHeight(pixs);
         datas = pixGetData(pixs);
         if ((data = (l_uint32 *)pix_malloc(bytes)) == NULL)
@@ -1649,8 +1744,9 @@ PIXCMAP  *cmap;
 
     if (text)
         fprintf(fp, "  Pix Info for %s:\n", text);
-    fprintf(fp, "    width = %d, height = %d, depth = %d\n",
-               pixGetWidth(pix), pixGetHeight(pix), pixGetDepth(pix));
+    fprintf(fp, "    width = %d, height = %d, depth = %d, spp = %d\n",
+               pixGetWidth(pix), pixGetHeight(pix), pixGetDepth(pix),
+               pixGetSpp(pix));
     fprintf(fp, "    wpl = %d, data = %p, refcount = %d\n",
                pixGetWpl(pix), pixGetData(pix), pixGetRefcount(pix));
     if ((cmap = pixGetColormap(pix)) != NULL)

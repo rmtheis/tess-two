@@ -34,8 +34,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       i, j;
 PIX          *pixs, *pixt, *pixd;

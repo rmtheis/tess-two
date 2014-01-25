@@ -57,16 +57,14 @@ PIXA *GenerateSetOfMargePix(void);
 void CopyStoreClean(PIXA *pixas, l_int32 nlevels, l_int32 ncopies);
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-l_int32      i;
-BOXA        *boxa;
-NUMA        *nas, *nab;
-PIX         *pixs;
-PIXA        *pixa, *pixas;
-static char  mainName[] = "pixalloc_reg";
-
+l_int32  i;
+BOXA    *boxa;
+NUMA    *nas, *nab;
+PIX     *pixs;
+PIXA    *pixa, *pixas;
 
     /* ----------------- Custom with a few large pix -----------------*/
         /* Set up pms */

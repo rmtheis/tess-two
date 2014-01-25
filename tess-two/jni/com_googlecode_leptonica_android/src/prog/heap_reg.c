@@ -42,8 +42,8 @@ typedef struct HeapElement  HEAPEL;
 static const l_int32  NELEM = 50;
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i;
 l_float32    frand, fval;
@@ -53,7 +53,7 @@ L_HEAP      *lh;
 static char  mainName[] = "heap_reg";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax: heap_reg", mainName, 1));
+        return ERROR_INT(" Syntax: heap_reg", mainName, 1);
 
         /* make a numa of random numbers */
     na = numaCreate(5);
@@ -89,8 +89,8 @@ static char  mainName[] = "heap_reg";
         /* remove the elements, one at a time */
     for (i = 0; lheapGetCount(lh) > 0; i++) {
         item = (HEAPEL *)lheapRemove(lh);
-	fprintf(stderr, "item %d: %f\n", i, item->distance);
-	lept_free(item);
+        fprintf(stderr, "item %d: %f\n", i, item->distance);
+        lept_free(item);
     }
 
     lheapDestroy(&lh, 1);

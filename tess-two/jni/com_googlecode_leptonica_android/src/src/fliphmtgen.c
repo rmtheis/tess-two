@@ -102,8 +102,7 @@ PIX       *pixt;
     if (pixd) {
         if (!pixSizesEqual(pixs, pixd))
             return (PIX *)ERROR_PTR("sizes not equal", procName, pixd);
-    }
-    else {
+    } else {
         if ((pixd = pixCreateTemplate(pixs)) == NULL)
             return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     }
@@ -126,8 +125,7 @@ PIX       *pixt;
         datat = pixGetData(pixt) + ADDED_BORDER * wpls + ADDED_BORDER / 32;
         flipfhmtgen_low(datad, w, h, wpld, datat, wpls, index);
         pixDestroy(&pixt);
-    }
-    else {  /* simple and not in-place */
+    } else {  /* simple and not in-place */
         flipfhmtgen_low(datad, w, h, wpld, datas, wpls, index);
     }
 

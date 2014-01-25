@@ -37,9 +37,9 @@
  *
  *      Pixa addition
  *           l_int32   pixaAddPix()
- *           l_int32   pixaExtendArray()
- *           l_int32   pixaExtendArrayToSize()
  *           l_int32   pixaAddBox()
+ *           static l_int32   pixaExtendArray()
+ *           l_int32   pixaExtendArrayToSize()
  *
  *      Pixa accessors
  *           l_int32   pixaGetCount()
@@ -50,17 +50,24 @@
  *           l_int32   pixaGetBoxaCount()
  *           BOX      *pixaGetBox()
  *           l_int32   pixaGetBoxGeometry()
+ *           l_int32   pixaSetBoxa()
  *           PIX     **pixaGetPixArray()
+ *           l_int32   pixaVerifyDepth()
+ *           l_int32   pixaIsFull()
+ *           l_int32   pixaCountText()
+ *           void   ***pixaGetLinePtrs()
  *
  *      Pixa array modifiers
  *           l_int32   pixaReplacePix()
  *           l_int32   pixaInsertPix()
  *           l_int32   pixaRemovePix()
+ *           l_int32   pixaRemovePixAndSave()
  *           l_int32   pixaInitFull()
  *           l_int32   pixaClear()
  *
- *      Pixa combination
- *           PIXA     *pixaJoin()
+ *      Pixa and Pixaa combination
+ *           l_int32   pixaJoin()
+ *           l_int32   pixaaJoin()
  *
  *      Pixaa creation, destruction
  *           PIXAA    *pixaaCreate()
@@ -70,6 +77,7 @@
  *      Pixaa addition
  *           l_int32   pixaaAddPixa()
  *           l_int32   pixaaExtendArray()
+ *           l_int32   pixaaAddPix()
  *           l_int32   pixaaAddBox()
  *
  *      Pixaa accessors
@@ -77,6 +85,14 @@
  *           PIXA     *pixaaGetPixa()
  *           BOXA     *pixaaGetBoxa()
  *           PIX      *pixaaGetPix()
+ *           l_int32   pixaaVerifyDepth()
+ *           l_int32   pixaaIsFull()
+ *
+ *      Pixaa array modifiers
+ *           l_int32   pixaaInitFull()
+ *           l_int32   pixaaReplacePixa()
+ *           l_int32   pixaaClear()
+ *           l_int32   pixaaTruncate()
  *
  *      Pixa serialized I/O  (requires png support)
  *           PIXA     *pixaRead()
@@ -85,6 +101,7 @@
  *           l_int32   pixaWriteStream()
  *
  *      Pixaa serialized I/O  (requires png support)
+ *           PIXAA    *pixaaReadFromFiles()
  *           PIXAA    *pixaaRead()
  *           PIXAA    *pixaaReadStream()
  *           l_int32   pixaaWrite()
@@ -103,6 +120,9 @@
 #include "allheaders.h"
 
 static const l_int32  INITIAL_PTR_ARRAYSIZE = 20;   /* n'import quoi */
+
+    /* Static functions */
+static l_int32 pixaExtendArray(PIXA  *pixa);
 
 
 /*---------------------------------------------------------------------*
@@ -148,8 +168,9 @@ PIXA  *pixa;
  *              cellh   (height of each cell)
  *      Return: pixa, or null on error
  *
- *  Note: for bpp = 1, we truncate each retrieved pix to
- *        the ON pixels, which we assume for now start at (0,0)
+ *  Notes:
+ *      (1) For bpp = 1, we truncate each retrieved pix to the ON
+ *          pixels, which we assume for now start at (0,0)
  */
 PIXA *
 pixaCreateFromPix(PIX     *pixs,
@@ -248,8 +269,7 @@ PIXA    *pixad;
                 pixaAddBox(pixad, boxc, L_INSERT);
             }
             boxDestroy(&box);
-        }
-        else {
+        } else {
             pixd = pixClipRectangle(pixs, box, NULL);
             pixaAddPix(pixad, pixd, L_INSERT);
             pixaAddBox(pixad, box, L_INSERT);
@@ -318,9 +338,9 @@ PIXA    *pixa;
                     pixClearAll(pixt);
                 else
                     pixSetAll(pixt);
-            }
-            else
+            } else {
                 pixSetAllArbitrary(pixt, bordercolor);
+            }
             pixRasterop(pixt, borderwidth, borderwidth, cellw, cellh,
                         PIX_SRC, pixs, j * cellw, i * cellh);
             pixaAddPix(pixa, pixt, L_INSERT);
@@ -350,7 +370,7 @@ PIXA    *pixa;
     PROCNAME("pixaDestroy");
 
     if (ppixa == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
 
@@ -376,14 +396,12 @@ PIXA    *pixa;
  *  pixaCopy()
  *
  *      Input:  pixas
- *              copyflag:
+ *              copyflag (see pix.h for details):
  *                L_COPY makes a new pixa and copies each pix and each box
  *                L_CLONE gives a new ref-counted handle to the input pixa
  *                L_COPY_CLONE makes a new pixa and inserts clones of
  *                    all pix and boxes
  *      Return: new pixa, or null on error
- *
- *  Note: see pix.h for description of the copy types.
  */
 PIXA *
 pixaCopy(PIXA    *pixa,
@@ -413,8 +431,7 @@ PIXA    *pixac;
         if (copyflag == L_COPY) {
             pixc = pixaGetPix(pixa, i, L_COPY);
             boxc = pixaGetBox(pixa, i, L_COPY);
-        }
-        else {  /* copy-clone */
+        } else {  /* copy-clone */
             pixc = pixaGetPix(pixa, i, L_CLONE);
             boxc = pixaGetBox(pixa, i, L_CLONE);
         }
@@ -475,6 +492,33 @@ PIX     *pixc;
 
 
 /*!
+ *  pixaAddBox()
+ *
+ *      Input:  pixa
+ *              box
+ *              copyflag (L_INSERT, L_COPY, L_CLONE)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+pixaAddBox(PIXA    *pixa,
+           BOX     *box,
+           l_int32  copyflag)
+{
+    PROCNAME("pixaAddBox");
+
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+    if (!box)
+        return ERROR_INT("box not defined", procName, 1);
+    if (copyflag != L_INSERT && copyflag != L_COPY && copyflag != L_CLONE)
+        return ERROR_INT("invalid copyflag", procName, 1);
+
+    boxaAddBox(pixa->boxa, box, copyflag);
+    return 0;
+}
+
+
+/*!
  *  pixaExtendArray()
  *
  *      Input:  pixa
@@ -483,7 +527,7 @@ PIX     *pixc;
  *  Notes:
  *      (1) Doubles the size of the pixa and boxa ptr arrays.
  */
-l_int32
+static l_int32
 pixaExtendArray(PIXA  *pixa)
 {
     PROCNAME("pixaExtendArray");
@@ -523,34 +567,6 @@ pixaExtendArrayToSize(PIXA    *pixa,
     }
     return boxaExtendArrayToSize(pixa->boxa, size);
 }
-
-
-/*!
- *  pixaAddBox()
- *
- *      Input:  pixa
- *              box
- *              copyflag (L_INSERT, L_COPY, L_CLONE)
- *      Return: 0 if OK, 1 on error
- */
-l_int32
-pixaAddBox(PIXA    *pixa,
-           BOX     *box,
-           l_int32  copyflag)
-{
-    PROCNAME("pixaAddBox");
-
-    if (!pixa)
-        return ERROR_INT("pixa not defined", procName, 1);
-    if (!box)
-        return ERROR_INT("box not defined", procName, 1);
-    if (copyflag != L_INSERT && copyflag != L_COPY && copyflag != L_CLONE)
-        return ERROR_INT("invalid copyflag", procName, 1);
-
-    boxaAddBox(pixa->boxa, box, copyflag);
-    return 0;
-}
-
 
 
 /*---------------------------------------------------------------------*
@@ -607,17 +623,23 @@ pixaGetPix(PIXA    *pixa,
            l_int32  index,
            l_int32  accesstype)
 {
+PIX  *pix;
+
     PROCNAME("pixaGetPix");
 
     if (!pixa)
         return (PIX *)ERROR_PTR("pixa not defined", procName, NULL);
     if (index < 0 || index >= pixa->n)
         return (PIX *)ERROR_PTR("index not valid", procName, NULL);
+    if ((pix = pixa->pix[index]) == NULL) {
+        L_ERROR("no pix at pixa[%d]\n", procName, index);
+        return (PIX *)ERROR_PTR("pix not found!", procName, NULL);
+    }
 
     if (accesstype == L_COPY)
-        return pixCopy(NULL, pixa->pix[index]);
+        return pixCopy(NULL, pix);
     else if (accesstype == L_CLONE)
-        return pixClone(pixa->pix[index]);
+        return pixClone(pix);
     else
         return (PIX *)ERROR_PTR("invalid accesstype", procName, NULL);
 }
@@ -642,6 +664,9 @@ PIX  *pix;
 
     PROCNAME("pixaGetPixDimensions");
 
+    if (pw) *pw = 0;
+    if (ph) *ph = 0;
+    if (pd) *pd = 0;
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
     if (index < 0 || index >= pixa->n)
@@ -740,9 +765,9 @@ BOX  *box;
             return boxCopy(box);
         else  /* accesstype == L_CLONE */
             return boxClone(box);
-    }
-    else
+    } else {
         return NULL;
+    }
 }
 
 
@@ -766,6 +791,10 @@ BOX  *box;
 
     PROCNAME("pixaGetBoxGeometry");
 
+    if (px) *px = 0;
+    if (py) *py = 0;
+    if (pw) *pw = 0;
+    if (ph) *ph = 0;
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
     if (index < 0 || index >= pixa->n)
@@ -775,6 +804,42 @@ BOX  *box;
         return ERROR_INT("box not found!", procName, 1);
     boxGetGeometry(box, px, py, pw, ph);
     boxDestroy(&box);
+    return 0;
+}
+
+
+/*!
+ *  pixaSetBoxa()
+ *
+ *      Input:  pixa
+ *              boxa
+ *              accesstype  (L_INSERT, L_COPY, L_CLONE)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This destroys the existing boxa in the pixa.
+ */
+l_int32
+pixaSetBoxa(PIXA    *pixa,
+            BOXA    *boxa,
+            l_int32  accesstype)
+{
+    PROCNAME("pixaSetBoxa");
+
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+    if (!boxa)
+        return ERROR_INT("boxa not defined", procName, 1);
+    if (accesstype != L_INSERT && accesstype != L_COPY &&
+        accesstype != L_CLONE)
+        return ERROR_INT("invalid access type", procName, 1);
+
+    boxaDestroy(&pixa->boxa);
+    if (accesstype == L_INSERT)
+        pixa->boxa = boxa;
+    else
+        pixa->boxa = boxaCopy(boxa, accesstype);
+
     return 0;
 }
 
@@ -800,6 +865,184 @@ pixaGetPixArray(PIXA  *pixa)
         return (PIX **)ERROR_PTR("pixa not defined", procName, NULL);
 
     return pixa->pix;
+}
+
+
+/*!
+ *  pixaVerifyDepth()
+ *
+ *      Input:  pixa
+ *              &maxdepth (<optional return> max depth of all pix)
+ *      Return: depth (return 0 if they're not all the same, or on error)
+ *
+ *  Notes:
+ *      (1) It is considered to be an error if there are no pix.
+ */
+l_int32
+pixaVerifyDepth(PIXA     *pixa,
+                l_int32  *pmaxdepth)
+{
+l_int32  i, n, d, depth, maxdepth, same;
+
+    PROCNAME("pixaVerifyDepth");
+
+    if (pmaxdepth) *pmaxdepth = 0;
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 0);
+
+    depth = 0;
+    n = pixaGetCount(pixa);
+    maxdepth = 0;
+    same = 1;
+    for (i = 0; i < n; i++) {
+        if (pixaGetPixDimensions(pixa, i, NULL, NULL, &d))
+            return ERROR_INT("pix depth not found", procName, 0);
+        maxdepth = L_MAX(maxdepth, d);
+        if (i == 0)
+            depth = d;
+        else if (d != depth)
+            same = 0;
+    }
+    if (pmaxdepth) *pmaxdepth = maxdepth;
+    return (same == 1) ? depth : 0;
+}
+
+
+/*!
+ *  pixaIsFull()
+ *
+ *      Input:  pixa
+ *              &fullpa (<optional return> 1 if pixa is full)
+ *              &fullba (<optional return> 1 if boxa is full)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) A pixa is "full" if the array of pix is fully
+ *          occupied from index 0 to index (pixa->n - 1).
+ */
+l_int32
+pixaIsFull(PIXA     *pixa,
+           l_int32  *pfullpa,
+           l_int32  *pfullba)
+{
+l_int32  i, n, full;
+BOXA    *boxa;
+PIX     *pix;
+
+    PROCNAME("pixaIsFull");
+
+    if (pfullpa) *pfullpa = 0;
+    if (pfullba) *pfullba = 0;
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+
+    n = pixaGetCount(pixa);
+    if (pfullpa) {
+        full = 1;
+        for (i = 0; i < n; i++) {
+            if ((pix = pixaGetPix(pixa, i, L_CLONE)) == NULL) {
+                full = 0;
+                break;
+            }
+            pixDestroy(&pix);
+        }
+        *pfullpa = full;
+    }
+    if (pfullba) {
+        boxa = pixaGetBoxa(pixa, L_CLONE);
+        boxaIsFull(boxa, pfullba);
+        boxaDestroy(&boxa);
+    }
+    return 0;
+}
+
+
+/*!
+ *  pixaCountText()
+ *
+ *      Input:  pixa
+ *              &ntext (<return> number of pix with non-empty text strings)
+ *      Return: 0 if OK, 1 on error.
+ *
+ *  Notes:
+ *      (1) All pix have non-empty text strings if the returned value @ntext
+ *          equals the pixa count.
+ */
+l_int32
+pixaCountText(PIXA     *pixa,
+              l_int32  *pntext)
+{
+char    *text;
+l_int32  i, n;
+PIX     *pix;
+
+    PROCNAME("pixaCountText");
+
+    if (!pntext)
+        return ERROR_INT("&ntext not defined", procName, 1);
+    *pntext = 0;
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+
+    n = pixaGetCount(pixa);
+    for (i = 0; i < n; i++) {
+        if ((pix = pixaGetPix(pixa, i, L_CLONE)) == NULL)
+            continue;
+        text = pixGetText(pix);
+        if (text && strlen(text) > 0)
+            (*pntext)++;
+        pixDestroy(&pix);
+    }
+
+    return 0;
+}
+
+
+/*!
+ *  pixaGetLinePtrs()
+ *
+ *      Input:  pixa (of pix that all have the same depth)
+ *              &size (<optional return> number of pix in the pixa)
+ *      Return: array of array of line ptrs, or null on error
+ *
+ *  Notes:
+ *      (1) See pixGetLinePtrs() for details.
+ *      (2) It is best if all pix in the pixa are the same size.
+ *          The size of each line ptr array is equal to the height
+ *          of the pix that it refers to.
+ *      (3) This is an array of arrays.  To destroy it:
+ *            for (i = 0; i < size; i++)
+ *                FREE(lineset[i]);
+ *            FREE(lineset);
+ */
+void ***
+pixaGetLinePtrs(PIXA     *pixa,
+                l_int32  *psize)
+{
+l_int32  i, n;
+void   **lineptrs;
+void  ***lineset;
+PIX     *pix;
+
+    PROCNAME("pixaGetLinePtrs");
+
+    if (psize) *psize = 0;
+    if (!pixa)
+        return (void ***)ERROR_PTR("pixa not defined", procName, NULL);
+    if (pixaVerifyDepth(pixa, NULL) == 0)
+        return (void ***)ERROR_PTR("pixa not all same depth", procName, NULL);
+    n = pixaGetCount(pixa);
+    if (psize) *psize = n;
+    if ((lineset = (void ***)CALLOC(n, sizeof(void **))) == NULL)
+        return (void ***)ERROR_PTR("lineset not made", procName, NULL);
+    for (i = 0; i < n; i++) {
+        pix = pixaGetPix(pixa, i, L_CLONE);
+        lineptrs = pixGetLinePtrs(pix, NULL);
+        lineset[i] = lineptrs;
+        pixDestroy(&pix);
+    }
+
+    return lineset;
 }
 
 
@@ -940,7 +1183,7 @@ PIX    **array;
     array[n - 1] = NULL;
     pixa->n--;
 
-        /* Remove the box if it exists  */
+        /* Remove the box if it exists */
     boxa = pixa->boxa;
     nbox = boxaGetCount(boxa);
     if (index < nbox)
@@ -951,35 +1194,91 @@ PIX    **array;
 
 
 /*!
+ *  pixaRemovePixAndSave()
+ *
+ *      Input:  pixa
+ *              index (of pix to be removed)
+ *              &pix (<optional return> removed pix)
+ *              &box (<optional return> removed box)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This shifts pixa[i] --> pixa[i - 1] for all i > index.
+ *      (2) It should not be used repeatedly on large arrays,
+ *          because the function is O(n).
+ *      (3) The corresponding box is removed as well, if it exists.
+ *      (4) The removed pix and box can either be retained or destroyed.
+ */
+l_int32
+pixaRemovePixAndSave(PIXA    *pixa,
+                     l_int32  index,
+                     PIX    **ppix,
+                     BOX    **pbox)
+{
+l_int32  i, n, nbox;
+BOXA    *boxa;
+PIX    **array;
+
+    PROCNAME("pixaRemovePixAndSave");
+
+    if (ppix) *ppix = NULL;
+    if (pbox) *pbox = NULL;
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+    n = pixaGetCount(pixa);
+    if (index < 0 || index >= n)
+        return ERROR_INT("index not in {0...n - 1}", procName, 1);
+
+        /* Remove the pix */
+    array = pixa->pix;
+    if (ppix)
+        *ppix = pixaGetPix(pixa, index, L_CLONE);
+    pixDestroy(&array[index]);
+    for (i = index + 1; i < n; i++)
+        array[i - 1] = array[i];
+    array[n - 1] = NULL;
+    pixa->n--;
+
+        /* Remove the box if it exists  */
+    boxa = pixa->boxa;
+    nbox = boxaGetCount(boxa);
+    if (index < nbox)
+        boxaRemoveBoxAndSave(boxa, index, pbox);
+
+    return 0;
+}
+
+
+/*!
  *  pixaInitFull()
  *
  *      Input:  pixa (typically empty)
- *              pix (to be replicated into the entire pixa ptr array)
+ *              pix (<optional> to be replicated into the entire pixa ptr array)
  *              box (<optional> to be replicated into the entire boxa ptr array)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
  *      (1) This initializes a pixa by filling up the entire pix ptr array
- *          with copies of @pix.  Any existing pix are destroyed.
- *          It also fills the boxa with copies of @box.
- *          After this oepration, the numbers of pix and boxes are equal to
- *          the number of allocated ptrs.
+ *          with copies of @pix.  If @pix == NULL, we use a tiny placeholder
+ *          pix (w = h = d = 1).  Any existing pix are destroyed.
+ *          It also optionally fills the boxa with copies of @box.
+ *          After this operation, the numbers of pix and (optionally)
+ *          boxes are equal to the number of allocated ptrs.
  *      (2) Note that we use pixaReplacePix() instead of pixaInsertPix().
  *          They both have the same effect when inserting into a NULL ptr
  *          in the pixa ptr array:
- *      (3) Example usage.  This function is useful to prepare for a
+ *      (3) If the boxa is not initialized (i.e., filled with boxes),
+ *          later insertion of boxes will cause an error, because the
+ *          'n' field is 0.
+ *      (4) Example usage.  This function is useful to prepare for a
  *          random insertion (or replacement) of pix into a pixa.
- *          To randomly insert pix into a pixa, up to some index "max":
+ *          To randomly insert pix into a pixa, without boxes, up to
+ *          some index "max":
  *             Pixa *pixa = pixaCreate(max);
- *             Pix *pix = pixCreate(1, 1, 1);  // little memory
- *             Box *box = boxCreate(...);
- *             pixaInitFull(pixa, pix, box);
+ *             pixaInitFull(pixa, NULL, NULL);
  *          An existing pixa with a smaller ptr array can also be reused:
  *             pixaExtendArrayToSize(pixa, max);
- *             Pix *pix = pixCreate(...);
- *             Box *box = boxCreate(...);
- *             pixaInitFull(pixa, pix, box);
- *          For these situations, the pix should be small and disposable.
+ *             pixaInitFull(pixa, NULL, NULL);
  *          The initialization allows the pixa to always be properly
  *          filled, even if all pix (and boxes) are not later replaced.
  */
@@ -995,13 +1294,14 @@ PIX     *pixt;
 
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
-    if (!pix)
-        return ERROR_INT("pix not defined", procName, 1);
 
     n = pixa->nalloc;
     pixa->n = n;
     for (i = 0; i < n; i++) {
-        pixt = pixCopy(NULL, pix);
+        if (pix)
+            pixt = pixCopy(NULL, pix);
+        else
+            pixt = pixCreate(1, 1, 1);
         pixaReplacePix(pixa, i, pixt, NULL);
     }
     if (box)
@@ -1041,21 +1341,22 @@ l_int32  i, n;
 
 
 /*---------------------------------------------------------------------*
- *                           Pixa combination                          *
+ *                      Pixa and Pixaa combination                     *
  *---------------------------------------------------------------------*/
 /*!
  *  pixaJoin()
  *
  *      Input:  pixad  (dest pixa; add to this one)
- *              pixas  (source pixa; add from this one)
- *              istart  (starting index in nas)
- *              iend  (ending index in nas; use 0 to cat all)
+ *              pixas  (<optional> source pixa; add from this one)
+ *              istart  (starting index in pixas)
+ *              iend  (ending index in pixas; use -1 to cat all)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
  *      (1) This appends a clone of each indicated pix in pixas to pixad
  *      (2) istart < 0 is taken to mean 'read from the start' (istart = 0)
- *      (3) iend <= 0 means 'read to the end'
+ *      (3) iend < 0 means 'read to the end'
+ *      (4) If pixas is NULL or contains no pix, this is a no-op.
  */
 l_int32
 pixaJoin(PIXA    *pixad,
@@ -1063,7 +1364,7 @@ pixaJoin(PIXA    *pixad,
          l_int32  istart,
          l_int32  iend)
 {
-l_int32  ns, i;
+l_int32  i, n, nb;
 BOXA    *boxas, *boxad;
 PIX     *pix;
 
@@ -1071,20 +1372,13 @@ PIX     *pix;
 
     if (!pixad)
         return ERROR_INT("pixad not defined", procName, 1);
-    if (!pixas)
-        return ERROR_INT("pixas not defined", procName, 1);
-    if ((ns = pixaGetCount(pixas)) == 0) {
-        L_INFO("empty pixas", procName);
+    if (!pixas || ((n = pixaGetCount(pixas)) == 0))
         return 0;
-    }
+
     if (istart < 0)
         istart = 0;
-    if (istart >= ns)
-        return ERROR_INT("istart out of bounds", procName, 1);
-    if (iend <= 0)
-        iend = ns - 1;
-    if (iend >= ns)
-        return ERROR_INT("iend out of bounds", procName, 1);
+    if (iend < 0 || iend >= n)
+        iend = n - 1;
     if (istart > iend)
         return ERROR_INT("istart > iend; nothing to add", procName, 1);
 
@@ -1095,9 +1389,58 @@ PIX     *pix;
 
     boxas = pixaGetBoxa(pixas, L_CLONE);
     boxad = pixaGetBoxa(pixad, L_CLONE);
-    boxaJoin(boxad, boxas, 0, 0);
+    nb = pixaGetBoxaCount(pixas);
+    iend = L_MIN(iend, nb - 1);
+    boxaJoin(boxad, boxas, istart, iend);
     boxaDestroy(&boxas);  /* just the clones */
     boxaDestroy(&boxad);
+    return 0;
+}
+
+
+/*!
+ *  pixaaJoin()
+ *
+ *      Input:  paad  (dest pixaa; add to this one)
+ *              paas  (<optional> source pixaa; add from this one)
+ *              istart  (starting index in pixaas)
+ *              iend  (ending index in pixaas; use -1 to cat all)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This appends a clone of each indicated pixa in paas to pixaad
+ *      (2) istart < 0 is taken to mean 'read from the start' (istart = 0)
+ *      (3) iend < 0 means 'read to the end'
+ */
+l_int32
+pixaaJoin(PIXAA   *paad,
+          PIXAA   *paas,
+          l_int32  istart,
+          l_int32  iend)
+{
+l_int32  i, n;
+PIXA    *pixa;
+
+    PROCNAME("pixaaJoin");
+
+    if (!paad)
+        return ERROR_INT("pixaad not defined", procName, 1);
+    if (!paas)
+        return 0;
+
+    if (istart < 0)
+        istart = 0;
+    n = pixaaGetCount(paas, NULL);
+    if (iend < 0 || iend >= n)
+        iend = n - 1;
+    if (istart > iend)
+        return ERROR_INT("istart > iend; nothing to add", procName, 1);
+
+    for (i = istart; i <= iend; i++) {
+        pixa = pixaaGetPixa(paas, i, L_CLONE);
+        pixaaAddPixa(paad, pixa, L_INSERT);
+    }
+
     return 0;
 }
 
@@ -1109,7 +1452,7 @@ PIX     *pix;
  *  pixaaCreate()
  *
  *      Input:  n  (initial number of pixa ptrs)
- *      Return: pixaa, or null on error
+ *      Return: paa, or null on error
  *
  *  Notes:
  *      (1) A pixaa provides a 2-level hierarchy of images.
@@ -1128,23 +1471,25 @@ PIX     *pix;
 PIXAA *
 pixaaCreate(l_int32  n)
 {
-PIXAA  *pixaa;
+PIXAA  *paa;
 
     PROCNAME("pixaaCreate");
 
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((pixaa = (PIXAA *)CALLOC(1, sizeof(PIXAA))) == NULL)
-        return (PIXAA *)ERROR_PTR("pixaa not made", procName, NULL);
-    pixaa->n = 0;
-    pixaa->nalloc = n;
+    if ((paa = (PIXAA *)CALLOC(1, sizeof(PIXAA))) == NULL)
+        return (PIXAA *)ERROR_PTR("paa not made", procName, NULL);
+    paa->n = 0;
+    paa->nalloc = n;
 
-    if ((pixaa->pixa = (PIXA **)CALLOC(n, sizeof(PIXA *))) == NULL)
+    if ((paa->pixa = (PIXA **)CALLOC(n, sizeof(PIXA *))) == NULL) {
+        pixaaDestroy(&paa);
         return (PIXAA *)ERROR_PTR("pixa ptrs not made", procName, NULL);
-    pixaa->boxa = boxaCreate(n);
+    }
+    paa->boxa = boxaCreate(n);
 
-    return pixaa;
+    return paa;
 }
 
 
@@ -1155,7 +1500,7 @@ PIXAA  *pixaa;
  *              n (number specifying subdivision of pixa)
  *              type (L_CHOOSE_CONSECUTIVE, L_CHOOSE_SKIP_BY)
  *              copyflag (L_CLONE, L_COPY)
- *      Return: pixaa, or null on error
+ *      Return: paa, or null on error
  *
  *  Notes:
  *      (1) This subdivides a pixa into a set of smaller pixa that
@@ -1175,7 +1520,7 @@ pixaaCreateFromPixa(PIXA    *pixa,
 l_int32  count, i, j, npixa;
 PIX     *pix;
 PIXA    *pixat;
-PIXAA   *pixaa;
+PIXAA   *paa;
 
     PROCNAME("pixaaCreateFromPixa");
 
@@ -1195,7 +1540,7 @@ PIXAA   *pixaa;
         npixa = (count + n - 1) / n;
     else  /* L_CHOOSE_SKIP_BY */
         npixa = L_MIN(n, count);
-    pixaa = pixaaCreate(npixa);
+    paa = pixaaCreate(npixa);
     if (type == L_CHOOSE_CONSECUTIVE) {
         for (i = 0; i < count; i++) {
             if (i % n == 0)
@@ -1203,55 +1548,54 @@ PIXAA   *pixaa;
             pix = pixaGetPix(pixa, i, copyflag);
             pixaAddPix(pixat, pix, L_INSERT);
             if (i % n == n - 1)
-                pixaaAddPixa(pixaa, pixat, L_INSERT);
+                pixaaAddPixa(paa, pixat, L_INSERT);
         }
         if (i % n != 0)
-            pixaaAddPixa(pixaa, pixat, L_INSERT);
-    }
-    else {  /* L_CHOOSE_SKIP_BY */
+            pixaaAddPixa(paa, pixat, L_INSERT);
+    } else {  /* L_CHOOSE_SKIP_BY */
         for (i = 0; i < npixa; i++) {
             pixat = pixaCreate(count / npixa + 1);
             for (j = i; j < count; j += n) {
                 pix = pixaGetPix(pixa, j, copyflag);
                 pixaAddPix(pixat, pix, L_INSERT);
             }
-            pixaaAddPixa(pixaa, pixat, L_INSERT);
+            pixaaAddPixa(paa, pixat, L_INSERT);
         }
     }
 
-    return pixaa;
+    return paa;
 }
 
 
 /*!
  *  pixaaDestroy()
  *
- *      Input:  &pixaa <to be nulled>
+ *      Input:  &paa <to be nulled>
  *      Return: void
  */
 void
-pixaaDestroy(PIXAA  **ppixaa)
+pixaaDestroy(PIXAA  **ppaa)
 {
 l_int32  i;
-PIXAA   *pixaa;
+PIXAA   *paa;
 
     PROCNAME("pixaaDestroy");
 
-    if (ppixaa == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+    if (ppaa == NULL) {
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
 
-    if ((pixaa = *ppixaa) == NULL)
+    if ((paa = *ppaa) == NULL)
         return;
 
-    for (i = 0; i < pixaa->n; i++)
-        pixaDestroy(&pixaa->pixa[i]);
-    FREE(pixaa->pixa);
-    boxaDestroy(&pixaa->boxa);
+    for (i = 0; i < paa->n; i++)
+        pixaDestroy(&paa->pixa[i]);
+    FREE(paa->pixa);
+    boxaDestroy(&paa->boxa);
 
-    FREE(pixaa);
-    *ppixaa = NULL;
+    FREE(paa);
+    *ppaa = NULL;
 
     return;
 }
@@ -1263,7 +1607,7 @@ PIXAA   *pixaa;
 /*!
  *  pixaaAddPixa()
  *
- *      Input:  pixaa
+ *      Input:  paa
  *              pixa  (to be added)
  *              copyflag:
  *                L_INSERT inserts the pixa directly
@@ -1274,7 +1618,7 @@ PIXAA   *pixaa;
  *      Return: 0 if OK; 1 on error
  */
 l_int32
-pixaaAddPixa(PIXAA   *pixaa,
+pixaaAddPixa(PIXAA   *paa,
              PIXA    *pixa,
              l_int32  copyflag)
 {
@@ -1283,26 +1627,26 @@ PIXA    *pixac;
 
     PROCNAME("pixaaAddPixa");
 
-    if (!pixaa)
-        return ERROR_INT("pixaa not defined", procName, 1);
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 1);
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
     if (copyflag != L_INSERT && copyflag != L_COPY &&
         copyflag != L_CLONE && copyflag != L_COPY_CLONE)
         return ERROR_INT("invalid copyflag", procName, 1);
 
-    if (copyflag == L_INSERT)
+    if (copyflag == L_INSERT) {
         pixac = pixa;
-    else {
+    } else {
         if ((pixac = pixaCopy(pixa, copyflag)) == NULL)
             return ERROR_INT("pixac not made", procName, 1);
     }
 
-    n = pixaaGetCount(pixaa);
-    if (n >= pixaa->nalloc)
-        pixaaExtendArray(pixaa);
-    pixaa->pixa[n] = pixac;
-    pixaa->n++;
+    n = pixaaGetCount(paa, NULL);
+    if (n >= paa->nalloc)
+        pixaaExtendArray(paa);
+    paa->pixa[n] = pixac;
+    paa->n++;
 
     return 0;
 }
@@ -1311,23 +1655,58 @@ PIXA    *pixac;
 /*!
  *  pixaaExtendArray()
  *
- *      Input:  pixaa
+ *      Input:  paa
  *      Return: 0 if OK; 1 on error
  */
 l_int32
-pixaaExtendArray(PIXAA  *pixaa)
+pixaaExtendArray(PIXAA  *paa)
 {
     PROCNAME("pixaaExtendArray");
 
-    if (!pixaa)
-        return ERROR_INT("pixaa not defined", procName, 1);
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 1);
 
-    if ((pixaa->pixa = (PIXA **)reallocNew((void **)&pixaa->pixa,
-                             sizeof(PIXA *) * pixaa->nalloc,
-                             2 * sizeof(PIXA *) * pixaa->nalloc)) == NULL)
+    if ((paa->pixa = (PIXA **)reallocNew((void **)&paa->pixa,
+                             sizeof(PIXA *) * paa->nalloc,
+                             2 * sizeof(PIXA *) * paa->nalloc)) == NULL)
         return ERROR_INT("new ptr array not returned", procName, 1);
 
-    pixaa->nalloc = 2 * pixaa->nalloc;
+    paa->nalloc = 2 * paa->nalloc;
+    return 0;
+}
+
+
+/*!
+ *  pixaaAddPix()
+ *
+ *      Input:  paa  (input paa)
+ *              index (index of pixa in paa)
+ *              pix (to be added)
+ *              box (<optional> to be added)
+ *              copyflag (L_INSERT, L_COPY, L_CLONE)
+ *      Return: 0 if OK; 1 on error
+ */
+l_int32
+pixaaAddPix(PIXAA   *paa,
+            l_int32  index,
+            PIX     *pix,
+            BOX     *box,
+            l_int32  copyflag)
+{
+PIXA  *pixa;
+
+    PROCNAME("pixaaAddPix");
+
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 1);
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+
+    if ((pixa = pixaaGetPixa(paa, index, L_CLONE)) == NULL)
+        return ERROR_INT("pixa not found", procName, 1);
+    pixaAddPix(pixa, pix, copyflag);
+    if (box) pixaAddBox(pixa, box, copyflag);
+    pixaDestroy(&pixa);
     return 0;
 }
 
@@ -1335,7 +1714,7 @@ pixaaExtendArray(PIXAA  *pixaa)
 /*!
  *  pixaaAddBox()
  *
- *      Input:  pixaa
+ *      Input:  paa
  *              box
  *              copyflag (L_INSERT, L_COPY, L_CLONE)
  *      Return: 0 if OK, 1 on error
@@ -1345,20 +1724,20 @@ pixaaExtendArray(PIXAA  *pixaa)
  *          of a pixa that is being added to the pixaa.
  */
 l_int32
-pixaaAddBox(PIXAA   *pixaa,
+pixaaAddBox(PIXAA   *paa,
             BOX     *box,
             l_int32  copyflag)
 {
     PROCNAME("pixaaAddBox");
 
-    if (!pixaa)
-        return ERROR_INT("pixaa not defined", procName, 1);
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 1);
     if (!box)
         return ERROR_INT("box not defined", procName, 1);
     if (copyflag != L_INSERT && copyflag != L_COPY && copyflag != L_CLONE)
         return ERROR_INT("invalid copyflag", procName, 1);
 
-    boxaAddBox(pixaa->boxa, box, copyflag);
+    boxaAddBox(paa->boxa, box, copyflag);
     return 0;
 }
 
@@ -1370,25 +1749,46 @@ pixaaAddBox(PIXAA   *pixaa,
 /*!
  *  pixaaGetCount()
  *
- *      Input:  pixaa
+ *      Input:  paa
+ *              &na (<optional return> number of pix in each pixa)
  *      Return: count, or 0 if no pixaa
+ *
+ *  Notes:
+ *      (1) If paa is empty, a returned na will also be empty.
  */
 l_int32
-pixaaGetCount(PIXAA  *pixaa)
+pixaaGetCount(PIXAA  *paa,
+              NUMA  **pna)
 {
+l_int32  i, n;
+NUMA    *na;
+PIXA    *pixa;
+
     PROCNAME("pixaaGetCount");
 
-    if (!pixaa)
-        return ERROR_INT("pixaa not defined", procName, 0);
+    if (pna) *pna = NULL;
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 0);
 
-    return pixaa->n;
+    n = paa->n;
+    if (pna) {
+        if ((na = numaCreate(n)) == NULL)
+            return ERROR_INT("na not made", procName, 0);
+        *pna = na;
+        for (i = 0; i < n; i++) {
+            pixa = pixaaGetPixa(paa, i, L_CLONE);
+            numaAddNumber(na, pixaGetCount(pixa));
+            pixaDestroy(&pixa);
+        }
+    }
+    return n;
 }
 
 
 /*!
  *  pixaaGetPixa()
  *
- *      Input:  pixaa
+ *      Input:  paa
  *              index  (to the index-th pixa)
  *              accesstype  (L_COPY, L_CLONE, L_COPY_CLONE)
  *      Return: pixa, or null on error
@@ -1404,7 +1804,7 @@ pixaaGetCount(PIXAA  *pixaa)
  *      (4) In all cases, you must invoke pixaDestroy() on the returned pixa
  */
 PIXA *
-pixaaGetPixa(PIXAA   *pixaa,
+pixaaGetPixa(PIXAA   *paa,
              l_int32  index,
              l_int32  accesstype)
 {
@@ -1412,16 +1812,18 @@ PIXA  *pixa;
 
     PROCNAME("pixaaGetPixa");
 
-    if (!pixaa)
-        return (PIXA *)ERROR_PTR("pixaa not defined", procName, NULL);
-    if (index < 0 || index >= pixaa->n)
+    if (!paa)
+        return (PIXA *)ERROR_PTR("paa not defined", procName, NULL);
+    if (index < 0 || index >= paa->n)
         return (PIXA *)ERROR_PTR("index not valid", procName, NULL);
     if (accesstype != L_COPY && accesstype != L_CLONE &&
         accesstype != L_COPY_CLONE)
         return (PIXA *)ERROR_PTR("invalid accesstype", procName, NULL);
 
-    if ((pixa = pixaa->pixa[index]) == NULL)  /* shouldn't happen! */
-        return (PIXA *)ERROR_PTR("no pixa[index]", procName, NULL);
+    if ((pixa = paa->pixa[index]) == NULL) {  /* shouldn't happen! */
+        L_ERROR("missing pixa[%d]\n", procName, index);
+        return (PIXA *)ERROR_PTR("pixa not found at index", procName, NULL);
+    }
     return pixaCopy(pixa, accesstype);
 }
 
@@ -1429,7 +1831,7 @@ PIXA  *pixa;
 /*!
  *  pixaaGetBoxa()
  *
- *      Input:  pixaa
+ *      Input:  paa
  *              accesstype  (L_COPY, L_CLONE)
  *      Return: boxa, or null on error
  *
@@ -1438,17 +1840,17 @@ PIXA  *pixa;
  *      (2) In both cases, invoke boxaDestroy() on the returned boxa.
  */
 BOXA *
-pixaaGetBoxa(PIXAA   *pixaa,
+pixaaGetBoxa(PIXAA   *paa,
              l_int32  accesstype)
 {
     PROCNAME("pixaaGetBoxa");
 
-    if (!pixaa)
-        return (BOXA *)ERROR_PTR("pixaa not defined", procName, NULL);
+    if (!paa)
+        return (BOXA *)ERROR_PTR("paa not defined", procName, NULL);
     if (accesstype != L_COPY && accesstype != L_CLONE)
         return (BOXA *)ERROR_PTR("invalid access type", procName, NULL);
 
-    return boxaCopy(pixaa->boxa, accesstype);
+    return boxaCopy(paa->boxa, accesstype);
 }
 
 
@@ -1456,14 +1858,14 @@ pixaaGetBoxa(PIXAA   *pixaa,
  *  pixaaGetPix()
  *
  *      Input:  paa
- *              ipixa  (index into the pixa array in the pixaa)
+ *              index  (index into the pixa array in the pixaa)
  *              ipix  (index into the pix array in the pixa)
  *              accessflag  (L_COPY or L_CLONE)
  *      Return: pix, or null on error
  */
 PIX *
 pixaaGetPix(PIXAA   *paa,
-            l_int32  ipixa,
+            l_int32  index,
             l_int32  ipix,
             l_int32  accessflag)
 {
@@ -1472,13 +1874,242 @@ PIXA  *pixa;
 
     PROCNAME("pixaaGetPix");
 
-    if ((pixa = pixaaGetPixa(paa, ipixa, L_CLONE)) == NULL)
+    if ((pixa = pixaaGetPixa(paa, index, L_CLONE)) == NULL)
         return (PIX *)ERROR_PTR("pixa not retrieved", procName, NULL);
     if ((pix = pixaGetPix(pixa, ipix, accessflag)) == NULL)
-        L_ERROR("pix not retrieved", procName);
+        L_ERROR("pix not retrieved\n", procName);
     pixaDestroy(&pixa);
     return pix;
 }
+
+
+/*!
+ *  pixaaVerifyDepth()
+ *
+ *      Input:  paa
+ *              &maxdepth (<optional return> max depth of all pix in pixaa)
+ *      Return: depth (return 0 if they're not all the same, or on error)
+ */
+l_int32
+pixaaVerifyDepth(PIXAA    *paa,
+                 l_int32  *pmaxdepth)
+{
+l_int32  i, npixa, d, maxd, maxdepth, same;
+PIXA    *pixa;
+
+    PROCNAME("pixaaVerifyDepth");
+
+    if (pmaxdepth) *pmaxdepth = 0;
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 0);
+
+    npixa = pixaaGetCount(paa, NULL);
+    maxdepth = 0;
+    same = 1;
+    for (i = 0; i < npixa; i++) {
+        pixa = pixaaGetPixa(paa, i, L_CLONE);
+        if (pixaGetCount(pixa) > 0) {
+            d = pixaVerifyDepth(pixa, &maxd);
+            maxdepth = L_MAX(maxdepth, maxd);  /* biggest up to this point */
+            if (d != maxdepth) same = 0;
+        }
+        pixaDestroy(&pixa);
+    }
+    if (pmaxdepth) *pmaxdepth = maxdepth;
+    return (same == 1) ? maxdepth : 0;
+}
+
+
+/*!
+ *  pixaaIsFull()
+ *
+ *      Input:  paa
+ *              &full (<return> 1 if all pixa in the paa have full pix arrays)
+ *      Return: return 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) Does not require boxa associated with each pixa to be full.
+ */
+l_int32
+pixaaIsFull(PIXAA    *paa,
+            l_int32  *pfull)
+{
+l_int32  i, n, full;
+PIXA    *pixa;
+
+    PROCNAME("pixaaIsFull");
+
+    if (!pfull)
+        return ERROR_INT("&full not defined", procName, 0);
+    *pfull = 0;
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 0);
+
+    n = pixaaGetCount(paa, NULL);
+    full = 1;
+    for (i = 0; i < n; i++) {
+        pixa = pixaaGetPixa(paa, i, L_CLONE);
+        pixaIsFull(pixa, &full, NULL);
+        pixaDestroy(&pixa);
+        if (!full) break;
+    }
+    *pfull = full;
+    return 0;
+}
+
+
+/*---------------------------------------------------------------------*
+ *                         Pixaa array modifiers                       *
+ *---------------------------------------------------------------------*/
+/*!
+ *  pixaaInitFull()
+ *
+ *      Input:  paa (typically empty)
+ *              pixa (to be replicated into the entire pixa ptr array)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This initializes a pixaa by filling up the entire pixa ptr array
+ *          with copies of @pixa.  Any existing pixa are destroyed.
+ *      (2) Example usage.  This function is useful to prepare for a
+ *          random insertion (or replacement) of pixa into a pixaa.
+ *          To randomly insert pixa into a pixaa, up to some index "max":
+ *             Pixaa *paa = pixaaCreate(max);
+ *             Pixa *pixa = pixaCreate(1);  // if you want little memory
+ *             pixaaInitFull(paa, pixa);  // copy it to entire array
+ *             pixaDestroy(&pixa);  // no longer needed
+ *          The initialization allows the pixaa to always be properly filled.
+ */
+l_int32
+pixaaInitFull(PIXAA  *paa,
+              PIXA   *pixa)
+{
+l_int32  i, n;
+PIXA    *pixat;
+
+    PROCNAME("pixaaInitFull");
+
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 1);
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+
+    n = paa->nalloc;
+    paa->n = n;
+    for (i = 0; i < n; i++) {
+        pixat = pixaCopy(pixa, L_COPY);
+        pixaaReplacePixa(paa, i, pixat);
+    }
+
+    return 0;
+}
+
+
+/*!
+ *  pixaaReplacePixa()
+ *
+ *      Input:  paa
+ *              index  (to the index-th pixa)
+ *              pixa (insert to replace existing one)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This allows random insertion of a pixa into a pixaa, with
+ *          destruction of any existing pixa at that location.
+ *          The input pixa is now owned by the pixaa.
+ *      (2) No other pixa in the array are affected.
+ *      (3) The index must be within the allowed set.
+ */
+l_int32
+pixaaReplacePixa(PIXAA   *paa,
+                 l_int32  index,
+                 PIXA    *pixa)
+{
+
+    PROCNAME("pixaaReplacePixa");
+
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 1);
+    if (index < 0 || index >= paa->n)
+        return ERROR_INT("index not valid", procName, 1);
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+
+    pixaDestroy(&(paa->pixa[index]));
+    paa->pixa[index] = pixa;
+    return 0;
+}
+
+
+/*!
+ *  pixaaClear()
+ *
+ *      Input:  paa
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This destroys all pixa in the pixaa, and nulls the ptrs
+ *          in the pixa ptr array.
+ */
+l_int32
+pixaaClear(PIXAA  *paa)
+{
+l_int32  i, n;
+
+    PROCNAME("pixaClear");
+
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 1);
+
+    n = pixaaGetCount(paa, NULL);
+    for (i = 0; i < n; i++)
+        pixaDestroy(&paa->pixa[i]);
+    paa->n = 0;
+    return 0;
+}
+
+
+/*!
+ *  pixaaTruncate()
+ *
+ *      Input:  paa
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This identifies the largest index containing a pixa that
+ *          has any pix within it, destroys all pixa above that index,
+ *          and resets the count.
+ */
+l_int32
+pixaaTruncate(PIXAA  *paa)
+{
+l_int32  i, n, np;
+PIXA    *pixa;
+
+    PROCNAME("pixaaTruncate");
+
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 1);
+
+    n = pixaaGetCount(paa, NULL);
+    for (i = n - 1; i >= 0; i--) {
+        pixa = pixaaGetPixa(paa, i, L_CLONE);
+        if (!pixa) {
+            paa->n--;
+            continue;
+        }
+        np = pixaGetCount(pixa);
+        pixaDestroy(&pixa);
+        if (np == 0) {
+            pixaDestroy(&paa->pixa[i]);
+            paa->n--;
+        } else {
+            break;
+        }
+    }
+    return 0;
+}
+
 
 
 /*---------------------------------------------------------------------*
@@ -1560,17 +2191,21 @@ PIXA    *pixa;
     if (fscanf(fp, "Number of pix = %d\n", &n) != 1)
         return (PIXA *)ERROR_PTR("not a pixa file", procName, NULL);
 
-    if ((pixa = pixaCreate(n)) == NULL)
-        return (PIXA *)ERROR_PTR("pixa not made", procName, NULL);
     if ((boxa = boxaReadStream(fp)) == NULL)
         return (PIXA *)ERROR_PTR("boxa not made", procName, NULL);
+    if ((pixa = pixaCreate(n)) == NULL) {
+        boxaDestroy(&boxa);
+        return (PIXA *)ERROR_PTR("pixa not made", procName, NULL);
+    }
     boxaDestroy(&pixa->boxa);
     pixa->boxa = boxa;
 
     for (i = 0; i < n; i++) {
         if ((fscanf(fp, " pix[%d]: xres = %d, yres = %d\n",
-              &ignore, &xres, &yres)) != 3)
-            return (PIXA *)ERROR_PTR("res reading", procName, NULL);
+              &ignore, &xres, &yres)) != 3) {
+            pixaDestroy(&pixa);
+            return (PIXA *)ERROR_PTR("res reading error", procName, NULL);
+        }
         if ((pix = pixReadStreamPng(fp)) == NULL) {
             pixaDestroy(&pixa);
             return (PIXA *)ERROR_PTR("pix not read", procName, NULL);
@@ -1611,7 +2246,7 @@ FILE  *fp;
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
 
-    if ((fp = fopen(filename, "wb")) == NULL)
+    if ((fp = fopenWriteStream(filename, "wb")) == NULL)
         return ERROR_INT("stream not opened", procName, 1);
     if (pixaWriteStream(fp, pixa))
         return ERROR_INT("pixa not written to stream", procName, 1);
@@ -1669,10 +2304,66 @@ PIX     *pix;
  *                         Pixaa serialized I/O                        *
  *---------------------------------------------------------------------*/
 /*!
+ *  pixaaReadFromFiles()
+ *
+ *      Input:  dirname (directory)
+ *              substr (<optional> substring filter on filenames; can be NULL)
+ *              first (0-based)
+ *              nfiles (use 0 for everything from @first to the end)
+ *      Return: paa, or null on error or if no pixa files are found.
+ *
+ *  Notes:
+ *      (1) The files must be serialized pixa files (e.g., *.pa)
+ *          If some files cannot be read, warnings are issued.
+ *      (2) Use @substr to filter filenames in the directory.  If
+ *          @substr == NULL, this takes all files.
+ *      (3) After filtering, use @first and @nfiles to select
+ *          a contiguous set of files, that have been lexically
+ *          sorted in increasing order.
+ */
+PIXAA *
+pixaaReadFromFiles(const char  *dirname,
+                   const char  *substr,
+                   l_int32      first,
+                   l_int32      nfiles)
+{
+char    *fname;
+l_int32  i, n;
+PIXA    *pixa;
+PIXAA   *paa;
+SARRAY  *sa;
+
+  PROCNAME("pixaaReadFromFiles");
+
+  if (!dirname)
+      return (PIXAA *)ERROR_PTR("dirname not defined", procName, NULL);
+
+  sa = getSortedPathnamesInDirectory(dirname, substr, first, nfiles);
+  if (!sa || ((n = sarrayGetCount(sa)) == 0)) {
+      sarrayDestroy(&sa);
+      return (PIXAA *)ERROR_PTR("no pixa files found", procName, NULL);
+  }
+
+  paa = pixaaCreate(n);
+  for (i = 0; i < n; i++) {
+      fname = sarrayGetString(sa, i, L_NOCOPY);
+      if ((pixa = pixaRead(fname)) == NULL) {
+          L_ERROR("pixa not read for %d-th file", procName, i);
+          continue;
+      }
+      pixaaAddPixa(paa, pixa, L_INSERT);
+  }
+
+  sarrayDestroy(&sa);
+  return paa;
+}
+
+
+/*!
  *  pixaaRead()
  *
  *      Input:  filename
- *      Return: pixaa, or null on error
+ *      Return: paa, or null on error
  *
  *  Notes:
  *      (1) The pix are stored in the file as png.
@@ -1682,7 +2373,7 @@ PIXAA *
 pixaaRead(const char  *filename)
 {
 FILE   *fp;
-PIXAA  *pixaa;
+PIXAA  *paa;
 
     PROCNAME("pixaaRead");
 
@@ -1695,13 +2386,13 @@ PIXAA  *pixaa;
     if ((fp = fopenReadStream(filename)) == NULL)
         return (PIXAA *)ERROR_PTR("stream not opened", procName, NULL);
 
-    if ((pixaa = pixaaReadStream(fp)) == NULL) {
+    if ((paa = pixaaReadStream(fp)) == NULL) {
         fclose(fp);
-        return (PIXAA *)ERROR_PTR("pixaa not read", procName, NULL);
+        return (PIXAA *)ERROR_PTR("paa not read", procName, NULL);
     }
 
     fclose(fp);
-    return pixaa;
+    return paa;
 }
 
 
@@ -1709,7 +2400,7 @@ PIXAA  *pixaa;
  *  pixaaReadStream()
  *
  *      Input:  stream
- *      Return: pixaa, or null on error
+ *      Return: paa, or null on error
  *
  *  Notes:
  *      (1) The pix are stored in the file as png.
@@ -1722,7 +2413,7 @@ l_int32  n, i, version;
 l_int32  ignore;
 BOXA    *boxa;
 PIXA    *pixa;
-PIXAA   *pixaa;
+PIXAA   *paa;
 
     PROCNAME("pixaaReadStream");
 
@@ -1740,12 +2431,12 @@ PIXAA   *pixaa;
     if (fscanf(fp, "Number of pixa = %d\n", &n) != 1)
         return (PIXAA *)ERROR_PTR("not a pixaa file", procName, NULL);
 
-    if ((pixaa = pixaaCreate(n)) == NULL)
-        return (PIXAA *)ERROR_PTR("pixaa not made", procName, NULL);
+    if ((paa = pixaaCreate(n)) == NULL)
+        return (PIXAA *)ERROR_PTR("paa not made", procName, NULL);
     if ((boxa = boxaReadStream(fp)) == NULL)
         return (PIXAA *)ERROR_PTR("boxa not made", procName, NULL);
-    boxaDestroy(&pixaa->boxa);
-    pixaa->boxa = boxa;
+    boxaDestroy(&paa->boxa);
+    paa->boxa = boxa;
 
     for (i = 0; i < n; i++) {
         if ((fscanf(fp, "\n\n --------------- pixa[%d] ---------------\n",
@@ -1754,10 +2445,10 @@ PIXAA   *pixaa;
         }
         if ((pixa = pixaReadStream(fp)) == NULL)
             return (PIXAA *)ERROR_PTR("pixa not read", procName, NULL);
-        pixaaAddPixa(pixaa, pixa, L_INSERT);
+        pixaaAddPixa(paa, pixa, L_INSERT);
     }
 
-    return pixaa;
+    return paa;
 }
 
 
@@ -1765,7 +2456,7 @@ PIXAA   *pixaa;
  *  pixaaWrite()
  *
  *      Input:  filename
- *              pixaa
+ *              paa
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -1774,7 +2465,7 @@ PIXAA   *pixaa;
  */
 l_int32
 pixaaWrite(const char  *filename,
-           PIXAA       *pixaa)
+           PIXAA       *paa)
 {
 FILE  *fp;
 
@@ -1786,13 +2477,13 @@ FILE  *fp;
 
     if (!filename)
         return ERROR_INT("filename not defined", procName, 1);
-    if (!pixaa)
-        return ERROR_INT("pixaa not defined", procName, 1);
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 1);
 
-    if ((fp = fopen(filename, "wb")) == NULL)
+    if ((fp = fopenWriteStream(filename, "wb")) == NULL)
         return ERROR_INT("stream not opened", procName, 1);
-    if (pixaaWriteStream(fp, pixaa))
-        return ERROR_INT("pixaa not written to stream", procName, 1);
+    if (pixaaWriteStream(fp, paa))
+        return ERROR_INT("paa not written to stream", procName, 1);
     fclose(fp);
 
     return 0;
@@ -1803,7 +2494,7 @@ FILE  *fp;
  *  pixaaWriteStream()
  *
  *      Input:  stream (opened for "wb")
- *              pixaa
+ *              paa
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -1812,7 +2503,7 @@ FILE  *fp;
  */
 l_int32
 pixaaWriteStream(FILE   *fp,
-                 PIXAA  *pixaa)
+                 PIXAA  *paa)
 {
 l_int32  n, i;
 PIXA    *pixa;
@@ -1825,15 +2516,15 @@ PIXA    *pixa;
 
     if (!fp)
         return ERROR_INT("stream not defined", procName, 1);
-    if (!pixaa)
-        return ERROR_INT("pixaa not defined", procName, 1);
+    if (!paa)
+        return ERROR_INT("paa not defined", procName, 1);
 
-    n = pixaaGetCount(pixaa);
+    n = pixaaGetCount(paa, NULL);
     fprintf(fp, "\nPixaa Version %d\n", PIXAA_VERSION_NUMBER);
     fprintf(fp, "Number of pixa = %d\n", n);
-    boxaWriteStream(fp, pixaa->boxa);
+    boxaWriteStream(fp, paa->boxa);
     for (i = 0; i < n; i++) {
-        if ((pixa = pixaaGetPixa(pixaa, i, L_CLONE)) == NULL)
+        if ((pixa = pixaaGetPixa(paa, i, L_CLONE)) == NULL)
             return ERROR_INT("pixa not found", procName, 1);
         fprintf(fp, "\n\n --------------- pixa[%d] ---------------\n", i);
         pixaWriteStream(fp, pixa);

@@ -54,8 +54,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      type, comptype, d1, d2, same, first, last;
 l_float32    fract, diff, rmsdiff;
@@ -66,20 +66,20 @@ PIX         *pixs1, *pixs2, *pixd;
 static char  mainName[] = "comparetest";
 
     if (argc != 5)
-	exit(ERROR_INT(" Syntax:  comparetest filein1 filein2 type fileout",
-	               mainName, 1));
+        return ERROR_INT(" Syntax:  comparetest filein1 filein2 type fileout",
+                         mainName, 1);
 
     filein1 = argv[1];
     filein2 = argv[2];
     type = atoi(argv[3]);
     pixd = NULL;
     fileout = argv[4];
-    l_pngSetStrip16To8(0);
+    l_pngSetReadStrip16To8(0);
 
     if ((pixs1 = pixRead(filein1)) == NULL)
-	exit(ERROR_INT("pixs1 not made", mainName, 1));
+        return ERROR_INT("pixs1 not made", mainName, 1);
     if ((pixs2 = pixRead(filein2)) == NULL)
-	exit(ERROR_INT("pixs2 not made", mainName, 1));
+        return ERROR_INT("pixs2 not made", mainName, 1);
     d1 = pixGetDepth(pixs1);
     d2 = pixGetDepth(pixs2);
 
@@ -154,4 +154,3 @@ static char  mainName[] = "comparetest";
     pixDestroy(&pixd);
     return 0;
 }
-

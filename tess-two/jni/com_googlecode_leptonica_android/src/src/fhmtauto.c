@@ -632,7 +632,7 @@ SARRAY  *sa;
         }
     }
     if (ymax > 31) {
-        L_WARNING("ymax > 31; truncating to 31", procName);
+        L_WARNING("ymax > 31; truncating to 31\n", procName);
         ymax = 31;
     }
 
@@ -700,7 +700,7 @@ SARRAY  *sa;
                 delx = j - sel->cx;
                 if ((string = makeBarrelshiftString(delx, dely, type))
                         == NULL) {
-                    L_WARNING("barrel shift string not made", procName);
+                    L_WARNING("barrel shift string not made\n", procName);
                     continue;
                 }
                 if (ntot == 1)  /* just one item */
@@ -766,8 +766,7 @@ char     bigbuf[BUFFER_SIZE];
         else  /*  ((delx > 0) && (dely > 0))  */
             sprintf(bigbuf, "((*(sptr %s) << %d) | (*(sptr %s + 1) >> %d))",
                   wplstrp[absy - 1], absx, wplstrp[absy - 1], 32 - absx);
-    }
-    else {  /* type == SEL_MISS */
+    } else {  /* type == SEL_MISS */
         if ((delx == 0) && (dely == 0))
             sprintf(bigbuf, "(~*sptr)");
         else if ((delx == 0) && (dely < 0))

@@ -34,16 +34,15 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-l_int32      i, n, nbox, npta, fgcount, bgcount, count, same, ok;
-BOXA        *boxa;
-PIX         *pixs, *pixfg, *pixbg, *pixc, *pixb, *pixd;
-PIXA        *pixa;
-PTA         *pta;
-PTAA        *ptaafg, *ptaabg;
-static char  mainName[] = "pta_reg.c";
+l_int32  i, nbox, npta, fgcount, bgcount, count, same, ok;
+BOXA    *boxa;
+PIX     *pixs, *pixfg, *pixbg, *pixc, *pixb, *pixd;
+PIXA    *pixa;
+PTA     *pta;
+PTAA    *ptaafg, *ptaabg;
 
     ok = TRUE;
     pixs = pixRead("feyn-fract.tif");
@@ -75,7 +74,7 @@ static char  mainName[] = "pta_reg.c";
 
         /* Get ptaa of fg pixels */
     ptaafg = ptaaGetBoundaryPixels(pixs, L_BOUNDARY_FG, 8, NULL, NULL);
-    ptaaWrite("/tmp/junkfg.ptaa", ptaafg, 1);
+    ptaaWrite("/tmp/fg.ptaa", ptaafg, 1);
     npta = ptaaGetCount(ptaafg);
     if (npta != nbox) {
         ok = FALSE;
@@ -99,7 +98,7 @@ static char  mainName[] = "pta_reg.c";
          * because bg boundary pixels are shared by two c.c. that
          * are 1 pixel apart. */
     ptaabg = ptaaGetBoundaryPixels(pixs, L_BOUNDARY_BG, 8, NULL, NULL);
-    ptaaWrite("/tmp/junkbg.ptaa", ptaabg, 1);
+    ptaaWrite("/tmp/bg.ptaa", ptaabg, 1);
     npta = ptaaGetCount(ptaabg);
     if (npta != nbox) {
         ok = FALSE;
@@ -121,19 +120,19 @@ static char  mainName[] = "pta_reg.c";
         /* Render the fg boundary pixels on top of pixs. */
     pixa = pixaCreate(4);
     pixc = pixRenderRandomCmapPtaa(pixs, ptaafg, 0, 0, 0);
-    pixSaveTiled(pixc, pixa, 1, 1, 30, 32);
+    pixSaveTiled(pixc, pixa, 1.0, 1, 30, 32);
     pixDestroy(&pixc);
 
         /* Render the bg boundary pixels on top of pixs. */
     pixc = pixRenderRandomCmapPtaa(pixs, ptaabg, 0, 0, 0);
-    pixSaveTiled(pixc, pixa, 1, 0, 30, 32);
+    pixSaveTiled(pixc, pixa, 1.0, 0, 30, 32);
     pixDestroy(&pixc);
 
     pixClearAll(pixs);
 
         /* Render the fg boundary pixels alone. */
     pixc = pixRenderRandomCmapPtaa(pixs, ptaafg, 0, 0, 0);
-    pixSaveTiled(pixc, pixa, 1, 1, 30, 32);
+    pixSaveTiled(pixc, pixa, 1.0, 1, 30, 32);
 
         /* Verify that the fg pixels are the same set as we
          * originally started with. */
@@ -148,7 +147,7 @@ static char  mainName[] = "pta_reg.c";
 
         /* Render the fg boundary pixels alone. */
     pixc = pixRenderRandomCmapPtaa(pixs, ptaabg, 0, 0, 0);
-    pixSaveTiled(pixc, pixa, 1, 0, 30, 32);
+    pixSaveTiled(pixc, pixa, 1.0, 0, 30, 32);
 
         /* Verify that the bg pixels are the same set as we
          * originally started with. */
@@ -167,7 +166,7 @@ static char  mainName[] = "pta_reg.c";
         fprintf(stderr, "Error!\n");
 
     pixd = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/junkboundary.png", pixd, IFF_PNG);
+    pixWrite("/tmp/boundary.png", pixd, IFF_PNG);
     pixDisplay(pixd, 0, 0);
 
     ptaaDestroy(&ptaafg);

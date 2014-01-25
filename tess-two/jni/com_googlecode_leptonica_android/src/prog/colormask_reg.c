@@ -41,8 +41,8 @@
 #include "allheaders.h"
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       i, j, x, y, rval, gval, bval;
 l_uint32      pixel;

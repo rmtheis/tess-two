@@ -34,34 +34,52 @@
 
 LEPT_DLL extern const char *ImageFileFormatExtensions[];
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *text;
-l_int32      w, h, d, wpl, count, npages, color, format, bps, spp, iscmap;
+l_int32      w, h, d, wpl, count, npages, color;
+l_int32      format, bps, spp, iscmap;
 FILE        *fp;
-PIX         *pix;
+PIX         *pix, *pixt;
 PIXCMAP     *cmap;
 char        *filein;
 static char  mainName[] = "fileinfo";
 
     if (argc != 2)
-	exit(ERROR_INT(" Syntax:  fileinfo filein", mainName, 1));
+        return ERROR_INT(" Syntax:  fileinfo filein", mainName, 1);
     filein = argv[1];
 
-    l_pngSetStrip16To8(0);  /* to preserve 16 bpp if format is png */
+    l_pngSetReadStrip16To8(1);  /* to preserve 16 bpp if format is png */
+
+        /* Read the header */
+    if (pixReadHeader(filein, &format, &w, &h, &bps, &spp, &iscmap)) {
+        fprintf(stderr, "Failure to read header!\n");
+        return 1;
+    }
+    fprintf(stderr, "Reading the header:\n");
+    fprintf(stderr, "  Input image format type: %s\n",
+            ImageFileFormatExtensions[format]);
+    fprintf(stderr,
+            "  w = %d, h = %d, bps = %d, spp = %d, iscmap = %d\n",
+            w, h, bps, spp, iscmap);
+
+    findFileFormat(filein, &format);
+    if (format == IFF_JP2) return 0;
 
         /* Read the full image */
     if ((pix = pixRead(filein)) == NULL)
-	exit(ERROR_INT("image not returned from file", mainName, 1));
+        return ERROR_INT("image not returned from file", mainName, 1);
 
     format = pixGetInputFormat(pix);
     pixGetDimensions(pix, &w, &h, &d);
     wpl = pixGetWpl(pix);
+    spp = pixGetSpp(pix);
     fprintf(stderr, "Reading the full image:\n");
     fprintf(stderr, "  Input image format type: %s\n",
             ImageFileFormatExtensions[format]);
-    fprintf(stderr, "  w = %d, h = %d, d = %d, wpl = %d\n", w, h, d, wpl);
+    fprintf(stderr, "  w = %d, h = %d, d = %d, spp = %d, wpl = %d\n",
+            w, h, d, spp, wpl);
     fprintf(stderr, "  xres = %d, yres = %d\n",
             pixGetXRes(pix), pixGetYRes(pix));
 
@@ -76,10 +94,10 @@ static char  mainName[] = "fileinfo";
             fprintf(stderr, "  Colormap exists and has color values:");
         else
             fprintf(stderr, "  Colormap exists and has only gray values:");
-	pixcmapWriteStream(stderr, pixGetColormap(pix));
+        pixcmapWriteStream(stderr, pixGetColormap(pix));
     }
     else
-	fprintf(stderr, "  Colormap does not exist.\n");
+        fprintf(stderr, "  Colormap does not exist.\n");
 
     if (format == IFF_TIFF || format == IFF_TIFF_G4 ||
         format == IFF_TIFF_G3 || format == IFF_TIFF_PACKBITS) {
@@ -96,23 +114,20 @@ static char  mainName[] = "fileinfo";
 
     if (d == 1) {
         pixCountPixels(pix, &count, NULL);
-	fprintf(stderr, "  1 bpp: pixel ratio ON/OFF = %6.3f\n",
+        fprintf(stderr, "  1 bpp: pixel ratio ON/OFF = %6.3f\n",
           (l_float32)count / (l_float32)(pixGetWidth(pix) * pixGetHeight(pix)));
     }
 
-    pixDestroy(&pix);
-
-        /* Test pixReadHeader() */
-    if (pixReadHeader(filein, &format, &w, &h, &bps, &spp, &iscmap)) {
-        fprintf(stderr, "Failure to read header!\n");
-        return 1;
+        /* If there is an alpha component, visualize it.  Note that when
+         * alpha == 0, the rgb layer is transparent.  We visualize the
+         * result when a white background is visible through the
+         * transparency layer. */
+    if (pixGetSpp(pix) == 4) {
+        pixt = pixDisplayLayersRGBA(pix, 0xffffff00, 600.0);
+        pixDisplay(pixt, 100, 100);
+        pixDestroy(&pixt);
     }
-    fprintf(stderr, "Reading just the header:\n");
-    fprintf(stderr, "  Input image format type: %s\n",
-            ImageFileFormatExtensions[format]);
-    fprintf(stderr,
-            "  w = %d, h = %d, d = %d, bps = %d, spp = %d, iscmap = %d\n",
-            w, h, d, bps, spp, iscmap);
+
+    pixDestroy(&pix);
     return 0;
 }
-

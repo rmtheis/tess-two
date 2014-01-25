@@ -236,7 +236,7 @@ DLLIST  *elem, *next, *head;
     PROCNAME("listDestroy");
 
     if (phead == NULL) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
 
@@ -245,7 +245,7 @@ DLLIST  *elem, *next, *head;
 
     for (elem = head; elem; elem = next) {
         if (elem->data)
-            L_WARNING("list data ptr is not null", procName);
+            L_WARNING("list data ptr is not null\n", procName);
         next = elem->next;
         FREE(elem);
     }
@@ -288,8 +288,7 @@ DLLIST  *cell, *head;
     if (!head) {  /* start the list; initialize the ptrs */
         cell->prev = NULL;
         cell->next = NULL;
-    }
-    else {
+    } else {
         cell->prev = NULL;
         cell->next = head;
         head->prev = cell;
@@ -347,8 +346,7 @@ DLLIST  *cell, *head, *tail;
         cell->next = NULL;
         *phead = cell;
         *ptail = cell;
-    }
-    else {
+    } else {
         if ((tail = *ptail) == NULL)
             tail = listFindTail(head);
         cell->prev = tail;
@@ -407,14 +405,12 @@ DLLIST  *cell, *head;
         cell->prev = NULL;
         cell->next = NULL;
         *phead = cell;
-    }
-    else if (head == elem) {  /* insert before head of list */
+    } else if (head == elem) {  /* insert before head of list */
         cell->prev = NULL;
         cell->next = head;
         head->prev = cell;
         *phead = cell;
-    }
-    else  {   /* insert before elem and after head of list */
+    } else  {   /* insert before elem and after head of list */
         cell->prev = elem->prev;
         cell->next = elem;
         elem->prev->next = cell;
@@ -470,13 +466,11 @@ DLLIST  *cell, *head;
         cell->prev = NULL;
         cell->next = NULL;
         *phead = cell;
-    }
-    else if (elem->next == NULL) {  /* insert after last */
+    } else if (elem->next == NULL) {  /* insert after last */
         cell->prev = elem;
         cell->next = NULL;
         elem->next = cell;
-    }
-    else  {  /* insert after elem and before the end */
+    } else  {  /* insert after elem and before the end */
         cell->prev = elem;
         cell->next = elem->next;
         elem->next->prev = cell;
@@ -522,15 +516,12 @@ DLLIST  *head;
         if (elem != head)
             return (void *)ERROR_PTR("elem must be head", procName, NULL);
         *phead = NULL;
-    }
-    else if (head == elem) {   /* first one */
+    } else if (head == elem) {   /* first one */
         elem->next->prev = NULL;
         *phead = elem->next;
-    }
-    else if (elem->next == NULL) {   /* last one */
+    } else if (elem->next == NULL) {   /* last one */
         elem->prev->next = NULL;
-    }
-    else {  /* neither the first nor the last one */
+    } else {  /* neither the first nor the last one */
         elem->next->prev = elem->prev;
         elem->prev->next = elem->next;
     }
@@ -565,9 +556,9 @@ void    *data;
     if ((head = *phead) == NULL)
         return (void *)ERROR_PTR("head not defined", procName, NULL);
 
-    if (head->next == NULL)  /* only one */
+    if (head->next == NULL) {  /* only one */
         *phead = NULL;
-    else {
+    } else {
         head->next->prev = NULL;
         *phead = head->next;
     }
@@ -619,8 +610,7 @@ void    *data;
     if (head->next == NULL) { /* only one */
         *phead = NULL;
         *ptail = NULL;
-    }
-    else {
+    } else {
         tail->prev->next = NULL;
         *ptail = tail->prev;
     }

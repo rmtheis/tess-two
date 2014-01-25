@@ -33,8 +33,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein;
 l_int32      count;
@@ -44,12 +44,11 @@ PIX         *pixt, *pixc, *pixc2;
 static char  mainName[] = "ccbordtest";
 
     if (argc != 2)
-	exit(ERROR_INT(" Syntax:  ccbordtest filein", mainName, 1));
+        return ERROR_INT(" Syntax:  ccbordtest filein", mainName, 1);
 
     filein = argv[1];
-
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
 
     fprintf(stderr, "Get border representation...");
     startTimer();
@@ -57,7 +56,7 @@ static char  mainName[] = "ccbordtest";
     fprintf(stderr, "%6.3f sec\n", stopTimer());
 
 #if 0
-	/* get global locs directly and display borders */
+        /* get global locs directly and display borders */
     fprintf(stderr, "Convert from local to global locs...");
     startTimer();
     ccbaGenerateGlobalLocs(ccba);
@@ -69,7 +68,7 @@ static char  mainName[] = "ccbordtest";
     pixWrite("/tmp/junkborder1.png", pixd, IFF_PNG);
 
 #else
-	/* get step chain code, then global coords, and display borders */
+        /* get step chain code, then global coords, and display borders */
     fprintf(stderr, "Get step chain code...");
     startTimer();
     ccbaGenerateStepChains(ccba);
@@ -85,17 +84,17 @@ static char  mainName[] = "ccbordtest";
     pixWrite("/tmp/junkborder1.png", pixd, IFF_PNG);
 #endif
 
-	/* check if border pixels are in original set */
+        /* check if border pixels are in original set */
     fprintf(stderr, "Check if border pixels are in original set ...\n");
     pixt = pixSubtract(NULL, pixd, pixs);
     pixCountPixels(pixt, &count, NULL);
     if (count == 0)
-	fprintf(stderr, "   all border pixels are in original set\n");
+        fprintf(stderr, "   all border pixels are in original set\n");
     else
-	fprintf(stderr, "   %d border pixels are not in original set\n", count);
+        fprintf(stderr, "   %d border pixels are not in original set\n", count);
     pixDestroy(&pixt);
 
-	/* display image */
+        /* display image */
     fprintf(stderr, "Reconstruct image ...");
     startTimer();
 /*    pixc = ccbaDisplayImage1(ccba); */
@@ -103,27 +102,27 @@ static char  mainName[] = "ccbordtest";
     fprintf(stderr, "%6.3f sec\n", stopTimer());
     pixWrite("/tmp/junkrecon1.png", pixc, IFF_PNG);
 
-	/* check with original to see if correct */
+        /* check with original to see if correct */
     fprintf(stderr, "Check with original to see if correct ...\n");
     pixXor(pixc, pixc, pixs);
     pixCountPixels(pixc, &count, NULL);
     if (count == 0)
-	fprintf(stderr, "   perfect direct recon\n");
+        fprintf(stderr, "   perfect direct recon\n");
     else {
-	l_int32  w, h, i, j;
-	l_uint32 val;
-	fprintf(stderr, "   %d pixels in error in recon\n", count);
+        l_int32  w, h, i, j;
+        l_uint32 val;
+        fprintf(stderr, "   %d pixels in error in recon\n", count);
 #if 1
-	w = pixGetWidth(pixc);
-	h = pixGetHeight(pixc);
-	for (i = 0; i < h; i++) {
-	    for (j = 0; j < w; j++) {
-		pixGetPixel(pixc, j, i, &val);
-		if (val == 1)
-		    fprintf(stderr, "bad pixel at (%d, %d)\n", j, i);
-	    }
-	}
-	pixWrite("/tmp/junkbadpixels.png", pixc, IFF_PNG);
+        w = pixGetWidth(pixc);
+        h = pixGetHeight(pixc);
+        for (i = 0; i < h; i++) {
+            for (j = 0; j < w; j++) {
+                pixGetPixel(pixc, j, i, &val);
+                if (val == 1)
+                    fprintf(stderr, "bad pixel at (%d, %d)\n", j, i);
+            }
+        }
+        pixWrite("/tmp/junkbadpixels.png", pixc, IFF_PNG);
 #endif
     }
 
@@ -140,7 +139,7 @@ static char  mainName[] = "ccbordtest";
     ccba2 = ccbaRead("/tmp/junkstepout");
     fprintf(stderr, "%6.3f sec\n", stopTimer());
 
-	/* display the border pixels again */
+        /* display the border pixels again */
     fprintf(stderr, "Convert from step chain to global locs...");
     startTimer();
     ccbaStepChainsToPixCoords(ccba2, CCB_GLOBAL_COORDS);
@@ -151,18 +150,16 @@ static char  mainName[] = "ccbordtest";
     fprintf(stderr, "%6.3f sec\n", stopTimer());
     pixWrite("/tmp/junkborder2.png", pixd2, IFF_PNG);
 
-	/* check if border pixels are same as first time */
+        /* check if border pixels are same as first time */
     pixXor(pixd2, pixd2, pixd);
     pixCountPixels(pixd2, &count, NULL);
     if (count == 0)
-	fprintf(stderr, "   perfect w/r border recon\n");
-    else {
-	l_int32  w, h, i, j, val;
-	fprintf(stderr, "   %d pixels in error in w/r recon\n", count);
-    }
+        fprintf(stderr, "   perfect w/r border recon\n");
+    else
+        fprintf(stderr, "   %d pixels in error in w/r recon\n", count);
     pixDestroy(&pixd2);
 
-	/* display image again */
+        /* display image again */
     fprintf(stderr, "Convert from step chain to local coords...");
     startTimer();
     ccbaStepChainsToPixCoords(ccba2, CCB_LOCAL_COORDS);
@@ -174,61 +171,61 @@ static char  mainName[] = "ccbordtest";
     fprintf(stderr, "%6.3f sec\n", stopTimer());
     pixWrite("/tmp/junkrecon2.png", pixc2, IFF_PNG);
 
-	/* check with original to see if correct */
+        /* check with original to see if correct */
     fprintf(stderr, "Check with original to see if correct ...\n");
     pixXor(pixc2, pixc2, pixs);
     pixCountPixels(pixc2, &count, NULL);
     if (count == 0)
-	fprintf(stderr, "   perfect image recon\n");
+        fprintf(stderr, "   perfect image recon\n");
     else {
-	l_int32  w, h, i, j;
-	l_uint32 val;
-	fprintf(stderr, "   %d pixels in error in image recon\n", count);
+        l_int32  w, h, i, j;
+        l_uint32 val;
+        fprintf(stderr, "   %d pixels in error in image recon\n", count);
 #if 1
-	w = pixGetWidth(pixc2);
-	h = pixGetHeight(pixc2);
-	for (i = 0; i < h; i++) {
-	    for (j = 0; j < w; j++) {
-		pixGetPixel(pixc2, j, i, &val);
-		if (val == 1)
-		    fprintf(stderr, "bad pixel at (%d, %d)\n", j, i);
-	    }
-	}
-	pixWrite("/tmp/junkbadpixels2.png", pixc2, IFF_PNG);
+        w = pixGetWidth(pixc2);
+        h = pixGetHeight(pixc2);
+        for (i = 0; i < h; i++) {
+            for (j = 0; j < w; j++) {
+                pixGetPixel(pixc2, j, i, &val);
+                if (val == 1)
+                    fprintf(stderr, "bad pixel at (%d, %d)\n", j, i);
+            }
+        }
+        pixWrite("/tmp/junkbadpixels2.png", pixc2, IFF_PNG);
 #endif
     }
 
     /*----------------------------------------------------------*
      *     make, display and check single path border for svg   *
      *----------------------------------------------------------*/
-	/* make local single path border for svg */
+        /* make local single path border for svg */
     fprintf(stderr, "Make local single path borders for svg ...");
     startTimer();
     ccbaGenerateSinglePath(ccba);
     fprintf(stderr, "%6.3f sec\n", stopTimer());
-	/* generate global single path border */
+        /* generate global single path border */
     fprintf(stderr, "Generate global single path borders ...");
     startTimer();
     ccbaGenerateSPGlobalLocs(ccba, CCB_SAVE_TURNING_PTS);
     fprintf(stderr, "%6.3f sec\n", stopTimer());
-	/* display border pixels from single path */
+        /* display border pixels from single path */
     fprintf(stderr, "Display border from single path...");
     startTimer();
     pixd3 = ccbaDisplaySPBorder(ccba);
     fprintf(stderr, "%6.3f sec\n", stopTimer());
     pixWrite("/tmp/junkborder3.png", pixd3, IFF_PNG);
-	/* check if border pixels are in original set */
+        /* check if border pixels are in original set */
     fprintf(stderr, "Check if border pixels are in original set ...\n");
     pixt = pixSubtract(NULL, pixd3, pixs);
     pixCountPixels(pixt, &count, NULL);
     if (count == 0)
-	fprintf(stderr, "   all border pixels are in original set\n");
+        fprintf(stderr, "   all border pixels are in original set\n");
     else
-	fprintf(stderr, "   %d border pixels are not in original set\n", count);
+        fprintf(stderr, "   %d border pixels are not in original set\n", count);
     pixDestroy(&pixt);
     pixDestroy(&pixd3);
 
-	/*  output in svg file format */
+        /*  output in svg file format */
     fprintf(stderr, "Write output in svg file format ...\n");
     startTimer();
     ccbaWriteSVG("/tmp/junksvg", ccba);

@@ -39,25 +39,26 @@
  *    we multiply these, so that the generated pdf will render at the
  *    same resolution as if it hadn't been scaled.  By downscaling, you
  *    reduce the size of the images.  For jpeg, downscaling reduces
- *    pdf size by the square of the scale factor.  It also regenerates
- *    the jpeg with quality = 75.
+ *    pdf size by the square of the scale factor.  The jpeg quality can
+ *    be specified from 1 (very poor) to 100 (best available, but
+ *    still lossy); use 0 for the default (75).
  */
 
 #include <string.h>
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *dirin, *substr, *title, *fileout;
-l_int32      ret, res, type;
+l_int32      ret, res, type, quality;
 l_float32    scalefactor;
 static char  mainName[] = "convertfilestopdf";
 
-    if (argc != 8) {
+    if (argc != 9) {
         fprintf(stderr,
             " Syntax: convertfilestopdf dirin substr res"
-            " scalefactor encoding_type, title fileout\n"
+            " scalefactor encoding_type title fileout\n"
             "         dirin:  input directory for image files\n"
             "         substr:  Use 'allfiles' to convert all files\n"
             "                  in the directory.\n"
@@ -68,6 +69,8 @@ static char  mainName[] = "convertfilestopdf";
             "              L_JPEG_ENCODE = 1\n"
             "              L_G4_ENCODE = 2\n"
             "              L_FLATE_ENCODE = 3, or 0 for per-page default)\n"
+            "         quality:  used for jpeg; 0 for default (75);\n"
+            "                   otherwise select from 1 to 100\n"
             "         title:  Use 'none' to omit\n"
             "         fileout:  Output pdf file\n");
         return 1;
@@ -78,18 +81,19 @@ static char  mainName[] = "convertfilestopdf";
     res = atoi(argv[3]);
     scalefactor = atof(argv[4]);
     type = atoi(argv[5]);
-    title = argv[6];
-    fileout = argv[7];
+    quality = atoi(argv[6]);
+    title = argv[7];
+    fileout = argv[8];
     if (!strcmp(substr, "allfiles"))
         substr = NULL;
     if (scalefactor <= 0.0 || scalefactor > 1.0) {
-        L_WARNING("invalid scalefactor: setting to 1.0", mainName);
+        L_WARNING("invalid scalefactor: setting to 1.0\n", mainName);
         scalefactor = 1.0;
     }
     if (!strcmp(title, "none"))
         title = NULL;
 
     ret = convertFilesToPdf(dirin, substr, res, scalefactor, type,
-                            75, title, fileout);
+                            quality, title, fileout);
     return ret;
 }

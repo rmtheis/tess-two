@@ -28,6 +28,7 @@
  *  coloring.c
  *
  *      Coloring "gray" pixels
+ *           PIX             *pixColorGrayRegions()
  *           l_int32          pixColorGray()
  *
  *      Adjusting one or more colors to a target color
@@ -49,6 +50,7 @@
  *       paintcmap.c
  *       pix2.c
  *       blend.c
+ *       enhance.c
  *
  *  They fall into the following categories:
  *
@@ -63,13 +65,25 @@
  *      from 0 (if shifting down) or from 255 (if shifting up).
  *      This is useful for colorizing either the background or
  *      the foreground of a grayscale image. (pixShiftByComponent)
- *  (5) Repainting selected pixels. (paintcmap.c: pixSetSelectMaskedCmap)
- *  (6) Blending a fraction of a specific color with the existing RGB
+ *  (5) Shifting all colors by a component-dependent fraction of
+ *      their distance from 0 (if shifting down) or from 255 (if
+ *      shifting up).  This is useful for modifying the color to
+ *      compensate for color shifts in acquisition, for example
+ *      (enhance.c: pixColorShiftRGB).
+ *  (6) Repainting selected pixels. (paintcmap.c: pixSetSelectMaskedCmap)
+ *  (7) Blending a fraction of a specific color with the existing RGB
  *      color.  (pix2.c: pixBlendInRect())
- *  (7) Changing selected colors in a colormap.
+ *  (8) Changing selected colors in a colormap.
  *      (paintcmap.c: pixSetSelectCmap, pixSetSelectMaskedCmap)
- *  (8) Shifting all the pixels towards black or white depending on
+ *  (9) Shifting all the pixels towards black or white depending on
  *      the gray value of a second image.  (blend.c: pixFadeWithGray)
+ *  (10) Changing the hue, saturation or brightness, by changing the
+ *      appropriate parameter in HSV color space by a fraction of
+ *      the distance toward its end-point.  For example, you can change
+ *      the brightness by moving each pixel's v-parameter a specified
+ *      fraction of the distance toward 0 (darkening) or toward 255
+ *      (brightening).  (enhance.c: pixModifySaturation,
+ *      pixModifyHue, pixModifyBrightness)
  */
 
 #include "allheaders.h"
@@ -78,6 +92,87 @@
 /*---------------------------------------------------------------------*
  *                        Coloring "gray" pixels                       *
  *---------------------------------------------------------------------*/
+/*!
+ *  pixColorGrayRegions()
+ *
+ *      Input:  pixs (2, 4 or 8 bpp gray, rgb, or colormapped)
+ *              boxa (of regions in which to apply color)
+ *              type (L_PAINT_LIGHT, L_PAINT_DARK)
+ *              thresh (average value below/above which pixel is unchanged)
+ *              rval, gval, bval (new color to paint)
+ *      Return: pixd, or null on error
+ *
+ *  Notes:
+ *      (1) This generates a new image, where some of the pixels in each
+ *          box in the boxa are colorized.  See pixColorGray() for usage
+ *          with @type and @thresh.  Note that @thresh is only used for
+ *          rgb; it is ignored for colormapped images.
+ *      (2) If the input image is colormapped, the new image will be 8 bpp
+ *          colormapped if possible; otherwise, it will be converted
+ *          to 32 bpp rgb.  Only pixels that are strictly gray will be
+ *          colorized.
+ *      (3) If the input image is not colormapped, it is converted to rgb.
+ *          A "gray" value for a pixel is determined by averaging the
+ *          components, and the output rgb value is determined from this.
+ *      (4) This can be used in conjunction with pixFindColorRegions() to
+ *          add highlight color to a grayscale image.
+ */
+PIX *
+pixColorGrayRegions(PIX     *pixs,
+                    BOXA    *boxa,
+                    l_int32  type,
+                    l_int32  thresh,
+                    l_int32  rval,
+                    l_int32  gval,
+                    l_int32  bval)
+{
+l_int32   i, n;
+BOX      *box;
+PIX      *pixd;
+PIXCMAP  *cmap;
+
+    PROCNAME("pixColorGrayRegions");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+    if (!boxa)
+        return (PIX *)ERROR_PTR("boxa not defined", procName, NULL);
+    if (type != L_PAINT_LIGHT && type != L_PAINT_DARK)
+        return (PIX *)ERROR_PTR("invalid type", procName, NULL);
+
+    cmap = pixGetColormap(pixs);
+    if (cmap && (pixcmapGetCount(cmap) < 128)) {
+        pixd = pixConvertTo8(pixs, 1);  /* always new image */
+        pixColorGrayRegionsCmap(pixd, boxa, type, rval, gval, bval);
+        return pixd;
+    }
+
+    if (pixGetDepth(pixs) < 8)
+        return (PIX *)ERROR_PTR("depth < 8 bpp", procName, NULL);
+    if (type == L_PAINT_LIGHT) {  /* thresh should be low */
+        if (thresh >= 255)
+            return (PIX *)ERROR_PTR("thresh must be < 255", procName, NULL);
+        if (thresh > 127)
+            L_WARNING("threshold set very high\n", procName);
+    } else {  /* type == L_PAINT_DARK; thresh should be high */
+        if (thresh <= 0)
+            return (PIX *)ERROR_PTR("thresh must be > 0", procName, NULL);
+        if (thresh < 128)
+            L_WARNING("threshold set very low\n", procName);
+    }
+
+    pixd = pixConvertTo32(pixs);  /* always new image */
+    n = boxaGetCount(boxa);
+    for (i = 0; i < n; i++) {
+        box = boxaGetBox(boxa, i, L_CLONE);
+        pixColorGray(pixd, box, type, thresh, rval, gval, bval);
+        boxDestroy(&box);
+    }
+
+    return pixd;
+}
+
+
 /*!
  *  pixColorGray()
  *
@@ -153,14 +248,13 @@ PIXCMAP   *cmap;
             return ERROR_INT("thresh must be < 255; else this is a no-op",
                              procName, 1);
         if (thresh > 127)
-            L_WARNING("threshold set very high", procName);
-    }
-    else {  /* type == L_PAINT_DARK; thresh should be high */
+            L_WARNING("threshold set very high\n", procName);
+    } else {  /* type == L_PAINT_DARK; thresh should be high */
         if (thresh <= 0)
             return ERROR_INT("thresh must be > 0; else this is a no-op",
                              procName, 1);
         if (thresh < 128)
-            L_WARNING("threshold set very low", procName);
+            L_WARNING("threshold set very low\n", procName);
     }
 
     if (d == 8) {
@@ -172,8 +266,7 @@ PIXCMAP   *cmap;
         x1 = y1 = 0;
         x2 = w;
         y2 = h;
-    }
-    else {
+    } else {
         boxGetGeometry(box, &x1, &y1, &bw, &bh);
         x2 = x1 + bw - 1;
         y2 = y1 + bh - 1;
@@ -198,8 +291,7 @@ PIXCMAP   *cmap;
                 nrval = (l_int32)(rval * aveval * factor);
                 ngval = (l_int32)(gval * aveval * factor);
                 nbval = (l_int32)(bval * aveval * factor);
-            }
-            else {  /* type == L_PAINT_DARK */
+            } else {  /* type == L_PAINT_DARK */
                 if (aveval > thresh)  /* skip sufficiently light pixels */
                     continue;
                 nrval = rval + (l_int32)((255. - rval) * aveval * factor);
@@ -213,7 +305,6 @@ PIXCMAP   *cmap;
 
     return 0;
 }
-
 
 
 /*------------------------------------------------------------------*
@@ -285,8 +376,7 @@ l_uint32  *line, *data;
                     SET_DATA_BYTE(line, j, dval);
             }
         }
-    }
-    else {  /* d == 32 */
+    } else {  /* d == 32 */
         extractRGBValues(srcval, &rsval, &gsval, &bsval);
         for (i = 0; i < h; i++) {
             line = data + i * wpl;
@@ -369,8 +459,7 @@ PIXCMAP   *cmap;
                 break;
             }
         }
-    }
-    else {  /* just add the new color */
+    } else {  /* just add the new color */
         pixcmapAddColor(cmap, rdval, gdval, bdval);
         ncolors = pixcmapGetCount(cmap);
         index = ncolors - 1;  /* index of new destination color */
@@ -378,7 +467,7 @@ PIXCMAP   *cmap;
     }
 
     if (!found) {
-        L_INFO("nothing to do", procName);
+        L_INFO("nothing to do\n", procName);
         return pixd;
     }
 

@@ -39,13 +39,12 @@ void PixAddEdgeData(PIXA *pixa, PIX *pixs, l_int32 side, l_int32 minjump,
                     l_int32 minreversal);
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-l_int32      w;
-PIX         *pixs, *pixt, *pixd;
-PIXA        *pixa;
-static char  mainName[] = "smoothedge_reg";
+l_int32  w;
+PIX     *pixs, *pixt, *pixd;
+PIXA    *pixa;
 
     pixs = pixRead("raggededge.png");
     w = pixGetWidth(pixs);
@@ -53,7 +52,7 @@ static char  mainName[] = "smoothedge_reg";
     PixAddEdgeData(pixa, pixs, L_FROM_RIGHT, MIN_JUMP, MIN_REVERSAL);
     PixAddEdgeData(pixa, pixs, L_FROM_LEFT, MIN_JUMP, MIN_REVERSAL);
     pixt = pixRotateOrth(pixs, 1);
-    PixAddEdgeData(pixa, pixt, L_FROM_BOTTOM, MIN_JUMP, MIN_REVERSAL);
+    PixAddEdgeData(pixa, pixt, L_FROM_BOT, MIN_JUMP, MIN_REVERSAL);
     PixAddEdgeData(pixa, pixt, L_FROM_TOP, MIN_JUMP, MIN_REVERSAL);
     pixDestroy(&pixt);
     pixt = pixRotateOrth(pixs, 2);
@@ -62,7 +61,7 @@ static char  mainName[] = "smoothedge_reg";
     pixDestroy(&pixt);
     pixt = pixRotateOrth(pixs, 3);
     PixAddEdgeData(pixa, pixt, L_FROM_TOP, MIN_JUMP, MIN_REVERSAL);
-    PixAddEdgeData(pixa, pixt, L_FROM_BOTTOM, MIN_JUMP, MIN_REVERSAL);
+    PixAddEdgeData(pixa, pixt, L_FROM_BOT, MIN_JUMP, MIN_REVERSAL);
     pixDestroy(&pixt);
     pixDestroy(&pixs);
 

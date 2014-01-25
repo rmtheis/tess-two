@@ -52,8 +52,8 @@ static const l_int32  SPACING = 25;  /* between images and on outside */
 static const l_int32  BLACK_BORDER = 2;  /* surrounding each image */
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *dirin, *substr, *fileout;
 l_int32      depth, width, ncols;

@@ -27,16 +27,16 @@
 /*
  * cornertest.c
  *
- *   e.g., use on witten.tif
+ *   e.g., use on witten.png
  */
 
 #include "allheaders.h"
 
-#define   LINE_SIZE   9
+#define   LINE_SIZE   29
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
 l_int32      x, y, n, i;
@@ -46,15 +46,14 @@ PTAA        *ptaa, *ptaa2, *ptaa3;
 static char  mainName[] = "cornertest";
 
     if (argc != 3)
-	exit(ERROR_INT(" Syntax:  cornertest filein fileout", mainName, 1));
+        return ERROR_INT(" Syntax:  cornertest filein fileout", mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
-
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
 
-	/* Clean noise in LR corner of witten.tif */
+        /* Clean noise in LR corner of witten.tif */
     pixSetPixel(pixs, 2252, 3051, 0);
     pixSetPixel(pixs, 2252, 3050, 0);
     pixSetPixel(pixs, 2251, 3050, 0);
@@ -80,14 +79,14 @@ static char  mainName[] = "cornertest";
     ptaaDestroy(&ptaa3);
 #endif
 
-	/* mark corner pixels */
+        /* mark corner pixels */
     n = ptaGetCount(pta);
     for (i = 0; i < n; i++) {
-	ptaGetIPt(pta, i, &x, &y);
-	pixRenderLine(pixs, x - LINE_SIZE, y, x + LINE_SIZE, y, 3,
-	              L_FLIP_PIXELS);
-	pixRenderLine(pixs, x, y - LINE_SIZE, x, y + LINE_SIZE, 3,
-	              L_FLIP_PIXELS);
+        ptaGetIPt(pta, i, &x, &y);
+        pixRenderLine(pixs, x - LINE_SIZE, y, x + LINE_SIZE, y, 5,
+                      L_FLIP_PIXELS);
+        pixRenderLine(pixs, x, y - LINE_SIZE, x, y + LINE_SIZE, 5,
+                      L_FLIP_PIXELS);
     }
 
     pixWrite(fileout, pixs, IFF_PNG);

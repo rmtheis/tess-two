@@ -48,7 +48,7 @@ static const l_float32  ANGLE1 = 3.14159265 / 12.;
 static const l_float32  ANGLE2 = 3.14159265 / 120.;
 static const l_int32    NTIMES = 24;
 
-static void RotateTest(PIX *pixs, l_int32 reduction, L_REGPARAMS *rp);
+static void RotateTest(PIX *pixs, l_float32 scale, L_REGPARAMS *rp);
 
 
 l_int32 main(int    argc,
@@ -62,44 +62,44 @@ L_REGPARAMS  *rp;
 
     fprintf(stderr, "Test binary image:\n");
     pixs = pixRead(BINARY_IMAGE);
-    RotateTest(pixs, 1, rp);
+    RotateTest(pixs, 1.0, rp);
     pixDestroy(&pixs);
 
     fprintf(stderr, "Test 2 bpp cmapped image with filled cmap:\n");
     pixs = pixRead(TWO_BPP_IMAGE);
-    RotateTest(pixs, 1, rp);
+    RotateTest(pixs, 1.0, rp);
     pixDestroy(&pixs);
 
     fprintf(stderr, "Test 4 bpp cmapped image with unfilled cmap:\n");
     pixs = pixRead(FOUR_BPP_IMAGE1);
-    RotateTest(pixs, 1, rp);
+    RotateTest(pixs, 1.0, rp);
     pixDestroy(&pixs);
 
     fprintf(stderr, "Test 4 bpp cmapped image with filled cmap:\n");
     pixs = pixRead(FOUR_BPP_IMAGE2);
-    RotateTest(pixs, 1, rp);
+    RotateTest(pixs, 1.0, rp);
     pixDestroy(&pixs);
 
     fprintf(stderr, "Test 8 bpp grayscale image:\n");
     pixs = pixRead(EIGHT_BPP_IMAGE);
-    RotateTest(pixs, 1, rp);
+    RotateTest(pixs, 1.0, rp);
     pixDestroy(&pixs);
 
     fprintf(stderr, "Test 8 bpp grayscale cmap image:\n");
     pixs = pixRead(EIGHT_BPP_CMAP_IMAGE1);
-    RotateTest(pixs, 1, rp);
+    RotateTest(pixs, 1.0, rp);
     pixDestroy(&pixs);
 
     fprintf(stderr, "Test 8 bpp color cmap image:\n");
     pixs = pixRead(EIGHT_BPP_CMAP_IMAGE2);
     pixd = pixOctreeColorQuant(pixs, 200, 0);
-    RotateTest(pixs, 4, rp);
+    RotateTest(pixs, 0.25, rp);
     pixDestroy(&pixs);
     pixDestroy(&pixd);
 
     fprintf(stderr, "Test rgb image:\n");
     pixs = pixRead(RGB_IMAGE);
-    RotateTest(pixs, 1, rp);
+    RotateTest(pixs, 1.0, rp);
     pixDestroy(&pixs);
 
     return regTestCleanup(rp);
@@ -108,7 +108,7 @@ L_REGPARAMS  *rp;
 
 static void
 RotateTest(PIX          *pixs,
-           l_int32       reduction,
+           l_float32     scale,
            L_REGPARAMS  *rp)
 {
 l_int32   w, h, d, i, outformat;
@@ -124,10 +124,10 @@ PIXCMAP  *cmap;
     for (i = 1; i < NTIMES; i++) {
         if ((i % MODSIZE) == 0) {
             if (i == MODSIZE) {
-                pixSaveTiled(pixd, pixa, reduction, 1, 20, 32);
+                pixSaveTiled(pixd, pixa, scale, 1, 20, 32);
                 regTestWritePixAndCheck(rp, pixd, outformat);
             } else {
-                pixSaveTiled(pixd, pixa, reduction, 0, 20, 32);
+                pixSaveTiled(pixd, pixa, scale, 0, 20, 32);
                 regTestWritePixAndCheck(rp, pixd, outformat);
             }
         }
@@ -142,10 +142,10 @@ PIXCMAP  *cmap;
     for (i = 1; i < NTIMES; i++) {
         if ((i % MODSIZE) == 0) {
             if (i == MODSIZE) {
-                pixSaveTiled(pixd, pixa, reduction, 1, 20, 32);
+                pixSaveTiled(pixd, pixa, scale, 1, 20, 32);
                 regTestWritePixAndCheck(rp, pixd, outformat);
             } else {
-                pixSaveTiled(pixd, pixa, reduction, 0, 20, 32);
+                pixSaveTiled(pixd, pixa, scale, 0, 20, 32);
                 regTestWritePixAndCheck(rp, pixd, outformat);
             }
         }
@@ -160,10 +160,10 @@ PIXCMAP  *cmap;
     for (i = 1; i < NTIMES; i++) {
         if ((i % MODSIZE) == 0) {
             if (i == MODSIZE) {
-                pixSaveTiled(pixd, pixa, reduction, 1, 20, 32);
+                pixSaveTiled(pixd, pixa, scale, 1, 20, 32);
                 regTestWritePixAndCheck(rp, pixd, outformat);
             } else {
-                pixSaveTiled(pixd, pixa, reduction, 0, 20, 32);
+                pixSaveTiled(pixd, pixa, scale, 0, 20, 32);
                 regTestWritePixAndCheck(rp, pixd, outformat);
             }
         }
@@ -178,10 +178,10 @@ PIXCMAP  *cmap;
     for (i = 1; i < NTIMES; i++) {
         if ((i % MODSIZE) == 0) {
             if (i == MODSIZE) {
-                pixSaveTiled(pixd, pixa, reduction, 1, 20, 32);
+                pixSaveTiled(pixd, pixa, scale, 1, 20, 32);
                 regTestWritePixAndCheck(rp, pixd, outformat);
             } else {
-                pixSaveTiled(pixd, pixa, reduction, 0, 20, 32);
+                pixSaveTiled(pixd, pixa, scale, 0, 20, 32);
                 regTestWritePixAndCheck(rp, pixd, outformat);
             }
         }
@@ -196,10 +196,10 @@ PIXCMAP  *cmap;
         for (i = 1; i < NTIMES; i++) {
             if ((i % MODSIZE) == 0) {
                 if (i == MODSIZE) {
-                    pixSaveTiled(pixd, pixa, reduction, 1, 20, 32);
+                    pixSaveTiled(pixd, pixa, scale, 1, 20, 32);
                     regTestWritePixAndCheck(rp, pixd, outformat);
                 } else {
-                    pixSaveTiled(pixd, pixa, reduction, 0, 20, 32);
+                    pixSaveTiled(pixd, pixa, scale, 0, 20, 32);
                     regTestWritePixAndCheck(rp, pixd, outformat);
                 }
             }

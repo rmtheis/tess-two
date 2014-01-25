@@ -131,7 +131,7 @@ L_KERNEL  *kel;
     PROCNAME("kernelDestroy");
 
     if (pkel == NULL)  {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
     if ((kel = *pkel) == NULL)
@@ -384,7 +384,7 @@ l_float32  val, minval, maxval;
  *  Notes:
  *      (1) If the sum of kernel elements is close to 0, do not
  *          try to calculate the normalized kernel.  Instead,
- *          return a copy of the input kernel, with an error message.
+ *          return a copy of the input kernel, with a warning.
  */
 L_KERNEL *
 kernelNormalize(L_KERNEL  *kels,
@@ -400,8 +400,8 @@ L_KERNEL  *keld;
         return (L_KERNEL *)ERROR_PTR("kels not defined", procName, NULL);
 
     kernelGetSum(kels, &sum);
-    if (L_ABS(sum) < 0.01) {
-        L_ERROR("null sum; not normalizing; returning a copy", procName);
+    if (L_ABS(sum) < 0.00001) {
+        L_WARNING("null sum; not normalizing; returning a copy\n", procName);
         return kernelCopy(kels);
     }
 
@@ -777,7 +777,7 @@ L_KERNEL  *kel;
         if (line[0] == '\0' || line[0] == '\n' || line[0] == '#')
             break;
         nat = parseStringForNumbers(line, " \t\n");
-        numaJoin(na, nat, 0, 0);
+        numaJoin(na, nat, 0, -1);
         numaDestroy(&nat);
     }
     sarrayDestroy(&sa);
@@ -857,13 +857,25 @@ L_KERNEL  *kel;
  *  kernelDisplayInPix()
  *
  *      Input:  kernel
- *              size (of grid interiors; odd; minimum size of 17 is enforced)
- *              gthick (grid thickness; minimum size of 2 is enforced)
+ *              size (of grid interiors; odd; either 1 or a minimum size
+ *                    of 17 is enforced)
+ *              gthick (grid thickness; either 0 or a minimum size of 2
+ *                      is enforced)
  *      Return: pix (display of kernel), or null on error
  *
  *  Notes:
  *      (1) This gives a visual representation of a kernel.
- *      (2) The origin is outlined in red.
+ *      (2) There are two modes of display:
+ *          (a) Grid lines of minimum width 2, surrounding regions
+ *              representing kernel elements of minimum size 17,
+ *              with a "plus" mark at the kernel origin, or
+ *          (b) A pix without grid lines and using 1 pixel per kernel element.
+ *      (3) For both cases, the kernel absolute value is displayed,
+ *          normalized such that the maximum absolute value is 255.
+ *      (4) Large 2D separable kernels should be used for convolution
+ *          with two 1D kernels.  However, for the bilateral filter,
+ *          the computation time is independent of the size of the
+ *          2D content kernel.
  */
 PIX *
 kernelDisplayInPix(L_KERNEL     *kel,
@@ -879,22 +891,40 @@ PIX       *pixd, *pixt0, *pixt1;
 
     if (!kel)
         return (PIX *)ERROR_PTR("kernel not defined", procName, NULL);
-    if (size < 17) {
-        L_WARNING("size < 17; setting to 17", procName);
-        size = 17;
-    }
-    if (size % 2 == 0)
-        size++;
-    if (gthick < 2) {
-        L_WARNING("grid thickness < 2; setting to 2", procName);
-        gthick = 2;
-    }
 
         /* Normalize the max value to be 255 for display */
     kernelGetParameters(kel, &sy, &sx, &cy, &cx);
     kernelGetMinMax(kel, &minval, &maxval);
     max = L_MAX(maxval, -minval);
+    if (max == 0.0)
+        return (PIX *)ERROR_PTR("kernel elements all 0.0", procName, NULL);
     norm = 255. / (l_float32)max;
+
+        /* Handle the 1 element/pixel case; typically with large kernels */
+    if (size == 1 && gthick == 0) {
+        pixd = pixCreate(sx, sy, 8);
+        for (i = 0; i < sy; i++) {
+            for (j = 0; j < sx; j++) {
+                kernelGetElement(kel, i, j, &val);
+                normval = (l_int32)(norm * L_ABS(val));
+                pixSetPixel(pixd, j, i, normval);
+            }
+        }
+        return pixd;
+    }
+
+        /* Enforce the constraints for the grid line version */
+    if (size < 17) {
+        L_WARNING("size < 17; setting to 17\n", procName);
+        size = 17;
+    }
+    if (size % 2 == 0)
+        size++;
+    if (gthick < 2) {
+        L_WARNING("grid thickness < 2; setting to 2\n", procName);
+        gthick = 2;
+    }
+
     w = size * sx + gthick * (sx + 1);
     h = size * sy + gthick * (sy + 1);
     pixd = pixCreate(w, h, 8);
@@ -1004,8 +1034,8 @@ NUMA      *na;
  *          in the block convolution functions.
  *      (2) The kernel origin (@cy, @cx) is typically placed as near
  *          the center of the kernel as possible.  If height and
- *          width are odd, then using cy = (height - 1) / 2 and
- *          cx = (width - 1) / 2 places the origin at the exact center.
+ *          width are odd, then using cy = height / 2 and
+ *          cx = width / 2 places the origin at the exact center.
  *      (3) This returns a normalized kernel.
  */
 L_KERNEL *
@@ -1126,7 +1156,7 @@ makeGaussianKernelSep(l_int32    halfheight,
  *  makeDoGKernel()
  *
  *      Input:  halfheight, halfwidth (sx = 2 * halfwidth + 1, etc)
- *              stdev (standard deviation)
+ *              stdev (standard deviation of narrower gaussian)
  *              ratio (of stdev for wide filter to stdev for narrow one)
  *      Return: kernel, or null on error
  *
@@ -1171,8 +1201,8 @@ L_KERNEL  *kel;
                                      (j - halfwidth) * (j - halfwidth));
             highnorm = 1. / (2 * stdev * stdev);
             lownorm = highnorm / (ratio * ratio);
-            val = (highnorm / pi) * expf(-(highnorm * squaredist)) -
-                  (lownorm / pi) * expf(-(lownorm * squaredist));
+            val = (highnorm / pi) * expf(-(highnorm * squaredist))
+                  - (lownorm / pi) * expf(-(lownorm * squaredist));
             kernelSetElement(kel, i, j, val);
         }
     }

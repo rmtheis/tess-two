@@ -64,8 +64,12 @@
 #include "zlib.h"
 #endif
 
+#if HAVE_LIBWEBP
+#include "webp/encode.h"
+#endif
+
 #define stringJoinInPlace(s1, s2) \
-    tempStrP = stringJoin(s1,s2); FREE(s1); s1 = tempStrP;
+    { tempStrP = stringJoin((s1),(s2)); FREE(s1); (s1) = tempStrP; }
 
 
 /*---------------------------------------------------------------------*
@@ -75,11 +79,12 @@
  *  getImagelibVersions()
  *
  *      Return: string of version numbers (e.g.,
- *               libgif 4.1.6
+ *               libgif 5.0.3
  *               libjpeg 8b
  *               libpng 1.4.3
- *               libtiff 3.9.4
+ *               libtiff 3.9.5
  *               zlib 1.2.5
+ *               webp 0.3.0
  *
  *  Notes:
  *      (1) The caller has responsibility to free the memory.
@@ -87,6 +92,9 @@
 char *
 getImagelibVersions()
 {
+char     buf[128];
+l_int32  first = TRUE;
+
 #if HAVE_LIBJPEG
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr err;
@@ -98,7 +106,15 @@ getImagelibVersions()
     char *versionStrP = stringNew("");
 
 #if HAVE_LIBGIF
-    stringJoinInPlace(versionStrP, "libgif 4.1.6 : ");
+    first = FALSE;
+    stringJoinInPlace(versionStrP, "libgif ");
+  #ifdef GIFLIB_MAJOR
+    snprintf(buf, sizeof(buf), "%d.%d.%d", GIFLIB_MAJOR, GIFLIB_MINOR,
+             GIFLIB_RELEASE);
+  #else
+    stringCopy(buf, "4.1.6(?)", sizeof(buf));
+  #endif
+    stringJoinInPlace(versionStrP, buf);
 #endif
 
 #if HAVE_LIBJPEG
@@ -106,20 +122,24 @@ getImagelibVersions()
     err.msg_code = JMSG_VERSION;
     (*err.format_message) ((j_common_ptr ) &cinfo, buffer);
 
+    if (!first) stringJoinInPlace(versionStrP, " : ");
+    first = FALSE;
     stringJoinInPlace(versionStrP, "libjpeg ");
     versionNumP = strtokSafe(buffer, " ", &nextTokenP);
     stringJoinInPlace(versionStrP, versionNumP);
-    stringJoinInPlace(versionStrP, " : ");
     FREE(versionNumP);
 #endif
 
 #if HAVE_LIBPNG
+    if (!first) stringJoinInPlace(versionStrP, " : ");
+    first = FALSE;
     stringJoinInPlace(versionStrP, "libpng ");
     stringJoinInPlace(versionStrP, png_get_libpng_ver(NULL));
-    stringJoinInPlace(versionStrP, " : ");
 #endif
 
 #if HAVE_LIBTIFF
+    if (!first) stringJoinInPlace(versionStrP, " : ");
+    first = FALSE;
     stringJoinInPlace(versionStrP, "libtiff ");
     versionNumP = strtokSafe((char *)TIFFGetVersion(), " \n", &nextTokenP);
     FREE(versionNumP);
@@ -127,15 +147,30 @@ getImagelibVersions()
     FREE(versionNumP);
     versionNumP = strtokSafe(NULL, " \n", &nextTokenP);
     stringJoinInPlace(versionStrP, versionNumP);
-    stringJoinInPlace(versionStrP, " : ");
     FREE(versionNumP);
 #endif
 
 #if HAVE_LIBZ
+    if (!first) stringJoinInPlace(versionStrP, " : ");
+    first = FALSE;
     stringJoinInPlace(versionStrP, "zlib ");
     stringJoinInPlace(versionStrP, zlibVersion());
 #endif
-    stringJoinInPlace(versionStrP, "\n");
 
+#if HAVE_LIBWEBP
+    {
+    l_int32 val;
+    char buf[32];
+    if (!first) stringJoinInPlace(versionStrP, " : ");
+    first = FALSE;
+    stringJoinInPlace(versionStrP, "webp ");
+    val = WebPGetEncoderVersion();
+    snprintf(buf, sizeof(buf), "%d.%d.%d", val >> 16, (val >> 8) & 0xff,
+             val & 0xff);
+    stringJoinInPlace(versionStrP, buf);
+    }
+#endif
+
+    stringJoinInPlace(versionStrP, "\n");
     return versionStrP;
 }

@@ -32,8 +32,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein;
 l_float32    angle, conf, deg2rad;
@@ -42,21 +42,21 @@ PIX         *pix6, *pix7, *pix8, *pix9;
 static char  mainName[] = "lineremoval";
 
     if (argc != 2)
-	exit(ERROR_INT(" Syntax:  lineremoval filein", mainName, 1));
+        return ERROR_INT(" Syntax:  lineremoval filein", mainName, 1);
 
     filein = argv[1];
 
     deg2rad = 3.14159 / 180.;
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
+        return ERROR_INT("pix not made", mainName, 1);
 
         /* threshold to binary, extracting much of the lines */
     pix1 = pixThresholdToBinary(pixs, 170);
     pixWrite("/tmp/dave-proc1.png", pix1, IFF_PNG);
     pixDisplayWrite(pix1, 1);
 
-	/* find the skew angle and deskew using an interpolated
-	 * rotator for anti-aliasing (to avoid jaggies) */
+        /* find the skew angle and deskew using an interpolated
+         * rotator for anti-aliasing (to avoid jaggies) */
     pixFindSkew(pix1, &angle, &conf);
     pix2 = pixRotateAMGray(pixs, deg2rad * angle, 255);
     pixWrite("/tmp/dave-proc2.png", pix2, IFF_PNG);
@@ -87,9 +87,9 @@ static char  mainName[] = "lineremoval";
     pixDisplayWrite(pix7, 1);
 
         /* add the inverted, cleaned lines to orig.  Because
-	 * the background was cleaned, the inversion is 0,
-	 * so when you add, it doesn't lighten those pixels.
-	 * It only lightens (to white) the pixels in the lines! */
+         * the background was cleaned, the inversion is 0,
+         * so when you add, it doesn't lighten those pixels.
+         * It only lightens (to white) the pixels in the lines! */
     pixInvert(pix6, pix6);
     pix8 = pixAddGray(NULL, pix2, pix6);
     pixWrite("/tmp/dave-proc8.png", pix8, IFF_PNG);
@@ -103,7 +103,7 @@ static char  mainName[] = "lineremoval";
     pixWrite("/tmp/dave-result.png", pix8, IFF_PNG);
     pixDisplayWrite(pix8, 1);
 
-    pixDisplayMultiple("/tmp/junk_write_display*");
+    pixDisplayMultiple("/tmp/display/file*");
     return 0;
 }
 

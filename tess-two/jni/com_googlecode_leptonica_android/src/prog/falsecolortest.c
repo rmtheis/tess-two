@@ -35,8 +35,8 @@
 #define   HEIGHT    100
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 PIX            *pixs, *pixd, *pixt;
 l_int32         i, j, maxval, val;
@@ -44,7 +44,7 @@ l_float32       gamma;
 static char     mainName[] = "falsecolortest";
 
     if (argc != 2)
-	exit(ERROR_INT(" Syntax:  falsecolortest gamma", mainName, 1));
+        return ERROR_INT(" Syntax:  falsecolortest gamma", mainName, 1);
 
     gamma = atof(argv[1]);
     maxval = 0xff;
@@ -54,19 +54,19 @@ static char     mainName[] = "falsecolortest";
     pixs = pixCreate(WIDTH, HEIGHT, DEPTH);
     for (i = 0; i < HEIGHT; i++) {
         for (j = 0; j < WIDTH; j++) {
-	    val = maxval * j / WIDTH;
-	    pixSetPixel(pixs, j, i, val);
-	}
+            val = maxval * j / WIDTH;
+            pixSetPixel(pixs, j, i, val);
+        }
     }
     fprintf(stderr, "before depth = %d\n", pixGetDepth(pixs));
-    pixWrite("/tmp/junkout16.png", pixs, IFF_PNG);
-    pixt = pixRead("/tmp/junkout16.png");
-    pixWrite("/tmp/junkoutafter.png", pixt, IFF_PNG);
+    pixWrite("/tmp/out16.png", pixs, IFF_PNG);
+    pixt = pixRead("/tmp/out16.png");
+    pixWrite("/tmp/outafter.png", pixt, IFF_PNG);
     fprintf(stderr, "after depth = %d\n", pixGetDepth(pixt));
 
     pixd = pixConvertGrayToFalseColor(pixt, gamma);
     pixDisplay(pixd, 50, 50);
-    pixWrite("/tmp/junkout.png", pixd, IFF_PNG);
+    pixWrite("/tmp/out.png", pixd, IFF_PNG);
     pixDestroy(&pixs);
     pixDestroy(&pixt);
     pixDestroy(&pixd);

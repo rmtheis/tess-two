@@ -422,7 +422,7 @@ PIX       *pix, *pixt;
         pixFindDifferentialSquareSum(pixt, &sum);
 
 #if  DEBUG_PRINT_SCORES
-        L_INFO_FLOAT2("sum(%7.2f) = %7.0f", procName, theta, sum);
+        L_INFO("sum(%7.2f) = %7.0f\n", procName, theta, sum);
 #endif  /* DEBUG_PRINT_SCORES */
 
             /* Save the result in the output arrays */
@@ -437,8 +437,8 @@ PIX       *pix, *pixt;
     *pangle = maxangle;
 
 #if  DEBUG_PRINT_SWEEP
-    L_INFO_FLOAT2(" From sweep: angle = %7.3f, score = %7.3f", procName,
-                  maxangle, maxscore);
+    L_INFO(" From sweep: angle = %7.3f, score = %7.3f\n", procName,
+           maxangle, maxscore);
 #endif  /* DEBUG_PRINT_SWEEP */
 
 #if  DEBUG_PLOT_SCORES
@@ -466,7 +466,7 @@ cleanup:
     pixDestroy(&pixt);
     numaDestroy(&nascore);
     numaDestroy(&natheta);
-    return 0;
+    return ret;
 }
 
 
@@ -662,9 +662,9 @@ PIX       *pixsw, *pixsch, *pixt1, *pixt2;
 
         /* Generate reduced image for sweep, if requested */
     ratio = redsweep / redsearch;
-    if (ratio == 1)
+    if (ratio == 1) {
         pixsw = pixClone(pixsch);
-    else {  /* ratio > 1 */
+    } else {  /* ratio > 1 */
         if (ratio == 2)
             pixsw = pixReduceRankBinaryCascade(pixsch, 1, 0, 0, 0);
         else if (ratio == 4)
@@ -711,7 +711,7 @@ PIX       *pixsw, *pixsch, *pixt1, *pixt2;
         pixFindDifferentialSquareSum(pixt1, &sum);
 
 #if  DEBUG_PRINT_SCORES
-        L_INFO_FLOAT2("sum(%7.2f) = %7.0f", procName, theta, sum);
+        L_INFO("sum(%7.2f) = %7.0f\n", procName, theta, sum);
 #endif  /* DEBUG_PRINT_SCORES */
 
             /* Save the result in the output arrays */
@@ -724,8 +724,8 @@ PIX       *pixsw, *pixsch, *pixt1, *pixt2;
     numaGetFValue(natheta, maxindex, &maxangle);
 
 #if  DEBUG_PRINT_SWEEP
-    L_INFO_FLOAT2(" From sweep: angle = %7.3f, score = %7.3f", procName,
-                  maxangle, maxscore);
+    L_INFO(" From sweep: angle = %7.3f, score = %7.3f\n", procName,
+           maxangle, maxscore);
 #endif  /* DEBUG_PRINT_SWEEP */
 
 #if  DEBUG_PLOT_SCORES
@@ -745,7 +745,7 @@ PIX       *pixsw, *pixsch, *pixt1, *pixt2;
         /* Check if the max is at the end of the sweep. */
     n = numaGetCount(natheta);
     if (maxindex == 0 || maxindex == n - 1) {
-        L_WARNING("max found at sweep edge", procName);
+        L_WARNING("max found at sweep edge\n", procName);
         goto cleanup;
     }
 
@@ -765,8 +765,7 @@ PIX       *pixsw, *pixsch, *pixt1, *pixt2;
         pixVShearCorner(pixt2, pixsch, deg2rad * (centerangle + sweepdelta),
                         L_BRING_IN_WHITE);
         pixFindDifferentialSquareSum(pixt2, &bsearchscore[4]);
-    }
-    else {
+    } else {
         pixVShearCenter(pixt2, pixsch, deg2rad * centerangle, L_BRING_IN_WHITE);
         pixFindDifferentialSquareSum(pixt2, &bsearchscore[2]);
         pixVShearCenter(pixt2, pixsch, deg2rad * (centerangle - sweepdelta),
@@ -838,7 +837,7 @@ PIX       *pixsw, *pixsch, *pixt1, *pixt2;
     *pangle = centerangle;
 
 #if  DEBUG_PRINT_SCORES
-    L_INFO_FLOAT(" Binary search score = %7.3f", procName, bsearchscore[2]);
+    L_INFO(" Binary search score = %7.3f\n", procName, bsearchscore[2]);
 #endif  /* DEBUG_PRINT_SCORES */
 
     if (pendscore)  /* save if requested */
@@ -861,9 +860,9 @@ PIX       *pixsw, *pixsch, *pixt1, *pixt2;
     minthresh = MINSCORE_THRESHOLD_CONSTANT * width * width * height;
 
 #if  DEBUG_THRESHOLD
-    L_INFO_FLOAT2(" minthresh = %10.2f, minscore = %10.2f", procName,
-            minthresh, minscore);
-    L_INFO_FLOAT(" maxscore = %10.2f", procName, maxscore);
+    L_INFO(" minthresh = %10.2f, minscore = %10.2f\n", procName,
+           minthresh, minscore);
+    L_INFO(" maxscore = %10.2f\n", procName, maxscore);
 #endif  /* DEBUG_THRESHOLD */
 
     if (minscore > minthresh)
@@ -1143,9 +1142,9 @@ PIX       *pixt;
                 sumsq += val * val;
             }
             *phratio = sumsq / uniform;
-        }
-        else
+        } else {
             empty = 1;
+        }
         numaDestroy(&na);
     }
 
@@ -1163,9 +1162,9 @@ PIX       *pixt;
                 sumsq += val * val;
             }
             *pvratio = sumsq / uniform;
-        }
-        else
+        } else {
             empty = 1;
+        }
         pixDestroy(&pixt);
         numaDestroy(&na);
     }

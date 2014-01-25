@@ -685,7 +685,7 @@ SARRAY  *sa;
         }
     }
     if (ymax > 31) {
-        L_WARNING("ymax > 31; truncating to 31", procName);
+        L_WARNING("ymax > 31; truncating to 31\n", procName);
         ymax = 31;
     }
 
@@ -719,8 +719,7 @@ SARRAY  *sa;
             sarrayAddString(sa, wpldecls[26], 1);
         if (ymax > 1)
             sarrayAddString(sa, wpldecls[ymax - 2], 1);
-    }
-    else {  /* puts them one/line */
+    } else {  /* puts them one/line */
         for (i = 2; i <= ymax; i++) {
             if (vshift[i])
                 sarrayAddString(sa, wplgendecls[i - 2], 1);
@@ -761,8 +760,7 @@ SARRAY  *sa;
     if (index % 2 == 0) {
         optype = L_MORPH_DILATE;
         tstr = logicalor;
-    }
-    else {
+    } else {
         optype = L_MORPH_ERODE;
         tstr = logicaland;
     }
@@ -778,7 +776,7 @@ SARRAY  *sa;
     if ((sa = sarrayCreate(0)) == NULL)
         return (SARRAY *)ERROR_PTR("sa not made", procName, NULL);
     if (count == 0) {
-        L_WARNING_INT("no hits in Sel %d", procName, index);
+        L_WARNING("no hits in Sel %d\n", procName, index);
         return sa;  /* no code inside! */
     }
 
@@ -790,13 +788,12 @@ SARRAY  *sa;
                 if (optype == L_MORPH_DILATE) {
                     dely = sel->cy - i;
                     delx = sel->cx - j;
-                }
-                else if (optype == L_MORPH_ERODE) {
+                } else if (optype == L_MORPH_ERODE) {
                     dely = i - sel->cy;
                     delx = j - sel->cx;
                 }
                 if ((string = makeBarrelshiftString(delx, dely)) == NULL) {
-                    L_WARNING("barrel shift string not made", procName);
+                    L_WARNING("barrel shift string not made\n", procName);
                     continue;
                 }
                 if (count == 1)  /* just one item */

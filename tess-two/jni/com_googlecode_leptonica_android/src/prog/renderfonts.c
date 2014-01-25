@@ -40,8 +40,8 @@ const l_int32 sizes[] = { 4, 6, 8, 10, 12, 14, 16, 18, 20 };
 #define  DEBUG            0
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout, *textstr;
 l_int32      i, d, size, width, wtext, overflow;
@@ -51,14 +51,14 @@ PIX         *pixs, *pix;
 static char  mainName[] = "renderfonts";
 
     if (argc != 4)
-	exit(ERROR_INT("Syntax: renderfonts filein size fileout", mainName, 1));
+        return ERROR_INT("Syntax: renderfonts filein size fileout",
+                         mainName, 1);
 
     filein = argv[1];
     size = atoi(argv[2]);
     fileout = argv[3];
-
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
     d = pixGetDepth(pixs);
     if (d == 8)
         val = 128;
@@ -67,7 +67,7 @@ static char  mainName[] = "renderfonts";
     else if (d == 32)
         composeRGBPixel(128, 0, 255, &val);
     else
-	exit(ERROR_INT("pixs not 8, 16 or 32 bpp", mainName, 1));
+        return ERROR_INT("pixs not 8, 16 or 32 bpp", mainName, 1);
 
     bmf = bmfCreate(DIRECTORY, size);
 
@@ -75,7 +75,7 @@ static char  mainName[] = "renderfonts";
     pix = pixaGetPix(bmf->pixa, 45, L_CLONE);
     startTimer();
     for (i = 0; i < 10000; i++)
-	pixSetMaskedGeneral(pixs, pix, val, 150, 150);
+        pixSetMaskedGeneral(pixs, pix, val, 150, 150);
     fprintf(stderr, "time: %7.3f sec\n", stopTimer());
     pixWrite(fileout, pixs, IFF_JFIF_JPEG);
     pixDestroy(&pix);

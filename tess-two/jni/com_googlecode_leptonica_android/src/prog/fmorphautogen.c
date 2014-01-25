@@ -43,8 +43,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filename;
 l_int32      index;
@@ -52,8 +52,8 @@ SELA        *sela;
 static char  mainName[] = "fmorphautogen";
 
     if (argc != 2 && argc != 3)
-	exit(ERROR_INT(" Syntax:  fmorphautogen index <filename>",
-                       mainName, 1));
+        return ERROR_INT(" Syntax:  fmorphautogen index <filename>",
+                         mainName, 1);
 
     index = atoi(argv[1]);
     filename = NULL;

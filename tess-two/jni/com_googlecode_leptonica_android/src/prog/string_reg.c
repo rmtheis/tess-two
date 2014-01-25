@@ -33,18 +33,18 @@
 #include <string.h>
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      ignore;
 size_t       nbytesin, nbytesout;
-char        *infile, *outfile, *instring, *outstring;
+char        *infile, *instring, *outstring;
 SARRAY      *sa1, *sa2, *sa3, *sa4, *sa5;
 char         buf[256];
 static char  mainName[] = "string_reg";
 
     if (argc != 2)
-	return ERROR_INT(" Syntax:  string_reg infile", mainName, 1);
+        return ERROR_INT(" Syntax:  string_reg infile", mainName, 1);
 
     infile = argv[1];
     instring = (char *)l_binaryRead(infile, &nbytesin);
@@ -88,7 +88,7 @@ static char  mainName[] = "string_reg";
     sprintf(buf, "diff -s /tmp/junk6.txt %s", infile);
     ignore = system(buf);
 
-	/* write/read/write; compare /tmp/junkout5 with /tmp/junkout6 */
+        /* write/read/write; compare /tmp/junkout5 with /tmp/junkout6 */
     sarrayWrite("/tmp/junk7.txt", sa2);
     sarrayWrite("/tmp/junk8.txt", sa3);
     sa4 = sarrayRead("/tmp/junk8.txt");

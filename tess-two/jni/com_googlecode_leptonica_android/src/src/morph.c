@@ -352,20 +352,17 @@ PIX     *pixt;
                     pixRasterop(pixd, cx - j, cy - i, w, h, PIX_SRC,
                                 pixt, 0, 0);
                     firstrasterop = FALSE;
-                }
-                else {   /* src & dst */
+                } else {   /* src & dst */
                     pixRasterop(pixd, cx - j, cy - i, w, h, PIX_SRC & PIX_DST,
                                 pixt, 0, 0);
                 }
-            }
-            else if (seldata == 2) {  /* miss */
+            } else if (seldata == 2) {  /* miss */
                 if (firstrasterop == TRUE) {  /* ~src only */
                     pixSetAll(pixd);
                     pixRasterop(pixd, cx - j, cy - i, w, h, PIX_NOT(PIX_SRC),
                              pixt, 0, 0);
                     firstrasterop = FALSE;
-                }
-                else  {  /* ~src & dst */
+                } else {  /* ~src & dst */
                     pixRasterop(pixd, cx - j, cy - i, w, h,
                                 PIX_NOT(PIX_SRC) & PIX_DST,
                                 pixt, 0, 0);
@@ -687,8 +684,7 @@ SEL  *sel, *selh, *selv;
         sel = selCreateBrick(vsize, hsize, vsize / 2, hsize / 2, SEL_HIT);
         pixd = pixDilate(pixd, pixs, sel);
         selDestroy(&sel);
-    }
-    else {
+    } else {
         selh = selCreateBrick(1, hsize, 0, hsize / 2, SEL_HIT);
         selv = selCreateBrick(vsize, 1, vsize / 2, 0, SEL_HIT);
         pixt = pixDilate(NULL, pixs, selh);
@@ -750,8 +746,7 @@ SEL  *sel, *selh, *selv;
         sel = selCreateBrick(vsize, hsize, vsize / 2, hsize / 2, SEL_HIT);
         pixd = pixErode(pixd, pixs, sel);
         selDestroy(&sel);
-    }
-    else {
+    } else {
         selh = selCreateBrick(1, hsize, 0, hsize / 2, SEL_HIT);
         selv = selCreateBrick(vsize, 1, vsize / 2, 0, SEL_HIT);
         pixt = pixErode(NULL, pixs, selh);
@@ -813,8 +808,7 @@ SEL  *sel, *selh, *selv;
         sel = selCreateBrick(vsize, hsize, vsize / 2, hsize / 2, SEL_HIT);
         pixd = pixOpen(pixd, pixs, sel);
         selDestroy(&sel);
-    }
-    else {  /* do separably */
+    } else {  /* do separably */
         selh = selCreateBrick(1, hsize, 0, hsize / 2, SEL_HIT);
         selv = selCreateBrick(vsize, 1, vsize / 2, 0, SEL_HIT);
         pixt = pixErode(NULL, pixs, selh);
@@ -878,8 +872,7 @@ SEL  *sel, *selh, *selv;
         sel = selCreateBrick(vsize, hsize, vsize / 2, hsize / 2, SEL_HIT);
         pixd = pixClose(pixd, pixs, sel);
         selDestroy(&sel);
-    }
-    else {  /* do separably */
+    } else {  /* do separably */
         selh = selCreateBrick(1, hsize, 0, hsize / 2, SEL_HIT);
         selv = selCreateBrick(vsize, 1, vsize / 2, 0, SEL_HIT);
         pixt = pixDilate(NULL, pixs, selh);
@@ -958,8 +951,7 @@ SEL     *sel, *selh, *selv;
         sel = selCreateBrick(vsize, hsize, vsize / 2, hsize / 2, SEL_HIT);
         pixdb = pixClose(NULL, pixsb, sel);
         selDestroy(&sel);
-    }
-    else {  /* do separably */
+    } else {  /* do separably */
         selh = selCreateBrick(1, hsize, 0, hsize / 2, SEL_HIT);
         selv = selCreateBrick(vsize, 1, vsize / 2, 0, SEL_HIT);
         pixt = pixDilate(NULL, pixsb, selh);
@@ -975,9 +967,9 @@ SEL     *sel, *selh, *selv;
     pixDestroy(&pixsb);
     pixDestroy(&pixdb);
 
-    if (!pixd)
+    if (!pixd) {
         pixd = pixt;
-    else {
+    } else {
         pixCopy(pixd, pixt);
         pixDestroy(&pixt);
     }
@@ -1108,8 +1100,7 @@ l_int32  diff[256];  /* diff between product (sel size) and input size */
             hival[i] = L_MAX(val1, val2m);
             rastcost[i] = rastcostm;
             diff[i] = diffm;
-        }
-        else {
+        } else {
             lowval[i] = L_MIN(val1, val2p);
             hival[i] = L_MAX(val1, val2p);
             rastcost[i] = rastcostp;
@@ -1205,12 +1196,10 @@ SEL  *selh1, *selh2, *selv1, *selv2;
     if (vsize == 1) {
         pixt2 = pixDilate(NULL, pixt1, selh1);
         pixt3 = pixDilate(NULL, pixt2, selh2);
-    }
-    else if (hsize == 1) {
+    } else if (hsize == 1) {
         pixt2 = pixDilate(NULL, pixt1, selv1);
         pixt3 = pixDilate(NULL, pixt2, selv2);
-    }
-    else {
+    } else {
         pixt2 = pixDilate(NULL, pixt1, selh1);
         pixt3 = pixDilate(NULL, pixt2, selh2);
         pixDilate(pixt2, pixt3, selv1);
@@ -1303,12 +1292,10 @@ SEL  *selh1, *selh2, *selv1, *selv2;
     if (vsize == 1) {
         pixt = pixErode(NULL, pixs, selh1);
         pixd = pixErode(pixd, pixt, selh2);
-    }
-    else if (hsize == 1) {
+    } else if (hsize == 1) {
         pixt = pixErode(NULL, pixs, selv1);
         pixd = pixErode(pixd, pixt, selv2);
-    }
-    else {
+    } else {
         pixt = pixErode(NULL, pixs, selh1);
         pixd = pixErode(pixd, pixt, selh2);
         pixErode(pixt, pixd, selv1);
@@ -1396,14 +1383,12 @@ SEL  *selh1, *selh2, *selv1, *selv2;
         pixd = pixErode(pixd, pixt, selh2);
         pixDilate(pixt, pixd, selh1);
         pixDilate(pixd, pixt, selh2);
-    }
-    else if (hsize == 1) {
+    } else if (hsize == 1) {
         pixt = pixErode(NULL, pixs, selv1);
         pixd = pixErode(pixd, pixt, selv2);
         pixDilate(pixt, pixd, selv1);
         pixDilate(pixd, pixt, selv2);
-    }
-    else {  /* do separably */
+    } else {  /* do separably */
         pixt = pixErode(NULL, pixs, selh1);
         pixd = pixErode(pixd, pixt, selh2);
         pixErode(pixt, pixd, selv1);
@@ -1495,14 +1480,12 @@ SEL  *selh1, *selh2, *selv1, *selv2;
         pixd = pixDilate(pixd, pixt, selh2);
         pixErode(pixt, pixd, selh1);
         pixErode(pixd, pixt, selh2);
-    }
-    else if (hsize == 1) {
+    } else if (hsize == 1) {
         pixt = pixDilate(NULL, pixs, selv1);
         pixd = pixDilate(pixd, pixt, selv2);
         pixErode(pixt, pixd, selv1);
         pixErode(pixd, pixt, selv2);
-    }
-    else {  /* do separably */
+    } else {  /* do separably */
         pixt = pixDilate(NULL, pixs, selh1);
         pixd = pixDilate(pixd, pixt, selh2);
         pixDilate(pixt, pixd, selv1);
@@ -1609,14 +1592,12 @@ SEL     *selh1, *selh2, *selv1, *selv2;
         pixdb = pixDilate(NULL, pixt, selh2);
         pixErode(pixt, pixdb, selh1);
         pixErode(pixdb, pixt, selh2);
-    }
-    else if (hsize == 1) {
+    } else if (hsize == 1) {
         pixt = pixDilate(NULL, pixsb, selv1);
         pixdb = pixDilate(NULL, pixt, selv2);
         pixErode(pixt, pixdb, selv1);
         pixErode(pixdb, pixt, selv2);
-    }
-    else {  /* do separably */
+    } else {  /* do separably */
         pixt = pixDilate(NULL, pixsb, selh1);
         pixdb = pixDilate(NULL, pixt, selh2);
         pixDilate(pixt, pixdb, selv1);
@@ -1632,9 +1613,9 @@ SEL     *selh1, *selh2, *selv1, *selv2;
     pixDestroy(&pixsb);
     pixDestroy(&pixdb);
 
-    if (!pixd)
+    if (!pixd) {
         pixd = pixt;
-    else {
+    } else {
         pixCopy(pixd, pixt);
         pixDestroy(&pixt);
     }
@@ -1667,7 +1648,7 @@ resetMorphBoundaryCondition(l_int32  bc)
     PROCNAME("resetMorphBoundaryCondition");
 
     if (bc != SYMMETRIC_MORPH_BC && bc != ASYMMETRIC_MORPH_BC) {
-        L_WARNING("invalid bc; using asymmetric", procName);
+        L_WARNING("invalid bc; using asymmetric\n", procName);
         bc = ASYMMETRIC_MORPH_BC;
     }
     MORPH_BC = bc;
@@ -1751,15 +1732,14 @@ l_int32  sx, sy;
         if ((pixd = pixCreateTemplate(pixs)) == NULL)
             return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
         *ppixt = pixClone(pixs);
-    }
-    else {
+    } else {
         pixResizeImageData(pixd, pixs);
         if (pixd == pixs) {  /* in-place; must make a copy of pixs */
             if ((*ppixt = pixCopy(NULL, pixs)) == NULL)
                 return (PIX *)ERROR_PTR("pixt not made", procName, pixd);
-        }
-        else
+        } else {
             *ppixt = pixClone(pixs);
+        }
     }
     return pixd;
 }

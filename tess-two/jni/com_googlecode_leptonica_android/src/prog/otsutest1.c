@@ -44,8 +44,8 @@ static NUMA *MakeGaussian(l_int32 mean, l_int32 stdev, l_float32 fract);
 
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32  i;
 PIX     *pix;
@@ -58,13 +58,13 @@ PIXA    *pixa;
     pixa = pixaCreate(0);
     for (i = 0; i < NTests; i++) {
         sprintf(buf, "/tmp/junkplot.%d.png", i);
-	pix = pixRead(buf);
-	pixSaveTiled(pix, pixa, 1, 1, 25, 32);
-	pixDestroy(&pix);
+        pix = pixRead(buf);
+        pixSaveTiled(pix, pixa, 1.0, 1, 25, 32);
+        pixDestroy(&pix);
         sprintf(buf, "/tmp/junkplots.%d.png", i);
-	pix = pixRead(buf);
-	pixSaveTiled(pix, pixa, 1, 0, 25, 32);
-	pixDestroy(&pix);
+        pix = pixRead(buf);
+        pixSaveTiled(pix, pixa, 1.0, 0, 25, 32);
+        pixDestroy(&pix);
     }
 
         /* ... and save into a tiled pix  */

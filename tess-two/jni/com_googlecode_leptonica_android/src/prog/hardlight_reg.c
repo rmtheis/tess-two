@@ -34,10 +34,9 @@
 static PIXA *TestHardlight(const char *file1, const char *file2,
                             L_REGPARAMS *rp);
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-char          fname[256];
 PIX          *pix;
 PIXA         *pixa;
 L_REGPARAMS  *rp;
@@ -67,7 +66,7 @@ TestHardlight(const char   *file1,
               const char   *file2,
               L_REGPARAMS  *rp)
 {
-PIX   *pixs1, *pixs2, *pixr, *pixt1, *pixt2, *pixd;
+PIX   *pixs1, *pixs2, *pixt1, *pixt2, *pixd;
 PIXA  *pixa;
 
     PROCNAME("TestHardlight");
@@ -83,22 +82,22 @@ PIXA  *pixa;
     pixa = pixaCreate(0);
 
         /* ---------- Test not-in-place; no colormaps ----------- */
-    pixSaveTiled(pixs1, pixa, 1, 1, 20, 32);
-    pixSaveTiled(pixs2, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixs1, pixa, 1.0, 1, 20, 32);
+    pixSaveTiled(pixs2, pixa, 1.0, 0, 20, 0);
     pixd = pixBlendHardLight(NULL, pixs1, pixs2, 0, 0, 1.0);
     regTestWritePixAndCheck(rp, pixd, IFF_PNG);
-    pixSaveTiled(pixd, pixa, 1, 1, 20, 0);
+    pixSaveTiled(pixd, pixa, 1.0, 1, 20, 0);
     pixDestroy(&pixd);
 
     pixt2 = pixConvertTo32(pixs2);
     pixd = pixBlendHardLight(NULL, pixs1, pixt2, 0, 0, 1.0);
     regTestWritePixAndCheck(rp, pixd, IFF_PNG);
-    pixSaveTiled(pixd, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
     pixDestroy(&pixt2);
     pixDestroy(&pixd);
 
     pixd = pixBlendHardLight(NULL, pixs2, pixs1, 0, 0, 1.0);
-    pixSaveTiled(pixd, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
     pixDestroy(&pixd);
 
         /* ---------- Test not-in-place; colormaps ----------- */
@@ -108,22 +107,22 @@ PIXA  *pixa;
     else
 /*        pixt2 = pixConvertTo8(pixs2, 1); */
         pixt2 = pixMedianCutQuant(pixs2, 0);
-    pixSaveTiled(pixt1, pixa, 1, 1, 20, 0);
-    pixSaveTiled(pixt2, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 0);
+    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 0);
 
     pixd = pixBlendHardLight(NULL, pixt1, pixs2, 0, 0, 1.0);
     regTestWritePixAndCheck(rp, pixd, IFF_PNG);
-    pixSaveTiled(pixd, pixa, 1, 1, 20, 0);
+    pixSaveTiled(pixd, pixa, 1.0, 1, 20, 0);
     pixDestroy(&pixd);
 
     pixd = pixBlendHardLight(NULL, pixt1, pixt2, 0, 0, 1.0);
     regTestWritePixAndCheck(rp, pixd, IFF_PNG);
-    pixSaveTiled(pixd, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
     pixDestroy(&pixd);
 
     pixd = pixBlendHardLight(NULL, pixt2, pixt1, 0, 0, 1.0);
     regTestWritePixAndCheck(rp, pixd, IFF_PNG);
-    pixSaveTiled(pixd, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
     pixDestroy(&pixd);
@@ -131,21 +130,21 @@ PIXA  *pixa;
         /* ---------- Test in-place; no colormaps ----------- */
     pixBlendHardLight(pixs1, pixs1, pixs2, 0, 0, 1.0);
     regTestWritePixAndCheck(rp, pixs1, IFF_PNG);
-    pixSaveTiled(pixs1, pixa, 1, 1, 20, 0);
+    pixSaveTiled(pixs1, pixa, 1.0, 1, 20, 0);
     pixDestroy(&pixs1);
 
     pixs1 = pixRead(file1);
     pixt2 = pixConvertTo32(pixs2);
     pixBlendHardLight(pixs1, pixs1, pixt2, 0, 0, 1.0);
     regTestWritePixAndCheck(rp, pixs1, IFF_PNG);
-    pixSaveTiled(pixs1, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixs1, pixa, 1.0, 0, 20, 0);
     pixDestroy(&pixt2);
     pixDestroy(&pixs1);
 
     pixs1 = pixRead(file1);
     pixBlendHardLight(pixs2, pixs2, pixs1, 0, 0, 1.0);
     regTestWritePixAndCheck(rp, pixs2, IFF_PNG);
-    pixSaveTiled(pixs2, pixa, 1, 0, 20, 0);
+    pixSaveTiled(pixs2, pixa, 1.0, 0, 20, 0);
     pixDestroy(&pixs2);
 
     pixDestroy(&pixs1);

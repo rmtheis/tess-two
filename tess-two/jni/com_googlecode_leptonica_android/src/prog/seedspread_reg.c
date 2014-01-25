@@ -33,10 +33,10 @@
 
 #include "allheaders.h"
 
-#define  REDUCTION     1
+static const l_int32  scalefact = 1.0;
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       i, j, x, y, val;
 PIX          *pixsq, *pixs, *pixc, *pixd;
@@ -66,7 +66,7 @@ L_REGPARAMS  *rp;
         y = (117 * i * i * i + 241) % 299;
         pixRasterop(pixc, x - 1, y - 1, 3, 3, PIX_SRC, pixsq, 0, 0);
     }
-    pixSaveTiled(pixc, pixa, REDUCTION, 1, 20, 32);
+    pixSaveTiled(pixc, pixa, scalefact, 1, 20, 32);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 0 */
     pixDisplayWithTitle(pixc, 100, 100, "4-cc", rp->display);
     pixDestroy(&pixd);
@@ -79,7 +79,7 @@ L_REGPARAMS  *rp;
         y = (117 * i * i * i + 241) % 299;
         pixRasterop(pixc, x - 1, y - 1, 3, 3, PIX_SRC, pixsq, 0, 0);
     }
-    pixSaveTiled(pixc, pixa, REDUCTION, 0, 20, 0);
+    pixSaveTiled(pixc, pixa, scalefact, 0, 20, 0);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 1 */
     pixDisplayWithTitle(pixc, 410, 100, "8-cc", rp->display);
     pixDestroy(&pixd);
@@ -100,7 +100,7 @@ L_REGPARAMS  *rp;
             pixRasterop(pixc, j - 1, i - 1, 3, 3, PIX_SRC, pixsq, 0, 0);
         }
     }
-    pixSaveTiled(pixc, pixa, REDUCTION, 1, 20, 0);
+    pixSaveTiled(pixc, pixa, scalefact, 1, 20, 0);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 2 */
     pixDisplayWithTitle(pixc, 100, 430, "4-cc", rp->display);
     pixDestroy(&pixd);
@@ -113,7 +113,7 @@ L_REGPARAMS  *rp;
             pixRasterop(pixc, j - 1, i - 1, 3, 3, PIX_SRC, pixsq, 0, 0);
         }
     }
-    pixSaveTiled(pixc, pixa, REDUCTION, 0, 20, 0);
+    pixSaveTiled(pixc, pixa, scalefact, 0, 20, 0);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 3 */
     pixDisplayWithTitle(pixc, 310, 430, "8-cc", rp->display);
     pixDestroy(&pixd);
@@ -132,7 +132,7 @@ L_REGPARAMS  *rp;
     pixRasterop(pixc, 160 - 1, 40 - 1, 3, 3, PIX_SRC, pixsq, 0, 0);
     pixRasterop(pixc, 80 - 1, 80 - 1, 3, 3, PIX_SRC, pixsq, 0, 0);
     pixRasterop(pixc, 40 - 1, 160 - 1, 3, 3, PIX_SRC, pixsq, 0, 0);
-    pixSaveTiled(pixc, pixa, REDUCTION, 1, 20, 0);
+    pixSaveTiled(pixc, pixa, scalefact, 1, 20, 0);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 4 */
     pixDisplayWithTitle(pixc, 100, 600, "4-cc", rp->display);
     pixDestroy(&pixd);
@@ -144,7 +144,7 @@ L_REGPARAMS  *rp;
     pixRasterop(pixc, 160 - 1, 40 - 1, 3, 3, PIX_SRC, pixsq, 0, 0);
     pixRasterop(pixc, 80 - 1, 80 - 1, 3, 3, PIX_SRC, pixsq, 0, 0);
     pixRasterop(pixc, 40 - 1, 160 - 1, 3, 3, PIX_SRC, pixsq, 0, 0);
-    pixSaveTiled(pixc, pixa, REDUCTION, 0, 20, 0);
+    pixSaveTiled(pixc, pixa, scalefact, 0, 20, 0);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 5 */
     pixDisplayWithTitle(pixc, 310, 660, "8-cc", rp->display);
     pixDestroy(&pixd);

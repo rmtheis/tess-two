@@ -70,9 +70,9 @@ L_REGPARAMS  *rp;
     for (i = 0; i < 4; i++) {
         pixcmapResetColor(cmap, index, rval[i], gval[i], bval[i]);
         snprintf(buf, sizeof(buf), "(rval, bval, gval) = (%d, %d, %d)",
-                 i + 1, rval[i], gval[i], bval[i]);
+                 rval[i], gval[i], bval[i]);
         pix1 = pixAddSingleTextblock(pix0, bmf, buf, 0xff000000,
-                                     L_ADD_AT_BOTTOM, NULL);
+                                     L_ADD_AT_BOT, NULL);
         pixaAddPix(pixa, pix1, L_INSERT);
     }
 
@@ -82,9 +82,9 @@ L_REGPARAMS  *rp;
         composeRGBPixel(rval[i], gval[i], bval[i], &dcolor);  /* dest color */
         pix1 = pixShiftByComponent(NULL, pix0, scolor, dcolor);
         snprintf(buf, sizeof(buf), "(rval, bval, gval) = (%d, %d, %d)",
-                 i + 1, rval[i], gval[i], bval[i]);
+                 rval[i], gval[i], bval[i]);
         pix2 = pixAddSingleTextblock(pix1, bmf, buf, 0xff000000,
-                                     L_ADD_AT_BOTTOM, NULL);
+                                     L_ADD_AT_BOT, NULL);
         pixaAddPix(pixa, pix2, L_INSERT);
         pixDestroy(&pix1);
     }
@@ -97,9 +97,9 @@ L_REGPARAMS  *rp;
         composeRGBPixel(rval[i], gval[i], bval[i], &dcolor);
         pix2 = pixShiftByComponent(NULL, pix1, scolor, dcolor);
         snprintf(buf, sizeof(buf), "(rval, bval, gval) = (%d, %d, %d)",
-                 i + 1, rval[i], gval[i], bval[i]);
+                 rval[i], gval[i], bval[i]);
         pix3 = pixAddSingleTextblock(pix2, bmf, buf, 0xff000000,
-                                     L_ADD_AT_BOTTOM, NULL);
+                                     L_ADD_AT_BOT, NULL);
         pixaAddPix(pixa, pix3, L_INSERT);
         pixDestroy(&pix2);
     }
@@ -112,14 +112,14 @@ L_REGPARAMS  *rp;
     snprintf(buf, sizeof(buf), "(rval, bval, gval) = (%d, %d, %d)",
              200, 100, 50);
     pix2 = pixAddSingleTextblock(pix1, bmf, buf, 0xff000000,
-                                 L_ADD_AT_BOTTOM, NULL);
+                                 L_ADD_AT_BOT, NULL);
     pixaAddPix(pixa, pix2, L_INSERT);
     pix3 = pixConvertTo32(pix0);
     pix4 = pixShiftByComponent(NULL, pix3, scolor, dcolor);  /* rgb */
     snprintf(buf, sizeof(buf), "(rval, bval, gval) = (%d, %d, %d)",
              200, 100, 50);
     pix5 = pixAddSingleTextblock(pix4, bmf, buf, 0xff000000,
-                                 L_ADD_AT_BOTTOM, NULL);
+                                 L_ADD_AT_BOT, NULL);
     pixaAddPix(pixa, pix5, L_INSERT);
     regTestComparePix(rp, pix1, pix4);
     regTestComparePix(rp, pix2, pix5);

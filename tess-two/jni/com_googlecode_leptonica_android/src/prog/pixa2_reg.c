@@ -32,16 +32,15 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 const char   *name;
 l_int32       i, n;
 BOX          *box;
-FILE         *fp;
-PIX          *pix, *pixt0, *pixt1, *pixd;
+PIX          *pix0, *pix1, *pixd;
 PIXA         *pixa;
-SARRAY       *sa1, *sa2, *sa3, *sa4, *sa;
+SARRAY       *sa1, *sa2, *sa3, *sa4;
 L_REGPARAMS  *rp;
 
     if (regTestSetup(argc, argv, &rp))
@@ -61,25 +60,25 @@ L_REGPARAMS  *rp;
     /* ---------------- Use replace to fill up a pixa -------------------*/
     pixa = pixaCreate(1);
     pixaExtendArrayToSize(pixa, n);
-    if ((pixt0 = pixRead("marge.jpg")) == NULL)
+    if ((pix0 = pixRead("marge.jpg")) == NULL)
         rp->success = FALSE;
-    pixt1 = pixScaleToSize(pixt0, 144, 108);  /* scale 0.25 */
-    pixDestroy(&pixt0);
-    pixaInitFull(pixa, pixt1, NULL);  /* fill it up */
+    pix1 = pixScaleToSize(pix0, 144, 108);  /* scale 0.25 */
+    pixDestroy(&pix0);
+    pixaInitFull(pixa, pix1, NULL);  /* fill it up */
     pixd = pixaDisplayTiledInRows(pixa, 32, 1000, 1.0, 0, 25, 2);
     pixDisplayWithTitle(pixd, 100, 100, NULL, rp->display);
     pixWrite("/tmp/pix1.jpg", pixd, IFF_JFIF_JPEG);
-    pixDestroy(&pixt1);
+    pixDestroy(&pix1);
     pixDestroy(&pixd);
 
     /* ---------------- And again with jpgs and tifs -------------------*/
     for (i = 0; i < n; i++) {
         name = sarrayGetString(sa3, i, L_NOCOPY);
-        if ((pixt0 = pixRead(name)) == NULL)
+        if ((pix0 = pixRead(name)) == NULL)
             rp->success = FALSE;
-        pixt1 = pixScaleToSize(pixt0, 144, 108);
-        pixaReplacePix(pixa, i, pixt1, NULL);
-        pixDestroy(&pixt0);
+        pix1 = pixScaleToSize(pix0, 144, 108);
+        pixaReplacePix(pixa, i, pix1, NULL);
+        pixDestroy(&pix0);
     }
     pixd = pixaDisplayTiledInRows(pixa, 32, 1000, 1.0, 0, 25, 2);
     pixDisplayWithTitle(pixd, 400, 100, NULL, rp->display);
@@ -87,18 +86,16 @@ L_REGPARAMS  *rp;
     pixDestroy(&pixd);
 
     /* ---------------- And again, reversing the order ------------------*/
-    pix = pixCreate(1, 1, 1);
     box = boxCreate(0, 0, 0, 0);
-    pixaInitFull(pixa, pix, box);
-    pixDestroy(&pix);
+    pixaInitFull(pixa, NULL, box);
     boxDestroy(&box);
     for (i = 0; i < n; i++) {
         name = sarrayGetString(sa3, i, L_NOCOPY);
-        if ((pixt0 = pixRead(name)) == NULL)
+        if ((pix0 = pixRead(name)) == NULL)
             rp->success = FALSE;
-        pixt1 = pixScaleToSize(pixt0, 144, 108);
-        pixaReplacePix(pixa, n - 1 - i, pixt1, NULL);
-        pixDestroy(&pixt0);
+        pix1 = pixScaleToSize(pix0, 144, 108);
+        pixaReplacePix(pixa, n - 1 - i, pix1, NULL);
+        pixDestroy(&pix0);
     }
     pixd = pixaDisplayTiledInRows(pixa, 32, 1000, 1.0, 0, 25, 2);
     pixDisplayWithTitle(pixd, 700, 100, NULL, rp->display);

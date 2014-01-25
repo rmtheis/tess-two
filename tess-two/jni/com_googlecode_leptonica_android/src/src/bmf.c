@@ -71,11 +71,11 @@ static const char  *inputfonts[] = {"chars-4.tif", "chars-6.tif",
                                     "chars-12.tif", "chars-14.tif",
                                     "chars-16.tif", "chars-18.tif",
                                     "chars-20.tif"};
-static const char  *outputfonts[] = {"chars-4.pixa", "chars-6.pixa",
-                                     "chars-8.pixa", "chars-10.pixa",
-                                     "chars-12.pixa", "chars-14.pixa",
-                                     "chars-16.pixa", "chars-18.pixa",
-                                     "chars-20.pixa"};
+static const char  *outputfonts[] = {"chars-4.pa", "chars-6.pa",
+                                     "chars-8.pa", "chars-10.pa",
+                                     "chars-12.pa", "chars-14.pa",
+                                     "chars-16.pa", "chars-18.pa",
+                                     "chars-20.pa"};
 static const l_int32 baselines[NFONTS][3] = {{11, 12, 12}, {18, 18, 18},
                                              {24, 24, 24}, {30, 30, 30},
                                              {36, 36, 36}, {42, 42, 42},
@@ -127,7 +127,7 @@ PIXA  *pixa;
 
         /* If not found, make it */
     if (!pixa) {
-        L_INFO("Generating pixa of bitmap fonts", procName);
+        L_INFO("Generating pixa of bitmap fonts\n", procName);
         pixa = pixaGenerateFont(dir, size, &bmf->baseline1, &bmf->baseline2,
                                 &bmf->baseline3);
         if (!pixa) {
@@ -158,7 +158,7 @@ L_BMF  *bmf;
     PROCNAME("bmfDestroy");
 
     if (pbmf == NULL) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
 
@@ -202,7 +202,7 @@ PIXA    *pixa;
 
     i = bmf->fonttab[index];
     if (i == UNDEF) {
-        L_ERROR_INT("no bitmap representation for %d", procName, index);
+        L_ERROR("no bitmap representation for %d\n", procName, index);
         return NULL;
     }
 
@@ -241,7 +241,7 @@ PIXA    *pixa;
 
     i = bmf->fonttab[index];
     if (i == UNDEF) {
-        L_ERROR_INT("no bitmap representation for %d", procName, index);
+        L_ERROR("no bitmap representation for %d\n", procName, index);
         return 1;
     }
 
@@ -283,7 +283,7 @@ l_int32  bl, index;
 
     bl = bmf->baselinetab[index];
     if (bl == UNDEF) {
-        L_ERROR_INT("no bitmap representation for %d", procName, index);
+        L_ERROR("no bitmap representation for %d\n", procName, index);
         return 1;
     }
 
@@ -335,7 +335,7 @@ PIXA     *pixa;
     FREE(pathname);
 
     if (!pixa)
-        L_WARNING("pixa of char bitmaps not found", procName);
+        L_WARNING("pixa of char bitmaps not found\n", procName);
     return pixa;
 }
 
@@ -456,7 +456,7 @@ PIXA     *pixa;
             inputfonts[fileno], nrows);
 #endif  /* DEBUG_FONT_GEN */
     if (nrows != 3) {
-        L_INFO_INT2("nrows = %d; skipping font %d", procName, nrows, fileno);
+        L_INFO("nrows = %d; skipping font %d\n", procName, nrows, fileno);
         return (PIXA *)ERROR_PTR("3 rows not generated", procName, NULL);
     }
     for (i = 0; i < nrows; i++) {

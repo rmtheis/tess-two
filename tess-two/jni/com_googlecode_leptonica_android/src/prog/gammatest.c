@@ -36,12 +36,12 @@
 #define  MINVAL      30
 #define  MAXVAL      210
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
 char         bigbuf[512];
-l_int32      iplot;
+l_int32      iplot, same;
 l_float32    gam;
 l_float64    gamma[NPLOTS] = {.5, 1.0, 1.5, 2.0, 2.5};
 GPLOT       *gplot;
@@ -50,52 +50,42 @@ PIX         *pixs, *pixd;
 static char  mainName[] = "gammatest";
 
     if (argc != 4)
-	exit(ERROR_INT(" Syntax:  gammatest filein gam fileout", mainName, 1));
+        return ERROR_INT(" Syntax:  gammatest filein gam fileout", mainName, 1);
 
     filein = argv[1];
     gam = atof(argv[2]);
     fileout = argv[3];
-
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
 
-#if 1
-    startTimer();
-    pixGammaTRC(pixs, pixs, gam, MINVAL, MAXVAL);
-    fprintf(stderr, "Time for gamma: %7.3f sec\n", stopTimer());
-    pixWrite(fileout, pixs, IFF_JFIF_JPEG);
-    pixDestroy(&pixs);
-#endif
-
-#if 0
     startTimer();
     pixd = pixGammaTRC(NULL, pixs, gam, MINVAL, MAXVAL);
     fprintf(stderr, "Time for gamma: %7.3f sec\n", stopTimer());
-    pixWrite(fileout, pixd, IFF_JFIF_JPEG);
+    pixGammaTRC(pixs, pixs, gam, MINVAL, MAXVAL);
+    pixEqual(pixs, pixd, &same);
+    if (!same)
+        fprintf(stderr, "Error in pixGammaTRC!\n");
+    pixWrite(fileout, pixs, IFF_JFIF_JPEG);
     pixDestroy(&pixs);
-    pixDestroy(&pixd);
-#endif
 
     na = numaGammaTRC(gam, MINVAL, MAXVAL);
     gplotSimple1(na, GPLOT_X11, "/tmp/junkroot", "gamma trc");
     numaDestroy(&na);
 
-#if 1     /* plot gamma TRC maps */
+        /* Plot gamma TRC maps */
     gplot = gplotCreate("/tmp/junkmap", GPLOT_X11,
                         "Mapping function for gamma correction",
-		       	"value in", "value out");
+                               "value in", "value out");
     nax = numaMakeSequence(0.0, 1.0, 256);
     for (iplot = 0; iplot < NPLOTS; iplot++) {
         na = numaGammaTRC(gamma[iplot], 30, 215);
-	sprintf(bigbuf, "gamma = %3.1f", gamma[iplot]);
+        sprintf(bigbuf, "gamma = %3.1f", gamma[iplot]);
         gplotAddPlot(gplot, nax, na, GPLOT_LINES, bigbuf);
-	numaDestroy(&na);
+        numaDestroy(&na);
     }
     gplotMakeOutput(gplot);
     gplotDestroy(&gplot);
     numaDestroy(&nax);
-#endif
-
     return 0;
 }
 

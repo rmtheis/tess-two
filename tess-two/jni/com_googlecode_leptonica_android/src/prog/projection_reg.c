@@ -40,14 +40,14 @@
 
 void TestProjection(L_REGPARAMS *rp, PIX *pix);
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 PIX          *pixs, *pixg1, *pixg2;
 L_REGPARAMS  *rp;
 
     if (regTestSetup(argc, argv, &rp))
-	return 1;
+        return 1;
 
         /* Use for input two different images */
     pixs = pixRead("projectionstats.jpg");
@@ -81,9 +81,9 @@ PIX     *pixd, *pixt;
 PIXA    *pixa;
 
     outline = 2;
-    pixColumnStats(pixs, &na1, &na3, &na5, &na7, &na9, &na11);
+    pixColumnStats(pixs, NULL, &na1, &na3, &na5, &na7, &na9, &na11);
     pixd = pixRotateOrth(pixs, 1);
-    pixRowStats(pixd, &na2, &na4, &na6, &na8, &na10, &na12);
+    pixRowStats(pixd, NULL, &na2, &na4, &na6, &na8, &na10, &na12);
 
         /* The png plot files are written to "/tmp/proj.0.png", etc.
          * These temp files are overwritten each time this
@@ -111,54 +111,54 @@ PIXA    *pixa;
          *    (2) saved as a golden file (generate stage) or compared
          *        to the existing golden file (testing stage)    */
     pixa = pixaCreate(13);
-    pixSaveTiledOutline(pixs, pixa, 1, 1, 30, outline, 32);
+    pixSaveTiledOutline(pixs, pixa, 1.0, 1, 30, outline, 32);
     pixt = pixRead("/tmp/proj.0.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);   /* 0 */
-    pixSaveTiledOutline(pixt, pixa, 1, 1, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/proj.1.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 1 */
-    pixSaveTiledOutline(pixt, pixa, 1, 0, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/proj.2.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 2 */
-    pixSaveTiledOutline(pixt, pixa, 1, 1, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/proj.3.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 3 */
-    pixSaveTiledOutline(pixt, pixa, 1, 0, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/proj.4.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 4 */
-    pixSaveTiledOutline(pixt, pixa, 1, 1, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/proj.5.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 5 */
-    pixSaveTiledOutline(pixt, pixa, 1, 0, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/proj.6.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 6 */
-    pixSaveTiledOutline(pixt, pixa, 1, 1, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/proj.7.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 7 */
-    pixSaveTiledOutline(pixt, pixa, 1, 0, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/proj.8.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 8 */
-    pixSaveTiledOutline(pixt, pixa, 1, 1, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/proj.9.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 9 */
-    pixSaveTiledOutline(pixt, pixa, 1, 0, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/proj.10.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 10 */
-    pixSaveTiledOutline(pixt, pixa, 1, 1, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/proj.11.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 11 */
-    pixSaveTiledOutline(pixt, pixa, 1, 0, 30, outline, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);
 
         /* The pixa is composited into a pix and 'goldened'/tested */

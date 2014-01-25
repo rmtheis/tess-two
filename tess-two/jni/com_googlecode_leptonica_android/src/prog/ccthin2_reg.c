@@ -32,8 +32,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      index, maxiters, type;
 BOX         *box;
@@ -42,11 +42,10 @@ PIXA        *pixa;
 static char  mainName[] = "ccthin2_reg";
 
     if (argc != 1 && argc != 3)
-	exit(ERROR_INT(" Syntax: ccthin2_reg [index maxiters]", mainName, 1));
+        return ERROR_INT(" Syntax: ccthin2_reg [index maxiters]", mainName, 1);
 
     pixDisplayWrite(NULL, 0);
-    if ((pix = pixRead("feyn.tif")) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
+    pix = pixRead("feyn.tif");
     box = boxCreate(683, 799, 970, 479);
     pixs = pixClipRectangle(pix, box, NULL);
     pixDisplayWrite(pixs, 1);
@@ -64,7 +63,7 @@ static char  mainName[] = "ccthin2_reg";
         pixDisplay(pixt, 100, 100);
         pixDisplayWrite(pixt, 1);
         pixDestroy(&pixt);
-        pixDisplayMultiple("/tmp/junk_write_display*");
+        pixDisplayMultiple("/tmp/display/file*");
         return 0;
     }
 
@@ -98,7 +97,7 @@ static char  mainName[] = "ccthin2_reg";
     pixDestroy(&pixt);
 
         /* Display the thinning results */
-    pixa = pixaReadFiles("/tmp", "junk_write_display");
+    pixa = pixaReadFiles("/tmp/display", "file");
     pixd = pixaDisplayTiledAndScaled(pixa, 8, 500, 1, 0, 25, 2);
     pixWrite("/tmp/junktiles.jpg", pixd, IFF_JFIF_JPEG);
     pixDestroy(&pixd);
@@ -115,7 +114,7 @@ static char  mainName[] = "ccthin2_reg";
     pixDestroy(&pixs);
     boxDestroy(&box);
 
-    pixDisplayMultiple("/tmp/junk_write_display*");
+    pixDisplayMultiple("/tmp/display/file*");
     return 0;
 }
 

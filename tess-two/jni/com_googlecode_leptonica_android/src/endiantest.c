@@ -24,7 +24,7 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/* 
+/*
  *    endiantest.c
  *
  *    This test was contributed by Bill Janssen.  When used with the

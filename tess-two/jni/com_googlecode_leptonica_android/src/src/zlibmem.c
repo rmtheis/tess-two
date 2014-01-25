@@ -60,6 +60,10 @@
 static const l_int32  L_BUF_SIZE = 32768;
 static const l_int32  ZLIB_COMPRESSION_LEVEL = 6;
 
+#ifndef  NO_CONSOLE_IO
+#define  DEBUG     0
+#endif  /* ~NO_CONSOLE_IO */
+
 
 /*!
  *  zlibCompress()
@@ -87,6 +91,7 @@ zlibCompress(l_uint8  *datain,
 {
 l_uint8  *dataout;
 l_int32   status;
+l_int32   flush;
 size_t    nbytes;
 l_uint8  *bufferin, *bufferout;
 BBUFFER  *bbin, *bbout;
@@ -118,28 +123,35 @@ z_stream  z;
     z.next_out = bufferout;
     z.avail_out = L_BUF_SIZE;
 
-    deflateInit(&z, ZLIB_COMPRESSION_LEVEL);
+    status = deflateInit(&z, ZLIB_COMPRESSION_LEVEL);
+    if (status != Z_OK)
+      return (l_uint8 *)ERROR_PTR("deflateInit failed", procName, NULL);
 
-    for ( ; ; ) {
+    do {
         if (z.avail_in == 0) {
             z.next_in = bufferin;
             bbufferWrite(bbin, bufferin, L_BUF_SIZE, &nbytes);
-/*            fprintf(stderr, " wrote %d bytes to bufferin\n", nbytes); */
+#if DEBUG
+            fprintf(stderr, " wrote %d bytes to bufferin\n", nbytes);
+#endif  /* DEBUG */
             z.avail_in = nbytes;
         }
-        if (z.avail_in == 0)
-            break;
-        status = deflate(&z, Z_SYNC_FLUSH);
-/*        fprintf(stderr, " status is %d, bytesleft = %d, totalout = %d\n",
-                  status, z.avail_out, z.total_out); */
+        flush = (bbin->n) ? Z_SYNC_FLUSH : Z_FINISH;
+        status = deflate(&z, flush);
+#if DEBUG
+        fprintf(stderr, " status is %d, bytesleft = %d, totalout = %d\n",
+                  status, z.avail_out, z.total_out);
+#endif  /* DEBUG */
         nbytes = L_BUF_SIZE - z.avail_out;
         if (nbytes) {
             bbufferRead(bbout, bufferout, nbytes);
-/*            fprintf(stderr, " read %d bytes from bufferout\n", nbytes); */
+#if DEBUG
+            fprintf(stderr, " read %d bytes from bufferout\n", nbytes);
+#endif  /* DEBUG */
         }
         z.next_out = bufferout;
         z.avail_out = L_BUF_SIZE;
-    }
+    } while (flush != Z_FINISH);
 
     deflateEnd(&z);
 

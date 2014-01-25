@@ -41,11 +41,11 @@
 static const char *filein = "test24.jpg";
 static const l_int32 WIDTH = 150;
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char          textstr[256];
-l_int32       w, h, d, i, same;
+l_int32       w, h, d, i;
 l_uint32      srcval, dstval;
 l_float32     scalefact, sat, fract;
 L_BMF        *bmf8;
@@ -75,7 +75,7 @@ L_REGPARAMS  *rp;
         pixaAddPix(pixa, pixt0, L_INSERT);
     }
     pixt1 = pixaDisplayTiledAndScaled(pixa, 32, w, 5, 0, 10, 2);
-    pixSaveTiled(pixt1, pixaf, 1, 1, 20, 32);
+    pixSaveTiled(pixt1, pixaf, 1.0, 1, 20, 32);
     regTestWritePixAndCheck(rp, pixt1, IFF_PNG);  /* 0 */
     pixDisplayWithTitle(pixt1, 0, 100, "TRC Gamma", rp->display);
     pixDestroy(&pixt1);
@@ -88,7 +88,7 @@ L_REGPARAMS  *rp;
         pixaAddPix(pixa, pixt0, L_INSERT);
     }
     pixt1 = pixaDisplayTiledAndScaled(pixa, 32, w, 5, 0, 10, 2);
-    pixSaveTiled(pixt1, pixaf, 1, 1, 20, 0);
+    pixSaveTiled(pixt1, pixaf, 1.0, 1, 20, 0);
     regTestWritePixAndCheck(rp, pixt1, IFF_PNG);  /* 1 */
     pixDisplayWithTitle(pixt1, 300, 100, "TRC", rp->display);
     pixDestroy(&pixt1);
@@ -101,7 +101,7 @@ L_REGPARAMS  *rp;
         pixaAddPix(pixa, pixt0, L_INSERT);
     }
     pixt1 = pixaDisplayTiledAndScaled(pixa, 32, w, 5, 0, 10, 2);
-    pixSaveTiled(pixt1, pixaf, 1, 1, 20, 0);
+    pixSaveTiled(pixt1, pixaf, 1.0, 1, 20, 0);
     regTestWritePixAndCheck(rp, pixt1, IFF_PNG);  /* 2 */
     pixDisplayWithTitle(pixt1, 600, 100, "Hue", rp->display);
     pixDestroy(&pixt1);
@@ -117,7 +117,7 @@ L_REGPARAMS  *rp;
         numaAddNumber(na, sat);
     }
     pixt1 = pixaDisplayTiledAndScaled(pixa, 32, w, 5, 0, 10, 2);
-    pixSaveTiled(pixt1, pixaf, 1, 1, 20, 0);
+    pixSaveTiled(pixt1, pixaf, 1.0, 1, 20, 0);
     gplotSimple1(na, GPLOT_PNG, "/tmp/enhance.7", "Average Saturation");
     regTestWritePixAndCheck(rp, pixt1, IFF_PNG);  /* 3 */
     pixDisplayWithTitle(pixt1, 900, 100, "Saturation", rp->display);
@@ -132,7 +132,7 @@ L_REGPARAMS  *rp;
         pixaAddPix(pixa, pixt0, L_INSERT);
     }
     pixt1 = pixaDisplayTiledAndScaled(pixa, 32, w, 5, 0, 10, 2);
-    pixSaveTiled(pixt1, pixaf, 1, 1, 20, 0);
+    pixSaveTiled(pixt1, pixaf, 1.0, 1, 20, 0);
     regTestWritePixAndCheck(rp, pixt1, IFF_PNG);  /* 4 */
     pixDisplayWithTitle(pixt1, 0, 400, "Contrast", rp->display);
     pixDestroy(&pixt1);
@@ -145,7 +145,7 @@ L_REGPARAMS  *rp;
         pixaAddPix(pixa, pixt0, L_INSERT);
     }
     pixt1 = pixaDisplayTiledAndScaled(pixa, 32, w, 5, 0, 10, 2);
-    pixSaveTiled(pixt1, pixaf, 1, 1, 20, 0);
+    pixSaveTiled(pixt1, pixaf, 1.0, 1, 20, 0);
     regTestWritePixAndCheck(rp, pixt1, IFF_PNG);  /* 5 */
     pixDisplayWithTitle(pixt1, 300, 400, "Sharp", rp->display);
     pixDestroy(&pixt1);
@@ -163,7 +163,7 @@ L_REGPARAMS  *rp;
         snprintf(textstr, 50, "Fract = %5.1f", fract);
         pixt2 = pixAddSingleTextblock(pixt1, bmf8, textstr, 0xff000000,
                                       L_ADD_BELOW, NULL);
-        pixSaveTiledOutline(pixt2, pixa, 1, (i % 4 == 0) ? 1 : 0, 30, 2, 32);
+        pixSaveTiledOutline(pixt2, pixa, 1.0, (i % 4 == 0) ? 1 : 0, 30, 2, 32);
         pixDestroy(&pixt1);
         pixDestroy(&pixt2);
     }

@@ -34,6 +34,7 @@
  *           PIXCMAP    *pixcmapCopy()
  *           void        pixcmapDestroy()
  *           l_int32     pixcmapAddColor()
+ *           l_int32     pixcmapAddRGBA()
  *           l_int32     pixcmapAddNewColor()
  *           l_int32     pixcmapAddNearestColor()
  *           l_int32     pixcmapUsableColor()
@@ -48,9 +49,12 @@
  *      Colormap random access and test
  *           l_int32     pixcmapGetColor()
  *           l_int32     pixcmapGetColor32()
+ *           l_int32     pixcmapGetRGBA()
+ *           l_int32     pixcmapGetRGBA32()
  *           l_int32     pixcmapResetColor()
  *           l_int32     pixcmapGetIndex()
  *           l_int32     pixcmapHasColor()
+ *           l_int32     pixcmapIsOpaque()
  *           l_int32     pixcmapCountGrayColors()
  *           l_int32     pixcmapGetRankIntensity()
  *           l_int32     pixcmapGetNearestIndex()
@@ -235,7 +239,6 @@ PIXCMAP  *cmapd;
     cmapd->n = cmaps->n;
     cmapd->nalloc = cmaps->nalloc;
     cmapd->depth = cmaps->depth;
-
     return cmapd;
 }
 
@@ -254,7 +257,7 @@ PIXCMAP  *cmap;
     PROCNAME("pixcmapDestroy");
 
     if (pcmap == NULL) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
 
@@ -264,7 +267,6 @@ PIXCMAP  *cmap;
     FREE(cmap->array);
     FREE(cmap);
     *pcmap = NULL;
-
     return;
 }
 
@@ -277,7 +279,9 @@ PIXCMAP  *cmap;
  *                                is in range [0, ... 255])
  *      Return: 0 if OK, 1 on error
  *
- *  Note: always adds the color if there is room.
+ *  Notes:
+ *      (1) This always adds the color if there is room.
+ *      (2) The alpha component is 255 (opaque)
  */
 l_int32
 pixcmapAddColor(PIXCMAP  *cmap,
@@ -298,8 +302,45 @@ RGBA_QUAD  *cta;
     cta[cmap->n].red = rval;
     cta[cmap->n].green = gval;
     cta[cmap->n].blue = bval;
+    cta[cmap->n].alpha = 255;
     cmap->n++;
+    return 0;
+}
 
+
+/*!
+ *  pixcmapAddRGBA()
+ *
+ *      Input:  cmap
+ *              rval, gval, bval, aval (colormap entry to be added;
+ *                                      each number is in range [0, ... 255])
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This always adds the color if there is room.
+ */
+l_int32
+pixcmapAddRGBA(PIXCMAP  *cmap,
+               l_int32   rval,
+               l_int32   gval,
+               l_int32   bval,
+               l_int32   aval)
+{
+RGBA_QUAD  *cta;
+
+    PROCNAME("pixcmapAddRGBA");
+
+    if (!cmap)
+        return ERROR_INT("cmap not defined", procName, 1);
+    if (cmap->n >= cmap->nalloc)
+        return ERROR_INT("no free color entries", procName, 1);
+
+    cta = (RGBA_QUAD *)cmap->array;
+    cta[cmap->n].red = rval;
+    cta[cmap->n].green = gval;
+    cta[cmap->n].blue = bval;
+    cta[cmap->n].alpha = aval;
+    cmap->n++;
     return 0;
 }
 
@@ -315,8 +356,9 @@ RGBA_QUAD  *cta;
  *
  *  Notes:
  *      (1) This only adds color if not already there.
- *      (2) This returns the index of the new (or existing) color.
- *      (3) Returns 2 with a warning if unable to add this color;
+ *      (2) The alpha component is 255 (opaque)
+ *      (3) This returns the index of the new (or existing) color.
+ *      (4) Returns 2 with a warning if unable to add this color;
  *          the caller should check the return value.
  */
 l_int32
@@ -340,7 +382,7 @@ pixcmapAddNewColor(PIXCMAP  *cmap,
 
         /* We need to add the color.  Is there room? */
     if (cmap->n >= cmap->nalloc) {
-        L_WARNING("no free color entries", procName);
+        L_WARNING("no free color entries\n", procName);
         return 2;
     }
 
@@ -362,7 +404,8 @@ pixcmapAddNewColor(PIXCMAP  *cmap,
  *
  *  Notes:
  *      (1) This only adds color if not already there.
- *      (2) If it's not in the colormap and there is no room to add
+ *      (2) The alpha component is 255 (opaque)
+ *      (3) If it's not in the colormap and there is no room to add
  *          another color, this returns the index of the nearest color.
  */
 l_int32
@@ -450,8 +493,9 @@ l_int32  index;
  *
  *  Notes:
  *      (1) This only adds color if not already there.
- *      (2) This sets index to the requested color.
- *      (3) If there is no room in the colormap, returns the index
+ *      (2) The alpha component is 255 (opaque)
+ *      (3) This sets index to the requested color.
+ *      (4) If there is no room in the colormap, returns the index
  *          of the closest color.
  */
 l_int32
@@ -472,8 +516,7 @@ l_int32  index;
             pixcmapAddNewColor(cmap, 0, 0, 0, &index);
         else
             pixcmapGetRankIntensity(cmap, 0.0, &index);
-    }
-    else {  /* white */
+    } else {  /* white */
         if (pixcmapGetFreeCount(cmap) > 0)
             pixcmapAddNewColor(cmap, 255, 255, 255, &index);
         else
@@ -514,7 +557,6 @@ l_int32  index;
         pixcmapGetRankIntensity(cmap, 1.0, &index);
         pixcmapResetColor(cmap, index, 255, 255, 255);
     }
-
     return 0;
 }
 
@@ -532,7 +574,6 @@ pixcmapGetCount(PIXCMAP  *cmap)
 
     if (!cmap)
         return ERROR_INT("cmap not defined", procName, 0);
-
     return cmap->n;
 }
 
@@ -550,7 +591,6 @@ pixcmapGetFreeCount(PIXCMAP  *cmap)
 
     if (!cmap)
         return ERROR_INT("cmap not defined", procName, 0);
-
     return (cmap->nalloc - cmap->n);
 }
 
@@ -568,7 +608,6 @@ pixcmapGetDepth(PIXCMAP  *cmap)
 
     if (!cmap)
         return ERROR_INT("cmap not defined", procName, 0);
-
     return cmap->depth;
 }
 
@@ -604,7 +643,6 @@ l_int32  ncolors;
         *pmindepth = 4;
     else  /* ncolors > 16 */
         *pmindepth = 8;
-
     return 0;
 }
 
@@ -637,7 +675,7 @@ pixcmapClear(PIXCMAP  *cmap)
  *
  *      Input:  cmap
  *              index
- *              &rval, &gval, &bval (<return> each color value in l_int32)
+ *              &rval, &gval, &bval (<return> each color value)
  *      Return: 0 if OK, 1 if not accessable (caller should check)
  */
 l_int32
@@ -663,7 +701,6 @@ RGBA_QUAD  *cta;
     *prval = cta[index].red;
     *pgval = cta[index].green;
     *pbval = cta[index].blue;
-
     return 0;
 }
 
@@ -673,12 +710,11 @@ RGBA_QUAD  *cta;
  *
  *      Input:  cmap
  *              index
- *              &val32 (<return> 32-bit rgba color value)
+ *              &val32 (<return> 32-bit rgb color value)
  *      Return: 0 if OK, 1 if not accessable (caller should check)
  *
  *  Notes:
- *      (1) The returned alpha channel value is zero, because it is
- *          not used in leptonica colormaps.
+ *      (1) The returned alpha channel value is 0.
  */
 l_int32
 pixcmapGetColor32(PIXCMAP   *cmap,
@@ -701,6 +737,72 @@ l_int32  rval, gval, bval;
 
 
 /*!
+ *  pixcmapGetRGBA()
+ *
+ *      Input:  cmap
+ *              index
+ *              &rval, &gval, &bval, &aval (<return> each color value)
+ *      Return: 0 if OK, 1 if not accessable (caller should check)
+ */
+l_int32
+pixcmapGetRGBA(PIXCMAP  *cmap,
+               l_int32   index,
+               l_int32  *prval,
+               l_int32  *pgval,
+               l_int32  *pbval,
+               l_int32  *paval)
+{
+RGBA_QUAD  *cta;
+
+    PROCNAME("pixcmapGetRGBA");
+
+    if (!prval || !pgval || !pbval || !paval)
+        return ERROR_INT("&rval, &gval, &bval, &aval not all defined",
+                procName, 1);
+    *prval = *pgval = *pbval = *paval = 0;
+    if (!cmap)
+        return ERROR_INT("cmap not defined", procName, 1);
+    if (index < 0 || index >= cmap->n)
+        return ERROR_INT("index out of bounds", procName, 1);
+
+    cta = (RGBA_QUAD *)cmap->array;
+    *prval = cta[index].red;
+    *pgval = cta[index].green;
+    *pbval = cta[index].blue;
+    *paval = cta[index].alpha;
+    return 0;
+}
+
+
+/*!
+ *  pixcmapGetRGBA32()
+ *
+ *      Input:  cmap
+ *              index
+ *              &val32 (<return> 32-bit rgba color value)
+ *      Return: 0 if OK, 1 if not accessable (caller should check)
+ */
+l_int32
+pixcmapGetRGBA32(PIXCMAP   *cmap,
+                 l_int32    index,
+                 l_uint32  *pval32)
+{
+l_int32  rval, gval, bval, aval;
+
+    PROCNAME("pixcmapGetRGBA32");
+
+    if (!pval32)
+        return ERROR_INT("&val32 not defined", procName, 1);
+    *pval32 = 0;
+
+    if (pixcmapGetRGBA(cmap, index, &rval, &gval, &bval, &aval) != 0)
+        return ERROR_INT("rgba values not found", procName, 1);
+    composeRGBAPixel(rval, gval, bval, aval, pval32);
+    return 0;
+}
+
+
+/*!
  *  pixcmapResetColor()
  *
  *      Input:  cmap
@@ -712,6 +814,7 @@ l_int32  rval, gval, bval;
  *  Notes:
  *      (1) This resets sets the color of an entry that has already
  *          been set and included in the count of colors.
+ *      (2) The alpha component is 255 (opaque)
  */
 l_int32
 pixcmapResetColor(PIXCMAP  *cmap,
@@ -733,7 +836,7 @@ RGBA_QUAD  *cta;
     cta[index].red = rval;
     cta[index].green = gval;
     cta[index].blue = bval;
-
+    cta[index].alpha = 255;
     return 0;
 }
 
@@ -773,7 +876,6 @@ RGBA_QUAD  *cta;
             return 0;
         }
     }
-
     return 1;
 }
 
@@ -800,7 +902,7 @@ l_int32  *rmap, *gmap, *bmap;
     if (!cmap)
         return ERROR_INT("cmap not defined", procName, 1);
 
-    if (pixcmapToArrays(cmap, &rmap, &gmap, &bmap))
+    if (pixcmapToArrays(cmap, &rmap, &gmap, &bmap, NULL))
         return ERROR_INT("colormap arrays not made", procName, 1);
     n = pixcmapGetCount(cmap);
     for (i = 0; i < n; i++) {
@@ -813,6 +915,40 @@ l_int32  *rmap, *gmap, *bmap;
     FREE(rmap);
     FREE(gmap);
     FREE(bmap);
+    return 0;
+}
+
+
+/*!
+ *  pixcmapIsOpaque()
+ *
+ *      Input:  cmap
+ *              &opaque (<return> TRUE if fully opaque: all entries are 255)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+pixcmapIsOpaque(PIXCMAP  *cmap,
+                l_int32  *popaque)
+{
+l_int32     i, n;
+RGBA_QUAD  *cta;
+
+    PROCNAME("pixcmapIsOpaque");
+
+    if (!popaque)
+        return ERROR_INT("&opaque not defined", procName, 1);
+    *popaque = TRUE;
+    if (!cmap)
+        return ERROR_INT("cmap not defined", procName, 1);
+
+    n = pixcmapGetCount(cmap);
+    cta = (RGBA_QUAD *)cmap->array;
+    for (i = 0; i < n; i++) {
+        if (cta[i].alpha != 255) {
+            *popaque = FALSE;
+            break;
+        }
+    }
     return 0;
 }
 
@@ -1041,17 +1177,15 @@ pixcmapGetComponentRange(PIXCMAP  *cmap,
     if (color == L_SELECT_RED) {
         pixcmapGetExtremeValue(cmap, L_SELECT_MIN, pminval, NULL, NULL);
         pixcmapGetExtremeValue(cmap, L_SELECT_MAX, pmaxval, NULL, NULL);
-    }
-    else if (color == L_SELECT_GREEN) {
+    } else if (color == L_SELECT_GREEN) {
         pixcmapGetExtremeValue(cmap, L_SELECT_MIN, NULL, pminval, NULL);
         pixcmapGetExtremeValue(cmap, L_SELECT_MAX, NULL, pmaxval, NULL);
-    }
-    else if (color == L_SELECT_BLUE) {
+    } else if (color == L_SELECT_BLUE) {
         pixcmapGetExtremeValue(cmap, L_SELECT_MIN, NULL, NULL, pminval);
         pixcmapGetExtremeValue(cmap, L_SELECT_MAX, NULL, NULL, pmaxval);
-    }
-    else
+    } else {
         return ERROR_INT("invalid color", procName, 1);
+    }
 
     return 0;
 }
@@ -1097,8 +1231,7 @@ l_int32  i, n, rval, gval, bval, extrval, extgval, extbval;
         extrval = 100000;
         extgval = 100000;
         extbval = 100000;
-    }
-    else {
+    } else {
         extrval = 0;
         extgval = 0;
         extbval = 0;
@@ -1191,12 +1324,12 @@ PIXCMAP   *cmapd;
          * overflow in the gray value. */
     sum = rwt + gwt + bwt;
     if (sum == 0.0) {
-        L_WARNING("all weights zero; setting equal to 1/3", procName);
+        L_WARNING("all weights zero; setting equal to 1/3\n", procName);
         rwt = gwt = bwt = 0.33333;
         sum = 1.0;
     }
     if (L_ABS(sum - 1.0) > 0.0001) {  /* maintain ratios with sum == 1.0 */
-        L_WARNING("weights don't sum to 1; maintaining ratios", procName);
+        L_WARNING("weights don't sum to 1; maintaining ratios\n", procName);
         rwt = rwt / sum;
         gwt = gwt / sum;
         bwt = bwt / sum;
@@ -1226,7 +1359,7 @@ PIXCMAP   *cmapd;
 PIXCMAP *
 pixcmapReadStream(FILE  *fp)
 {
-l_int32   rval, gval, bval, ignore;
+l_int32   rval, gval, bval, aval, ignore;
 l_int32   i, index, ret, depth, ncolors;
 PIXCMAP  *cmap;
 
@@ -1241,16 +1374,16 @@ PIXCMAP  *cmap;
         (depth != 1 && depth != 2 && depth != 4 && depth != 8) ||
         (ncolors < 2 || ncolors > 256))
         return (PIXCMAP *)ERROR_PTR("invalid cmap size", procName, NULL);
-    ignore = fscanf(fp, "Color    R-val    G-val    B-val\n");
-    ignore = fscanf(fp, "--------------------------------\n");
+    ignore = fscanf(fp, "Color    R-val    G-val    B-val   Alpha\n");
+    ignore = fscanf(fp, "----------------------------------------\n");
 
     if ((cmap = pixcmapCreate(depth)) == NULL)
         return (PIXCMAP *)ERROR_PTR("cmap not made", procName, NULL);
     for (i = 0; i < ncolors; i++) {
-        if (fscanf(fp, "%3d       %3d      %3d      %3d\n",
-                        &index, &rval, &gval, &bval) != 4)
+        if (fscanf(fp, "%3d       %3d      %3d      %3d      %3d\n",
+                        &index, &rval, &gval, &bval, &aval) != 5)
             return (PIXCMAP *)ERROR_PTR("invalid entry", procName, NULL);
-        pixcmapAddColor(cmap, rval, gval, bval);
+        pixcmapAddRGBA(cmap, rval, gval, bval, aval);
     }
 
     return cmap;
@@ -1267,7 +1400,7 @@ l_int32
 pixcmapWriteStream(FILE     *fp,
                    PIXCMAP  *cmap)
 {
-l_int32  *rmap, *gmap, *bmap;
+l_int32  *rmap, *gmap, *bmap, *amap;
 l_int32   i;
 
     PROCNAME("pixcmapWriteStream");
@@ -1277,20 +1410,21 @@ l_int32   i;
     if (!cmap)
         return ERROR_INT("cmap not defined", procName, 1);
 
-    if (pixcmapToArrays(cmap, &rmap, &gmap, &bmap))
+    if (pixcmapToArrays(cmap, &rmap, &gmap, &bmap, &amap))
         return ERROR_INT("colormap arrays not made", procName, 1);
 
     fprintf(fp, "\nPixcmap: depth = %d bpp; %d colors\n", cmap->depth, cmap->n);
-    fprintf(fp, "Color    R-val    G-val    B-val\n");
-    fprintf(fp, "--------------------------------\n");
+    fprintf(fp, "Color    R-val    G-val    B-val   Alpha\n");
+    fprintf(fp, "----------------------------------------\n");
     for (i = 0; i < cmap->n; i++)
-        fprintf(fp, "%3d       %3d      %3d      %3d\n",
-                i, rmap[i], gmap[i], bmap[i]);
+        fprintf(fp, "%3d       %3d      %3d      %3d      %3d\n",
+                i, rmap[i], gmap[i], bmap[i], amap[i]);
     fprintf(fp, "\n");
 
     FREE(rmap);
     FREE(gmap);
     FREE(bmap);
+    FREE(amap);
     return 0;
 }
 
@@ -1303,15 +1437,17 @@ l_int32   i;
  *
  *      Input:  colormap
  *              &rmap, &gmap, &bmap  (<return> colormap arrays)
+ *              &amap (<optional return> alpha array)
  *      Return: 0 if OK; 1 on error
  */
 l_int32
 pixcmapToArrays(PIXCMAP   *cmap,
                 l_int32  **prmap,
                 l_int32  **pgmap,
-                l_int32  **pbmap)
+                l_int32  **pbmap,
+                l_int32  **pamap)
 {
-l_int32    *rmap, *gmap, *bmap;
+l_int32    *rmap, *gmap, *bmap, *amap;
 l_int32     i, ncolors;
 RGBA_QUAD  *cta;
 
@@ -1320,6 +1456,7 @@ RGBA_QUAD  *cta;
     if (!prmap || !pgmap || !pbmap)
         return ERROR_INT("&rmap, &gmap, &bmap not all defined", procName, 1);
     *prmap = *pgmap = *pbmap = NULL;
+    if (pamap) *pamap = NULL;
     if (!cmap)
         return ERROR_INT("cmap not defined", procName, 1);
 
@@ -1331,12 +1468,18 @@ RGBA_QUAD  *cta;
     *prmap = rmap;
     *pgmap = gmap;
     *pbmap = bmap;
+    if (pamap) {
+        amap = (l_int32 *)CALLOC(ncolors, sizeof(l_int32));
+        *pamap = amap;
+    }
 
     cta = (RGBA_QUAD *)cmap->array;
     for (i = 0; i < ncolors; i++) {
         rmap[i] = cta[i].red;
         gmap[i] = cta[i].green;
         bmap[i] = cta[i].blue;
+        if (pamap)
+            amap[i] = cta[i].alpha;
     }
 
     return 0;
@@ -1356,7 +1499,7 @@ pixcmapToRGBTable(PIXCMAP    *cmap,
                   l_uint32  **ptab,
                   l_int32    *pncolors)
 {
-l_int32    i, ncolors, rval, gval, bval;
+l_int32    i, ncolors, rval, gval, bval, aval;
 l_uint32  *tab;
 
     PROCNAME("pixcmapToRGBTable");
@@ -1375,13 +1518,9 @@ l_uint32  *tab;
     *ptab = tab;
 
     for (i = 0; i < ncolors; i++) {
-        pixcmapGetColor(cmap, i, &rval, &gval, &bval);
-        composeRGBPixel(rval, gval, bval, &tab[i]);
+        pixcmapGetRGBA(cmap, i, &rval, &gval, &bval, &aval);
+        composeRGBAPixel(rval, gval, bval, aval, &tab[i]);
     }
-
-/*    for (i = 0; i < ncolors; i++)
-        fprintf(stderr, "Color[%d] = %x\n", i, tab[i]); */
-
     return 0;
 }
 
@@ -1392,22 +1531,19 @@ l_uint32  *tab;
  *      Input:  colormap
  *              cpc (components/color: 3 for rgb, 4 for rgba)
  *              &ncolors (<return> number of colors in table)
- *              &data (<return> binary string, 3 or 4 bytes per color)
- *              &nbytes (<return> size of data)
+ *              &data (<return> binary string, cpc bytes per color)
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
- *      (1) If @cpc == 4, we leave room for the alpha channel
- *          value in each color entry, but it is set to 0.
+ *      (1) When serializing to store in a pdf, use @cpc = 3.
  */
 l_int32
 pixcmapSerializeToMemory(PIXCMAP   *cmap,
                          l_int32    cpc,
                          l_int32   *pncolors,
-                         l_uint8  **pdata,
-                         l_int32   *pnbytes)
+                         l_uint8  **pdata)
 {
-l_int32   i, ncolors, rval, gval, bval;
+l_int32   i, ncolors, rval, gval, bval, aval;
 l_uint8  *data;
 
     PROCNAME("pixcmapSerializeToMemory");
@@ -1415,9 +1551,9 @@ l_uint8  *data;
     if (!pdata)
         return ERROR_INT("&data not defined", procName, 1);
     *pdata = NULL;
-    if (!pncolors || !pnbytes)
-        return ERROR_INT("&ncolors and &nbytes not defined", procName, 1);
-    *pncolors = *pnbytes = 0;
+    if (!pncolors)
+        return ERROR_INT("&ncolors not defined", procName, 1);
+    *pncolors = 0;
     if (!cmap)
         return ERROR_INT("cmap not defined", procName, 1);
     if (cpc != 3 && cpc != 4)
@@ -1425,16 +1561,17 @@ l_uint8  *data;
 
     ncolors = pixcmapGetCount(cmap);
     *pncolors = ncolors;
-    *pnbytes = cpc * ncolors;
     if ((data = (l_uint8 *)CALLOC(cpc * ncolors, sizeof(l_uint8))) == NULL)
         return ERROR_INT("data not made", procName, 1);
     *pdata = data;
 
     for (i = 0; i < ncolors; i++) {
-        pixcmapGetColor(cmap, i, &rval, &gval, &bval);
+        pixcmapGetRGBA(cmap, i, &rval, &gval, &bval, &aval);
         data[cpc * i] = rval;
         data[cpc * i + 1] = gval;
         data[cpc * i + 2] = bval;
+        if (cpc == 4)
+            data[cpc * i + 3] = aval;
     }
     return 0;
 }
@@ -1444,32 +1581,28 @@ l_uint8  *data;
  *  pixcmapDeserializeFromMemory()
  *
  *      Input:  data (binary string, 3 or 4 bytes per color)
+ *              cpc (components/color: 3 for rgb, 4 for rgba)
  *              ncolors
- *              nbytes (size of returned data)
  *      Return: cmap, or null on error
  */
 PIXCMAP *
 pixcmapDeserializeFromMemory(l_uint8  *data,
-                             l_int32   ncolors,
-                             l_int32   nbytes)
+                             l_int32   cpc,
+                             l_int32   ncolors)
 {
-l_int32   i, cpc, d, rval, gval, bval;
+l_int32   i, d, rval, gval, bval, aval;
 PIXCMAP  *cmap;
 
     PROCNAME("pixcmapDeserializeFromMemory");
 
     if (!data)
         return (PIXCMAP *)ERROR_PTR("data not defined", procName, NULL);
-    if (nbytes == 0 || ncolors == 0)
+    if (cpc != 3 && cpc != 4)
+        return (PIXCMAP *)ERROR_PTR("cpc not 3 or 4", procName, NULL);
+    if (ncolors == 0)
         return (PIXCMAP *)ERROR_PTR("no entries", procName, NULL);
     if (ncolors > 256)
         return (PIXCMAP *)ERROR_PTR("ncolors > 256", procName, NULL);
-    if (nbytes == 3 * ncolors)
-        cpc = 3;
-    else if (nbytes == 4 * ncolors)
-        cpc = 4;
-    else  /* there must be either 3 or 4 bytes for each color */
-        return (PIXCMAP *)ERROR_PTR("invalid table size", procName, NULL);
 
     if (ncolors > 16)
         d = 8;
@@ -1484,7 +1617,11 @@ PIXCMAP  *cmap;
         rval = data[cpc * i];
         gval = data[cpc * i + 1];
         bval = data[cpc * i + 2];
-        pixcmapAddColor(cmap, rval, gval, bval);
+        if (cpc == 4)
+            aval = data[cpc * i + 3];
+        else
+            aval = 255;  /* opaque */
+        pixcmapAddRGBA(cmap, rval, gval, bval, aval);
     }
 
     return cmap;
@@ -1495,26 +1632,23 @@ PIXCMAP  *cmap;
  *  pixcmapConvertToHex()
  *
  *      Input:  data  (binary serialized data)
- *              nbytes (size of data)
  *              ncolors (in colormap)
  *      Return: hexdata (bracketed, space-separated ascii hex string),
  *                       or null on error.
  *
  *  Notes:
- *      (1) If rgb, there are 3 colors/component; if rgba, there are 4.
+ *      (1) The number of bytes in @data is 3 * ncolors.
  *      (2) Output is in form:
  *             < r0g0b0 r1g1b1 ... rngnbn >
- *          where r0, g0, b0, ... are each 2 bytes of hex ascii
+ *          where r0, g0, b0 ... are each 2 bytes of hex ascii
  *      (3) This is used in pdf files to express the colormap as an
  *          array in ascii (human-readable) format.
  */
 char *
 pixcmapConvertToHex(l_uint8 *data,
-                    l_int32  nbytes,
                     l_int32  ncolors)
 {
 l_int32  i, j, hexbytes;
-l_int32  cpc;  /* colors per component */
 char    *hexdata = NULL;
 char     buf[4];
 
@@ -1525,24 +1659,20 @@ char     buf[4];
     if (ncolors < 1)
         return (char *)ERROR_PTR("no colors", procName, NULL);
 
-    cpc = nbytes / ncolors;
-    if (cpc != 3 && cpc != 4)
-        return (char *)ERROR_PTR("cpc not 3 or 4", procName, NULL);
-
-    hexbytes = 2 + (2 * cpc + 1) * ncolors + 2;
+    hexbytes = 2 + (2 * 3 + 1) * ncolors + 2;
     hexdata = (char *)CALLOC(hexbytes, sizeof(char));
     hexdata[0] = '<';
     hexdata[1] = ' ';
 
     for (i = 0; i < ncolors; i++) {
-        j = 2 + (2 * cpc + 1) * i;
-        snprintf(buf, sizeof(buf), "%02x", data[cpc * i]);
+        j = 2 + (2 * 3 + 1) * i;
+        snprintf(buf, sizeof(buf), "%02x", data[3 * i]);
         hexdata[j] = buf[0];
         hexdata[j + 1] = buf[1];
-        snprintf(buf, sizeof(buf), "%02x", data[cpc * i + 1]);
+        snprintf(buf, sizeof(buf), "%02x", data[3 * i + 1]);
         hexdata[j + 2] = buf[0];
         hexdata[j + 3] = buf[1];
-        snprintf(buf, sizeof(buf), "%02x", data[cpc * i + 2]);
+        snprintf(buf, sizeof(buf), "%02x", data[3 * i + 2]);
         hexdata[j + 4] = buf[0];
         hexdata[j + 5] = buf[1];
         hexdata[j + 6] = ' ';
@@ -1584,7 +1714,7 @@ NUMA    *nag;
     if (!cmap)
         return ERROR_INT("cmap not defined", procName, 1);
     if (gamma <= 0.0) {
-        L_WARNING("gamma must be > 0.0; setting to 1.0", procName);
+        L_WARNING("gamma must be > 0.0; setting to 1.0\n", procName);
         gamma = 1.0;
     }
     if (minval >= maxval)
@@ -1635,7 +1765,7 @@ NUMA    *nac;
     if (!cmap)
         return ERROR_INT("cmap not defined", procName, 1);
     if (factor < 0.0) {
-        L_WARNING("factor must be >= 0.0; setting to 0.0", procName);
+        L_WARNING("factor must be >= 0.0; setting to 0.0\n", procName);
         factor = 0.0;
     }
 

@@ -37,8 +37,8 @@
 static const l_float32  maxsize[] = {5.0, 10.0, 15.0, 20.0, 25.0, 26.0, 27.0};
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       i, k, x, y, w, h;
 BOX          *box;

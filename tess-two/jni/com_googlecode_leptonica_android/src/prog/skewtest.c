@@ -55,8 +55,8 @@
 #define   SEARCH_MIN_DELTA      0.01   /* degrees */
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
 l_int32      ret;
@@ -118,7 +118,7 @@ static char  mainName[] = "skewtest";
                                         SEARCH_REDUCTION, SWEEP_RANGE2,
                                         SWEEP_DELTA2, SEARCH_MIN_DELTA);
 	if (ret)
-            L_WARNING("skew angle not valid", mainName);
+            L_WARNING("skew angle not valid\n", mainName);
         else {
             fprintf(stderr, "conf = %5.3f, angle = %7.3f degrees\n",
                     conf, angle);

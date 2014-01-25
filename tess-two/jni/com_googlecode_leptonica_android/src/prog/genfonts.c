@@ -28,7 +28,7 @@
  * genfonts.c
  *
  *    This program can be used to generate characters for a
- *    font and save them in .pixa format.
+ *    font and save them in .pa format.
  *
  *    The tiff images of bitmaps fonts, which are used as input
  *    to this generator, are supplied in Leptonica in the prog/fonts
@@ -44,19 +44,19 @@
 #define   TEST_DIR      "/tmp/fonts"
 #define   INSTALL_DIR   "fonts"
 
-const char  *outputfonts[] = {"chars-4.pixa", "chars-6.pixa",
-                              "chars-8.pixa", "chars-10.pixa",
-                              "chars-12.pixa", "chars-14.pixa",
-                              "chars-16.pixa", "chars-18.pixa",
-                              "chars-20.pixa"};
+const char  *outputfonts[] = {"chars-4.pa", "chars-6.pa",
+                              "chars-8.pa", "chars-10.pa",
+                              "chars-12.pa", "chars-14.pa",
+                              "chars-16.pa", "chars-18.pa",
+                              "chars-20.pa"};
 
 const l_int32 sizes[] = { 4, 6, 8, 10, 12, 14, 16, 18, 20 };
 
 #define  DEBUG            1
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char         buf[512];
 char        *pathname;
@@ -66,23 +66,25 @@ PIXA        *pixa;
 static char  mainName[] = "genfonts";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax:  genfonts", mainName, 1));
+        return ERROR_INT(" Syntax:  genfonts", mainName, 1);
 
     /* ------------  Generate all the pixa char bitmap files ----------- */
 #if 1
+    lept_rmdir("fonts");
+    lept_mkdir("fonts");
     for (i = 0; i < 9; i++) {
-        pixaSaveFont(INSTALL_DIR, TEST_DIR, sizes[i]);
+        pixaSaveFont(INSTALL_DIR, "/tmp/fonts", sizes[i]);
 
 #if DEBUG
         pathname = genPathname(INSTALL_DIR, outputfonts[i]);
-	pixa = pixaRead(pathname);
-	fprintf(stderr, "Found %d chars in font size %d\n",
-	        pixaGetCount(pixa), sizes[i]);
-	pixd = pixaDisplayTiled(pixa, 1500, 0, 15);
-	pixDisplay(pixd, 100 * i, 200);
-	pixDestroy(&pixd);
-	pixaDestroy(&pixa);
-	lept_free(pathname);
+        pixa = pixaRead(pathname);
+        fprintf(stderr, "Found %d chars in font size %d\n",
+                pixaGetCount(pixa), sizes[i]);
+        pixd = pixaDisplayTiled(pixa, 1500, 0, 15);
+        pixDisplay(pixd, 100 * i, 200);
+        pixDestroy(&pixd);
+        pixaDestroy(&pixa);
+        lept_free(pathname);
 #endif  /* DEBUG */
 
     }

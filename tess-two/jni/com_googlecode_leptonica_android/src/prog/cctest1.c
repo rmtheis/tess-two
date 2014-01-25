@@ -45,64 +45,62 @@
 
 #define  NTIMES             2
 
-
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein;
-l_int32      i, n, np, same, count;
-FILE        *fp;
+l_int32      i, n, count;
 BOX         *box;
-BOXA        *boxa, *boxa2;
+BOXA        *boxa;
 PIX         *pixs, *pixd;
 PIXA        *pixa;
 PIXCMAP     *cmap;
 static char  mainName[] = "cctest1";
 
     if (argc != 2)
-	exit(ERROR_INT(" Syntax:  cctest1 filein", mainName, 1));
+        return ERROR_INT(" Syntax:  cctest1 filein", mainName, 1);
 
     filein = argv[1];
 
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
     if (pixGetDepth(pixs) != 1)
-	exit(ERROR_INT("pixs not 1 bpp", mainName, 1));
+        exit(ERROR_INT("pixs not 1 bpp", mainName, 1));
 
-	/* Test speed of pixCountConnComp() */
+        /* Test speed of pixCountConnComp() */
     startTimer();
     for (i = 0; i < NTIMES; i++)
-	pixCountConnComp(pixs, 4, &count);
+        pixCountConnComp(pixs, 4, &count);
     fprintf(stderr, "Time to compute 4-cc: %6.3f sec\n", stopTimer()/NTIMES);
     fprintf(stderr, "Number of 4-cc: %d\n", count);
     startTimer();
     for (i = 0; i < NTIMES; i++)
-	pixCountConnComp(pixs, 8, &count);
+        pixCountConnComp(pixs, 8, &count);
     fprintf(stderr, "Time to compute 8-cc: %6.3f sec\n", stopTimer()/NTIMES);
     fprintf(stderr, "Number of 8-cc: %d\n", count);
 
-	/* Test speed of pixConnComp(), with only boxa output  */
+        /* Test speed of pixConnComp(), with only boxa output  */
     startTimer();
     for (i = 0; i < NTIMES; i++) {
-	boxa = pixConnComp(pixs, NULL, 4);
-	boxaDestroy(&boxa);
+        boxa = pixConnComp(pixs, NULL, 4);
+        boxaDestroy(&boxa);
     }
     fprintf(stderr, "Time to compute 4-cc: %6.3f sec\n", stopTimer()/NTIMES);
     startTimer();
     for (i = 0; i < NTIMES; i++) {
-	boxa = pixConnComp(pixs, NULL, 8);
-	boxaDestroy(&boxa);
+        boxa = pixConnComp(pixs, NULL, 8);
+        boxaDestroy(&boxa);
     }
     fprintf(stderr, "Time to compute 8-cc: %6.3f sec\n", stopTimer()/NTIMES);
 
-	/* Draw outline of each c.c. box */
+        /* Draw outline of each c.c. box */
     boxa = pixConnComp(pixs, NULL, 4);
     n = boxaGetCount(boxa);
     fprintf(stderr, "Num 4-cc boxes: %d\n", n);
     for (i = 0; i < n; i++) {
-	box = boxaGetBox(boxa, i, L_CLONE);
-	pixRenderBox(pixs, box, 3, L_FLIP_PIXELS);
-	boxDestroy(&box);   /* remember, clones need to be destroyed */
+        box = boxaGetBox(boxa, i, L_CLONE);
+        pixRenderBox(pixs, box, 3, L_FLIP_PIXELS);
+        boxDestroy(&box);   /* remember, clones need to be destroyed */
     }
     pixDisplayWrite(pixs, 1);
     boxaDestroy(&boxa);

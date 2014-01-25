@@ -98,11 +98,11 @@ PIX       *pixb, *pixt, *pixd;
     if (hsize < 1 || vsize < 1)
         return (PIX *)ERROR_PTR("hsize or vsize < 1", procName, NULL);
     if ((hsize & 1) == 0 ) {
-        L_WARNING("horiz sel size must be odd; increasing by 1", procName);
+        L_WARNING("horiz sel size must be odd; increasing by 1\n", procName);
         hsize++;
     }
     if ((vsize & 1) == 0 ) {
-        L_WARNING("vert sel size must be odd; increasing by 1", procName);
+        L_WARNING("vert sel size must be odd; increasing by 1\n", procName);
         vsize++;
     }
 
@@ -114,14 +114,12 @@ PIX       *pixb, *pixt, *pixd;
         rightpix = (3 * hsize + 1) / 2;
         toppix = 0;
         bottompix = 0;
-    }
-    else if (hsize == 1) {  /* vertical sel */
+    } else if (hsize == 1) {  /* vertical sel */
         leftpix = 0;
         rightpix = 0;
         toppix = (vsize + 1) / 2;
         bottompix = (3 * vsize + 1) / 2;
-    }
-    else {
+    } else {
         leftpix = (hsize + 1) / 2;
         rightpix = (3 * hsize + 1) / 2;
         toppix = (vsize + 1) / 2;
@@ -146,13 +144,13 @@ PIX       *pixb, *pixt, *pixd;
     if ((minarray = (l_uint8 *)CALLOC(2 * maxsize, sizeof(l_uint8))) == NULL)
         return (PIX *)ERROR_PTR("minarray not made", procName, NULL);
 
-    if (vsize == 1)
+    if (vsize == 1) {
         erodeGrayLow(datat, w, h, wplt, datab, wplb, hsize, L_HORIZ,
                      buffer, minarray);
-    else if (hsize == 1)
+    } else if (hsize == 1) {
         erodeGrayLow(datat, w, h, wplt, datab, wplb, vsize, L_VERT,
                      buffer, minarray);
-    else {
+    } else {
         erodeGrayLow(datat, w, h, wplt, datab, wplb, hsize, L_HORIZ,
                      buffer, minarray);
         pixSetOrClearBorder(pixt, leftpix, rightpix, toppix, bottompix,
@@ -207,11 +205,11 @@ PIX       *pixb, *pixt, *pixd;
     if (hsize < 1 || vsize < 1)
         return (PIX *)ERROR_PTR("hsize or vsize < 1", procName, NULL);
     if ((hsize & 1) == 0 ) {
-        L_WARNING("horiz sel size must be odd; increasing by 1", procName);
+        L_WARNING("horiz sel size must be odd; increasing by 1\n", procName);
         hsize++;
     }
     if ((vsize & 1) == 0 ) {
-        L_WARNING("vert sel size must be odd; increasing by 1", procName);
+        L_WARNING("vert sel size must be odd; increasing by 1\n", procName);
         vsize++;
     }
 
@@ -223,14 +221,12 @@ PIX       *pixb, *pixt, *pixd;
         rightpix = (3 * hsize + 1) / 2;
         toppix = 0;
         bottompix = 0;
-    }
-    else if (hsize == 1) {  /* vertical sel */
+    } else if (hsize == 1) {  /* vertical sel */
         leftpix = 0;
         rightpix = 0;
         toppix = (vsize + 1) / 2;
         bottompix = (3 * vsize + 1) / 2;
-    }
-    else {
+    } else {
         leftpix = (hsize + 1) / 2;
         rightpix = (3 * hsize + 1) / 2;
         toppix = (vsize + 1) / 2;
@@ -255,13 +251,13 @@ PIX       *pixb, *pixt, *pixd;
     if ((maxarray = (l_uint8 *)CALLOC(2 * maxsize, sizeof(l_uint8))) == NULL)
         return (PIX *)ERROR_PTR("buffer not made", procName, NULL);
 
-    if (vsize == 1)
+    if (vsize == 1) {
         dilateGrayLow(datat, w, h, wplt, datab, wplb, hsize, L_HORIZ,
                       buffer, maxarray);
-    else if (hsize == 1)
+    } else if (hsize == 1) {
         dilateGrayLow(datat, w, h, wplt, datab, wplb, vsize, L_VERT,
                       buffer, maxarray);
-    else {
+    } else {
         dilateGrayLow(datat, w, h, wplt, datab, wplb, hsize, L_HORIZ,
                       buffer, maxarray);
         pixSetOrClearBorder(pixt, leftpix, rightpix, toppix, bottompix,
@@ -317,11 +313,11 @@ PIX       *pixb, *pixt, *pixd;
     if (hsize < 1 || vsize < 1)
         return (PIX *)ERROR_PTR("hsize or vsize < 1", procName, NULL);
     if ((hsize & 1) == 0 ) {
-        L_WARNING("horiz sel size must be odd; increasing by 1", procName);
+        L_WARNING("horiz sel size must be odd; increasing by 1\n", procName);
         hsize++;
     }
     if ((vsize & 1) == 0 ) {
-        L_WARNING("vert sel size must be odd; increasing by 1", procName);
+        L_WARNING("vert sel size must be odd; increasing by 1\n", procName);
         vsize++;
     }
 
@@ -333,14 +329,12 @@ PIX       *pixb, *pixt, *pixd;
         rightpix = (3 * hsize + 1) / 2;
         toppix = 0;
         bottompix = 0;
-    }
-    else if (hsize == 1) {  /* vertical sel */
+    } else if (hsize == 1) {  /* vertical sel */
         leftpix = 0;
         rightpix = 0;
         toppix = (vsize + 1) / 2;
         bottompix = (3 * vsize + 1) / 2;
-    }
-    else {
+    } else {
         leftpix = (hsize + 1) / 2;
         rightpix = (3 * hsize + 1) / 2;
         toppix = (vsize + 1) / 2;
@@ -380,8 +374,7 @@ PIX       *pixb, *pixt, *pixd;
                             PIX_CLR);
         dilateGrayLow(datab, w, h, wplb, datat, wplt, vsize, L_VERT,
                       buffer, array);
-    }
-    else {
+    } else {
         erodeGrayLow(datat, w, h, wplt, datab, wplb, hsize, L_HORIZ,
                      buffer, array);
         pixSetOrClearBorder(pixt, leftpix, rightpix, toppix, bottompix,
@@ -443,11 +436,11 @@ PIX       *pixb, *pixt, *pixd;
     if (hsize < 1 || vsize < 1)
         return (PIX *)ERROR_PTR("hsize or vsize < 1", procName, NULL);
     if ((hsize & 1) == 0 ) {
-        L_WARNING("horiz sel size must be odd; increasing by 1", procName);
+        L_WARNING("horiz sel size must be odd; increasing by 1\n", procName);
         hsize++;
     }
     if ((vsize & 1) == 0 ) {
-        L_WARNING("vert sel size must be odd; increasing by 1", procName);
+        L_WARNING("vert sel size must be odd; increasing by 1\n", procName);
         vsize++;
     }
 
@@ -459,14 +452,12 @@ PIX       *pixb, *pixt, *pixd;
         rightpix = (3 * hsize + 1) / 2;
         toppix = 0;
         bottompix = 0;
-    }
-    else if (hsize == 1) {  /* vertical sel */
+    } else if (hsize == 1) {  /* vertical sel */
         leftpix = 0;
         rightpix = 0;
         toppix = (vsize + 1) / 2;
         bottompix = (3 * vsize + 1) / 2;
-    }
-    else {
+    } else {
         leftpix = (hsize + 1) / 2;
         rightpix = (3 * hsize + 1) / 2;
         toppix = (vsize + 1) / 2;
@@ -498,16 +489,14 @@ PIX       *pixb, *pixt, *pixd;
                             PIX_SET);
         erodeGrayLow(datab, w, h, wplb, datat, wplt, hsize, L_HORIZ,
                       buffer, array);
-    }
-    else if (hsize == 1) {
+    } else if (hsize == 1) {
         dilateGrayLow(datat, w, h, wplt, datab, wplb, vsize, L_VERT,
                      buffer, array);
         pixSetOrClearBorder(pixt, leftpix, rightpix, toppix, bottompix,
                             PIX_SET);
         erodeGrayLow(datab, w, h, wplb, datat, wplt, vsize, L_VERT,
                       buffer, array);
-    }
-    else {
+    } else {
         dilateGrayLow(datat, w, h, wplt, datab, wplb, hsize, L_HORIZ,
                       buffer, array);
         pixSetOrClearBorder(pixt, leftpix, rightpix, toppix, bottompix,
@@ -946,14 +935,12 @@ PIX  *pixt, *pixb, *pixbd, *pixd;
         pixSetBorderVal(pixt, 4, 8, 2, 8, 0);  /* set to min */
         pixbd = pixDilateGray3h(pixt);
         pixDestroy(&pixt);
-    }
-    else if (hsize == 1) {
+    } else if (hsize == 1) {
         pixt = pixErodeGray3v(pixb);
         pixSetBorderVal(pixt, 4, 8, 2, 8, 0);
         pixbd = pixDilateGray3v(pixt);
         pixDestroy(&pixt);
-    }
-    else {  /* vize == hsize == 3 */
+    } else {  /* vize == hsize == 3 */
         pixt = pixErodeGray3h(pixb);
         pixbd = pixErodeGray3v(pixt);
         pixDestroy(&pixt);
@@ -1012,14 +999,12 @@ PIX  *pixt, *pixb, *pixbd, *pixd;
         pixSetBorderVal(pixt, 4, 8, 2, 8, 255);  /* set to max */
         pixbd = pixErodeGray3h(pixt);
         pixDestroy(&pixt);
-    }
-    else if (hsize == 1) {
+    } else if (hsize == 1) {
         pixt = pixDilateGray3v(pixb);
         pixSetBorderVal(pixt, 4, 8, 2, 8, 255);
         pixbd = pixErodeGray3v(pixt);
         pixDestroy(&pixt);
-    }
-    else {  /* vize == hsize == 3 */
+    } else {  /* vize == hsize == 3 */
         pixt = pixDilateGray3h(pixb);
         pixbd = pixDilateGray3v(pixt);
         pixDestroy(&pixt);

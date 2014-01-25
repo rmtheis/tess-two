@@ -441,7 +441,7 @@ NUMA      *na;
     na = numaCreate(n);
     *pna = na;
     delx = 3.14159265 / (l_float32)npts;
-    numaSetXParameters(na, 0.0, delx);
+    numaSetParameters(na, 0.0, delx);
     for (i = 0; i < n / 2; i++)
          numaAddNumber(na, (l_float32)sin((l_float64)i * delx));
     for (i = 0; i < n / 2; i++) {
@@ -533,7 +533,7 @@ l_float32  twopi, invtwopi, findex, diff;
  *          parameter @ybend gives the relative shift at left and right
  *          edges, with a downward shift for positive values of @ybend.
  *      (6) When writing out a steroscopic (red/cyan) image in jpeg,
- *          first call l_jpegSetNoChromaSampling() to get sufficient
+ *          first call pixSetChromaSampling(pix, 0) to get sufficient
  *          resolution in the red channel.
  *      (7) Typical values are:
  *             zbend = 20
@@ -619,9 +619,9 @@ PIX       *pixd;
         pixDestroy(&pixv2);
         pixDestroy(&pixv3);
         pixDestroy(&pixv4);
-    }
-    else
+    } else {
         pixt2 = pixClone(pixt);
+    }
 
         /* Split out the 3 components */
     pixr = pixGetRGBComponent(pixt2, COLOR_RED);
@@ -641,9 +641,9 @@ PIX       *pixd;
 
         /* Shift the red pixels horizontally by an amount that
          * increases quadratically from the centerline. */
-    if (zbend == 0)
+    if (zbend == 0) {
         pixrs = pixClone(pixr);
-    else {
+    } else {
         pixr1 = pixClipRectangle(pixr, boxleft, NULL);
         pixr2 = pixClipRectangle(pixr, boxright, NULL);
         pixr3 = pixStretchHorizontal(pixr1, L_WARP_TO_LEFT, L_QUADRATIC_WARP,
@@ -662,11 +662,11 @@ PIX       *pixd;
         /* Perform a combination of horizontal shift and shear of
          * red pixels.  The causes the plane of the image to tilt and
          * also move forward or backward. */
-    if (zshiftt == 0 && zshiftb == 0)
+    if (zshiftt == 0 && zshiftb == 0) {
         pixrss = pixClone(pixrs);
-    else if (zshiftt == zshiftb)
+    } else if (zshiftt == zshiftb) {
         pixrss = pixTranslate(NULL, pixrs, zshiftt, 0, L_BRING_IN_WHITE);
-    else {
+    } else {
         angle = (l_float32)(zshiftb - zshiftt) / (l_float32)pixGetHeight(pixrs);
         zshift = (zshiftt + zshiftb) / 2;
         pixt3 = pixTranslate(NULL, pixrs, zshift, 0, L_BRING_IN_WHITE);
@@ -743,7 +743,7 @@ l_int32  d;
     if (incolor != L_BRING_IN_WHITE && incolor != L_BRING_IN_BLACK)
         return (PIX *)ERROR_PTR("invalid incolor", procName, NULL);
     if (d == 1 && operation == L_INTERPOLATED) {
-        L_WARNING("Using sampling for 1 bpp", procName);
+        L_WARNING("Using sampling for 1 bpp\n", procName);
         operation = L_INTERPOLATED;
     }
 
@@ -805,8 +805,7 @@ PIX       *pixd;
                 j = jd - (hmax * (wm - jd)) / wm;
             else  /* L_QUADRATIC_WARP */
                 j = jd - (hmax * (wm - jd) * (wm - jd)) / (wm * wm);
-        }
-        else if (dir == L_WARP_TO_RIGHT) {
+        } else if (dir == L_WARP_TO_RIGHT) {
             if (type == L_LINEAR_WARP)
                 j = jd - (hmax * jd) / wm;
             else  /* L_QUADRATIC_WARP */
@@ -841,7 +840,7 @@ PIX       *pixd;
             }
             break;
         default:
-            L_ERROR_INT("invalid depth: %d", procName, d);
+            L_ERROR("invalid depth: %d\n", procName, d);
             pixDestroy(&pixd);
             return NULL;
         }
@@ -904,8 +903,7 @@ PIX       *pixd;
                 j = 64 * jd - 64 * (hmax * (wm - jd)) / wm;
             else  /* L_QUADRATIC_WARP */
                 j = 64 * jd - 64 * (hmax * (wm - jd) * (wm - jd)) / (wm * wm);
-        }
-        else if (dir == L_WARP_TO_RIGHT) {
+        } else if (dir == L_WARP_TO_RIGHT) {
             if (type == L_LINEAR_WARP)
                 j = 64 * jd - 64 * (hmax * jd) / wm;
             else  /* L_QUADRATIC_WARP */
@@ -926,8 +924,7 @@ PIX       *pixd;
                            jf * GET_DATA_BYTE(lines, jp + 1) + 31) / 63;
                     SET_DATA_BYTE(lined, jd, val);
                 }
-            }
-            else {  /* jp == wm */
+            } else {  /* jp == wm */
                 for (i = 0; i < h; i++) {
                     lines = datas + i * wpls;
                     lined = datad + i * wpld;
@@ -951,8 +948,7 @@ PIX       *pixd;
                            jf * ((word1 >> L_BLUE_SHIFT) & 0xff) + 31) / 63;
                     composeRGBPixel(rval, gval, bval, lined + jd);
                 }
-            }
-            else {  /* jp == wm */
+            } else {  /* jp == wm */
                 for (i = 0; i < h; i++) {
                     lines = datas + i * wpls;
                     lined = datad + i * wpld;
@@ -961,7 +957,7 @@ PIX       *pixd;
             }
             break;
         default:
-            L_ERROR_INT("invalid depth: %d", procName, d);
+            L_ERROR("invalid depth: %d\n", procName, d);
             pixDestroy(&pixd);
             return NULL;
         }
@@ -1029,7 +1025,7 @@ l_int32    w, h, d;
         return pixCopy(NULL, pixs);
 
     if (operation == L_INTERPOLATED && d == 1) {
-        L_WARNING("no interpolation for 1 bpp; using sampling", procName);
+        L_WARNING("no interpolation for 1 bpp; using sampling\n", procName);
         operation = L_SAMPLED;
     }
 
@@ -1094,8 +1090,7 @@ PIX       *pixd;
         if (dir == L_WARP_TO_LEFT) {
             delrowt = (l_float32)(vmaxt * (wm - j) * (wm - j)) * denom2;
             delrowb = (l_float32)(vmaxb * (wm - j) * (wm - j)) * denom2;
-        }
-        else if (dir == L_WARP_TO_RIGHT) {
+        } else if (dir == L_WARP_TO_RIGHT) {
             delrowt = (l_float32)(vmaxt * j * j) * denom2;
             delrowb = (l_float32)(vmaxb * j * j) * denom2;
         }
@@ -1135,7 +1130,7 @@ PIX       *pixd;
             }
             break;
         default:
-            L_ERROR_INT("invalid depth: %d", procName, d);
+            L_ERROR("invalid depth: %d\n", procName, d);
             pixDestroy(&pixd);
             return NULL;
         }
@@ -1217,8 +1212,7 @@ PIXCMAP   *cmap;
         if (dir == L_WARP_TO_LEFT) {
             delrowt = (l_float32)(vmaxt * (wm - j) * (wm - j)) * denom2;
             delrowb = (l_float32)(vmaxb * (wm - j) * (wm - j)) * denom2;
-        }
-        else if (dir == L_WARP_TO_RIGHT) {
+        } else if (dir == L_WARP_TO_RIGHT) {
             delrowt = (l_float32)(vmaxt * j * j) * denom2;
             delrowb = (l_float32)(vmaxb * j * j) * denom2;
         }
@@ -1233,11 +1227,12 @@ PIXCMAP   *cmap;
                 if (yp < 0 || yp > hm) continue;
                 lines = datas + yp * wpls;
                 lined = datad + id * wpld;
-                if (yp < hm)
+                if (yp < hm) {
                     val = ((63 - yf) * GET_DATA_BYTE(lines, j) +
                            yf * GET_DATA_BYTE(lines + wpls, j) + 31) / 63;
-                else  /* yp == hm */
+                } else {  /* yp == hm */
                     val = GET_DATA_BYTE(lines, j);
+                }
                 SET_DATA_BYTE(lined, j, val);
             }
             break;
@@ -1260,14 +1255,13 @@ PIXCMAP   *cmap;
                     bval = ((63 - yf) * ((word0 >> L_BLUE_SHIFT) & 0xff) +
                            yf * ((word1 >> L_BLUE_SHIFT) & 0xff) + 31) / 63;
                     composeRGBPixel(rval, gval, bval, lined + j);
-                }
-                else {  /* yp == hm */
+                } else {  /* yp == hm */
                     lined[j] = lines[j];
                 }
             }
             break;
         default:
-            L_ERROR_INT("invalid depth: %d", procName, d);
+            L_ERROR("invalid depth: %d\n", procName, d);
             pixDestroy(&pix);
             pixDestroy(&pixd);
             return NULL;
@@ -1339,7 +1333,7 @@ PIX       *pixd;
     }
     sum = rwt + gwt + bwt;
     if (L_ABS(sum - 1.0) > 0.0001) {  /* maintain ratios with sum == 1.0 */
-        L_WARNING("weights don't sum to 1; maintaining ratios", procName);
+        L_WARNING("weights don't sum to 1; maintaining ratios\n", procName);
         rwt = rwt / sum;
         gwt = gwt / sum;
         bwt = bwt / sum;

@@ -108,7 +108,7 @@ l_uint32  *linemina, *linemaxa, *line;
     wmwc = w - wc;
     hmhc = h - hc;
     if (wmwc <= 0 || hmhc <= 0) {
-        L_ERROR("wc >= w || hc >=h", procName);
+        L_ERROR("wc >= w || hc >=h\n", procName);
         return;
     }
     fwc = 2 * wc + 1;
@@ -251,8 +251,7 @@ l_uint32  *lines, *lined, *linedp;
             /* Do the first line */
         for (j = 0; j < w; j++) {
             val = GET_DATA_BIT(lines, j);
-            if (j == 0)
-                lined[0] = val;
+            if (j == 0) lined[0] = val;
             else
                 lined[j] = lined[j - 1] + val;
         }
@@ -270,8 +269,7 @@ l_uint32  *lines, *lined, *linedp;
                     lined[j] = val + lined[j - 1] + linedp[j] - linedp[j - 1];
             }
         }
-    }
-    else if (d == 8) {
+    } else if (d == 8) {
             /* Do the first line */
         for (j = 0; j < w; j++) {
             val = GET_DATA_BYTE(lines, j);
@@ -294,8 +292,7 @@ l_uint32  *lines, *lined, *linedp;
                     lined[j] = val + lined[j - 1] + linedp[j] - linedp[j - 1];
             }
         }
-    }
-    else if (d == 32) {
+    } else if (d == 32) {
             /* Do the first line */
         for (j = 0; j < w; j++) {
             val32 = lines[j];
@@ -318,9 +315,9 @@ l_uint32  *lines, *lined, *linedp;
                     lined[j] = val32 + lined[j - 1] + linedp[j] - linedp[j - 1];
             }
         }
+    } else {
+        L_ERROR("depth not 1, 8 or 32 bpp\n", procName);
     }
-    else
-        L_ERROR("depth not 1, 8 or 32 bpp", procName);
 
     return;
 }
@@ -381,7 +378,7 @@ l_uint32  *linemina, *linemaxa, *lined;
     wmwc = w - wc;
     hmhc = h - hc;
     if (wmwc <= 0 || hmhc <= 0) {
-        L_ERROR("wc >= w || hc >=h", procName);
+        L_ERROR("wc >= w || hc >=h\n", procName);
         return;
     }
     fwc = 2 * wc + 1;

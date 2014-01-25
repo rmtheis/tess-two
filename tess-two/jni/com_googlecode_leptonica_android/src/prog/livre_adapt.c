@@ -34,8 +34,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      d;
 PIX         *pixs, *pixc, *pixr, *pixg, *pixb, *pixsg, *pixsm, *pixd;
@@ -43,12 +43,12 @@ PIXA        *pixa;
 static char  mainName[] = "livre_adapt";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax:  livre_adapt", mainName, 1));
+        return ERROR_INT(" Syntax:  livre_adapt", mainName, 1);
 
         /* Read the image in at 150 ppi. */
     pixDisplayWrite(NULL, -1);
     if ((pixs = pixRead("brothers.150.jpg")) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
+        return ERROR_INT("pix not made", mainName, 1);
     pixDisplayWriteFormat(pixs, 2, IFF_JFIF_JPEG);
 
         /* Normalize for uneven illumination on RGB image */
@@ -92,7 +92,7 @@ static char  mainName[] = "livre_adapt";
     pixDestroy(&pixb);
 
             /* Generate the output image */
-    pixa = pixaReadFiles("/tmp", "junk_write_display");
+    pixa = pixaReadFiles("/tmp/display", "file");
     pixd = pixaDisplayTiledAndScaled(pixa, 8, 350, 4, 0, 25, 2);
     pixWrite("/tmp/adapt.jpg", pixd, IFF_JFIF_JPEG);
     pixDisplayWithTitle(pixd, 100, 100, NULL, 1);

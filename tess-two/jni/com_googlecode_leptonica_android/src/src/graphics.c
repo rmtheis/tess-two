@@ -28,27 +28,30 @@
  *  graphics.c
  *
  *      Pta generation for arbitrary shapes built with lines
- *
  *          PTA        *generatePtaLine()
  *          PTA        *generatePtaWideLine()
  *          PTA        *generatePtaBox()
- *          PTA        *generatePtaHashBox()
  *          PTA        *generatePtaBoxa()
+ *          PTA        *generatePtaHashBox()
+ *          PTA        *generatePtaHashBoxa()
  *          PTAA       *generatePtaaBoxa()
  *          PTAA       *generatePtaaHashBoxa()
  *          PTA        *generatePtaPolyline()
+ *          PTA        *convertPtaLineTo4cc()
  *          PTA        *generatePtaFilledCircle()
+ *          PTA        *generatePtaFilledSquare()
  *          PTA        *generatePtaLineFromPt()
  *          l_int32     locatePtRadially()
  *
- *      Pta rendering
+ *      Pta generation for plotting functions on images
+ *          PTA        *generatePlotPtaFromNuma()
  *
+ *      Pta rendering
  *          l_int32     pixRenderPta()
  *          l_int32     pixRenderPtaArb()
  *          l_int32     pixRenderPtaBlend()
  *
  *      Rendering of arbitrary shapes built with lines
- *
  *          l_int32     pixRenderLine()
  *          l_int32     pixRenderLineArb()
  *          l_int32     pixRenderLineBlend()
@@ -57,13 +60,17 @@
  *          l_int32     pixRenderBoxArb()
  *          l_int32     pixRenderBoxBlend()
  *
+ *          l_int32     pixRenderBoxa()
+ *          l_int32     pixRenderBoxaArb()
+ *          l_int32     pixRenderBoxaBlend()
+ *
  *          l_int32     pixRenderHashBox()
  *          l_int32     pixRenderHashBoxArb()
  *          l_int32     pixRenderHashBoxBlend()
  *
- *          l_int32     pixRenderBoxa()
- *          l_int32     pixRenderBoxaArb()
- *          l_int32     pixRenderBoxaBlend()
+ *          l_int32     pixRenderHashBoxa()
+ *          l_int32     pixRenderHashBoxaArb()
+ *          l_int32     pixRenderHashBoxaBlend()
  *
  *          l_int32     pixRenderPolyline()
  *          l_int32     pixRenderPolylineArb()
@@ -71,8 +78,11 @@
  *
  *          l_int32     pixRenderRandomCmapPtaa()
  *
- *      Contour rendering on grayscale images
+ *      Rendering and filling of polygons
+ *          PIX        *pixRenderPolygon()
+ *          PIX        *pixFillPolygon()
  *
+ *      Contour rendering on grayscale images
  *          PIX        *pixRenderContours()
  *          PIX        *fpixAutoRenderContours()
  *          PIX        *fpixRenderContours()
@@ -98,6 +108,9 @@
  *      Input:  x1, y1  (end point 1)
  *              x2, y2  (end point 2)
  *      Return: pta, or null on error
+ *
+ *  Notes:
+ *      (1) Uses Bresenham line drawing, which results in an 8-connected line.
  */
 PTA  *
 generatePtaLine(l_int32  x1,
@@ -118,8 +131,7 @@ PTA       *pta;
         diff = x2 - x1;
         sign = L_SIGN(x2 - x1);
         slope = (l_float32)(sign * (y2 - y1)) / (l_float32)diff;
-    }
-    else {
+    } else {
         getyofx = FALSE;
         npts = L_ABS(y2 - y1) + 1;
         diff = y2 - y1;
@@ -142,8 +154,7 @@ PTA       *pta;
             y = (l_int32)(y1 + (l_float32)i * slope + 0.5);
             ptaAddPt(pta, x, y);
         }
-    }
-    else {   /* x = x(y) */
+    } else {   /* x = x(y) */
         for (i = 0; i < npts; i++) {
             x = (l_int32)(x1 + (l_float32)i * slope + 0.5);
             y = y1 + sign * i;
@@ -176,7 +187,7 @@ PTA     *pta, *ptaj;
     PROCNAME("generatePtaWideLine");
 
     if (width < 1) {
-        L_WARNING("width < 1; setting to 1", procName);
+        L_WARNING("width < 1; setting to 1\n", procName);
         width = 1;
     }
 
@@ -191,30 +202,27 @@ PTA     *pta, *ptaj;
             if ((i & 1) == 1) {   /* place above */
                 y1a = y1 - (i + 1) / 2;
                 y2a = y2 - (i + 1) / 2;
-            }
-            else {  /* place below */
+            } else {  /* place below */
                 y1a = y1 + (i + 1) / 2;
                 y2a = y2 + (i + 1) / 2;
             }
             if ((pta = generatePtaLine(x1, y1a, x2, y2a)) == NULL)
                 return (PTA *)ERROR_PTR("pta not made", procName, NULL);
-            ptaJoin(ptaj, pta, 0, 0);
+            ptaJoin(ptaj, pta, 0, -1);
             ptaDestroy(&pta);
         }
-    }
-    else  {  /* "vertical" line  */
+    } else  {  /* "vertical" line  */
         for (i = 1; i < width; i++) {
             if ((i & 1) == 1) {   /* place to left */
                 x1a = x1 - (i + 1) / 2;
                 x2a = x2 - (i + 1) / 2;
-            }
-            else {  /* place to right */
+            } else {  /* place to right */
                 x1a = x1 + (i + 1) / 2;
                 x2a = x2 + (i + 1) / 2;
             }
             if ((pta = generatePtaLine(x1a, y1, x2a, y2)) == NULL)
                 return (PTA *)ERROR_PTR("pta not made", procName, NULL);
-            ptaJoin(ptaj, pta, 0, 0);
+            ptaJoin(ptaj, pta, 0, -1);
             ptaDestroy(&pta);
         }
     }
@@ -245,6 +253,10 @@ PTA     *ptad, *pta;
 
     if (!box)
         return (PTA *)ERROR_PTR("box not defined", procName, NULL);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
 
         /* Generate line points and add them to the pta. */
     boxGetGeometry(box, &x, &y, &w, &h);
@@ -254,40 +266,91 @@ PTA     *ptad, *pta;
     if ((width & 1) == 1) {   /* odd width */
         pta = generatePtaWideLine(x - width / 2, y,
                                   x + w - 1 + width / 2, y, width);
-        ptaJoin(ptad, pta, 0, 0);
+        ptaJoin(ptad, pta, 0, -1);
         ptaDestroy(&pta);
         pta = generatePtaWideLine(x + w - 1, y + 1 + width / 2,
                                   x + w - 1, y + h - 2 - width / 2, width);
-        ptaJoin(ptad, pta, 0, 0);
+        ptaJoin(ptad, pta, 0, -1);
         ptaDestroy(&pta);
         pta = generatePtaWideLine(x + w - 1 + width / 2, y + h - 1,
                                   x - width / 2, y + h - 1, width);
-        ptaJoin(ptad, pta, 0, 0);
+        ptaJoin(ptad, pta, 0, -1);
         ptaDestroy(&pta);
         pta = generatePtaWideLine(x, y + h - 2 - width / 2,
                                   x, y + 1 + width / 2, width);
-        ptaJoin(ptad, pta, 0, 0);
+        ptaJoin(ptad, pta, 0, -1);
         ptaDestroy(&pta);
-    }
-    else {   /* even width */
+    } else {   /* even width */
         pta = generatePtaWideLine(x - width / 2, y,
                                   x + w - 2 + width / 2, y, width);
-        ptaJoin(ptad, pta, 0, 0);
+        ptaJoin(ptad, pta, 0, -1);
         ptaDestroy(&pta);
         pta = generatePtaWideLine(x + w - 1, y + 0 + width / 2,
                                   x + w - 1, y + h - 2 - width / 2, width);
-        ptaJoin(ptad, pta, 0, 0);
+        ptaJoin(ptad, pta, 0, -1);
         ptaDestroy(&pta);
         pta = generatePtaWideLine(x + w - 2 + width / 2, y + h - 1,
                                   x - width / 2, y + h - 1, width);
-        ptaJoin(ptad, pta, 0, 0);
+        ptaJoin(ptad, pta, 0, -1);
         ptaDestroy(&pta);
         pta = generatePtaWideLine(x, y + h - 2 - width / 2,
                                   x, y + 0 + width / 2, width);
-        ptaJoin(ptad, pta, 0, 0);
+        ptaJoin(ptad, pta, 0, -1);
         ptaDestroy(&pta);
     }
 
+    return ptad;
+}
+
+
+/*!
+ *  generatePtaBoxa()
+ *
+ *      Input:  boxa
+ *              width
+ *              removedups  (1 to remove, 0 to leave)
+ *      Return: ptad, or null on error
+ *
+ *  Notes:
+ *      (1) If the boxa has overlapping boxes, and if blending will
+ *          be used to give a transparent effect, transparency
+ *          artifacts at line intersections can be removed using
+ *          removedups = 1.
+ */
+PTA  *
+generatePtaBoxa(BOXA    *boxa,
+                l_int32  width,
+                l_int32  removedups)
+{
+l_int32  i, n;
+BOX     *box;
+PTA     *ptad, *ptat, *pta;
+
+    PROCNAME("generatePtaBoxa");
+
+    if (!boxa)
+        return (PTA *)ERROR_PTR("boxa not defined", procName, NULL);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+
+    n = boxaGetCount(boxa);
+    ptat = ptaCreate(0);
+    for (i = 0; i < n; i++) {
+        box = boxaGetBox(boxa, i, L_CLONE);
+        pta = generatePtaBox(box, width);
+        ptaJoin(ptat, pta, 0, -1);
+        ptaDestroy(&pta);
+        boxDestroy(&box);
+    }
+
+    if (removedups)
+        ptad = ptaRemoveDuplicates(ptat, 0);
+    else
+        ptad = ptaClone(ptat);
+
+    ptaDestroy(&ptat);
     return ptad;
 }
 
@@ -329,12 +392,16 @@ PTA     *ptad, *pta;
     boxGetGeometry(box, &bx, &by, &bw, &bh);
     if (bw == 0 || bh == 0)
         return (PTA *)ERROR_PTR("box has bw = 0 or bh = 0", procName, NULL);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
 
         /* Generate line points and add them to the pta. */
     ptad = ptaCreate(0);
     if (outline) {
         pta = generatePtaBox(box, width);
-        ptaJoin(ptad, pta, 0, 0);
+        ptaJoin(ptad, pta, 0, -1);
         ptaDestroy(&pta);
     }
     if (orient == L_HORIZONTAL_LINE) {
@@ -342,39 +409,36 @@ PTA     *ptad, *pta;
         for (i = 0; i < n; i++) {
             y = by + (i * (bh - 1)) / (n - 1);
             pta = generatePtaWideLine(bx, y, bx + bw - 1, y, width);
-            ptaJoin(ptad, pta, 0, 0);
+            ptaJoin(ptad, pta, 0, -1);
             ptaDestroy(&pta);
-	}
-    }
-    else if (orient == L_VERTICAL_LINE) {
+        }
+    } else if (orient == L_VERTICAL_LINE) {
         n = 1 + bw / spacing;
         for (i = 0; i < n; i++) {
             x = bx + (i * (bw - 1)) / (n - 1);
             pta = generatePtaWideLine(x, by, x, by + bh - 1, width);
-            ptaJoin(ptad, pta, 0, 0);
+            ptaJoin(ptad, pta, 0, -1);
             ptaDestroy(&pta);
-	}
-    }
-    else if (orient == L_POS_SLOPE_LINE) {
+        }
+    } else if (orient == L_POS_SLOPE_LINE) {
         n = 2 + (l_int32)((bw + bh) / (1.4 * spacing));
         for (i = 0; i < n; i++) {
             x = (l_int32)(bx + (i + 0.5) * 1.4 * spacing);
             boxIntersectByLine(box, x, by - 1, 1.0, &x1, &y1, &x2, &y2, &npts);
             if (npts == 2) {
                 pta = generatePtaWideLine(x1, y1, x2, y2, width);
-                ptaJoin(ptad, pta, 0, 0);
+                ptaJoin(ptad, pta, 0, -1);
                 ptaDestroy(&pta);
             }
         }
-    }
-    else {  /* orient == L_NEG_SLOPE_LINE */
+    } else {  /* orient == L_NEG_SLOPE_LINE */
         n = 2 + (l_int32)((bw + bh) / (1.4 * spacing));
         for (i = 0; i < n; i++) {
             x = (l_int32)(bx - bh + (i + 0.5) * 1.4 * spacing);
             boxIntersectByLine(box, x, by - 1, -1.0, &x1, &y1, &x2, &y2, &npts);
             if (npts == 2) {
                 pta = generatePtaWideLine(x1, y1, x2, y2, width);
-                ptaJoin(ptad, pta, 0, 0);
+                ptaJoin(ptad, pta, 0, -1);
                 ptaDestroy(&pta);
             }
         }
@@ -385,39 +449,57 @@ PTA     *ptad, *pta;
 
 
 /*!
- *  generatePtaBoxa()
+ *  generatePtaHashBoxa()
  *
  *      Input:  boxa
- *              width
+ *              spacing (spacing between lines; must be > 1)
+ *              width  (of line)
+ *              orient  (orientation of lines: L_HORIZONTAL_LINE, ...)
+ *              outline  (0 to skip drawing box outline)
  *              removedups  (1 to remove, 0 to leave)
  *      Return: ptad, or null on error
  *
  *  Notes:
- *      (1) If the boxa has overlapping boxes, and if blending will
+ *      (1) The orientation takes on one of 4 orientations (horiz, vertical,
+ *          slope +1, slope -1).
+ *      (2) The full outline is also drawn if @outline = 1.
+ *      (3) If the boxa has overlapping boxes, and if blending will
  *          be used to give a transparent effect, transparency
  *          artifacts at line intersections can be removed using
  *          removedups = 1.
  */
 PTA  *
-generatePtaBoxa(BOXA    *boxa,
-                l_int32  width,
-                l_int32  removedups)
+generatePtaHashBoxa(BOXA    *boxa,
+                    l_int32  spacing,
+                    l_int32  width,
+                    l_int32  orient,
+                    l_int32  outline,
+                    l_int32  removedups)
 {
 l_int32  i, n;
 BOX     *box;
 PTA     *ptad, *ptat, *pta;
 
-    PROCNAME("generatePtaBoxa");
+    PROCNAME("generatePtaHashBoxa");
 
     if (!boxa)
         return (PTA *)ERROR_PTR("boxa not defined", procName, NULL);
+    if (spacing <= 1)
+        return (PTA *)ERROR_PTR("spacing not > 1", procName, NULL);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+    if (orient != L_HORIZONTAL_LINE && orient != L_POS_SLOPE_LINE &&
+        orient != L_VERTICAL_LINE && orient != L_NEG_SLOPE_LINE)
+        return (PTA *)ERROR_PTR("invalid line orientation", procName, NULL);
 
     n = boxaGetCount(boxa);
     ptat = ptaCreate(0);
     for (i = 0; i < n; i++) {
         box = boxaGetBox(boxa, i, L_CLONE);
-        pta = generatePtaBox(box, width);
-        ptaJoin(ptat, pta, 0, 0);
+        pta = generatePtaHashBox(box, spacing, width, orient, outline);
+        ptaJoin(ptat, pta, 0, -1);
         ptaDestroy(&pta);
         boxDestroy(&box);
     }
@@ -493,7 +575,7 @@ PTAA    *ptaa;
  *          by using pixRenderRandomCmapPtaa() with closeflag = 1.
  *
  */
-PTAA  *
+PTAA *
 generatePtaaHashBoxa(BOXA    *boxa,
                      l_int32  spacing,
                      l_int32  width,
@@ -511,6 +593,10 @@ PTAA    *ptaa;
         return (PTAA *)ERROR_PTR("boxa not defined", procName, NULL);
     if (spacing <= 1)
         return (PTAA *)ERROR_PTR("spacing not > 1", procName, NULL);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
     if (orient != L_HORIZONTAL_LINE && orient != L_POS_SLOPE_LINE &&
         orient != L_VERTICAL_LINE && orient != L_NEG_SLOPE_LINE)
         return (PTAA *)ERROR_PTR("invalid line orientation", procName, NULL);
@@ -536,14 +622,8 @@ PTAA    *ptaa;
  *              closeflag (1 to close the contour; 0 otherwise)
  *              removedups  (1 to remove, 0 to leave)
  *      Return: ptad, or null on error
- *
- *  Notes:
- *      (1) If the boxa has overlapping boxes, and if blending will
- *          be used to give a transparent effect, transparency
- *          artifacts at line intersections can be removed using
- *          removedups = 1.
  */
-PTA  *
+PTA *
 generatePtaPolyline(PTA     *ptas,
                     l_int32  width,
                     l_int32  closeflag,
@@ -556,6 +636,10 @@ PTA     *ptad, *ptat, *pta;
 
     if (!ptas)
         return (PTA *)ERROR_PTR("ptas not defined", procName, NULL);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
 
     n = ptaGetCount(ptas);
     ptat = ptaCreate(0);
@@ -566,7 +650,7 @@ PTA     *ptad, *ptat, *pta;
     for (i = 1; i < n; i++) {
         ptaGetIPt(ptas, i, &x2, &y2);
         pta = generatePtaWideLine(x1, y1, x2, y2, width);
-        ptaJoin(ptat, pta, 0, 0);
+        ptaJoin(ptat, pta, 0, -1);
         ptaDestroy(&pta);
         x1 = x2;
         y1 = y2;
@@ -575,7 +659,7 @@ PTA     *ptad, *ptat, *pta;
     if (closeflag) {
         ptaGetIPt(ptas, 0, &x2, &y2);
         pta = generatePtaWideLine(x1, y1, x2, y2, width);
-        ptaJoin(ptat, pta, 0, 0);
+        ptaJoin(ptat, pta, 0, -1);
         ptaDestroy(&pta);
     }
 
@@ -585,6 +669,47 @@ PTA     *ptad, *ptat, *pta;
         ptad = ptaClone(ptat);
 
     ptaDestroy(&ptat);
+    return ptad;
+}
+
+
+/*!
+ *  convertPtaLineTo4cc()
+ *
+ *      Input:  ptas (8-connected line of points)
+ *      Return: ptad (4-connected line), or null on error
+ *
+ *  Notes:
+ *      (1) When a polyline is generated with width = 1, the resulting
+ *          line is not 4-connected in general.  This function adds
+ *          points as necessary to convert the line to 4-cconnected.
+ *          It is useful when rendering 1 bpp on a pix.
+ *      (2) Do not use this for lines generated with width > 1.
+ */
+PTA *
+convertPtaLineTo4cc(PTA  *ptas)
+{
+l_int32  i, n, x, y, xp, yp;
+PTA     *ptad;
+
+    PROCNAME("convertPtaLineTo4cc");
+
+    if (!ptas)
+        return (PTA *)ERROR_PTR("ptas not defined", procName, NULL);
+
+    n = ptaGetCount(ptas);
+    ptad = ptaCreate(n);
+    ptaGetIPt(ptas, 0, &xp, &yp);
+    ptaAddPt(ptad, xp, yp);
+    for (i = 1; i < n; i++) {
+        ptaGetIPt(ptas, i, &x, &y);
+        if (x != xp && y != yp)  /* diagonal */
+            ptaAddPt(ptad, x, yp);
+        ptaAddPt(ptad, x, y);
+        xp = x;
+        yp = y;
+    }
+
     return ptad;
 }
 
@@ -602,7 +727,7 @@ PTA     *ptad, *ptat, *pta;
  *      (3) Consequently, it typically must be translated if
  *          it is to represent a set of pixels in an image.
  */
-PTA  *
+PTA *
 generatePtaFilledCircle(l_int32  radius)
 {
 l_int32    x, y;
@@ -624,6 +749,36 @@ PTA       *pta;
                 ptaAddPt(pta, x, y);
         }
     }
+
+    return pta;
+}
+
+
+/*!
+ *  generatePtaFilledSquare()
+ *
+ *      Input:  side
+ *      Return: pta, or null on error
+ *
+ *  Notes:
+ *      (1) The center of the square can be chosen to be at
+ *          (side / 2, side / 2).  It must be translated by this amount
+ *          when used for replication.
+ */
+PTA *
+generatePtaFilledSquare(l_int32  side)
+{
+l_int32  x, y;
+PTA     *pta;
+
+    PROCNAME("generatePtaFilledSquare");
+    if (side < 1)
+        return (PTA *)ERROR_PTR("side must be > 0", procName, NULL);
+
+    pta = ptaCreate(0);
+    for (y = 0; y < side; y++)
+        for (x = 0; x < side; x++)
+            ptaAddPt(pta, x, y);
 
     return pta;
 }
@@ -682,6 +837,119 @@ locatePtRadially(l_int32     xr,
     *px = xr + dist * cos(radang);
     *py = yr + dist * sin(radang);
     return 0;
+}
+
+
+/*------------------------------------------------------------------*
+ *          Pta generation for plotting functions on images         *
+ *------------------------------------------------------------------*/
+/*!
+ *  generatePlotPtaFromNuma()
+ *
+ *      Input:  numa
+ *              orient (L_HORIZONTAL_LINE, L_VERTICAL_LINE)
+ *              width (width of "line" that is drawn; between 1 and 7)
+ *              refpos (reference position: y for horizontal and x for vertical)
+ *              max (maximum excursion in pixels from baseline)
+ *              drawref (1 to draw the reference line and the normal to it)
+ *      Return: ptad, or null on error
+ *
+ *  Notes:
+ *      (1) This generates points from a numa representing y(x) or x(y)
+ *          with respect to a pix.  For y(x), we draw a horizontal line
+ *          at the reference position and a vertical line at the edge; then
+ *          we draw the values of the numa, scaled so that the maximum
+ *          excursion from the reference position is @max pixels.
+ *      (2) The width is chosen in the interval [1 ... 7].
+ *      (3) @refpos should be chosen so the plot is entirely within the pix
+ *          that it will be painted onto.
+ *      (4) This would typically be used to plot, in place, a function
+ *          computed along pixels rows or columns.
+ */
+PTA *
+generatePlotPtaFromNuma(NUMA    *na,
+                        l_int32  orient,
+                        l_int32  width,
+                        l_int32  refpos,
+                        l_int32  max,
+                        l_int32  drawref)
+{
+l_int32    i, n, maxw, maxh;
+l_float32  minval, maxval, absval, val, scale, start, del;
+PTA       *pta1, *pta2, *ptad;
+
+    PROCNAME("generatePlotPtaFromNuma");
+
+    if (!na)
+        return (PTA *)ERROR_PTR("na not defined", procName, NULL);
+    if (orient != L_HORIZONTAL_LINE && orient != L_VERTICAL_LINE)
+        return (PTA *)ERROR_PTR("invalid orient", procName, NULL);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+    if (width > 7) {
+        L_WARNING("width > 7; setting to 7\n", procName);
+        width = 7;
+    }
+
+    numaGetMin(na, &minval, NULL);
+    numaGetMax(na, &maxval, NULL);
+    absval = L_MAX(L_ABS(minval), L_ABS(maxval));
+    scale = (l_float32)max / (l_float32)absval;
+    n = numaGetCount(na);
+    numaGetParameters(na, &start, &del);
+
+        /* Generate the plot points */
+    pta1 = ptaCreate(n);
+    for (i = 0; i < n; i++) {
+        numaGetFValue(na, i, &val);
+        if (orient == L_HORIZONTAL_LINE) {
+            ptaAddPt(pta1, start + i * del, refpos + scale * val);
+            maxw = start + n * del + width;
+            maxh = refpos + max + width;
+        } else {  /* vertical line */
+            ptaAddPt(pta1, refpos + scale * val, start + i * del);
+            maxw = refpos + max + width;
+            maxh = start + n * del + width;
+        }
+    }
+
+        /* Optionally, widen the plot */
+    if (width > 1) {
+        if (width % 2 == 0)  /* even width; use side of a square */
+            pta2 = generatePtaFilledSquare(width);
+        else  /* odd width; use radius of a circle */
+            pta2 = generatePtaFilledCircle(width / 2);
+        ptad = ptaReplicatePattern(pta1, NULL, pta2, width / 2, width / 2,
+                                   maxw, maxh);
+        ptaDestroy(&pta2);
+    } else {
+        ptad = ptaClone(pta1);
+    }
+    ptaDestroy(&pta1);
+
+        /* Optionally, add the reference lines */
+    if (drawref) {
+        if (orient == L_HORIZONTAL_LINE) {
+            pta1 = generatePtaLine(start, refpos, start + n * del, refpos);
+            ptaJoin(ptad, pta1, 0, -1);
+            ptaDestroy(&pta1);
+            pta1 = generatePtaLine(start, refpos - max,
+                                   start, refpos + max);
+            ptaJoin(ptad, pta1, 0, -1);
+        } else {  /* vertical line */
+            pta1 = generatePtaLine(refpos, start, refpos, start + n * del);
+            ptaJoin(ptad, pta1, 0, -1);
+            ptaDestroy(&pta1);
+            pta1 = generatePtaLine(refpos - max, start,
+                                   refpos + max, start);
+            ptaJoin(ptad, pta1, 0, -1);
+        }
+        ptaDestroy(&pta1);
+    }
+
+    return ptad;
 }
 
 
@@ -781,7 +1049,8 @@ l_int32  i, n, x, y, w, h, d, maxval;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) If pix is colormapped, render this color on each pixel.
+ *      (1) If pix is colormapped, render this color (or the nearest
+ *          color if the cmap is full) on each pixel.
  *      (2) If pix is not colormapped, do the best job you can using
  *          the input colors:
  *          - d = 1: set the pixels
@@ -819,10 +1088,8 @@ PIXCMAP  *cmap;
     cmap = pixGetColormap(pix);
     pixGetDimensions(pix, &w, &h, &d);
     if (cmap) {
-        if (pixcmapAddNewColor(cmap, rval, gval, bval, &index))
-            return ERROR_INT("colormap is full", procName, 1);
-    }
-    else {
+        pixcmapAddNearestColor(cmap, rval, gval, bval, &index);
+    } else {
         if (d == 2)
             val = (rval + gval + bval) / (3 * 64);
         else if (d == 4)
@@ -885,7 +1152,7 @@ l_float32  frval, fgval, fbval;
     if (pixGetDepth(pix) != 32)
         return ERROR_INT("depth not 32 bpp", procName, 1);
     if (fract < 0.0 || fract > 1.0) {
-        L_WARNING("fract must be in [0.0, 1.0]; setting to 0.5", procName);
+        L_WARNING("fract must be in [0.0, 1.0]; setting to 0.5\n", procName);
         fract = 0.5;
     }
 
@@ -944,7 +1211,7 @@ PTA  *pta;
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
     if (width < 1) {
-        L_WARNING("width must be > 0; setting to 1", procName);
+        L_WARNING("width must be > 0; setting to 1\n", procName);
         width = 1;
     }
     if (op != L_SET_PIXELS && op != L_CLEAR_PIXELS && op != L_FLIP_PIXELS)
@@ -986,7 +1253,7 @@ PTA  *pta;
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
     if (width < 1) {
-        L_WARNING("width must be > 0; setting to 1", procName);
+        L_WARNING("width must be > 0; setting to 1\n", procName);
         width = 1;
     }
 
@@ -1028,7 +1295,7 @@ PTA  *pta;
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
     if (width < 1) {
-        L_WARNING("width must be > 0; setting to 1", procName);
+        L_WARNING("width must be > 0; setting to 1\n", procName);
         width = 1;
     }
 
@@ -1063,6 +1330,10 @@ PTA  *pta;
         return ERROR_INT("pix not defined", procName, 1);
     if (!box)
         return ERROR_INT("box not defined", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
     if (op != L_SET_PIXELS && op != L_CLEAR_PIXELS && op != L_FLIP_PIXELS)
         return ERROR_INT("invalid op", procName, 1);
 
@@ -1099,6 +1370,10 @@ PTA  *pta;
         return ERROR_INT("pix not defined", procName, 1);
     if (!box)
         return ERROR_INT("box not defined", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
 
     if ((pta = generatePtaBox(box, width)) == NULL)
         return ERROR_INT("pta not made", procName, 1);
@@ -1136,8 +1411,131 @@ PTA  *pta;
         return ERROR_INT("pix not defined", procName, 1);
     if (!box)
         return ERROR_INT("box not defined", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
 
     if ((pta = generatePtaBox(box, width)) == NULL)
+        return ERROR_INT("pta not made", procName, 1);
+    pixRenderPtaBlend(pix, pta, rval, gval, bval, fract);
+    ptaDestroy(&pta);
+    return 0;
+}
+
+
+/*!
+ *  pixRenderBoxa()
+ *
+ *      Input:  pix
+ *              boxa
+ *              width  (thickness of line)
+ *              op  (one of L_SET_PIXELS, L_CLEAR_PIXELS, L_FLIP_PIXELS)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+pixRenderBoxa(PIX     *pix,
+              BOXA    *boxa,
+              l_int32  width,
+              l_int32  op)
+{
+PTA  *pta;
+
+    PROCNAME("pixRenderBoxa");
+
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+    if (!boxa)
+        return ERROR_INT("boxa not defined", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+    if (op != L_SET_PIXELS && op != L_CLEAR_PIXELS && op != L_FLIP_PIXELS)
+        return ERROR_INT("invalid op", procName, 1);
+
+    if ((pta = generatePtaBoxa(boxa, width, 0)) == NULL)
+        return ERROR_INT("pta not made", procName, 1);
+    pixRenderPta(pix, pta, op);
+    ptaDestroy(&pta);
+    return 0;
+}
+
+
+/*!
+ *  pixRenderBoxaArb()
+ *
+ *      Input:  pix
+ *              boxa
+ *              width  (thickness of line)
+ *              rval, gval, bval
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+pixRenderBoxaArb(PIX     *pix,
+                 BOXA    *boxa,
+                 l_int32  width,
+                 l_uint8  rval,
+                 l_uint8  gval,
+                 l_uint8  bval)
+{
+PTA  *pta;
+
+    PROCNAME("pixRenderBoxaArb");
+
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+    if (!boxa)
+        return ERROR_INT("boxa not defined", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+
+    if ((pta = generatePtaBoxa(boxa, width, 0)) == NULL)
+        return ERROR_INT("pta not made", procName, 1);
+    pixRenderPtaArb(pix, pta, rval, gval, bval);
+    ptaDestroy(&pta);
+    return 0;
+}
+
+
+/*!
+ *  pixRenderBoxaBlend()
+ *
+ *      Input:  pix
+ *              boxa
+ *              width  (thickness of line)
+ *              rval, gval, bval
+ *              fract (in [0.0 - 1.0]; complete transparency (no effect)
+ *                     if 0.0; no transparency if 1.0)
+ *              removedups  (1 to remove; 0 otherwise)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+pixRenderBoxaBlend(PIX       *pix,
+                   BOXA      *boxa,
+                   l_int32    width,
+                   l_uint8    rval,
+                   l_uint8    gval,
+                   l_uint8    bval,
+                   l_float32  fract,
+                   l_int32    removedups)
+{
+PTA  *pta;
+
+    PROCNAME("pixRenderBoxaBlend");
+
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+    if (!boxa)
+        return ERROR_INT("boxa not defined", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+
+    if ((pta = generatePtaBoxa(boxa, width, removedups)) == NULL)
         return ERROR_INT("pta not made", procName, 1);
     pixRenderPtaBlend(pix, pta, rval, gval, bval, fract);
     ptaDestroy(&pta);
@@ -1176,6 +1574,10 @@ PTA  *pta;
         return ERROR_INT("box not defined", procName, 1);
     if (spacing <= 1)
         return ERROR_INT("spacing not > 1", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
     if (orient != L_HORIZONTAL_LINE && orient != L_POS_SLOPE_LINE &&
         orient != L_VERTICAL_LINE && orient != L_NEG_SLOPE_LINE)
         return ERROR_INT("invalid line orientation", procName, 1);
@@ -1224,6 +1626,10 @@ PTA  *pta;
         return ERROR_INT("box not defined", procName, 1);
     if (spacing <= 1)
         return ERROR_INT("spacing not > 1", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
     if (orient != L_HORIZONTAL_LINE && orient != L_POS_SLOPE_LINE &&
         orient != L_VERTICAL_LINE && orient != L_NEG_SLOPE_LINE)
         return ERROR_INT("invalid line orientation", procName, 1);
@@ -1273,6 +1679,10 @@ PTA  *pta;
         return ERROR_INT("box not defined", procName, 1);
     if (spacing <= 1)
         return ERROR_INT("spacing not > 1", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
     if (orient != L_HORIZONTAL_LINE && orient != L_POS_SLOPE_LINE &&
         orient != L_VERTICAL_LINE && orient != L_NEG_SLOPE_LINE)
         return ERROR_INT("invalid line orientation", procName, 1);
@@ -1287,32 +1697,48 @@ PTA  *pta;
 
 
 /*!
- *  pixRenderBoxa()
+ *  pixRenderHashBoxa()
  *
  *      Input:  pix
  *              boxa
- *              width  (thickness of line)
+ *              spacing (spacing between lines; must be > 1)
+ *              width  (thickness of box and hash lines)
+ *              orient  (orientation of lines: L_HORIZONTAL_LINE, ...)
+ *              outline  (0 to skip drawing box outline)
  *              op  (one of L_SET_PIXELS, L_CLEAR_PIXELS, L_FLIP_PIXELS)
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-pixRenderBoxa(PIX     *pix,
-              BOXA    *boxa,
-              l_int32  width,
-              l_int32  op)
-{
+pixRenderHashBoxa(PIX     *pix,
+                  BOXA    *boxa,
+                  l_int32  spacing,
+                  l_int32  width,
+                  l_int32  orient,
+                  l_int32  outline,
+                  l_int32  op)
+ {
 PTA  *pta;
 
-    PROCNAME("pixRenderBoxa");
+    PROCNAME("pixRenderHashBoxa");
 
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
     if (!boxa)
         return ERROR_INT("boxa not defined", procName, 1);
+    if (spacing <= 1)
+        return ERROR_INT("spacing not > 1", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+    if (orient != L_HORIZONTAL_LINE && orient != L_POS_SLOPE_LINE &&
+        orient != L_VERTICAL_LINE && orient != L_NEG_SLOPE_LINE)
+        return ERROR_INT("invalid line orientation", procName, 1);
     if (op != L_SET_PIXELS && op != L_CLEAR_PIXELS && op != L_FLIP_PIXELS)
         return ERROR_INT("invalid op", procName, 1);
 
-    if ((pta = generatePtaBoxa(boxa, width, 0)) == NULL)
+    pta = generatePtaHashBoxa(boxa, spacing, width, orient, outline, 1);
+    if (!pta)
         return ERROR_INT("pta not made", procName, 1);
     pixRenderPta(pix, pta, op);
     ptaDestroy(&pta);
@@ -1321,32 +1747,48 @@ PTA  *pta;
 
 
 /*!
- *  pixRenderBoxaArb()
+ *  pixRenderHashBoxaArb()
  *
  *      Input:  pix
  *              boxa
- *              width  (thickness of line)
+ *              spacing (spacing between lines; must be > 1)
+ *              width  (thickness of box and hash lines)
+ *              orient  (orientation of lines: L_HORIZONTAL_LINE, ...)
+ *              outline  (0 to skip drawing box outline)
  *              rval, gval, bval
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-pixRenderBoxaArb(PIX     *pix,
-                 BOXA    *boxa,
-                 l_int32  width,
-                 l_uint8  rval,
-                 l_uint8  gval,
-                 l_uint8  bval)
+pixRenderHashBoxaArb(PIX     *pix,
+                     BOXA    *boxa,
+                     l_int32  spacing,
+                     l_int32  width,
+                     l_int32  orient,
+                     l_int32  outline,
+                     l_int32  rval,
+                     l_int32  gval,
+                     l_int32  bval)
 {
 PTA  *pta;
 
-    PROCNAME("pixRenderBoxaArb");
+    PROCNAME("pixRenderHashBoxArb");
 
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
     if (!boxa)
         return ERROR_INT("boxa not defined", procName, 1);
+    if (spacing <= 1)
+        return ERROR_INT("spacing not > 1", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+    if (orient != L_HORIZONTAL_LINE && orient != L_POS_SLOPE_LINE &&
+        orient != L_VERTICAL_LINE && orient != L_NEG_SLOPE_LINE)
+        return ERROR_INT("invalid line orientation", procName, 1);
 
-    if ((pta = generatePtaBoxa(boxa, width, 0)) == NULL)
+    pta = generatePtaHashBoxa(boxa, spacing, width, orient, outline, 1);
+    if (!pta)
         return ERROR_INT("pta not made", procName, 1);
     pixRenderPtaArb(pix, pta, rval, gval, bval);
     ptaDestroy(&pta);
@@ -1355,37 +1797,51 @@ PTA  *pta;
 
 
 /*!
- *  pixRenderBoxaBlend()
+ *  pixRenderHashBoxaBlend()
  *
  *      Input:  pix
  *              boxa
- *              width  (thickness of line)
+ *              spacing (spacing between lines; must be > 1)
+ *              width  (thickness of box and hash lines)
+ *              orient  (orientation of lines: L_HORIZONTAL_LINE, ...)
+ *              outline  (0 to skip drawing box outline)
  *              rval, gval, bval
  *              fract (in [0.0 - 1.0]; complete transparency (no effect)
  *                     if 0.0; no transparency if 1.0)
- *              removedups  (1 to remove; 0 otherwise)
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-pixRenderBoxaBlend(PIX       *pix,
-                   BOXA      *boxa,
-                   l_int32    width,
-                   l_uint8    rval,
-                   l_uint8    gval,
-                   l_uint8    bval,
-                   l_float32  fract,
-                   l_int32    removedups)
+pixRenderHashBoxaBlend(PIX       *pix,
+                       BOXA      *boxa,
+                       l_int32    spacing,
+                       l_int32    width,
+                       l_int32    orient,
+                       l_int32    outline,
+                       l_int32    rval,
+                       l_int32    gval,
+                       l_int32    bval,
+                       l_float32  fract)
 {
 PTA  *pta;
 
-    PROCNAME("pixRenderBoxaBlend");
+    PROCNAME("pixRenderHashBoxaBlend");
 
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
     if (!boxa)
         return ERROR_INT("boxa not defined", procName, 1);
+    if (spacing <= 1)
+        return ERROR_INT("spacing not > 1", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+    if (orient != L_HORIZONTAL_LINE && orient != L_POS_SLOPE_LINE &&
+        orient != L_VERTICAL_LINE && orient != L_NEG_SLOPE_LINE)
+        return ERROR_INT("invalid line orientation", procName, 1);
 
-    if ((pta = generatePtaBoxa(boxa, width, removedups)) == NULL)
+    pta = generatePtaHashBoxa(boxa, spacing, width, orient, outline, 1);
+    if (!pta)
         return ERROR_INT("pta not made", procName, 1);
     pixRenderPtaBlend(pix, pta, rval, gval, bval, fract);
     ptaDestroy(&pta);
@@ -1420,6 +1876,10 @@ PTA  *pta;
         return ERROR_INT("pix not defined", procName, 1);
     if (!ptas)
         return ERROR_INT("ptas not defined", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
     if (op != L_SET_PIXELS && op != L_CLEAR_PIXELS && op != L_FLIP_PIXELS)
         return ERROR_INT("invalid op", procName, 1);
 
@@ -1460,6 +1920,10 @@ PTA  *pta;
         return ERROR_INT("pix not defined", procName, 1);
     if (!ptas)
         return ERROR_INT("ptas not defined", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
 
     if ((pta = generatePtaPolyline(ptas, width, closeflag, 0)) == NULL)
         return ERROR_INT("pta not made", procName, 1);
@@ -1501,6 +1965,10 @@ PTA  *pta;
         return ERROR_INT("pix not defined", procName, 1);
     if (!ptas)
         return ERROR_INT("ptas not defined", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
 
     if ((pta = generatePtaPolyline(ptas, width, closeflag, removedups)) == NULL)
         return ERROR_INT("pta not made", procName, 1);
@@ -1554,6 +2022,10 @@ PIX      *pixd;
         return (PIX *)ERROR_PTR("pix not defined", procName, NULL);
     if (!ptaa)
         return (PIX *)ERROR_PTR("ptaa not defined", procName, NULL);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
 
     pixd = pixConvertTo8(pix, FALSE);
     cmap = pixcmapCreateRandom(8, 1, 1);
@@ -1575,6 +2047,139 @@ PIX      *pixd;
         ptaDestroy(&ptat);
     }
 
+    return pixd;
+}
+
+
+
+/*------------------------------------------------------------------*
+ *                Rendering and filling of polygons                 *
+ *------------------------------------------------------------------*/
+/*!
+ *  pixRenderPolygon()
+ *
+ *      Input:  ptas (of vertices, none repeated)
+ *              width (of polygon outline)
+ *              &xmin (<optional return> min x value of input pts)
+ *              &ymin (<optional return> min y value of input pts)
+ *      Return: pix (1 bpp, with outline generated), or null on error
+ *
+ *  Notes:
+ *      (1) The pix is the minimum size required to contain the origin
+ *          and the polygon.  For example, the max x value of the input
+ *          points is w - 1, where w is the pix width.
+ *      (2) The rendered line is 4-connected, so that an interior or
+ *          exterior 8-c.c. flood fill operation works properly.
+ */
+PIX *
+pixRenderPolygon(PTA      *ptas,
+                 l_int32   width,
+                 l_int32  *pxmin,
+                 l_int32  *pymin)
+{
+l_float32  fxmin, fxmax, fymin, fymax;
+PIX       *pixd;
+PTA       *pta1, *pta2;
+
+    PROCNAME("pixRenderPolygon");
+
+    if (pxmin) *pxmin = 0;
+    if (pymin) *pymin = 0;
+    if (!ptas)
+        return (PIX *)ERROR_PTR("ptas not defined", procName, NULL);
+
+        /* Generate a 4-connected polygon line */
+    if ((pta1 = generatePtaPolyline(ptas, width, 1, 0)) == NULL)
+        return (PIX *)ERROR_PTR("pta1 not made", procName, NULL);
+    if (width < 2)
+        pta2 = convertPtaLineTo4cc(pta1);
+    else
+        pta2 = ptaClone(pta1);
+
+        /* Render onto a minimum-sized pix */
+    ptaGetRange(pta2, &fxmin, &fxmax, &fymin, &fymax);
+    if (pxmin) *pxmin = (l_int32)(fxmin + 0.5);
+    if (pymin) *pymin = (l_int32)(fymin + 0.5);
+    pixd = pixCreate((l_int32)(fxmax + 0.5) + 1, (l_int32)(fymax + 0.5) + 1, 1);
+    pixRenderPolyline(pixd, pta2, width, L_SET_PIXELS, 1);
+    ptaDestroy(&pta1);
+    ptaDestroy(&pta2);
+    return pixd;
+}
+
+
+/*!
+ *  pixFillPolygon()
+ *
+ *      Input:  pixs (1 bpp, with 4-connected polygon outline)
+ *              pta (vertices of the polygon)
+ *              xmin, ymin (min values of vertices of polygon)
+ *      Return: pixd (with outline filled), or null on error
+ *
+ *  Notes:
+ *      (1) This fills the interior of the polygon, returning a
+ *          new pix.  It works for both convex and non-convex polygons.
+ *      (2) To generate a filled polygon from a pta:
+ *            PIX *pixt = pixRenderPolygon(pta, 1, &xmin, &ymin);
+ *            PIX *pixd = pixFillPolygon(pixt, pta, xmin, ymin);
+ *            pixDestroy(&pixt);
+ */
+PIX *
+pixFillPolygon(PIX     *pixs,
+               PTA     *pta,
+               l_int32  xmin,
+               l_int32  ymin)
+{
+l_int32   w, h, i, n, inside, found;
+l_int32  *xstart, *xend;
+PIX      *pixi, *pixd;
+
+    PROCNAME("pixFillPolygon");
+
+    if (!pixs || (pixGetDepth(pixs) != 1))
+        return (PIX *)ERROR_PTR("pixs undefined or not 1 bpp", procName, NULL);
+    if (!pta)
+        return (PIX *)ERROR_PTR("pta not defined", procName, NULL);
+
+    pixGetDimensions(pixs, &w, &h, NULL);
+    xstart = (l_int32 *)CALLOC(w / 2, sizeof(l_int32));
+    xend = (l_int32 *)CALLOC(w / 2, sizeof(l_int32));
+
+        /* Find a raster with 2 or more black runs.  The first background
+         * pixel after the end of the first run is likely to be inside
+         * the polygon, and can be used as a seed pixel. */
+    found = FALSE;
+    for (i = ymin + 1; i < h; i++) {
+        pixFindHorizontalRuns(pixs, i, xstart, xend, &n);
+        if (n > 1) {
+            ptaPtInsidePolygon(pta, xend[0] + 1, i, &inside);
+            if (inside) {
+                found = TRUE;
+                break;
+            }
+        }
+    }
+    if (!found) {
+        L_WARNING("nothing found to fill\n", procName);
+        FREE(xstart);
+        FREE(xend);
+        return 0;
+    }
+
+        /* Place the seed pixel in the output image */
+    pixd = pixCreateTemplate(pixs);
+    pixSetPixel(pixd, xend[0] + 1, i, 1);
+
+        /* Invert pixs to make a filling mask, and fill from the seed */
+    pixi = pixInvert(NULL, pixs);
+    pixSeedfillBinary(pixd, pixd, pixi, 4);
+
+        /* Add the pixels of the original polygon outline */
+    pixOr(pixd, pixd, pixs);
+
+    pixDestroy(&pixi);
+    FREE(xstart);
+    FREE(xend);
     return pixd;
 }
 
@@ -1616,7 +2221,7 @@ PIX       *pixd;
     if (d != 8 && d != 16)
         return (PIX *)ERROR_PTR("pixs not 8 or 16 bpp", procName, NULL);
     if (outdepth != 1 && outdepth != d) {
-        L_WARNING("invalid outdepth; setting to 1", procName);
+        L_WARNING("invalid outdepth; setting to 1\n", procName);
         outdepth = 1;
     }
     maxval = (1 << d) - 1;
@@ -1653,8 +2258,7 @@ PIX       *pixd;
                         SET_DATA_BIT(lined, j);
                 }
             }
-        }
-        else {  /* outdepth == d */
+        } else {  /* outdepth == d */
             for (i = 0; i < h; i++) {
                 lines = datas + i * wpls;
                 lined = datad + i * wpld;
@@ -1684,8 +2288,7 @@ PIX       *pixd;
                         SET_DATA_BIT(lined, j);
                 }
             }
-        }
-        else {  /* outdepth == d */
+        } else {  /* outdepth == d */
             for (i = 0; i < h; i++) {
                 lines = datas + i * wpls;
                 lined = datad + i * wpld;
@@ -1712,23 +2315,21 @@ PIX       *pixd;
 /*!
  *  fpixAutoRenderContours()
  *
- *      Input:  pixs (8 or 16 bpp; no colormap)
+ *      Input:  fpix
  *              ncontours (> 1, < 500, typ. about 50)
  *      Return: pixd (8 bpp), or null on error
  *
  *  Notes:
  *      (1) The increment is set to get approximately @ncontours.
  *      (2) The proximity to the target value for contour display
- *          is set at 0.1 * increment.
- *      (3) Negative contours are rendered in red; 0 or positive
- *          contours are rendered in black.
+ *          is set to 0.15.
+ *      (3) Negative values are rendered in red; positive values as black.
  */
 PIX *
 fpixAutoRenderContours(FPIX    *fpix,
                        l_int32  ncontours)
 {
 l_float32  minval, maxval, incr;
-PIX       *pixd;
 
     PROCNAME("fpixAutoRenderContours");
 
@@ -1742,7 +2343,7 @@ PIX       *pixd;
     if (minval == maxval)
         return (PIX *)ERROR_PTR("all values in fpix are equal", procName, NULL);
     incr = (maxval - minval) / ((l_float32)ncontours - 1);
-    pixd = fpixRenderContours(fpix, incr, 0.1 * incr);
+    return fpixRenderContours(fpix, incr, 0.15);
 }
 
 
@@ -1751,13 +2352,14 @@ PIX       *pixd;
  *
  *      Input:  fpixs
  *              incr  (increment between contours; must be > 0.0)
- *              proxim (required proximity to target value; typ. 0.1 * incr)
+ *              proxim (required proximity to target value; default 0.15)
  *      Return: pixd (8 bpp), or null on error
  *
  *  Notes:
- *      (1) Values are displayed when val/incr is close to an integer.
- *      (2) Negative contours are rendered in red; 0 or positive
- *          contours are rendered in black.
+ *      (1) Values are displayed when val/incr is within +-proxim
+ *          to an integer.  The default value is 0.15; smaller values
+ *          result in thinner contour lines.
+ *      (2) Negative values are rendered in red; positive values as black.
  */
 PIX *
 fpixRenderContours(FPIX      *fpixs,
@@ -1765,7 +2367,7 @@ fpixRenderContours(FPIX      *fpixs,
                    l_float32  proxim)
 {
 l_int32     i, j, w, h, wpls, wpld;
-l_float32   val, invincr, finter, diff;
+l_float32   val, invincr, finter, above, below, diff;
 l_uint32   *datad, *lined;
 l_float32  *datas, *lines;
 PIX        *pixd;
@@ -1777,6 +2379,8 @@ PIXCMAP    *cmap;
         return (PIX *)ERROR_PTR("fpixs not defined", procName, NULL);
     if (incr <= 0.0)
         return (PIX *)ERROR_PTR("incr <= 0.0", procName, NULL);
+    if (proxim <= 0.0)
+        proxim = 0.15;  /* default */
 
     fpixGetDimensions(fpixs, &w, &h);
     if ((pixd = pixCreate(w, h, 8)) == NULL)
@@ -1798,7 +2402,9 @@ PIXCMAP    *cmap;
         for (j = 0; j < w; j++) {
             val = lines[j];
             finter = invincr * val;
-            diff = finter - floorf(finter);
+            above = finter - floorf(finter);
+            below = ceilf(finter) - finter;
+            diff = L_MIN(above, below);
             if (diff <= proxim) {
                 if (val < 0.0)
                     SET_DATA_BYTE(lined, j, 2);

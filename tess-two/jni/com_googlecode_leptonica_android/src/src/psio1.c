@@ -159,11 +159,11 @@ SARRAY  *sa;
     if (!fileout)
         return ERROR_INT("fileout not defined", procName, 1);
     if (res <= 0) {
-        L_INFO("setting res to 300 ppi", procName);
+        L_INFO("setting res to 300 ppi\n", procName);
         res = 300;
     }
     if (res < 10 || res > 4000)
-        L_WARNING("res is typically in the range 300-600 ppi", procName);
+        L_WARNING("res is typically in the range 300-600 ppi\n", procName);
 
         /* Get all filtered and sorted full pathnames. */
     sa = getSortedPathnamesInDirectory(dirin, substr, 0, 0);
@@ -203,11 +203,11 @@ l_int32  i, nfiles, index, firstfile, ret, format;
     if (!fileout)
         return ERROR_INT("fileout not defined", procName, 1);
     if (res <= 0) {
-        L_INFO("setting res to 300 ppi", procName);
+        L_INFO("setting res to 300 ppi\n", procName);
         res = 300;
     }
     if (res < 10 || res > 4000)
-        L_WARNING("res is typically in the range 300-600 ppi", procName);
+        L_WARNING("res is typically in the range 300-600 ppi\n", procName);
 
     nfiles = sarrayGetCount(sa);
     firstfile = TRUE;
@@ -269,15 +269,15 @@ SARRAY  *sa;
     if (!fileout)
         return ERROR_INT("fileout not defined", procName, 1);
     if (xpts <= 0.0) {
-        L_INFO("setting xpts to 612.0 ppi", procName);
+        L_INFO("setting xpts to 612.0 ppi\n", procName);
         xpts = 612.0;
     }
     if (ypts <= 0.0) {
-        L_INFO("setting ypts to 792.0 ppi", procName);
+        L_INFO("setting ypts to 792.0 ppi\n", procName);
         ypts = 792.0;
     }
     if (xpts < 100.0 || xpts > 2000.0 || ypts < 100.0 || ypts > 2000.0)
-        L_WARNING("xpts,ypts are typically in the range 500-800", procName);
+        L_WARNING("xpts,ypts are typically in the range 500-800\n", procName);
 
         /* Get all filtered and sorted full pathnames. */
     sa = getSortedPathnamesInDirectory(dirin, substr, 0, 0);
@@ -318,15 +318,15 @@ l_int32  ret, i, w, h, nfiles, index, firstfile, format, res;
     if (!fileout)
         return ERROR_INT("fileout not defined", procName, 1);
     if (xpts <= 0.0) {
-        L_INFO("setting xpts to 612.0", procName);
+        L_INFO("setting xpts to 612.0\n", procName);
         xpts = 612.0;
     }
     if (ypts <= 0.0) {
-        L_INFO("setting ypts to 792.0", procName);
+        L_INFO("setting ypts to 792.0\n", procName);
         ypts = 792.0;
     }
     if (xpts < 100.0 || xpts > 2000.0 || ypts < 100.0 || ypts > 2000.0)
-        L_WARNING("xpts,ypts are typically in the range 500-800", procName);
+        L_WARNING("xpts,ypts are typically in the range 500-800\n", procName);
 
     nfiles = sarrayGetCount(sa);
     firstfile = TRUE;
@@ -388,7 +388,7 @@ l_int32      format, retval;
 
     findFileFormat(filein, &format);
     if (format == IFF_UNKNOWN) {
-        L_ERROR_STRING("format of %s not known", procName, filein);
+        L_ERROR("format of %s not known\n", procName, filein);
         return 1;
     }
 
@@ -400,16 +400,14 @@ l_int32      format, retval;
             *pfirstfile = FALSE;
             (*pindex)++;
         }
-    }
-    else if (format == IFF_TIFF_G4) {
+    } else if (format == IFF_TIFF_G4) {
         retval = convertG4ToPS(filein, fileout, op, 0, 0,
                                res, 1.0, *pindex + 1, FALSE, TRUE);
         if (retval == 0) {
             *pfirstfile = FALSE;
             (*pindex)++;
         }
-    }
-    else {  /* all other image formats */
+    } else {  /* all other image formats */
         retval = convertFlateToPS(filein, fileout, op, 0, 0,
                                   res, 1.0, *pindex + 1, TRUE);
         if (retval == 0) {
@@ -502,7 +500,7 @@ SARRAY  *sapage, *samask;
     if (!fileout)
         return ERROR_INT("fileout not defined", procName, 1);
     if (threshold <= 0) {
-        L_INFO("setting threshold to 190", procName);
+        L_INFO("setting threshold to 190\n", procName);
         threshold = 190;
     }
 
@@ -604,9 +602,9 @@ PIX       *pixmi, *pixmis, *pixt, *pixg, *pixsc, *pixb, *pixc;
     scaleratio = 1.0;
     if (pixm) {
         pixZero(pixm, &alltext);  /* pixm empty: all text */
-        if (alltext)
+        if (alltext) {
             pixm = NULL;  /* treat it as not existing here */
-        else {
+        } else {
             pixmi = pixInvert(NULL, pixm);
             pixZero(pixmi, &notext);  /* pixm full; no text */
             pixDestroy(&pixmi);
@@ -617,8 +615,7 @@ PIX       *pixmi, *pixmis, *pixt, *pixg, *pixsc, *pixb, *pixc;
     if (pixGetDepth(pixs) == 1) {  /* render tiff g4 */
         pixb = pixClone(pixs);
         pixc = NULL;
-    }
-    else {
+    } else {
         pixt = pixConvertTo8Or32(pixs, 0, 0);  /* this can be a clone of pixs */
 
             /* Get the binary text mask.  Note that pixg cannot be a
@@ -668,9 +665,9 @@ PIX       *pixmi, *pixmis, *pixt, *pixg, *pixsc, *pixb, *pixc;
                 pixSetMasked(pixc, pixmi, val);  /* clear non-image part */
                 pixDestroy(&pixmis);
                 pixDestroy(&pixmi);
-            }
-            else
+            } else {
                 pixc = pixClone(pixsc);
+            }
             pixDestroy(&pixsc);
         }
         pixDestroy(&pixt);
@@ -741,9 +738,9 @@ l_int32      resb, resc, endpage, maskop, ret;
         return ERROR_INT("fileout not defined", procName, 1);
 
         /* Compute the resolution that fills a letter-size page. */
-    if (!pixc)
+    if (!pixc) {
        resb = getResLetterPage(pixGetWidth(pixb), pixGetHeight(pixb), 0);
-    else {
+    } else {
        resc = getResLetterPage(pixGetWidth(pixc), pixGetHeight(pixc), 0);
        if (pixb)
            resb = (l_int32)(scale * resc);
@@ -818,7 +815,7 @@ PIX        *pix, *pixs;
     if (!fileout)
         return ERROR_INT("fileout not defined", procName, 1);
     if (level != 1 && level != 2 && level != 3) {
-        L_ERROR("invalid level specified; using level 2", procName);
+        L_ERROR("invalid level specified; using level 2\n", procName);
         level = 2;
     }
 
@@ -832,13 +829,11 @@ PIX        *pix, *pixs;
     if (format == IFF_JFIF_JPEG) {
         convertJpegToPSEmbed(filein, fileout);
         return 0;
-    }
-    else if (format == IFF_TIFF_G4) {
+    } else if (format == IFF_TIFF_G4) {
         convertG4ToPSEmbed(filein, fileout);
         return 0;
-    }
-    else if (format == IFF_UNKNOWN) {
-        L_ERROR_STRING("format of %s not known", procName, filein);
+    } else if (format == IFF_UNKNOWN) {
+        L_ERROR("format of %s not known\n", procName, filein);
         return 1;
     }
 
@@ -863,8 +858,7 @@ PIX        *pix, *pixs;
     if (d == 1) {
         pixWrite(nametif, pix, IFF_TIFF_G4);
         convertG4ToPSEmbed(nametif, fileout);
-    }
-    else {
+    } else {
         pixWrite(namejpg, pix, IFF_JFIF_JPEG);
         convertJpegToPSEmbed(namejpg, fileout);
     }
@@ -919,7 +913,7 @@ PIXCMAP  *cmap;
     if (!fileout)
         return ERROR_INT("fileout not defined", procName, 1);
     if (level != 2 && level != 3) {
-        L_ERROR("only levels 2 and 3 permitted; using level 2", procName);
+        L_ERROR("only levels 2 and 3 permitted; using level 2\n", procName);
         level = 2;
     }
 
@@ -937,43 +931,36 @@ PIXCMAP  *cmap;
         if (d == 1) {
             tname = g4_name;
             pixWrite(tname, pix, IFF_TIFF_G4);
-        }
-        else if (cmap) {
+        } else if (cmap) {
             if (level == 2) {
                 pixt = pixConvertForPSWrap(pix);
                 tname = jpeg_name;
                 pixWrite(tname, pixt, IFF_JFIF_JPEG);
                 pixDestroy(&pixt);
-            }
-            else {  /* level == 3 */
+            } else {  /* level == 3 */
                 tname = png_name;
                 pixWrite(tname, pix, IFF_PNG);
             }
-        }
-        else if (d == 16) {
+        } else if (d == 16) {
             if (level == 2)
-                L_WARNING("d = 16; must write out flate", procName);
+                L_WARNING("d = 16; must write out flate\n", procName);
             tname = png_name;
             pixWrite(tname, pix, IFF_PNG);
-        }
-        else if (d == 2 || d == 4) {
+        } else if (d == 2 || d == 4) {
             if (level == 2) {
                 pixt = pixConvertTo8(pix, 0);
                 tname = jpeg_name;
                 pixWrite(tname, pixt, IFF_JFIF_JPEG);
                 pixDestroy(&pixt);
-            }
-            else {  /* level == 3 */
+            } else {  /* level == 3 */
                 tname = png_name;
                 pixWrite(tname, pix, IFF_PNG);
             }
-        }
-        else if (d == 8 || d == 32) {
+        } else if (d == 8 || d == 32) {
             tname = jpeg_name;
             pixWrite(tname, pix, IFF_JFIF_JPEG);
-        }
-        else {  /* shouldn't happen */
-            L_ERROR_INT("invalid depth: %d", procName, d);
+        } else {  /* shouldn't happen */
+            L_ERROR("invalid depth: %d\n", procName, d);
             writeout = FALSE;
         }
         pixDestroy(&pix);

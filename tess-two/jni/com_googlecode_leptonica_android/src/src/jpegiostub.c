@@ -79,6 +79,13 @@ l_int32 fgetJpegResolution(FILE *fp, l_int32 *pxres, l_int32 *pyres)
 
 /* ----------------------------------------------------------------------*/
 
+l_int32 fgetJpegComment(FILE *fp, l_uint8 **pcomment)
+{
+    return ERROR_INT("function not present", "fgetJpegComment", 1);
+}
+
+/* ----------------------------------------------------------------------*/
+
 l_int32 pixWriteJpeg(const char *filename, PIX *pix, l_int32 quality,
                      l_int32 progressive)
 {
@@ -120,10 +127,9 @@ l_int32 pixWriteMemJpeg(l_uint8 **pdata, size_t *psize, PIX *pix,
 
 /* ----------------------------------------------------------------------*/
 
-void l_jpegSetNoChromaSampling(l_int32 flag)
+l_int32 pixSetChromaSampling(PIX *pix, l_int32 sampling)
 {
-    L_ERROR("function not present", "l_jpegSetNoChromaSampling");
-    return;
+    return ERROR_INT("function not present", "pixSetChromaSampling", 1);
 }
 
 /* ----------------------------------------------------------------------*/

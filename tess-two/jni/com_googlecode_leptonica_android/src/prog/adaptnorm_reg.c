@@ -34,8 +34,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      w, h;
 l_float32    mps;
@@ -46,43 +46,42 @@ PIX         *pixt13, *pixt14, *pixt15, *pixt16;
 PIXA        *pixac;
 static char  mainName[] = "adaptnorm_reg";
 
-
     /* ---------------------------------------------------------- *
      *     Normalize by adaptively expanding the dynamic range    *
      * ---------------------------------------------------------- */
     pixac = pixaCreate(0);
     pixs = pixRead("lighttext.jpg");
     pixGetDimensions(pixs, &w, &h, NULL);
-    pixSaveTiled(pixs, pixac, 1, 1, 20, 8);
+    pixSaveTiled(pixs, pixac, 1.0, 1, 20, 8);
     startTimer();
     pixt1 = pixContrastNorm(NULL, pixs, 10, 10, 40, 2, 2);
     mps = 0.000001 * w * h / stopTimer();
     fprintf(stderr, "Time: Contrast norm: %7.3f Mpix/sec\n", mps);
-    pixSaveTiled(pixt1, pixac, 1, 1, 40, 8);
-    pixWrite("/tmp/junkpixt1.png", pixt1, IFF_PNG);
+    pixSaveTiled(pixt1, pixac, 1.0, 1, 40, 8);
+    pixWrite("/tmp/pixt1.png", pixt1, IFF_PNG);
 
          /* Apply a gamma to clean up the remaining background */
     pixt2 = pixGammaTRC(NULL, pixt1, 1.5, 50, 235);
-    pixSaveTiled(pixt2, pixac, 1, 0, 40, 8);
-    pixWrite("/tmp/junkpixt2.png", pixt2, IFF_PNG);
+    pixSaveTiled(pixt2, pixac, 1.0, 0, 40, 8);
+    pixWrite("/tmp/pixt2.png", pixt2, IFF_PNG);
 
          /* Here are two possible output display images; a dithered
           * 2 bpp image and a 7 level thresholded 4 bpp image */
     pixt3 = pixDitherTo2bpp(pixt2, 1);
-    pixSaveTiled(pixt3, pixac, 1, 0, 40, 8);
-    pixWrite("/tmp/junkpixt3.png", pixt3, IFF_PNG);
+    pixSaveTiled(pixt3, pixac, 1.0, 0, 40, 8);
+    pixWrite("/tmp/pixt3.png", pixt3, IFF_PNG);
     pixt4 = pixThresholdTo4bpp(pixt2, 7, 1);
-    pixSaveTiled(pixt4, pixac, 1, 0, 40, 8);
-    pixWrite("/tmp/junkpixt4.png", pixt4, IFF_PNG);
+    pixSaveTiled(pixt4, pixac, 1.0, 0, 40, 8);
+    pixWrite("/tmp/pixt4.png", pixt4, IFF_PNG);
 
          /* Binary image produced from 8 bpp normalized ones,
           * before and after the gamma correction. */
     pixt5 = pixThresholdToBinary(pixt1, 180);
-    pixSaveTiled(pixt5, pixac, 1, 1, 40, 8);
-    pixWrite("/tmp/junkpixt5.png", pixt5, IFF_PNG);
+    pixSaveTiled(pixt5, pixac, 1.0, 1, 40, 8);
+    pixWrite("/tmp/pixt5.png", pixt5, IFF_PNG);
     pixt6 = pixThresholdToBinary(pixt2, 200);
-    pixSaveTiled(pixt6, pixac, 1, 0, 40, 8);
-    pixWrite("/tmp/junkpixt6.png", pixt6, IFF_PNG);
+    pixSaveTiled(pixt6, pixac, 1.0, 0, 40, 8);
+    pixWrite("/tmp/pixt6.png", pixt6, IFF_PNG);
 
     pixDestroy(&pixs);
     pixDestroy(&pixt1);
@@ -94,7 +93,7 @@ static char  mainName[] = "adaptnorm_reg";
 
     pixd = pixaDisplay(pixac, 0, 0);
     pixDisplay(pixd, 100, 100);
-    pixWrite("/tmp/junknorm.png", pixd, IFF_PNG);
+    pixWrite("/tmp/norm.png", pixd, IFF_PNG);
     pixDestroy(&pixd);
     pixaDestroy(&pixac);
 
@@ -105,35 +104,35 @@ static char  mainName[] = "adaptnorm_reg";
     pixac = pixaCreate(0);
     pixs = pixRead("w91frag.jpg");
     pixGetDimensions(pixs, &w, &h, NULL);
-    pixSaveTiled(pixs, pixac, 1, 1, 20, 8);
+    pixSaveTiled(pixs, pixac, 1.0, 1, 20, 8);
     startTimer();
     pixt7 = pixBackgroundNormFlex(pixs, 7, 7, 1, 1, 10);
     mps = 0.000001 * w * h / stopTimer();
     fprintf(stderr, "Time: Flexible bg norm: %7.3f Mpix/sec\n", mps);
-    pixSaveTiled(pixt7, pixac, 1, 0, 40, 8);
-    pixWrite("/tmp/junkpixt7.png", pixt7, IFF_PNG);
+    pixSaveTiled(pixt7, pixac, 1.0, 0, 40, 8);
+    pixWrite("/tmp/pixt7.png", pixt7, IFF_PNG);
 
         /* Now do it again in several steps */
     pixt8 = pixScaleSmooth(pixs, 1./7., 1./7.);
     pixt = pixScale(pixt8, 7.0, 7.0);
-    pixSaveTiled(pixt, pixac, 1, 1, 20, 8);
+    pixSaveTiled(pixt, pixac, 1.0, 1, 20, 8);
     pixDestroy(&pixt);
     pixLocalExtrema(pixt8, 0, 0, &pixmin, NULL);  /* 1's at minima */
     pixt9 = pixExpandBinaryReplicate(pixmin, 7);
-    pixSaveTiled(pixt9, pixac, 1, 0, 20, 8);
+    pixSaveTiled(pixt9, pixac, 1.0, 0, 20, 8);
     pixt10 = pixSeedfillGrayBasin(pixmin, pixt8, 10, 4);
     pixt11 = pixExtendByReplication(pixt10, 1, 1);
     pixt12 = pixGetInvBackgroundMap(pixt11, 200, 1, 1);  /* smoothing incl. */
     pixt13 = pixApplyInvBackgroundGrayMap(pixs, pixt12, 7, 7);
-    pixSaveTiled(pixt13, pixac, 1, 0, 20, 8);
+    pixSaveTiled(pixt13, pixac, 1.0, 0, 20, 8);
 
         /* Process the result for gray and binary output */
     pixt14 = pixGammaTRCMasked(NULL, pixt7, NULL, 1.0, 100, 175);
-    pixSaveTiled(pixt14, pixac, 1, 1, 20, 8);
+    pixSaveTiled(pixt14, pixac, 1.0, 1, 20, 8);
     pixt15 = pixThresholdTo4bpp(pixt14, 10, 1);
-    pixSaveTiled(pixt15, pixac, 1, 0, 20, 8);
+    pixSaveTiled(pixt15, pixac, 1.0, 0, 20, 8);
     pixt16 = pixThresholdToBinary(pixt14, 190);
-    pixSaveTiled(pixt16, pixac, 1, 0, 20, 8);
+    pixSaveTiled(pixt16, pixac, 1.0, 0, 20, 8);
 
     pixDestroy(&pixs);
     pixDestroy(&pixt7);
@@ -150,7 +149,7 @@ static char  mainName[] = "adaptnorm_reg";
 
     pixd = pixaDisplay(pixac, 0, 0);
     pixDisplay(pixd, 100, 100);
-    pixWrite("/tmp/junkflex.png", pixd, IFF_PNG);
+    pixWrite("/tmp/flex.png", pixd, IFF_PNG);
     pixDestroy(&pixd);
     pixaDestroy(&pixac);
     return 0;

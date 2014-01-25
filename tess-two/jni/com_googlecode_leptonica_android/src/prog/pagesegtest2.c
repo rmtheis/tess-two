@@ -59,8 +59,8 @@ static const char *dilation_sequence = "d3.3";
 
 #define  DFLAG     1
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
 l_int32      thresh;
@@ -69,8 +69,8 @@ PIX         *pixmask4, *pixseed4, *pixsf4, *pixd4, *pixd;
 static char  mainName[] = "pagesegtest2";
 
     if (argc != 4)
-	exit(ERROR_INT(" Syntax:  pagesegtest2 filein thresh fileout",
-                       mainName, 1));
+        return ERROR_INT(" Syntax:  pagesegtest2 filein thresh fileout",
+                         mainName, 1);
 
     filein = argv[1];
     thresh = atoi(argv[2]);
@@ -78,7 +78,7 @@ static char  mainName[] = "pagesegtest2";
 
         /* Get a 1 bpp version of the page */
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
     if (pixGetDepth(pixs) == 32)
         pixg = pixConvertRGBToGrayFast(pixs);
     else

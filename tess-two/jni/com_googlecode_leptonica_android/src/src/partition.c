@@ -200,7 +200,7 @@ L_HEAP  *lh;
         return (BOXA *)ERROR_PTR("invalid sort flag", procName, NULL);
     if (maxboxes < 1) {
         maxboxes = 1;
-        L_WARNING("setting maxboxes = 1", procName);
+        L_WARNING("setting maxboxes = 1\n", procName);
     }
     if (maxoverlap < 0.0 || maxoverlap > 1.0)
         return (BOXA *)ERROR_PTR("invalid maxoverlap", procName, NULL);
@@ -323,7 +323,7 @@ PARTEL  *partel;
     PROCNAME("partelDestroy");
 
     if (ppartel == NULL) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
 
@@ -486,7 +486,7 @@ BOX       *boxt;
     if (n == 0)
         return (BOX *)ERROR_PTR("no boxes in boxa", procName, NULL);
     if (fract < 0.0 || fract > 1.0) {
-        L_WARNING("fract out of bounds; using 0.0", procName);
+        L_WARNING("fract out of bounds; using 0.0\n", procName);
         fract = 0.0;
     }
 

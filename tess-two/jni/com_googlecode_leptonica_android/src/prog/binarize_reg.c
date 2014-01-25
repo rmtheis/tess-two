@@ -38,8 +38,8 @@ PIX *PixTest2(PIX *pixs, l_int32 size, l_float32 factor, l_int32 nx,
 void PixTest3(PIX *pixs, l_int32 size, l_float32 factor,
               l_int32 nx, l_int32 ny, l_int32 paircount, L_REGPARAMS *rp);
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 PIX          *pixs, *pixt1, *pixt2;
 L_REGPARAMS  *rp;
@@ -99,10 +99,10 @@ PIXA    *pixa;
         /* Get results */
     pixSauvolaBinarize(pixs, size, factor, 1, &pixm, &pixsd, &pixth, &pixd);
     pixa = pixaCreate(0);
-    pixSaveTiled(pixm, pixa, 1, 1, 30, 8);
-    pixSaveTiled(pixsd, pixa, 1, 0, 30, 8);
-    pixSaveTiled(pixth, pixa, 1, 1, 30, 8);
-    pixSaveTiled(pixd, pixa, 1, 0, 30, 8);
+    pixSaveTiled(pixm, pixa, 1.0, 1, 30, 8);
+    pixSaveTiled(pixsd, pixa, 1.0, 0, 30, 8);
+    pixSaveTiled(pixth, pixa, 1.0, 1, 30, 8);
+    pixSaveTiled(pixd, pixa, 1.0, 0, 30, 8);
     pixt = pixaDisplay(pixa, 0, 0);
     regTestWritePixAndCheck(rp, pixt, IFF_JFIF_JPEG);
     if (rp->index < 5)
@@ -146,8 +146,8 @@ PIXA    *pixa;
     regTestWritePixAndCheck(rp, pixd, IFF_PNG);
     if (rp->index < 5 && rp->display) {
         pixa = pixaCreate(0);
-        pixSaveTiled(pixth, pixa, 1, 1, 30, 8);
-        pixSaveTiled(pixd, pixa, 1, 0, 30, 8);
+        pixSaveTiled(pixth, pixa, 1.0, 1, 30, 8);
+        pixSaveTiled(pixd, pixa, 1.0, 0, 30, 8);
         pixt = pixaDisplay(pixa, 0, 0);
         pixDisplayWithTitle(pixt, 100, 400, NULL, rp->display);
         pixDestroy(&pixt);

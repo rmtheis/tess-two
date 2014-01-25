@@ -182,7 +182,7 @@ L_PTRAA          *paa;
         return ERROR_INT("numalloc not defined", procName, 1);
     numaGetSum(numalloc, &nchunks);
     if (nchunks > 1000.0)
-        L_WARNING_FLOAT("There are %.0f chunks", procName, nchunks);
+        L_WARNING("There are %.0f chunks\n", procName, nchunks);
 
     if ((pms = (L_PIX_MEM_STORE *)CALLOC(1, sizeof(L_PIX_MEM_STORE))) == NULL)
         return ERROR_INT("pms not made", procName, 1);
@@ -317,8 +317,7 @@ L_PTRA           *pa;
     if (level < 0) {  /* size range invalid; must alloc */
         if ((data = pmsGetAlloc(nbytes)) == NULL)
             return (void *)ERROR_PTR("data not made", procName, NULL);
-    }
-    else {  /* get from store */
+    } else {  /* get from store */
         pa = ptraaGetPtra(pms->paa, level, L_HANDLE_ONLY);
         data = ptraRemoveLast(pa);
         if (data && pms->logfile) {
@@ -354,18 +353,18 @@ L_PTRA           *pa;
     PROCNAME("pmsCustomDealloc");
 
     if ((pms = CustomPMS) == NULL) {
-        L_ERROR("pms not defined", procName);
+        L_ERROR("pms not defined\n", procName);
         return;
     }
 
     if (pmsGetLevelForDealloc(data, &level) == 1) {
-        L_ERROR("level not found", procName);
+        L_ERROR("level not found\n", procName);
         return;
     }
 
-    if (level < 0)  /* no logging; just free the data */
+    if (level < 0) {  /* no logging; just free the data */
         FREE(data);
-    else {  /* return the data to the store */
+    } else {  /* return the data to the store */
         pa = ptraaGetPtra(pms->paa, level, L_HANDLE_ONLY);
         ptraAdd(pa, data);
         if (pms->logfile)
@@ -388,6 +387,10 @@ L_PTRA           *pa;
  *          is freed like normal memory.
  *      (2) If logging is on, only write out allocs that are as large as
  *          the minimum size handled by the memory store.
+ *      (3) size_t is %lu on 64 bit platforms and %u on 32 bit platforms.
+ *          The C99 platform-independent format specifier for size_t is %zu,
+ *          but windows hasn't conformed, so we are forced to go back to
+ *          C89, use %lu, and cast to get platform-independence.  Ugh.
  */
 void *
 pmsGetAlloc(size_t  nbytes)
@@ -405,7 +408,7 @@ L_PIX_MEM_STORE  *pms;
         return (void *)ERROR_PTR("data not made", procName, NULL);
     if (pms->logfile && nbytes >= pms->smallest) {
         fp = fopenWriteStream(pms->logfile, "a");
-        fprintf(fp, "Alloc %ld bytes at %p\n", nbytes, data);
+        fprintf(fp, "Alloc %lu bytes at %p\n", (unsigned long)nbytes, data);
         fclose(fp);
     }
 
@@ -508,18 +511,18 @@ L_PIX_MEM_STORE  *pms;
 
     fprintf(stderr, "Total number of pix used at each level\n");
     for (i = 0; i < pms->nlevels; i++)
-         fprintf(stderr, " Level %d (%ld bytes): %d\n", i, pms->sizes[i],
-                 pms->memused[i]);
+         fprintf(stderr, " Level %d (%lu bytes): %d\n", i,
+                 (unsigned long)pms->sizes[i], pms->memused[i]);
 
     fprintf(stderr, "Max number of pix in use at any time in each level\n");
     for (i = 0; i < pms->nlevels; i++)
-         fprintf(stderr, " Level %d (%ld bytes): %d\n", i, pms->sizes[i],
-                 pms->memmax[i]);
+         fprintf(stderr, " Level %d (%lu bytes): %d\n", i,
+                 (unsigned long)pms->sizes[i], pms->memmax[i]);
 
     fprintf(stderr, "Number of pix alloc'd because none were available\n");
     for (i = 0; i < pms->nlevels; i++)
-         fprintf(stderr, " Level %d (%ld bytes): %d\n", i, pms->sizes[i],
-                 pms->memempty[i]);
+         fprintf(stderr, " Level %d (%lu bytes): %d\n", i,
+                 (unsigned long)pms->sizes[i], pms->memempty[i]);
 
     return;
 }

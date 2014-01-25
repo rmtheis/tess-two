@@ -92,9 +92,7 @@
 #include <string.h>
 #include "allheaders.h"
 
-    /* MS VC++ can't handle array initialization with static consts ! */
-#define L_BUF_SIZE      512
-#define MAX_NUM_GPLOTS  40
+static const l_int32  L_BUF_SIZE = 512;
 
 const char  *gplotstylenames[] = {"with lines",
                                   "with points",
@@ -200,7 +198,7 @@ GPLOT  *gplot;
     PROCNAME("gplotDestroy");
 
     if (pgplot == NULL) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
 
@@ -274,7 +272,7 @@ SARRAY    *sa;
         return ERROR_INT("invalid plotstyle", procName, 1);
 
     n = numaGetCount(nay);
-    numaGetXParameters(nay, &startx, &delx);
+    numaGetParameters(nay, &startx, &delx);
     if (nax) {
         if (n != numaGetCount(nax))
             return ERROR_INT("nax and nay sizes differ", procName, 1);
@@ -285,9 +283,9 @@ SARRAY    *sa;
     if (plottitle) {
         title = stringNew(plottitle);
         sarrayAddString(gplot->plottitles, title, L_INSERT);
-    }
-    else
+    } else {
         sarrayAddString(gplot->plottitles, emptystring, L_COPY);
+    }
 
         /* Generate and save data filename */
     gplot->nplots++;
@@ -461,10 +459,10 @@ FILE    *fp;
         plottitle = sarrayGetString(gplot->plottitles, i, L_NOCOPY);
         dataname = sarrayGetString(gplot->datanames, i, L_NOCOPY);
         numaGetIValue(gplot->plotstyles, i, &plotstyle);
-        if (nplots == 1)
+        if (nplots == 1) {
             snprintf(buf, L_BUF_SIZE, "plot '%s' title '%s' %s",
                      dataname, plottitle, gplotstylenames[plotstyle]);
-        else {
+        } else {
             if (i == 0)
                 snprintf(buf, L_BUF_SIZE, "plot '%s' title '%s' %s, \\",
                      dataname, plottitle, gplotstylenames[plotstyle]);

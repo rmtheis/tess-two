@@ -24,7 +24,6 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-
 /*
  *  sel2.c
  *
@@ -39,6 +38,7 @@
  *               Isolated foreground pixel
  *               Horizontal and vertical edges
  *               Slanted edge
+ *               Corners
  *
  *          SELA    *selaAddDwaLinear()
  *          SELA    *selaAddDwaCombs()
@@ -49,13 +49,13 @@
 #include <math.h>
 #include "allheaders.h"
 
-    /* MSVC can't handle arrays dimensioned by static const integers */
-#define  L_BUF_SIZE  512
+static const l_int32  L_BUF_SIZE = 512;
 
     /* Linear brick sel sizes, including all those that are required
      * for decomposable sels up to size 63. */
 static const l_int32  num_linear = 25;
-static const l_int32  basic_linear[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20, 21, 25, 30, 31, 35, 40, 41, 45, 50, 51};
+static const l_int32  basic_linear[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+       12, 13, 14, 15, 20, 21, 25, 30, 31, 35, 40, 41, 45, 50, 51};
 
 
 /*!
@@ -180,52 +180,102 @@ SEL  *sel;
     /*--------------------------------------------------------------*
      *                   Isolated foreground pixel                  *
      *--------------------------------------------------------------*/
-    sel = selCreateBrick(3, 3, 1, 1, 2);
-    selSetElement(sel, 1, 1, 1);
+    sel = selCreateBrick(3, 3, 1, 1, SEL_MISS);
+    selSetElement(sel, 1, 1, SEL_HIT);
     selaAddSel(sela, sel, "sel_3hm", 0);
-
 
     /*--------------------------------------------------------------*
      *                Horizontal and vertical edges                 *
      *--------------------------------------------------------------*/
-    sel = selCreateBrick(2, 3, 0, 1, 1);
-    selSetElement(sel, 1, 0, 2);
-    selSetElement(sel, 1, 1, 2);
-    selSetElement(sel, 1, 2, 2);
+    sel = selCreateBrick(2, 3, 0, 1, SEL_HIT);
+    selSetElement(sel, 1, 0, SEL_MISS);
+    selSetElement(sel, 1, 1, SEL_MISS);
+    selSetElement(sel, 1, 2, SEL_MISS);
     selaAddSel(sela, sel, "sel_3de", 0);
 
-    sel = selCreateBrick(2, 3, 1, 1, 1);
-    selSetElement(sel, 0, 0, 2);
-    selSetElement(sel, 0, 1, 2);
-    selSetElement(sel, 0, 2, 2);
+    sel = selCreateBrick(2, 3, 1, 1, SEL_HIT);
+    selSetElement(sel, 0, 0, SEL_MISS);
+    selSetElement(sel, 0, 1, SEL_MISS);
+    selSetElement(sel, 0, 2, SEL_MISS);
     selaAddSel(sela, sel, "sel_3ue", 0);
 
-    sel = selCreateBrick(3, 2, 1, 0, 1);
-    selSetElement(sel, 0, 1, 2);
-    selSetElement(sel, 1, 1, 2);
-    selSetElement(sel, 2, 1, 2);
+    sel = selCreateBrick(3, 2, 1, 0, SEL_HIT);
+    selSetElement(sel, 0, 1, SEL_MISS);
+    selSetElement(sel, 1, 1, SEL_MISS);
+    selSetElement(sel, 2, 1, SEL_MISS);
     selaAddSel(sela, sel, "sel_3re", 0);
 
-    sel = selCreateBrick(3, 2, 1, 1, 1);
-    selSetElement(sel, 0, 0, 2);
-    selSetElement(sel, 1, 0, 2);
-    selSetElement(sel, 2, 0, 2);
+    sel = selCreateBrick(3, 2, 1, 1, SEL_HIT);
+    selSetElement(sel, 0, 0, SEL_MISS);
+    selSetElement(sel, 1, 0, SEL_MISS);
+    selSetElement(sel, 2, 0, SEL_MISS);
     selaAddSel(sela, sel, "sel_3le", 0);
 
+    /*--------------------------------------------------------------*
+     *                        Slanted edge                          *
+     *--------------------------------------------------------------*/
+    sel = selCreateBrick(13, 6, 6, 2, SEL_DONT_CARE);
+    selSetElement(sel, 0, 3, SEL_MISS);
+    selSetElement(sel, 0, 5, SEL_HIT);
+    selSetElement(sel, 4, 2, SEL_MISS);
+    selSetElement(sel, 4, 4, SEL_HIT);
+    selSetElement(sel, 8, 1, SEL_MISS);
+    selSetElement(sel, 8, 3, SEL_HIT);
+    selSetElement(sel, 12, 0, SEL_MISS);
+    selSetElement(sel, 12, 2, SEL_HIT);
+    selaAddSel(sela, sel, "sel_sl1", 0);
 
     /*--------------------------------------------------------------*
-     *                       Slanted edge                           *
+     *                           Corners                            *
+     *  This allows for up to 3 missing edge pixels at the corner   *
      *--------------------------------------------------------------*/
-    sel = selCreateBrick(13, 6, 6, 2, 0);
-    selSetElement(sel, 0, 3, 2);
-    selSetElement(sel, 0, 5, 1);
-    selSetElement(sel, 4, 2, 2);
-    selSetElement(sel, 4, 4, 1);
-    selSetElement(sel, 8, 1, 2);
-    selSetElement(sel, 8, 3, 1);
-    selSetElement(sel, 12, 0, 2);
-    selSetElement(sel, 12, 2, 1);
-    selaAddSel(sela, sel, "sel_sl1", 0);
+    sel = selCreateBrick(4, 4, 1, 1, SEL_MISS);
+    selSetElement(sel, 1, 1, SEL_DONT_CARE);
+    selSetElement(sel, 1, 2, SEL_DONT_CARE);
+    selSetElement(sel, 2, 1, SEL_DONT_CARE);
+    selSetElement(sel, 1, 3, SEL_HIT);
+    selSetElement(sel, 2, 2, SEL_HIT);
+    selSetElement(sel, 2, 3, SEL_HIT);
+    selSetElement(sel, 3, 1, SEL_HIT);
+    selSetElement(sel, 3, 2, SEL_HIT);
+    selSetElement(sel, 3, 3, SEL_HIT);
+    selaAddSel(sela, sel, "sel_ulc", 0);
+
+    sel = selCreateBrick(4, 4, 1, 2, SEL_MISS);
+    selSetElement(sel, 1, 1, SEL_DONT_CARE);
+    selSetElement(sel, 1, 2, SEL_DONT_CARE);
+    selSetElement(sel, 2, 2, SEL_DONT_CARE);
+    selSetElement(sel, 1, 0, SEL_HIT);
+    selSetElement(sel, 2, 0, SEL_HIT);
+    selSetElement(sel, 2, 1, SEL_HIT);
+    selSetElement(sel, 3, 0, SEL_HIT);
+    selSetElement(sel, 3, 1, SEL_HIT);
+    selSetElement(sel, 3, 2, SEL_HIT);
+    selaAddSel(sela, sel, "sel_urc", 0);
+
+    sel = selCreateBrick(4, 4, 2, 1, SEL_MISS);
+    selSetElement(sel, 1, 1, SEL_DONT_CARE);
+    selSetElement(sel, 2, 1, SEL_DONT_CARE);
+    selSetElement(sel, 2, 2, SEL_DONT_CARE);
+    selSetElement(sel, 0, 1, SEL_HIT);
+    selSetElement(sel, 0, 2, SEL_HIT);
+    selSetElement(sel, 0, 3, SEL_HIT);
+    selSetElement(sel, 1, 2, SEL_HIT);
+    selSetElement(sel, 1, 3, SEL_HIT);
+    selSetElement(sel, 2, 3, SEL_HIT);
+    selaAddSel(sela, sel, "sel_llc", 0);
+
+    sel = selCreateBrick(4, 4, 2, 2, SEL_MISS);
+    selSetElement(sel, 1, 2, SEL_DONT_CARE);
+    selSetElement(sel, 2, 1, SEL_DONT_CARE);
+    selSetElement(sel, 2, 2, SEL_DONT_CARE);
+    selSetElement(sel, 0, 0, SEL_HIT);
+    selSetElement(sel, 0, 1, SEL_HIT);
+    selSetElement(sel, 0, 2, SEL_HIT);
+    selSetElement(sel, 1, 0, SEL_HIT);
+    selSetElement(sel, 1, 1, SEL_HIT);
+    selSetElement(sel, 2, 0, SEL_HIT);
+    selaAddSel(sela, sel, "sel_lrc", 0);
 
     return sela;
 }
@@ -390,9 +440,9 @@ SEL       *sel;
         pta2 = generatePtaLineFromPt(xc, yc, hlsize + 1, radang + halfpi);
         pta3 = generatePtaLineFromPt(xc, yc, hlsize + 1, radang + pi);
         pta4 = generatePtaLineFromPt(xc, yc, hlsize + 1, radang + pi + halfpi);
-        ptaJoin(pta1, pta2, 0, 0);
-        ptaJoin(pta1, pta3, 0, 0);
-        ptaJoin(pta1, pta4, 0, 0);
+        ptaJoin(pta1, pta2, 0, -1);
+        ptaJoin(pta1, pta3, 0, -1);
+        ptaJoin(pta1, pta4, 0, -1);
         pixRenderPta(pixm, pta1, L_SET_PIXELS);
         pixPaintThroughMask(pixc, pixm, 0, 0, 0x00ff0000);
         ptaDestroy(&pta1);
@@ -515,8 +565,8 @@ SEL       *sel;
                                          jang + radang + halfpi);
             pta3 = generatePtaLineFromPt(xc, yc, hlsize + 1,
                                          jang + radang + pi);
-            ptaJoin(pta1, pta2, 0, 0);
-            ptaJoin(pta1, pta3, 0, 0);
+            ptaJoin(pta1, pta2, 0, -1);
+            ptaJoin(pta1, pta3, 0, -1);
             pixRenderPta(pixm, pta1, L_SET_PIXELS);
             pixPaintThroughMask(pixc, pixm, 0, 0, 0x00ff0000);
             ptaDestroy(&pta1);

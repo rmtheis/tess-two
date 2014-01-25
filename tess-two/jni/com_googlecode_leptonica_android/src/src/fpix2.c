@@ -76,14 +76,28 @@
  *    FPix simple rasterop
  *          l_int32        fpixRasterop()
  *
+ *    FPix rotation by multiples of 90 degrees
+ *          FPIX          *fpixRotateOrth()
+ *          FPIX          *fpixRotate180()
+ *          FPIX          *fpixRotate90()
+ *          FPIX          *fpixFlipLR()
+ *          FPIX          *fpixFlipTB()
+ *
  *    FPix affine and projective interpolated transforms
  *          FPIX          *fpixAffinePta()
  *          FPIX          *fpixAffine()
  *          FPIX          *fpixProjectivePta()
  *          FPIX          *fpixProjective()
  *          l_int32        linearInterpolatePixelFloat()
+ *
+ *    Thresholding to 1 bpp Pix
+ *          PIX           *fpixThresholdToPix()
+ *
+ *    Generate function from components
+ *          FPIX          *pixComponentFunction()
  */
 
+#include <string.h>
 #include "allheaders.h"
 
 /*--------------------------------------------------------------------*
@@ -145,32 +159,27 @@ FPIX       *fpixd;
                 val = GET_DATA_BIT(linet, j);
                 lined[j] = (l_float32)val;
             }
-        }
-        else if (d == 2) {
+        } else if (d == 2) {
             for (j = 0; j < w; j++) {
                 val = GET_DATA_DIBIT(linet, j);
                 lined[j] = (l_float32)val;
             }
-        }
-        else if (d == 4) {
+        } else if (d == 4) {
             for (j = 0; j < w; j++) {
                 val = GET_DATA_QBIT(linet, j);
                 lined[j] = (l_float32)val;
             }
-        }
-        else if (d == 8) {
+        } else if (d == 8) {
             for (j = 0; j < w; j++) {
                 val = GET_DATA_BYTE(linet, j);
                 lined[j] = (l_float32)val;
             }
-        }
-        else if (d == 16) {
+        } else if (d == 16) {
             for (j = 0; j < w; j++) {
                 val = GET_DATA_TWO_BYTES(linet, j);
                 lined[j] = (l_float32)val;
             }
-        }
-        else {  /* d == 32 */
+        } else {  /* d == 32 */
             for (j = 0; j < w; j++) {
                 uval = GET_DATA_FOUR_BYTES(linet, j);
                 lined[j] = (l_float32)uval;
@@ -239,32 +248,27 @@ DPIX       *dpixd;
                 val = GET_DATA_BIT(linet, j);
                 lined[j] = (l_float64)val;
             }
-        }
-        else if (d == 2) {
+        } else if (d == 2) {
             for (j = 0; j < w; j++) {
                 val = GET_DATA_DIBIT(linet, j);
                 lined[j] = (l_float64)val;
             }
-        }
-        else if (d == 4) {
+        } else if (d == 4) {
             for (j = 0; j < w; j++) {
                 val = GET_DATA_QBIT(linet, j);
                 lined[j] = (l_float64)val;
             }
-        }
-        else if (d == 8) {
+        } else if (d == 8) {
             for (j = 0; j < w; j++) {
                 val = GET_DATA_BYTE(linet, j);
                 lined[j] = (l_float64)val;
             }
-        }
-        else if (d == 16) {
+        } else if (d == 16) {
             for (j = 0; j < w; j++) {
                 val = GET_DATA_TWO_BYTES(linet, j);
                 lined[j] = (l_float64)val;
             }
-        }
-        else {  /* d == 32 */
+        } else {  /* d == 32 */
             for (j = 0; j < w; j++) {
                 uval = GET_DATA_FOUR_BYTES(linet, j);
                 lined[j] = (l_float64)uval;
@@ -354,9 +358,9 @@ PIX        *pixd;
             }
         }
         if (negs > 0)
-            L_ERROR_INT("Number of negative values: %d", procName, negs);
+            L_ERROR("Number of negative values: %d\n", procName, negs);
         if (overvals > 0)
-            L_ERROR_INT("Number of too-large values: %d", procName, overvals);
+            L_ERROR("Number of too-large values: %d\n", procName, overvals);
     }
 
         /* Make the pix and convert the data */
@@ -371,14 +375,13 @@ PIX        *pixd;
             val = lines[j];
             if (val >= 0.0)
                 vald = (l_uint32)(val + 0.5);
-            else {  /* val < 0.0 */
-                if (negvals == L_CLIP_TO_ZERO)
-                    vald = 0;
-                else
-                    vald = (l_uint32)(-val + 0.5);
-            }
+            else if (negvals == L_CLIP_TO_ZERO)  /* and val < 0.0 */
+                vald = 0;
+            else
+                vald = (l_uint32)(-val + 0.5);
             if (vald > maxval)
                 vald = maxval;
+
             if (outdepth == 8)
                 SET_DATA_BYTE(lined, j, vald);
             else if (outdepth == 16)
@@ -567,9 +570,9 @@ PIX        *pixd;
             }
         }
         if (negs > 0)
-            L_ERROR_INT("Number of negative values: %d", procName, negs);
+            L_ERROR("Number of negative values: %d\n", procName, negs);
         if (overvals > 0)
-            L_ERROR_INT("Number of too-large values: %d", procName, overvals);
+            L_ERROR("Number of too-large values: %d\n", procName, overvals);
     }
 
         /* Make the pix and convert the data */
@@ -582,9 +585,9 @@ PIX        *pixd;
         lined = datad + i * wpld;
         for (j = 0; j < w; j++) {
             val = lines[j];
-            if (val >= 0.0)
+            if (val >= 0.0) {
                 vald = (l_uint32)(val + 0.5);
-            else {  /* val < 0.0 */
+            } else {  /* val < 0.0 */
                 if (negvals == L_CLIP_TO_ZERO)
                     vald = 0;
                 else
@@ -1055,6 +1058,7 @@ DPIX       *dpixd;
  *                     different from fpixs1)
  *              fpixs1 (can be == to fpixd)
  *              fpixs2
+ *              a, b (multiplication factors on fpixs1 and fpixs2, rsp.)
  *      Return: fpixd always
  *
  *  Notes:
@@ -1148,12 +1152,10 @@ l_float32  *line, *data;
         if (addc == 0.0) {
             for (j = 0; j < w; j++)
                 line[j] *= multc;
-        }
-        else if (multc == 1.0) {
+        } else if (multc == 1.0) {
             for (j = 0; j < w; j++)
                 line[j] += addc;
-        }
-        else  {
+        } else {
             for (j = 0; j < w; j++) {
                 line[j] = multc * line[j] + addc;
             }
@@ -1171,6 +1173,7 @@ l_float32  *line, *data;
  *                     different from dpixs1)
  *              dpixs1 (can be == to dpixd)
  *              dpixs2
+ *              a, b (multiplication factors on dpixs1 and dpixs2, rsp.)
  *      Return: dpixd always
  *
  *  Notes:
@@ -1264,15 +1267,12 @@ l_float64  *line, *data;
         if (addc == 0.0) {
             for (j = 0; j < w; j++)
                 line[j] *= multc;
-        }
-        else if (multc == 1.0) {
+        } else if (multc == 1.0) {
             for (j = 0; j < w; j++)
                 line[j] += addc;
-        }
-        else  {
-            for (j = 0; j < w; j++) {
+        } else {
+            for (j = 0; j < w; j++)
                 line[j] = multc * line[j] + addc;
-            }
         }
     }
 
@@ -1702,6 +1702,254 @@ l_float32  *datas, *datad, *lines, *lined;
 
 
 /*--------------------------------------------------------------------*
+ *                   Rotation by multiples of 90 degrees              *
+ *--------------------------------------------------------------------*/
+/*!
+ *  fpixRotateOrth()
+ *
+ *      Input:  fpixs
+ *              quads (0-3; number of 90 degree cw rotations)
+ *      Return: fpixd, or null on error
+ */
+FPIX *
+fpixRotateOrth(FPIX     *fpixs,
+               l_int32  quads)
+{
+    PROCNAME("fpixRotateOrth");
+
+    if (!fpixs)
+        return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+    if (quads < 0 || quads > 3)
+        return (FPIX *)ERROR_PTR("quads not in {0,1,2,3}", procName, NULL);
+
+    if (quads == 0)
+        return fpixCopy(NULL, fpixs);
+    else if (quads == 1)
+        return fpixRotate90(fpixs, 1);
+    else if (quads == 2)
+        return fpixRotate180(NULL, fpixs);
+    else /* quads == 3 */
+        return fpixRotate90(fpixs, -1);
+}
+
+
+/*!
+ *  fpixRotate180()
+ *
+ *      Input:  fpixd  (<optional>; can be null, equal to fpixs,
+ *                      or different from fpixs)
+ *              fpixs
+ *      Return: fpixd, or null on error
+ *
+ *  Notes:
+ *      (1) This does a 180 rotation of the image about the center,
+ *          which is equivalent to a left-right flip about a vertical
+ *          line through the image center, followed by a top-bottom
+ *          flip about a horizontal line through the image center.
+ *      (2) There are 3 cases for input:
+ *          (a) fpixd == null (creates a new fpixd)
+ *          (b) fpixd == fpixs (in-place operation)
+ *          (c) fpixd != fpixs (existing fpixd)
+ *      (3) For clarity, use these three patterns, respectively:
+ *          (a) fpixd = fpixRotate180(NULL, fpixs);
+ *          (b) fpixRotate180(fpixs, fpixs);
+ *          (c) fpixRotate180(fpixd, fpixs);
+ */
+FPIX *
+fpixRotate180(FPIX  *fpixd,
+              FPIX  *fpixs)
+{
+    PROCNAME("fpixRotate180");
+
+    if (!fpixs)
+        return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+
+        /* Prepare pixd for in-place operation */
+    if ((fpixd = fpixCopy(fpixd, fpixs)) == NULL)
+        return (FPIX *)ERROR_PTR("fpixd not made", procName, NULL);
+
+    fpixFlipLR(fpixd, fpixd);
+    fpixFlipTB(fpixd, fpixd);
+    return fpixd;
+}
+
+
+/*!
+ *  fpixRotate90()
+ *
+ *      Input:  fpixs
+ *              direction (1 = clockwise,  -1 = counter-clockwise)
+ *      Return: fpixd, or null on error
+ *
+ *  Notes:
+ *      (1) This does a 90 degree rotation of the image about the center,
+ *          either cw or ccw, returning a new pix.
+ *      (2) The direction must be either 1 (cw) or -1 (ccw).
+ */
+FPIX *
+fpixRotate90(FPIX    *fpixs,
+             l_int32  direction)
+{
+l_int32     i, j, wd, hd, wpls, wpld;
+l_float32  *datas, *datad, *lines, *lined;
+FPIX       *fpixd;
+
+    PROCNAME("fpixRotate90");
+
+    if (!fpixs)
+        return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+    if (direction != 1 && direction != -1)
+        return (FPIX *)ERROR_PTR("invalid direction", procName, NULL);
+
+    fpixGetDimensions(fpixs, &hd, &wd);
+    if ((fpixd = fpixCreate(wd, hd)) == NULL)
+        return (FPIX *)ERROR_PTR("fpixd not made", procName, NULL);
+    fpixCopyResolution(fpixd, fpixs);
+
+    datas = fpixGetData(fpixs);
+    wpls = fpixGetWpl(fpixs);
+    datad = fpixGetData(fpixd);
+    wpld = fpixGetWpl(fpixd);
+    if (direction == 1) {  /* clockwise */
+        for (i = 0; i < hd; i++) {
+            lined = datad + i * wpld;
+            lines = datas + (wd - 1) * wpls;
+            for (j = 0; j < wd; j++) {
+                lined[j] = lines[i];
+                lines -= wpls;
+            }
+        }
+    } else {  /* ccw */
+        for (i = 0; i < hd; i++) {
+            lined = datad + i * wpld;
+            lines = datas;
+            for (j = 0; j < wd; j++) {
+                lined[j] = lines[hd - 1 - i];
+                lines += wpls;
+            }
+        }
+    }
+
+    return fpixd;
+}
+
+
+/*!
+ *  pixFlipLR()
+ *
+ *      Input:  fpixd (<optional>; can be null, equal to fpixs,
+ *                     or different from fpixs)
+ *              fpixs
+ *      Return: fpixd, or null on error
+ *
+ *  Notes:
+ *      (1) This does a left-right flip of the image, which is
+ *          equivalent to a rotation out of the plane about a
+ *          vertical line through the image center.
+ *      (2) There are 3 cases for input:
+ *          (a) fpixd == null (creates a new fpixd)
+ *          (b) fpixd == fpixs (in-place operation)
+ *          (c) fpixd != fpixs (existing fpixd)
+ *      (3) For clarity, use these three patterns, respectively:
+ *          (a) fpixd = fpixFlipLR(NULL, fpixs);
+ *          (b) fpixFlipLR(fpixs, fpixs);
+ *          (c) fpixFlipLR(fpixd, fpixs);
+ *      (4) If an existing fpixd is not the same size as fpixs, the
+ *          image data will be reallocated.
+ */
+FPIX *
+fpixFlipLR(FPIX  *fpixd,
+           FPIX  *fpixs)
+{
+l_int32     i, j, w, h, wpl, bpl;
+l_float32  *line, *data, *buffer;
+
+    PROCNAME("fpixFlipLR");
+
+    if (!fpixs)
+        return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+
+    fpixGetDimensions(fpixs, &w, &h);
+
+        /* Prepare fpixd for in-place operation */
+    if ((fpixd = fpixCopy(fpixd, fpixs)) == NULL)
+        return (FPIX *)ERROR_PTR("fpixd not made", procName, NULL);
+
+    data = fpixGetData(fpixd);
+    wpl = fpixGetWpl(fpixd);  /* 4-byte words */
+    bpl = 4 * wpl;
+    if ((buffer = (l_float32 *)CALLOC(wpl, sizeof(l_float32))) == NULL)
+        return (FPIX *)ERROR_PTR("buffer not made", procName, NULL);
+    for (i = 0; i < h; i++) {
+        line = data + i * wpl;
+        memcpy(buffer, line, bpl);
+        for (j = 0; j < w; j++)
+            line[j] = buffer[w - 1 - j];
+    }
+    FREE(buffer);
+    return fpixd;
+}
+
+
+/*!
+ *  fpixFlipTB()
+ *
+ *      Input:  fpixd (<optional>; can be null, equal to fpixs,
+ *                     or different from fpixs)
+ *              fpixs
+ *      Return: fpixd, or null on error
+ *
+ *  Notes:
+ *      (1) This does a top-bottom flip of the image, which is
+ *          equivalent to a rotation out of the plane about a
+ *          horizontal line through the image center.
+ *      (2) There are 3 cases for input:
+ *          (a) fpixd == null (creates a new fpixd)
+ *          (b) fpixd == fpixs (in-place operation)
+ *          (c) fpixd != fpixs (existing fpixd)
+ *      (3) For clarity, use these three patterns, respectively:
+ *          (a) fpixd = fpixFlipTB(NULL, fpixs);
+ *          (b) fpixFlipTB(fpixs, fpixs);
+ *          (c) fpixFlipTB(fpixd, fpixs);
+ *      (4) If an existing fpixd is not the same size as fpixs, the
+ *          image data will be reallocated.
+ */
+FPIX *
+fpixFlipTB(FPIX  *fpixd,
+           FPIX  *fpixs)
+{
+l_int32     i, k, h, h2, wpl, bpl;
+l_float32  *linet, *lineb, *data, *buffer;
+
+    PROCNAME("fpixFlipTB");
+
+    if (!fpixs)
+        return (FPIX *)ERROR_PTR("fpixs not defined", procName, NULL);
+
+        /* Prepare fpixd for in-place operation */
+    if ((fpixd = fpixCopy(fpixd, fpixs)) == NULL)
+        return (FPIX *)ERROR_PTR("fpixd not made", procName, NULL);
+
+    data = fpixGetData(fpixd);
+    wpl = fpixGetWpl(fpixd);
+    fpixGetDimensions(fpixd, NULL, &h);
+    if ((buffer = (l_float32 *)CALLOC(wpl, sizeof(l_float32))) == NULL)
+        return (FPIX *)ERROR_PTR("buffer not made", procName, NULL);
+    h2 = h / 2;
+    bpl = 4 * wpl;
+    for (i = 0, k = h - 1; i < h2; i++, k--) {
+        linet = data + i * wpl;
+        lineb = data + k * wpl;
+        memcpy(buffer, linet, bpl);
+        memcpy(linet, lineb, bpl);
+        memcpy(lineb, buffer, bpl);
+    }
+    FREE(buffer);
+    return fpixd;
+}
+
+
+/*--------------------------------------------------------------------*
  *            Affine and projective interpolated transforms           *
  *--------------------------------------------------------------------*/
 /*!
@@ -1749,8 +1997,7 @@ FPIX       *fpixs2, *fpixd, *fpixd2;
         ptas2 = ptaTransform(ptas, border, border, 1.0, 1.0);
         ptad2 = ptaTransform(ptad, border, border, 1.0, 1.0);
         fpixs2 = fpixAddSlopeBorder(fpixs, border, border, border, border);
-    }
-    else {
+    } else {
         ptas2 = ptaClone(ptas);
         ptad2 = ptaClone(ptad);
         fpixs2 = fpixClone(fpixs);
@@ -1787,7 +2034,7 @@ fpixAffine(FPIX       *fpixs,
            l_float32  *vc,
            l_float32   inval)
 {
-l_int32     i, j, w, h, wpls, wpld;
+l_int32     i, j, w, h, wpld;
 l_float32   val;
 l_float32  *datas, *datad, *lined;
 l_float32   x, y;
@@ -1802,7 +2049,6 @@ FPIX       *fpixd;
         return (FPIX *)ERROR_PTR("vc not defined", procName, NULL);
 
     datas = fpixGetData(fpixs);
-    wpls = fpixGetWpl(fpixs);
     fpixd = fpixCreateTemplate(fpixs);
     fpixSetAllArbitrary(fpixd, inval);
     datad = fpixGetData(fpixd);
@@ -1868,8 +2114,7 @@ FPIX       *fpixs2, *fpixd, *fpixd2;
         ptas2 = ptaTransform(ptas, border, border, 1.0, 1.0);
         ptad2 = ptaTransform(ptad, border, border, 1.0, 1.0);
         fpixs2 = fpixAddSlopeBorder(fpixs, border, border, border, border);
-    }
-    else {
+    } else {
         ptas2 = ptaClone(ptas);
         ptad2 = ptaClone(ptad);
         fpixs2 = fpixClone(fpixs);
@@ -1906,7 +2151,7 @@ fpixProjective(FPIX       *fpixs,
                l_float32  *vc,
                l_float32   inval)
 {
-l_int32     i, j, w, h, wpls, wpld;
+l_int32     i, j, w, h, wpld;
 l_float32   val;
 l_float32  *datas, *datad, *lined;
 l_float32   x, y;
@@ -1921,7 +2166,6 @@ FPIX       *fpixd;
         return (FPIX *)ERROR_PTR("vc not defined", procName, NULL);
 
     datas = fpixGetData(fpixs);
-    wpls = fpixGetWpl(fpixs);
     fpixd = fpixCreateTemplate(fpixs);
     fpixSetAllArbitrary(fpixd, inval);
     datad = fpixGetData(fpixd);
@@ -2005,3 +2249,152 @@ l_float32  *lines;
     *pval = (v00 + v01 + v10 + v11) / 256.0;
     return 0;
 }
+
+
+/*--------------------------------------------------------------------*
+ *                      Thresholding to 1 bpp Pix                     *
+ *--------------------------------------------------------------------*/
+/*!
+ *  fpixThresholdToPix()
+ *
+ *      Input:  fpix
+ *              thresh
+ *      Return: pixd (1 bpp), or null on error
+ *
+ *  Notes:
+ *      (1) For all values of fpix that are <= thresh, sets the pixel
+ *          in pixd to 1.
+ */
+PIX *
+fpixThresholdToPix(FPIX      *fpix,
+                   l_float32  thresh)
+{
+l_int32     i, j, w, h, wpls, wpld;
+l_float32  *datas, *lines;
+l_uint32   *datad, *lined;
+PIX        *pixd;
+
+    PROCNAME("fpixThresholdToPix");
+
+    if (!fpix)
+        return (PIX *)ERROR_PTR("fpix not defined", procName, NULL);
+
+    fpixGetDimensions(fpix, &w, &h);
+    datas = fpixGetData(fpix);
+    wpls = fpixGetWpl(fpix);
+    pixd = pixCreate(w, h, 1);
+    datad = pixGetData(pixd);
+    wpld = pixGetWpl(pixd);
+    for (i = 0; i < h; i++) {
+        lines = datas + i * wpls;
+        lined = datad + i * wpld;
+        for (j = 0; j < w; j++) {
+            if (lines[j] <= thresh)
+                SET_DATA_BIT(lined, j);
+        }
+    }
+
+    return pixd;
+}
+
+
+/*--------------------------------------------------------------------*
+ *                Generate function from components                   *
+ *--------------------------------------------------------------------*/
+/*!
+ *  pixComponentFunction()
+ *
+ *      Input:  pix (32 bpp rgb)
+ *              rnum, gnum, bnum (coefficients for numerator)
+ *              rdenom, gdenom, bdenom (coefficients for denominator)
+ *      Return: fpixd, or null on error
+ *
+ *  Notes:
+ *      (1) This stores a function of the component values of each
+ *          input pixel in @fpixd.
+ *      (2) The function is a ratio of linear combinations of component values.
+ *          There are two special cases for denominator coefficients:
+ *          (a) The denominator is 1.0: input 0 for all denominator coefficients
+ *          (b) Only one component is used in the denominator: input 1.0
+ *              for that denominator component and 0.0 for the other two.
+ *      (3) If the denominator is 0, multiply by an arbitrary number that
+ *          is much larger than 1.  Choose 256 "arbitrarily".
+ *
+ */
+FPIX *
+pixComponentFunction(PIX       *pix,
+                     l_float32  rnum,
+                     l_float32  gnum,
+                     l_float32  bnum,
+                     l_float32  rdenom,
+                     l_float32  gdenom,
+                     l_float32  bdenom)
+{
+l_int32     i, j, w, h, wpls, wpld, rval, gval, bval, zerodenom, onedenom;
+l_float32   fnum, fdenom;
+l_uint32   *datas, *lines;
+l_float32  *datad, *lined, *recip;
+FPIX       *fpixd;
+
+    PROCNAME("pixComponentFunction");
+
+    if (!pix || pixGetDepth(pix) != 32)
+        return (FPIX *)ERROR_PTR("pix undefined or not 32 bpp", procName, NULL);
+
+    pixGetDimensions(pix, &w, &h, NULL);
+    datas = pixGetData(pix);
+    wpls = pixGetWpl(pix);
+    fpixd = fpixCreate(w, h);
+    datad = fpixGetData(fpixd);
+    wpld = fpixGetWpl(fpixd);
+    zerodenom = (rdenom == 0.0 && gdenom == 0.0 && bdenom == 0.0) ? 1: 0;
+    onedenom = ((rdenom == 1.0 && gdenom == 0.0 && bdenom == 0.0) ||
+                (rdenom == 0.0 && gdenom == 1.0 && bdenom == 0.0) ||
+                (rdenom == 0.0 && gdenom == 0.0 && bdenom == 1.0)) ? 1 : 0;
+    recip = NULL;
+    if (onedenom) {
+        recip = (l_float32 *)CALLOC(256, sizeof(l_float32));
+        recip[0] = 256;  /* arbitrary large number */
+        for (i = 1; i < 256; i++)
+            recip[i] = 1.0 / (l_float32)i;
+    }
+    for (i = 0; i < h; i++) {
+        lines = datas + i * wpls;
+        lined = datad + i * wpld;
+        if (zerodenom) {
+            for (j = 0; j < w; j++) {
+                extractRGBValues(lines[j], &rval, &gval, &bval);
+                lined[j] = rnum * rval + gnum * gval + bnum * bval;
+            }
+        } else if (onedenom && rdenom == 1.0) {
+            for (j = 0; j < w; j++) {
+                extractRGBValues(lines[j], &rval, &gval, &bval);
+                lined[j]
+                    = recip[rval] * (rnum * rval + gnum * gval + bnum * bval);
+            }
+        } else if (onedenom && gdenom == 1.0) {
+            for (j = 0; j < w; j++) {
+                extractRGBValues(lines[j], &rval, &gval, &bval);
+                lined[j]
+                    = recip[gval] * (rnum * rval + gnum * gval + bnum * bval);
+            }
+        } else if (onedenom && bdenom == 1.0) {
+            for (j = 0; j < w; j++) {
+                extractRGBValues(lines[j], &rval, &gval, &bval);
+                lined[j]
+                    = recip[bval] * (rnum * rval + gnum * gval + bnum * bval);
+            }
+        } else {  /* general case */
+            for (j = 0; j < w; j++) {
+                extractRGBValues(lines[j], &rval, &gval, &bval);
+                fnum = rnum * rval + gnum * gval + bnum * bval;
+                fdenom = rdenom * rval + gdenom * gval + bdenom * bval;
+                lined[j] = (fdenom == 0) ? 256.0 * fnum : fnum / fdenom;
+            }
+        }
+    }
+
+    FREE(recip);
+    return fpixd;
+}
+

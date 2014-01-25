@@ -30,8 +30,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i;
 PIX         *pixs, *pixt1, *pixt2, *pixt3, *pixd;
@@ -59,7 +59,7 @@ static char  mainName[] = "livre_seedgen";
     pixDisplayWriteFormat(pixt3, 1, IFF_PNG);
 
         /* Generate the output image */
-    pixa = pixaReadFiles("/tmp", "junk_write_display");
+    pixa = pixaReadFiles("/tmp/display", "file");
     pixd = pixaDisplayTiledAndScaled(pixa, 8, 250, 4, 0, 25, 2);
     pixWrite("/tmp/seedgen.png", pixd, IFF_PNG);
 

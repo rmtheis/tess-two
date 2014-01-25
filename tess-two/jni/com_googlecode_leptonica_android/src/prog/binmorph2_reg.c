@@ -40,8 +40,8 @@ static const l_int32  MAX_SEL_SIZE = 120;
 static void writeResult(char *sequence, l_int32 same);
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *str;
 char         buffer1[256];
@@ -50,6 +50,9 @@ l_int32      i, same, same2, factor1, factor2, diff, success;
 PIX         *pixs, *pixsd, *pixt1, *pixt2, *pixt3;
 SEL         *sel1, *sel2;
 static char  mainName[] = "binmorph2_reg";
+
+    if (argc != 1)
+        return ERROR_INT(" Syntax:  binmorph2_reg", mainName, 1);
 
 #if 1
     pixs = pixRead("rabi.png");
@@ -62,19 +65,19 @@ static char  mainName[] = "binmorph2_reg";
         diff = factor1 * factor2 - i;
         fprintf(stderr, "%d: (%d, %d): %d\n", i, factor1, factor2, diff);
 
-	    /* Carry out operations on identical sized Sels: dilation */
+            /* Carry out operations on identical sized Sels: dilation */
         sprintf(buffer1, "d%d.%d", i + diff, i + diff);
         sprintf(buffer2, "d%d.%d", i, i);
         pixt1 = pixMorphSequence(pixsd, buffer1, 0);
         pixt2 = pixMorphCompSequence(pixsd, buffer2, 0);
         pixEqual(pixt1, pixt2, &same);
-	if (i < 64) {
+        if (i < 64) {
             pixt3 = pixMorphCompSequenceDwa(pixsd, buffer2, 0);
             pixEqual(pixt1, pixt3, &same2);
-	} else {
+        } else {
             pixt3 = NULL;
-	    same2 = TRUE;
-	}
+            same2 = TRUE;
+        }
         if (same && same2)
             writeResult(buffer1, 1);
         else {
@@ -85,19 +88,19 @@ static char  mainName[] = "binmorph2_reg";
         pixDestroy(&pixt2);
         pixDestroy(&pixt3);
 
-	    /* ... erosion */
+            /* ... erosion */
         sprintf(buffer1, "e%d.%d", i + diff, i + diff);
         sprintf(buffer2, "e%d.%d", i, i);
         pixt1 = pixMorphSequence(pixsd, buffer1, 0);
         pixt2 = pixMorphCompSequence(pixsd, buffer2, 0);
         pixEqual(pixt1, pixt2, &same);
-	if (i < 64) {
+        if (i < 64) {
             pixt3 = pixMorphCompSequenceDwa(pixsd, buffer2, 0);
             pixEqual(pixt1, pixt3, &same2);
-	} else {
+        } else {
             pixt3 = NULL;
-	    same2 = TRUE;
-	}
+            same2 = TRUE;
+        }
         if (same && same2)
             writeResult(buffer1, 1);
         else {
@@ -108,19 +111,19 @@ static char  mainName[] = "binmorph2_reg";
         pixDestroy(&pixt2);
         pixDestroy(&pixt3);
 
-	    /* ... opening */
+            /* ... opening */
         sprintf(buffer1, "o%d.%d", i + diff, i + diff);
         sprintf(buffer2, "o%d.%d", i, i);
         pixt1 = pixMorphSequence(pixsd, buffer1, 0);
         pixt2 = pixMorphCompSequence(pixsd, buffer2, 0);
         pixEqual(pixt1, pixt2, &same);
-	if (i < 64) {
+        if (i < 64) {
             pixt3 = pixMorphCompSequenceDwa(pixsd, buffer2, 0);
             pixEqual(pixt1, pixt3, &same2);
-	} else {
+        } else {
             pixt3 = NULL;
-	    same2 = TRUE;
-	}
+            same2 = TRUE;
+        }
         if (same && same2)
             writeResult(buffer1, 1);
         else {
@@ -137,13 +140,13 @@ static char  mainName[] = "binmorph2_reg";
         pixt1 = pixMorphSequence(pixsd, buffer1, 0);
         pixt2 = pixMorphCompSequence(pixsd, buffer2, 0);
         pixEqual(pixt1, pixt2, &same);
-	if (i < 64) {
+        if (i < 64) {
             pixt3 = pixMorphCompSequenceDwa(pixsd, buffer2, 0);
             pixEqual(pixt1, pixt3, &same2);
-	} else {
+        } else {
             pixt3 = NULL;
-	    same2 = TRUE;
-	}
+            same2 = TRUE;
+        }
         if (same && same2)
             writeResult(buffer1, 1);
         else {

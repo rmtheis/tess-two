@@ -28,26 +28,197 @@
  *  runlength.c
  *
  *     Label pixels by membership in runs
- *           PIX        *pixRunlengthTransform()
+ *           PIX         *pixStrokeWidthTransform()
+ *           static PIX  *pixFindMinRunsOrthogonal()
+ *           PIX         *pixRunlengthTransform()
  *
  *     Find runs along horizontal and vertical lines
- *           l_int32     pixFindHorizontalRuns()
- *           l_int32     pixFindVerticalRuns()
+ *           l_int32      pixFindHorizontalRuns()
+ *           l_int32      pixFindVerticalRuns()
  *
  *     Compute runlength-to-membership transform on a line
- *           l_int32     runlengthMembershipOnLine()
+ *           l_int32      runlengthMembershipOnLine()
  *
  *     Make byte position LUT
- *           l_int32     makeMSBitLocTab()
+ *           l_int32      makeMSBitLocTab()
  */
 
 #include <string.h>
+#include <math.h>
 #include "allheaders.h"
+
+static PIX *pixFindMinRunsOrthogonal(PIX *pixs, l_float32 angle, l_int32 depth);
 
 
 /*-----------------------------------------------------------------------*
  *                   Label pixels by membership in runs                  *
  *-----------------------------------------------------------------------*/
+/*!
+ *  pixStrokeWidthTransform()
+ *
+ *      Input:   pixs (1 bpp)
+ *               color (0 for white runs, 1 for black runs)
+ *               depth (of pixd: 8 or 16 bpp)
+ *               nangles (2, 4, 6 or 8)
+ *      Return:  pixd (8 or 16 bpp), or null on error
+ *
+ *  Notes:
+ *      (1) The dest Pix is 8 or 16 bpp, with the pixel values
+ *          equal to the stroke width in which it is a member.
+ *          The values are clipped to the max pixel value if necessary.
+ *      (2) The color determines if we're labelling white or black strokes.
+ *      (3) A pixel that is not a member of the chosen color gets
+ *          value 0; it belongs to a width of length 0 of the
+ *          chosen color.
+ *      (4) This chooses, for each dest pixel, the minimum of sets
+ *          of runlengths through each pixel.  Here are the sets:
+ *            nangles    increment          set
+ *            -------    ---------    --------------------------------
+ *               2          90       {0, 90}
+ *               4          45       {0, 45, 90, 135}
+ *               6          30       {0, 30, 60, 90, 120, 150}
+ *               8          22.5     {0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5}
+ *      (5) Runtime scales linearly with (nangles - 2).
+ */
+PIX *
+pixStrokeWidthTransform(PIX     *pixs,
+                        l_int32  color,
+                        l_int32  depth,
+                        l_int32  nangles)
+{
+l_float32  angle, pi;
+PIX       *pixh, *pixv, *pixt, *pixg1, *pixg2, *pixg3, *pixg4;
+
+    PROCNAME("pixStrokeWidthTransform");
+
+    if (!pixs || pixGetDepth(pixs) != 1)
+        return (PIX *)ERROR_PTR("pixs undefined or not 1 bpp", procName, NULL);
+    if (depth != 8 && depth != 16)
+        return (PIX *)ERROR_PTR("depth must be 8 or 16 bpp", procName, NULL);
+    if (nangles != 2 && nangles != 4 && nangles != 6 && nangles != 8)
+        return (PIX *)ERROR_PTR("nangles not in {2,4,6,8}", procName, NULL);
+
+        /* Use fg runs for evaluation */
+    if (color == 0)
+        pixt = pixInvert(NULL, pixs);
+    else
+        pixt = pixClone(pixs);
+
+        /* Find min length at 0 and 90 degrees */
+    pixh = pixRunlengthTransform(pixt, 1, L_HORIZONTAL_RUNS, depth);
+    pixv = pixRunlengthTransform(pixt, 1, L_VERTICAL_RUNS, depth);
+    pixg1 = pixMinOrMax(NULL, pixh, pixv, L_CHOOSE_MIN);
+    pixDestroy(&pixh);
+    pixDestroy(&pixv);
+
+    pixg2 = pixg3 = pixg4 = NULL;
+    pi = 3.1415926535;
+    if (nangles == 4 || nangles == 8) {
+            /* Find min length at +45 and -45 degrees */
+        angle = pi / 4.0;
+        pixg2 = pixFindMinRunsOrthogonal(pixt, angle, depth);
+    }
+
+    if (nangles == 6) {
+            /* Find min length at +30 and -60 degrees */
+        angle = pi / 6.0;
+        pixg2 = pixFindMinRunsOrthogonal(pixt, angle, depth);
+
+            /* Find min length at +60 and -30 degrees */
+        angle = pi / 3.0;
+        pixg3 = pixFindMinRunsOrthogonal(pixt, angle, depth);
+    }
+
+    if (nangles == 8) {
+            /* Find min length at +22.5 and -67.5 degrees */
+        angle = pi / 8.0;
+        pixg3 = pixFindMinRunsOrthogonal(pixt, angle, depth);
+
+            /* Find min length at +67.5 and -22.5 degrees */
+        angle = 3.0 * pi / 8.0;
+        pixg4 = pixFindMinRunsOrthogonal(pixt, angle, depth);
+    }
+    pixDestroy(&pixt);
+
+    if (nangles > 2)
+        pixMinOrMax(pixg1, pixg1, pixg2, L_CHOOSE_MIN);
+    if (nangles > 4)
+        pixMinOrMax(pixg1, pixg1, pixg3, L_CHOOSE_MIN);
+    if (nangles > 6)
+        pixMinOrMax(pixg1, pixg1, pixg4, L_CHOOSE_MIN);
+    pixDestroy(&pixg2);
+    pixDestroy(&pixg3);
+    pixDestroy(&pixg4);
+    return pixg1;
+}
+
+
+/*!
+ *  pixFindMinRunsOrthogonal()
+ *
+ *      Input:   pixs (1 bpp)
+ *               angle (in radians)
+ *               depth (of pixd: 8 or 16 bpp)
+ *      Return:  pixd (8 or 16 bpp), or null on error
+ *
+ *  Notes:
+ *      (1) This computes, for each fg pixel in pixs, the minimum of
+ *          the runlengths going through that pixel in two orthogonal
+ *          directions: at @angle and at (90 + @angle).
+ *      (2) We use rotation by shear because the forward and backward
+ *          rotations by the same angle are exact inverse operations.
+ *          As a result, the nonzero pixels in pixd correspond exactly
+ *          to the fg pixels in pixs.  This is not the case with
+ *          sampled rotation, due to spatial quantization.  Nevertheless,
+ *          the result suffers from lack of exact correspondence
+ *          between original and rotated pixels, also due to spatial
+ *          quantization, causing some boundary pixels to be
+ *          shifted from bg to fg or v.v.
+ */
+static PIX *
+pixFindMinRunsOrthogonal(PIX       *pixs,
+                         l_float32  angle,
+                         l_int32    depth)
+{
+l_int32  w, h, diag, xoff, yoff;
+PIX     *pixb, *pixr, *pixh, *pixv, *pixg1, *pixg2, *pixd;
+BOX     *box;
+
+    PROCNAME("pixFindMinRunsOrthogonal");
+
+    if (!pixs || pixGetDepth(pixs) != 1)
+        return (PIX *)ERROR_PTR("pixs undefined or not 1 bpp", procName, NULL);
+
+        /* Rasterop into the center of a sufficiently large image
+         * so we don't lose pixels for any rotation angle. */
+    pixGetDimensions(pixs, &w, &h, NULL);
+    diag = (l_int32)(sqrt((l_float64)(w * w + h * h)) + 2.5);
+    xoff = (diag - w) / 2;
+    yoff = (diag - h) / 2;
+    pixb = pixCreate(diag, diag, 1);
+    pixRasterop(pixb, xoff, yoff, w, h, PIX_SRC, pixs, 0, 0);
+
+        /* Rotate about the 'center', get the min of orthogonal transforms,
+         * rotate back, and crop the part corresponding to pixs.  */
+    pixr = pixRotateShear(pixb, diag / 2, diag / 2, angle, L_BRING_IN_WHITE);
+    pixh = pixRunlengthTransform(pixr, 1, L_HORIZONTAL_RUNS, depth);
+    pixv = pixRunlengthTransform(pixr, 1, L_VERTICAL_RUNS, depth);
+    pixg1 = pixMinOrMax(NULL, pixh, pixv, L_CHOOSE_MIN);
+    pixg2 = pixRotateShear(pixg1, diag / 2, diag / 2, -angle, L_BRING_IN_WHITE);
+    box = boxCreate(xoff, yoff, w, h);
+    pixd = pixClipRectangle(pixg2, box, NULL);
+
+    pixDestroy(&pixb);
+    pixDestroy(&pixr);
+    pixDestroy(&pixh);
+    pixDestroy(&pixv);
+    pixDestroy(&pixg1);
+    pixDestroy(&pixg2);
+    boxDestroy(&box);
+    return pixd;
+}
+
+
 /*!
  *  pixRunlengthTransform()
  *
@@ -215,8 +386,7 @@ l_uint32  *line;
                 xstart[index] = j;
                 inrun = TRUE;
             }
-        }
-        else {
+        } else {
             if (!val) {
                 xend[index++] = j - 1;
                 inrun = FALSE;
@@ -292,8 +462,7 @@ l_uint32  *data, *line;
                 ystart[index] = i;
                 inrun = TRUE;
             }
-        }
-        else {
+        } else {
             if (!val) {
                 yend[index++] = i - 1;
                 inrun = FALSE;

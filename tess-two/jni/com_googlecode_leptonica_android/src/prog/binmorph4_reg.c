@@ -66,12 +66,11 @@ l_int32 PixCompareDwa(l_int32 size, const char *type, PIX *pixt1, PIX *pixt2,
                                      otherwise, it tests asymmetric b.c. */
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-l_int32      i;
-PIX         *pixs, *pixt0, *pixt1, *pixt2, *pixt3, *pixt4, *pixt5, *pixt6;
-static char  mainName[] = "binmorph4_reg";
+l_int32  i;
+PIX     *pixs, *pixt1, *pixt2, *pixt3, *pixt4, *pixt5, *pixt6;
 
     pixs = pixRead("feyn.tif");
 

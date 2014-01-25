@@ -77,8 +77,8 @@ static l_int32 test_mem_gif(const char *fname, l_int32 index);
 
 #define   REDUCTION     1
 
-main(int    argc,
-char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       success;
 L_REGPARAMS  *rp;
@@ -112,7 +112,7 @@ L_REGPARAMS  *rp;
             "\n  ******* Failure on at least one r/w to file ******\n\n");
 
     if (rp->display)
-        pixDisplayMultiple("/tmp/junk_write_display*");
+        pixDisplayMultiple("/tmp/display/file*");
 
     /* ------------ Part 2: Test lossless r/w to memory ------------ */
     success = TRUE;

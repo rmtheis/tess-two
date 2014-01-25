@@ -22,7 +22,44 @@ They are <i>not</i> a complete listing of the modifications.
 
 <pre>
 
-1.69   30 Jan 12
+1.70   24 Jan 14   (distribution to debian; ubuntu 14-04; 4.0.0)
+       New bilateral filtering.
+       New simple character recognition utility.
+       Improved dewarping functionality, in model building and rendering.
+        More flexible use of ref models.
+       Better and more consistent handling of alpha layer in RGBA, though
+        use of the spp field.  Ability to handle more png files with alpha,
+        including palette with alpha.
+       New fast converters from jpeg and jpeg2000 to pdf, without transcoding.
+       Made bmp reader (and pix reading in general) more robust; avoid
+        size overflow errors.
+       New text labelling operations; depth conversion of a set of images
+       New license (essentially BSD 2-clause), to specify conditions
+        for both source and binary distribution.
+       Improved auto make: make all progs, install just 11, test 61.
+       New src files: bilateral.{c,h}, dewarp1.c, dewarp2.c,
+           dewarp3.c, dewarp4.c, jp2kio.c, jp2kiostub.c,
+           pixlabel.c, recogbasic.c, recogdid.c, recogident.c,
+           recogtrain.c, recog.h
+       New prog files: adaptmap_dark.c, alphaxform_ret.c,
+           bilateral_reg.c, binarize_reg.c, binarize_set.c,
+           blackwhite_reg.c, blend1_reg.c, blend3_reg.c, blend4_reg.c,
+           boxa1_reg.c, colorcontent_reg.c, coloring_reg.c,
+           colorspace_reg.c, compare_reg.c, converttopdf.c,
+           croptest.c, dewarprules.c, dewarptest1.c, dewarptest2.c,
+           dewarptest3.c, dewarptest4.c, displayboxa.c, displaypix.c,
+           displaypixa.c, findcorners_reg.c, fpix1_reg.c,
+           fpix2_reg.c, fpixcontours.c, insert_reg.c, italictest.c,
+           jpegio_reg.c, label_reg.c, multitype_reg.c, nearline_reg.c,
+           newspaper_reg.c, numa1_reg.c, numa2_reg.c, recogsort.c,
+           recogtest1.c, shear1_reg.c, webpio_reg.c, wordboxes_reg.c
+       Removed src files: arithlow.c, binexpandlow.c, binreducelow.c,
+           dewarp.c
+       Removed prog files: blend_reg.c, blendtest1.c,
+           dewarptest.c, fpix_reg.c, inserttest.c, numa_reg.c, rotatetest2.c
+           shear_reg, xvdisp.c
+
+1.69   16 Jan 12   (distribution to debian; ubuntu 12-04; 3.0.0)
        Fixed bug in pdf generation for large files, using a new
         double array (dnabasic.c).  Added several new modes for pdf
         generation from sets of images.

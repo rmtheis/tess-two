@@ -31,23 +31,22 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+          char **argv)
 {
 char         *filein, *fileout;
 l_int32       d, same;
-PIX          *pixs, *pixd, *pixt0, *pixt1, *pixt2, *pixt3, *pixt4, *pixt5;
+PIX          *pixs, *pixd, *pix1, *pix2, *pix3, *pix4;
 static char   mainName[] = "converttogray";
 
     if (argc != 2 && argc != 3)
-	exit(ERROR_INT(" Syntax:  converttogray filein [fileout]",
-	               mainName, 1));
+        return ERROR_INT(" Syntax:  converttogray filein [fileout]",
+                         mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
-
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
 
 #if 0
     pixd = pixConvertRGBToGray(pixs, 0.33, 0.34, 0.33);
@@ -58,54 +57,53 @@ static char   mainName[] = "converttogray";
 #if 1
     d = pixGetDepth(pixs);
     if (d == 2) {
-	pixt1 = pixConvert2To8(pixs, 0x00, 0x55, 0xaa, 0xff, TRUE);
-	pixt2 = pixConvert2To8(pixs, 0x00, 0x55, 0xaa, 0xff, FALSE);
-	pixEqual(pixt1, pixt2, &same);
-	if (same)
-	    fprintf(stderr, "images are the same\n");
-	else
-	    fprintf(stderr, "images are different!\n");
-	pixWrite("/tmp/junkpixt1", pixt1, IFF_PNG);
-	pixWrite("/tmp/junkpixt2", pixt2, IFF_PNG);
-	pixDestroy(&pixt1);
-	pixDestroy(&pixt2);
-	pixSetColormap(pixs, NULL);
-	pixt3 = pixConvert2To8(pixs, 0x00, 0x55, 0xaa, 0xff, TRUE);
-	pixt4 = pixConvert2To8(pixs, 0x00, 0x55, 0xaa, 0xff, FALSE);
-	pixEqual(pixt3, pixt4, &same);
-	if (same)
-	    fprintf(stderr, "images are the same\n");
-	else
-	    fprintf(stderr, "images are different!\n");
-	pixWrite("/tmp/junkpixt3", pixt3, IFF_PNG);
-	pixWrite("/tmp/junkpixt4", pixt4, IFF_PNG);
-	pixDestroy(&pixt3);
-	pixDestroy(&pixt4);
-    }
-    else if (d == 4) {
-	pixt1 = pixConvert4To8(pixs, TRUE);
-	pixt2 = pixConvert4To8(pixs, FALSE);
-	pixEqual(pixt1, pixt2, &same);
-	if (same)
-	    fprintf(stderr, "images are the same\n");
-	else
-	    fprintf(stderr, "images are different!\n");
-	pixWrite("/tmp/junkpixt1", pixt1, IFF_PNG);
-	pixWrite("/tmp/junkpixt2", pixt2, IFF_PNG);
-	pixDestroy(&pixt1);
-	pixDestroy(&pixt2);
-	pixSetColormap(pixs, NULL);
-	pixt3 = pixConvert4To8(pixs, TRUE);
-	pixt4 = pixConvert4To8(pixs, FALSE);
-	pixEqual(pixt3, pixt4, &same);
-	if (same)
-	    fprintf(stderr, "images are the same\n");
-	else
-	    fprintf(stderr, "images are different!\n");
-	pixWrite("/tmp/junkpixt3", pixt3, IFF_PNG);
-	pixWrite("/tmp/junkpixt4", pixt4, IFF_PNG);
-	pixDestroy(&pixt3);
-	pixDestroy(&pixt4);
+        pix1 = pixConvert2To8(pixs, 0x00, 0x55, 0xaa, 0xff, TRUE);
+        pix2 = pixConvert2To8(pixs, 0x00, 0x55, 0xaa, 0xff, FALSE);
+        pixEqual(pix1, pix2, &same);
+        if (same)
+            fprintf(stderr, "images are the same\n");
+        else
+            fprintf(stderr, "images are different!\n");
+        pixWrite("/tmp/pix1.png", pix1, IFF_PNG);
+        pixWrite("/tmp/pix2.png", pix2, IFF_PNG);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+        pixSetColormap(pixs, NULL);
+        pix3 = pixConvert2To8(pixs, 0x00, 0x55, 0xaa, 0xff, TRUE);
+        pix4 = pixConvert2To8(pixs, 0x00, 0x55, 0xaa, 0xff, FALSE);
+        pixEqual(pix3, pix4, &same);
+        if (same)
+            fprintf(stderr, "images are the same\n");
+        else
+            fprintf(stderr, "images are different!\n");
+        pixWrite("/tmp/pix3.png", pix3, IFF_PNG);
+        pixWrite("/tmp/pix4.png", pix4, IFF_PNG);
+        pixDestroy(&pix3);
+        pixDestroy(&pix4);
+    } else if (d == 4) {
+        pix1 = pixConvert4To8(pixs, TRUE);
+        pix2 = pixConvert4To8(pixs, FALSE);
+        pixEqual(pix1, pix2, &same);
+        if (same)
+            fprintf(stderr, "images are the same\n");
+        else
+            fprintf(stderr, "images are different!\n");
+        pixWrite("/tmp/pix1.png", pix1, IFF_PNG);
+        pixWrite("/tmp/pix2.png", pix2, IFF_PNG);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+        pixSetColormap(pixs, NULL);
+        pix3 = pixConvert4To8(pixs, TRUE);
+        pix4 = pixConvert4To8(pixs, FALSE);
+        pixEqual(pix3, pix4, &same);
+        if (same)
+            fprintf(stderr, "images are the same\n");
+        else
+            fprintf(stderr, "images are different!\n");
+        pixWrite("/tmp/pix3.png", pix3, IFF_PNG);
+        pixWrite("/tmp/pix4.png", pix4, IFF_PNG);
+        pixDestroy(&pix3);
+        pixDestroy(&pix4);
     }
 #endif
 

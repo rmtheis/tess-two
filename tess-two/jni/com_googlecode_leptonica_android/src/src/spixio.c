@@ -52,6 +52,10 @@
 #include <string.h>
 #include "allheaders.h"
 
+#ifndef  NO_CONSOLE_IO
+#define  DEBUG_SERIALIZE      0
+#endif  /* ~NO_CONSOLE_IO */
+
 
 /*-----------------------------------------------------------------------*
  *                          Reading spix from file                       *
@@ -220,8 +224,7 @@ l_int32  d, ncolors;
     if (d <= 16) {
       *pbps = d;
       *pspp = 1;
-    }
-    else {
+    } else {
       *pbps = 8;
       *pspp = d / 8;  /* if the pix is 32 bpp, call it 4 samples */
     }
@@ -317,9 +320,7 @@ pixWriteMemSpix(l_uint8  **pdata,
  *            d         (4 bytes)
  *            wpl       (4 bytes)
  *            ncolors   (4 bytes) -- in colormap; 0 if there is no colormap
- *            cdatasize (4 bytes) -- size of serialized colormap
- *                                   = 4 * (num colors)
- *            cdata     (cdatasize)
+ *            cdata     (4 * ncolors)  -- size of serialized colormap array
  *            rdatasize (4 bytes) -- size of serialized raster data
  *                                   = 4 * wpl * h
  *            rdata     (rdatasize)
@@ -327,11 +328,11 @@ pixWriteMemSpix(l_uint8  **pdata,
 l_int32
 pixSerializeToMemory(PIX        *pixs,
                      l_uint32  **pdata,
-                     size_t    *pnbytes)
+                     size_t     *pnbytes)
 {
 char      *id;
-l_int32    w, h, d, wpl, rdatasize, cdatasize, ncolors, nbytes, index;
-l_uint8   *cdata;  /* data in colormap (4 bytes/color table entry) */
+l_int32    w, h, d, wpl, rdatasize, ncolors, nbytes, index;
+l_uint8   *cdata;  /* data in colormap array (4 bytes/color table entry) */
 l_uint32  *data;
 l_uint32  *rdata;  /* data in pix raster */
 PIXCMAP   *cmap;
@@ -349,13 +350,12 @@ PIXCMAP   *cmap;
     wpl = pixGetWpl(pixs);
     rdata = pixGetData(pixs);
     rdatasize = 4 * wpl * h;
-    cdatasize = 0;
     ncolors = 0;
     cdata = NULL;
     if ((cmap = pixGetColormap(pixs)) != NULL)
-        pixcmapSerializeToMemory(cmap, 4, &ncolors, &cdata, &cdatasize);
+        pixcmapSerializeToMemory(cmap, 4, &ncolors, &cdata);
 
-    nbytes = 32 + cdatasize + rdatasize;
+    nbytes = 24 + 4 * ncolors + 4 + rdatasize;
     if ((data = (l_uint32 *)CALLOC(nbytes / 4, sizeof(l_uint32))) == NULL)
         return ERROR_INT("data not made", procName, 1);
     *pdata = data;
@@ -370,10 +370,9 @@ PIXCMAP   *cmap;
     data[3] = d;
     data[4] = wpl;
     data[5] = ncolors;
-    data[6] = cdatasize;
-    if (cdatasize > 0)
-        memcpy((char *)(data + 7), (char *)cdata, cdatasize);
-    index = 7 + cdatasize / 4;
+    if (ncolors > 0)
+        memcpy((char *)(data + 6), (char *)cdata, 4 * ncolors);
+    index = 6 + ncolors;
     data[index] = rdatasize;
     memcpy((char *)(data + index + 1), (char *)rdata, rdatasize);
 
@@ -403,7 +402,7 @@ pixDeserializeFromMemory(const l_uint32  *data,
                          size_t           nbytes)
 {
 char      *id;
-l_int32    w, h, d, wpl, imdatasize, cdatasize, ncolors;
+l_int32    w, h, d, imdatasize, ncolors;
 l_uint32  *imdata;  /* data in pix raster */
 PIX       *pixd;
 PIXCMAP   *cmap;
@@ -412,7 +411,7 @@ PIXCMAP   *cmap;
 
     if (!data)
         return (PIX *)ERROR_PTR("data not defined", procName, NULL);
-    if (nbytes < 32)
+    if (nbytes < 28)
         return (PIX *)ERROR_PTR("invalid data", procName, NULL);
 
     id = (char *)data;
@@ -424,23 +423,23 @@ PIXCMAP   *cmap;
     if ((pixd = pixCreate(w, h, d)) == NULL)
         return (PIX *)ERROR_PTR("pix not made", procName, NULL);
 
-    wpl = data[4];
     ncolors = data[5];
-    if ((cdatasize = data[6]) > 0) {
-        cmap = pixcmapDeserializeFromMemory((l_uint8 *)(&data[7]), ncolors,
-                                            cdatasize);
+    if (ncolors > 0) {
+        cmap = pixcmapDeserializeFromMemory((l_uint8 *)(&data[6]), 4, ncolors);
         if (!cmap)
             return (PIX *)ERROR_PTR("cmap not made", procName, NULL);
         pixSetColormap(pixd, cmap);
     }
 
     imdata = pixGetData(pixd);
-    imdatasize = nbytes - 32 - cdatasize;
-    memcpy((char *)imdata, (char *)(data + 8 + cdatasize / 4), imdatasize);
+    imdatasize = nbytes - 24 - 4 * ncolors - 4;
+    if (imdatasize != data[6 + ncolors])
+        L_ERROR("imdatasize is inconsistent with nbytes\n", procName);
+    memcpy((char *)imdata, (char *)(data + 7 + ncolors), imdatasize);
 
 #if  DEBUG_SERIALIZE
     fprintf(stderr, "Deserialize: "
-            "raster size = %d, ncolors in cmap = %d, total bytes = %d\n",
+            "raster size = %d, ncolors in cmap = %d, total bytes = %lu\n",
             imdatasize, ncolors, nbytes);
 #endif  /* DEBUG_SERIALIZE */
 

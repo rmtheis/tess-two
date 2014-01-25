@@ -27,41 +27,42 @@
 /*
  * graphicstest.c
  *
+ *  e.g.:   graphicstest fish24.jpg junkout
  */
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-char       *filein, *fileout;
-l_int32     d;
-BOX        *box1, *box2, *box3, *box4;
-BOXA       *boxa;
-PIX        *pixs, *pixt1, *pixt2, *pixt3;
-PTA        *pta;
-static char     mainName[] = "graphicstest";
+char        *filein, *fileout;
+l_int32      d;
+BOX         *box1, *box2, *box3, *box4;
+BOXA        *boxa;
+PIX         *pixs, *pix1;
+PTA         *pta;
+static char  mainName[] = "graphicstest";
 
     if (argc != 3)
-        exit(ERROR_INT(" Syntax: graphicstest filein fileout", mainName, 1));
+        return ERROR_INT(" Syntax: graphicstest filein fileout", mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
     if ((pixs = pixRead(filein)) == NULL)
-        exit(ERROR_INT(" Syntax: pixs not made", mainName, 1));
+        return ERROR_INT(" Syntax: pixs not made", mainName, 1);
     d = pixGetDepth(pixs);
     if (d <= 8)
-        pixt1 = pixConvertTo32(pixs);
+        pix1 = pixConvertTo32(pixs);
     else
-        pixt1 = pixClone(pixs);
+        pix1 = pixClone(pixs);
 
         /* Paint on RGB */
-    pixRenderLineArb(pixt1, 450, 20, 850, 320, 5, 200, 50, 125);
-    pixRenderLineArb(pixt1, 30, 40, 440, 40, 5, 100, 200, 25);
-    pixRenderLineBlend(pixt1, 30, 60, 440, 70, 5, 115, 200, 120, 0.3);
-    pixRenderLineBlend(pixt1, 30, 600, 440, 670, 9, 215, 115, 30, 0.5);
-    pixRenderLineBlend(pixt1, 130, 700, 540, 770, 9, 255, 255, 250, 0.4);
-    pixRenderLineBlend(pixt1, 130, 800, 540, 870, 9, 0, 0, 0, 0.4);
+    pixRenderLineArb(pix1, 450, 20, 850, 320, 5, 200, 50, 125);
+    pixRenderLineArb(pix1, 30, 40, 440, 40, 5, 100, 200, 25);
+    pixRenderLineBlend(pix1, 30, 60, 440, 70, 5, 115, 200, 120, 0.3);
+    pixRenderLineBlend(pix1, 30, 600, 440, 670, 9, 215, 115, 30, 0.5);
+    pixRenderLineBlend(pix1, 130, 700, 540, 770, 9, 255, 255, 250, 0.4);
+    pixRenderLineBlend(pix1, 130, 800, 540, 870, 9, 0, 0, 0, 0.4);
     box1 = boxCreate(70, 80, 300, 245);
     box2 = boxCreate(470, 180, 150, 205);
     box3 = boxCreate(520, 220, 160, 220);
@@ -70,20 +71,20 @@ static char     mainName[] = "graphicstest";
     boxaAddBox(boxa, box2, L_INSERT);
     boxaAddBox(boxa, box3, L_INSERT);
     boxaAddBox(boxa, box4, L_INSERT);
-    pixRenderBoxArb(pixt1, box1, 3, 200, 200, 25);
-    pixRenderBoxaBlend(pixt1, boxa, 17, 200, 200, 25, 0.4, 1);
+    pixRenderBoxArb(pix1, box1, 3, 200, 200, 25);
+    pixRenderBoxaBlend(pix1, boxa, 17, 200, 200, 25, 0.4, 1);
     pta = ptaCreate(5);
     ptaAddPt(pta, 250, 300);
     ptaAddPt(pta, 350, 450);
     ptaAddPt(pta, 400, 600);
     ptaAddPt(pta, 212, 512);
     ptaAddPt(pta, 180, 375);
-    pixRenderPolylineBlend(pixt1, pta, 17, 25, 200, 200, 0.5, 1, 1);
-    pixWrite(fileout, pixt1, IFF_JFIF_JPEG);
-    pixDisplay(pixt1, 200, 200);
+    pixRenderPolylineBlend(pix1, pta, 17, 25, 200, 200, 0.5, 1, 1);
+    pixWrite(fileout, pix1, IFF_JFIF_JPEG);
+    pixDisplay(pix1, 200, 200);
 
     pixDestroy(&pixs);
-    pixDestroy(&pixt1);
+    pixDestroy(&pix1);
     boxDestroy(&box1);
     boxaDestroy(&boxa);
     ptaDestroy(&pta);

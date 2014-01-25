@@ -42,7 +42,7 @@
  *
  *      Pixacomp creation and destruction
  *           PIXAC    *pixacompCreate()
- *           PIXAC    *pixacompCreateInitialized()
+ *           PIXAC    *pixacompCreateWithInit()
  *           PIXAC    *pixacompCreateFromPixa()
  *           PIXAC    *pixacompCreateFromFiles()
  *           PIXAC    *pixacompCreateFromSA()
@@ -51,7 +51,7 @@
  *      Pixacomp addition/replacement
  *           l_int32   pixacompAddPix()
  *           l_int32   pixacompAddPixcomp()
- *           l_int32   pixacompExtendArray()
+ *           static l_int32  pixacompExtendArray()
  *           l_int32   pixacompReplacePix()
  *           l_int32   pixacompReplacePixcomp()
  *           l_int32   pixacompAddBox()
@@ -104,15 +104,32 @@
  *   serialization of the Pixacomp does not require any imaging
  *   libraries because it simply reads and writes the compressed data.
  *
- *   For random insertion and replacement of pixcomp into a pixacomp,
- *   initialize a fully populated array using pixacompCreateInitialized().
- *   Then use pixacompReplacePix() or pixacompReplacePixcomp() for
- *   the random insertion.
+ *   There are two modes of use in accumulating images:
+ *     (1) addition to the end of the array
+ *     (2) random insertion (replacement) into the array
+ *
+ *   In use, we assume that the array is fully populated up to the
+ *   index value (n - 1), where n is the value of the pixcomp field n.
+ *   Addition can only be made to the end of the fully populated array,
+ *   at the index value n.  Insertion can be made randomly, but again
+ *   only within the array of pixcomps; i.e., within the set of
+ *   indices {0 .... n-1}.  The functions are pixacompReplacePix()
+ *   and pixacompReplacePixcomp(), and they destroy the existing pixcomp.
+ *
+ *   For addition to the end of the array, use pixacompCreate(), which
+ *   generates an initially empty array of pixcomps.  For random
+ *   insertion and replacement of pixcomp into a pixacomp,
+ *   initialize a fully populated array using pixacompCreateWithInit().
  *
  *   The offset field allows you to use an offset-based index to
  *   access the 0-based ptr array in the pixacomp.  This would typically
  *   be used to map the pixacomp array index to a page number, or v.v.
- *   By default, the offset is 0.
+ *   By default, the offset is 0.  For example, suppose you have 50 images,
+ *   corresponding to page numbers 10 - 59.  Then you would use
+ *      pixac = pixacompCreateWithInit(50, 10, ...);
+ *   This would allocate an array of 50 pixcomps, but if you asked for
+ *   the pix at index 10, using pixacompGetPix(pixac, 10), it would
+ *   apply the offset internally, returning the pix at index 0 in the array.
  */
 
 #include <string.h>
@@ -123,6 +140,9 @@ static const l_int32  INITIAL_PTR_ARRAYSIZE = 20;   /* n'import quoi */
     /* These two globals are defined in writefile.c */
 extern l_int32 NumImageFileFormatExtensions;
 extern const char *ImageFileFormatExtensions[];
+
+    /* Static function */
+static l_int32 pixacompExtendArray(PIXAC *pixac);
 
 
 /*---------------------------------------------------------------------*
@@ -170,7 +190,7 @@ PIXC     *pixc;
     pixc->comptype = format;
     ret = pixWriteMem(&data, &size, pix, format);
     if (ret) {
-        L_ERROR("write to memory failed", procName);
+        L_ERROR("write to memory failed\n", procName);
         pixcompDestroy(&pixc);
         return NULL;
     }
@@ -260,8 +280,10 @@ PIXC     *pixc;
         return (PIXC *)ERROR_PTR("invalid comptype", procName, NULL);
 
     findFileFormat(filename, &format);
-    if (format == IFF_UNKNOWN)
-        return (PIXC *)ERROR_PTR("image file not readable", procName, NULL);
+    if (format == IFF_UNKNOWN) {
+        L_ERROR("unreadable file: %s\n", procName, filename);
+        return NULL;
+    }
 
         /* Can we accept the encoded file directly?  Remember that
          * png is the "universal" compression type, so if requested
@@ -308,7 +330,7 @@ PIXC  *pixc;
     PROCNAME("pixcompDestroy");
 
     if (!ppixc) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
 
@@ -392,11 +414,11 @@ pixcompDetermineFormat(l_int32   comptype,
             *pformat = IFF_PNG;
         else if (d >= 8 && !cmapflag)
             *pformat = IFF_JFIF_JPEG;
-    }
-    else if (comptype == IFF_TIFF_G4 && d == 1)
+    } else if (comptype == IFF_TIFF_G4 && d == 1) {
         *pformat = IFF_TIFF_G4;
-    else if (comptype == IFF_JFIF_JPEG && d >= 8 && !cmapflag)
+    } else if (comptype == IFF_JFIF_JPEG && d >= 8 && !cmapflag) {
         *pformat = IFF_JFIF_JPEG;
+    }
 
     return 0;
 }
@@ -431,23 +453,23 @@ PIX     *pix;
         /* Check fields for consistency */
     pixGetDimensions(pix, &w, &h, &d);
     if (pixc->w != w) {
-        L_INFO_INT2("pix width %d != pixc width %d", procName, w, pixc->w);
-        L_ERROR_INT("pix width %d != pixc width", procName, w);
+        L_INFO("pix width %d != pixc width %d\n", procName, w, pixc->w);
+        L_ERROR("pix width %d != pixc width\n", procName, w);
     }
     if (pixc->h != h)
-        L_ERROR_INT("pix height %d != pixc height", procName, h);
+        L_ERROR("pix height %d != pixc height\n", procName, h);
     if (pixc->d != d) {
         if (pixc->d == 16)  /* we strip 16 --> 8 bpp by default */
-            L_WARNING_INT("pix depth %d != pixc depth 16", procName, d);
+            L_WARNING("pix depth %d != pixc depth 16\n", procName, d);
         else
-            L_ERROR_INT("pix depth %d != pixc depth", procName, d);
+            L_ERROR("pix depth %d != pixc depth\n", procName, d);
     }
     cmapinpix = (pixGetColormap(pix) != NULL);
     if ((cmapinpix && !pixc->cmapflag) || (!cmapinpix && pixc->cmapflag))
-        L_ERROR("pix cmap flag inconsistent", procName);
+        L_ERROR("pix cmap flag inconsistent\n", procName);
     format = pixGetInputFormat(pix);
     if (format != pixc->comptype) {
-        L_ERROR_INT("pix comptype %d not equal to pixc comptype",
+        L_ERROR("pix comptype %d not equal to pixc comptype\n",
                     procName, format);
     }
 
@@ -490,61 +512,80 @@ PIXAC  *pixac;
 
 
 /*!
- *  pixacompCreateInitialized()
+ *  pixacompCreateWithInit()
  *
  *      Input:  n  (initial number of ptrs)
  *              offset (difference: accessor index - pixacomp array index)
- *              pix (initialize each ptr in pixacomp to this pix)
+ *              pix (<optional> initialize each ptr in pixacomp to this pix;
+ *                   can be NULL)
  *              comptype (IFF_DEFAULT, IFF_TIFF_G4, IFF_PNG, IFF_JFIF_JPEG)
  *      Return: pixac, or null on error
  *
  *  Notes:
- *      (1) Initializes a pixacomp to be fully populated with @pix.
- *      (2) Typically use a very small @pix (w = h = 1) with
- *          @comptype == IFF_TIFF_G4 for the initialization.
+ *      (1) Initializes a pixacomp to be fully populated with @pix,
+ *          compressed using @comptype.  If @pix == NULL, @comptype
+ *          is ignored.
+ *      (2) Typically, the array is initialized with a tiny pix.
+ *          This is most easily done by setting @pix == NULL, causing
+ *          initialization of each array element with a tiny placeholder
+ *          pix (w = h = d = 1), using comptype = IFF_TIFF_G4 .
  *      (3) Example usage:
  *            // Generate pixacomp for pages 30 - 49.  This has an array
  *            // size of 20 and the page number offset is 30.
- *            Pix *pix = pixCreate(1, 1, 1);
- *            Pixacomp *pixac = pixacompCreateInitialized(20, 30, pix,
- *                                                        IFF_TIFF_G4);
+ *            PixaComp *pixac = pixacompCreateWithInit(20, 30, NULL,
+ *                                                     IFF_TIFF_G4);
+ *            // Now insert png-compressed images into the initialized array
  *            for (pageno = 30; pageno < 50; pageno++) {
  *                Pix *pixt = ...   // derived from image[pageno]
  *                if (pixt)
- *                    pixacompReplacePix(pixac, pageno, pixt, IFF_TIFF_G4);
+ *                    pixacompReplacePix(pixac, pageno, pixt, IFF_PNG);
  *                pixDestroy(&pixt);
  *            }
  *          The result is a pixac with 20 compressed strings, and with
  *          selected pixt replacing the placeholders.
+ *          To extract the image for page 38, which is decompressed
+ *          from element 8 in the array, use:
+ *            pixt = pixacompGetPix(pixac, 38);
  */
 PIXAC *
-pixacompCreateInitialized(l_int32  n,
-                          l_int32  offset,
-                          PIX     *pix,
-                          l_int32  comptype)
+pixacompCreateWithInit(l_int32  n,
+                       l_int32  offset,
+                       PIX     *pix,
+                       l_int32  comptype)
 {
 l_int32  i;
+PIX     *pixt;
 PIXC    *pixc;
 PIXAC   *pixac;
 
-    PROCNAME("pixacompCreateInitialized");
+    PROCNAME("pixacompCreateWithInit");
 
     if (n <= 0)
         return (PIXAC *)ERROR_PTR("n must be > 0", procName, NULL);
+    if (pix) {
+        if (comptype != IFF_DEFAULT && comptype != IFF_TIFF_G4 &&
+            comptype != IFF_PNG && comptype != IFF_JFIF_JPEG)
+            return (PIXAC *)ERROR_PTR("invalid comptype", procName, NULL);
+    } else {
+        comptype = IFF_TIFF_G4;
+    }
     if (offset < 0) {
-        L_WARNING("offset < 0; setting to 0", procName);
+        L_WARNING("offset < 0; setting to 0\n", procName);
         offset = 0;
     }
-    if (!pix)
-        return (PIXAC *)ERROR_PTR("pix not defined", procName, NULL);
 
     if ((pixac = pixacompCreate(n)) == NULL)
         return (PIXAC *)ERROR_PTR("pixac not made", procName, NULL);
     pixacompSetOffset(pixac, offset);
+    if (pix)
+        pixt = pixClone(pix);
+    else
+        pixt = pixCreate(1, 1, 1);
     for (i = 0; i < n; i++) {
-        pixc = pixcompCreateFromPix(pix, comptype);
+        pixc = pixcompCreateFromPix(pixt, comptype);
         pixacompAddPixcomp(pixac, pixc);
     }
+    pixDestroy(&pixt);
 
     return pixac;
 }
@@ -555,7 +596,7 @@ PIXAC   *pixac;
  *
  *      Input:  pixa
  *              comptype (IFF_DEFAULT, IFF_TIFF_G4, IFF_PNG, IFF_JFIF_JPEG)
- *              accesstype (L_COPY, L_CLONE, L_COPY_CLONE; for boxa)
+ *              accesstype (L_COPY, L_CLONE, L_COPY_CLONE)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -564,6 +605,7 @@ PIXAC   *pixac;
  *          specified format unless it can't be done (e.g., jpeg
  *          for a 1, 2 or 4 bpp pix, or a pix with a colormap),
  *          in which case we use the default (assumed best) compression.
+ *      (2) @accesstype is used to extract a boxa from @pixa.
  */
 PIXAC *
 pixacompCreateFromPixa(PIXA    *pixa,
@@ -665,10 +707,10 @@ PIXAC *
 pixacompCreateFromSA(SARRAY  *sa,
                      l_int32  comptype)
 {
-char     *str;
-l_int32   i, n;
-PIXC     *pixc;
-PIXAC    *pixac;
+char    *str;
+l_int32  i, n;
+PIXC    *pixc;
+PIXAC   *pixac;
 
     PROCNAME("pixacompCreateFromSA");
 
@@ -683,7 +725,7 @@ PIXAC    *pixac;
     for (i = 0; i < n; i++) {
         str = sarrayGetString(sa, i, L_NOCOPY);
         if ((pixc = pixcompCreateFromFile(str, comptype)) == NULL) {
-            L_WARNING_STRING("pixc not read from file %s", procName, str);
+            L_ERROR("pixc not read from file: %s\n", procName, str);
             continue;
         }
         pixacompAddPixcomp(pixac, pixc);
@@ -710,7 +752,7 @@ PIXAC   *pixac;
     PROCNAME("pixacompDestroy");
 
     if (ppixac == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
 
@@ -813,7 +855,7 @@ l_int32  n;
  *          with adding pixc.  We always want the sizes of the
  *          pixac and boxa ptr arrays to be equal.
  */
-l_int32
+static l_int32
 pixacompExtendArray(PIXAC  *pixac)
 {
     PROCNAME("pixacompExtendArray");
@@ -1152,9 +1194,9 @@ BOX     *box;
             return boxCopy(box);
         else  /* accesstype == L_CLONE */
             return boxClone(box);
-    }
-    else
+    } else {
         return NULL;
+    }
 }
 
 
@@ -1275,7 +1317,7 @@ PIXA    *pixa;
         return (PIXA *)ERROR_PTR("pixa not made", procName, NULL);
     for (i = 0; i < n; i++) {
         if ((pix = pixacompGetPix(pixac, i)) == NULL) {
-            L_WARNING_INT("pix %d not made", procName, i);
+            L_WARNING("pix %d not made\n", procName, i);
             continue;
         }
         pixaAddPix(pixa, pix, L_INSERT);
@@ -1450,7 +1492,7 @@ l_int32
 pixacompWriteStream(FILE   *fp,
                     PIXAC  *pixac)
 {
-l_int32  n, offset, i;
+l_int32  n, i;
 PIXC    *pixc;
 
     PROCNAME("pixacompWriteStream");
@@ -1463,7 +1505,7 @@ PIXC    *pixc;
     n = pixacompGetCount(pixac);
     fprintf(fp, "\nPixacomp Version %d\n", PIXACOMP_VERSION_NUMBER);
     fprintf(fp, "Number of pixcomp = %d", n);
-    fprintf(fp, "Offset of index into array = %d", offset);
+    fprintf(fp, "Offset of index into array = %d", pixac->offset);
     boxaWriteStream(fp, pixac->boxa);
     for (i = 0; i < n; i++) {
         if ((pixc =
@@ -1471,8 +1513,8 @@ PIXC    *pixc;
             return ERROR_INT("pixc not found", procName, 1);
         fprintf(fp, "\nPixcomp[%d]: w = %d, h = %d, d = %d\n",
                 i, pixc->w, pixc->h, pixc->d);
-        fprintf(fp, "  comptype = %d, size = %ld, cmapflag = %d\n",
-                pixc->comptype, pixc->size, pixc->cmapflag);
+        fprintf(fp, "  comptype = %d, size = %lu, cmapflag = %d\n",
+                pixc->comptype, (unsigned long)pixc->size, pixc->cmapflag);
         fprintf(fp, "  xres = %d, yres = %d\n", pixc->xres, pixc->yres);
         fwrite(pixc->data, 1, pixc->size, fp);
         fprintf(fp, "\n");
@@ -1494,8 +1536,7 @@ PIXC    *pixc;
  *              type (encoding type (L_JPEG_ENCODE, L_G4_ENCODE,
  *                    L_FLATE_ENCODE, or 0 for default)
  *              quality (used for JPEG only; 0 for default (75))
- *              title (<optional> pdf title; if null, taken from the first
- *                     image filename)
+ *              title (<optional> pdf title)
  *              fileout (pdf file of all images)
  *      Return: 0 if OK, 1 on error
  *
@@ -1537,7 +1578,7 @@ size_t    nbytes;
     ret = l_binaryWrite(fileout, "w", data, nbytes);
     FREE(data);
     if (ret)
-        L_ERROR("pdf data not written to file", procName);
+        L_ERROR("pdf data not written to file\n", procName);
     return ret;
 }
 
@@ -1551,8 +1592,7 @@ size_t    nbytes;
  *              type (encoding type (L_JPEG_ENCODE, L_G4_ENCODE,
  *                    L_FLATE_ENCODE, or 0 for default)
  *              quality (used for JPEG only; 0 for default (75))
- *              title (<optional> pdf title; if null, taken from the first
- *                     image filename)
+ *              title (<optional> pdf title)
  *              &data (<return> output pdf data (of all images)
  *              &nbytes (<return> size of output pdf data)
  *      Return: 0 if OK, 1 on error
@@ -1589,7 +1629,8 @@ L_PTRA   *pa_data;
         return ERROR_INT("pixac not defined", procName, 1);
     if (scalefactor <= 0.0) scalefactor = 1.0;
     if (type < 0 || type > L_FLATE_ENCODE) {
-        L_WARNING("invalid compression type; using per-page default", procName);
+        L_WARNING("invalid compression type; using per-page default\n",
+                  procName);
         type = 0;
     }
 
@@ -1599,11 +1640,11 @@ L_PTRA   *pa_data;
     for (i = 0; i < n; i++) {
         if ((pixs =
              pixacompGetPix(pixac, pixacompGetOffset(pixac) + i)) == NULL) {
-            L_ERROR_INT("pix[%d] not retrieved", procName, i);
+            L_ERROR("pix[%d] not retrieved\n", procName, i);
             continue;
         }
         if (pixGetWidth(pixs) == 1) {  /* used sometimes as placeholders */
-            L_INFO_INT("placeholder image[%d] has w = 1", procName, i);
+            L_INFO("placeholder image[%d] has w = 1\n", procName, i);
             pixDestroy(&pixs);
             continue;
         }
@@ -1613,19 +1654,19 @@ L_PTRA   *pa_data;
             pix = pixClone(pixs);
         pixDestroy(&pixs);
         scaledres = (l_int32)(res * scalefactor);
-        if (type != 0)
+        if (type != 0) {
             pagetype = type;
-        else if (selectDefaultPdfEncoding(pix, &pagetype) != 0) {
-            L_ERROR_INT("encoding type selection failed for pix[%d]",
-                        procName, i);
+        } else if (selectDefaultPdfEncoding(pix, &pagetype) != 0) {
+            L_ERROR("encoding type selection failed for pix[%d]\n",
+                    procName, i);
             pixDestroy(&pix);
             continue;
         }
         ret = pixConvertToPdfData(pix, pagetype, quality, &imdata, &imbytes,
-                                  0, 0, scaledres, NULL, 0, title);
+                                  0, 0, scaledres, title, NULL, 0);
         pixDestroy(&pix);
         if (ret) {
-            L_ERROR_INT("pdf encoding failed for pix[%d]", procName, i);
+            L_ERROR("pdf encoding failed for pix[%d]\n", procName, i);
             continue;
         }
         ba = l_byteaInitFromMem(imdata, imbytes);
@@ -1634,7 +1675,7 @@ L_PTRA   *pa_data;
     }
     ptraGetActualCount(pa_data, &n);
     if (n == 0) {
-        L_ERROR("no pdf files made", procName);
+        L_ERROR("no pdf files made\n", procName);
         ptraDestroy(&pa_data, FALSE, FALSE);
         return 1;
     }
@@ -1725,17 +1766,18 @@ pixcompWriteStreamInfo(FILE        *fp,
         fprintf(fp, "  Pixcomp Info:");
     fprintf(fp, " width = %d, height = %d, depth = %d\n",
             pixc->w, pixc->h, pixc->d);
-    fprintf(fp, "    xres = %d, yres = %d, size in bytes = %ld\n",
-            pixc->xres, pixc->yres, pixc->size);
+    fprintf(fp, "    xres = %d, yres = %d, size in bytes = %lu\n",
+            pixc->xres, pixc->yres, (unsigned long)pixc->size);
     if (pixc->cmapflag)
         fprintf(fp, "    has colormap\n");
     else
         fprintf(fp, "    no colormap\n");
-    if (pixc->comptype < NumImageFileFormatExtensions)
+    if (pixc->comptype < NumImageFileFormatExtensions) {
         fprintf(fp, "    comptype = %s (%d)\n",
                 ImageFileFormatExtensions[pixc->comptype], pixc->comptype);
-    else
+    } else {
         fprintf(fp, "    Error!! Invalid comptype index: %d\n", pixc->comptype);
+    }
     return 0;
 }
 
@@ -1799,7 +1841,7 @@ PIXA      *pixan;
     for (i = 0; i < n; i++) {
         if ((pix =
              pixacompGetPix(pixac, pixacompGetOffset(pixac) + i)) == NULL) {
-            L_WARNING_INT("pix %d not made", procName, i);
+            L_WARNING("pix %d not made\n", procName, i);
             continue;
         }
 

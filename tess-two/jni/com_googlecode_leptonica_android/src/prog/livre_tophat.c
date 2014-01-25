@@ -31,8 +31,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 PIX         *pixs, *pixsg, *pixg, *pixd;
 PIXA        *pixa;
@@ -61,7 +61,7 @@ static char  mainName[] = "livre_tophat";
     pixDestroy(&pixd);
 
         /* Generate the output image */
-    pixa = pixaReadFiles("/tmp", "junk_write_display");
+    pixa = pixaReadFiles("/tmp/display", "file");
     pixd = pixaDisplayTiledAndScaled(pixa, 8, 350, 3, 0, 25, 2);
     pixWrite("/tmp/tophat.jpg", pixd, IFF_JFIF_JPEG);
     pixDisplay(pixd, 0, 0);

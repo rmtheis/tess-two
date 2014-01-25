@@ -32,8 +32,8 @@
 #include <string.h>
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *str;
 l_uint8     *data1, *data2;
@@ -46,7 +46,7 @@ L_BYTEA     *lba1, *lba2, *lba3, *lba4, *lba5;
 static char  mainName[] = "byteatest";
 
     if (argc != 1)
-        exit(ERROR_INT("syntax: whatever11", mainName, 1));
+        return ERROR_INT("syntax: byteatest", mainName, 1);
 
         /* Test basic init, join and split */
     lba1 = l_byteaInitFromFile("feyn.tif");
@@ -106,7 +106,7 @@ static char  mainName[] = "byteatest";
 
         /* Test search */
     convertToPdf("test24.jpg", L_JPEG_ENCODE, 0, "junk3.pdf",
-                 0, 0, 100, NULL, 0, NULL);
+                 0, 0, 100, NULL, NULL, 0);
     lba1 = l_byteaInitFromFile("junk3.pdf");
     l_byteaFindEachSequence(lba1, (l_uint8 *)" 0 obj\n", 7, &da);
     l_dnaWriteStream(stderr, da);

@@ -233,7 +233,7 @@ TIFF    *tif;
     }
 
     if (pagefound == FALSE) {
-        L_WARNING_INT("tiff page %d not found", procName, n);
+        L_WARNING("tiff page %d not found\n", procName, n);
         TIFFCleanup(tif);
         return NULL;
     }
@@ -249,21 +249,30 @@ TIFF    *tif;
  *      Input:  stream
  *      Return: pix, or null on error
  *
- * Quoting the libtiff documenation at http://libtiff.maptools.org/libtiff.html
- *
- * libtiff provides a high-level interface for reading image data from
- * a TIFF file. This interface handles the details of data
- * organization and format for a wide variety of TIFF files; at least
- * the large majority of those files that one would normally
- * encounter. Image data is, by default, returned as ABGR pixels
- * packed into 32-bit words (8 bits per sample). Rectangular rasters
- * can be read or data can be intercepted at an intermediate level and
- * packed into memory in a format more suitable to the
- * application. The library handles all the details of the format of
- * data stored on disk and, in most cases, if any colorspace
- * conversions are required: bilevel to RGB, greyscale to RGB, CMYK to
- * RGB, YCbCr to RGB, 16-bit samples to 8-bit samples,
- * associated/unassociated alpha, etc.
+ *  Notes:
+ *      (1) We handle pixels up to 32 bits.  This includes:
+ *          1 spp (grayscale): 1, 2, 4, 8, 16 bpp
+ *          1 spp (colormapped): 1, 2, 4, 8 bpp
+ *          3 spp (color): 8 bpp
+ *          We do not handle 3 spp, 16 bpp (48 bits/pixel)
+ *      (2) For colormapped images, we support 8 bits/color in the palette.
+ *          Tiff colormaps have 16 bits/color, and we reduce them to 8.
+ *      (3) Quoting the libtiff documenation at
+ *               http://libtiff.maptools.org/libtiff.html
+ *          "libtiff provides a high-level interface for reading image data
+ *          from a TIFF file. This interface handles the details of data
+ *          organization and format for a wide variety of TIFF files;
+ *          at least the large majority of those files that one would
+ *          normally encounter. Image data is, by default, returned as
+ *          ABGR pixels packed into 32-bit words (8 bits per sample).
+ *          Rectangular rasters can be read or data can be intercepted
+ *          at an intermediate level and packed into memory in a format
+ *          more suitable to the application. The library handles all
+ *          the details of the format of data stored on disk and,
+ *          in most cases, if any colorspace conversions are required:
+ *          bilevel to RGB, greyscale to RGB, CMYK to RGB, YCbCr to RGB,
+ *          16-bit samples to 8-bit samples, associated/unassociated alpha,
+ *          etc."
  */
 static PIX *
 pixReadFromTiffStream(TIFF  *tif)
@@ -271,7 +280,7 @@ pixReadFromTiffStream(TIFF  *tif)
 l_uint8   *linebuf, *data;
 l_uint16   spp, bps, bpp, tiffbpl, photometry, tiffcomp, orientation;
 l_uint16  *redmap, *greenmap, *bluemap;
-l_int32    d, wpl, bpl, comptype, i, j, k, ncolors, rval, gval, bval;
+l_int32    d, wpl, bpl, comptype, i, j, ncolors, rval, gval, bval;
 l_int32    xres, yres;
 l_uint32   w, h, tiffword;
 l_uint32  *line, *ppixel, *tiffdata;
@@ -340,7 +349,7 @@ PIXCMAP   *cmap;
 
         line = pixGetData(pix);
         for (i = 0 ; i < h ; i++, line += wpl) {
-            for (j = 0, k = 0, ppixel = line; j < w; j++) {
+            for (j = 0, ppixel = line; j < w; j++) {
                     /* TIFFGet* are macros */
                 tiffword = tiffdata[i * w + j];
                 rval = TIFFGetR(tiffword);
@@ -368,6 +377,10 @@ PIXCMAP   *cmap;
              * tiff colormap components are 16 bit unsigned,
              * and go from black (0) to white (0xffff), the
              * the pix cmap takes the most significant byte. */
+        if (bps > 8) {
+            pixDestroy(&pix);
+            return (PIX *)ERROR_PTR("invalid bps; > 8", procName, NULL);
+        }
         if ((cmap = pixcmapCreate(bps)) == NULL) {
             pixDestroy(&pix);
             return (PIX *)ERROR_PTR("cmap not made", procName, NULL);
@@ -377,8 +390,7 @@ PIXCMAP   *cmap;
             pixcmapAddColor(cmap, redmap[i] >> 8, greenmap[i] >> 8,
                             bluemap[i] >> 8);
         pixSetColormap(pix, cmap);
-    }
-    else {   /* No colormap: check photometry and invert if necessary */
+    } else {   /* No colormap: check photometry and invert if necessary */
         if (!TIFFGetField(tif, TIFFTAG_PHOTOMETRIC, &photometry)) {
                 /* Guess default photometry setting.  Assume min_is_white
                  * if compressed 1 bpp; min_is_black otherwise. */
@@ -387,9 +399,9 @@ PIXCMAP   *cmap;
                 tiffcomp == COMPRESSION_CCITTRLE ||
                 tiffcomp == COMPRESSION_CCITTRLEW) {
                 photometry = PHOTOMETRIC_MINISWHITE;
-            }
-            else
+            } else {
                 photometry = PHOTOMETRIC_MINISBLACK;
+            }
         }
         if ((d == 1 && photometry == PHOTOMETRIC_MINISBLACK) ||
             (d == 8 && photometry == PHOTOMETRIC_MINISWHITE))
@@ -561,7 +573,7 @@ TIFF  *tif;
 
     if (pixGetDepth(pix) != 1 && comptype != IFF_TIFF &&
         comptype != IFF_TIFF_LZW && comptype != IFF_TIFF_ZIP) {
-        L_WARNING("invalid compression type for image with bpp > 1", procName);
+        L_WARNING("invalid compression type for bpp > 1\n", procName);
         comptype = IFF_TIFF_ZIP;
     }
 
@@ -661,17 +673,17 @@ char      *text;
         TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE,
                        (l_uint16)8, (l_uint16)8, (l_uint16)8);
         TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, (l_uint16)3);
-    }
-    else if ((cmap = pixGetColormap(pix)) == NULL)
+    } else if ((cmap = pixGetColormap(pix)) == NULL) {
         TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-    else {  /* Save colormap in the tiff; not more than 256 colors */
-        pixcmapToArrays(cmap, &rmap, &gmap, &bmap);
+    } else {  /* Save colormap in the tiff; not more than 256 colors */
+        pixcmapToArrays(cmap, &rmap, &gmap, &bmap, NULL);
         ncolors = pixcmapGetCount(cmap);
         ncolors = L_MIN(256, ncolors);  /* max 256 */
         cmapsize = 1 << d;
         cmapsize = L_MIN(256, cmapsize);  /* power of 2; max 256 */
         if (ncolors > cmapsize) {
-            L_WARNING("too many colors in cmap for tiff; truncating", procName);
+            L_WARNING("too many colors in cmap for tiff; truncating\n",
+                      procName);
             ncolors = cmapsize;
         }
         for (i = 0; i < ncolors; i++) {
@@ -697,22 +709,22 @@ char      *text;
     }
 
     TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-    if (comptype == IFF_TIFF)  /* no compression */
+    if (comptype == IFF_TIFF) {  /* no compression */
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
-    else if (comptype == IFF_TIFF_G4)
+    } else if (comptype == IFF_TIFF_G4) {
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_CCITTFAX4);
-    else if (comptype == IFF_TIFF_G3)
+    } else if (comptype == IFF_TIFF_G3) {
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_CCITTFAX3);
-    else if (comptype == IFF_TIFF_RLE)
+    } else if (comptype == IFF_TIFF_RLE) {
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_CCITTRLE);
-    else if (comptype == IFF_TIFF_PACKBITS)
+    } else if (comptype == IFF_TIFF_PACKBITS) {
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_PACKBITS);
-    else if (comptype == IFF_TIFF_LZW)
+    } else if (comptype == IFF_TIFF_LZW) {
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
-    else if (comptype == IFF_TIFF_ZIP)
+    } else if (comptype == IFF_TIFF_ZIP) {
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_ADOBE_DEFLATE);
-    else {
-        L_WARNING("unknown tiff compression; using none", procName);
+    } else {
+        L_WARNING("unknown tiff compression; using none\n", procName);
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
     }
 
@@ -743,15 +755,13 @@ char      *text;
                 break;
         }
         pixDestroy(&pixt);
-    }
-    else if (d == 24) {  /* See note 4 above: special case of 24 bpp rgb */
+    } else if (d == 24) {  /* See note 4 above: special case of 24 bpp rgb */
         for (i = 0; i < h; i++) {
             line = pixGetData(pix) + i * wpl;
             if (TIFFWriteScanline(tif, (l_uint8 *)line, i, 0) < 0)
                 break;
         }
-    }
-    else {  /* standard 32 bpp rgb */
+    } else {  /* standard 32 bpp rgb */
         for (i = 0; i < h; i++) {
             line = pixGetData(pix) + i * wpl;
             for (j = 0, k = 0, ppixel = line; j < w; j++) {
@@ -834,12 +844,13 @@ l_uint32   uval, uval2;
             type = sarrayGetString(satypes, i, 0);
             numaGetIValue(nasizes, i, &size);
             if (strcmp(type, "char*") && strcmp(type, "l_uint8*"))
-                L_WARNING("array type not char* or l_uint8*; ignore", procName);
+                L_WARNING("array type not char* or l_uint8*; ignore\n",
+                          procName);
             TIFFSetField(tif, tagval, size, sval);
         }
-    }
-    else
+    } else {
         ns = 0;
+    }
 
         /* The typical tags (3 args to TIFFSetField) are now written */
     for (i = ns; i < n; i++) {
@@ -848,54 +859,44 @@ l_uint32   uval, uval2;
         type = sarrayGetString(satypes, i, 0);
         if (!strcmp(type, "char*")) {
             TIFFSetField(tif, tagval, sval);
-        }
-        else if (!strcmp(type, "l_uint16")) {
+        } else if (!strcmp(type, "l_uint16")) {
             if (sscanf(sval, "%u", &uval) == 1) {
                 TIFFSetField(tif, tagval, (l_uint16)uval);
-            }
-            else {
+            } else {
                 fprintf(stderr, "val %s not of type %s\n", sval, type);
                 return ERROR_INT("custom tag(s) not written", procName, 1);
             }
-        }
-        else if (!strcmp(type, "l_uint32")) {
+        } else if (!strcmp(type, "l_uint32")) {
             if (sscanf(sval, "%u", &uval) == 1) {
                 TIFFSetField(tif, tagval, uval);
-            }
-            else {
+            } else {
                 fprintf(stderr, "val %s not of type %s\n", sval, type);
                 return ERROR_INT("custom tag(s) not written", procName, 1);
             }
-        }
-        else if (!strcmp(type, "l_int32")) {
+        } else if (!strcmp(type, "l_int32")) {
             if (sscanf(sval, "%d", &val) == 1) {
                 TIFFSetField(tif, tagval, val);
-            }
-            else {
+            } else {
                 fprintf(stderr, "val %s not of type %s\n", sval, type);
                 return ERROR_INT("custom tag(s) not written", procName, 1);
             }
-        }
-        else if (!strcmp(type, "l_float64")) {
+        } else if (!strcmp(type, "l_float64")) {
             if (sscanf(sval, "%lf", &dval) == 1) {
                 TIFFSetField(tif, tagval, dval);
-            }
-            else {
+            } else {
                 fprintf(stderr, "val %s not of type %s\n", sval, type);
                 return ERROR_INT("custom tag(s) not written", procName, 1);
             }
-        }
-        else if (!strcmp(type, "l_uint16-l_uint16")) {
+        } else if (!strcmp(type, "l_uint16-l_uint16")) {
             if (sscanf(sval, "%u-%u", &uval, &uval2) == 2) {
                 TIFFSetField(tif, tagval, (l_uint16)uval, (l_uint16)uval2);
-            }
-            else {
+            } else {
                 fprintf(stderr, "val %s not of type %s\n", sval, type);
                 return ERROR_INT("custom tag(s) not written", procName, 1);
             }
-        }
-        else
+        } else {
             return ERROR_INT("unknown type; tag(s) not written", procName, 1);
+        }
     }
     return 0;
 }
@@ -927,17 +928,17 @@ PIXA    *pixa;
         return (PIXA *)ERROR_PTR("stream not opened", procName, NULL);
     if (fileFormatIsTiff(fp)) {
         tiffGetCount(fp, &npages);
-        L_INFO_INT(" Tiff: %d pages\n", procName, npages);
-    }
-    else
+        L_INFO(" Tiff: %d pages\n", procName, npages);
+    } else {
         return (PIXA *)ERROR_PTR("file not tiff", procName, NULL);
+    }
     fclose(fp);
 
     pixa = pixaCreate(npages);
     for (i = 0; i < npages; i++) {
         pix = pixReadTiff(filename, i);
         if (!pix) {
-            L_WARNING_INT("pix not read for page %d", procName, i);
+            L_WARNING("pix not read for page %d\n", procName, i);
             continue;
         }
         pixaAddPix(pixa, pix, L_INSERT);
@@ -1023,21 +1024,22 @@ PIX         *pix, *pixt;
         fname = sarrayGetString(sa, i, L_NOCOPY);
         findFileFormat(fname, &format);
         if (format == IFF_UNKNOWN) {
-            L_INFO_STRING("format of %s not known", procName, fname);
+            L_INFO("format of %s not known\n", procName, fname);
             continue;
         }
 
         if ((pix = pixRead(fname)) == NULL) {
-            L_WARNING_STRING("pix not made for file: %s", procName, fname);
+            L_WARNING("pix not made for file: %s\n", procName, fname);
             continue;
         }
-        if (pixGetDepth(pix) == 1)
+        if (pixGetDepth(pix) == 1) {
             pixWriteTiff(fileout, pix, IFF_TIFF_G4, op);
-        else {
-            if (pixGetColormap(pix))
+        } else {
+            if (pixGetColormap(pix)) {
                 pixt = pixRemoveColormap(pix, REMOVE_CMAP_BASED_ON_SRC);
-            else
+            } else {
                 pixt = pixClone(pix);
+            }
             pixWriteTiff(fileout, pixt, IFF_TIFF_ZIP, op);
             pixDestroy(&pixt);
         }
@@ -1197,8 +1199,7 @@ l_float32  fxres, fyres;
     if (resunit == RESUNIT_CENTIMETER) {  /* convert to ppi */
         *pxres = (l_int32)(2.54 * fxres + 0.5);
         *pyres = (l_int32)(2.54 * fyres + 0.5);
-    }
-    else {
+    } else {
         *pxres = (l_int32)fxres;
         *pyres = (l_int32)fyres;
     }
@@ -1607,7 +1608,7 @@ TIFF     *tif;
     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
     TIFFGetField(tif, TIFFTAG_ROWSPERSTRIP, &rowsperstrip);
     if (h != rowsperstrip)
-        L_WARNING("more than 1 strip", procName);
+        L_WARNING("more than 1 strip\n", procName);
     TIFFGetField(tif, TIFFTAG_PHOTOMETRIC, &minisblack);  /* for 1 bpp */
 /*    TIFFPrintDirectory(tif, stderr, 0); */
     TIFFClose(tif);
@@ -1622,8 +1623,7 @@ TIFF     *tif;
     if (inarray[0] == 0x4d) {  /* big-endian */
         diroff = (inarray[4] << 24) | (inarray[5] << 16) |
                  (inarray[6] << 8) | inarray[7];
-    }
-    else  {   /* inarray[0] == 0x49 :  little-endian */
+    } else  {   /* inarray[0] == 0x49 :  little-endian */
         diroff = (inarray[7] << 24) | (inarray[6] << 16) |
                  (inarray[5] << 8) | inarray[4];
     }
@@ -1847,7 +1847,7 @@ size_t        newsize;
     if (mstream->offset + length > mstream->bufsize) {
         newsize = 2 * (mstream->offset + length);
         mstream->buffer = (l_uint8 *)reallocNew((void **)&mstream->buffer,
-                                                mstream->offset, newsize);
+                                                mstream->hw, newsize);
         mstream->bufsize = newsize;
     }
 
@@ -2037,7 +2037,7 @@ TIFF     *tif;
     }
 
     if (pagefound == FALSE)
-        L_WARNING_INT("tiff page %d not found", procName, n);
+        L_WARNING("tiff page %d not found\n", procName, n);
 
     TIFFClose(tif);
     return pix;
@@ -2113,7 +2113,7 @@ TIFF    *tif;
         return ERROR_INT("&pix not defined", procName, 1);
     if (pixGetDepth(pix) != 1 && comptype != IFF_TIFF &&
         comptype != IFF_TIFF_LZW && comptype != IFF_TIFF_ZIP) {
-        L_WARNING("invalid compression type for image with bpp > 1", procName);
+        L_WARNING("invalid compression type for bpp > 1\n", procName);
         comptype = IFF_TIFF_ZIP;
     }
 

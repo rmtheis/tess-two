@@ -43,12 +43,12 @@ PIX *pixMorphDwa_3(PIX *pixd, PIX *pixs, l_int32 operation, char *selname);
 PIX *pixFMorphopGen_3(PIX *pixd, PIX *pixs, l_int32 operation, char *selname);
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       i, nsels, same, xorcount;
 char         *selname;
-PIX          *pixs, *pixs1, *pixt1, *pixt2, *pixt3;
+PIX          *pixs, *pixt1, *pixt2, *pixt3;
 SEL          *sel;
 SELA         *sela;
 L_REGPARAMS  *rp;

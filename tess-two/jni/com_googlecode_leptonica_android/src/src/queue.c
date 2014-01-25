@@ -28,19 +28,19 @@
  *   queue.c
  *
  *      Create/Destroy L_Queue
- *          L_QUEUE    *lqueueCreate()
- *          void       *lqueueDestroy()
+ *          L_QUEUE        *lqueueCreate()
+ *          void           *lqueueDestroy()
  *
  *      Operations to add/remove to/from a L_Queue
- *          l_int32     lqueueAdd()
- *          l_int32     lqueueExtendArray()
- *          void       *lqueueRemove()
+ *          l_int32         lqueueAdd()
+ *          static l_int32  lqueueExtendArray()
+ *          void           *lqueueRemove()
  *
  *      Accessors
- *          l_int32     lqueueGetCount()
+ *          l_int32         lqueueGetCount()
  *
  *      Debug output
- *          l_int32     lqueuePrint()
+ *          l_int32         lqueuePrint()
  *
  *    The lqueue is a fifo that implements a queue of void* pointers.
  *    It can be used to hold a queue of any type of struct.
@@ -65,6 +65,9 @@
 
 static const l_int32  MIN_BUFFER_SIZE = 20;             /* n'importe quoi */
 static const l_int32  INITIAL_BUFFER_ARRAYSIZE = 1024;  /* n'importe quoi */
+
+    /* Static function */
+static l_int32 lqueueExtendArray(L_QUEUE *lq);
 
 
 /*--------------------------------------------------------------------------*
@@ -127,7 +130,7 @@ L_QUEUE  *lq;
     PROCNAME("lqueueDestroy");
 
     if (plq == NULL) {
-        L_WARNING("ptr address is NULL", procName);
+        L_WARNING("ptr address is NULL\n", procName);
         return;
     }
     if ((lq = *plq) == NULL)
@@ -138,10 +141,9 @@ L_QUEUE  *lq;
             item = lqueueRemove(lq);
             FREE(item);
         }
+    } else if (lq->nelem > 0) {
+        L_WARNING("memory leak of %d items in lqueue!\n", procName, lq->nelem);
     }
-    else if (lq->nelem > 0)
-        L_WARNING_INT("memory leak of %d items in lqueue!",
-                      procName, lq->nelem);
 
     if (lq->array)
         FREE(lq->array);
@@ -208,7 +210,7 @@ lqueueAdd(L_QUEUE  *lq,
  *      Input:  lqueue
  *      Return: 0 if OK, 1 on error
  */
-l_int32
+static l_int32
 lqueueExtendArray(L_QUEUE  *lq)
 {
     PROCNAME("lqueueExtendArray");

@@ -34,10 +34,10 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-l_int32      ws, hs;
+l_int32      ws, hs, ncols;
 BOX         *box;
 BOXA        *boxa;
 PIX         *pixs, *pixc, *pix32, *pixt, *pixd;
@@ -45,16 +45,16 @@ PIXA        *pixat, *pixas, *pixac;
 static char  mainName[] = "pixadisp_reg";
 
     if (argc != 1)
-        exit(ERROR_INT(" Syntax: pixadisp_reg", mainName, 1));
+        return ERROR_INT(" Syntax: pixadisp_reg", mainName, 1);
 
     if ((pixs = pixRead("feyn.tif")) == NULL)
-        exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
     box = boxCreate(683, 799, 970, 479);
     pixc = pixClipRectangle(pixs, box, NULL);
     boxDestroy(&box);
     pixDisplayWrite(pixc, 1);
     if ((pix32 = pixRead("marge.jpg")) == NULL)
-        exit(ERROR_INT("pix32 not made", mainName, 1));
+        return ERROR_INT("pix32 not made", mainName, 1);
 
         /* Generate pixas from pixs and pixac from pixc */
     boxa = pixConnComp(pixs, &pixat, 8);
@@ -79,9 +79,12 @@ static char  mainName[] = "pixadisp_reg";
     pixDestroy(&pixd);
 
         /* pixaDisplayOnLattice() */
-    pixd = pixaDisplayOnLattice(pixac, 50, 50);
+    pixd = pixaDisplayOnLattice(pixac, 50, 50, &ncols, &boxa);
     pixDisplayWrite(pixd, 1);
     pixDestroy(&pixd);
+    fprintf(stderr, "Number of columns = %d; number of boxes: %d\n",
+            ncols, boxaGetCount(boxa));
+    boxaDestroy(&boxa);
 
         /* pixaDisplayUnsplit() */
     pixat = pixaSplitPix(pix32, 5, 7, 10, 0x0000ff00);
@@ -128,8 +131,6 @@ static char  mainName[] = "pixadisp_reg";
     pixDestroy(&pixc);
     pixDestroy(&pix32);
 
-    pixDisplayMultiple("/tmp/junk_write_display*");
+    pixDisplayMultiple("/tmp/display/file*");
     return 0;
 }
-
-

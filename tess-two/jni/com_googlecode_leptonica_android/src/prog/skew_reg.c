@@ -50,11 +50,11 @@
 static const l_int32  BORDER = 150;
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       w, h, wd, hd;
-l_float32     deg2rad, angle, conf, score;
+l_float32     deg2rad, angle, conf;
 PIX          *pixs, *pixb1, *pixb2, *pixr, *pixf, *pixd, *pixc;
 PIXA         *pixa;
 L_REGPARAMS  *rp;
@@ -74,11 +74,11 @@ L_REGPARAMS  *rp;
         /* Add a border and locate and deskew a 40 degree rotation */
     pixb2 = pixAddBorder(pixb1, BORDER, 0);
     pixGetDimensions(pixb2, &w, &h, NULL);
-    pixSaveTiled(pixb2, pixa, 2, 1, 20, 8);
+    pixSaveTiled(pixb2, pixa, 0.5, 1, 20, 8);
     pixr = pixRotateBySampling(pixb2, w / 2, h / 2,
                                     deg2rad * 40., L_BRING_IN_WHITE);
     regTestWritePixAndCheck(rp, pixr, IFF_PNG);  /* 1 */
-    pixSaveTiled(pixr, pixa, 2, 0, 20, 0);
+    pixSaveTiled(pixr, pixa, 0.5, 0, 20, 0);
     pixFindSkewSweepAndSearchScorePivot(pixr, &angle, &conf, NULL, 1, 1,
                                         0.0, 45.0, 2.0, 0.03,
                                         L_SHEAR_ABOUT_CENTER);
@@ -88,7 +88,7 @@ L_REGPARAMS  *rp;
                                     deg2rad * angle, L_BRING_IN_WHITE);
     pixd = pixRemoveBorder(pixf, BORDER);
     regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 2 */
-    pixSaveTiled(pixd, pixa, 2, 0, 20, 0);
+    pixSaveTiled(pixd, pixa, 0.5, 0, 20, 0);
     pixDestroy(&pixr);
     pixDestroy(&pixf);
     pixDestroy(&pixd);
@@ -100,7 +100,7 @@ L_REGPARAMS  *rp;
     pixr = pixRotate(pixb1, deg2rad * 37., L_ROTATE_SAMPLING,
                      L_BRING_IN_WHITE, w, h);
     regTestWritePixAndCheck(rp, pixr, IFF_PNG);  /* 3 */
-    pixSaveTiled(pixr, pixa, 2, 1, 20, 0);
+    pixSaveTiled(pixr, pixa, 0.5, 1, 20, 0);
     startTimer();
     pixFindSkewOrthogonalRange(pixr, &angle, &conf, 2, 1,
                                47.0, 1.0, 0.03, 0.0);
@@ -113,7 +113,7 @@ L_REGPARAMS  *rp;
     pixc = pixCreate(w, h, 1);
     pixRasterop(pixc, 0, 0, w, h, PIX_SRC, pixd, (wd - w) / 2, (hd - h) / 2);
     regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 5 */
-    pixSaveTiled(pixc, pixa, 2, 0, 20, 0);
+    pixSaveTiled(pixc, pixa, 0.5, 0, 20, 0);
     pixDestroy(&pixr);
     pixDestroy(&pixf);
     pixDestroy(&pixd);
@@ -146,24 +146,24 @@ L_REGPARAMS  *rp;
 
 #if 0
     if (pixFindSkew(pixs, &angle)) {
-	L_WARNING("skew angle not valid", mainName);
-	exit(1);
+        L_WARNING("skew angle not valid\n", mainName);
+        return 1;
     }
 #endif
 
 #if 0
     if (pixFindSkewSweep(pixs, &angle, SWEEP_REDUCTION,
                          SWEEP_RANGE, SWEEP_DELTA)) {
-	L_WARNING("skew angle not valid", mainName);
-	exit(1);
+        L_WARNING("skew angle not valid\n", mainName);
+        return 1;
     }
 #endif
 
 #if 0
     if (pixFindSkewSweepAndSearch(pixs, &angle, SWEEP_REDUCTION2,
                          SEARCH_REDUCTION, SWEEP_RANGE2, SWEEP_DELTA2,
-			 SEARCH_MIN_DELTA)) {
-	L_WARNING("skew angle not valid", mainName);
-	exit(1);
+                         SEARCH_MIN_DELTA)) {
+        L_WARNING("skew angle not valid\n", mainName);
+        return 1;
     }
 #endif

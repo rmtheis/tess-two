@@ -33,15 +33,15 @@
 
 #define   DISPLAY    0
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      same;
 PIX         *pixs, *pixt1, *pixt2, *pixt3, *pixt4;
 static char  mainName[] = "logicops_reg";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax: logicops_reg", mainName, 1));
+        return ERROR_INT(" Syntax: logicops_reg", mainName, 1);
 
     pixs = pixRead("test1.png");
     pixDisplayWrite(pixs, DISPLAY);

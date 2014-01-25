@@ -73,8 +73,8 @@
 #include <string.h>
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char      *pagedir, *pagestr, *maskdir, *maskstr, *fileout;
 l_int32    threshold, numpre, numpost, maxnum;

@@ -34,15 +34,14 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-l_int32      w, h, n, same;
-BOXA        *boxa1, *boxa2;
-NUMA        *nai1, *nai2;
-NUMAA       *naa1, *naa1r, *naa2;
-PIX         *pixs, *pixt, *pixb1, *pixb2;
-static char  mainName[] = "comparepages";
+l_int32  w, h, n, same;
+BOXA    *boxa1, *boxa2;
+NUMA    *nai1, *nai2;
+NUMAA   *naa1, *naa1r, *naa2;
+PIX     *pixs, *pixt, *pixb1, *pixb2;
 
     pixs = pixRead("lucasta-47.jpg");
     pixb1 = pixConvertTo1(pixs, 128);

@@ -35,8 +35,8 @@ static l_int32 TestTiling(PIX *pixd, PIX *pixs, l_int32 nx, l_int32 ny,
                           l_int32 yoverlap);
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 PIX         *pixs, *pixd;
 

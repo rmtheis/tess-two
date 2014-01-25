@@ -38,8 +38,8 @@
 #define  NTIMES   10
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i, w, h, dir;
 PIX         *pixs, *pixd, *pixt;
@@ -48,18 +48,18 @@ char        *filein, *fileout;
 static char  mainName[] = "rotateorthtest1";
 
     if (argc != 3 && argc != 4)
-	exit(ERROR_INT(" Syntax:  rotateorthtest1 filein fileout [direction]",
-	       mainName, 1));
+        return ERROR_INT(" Syntax:  rotateorthtest1 filein fileout [direction]",
+                         mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
     if (argc == 4)
-	dir = atoi(argv[3]);
+        dir = atoi(argv[3]);
     else
-	dir = 1;
+        dir = 1;
 
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
+        return ERROR_INT("pix not made", mainName, 1);
 
         /* Do a single operation */
 #if 1
@@ -72,34 +72,34 @@ static char  mainName[] = "rotateorthtest1";
     pixd = pixRotateTB(NULL, pixs);
 #endif
 
-	/* Time rotate 90, allocating & destroying each time */
+        /* Time rotate 90, allocating & destroying each time */
 #if 0
     startTimer();
     w = pixGetWidth(pixs);
     h = pixGetHeight(pixs);
     for (i = 0; i < NTIMES; i++) {
-	pixd = pixRotate90(pixs, dir);
-	pixDestroy(&pixd);
+        pixd = pixRotate90(pixs, dir);
+        pixDestroy(&pixd);
     }
     pops = (l_float32)(w * h * NTIMES) / stopTimer();
     fprintf(stderr, "MPops for 90 rotation: %7.3f\n", pops / 1000000.);
     pixd = pixRotate90(pixs, dir);
 #endif
 
-	/* Time rotate 180, with no alloc/destroy */
+        /* Time rotate 180, with no alloc/destroy */
 #if 0
     startTimer();
     w = pixGetWidth(pixs);
     h = pixGetHeight(pixs);
     pixd = pixCreateTemplate(pixs);
     for (i = 0; i < NTIMES; i++)
-	pixRotate180(pixd, pixs);
+        pixRotate180(pixd, pixs);
     pops = (l_float32)(w * h * NTIMES) / stopTimer();
     fprintf(stderr, "MPops for 180 rotation: %7.3f\n", pops / 1000000.);
 #endif
 
 
-	/* Test rotate 180 not in-place */
+        /* Test rotate 180 not in-place */
 #if 0
     pixt = pixRotate180(NULL, pixs);
     pixd = pixRotate180(NULL, pixt);
@@ -119,7 +119,7 @@ static char  mainName[] = "rotateorthtest1";
     else fprintf(stderr, "2 rots fail to give I\n");
 #endif
 
-	/* Mix rotate 180 with LR/TB */
+        /* Mix rotate 180 with LR/TB */
 #if 0
     pixd = pixRotate180(NULL, pixs);
     pixRotateLR(pixd, pixd);
@@ -130,9 +130,9 @@ static char  mainName[] = "rotateorthtest1";
 #endif
 
     if (pixGetDepth(pixd) < 8)
-	pixWrite(fileout, pixd, IFF_PNG);
+        pixWrite(fileout, pixd, IFF_PNG);
     else
-	pixWrite(fileout, pixd, IFF_JFIF_JPEG);
+        pixWrite(fileout, pixd, IFF_JFIF_JPEG);
 
     pixDestroy(&pixs);
     pixDestroy(&pixd);

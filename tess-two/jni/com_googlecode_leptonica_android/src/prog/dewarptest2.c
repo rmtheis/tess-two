@@ -38,7 +38,7 @@
 
 #include "allheaders.h"
 
-#define  NORMALIZE     0
+#define  NORMALIZE     1
 
 l_int32 main(int    argc,
              char **argv)
@@ -46,7 +46,7 @@ l_int32 main(int    argc,
 l_int32      pageno;
 L_DEWARP    *dew1;
 L_DEWARPA   *dewa;
-PIX         *pixs, *pixn, *pixg, *pixb;
+PIX         *pixs, *pixn, *pixg, *pixb, *pixd;
 static char  mainName[] = "dewarptest2";
 
     if (argc != 1 && argc != 3)
@@ -63,7 +63,14 @@ static char  mainName[] = "dewarptest2";
     if (!pixs)
         return ERROR_INT("image not read", mainName, 1);
 
+#if 1
+    dewarpSinglePage(pixs, 100, 1, 1, &pixd, NULL, 1);
+    pixDisplay(pixd, 100, 100);
+
+#else
+
     dewa = dewarpaCreate(40, 30, 1, 6, 50);
+    dewarpaUseBothArrays(dewa, 1);
 
 #if NORMALIZE
         /* Normalize for varying background and binarize */
@@ -81,12 +88,17 @@ static char  mainName[] = "dewarptest2";
         /* Run the basic functions */
     dew1 = dewarpCreate(pixb, pageno);
     dewarpaInsertDewarp(dewa, dew1);
-    dewarpBuildModel(dew1, "/tmp/dewarp_model1.pdf");
-    dewarpaApplyDisparity(dewa, pageno, pixg, "/tmp/dewarp_apply1.pdf");
+    dewarpBuildPageModel(dew1, "/tmp/dewarp_model1.pdf");
+    dewarpaApplyDisparity(dewa, pageno, pixg, -1, 0, 0, &pixd,
+                          "/tmp/dewarp_apply1.pdf");
 
     dewarpaDestroy(&dewa);
-    pixDestroy(&pixs);
     pixDestroy(&pixg);
     pixDestroy(&pixb);
+
+#endif
+
+    pixDestroy(&pixs);
+    pixDestroy(&pixd);
     return 0;
 }

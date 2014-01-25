@@ -27,8 +27,10 @@
 /*
  *  compare_reg.c
  *
- *   This tests comparison of images that are translated with
- *   respect to each other.
+ *   This tests comparison of images that are:
+ *
+ *   (1) translated with respect to each other
+ *   (2) only slightly different in content
  */
 
 #include "string.h"
@@ -38,11 +40,10 @@
 l_int32 main(int    argc,
              char **argv)
 {
-char          buf[512];
 l_int32       delx, dely, etransx, etransy, w, h, area1, area2;
 l_int32      *stab, *ctab;
-l_float32     cx1, cy1, cx2, cy2, score;
-PIX          *pix0, *pix1, *pix2;
+l_float32     cx1, cy1, cx2, cy2, score, fract;
+PIX          *pix0, *pix1, *pix2, *pix3, *pix4, *pix5;
 L_REGPARAMS  *rp;
 
     if (regTestSetup(argc, argv, &rp))
@@ -80,10 +81,10 @@ L_REGPARAMS  *rp;
             delx, dely, score);
     regTestCompareValues(rp, 32, delx, 0);   /* 0 */
     regTestCompareValues(rp, 12, dely, 0);   /* 1 */
-    regTestCheckFile(rp, "/tmp/junkcorrel_5.png");   /* 2 */
-    lept_rm(NULL, "junkcorrel_5.png");
-    FREE(stab);
-    FREE(ctab);
+    regTestCheckFile(rp, "/tmp/correl_5.png");   /* 2 */
+    lept_rm(NULL, "correl_5.png");
+    lept_free(stab);
+    lept_free(ctab);
     pixDestroy(&pix0);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
@@ -102,8 +103,34 @@ L_REGPARAMS  *rp;
     fprintf(stderr, "delx = %d, dely = %d\n", delx, dely);
     regTestCompareValues(rp, 45, delx, 0);   /* 3 */
     regTestCompareValues(rp, -25, dely, 0);   /* 4 */
-    regTestCheckFile(rp, "/tmp/junkcmp.pdf");   /* 5 */
-    regTestCheckFile(rp, "/tmp/junkcorrel.pdf");  /* 6 */
+    regTestCheckFile(rp, "/tmp/cmp.pdf");   /* 5 */
+    regTestCheckFile(rp, "/tmp/correl.pdf");  /* 6 */
+
+    /* ------------ Test of pixGetPerceptualDiff() --------------- */
+    pix0 = pixRead("greencover.jpg");
+    pix1 = pixRead("redcover.jpg");  /* pre-scaled to the same size */
+        /* Apply directly to the color images */
+    pixGetPerceptualDiff(pix0, pix1, 1, 3, 20, &fract, &pix2, &pix3);
+    fprintf(stderr, "Fraction of color pixels = %f\n", fract);
+    regTestCompareValues(rp, 0.061252, fract, 0.0001);  /* 7 */
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 8 */
+    regTestWritePixAndCheck(rp, pix3, IFF_TIFF_G4);  /* 9 */
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+        /* Apply to grayscale images */
+    pix2 = pixConvertTo8(pix0, 0);
+    pix3 = pixConvertTo8(pix1, 0);
+    pixGetPerceptualDiff(pix2, pix3, 1, 3, 20, &fract, &pix4, &pix5);
+    fprintf(stderr, "Fraction of grayscale pixels = %f\n", fract);
+    regTestCompareValues(rp, 0.046928, fract, 0.0002);  /* 10 */
+    regTestWritePixAndCheck(rp, pix4, IFF_JFIF_JPEG);  /* 11 */
+    regTestWritePixAndCheck(rp, pix5, IFF_TIFF_G4);  /* 12 */
+    pixDestroy(&pix0);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
 
     return regTestCleanup(rp);
 }

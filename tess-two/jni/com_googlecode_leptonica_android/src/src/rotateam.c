@@ -97,7 +97,7 @@
 #include <string.h>
 #include "allheaders.h"
 
-static const l_float32  VERY_SMALL_ANGLE = 0.001;  /* radians; ~0.06 degrees */
+static const l_float32  MIN_ANGLE_TO_ROTATE = 0.001;  /* radians; ~0.06 deg */
 
 
 /*------------------------------------------------------------------*
@@ -132,7 +132,7 @@ PIX      *pixt1, *pixt2, *pixd;
     if (pixGetDepth(pixs) == 1)
         return (PIX *)ERROR_PTR("pixs is 1 bpp", procName, NULL);
 
-    if (L_ABS(angle) < VERY_SMALL_ANGLE)
+    if (L_ABS(angle) < MIN_ANGLE_TO_ROTATE)
         return pixClone(pixs);
 
         /* Remove cmap if it exists, and unpack to 8 bpp if necessary */
@@ -184,7 +184,7 @@ pixRotateAMColor(PIX       *pixs,
 {
 l_int32    w, h, wpls, wpld;
 l_uint32  *datas, *datad;
-PIX       *pixd;
+PIX       *pix1, *pix2, *pixd;
 
     PROCNAME("pixRotateAMColor");
 
@@ -193,7 +193,7 @@ PIX       *pixd;
     if (pixGetDepth(pixs) != 32)
         return (PIX *)ERROR_PTR("pixs must be 32 bpp", procName, NULL);
 
-    if (L_ABS(angle) < VERY_SMALL_ANGLE)
+    if (L_ABS(angle) < MIN_ANGLE_TO_ROTATE)
         return pixClone(pixs);
 
     pixGetDimensions(pixs, &w, &h, NULL);
@@ -204,6 +204,13 @@ PIX       *pixd;
     wpld = pixGetWpl(pixd);
 
     rotateAMColorLow(datad, w, h, wpld, datas, wpls, angle, colorval);
+    if (pixGetSpp(pixs) == 4) {
+        pix1 = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
+        pix2 = pixRotateAMGray(pix1, angle, 255);  /* bring in opaque */
+        pixSetRGBComponent(pixd, pix2, L_ALPHA_CHANNEL);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+    }
 
     return pixd;
 }
@@ -238,7 +245,7 @@ PIX        *pixd;
     if (pixGetDepth(pixs) != 8)
         return (PIX *)ERROR_PTR("pixs must be 8 bpp", procName, NULL);
 
-    if (L_ABS(angle) < VERY_SMALL_ANGLE)
+    if (L_ABS(angle) < MIN_ANGLE_TO_ROTATE)
         return pixClone(pixs);
 
     pixGetDimensions(pixs, &w, &h, NULL);
@@ -284,7 +291,7 @@ PIX      *pixt1, *pixt2, *pixd;
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
 
-    if (L_ABS(angle) < VERY_SMALL_ANGLE)
+    if (L_ABS(angle) < MIN_ANGLE_TO_ROTATE)
         return pixClone(pixs);
 
         /* Remove cmap if it exists, and unpack to 8 bpp if necessary */
@@ -336,7 +343,7 @@ pixRotateAMColorCorner(PIX       *pixs,
 {
 l_int32    w, h, wpls, wpld;
 l_uint32  *datas, *datad;
-PIX       *pixd;
+PIX       *pix1, *pix2, *pixd;
 
     PROCNAME("pixRotateAMColorCorner");
 
@@ -345,7 +352,7 @@ PIX       *pixd;
     if (pixGetDepth(pixs) != 32)
         return (PIX *)ERROR_PTR("pixs must be 32 bpp", procName, NULL);
 
-    if (L_ABS(angle) < VERY_SMALL_ANGLE)
+    if (L_ABS(angle) < MIN_ANGLE_TO_ROTATE)
         return pixClone(pixs);
 
     pixGetDimensions(pixs, &w, &h, NULL);
@@ -356,6 +363,13 @@ PIX       *pixd;
     wpld = pixGetWpl(pixd);
 
     rotateAMColorCornerLow(datad, w, h, wpld, datas, wpls, angle, fillval);
+    if (pixGetSpp(pixs) == 4) {
+        pix1 = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
+        pix2 = pixRotateAMGrayCorner(pix1, angle, 255);  /* bring in opaque */
+        pixSetRGBComponent(pixd, pix2, L_ALPHA_CHANNEL);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+    }
 
     return pixd;
 }
@@ -390,7 +404,7 @@ PIX       *pixd;
     if (pixGetDepth(pixs) != 8)
         return (PIX *)ERROR_PTR("pixs must be 8 bpp", procName, NULL);
 
-    if (L_ABS(angle) < VERY_SMALL_ANGLE)
+    if (L_ABS(angle) < MIN_ANGLE_TO_ROTATE)
         return pixClone(pixs);
 
     pixGetDimensions(pixs, &w, &h, NULL);
@@ -425,6 +439,8 @@ PIX       *pixd;
  *      (4) It is about 10% to 20% faster than the more accurate linear
  *          interpolation function pixRotateAMColor(),
  *          which uses 256 subpixels.
+ *      (5) For some reason it shifts the image center.
+ *          No attempt is made to rotate the alpha component.
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
  */
@@ -444,7 +460,7 @@ PIX       *pixd;
     if (pixGetDepth(pixs) != 32)
         return (PIX *)ERROR_PTR("pixs must be 32 bpp", procName, NULL);
 
-    if (L_ABS(angle) < VERY_SMALL_ANGLE)
+    if (L_ABS(angle) < MIN_ANGLE_TO_ROTATE)
         return pixClone(pixs);
 
     pixGetDimensions(pixs, &w, &h, NULL);
@@ -455,6 +471,5 @@ PIX       *pixd;
     wpld = pixGetWpl(pixd);
 
     rotateAMColorFastLow(datad, w, h, wpld, datas, wpls, angle, colorval);
-
     return pixd;
 }

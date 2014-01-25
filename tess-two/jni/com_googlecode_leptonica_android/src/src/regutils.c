@@ -32,6 +32,7 @@
  *           l_int32    regTestSetup()
  *           l_int32    regTestCleanup()
  *           l_int32    regTestCompareValues()
+ *           l_int32    regTestCompareStrings()
  *           l_int32    regTestComparePix()
  *           l_int32    regTestCompareSimilarPix()
  *           l_int32    regTestCheckFile()
@@ -40,6 +41,20 @@
  *
  *       Static function
  *           char      *getRootNameFromArgv0()
+ *
+ *  See regutils.h for how to use this.  Here is a minimal setup:
+ *
+ *  main(int argc, char **argv) {
+ *  ...
+ *  L_REGPARAMS  *rp;
+ *
+ *      if (regTestSetup(argc, argv, &rp))
+ *          return 1;
+ *      ...
+ *      regTestWritePixAndCheck(rp, pix, IFF_PNG);  // 0
+ *      ...
+ *      return regTestCleanup(rp);
+ *  }
  */
 
 #include <string.h>
@@ -49,7 +64,6 @@ extern l_int32 NumImageFileFormatExtensions;
 extern const char *ImageFileFormatExtensions[];
 
 static char *getRootNameFromArgv0(const char *argv0);
-
 
 /*--------------------------------------------------------------------*
  *                      Regression test utilities                     *
@@ -67,25 +81,27 @@ static char *getRootNameFromArgv0(const char *argv0);
  *      (1) Call this function with the args to the reg test.
  *          There are three cases:
  *          Case 1:
+ *              There is either only one arg, or the second arg is "compare".
+ *              This is the mode in which you run a regression test
+ *              (or a set of them), looking for failures and logging
+ *              the results to a file.  The output, which includes
+ *              logging of all reg test failures plus a SUCCESS or
+ *              FAILURE summary for each test, is appended to the file
+ *              "/tmp/reg_results.txt.  For this case, as in Case 2,
+ *              the display field in rp is set to FALSE, preventing
+ *              image display.
+ *          Case 2:
  *              The second arg is "generate".  This will cause
  *              generation of new golden files for the reg test.
  *              The results of the reg test are not recorded, and
- *              the display field is set to FALSE, preventing image display.
- *          Case 2:
- *              The second arg is "compare".  This is the mode in which
- *              you run a regression test (or a set of them), looking
- *              for failures and logging the results to a file.
- *              The output, which includes logging of all reg test
- *              failures plus a SUCCESS or FAILURE summary for each test,
- *              is appended to the file "/tmp/reg_results.txt.  For this
- *              case, as in Case 1, the display field in rp is set to FALSE.
+ *              the display field in rp is set to FALSE.
  *          Case 3:
- *              There is either only arg, or the  second arg is "display".
- *              The test will run and files will be written.  Comparisons
- *              with golden files will not be carried out, so the only
- *              notion of success or failure is with tests that do not
- *              involve golden files.  The display field in rp is TRUE,
- *              and this is used by pixDisplayWithTitle().
+ *              The second arg is "display".  The test will run and
+ *              files will be written.  Comparisons with golden files
+ *              will not be carried out, so the only notion of success
+ *              or failure is with tests that do not involve golden files.
+ *              The display field in rp is TRUE, and this is used by
+ *              pixDisplayWithTitle().
  *      (2) See regutils.h for examples of usage.
  */
 l_int32
@@ -101,7 +117,7 @@ L_REGPARAMS  *rp;
 
     if (argc != 1 && argc != 2) {
         snprintf(errormsg, sizeof(errormsg),
-            "Syntax: %s [generate | compare | [display]]", argv[0]);
+            "Syntax: %s [ [generate] | compare | display ]", argv[0]);
         return ERROR_INT(errormsg, procName, 1);
     }
 
@@ -119,11 +135,7 @@ L_REGPARAMS  *rp;
     rp->success = TRUE;
 
         /* Only open a stream to a temp file for the 'compare' case */
-    if (argc == 1 || !strcmp(argv[1], "display")) {
-        rp->mode = L_REG_DISPLAY;
-        rp->display = TRUE;
-    }
-    else if (!strcmp(argv[1], "compare")) {
+    if (argc == 1 || !strcmp(argv[1], "compare")) {
         rp->mode = L_REG_COMPARE;
         rp->tempfile = genTempFilename("/tmp", "regtest_output.txt", 0, 1);
         rp->fp = fopenWriteStream(rp->tempfile, "wb");
@@ -131,15 +143,16 @@ L_REGPARAMS  *rp;
             rp->success = FALSE;
             return ERROR_INT("stream not opened for tempfile", procName, 1);
         }
-    }
-    else if (!strcmp(argv[1], "generate")) {
+    } else if (!strcmp(argv[1], "generate")) {
         rp->mode = L_REG_GENERATE;
         lept_mkdir("golden");
-    }
-    else {
+    } else if (!strcmp(argv[1], "display")) {
+        rp->mode = L_REG_DISPLAY;
+        rp->display = TRUE;
+    } else {
         FREE(rp);
         snprintf(errormsg, sizeof(errormsg),
-            "Syntax: %s [generate | compare | [display]]", argv[0]);
+            "Syntax: %s [ [generate] | compare | display ]", argv[0]);
         return ERROR_INT(errormsg, procName, 1);
     }
 
@@ -267,6 +280,69 @@ l_float32  diff;
 
 
 /*!
+ *  regTestCompareStrings()
+ *
+ *      Input:  rp (regtest parameters)
+ *              string1 (typ. the expected string)
+ *              bytes1 (size of string1)
+ *              string2 (typ. the computed string)
+ *              bytes2 (size of string2)
+ *      Return: 0 if OK, 1 on error (a failure in comparison is not an error)
+ */
+l_int32
+regTestCompareStrings(L_REGPARAMS  *rp,
+                      l_uint8      *string1,
+                      size_t        bytes1,
+                      l_uint8      *string2,
+                      size_t        bytes2)
+{
+l_int32  i, fail;
+char     buf[256];
+
+    PROCNAME("regTestCompareValues");
+
+    if (!rp)
+        return ERROR_INT("rp not defined", procName, 1);
+
+    rp->index++;
+    fail = FALSE;
+    if (bytes1 != bytes2) fail = TRUE;
+    if (fail == FALSE) {
+        for (i = 0; i < bytes1; i++) {
+            if (string1[i] != string2[i]) {
+                fail = TRUE;
+                break;
+            }
+        }
+    }
+
+        /* Output on failure */
+    if (fail == TRUE) {
+            /* Write the two strings to file */
+        snprintf(buf, sizeof(buf), "/tmp/string1_%d_%lu", rp->index,
+                 (unsigned long)bytes1);
+        l_binaryWrite(buf, "w", string1, bytes1);
+        snprintf(buf, sizeof(buf), "/tmp/string2_%d_%lu", rp->index,
+                 (unsigned long)bytes2);
+        l_binaryWrite(buf, "w", string2, bytes2);
+
+            /* Report comparison failure */
+        snprintf(buf, sizeof(buf), "/tmp/string*_%d_*", rp->index);
+        if (rp->fp) {
+            fprintf(rp->fp,
+                    "Failure in %s_reg: string comp for index %d; "
+                    "written to %s\n", rp->testname, rp->index, buf);
+        }
+        fprintf(stderr,
+                    "Failure in %s_reg: string comp for index %d; "
+                    "written to %s\n", rp->testname, rp->index, buf);
+        rp->success = FALSE;
+    }
+    return 0;
+}
+
+
+/*!
  *  regTestComparePix()
  *
  *      Input:  rp (regtest parameters)
@@ -274,8 +350,8 @@ l_float32  diff;
  *      Return: 0 if OK, 1 on error (a failure in comparison is not an error)
  *
  *  Notes:
- *      (1) This function compares two pix for equality.  If not in compare
- *          mode, on failure it writes to stderr.
+ *      (1) This function compares two pix for equality.  On failure,
+ *          this writes to stderr.
  */
 l_int32
 regTestComparePix(L_REGPARAMS  *rp,
@@ -314,7 +390,7 @@ l_int32  same;
  *  regTestCompareSimilarPix()
  *
  *      Input:  rp (regtest parameters)
- *              pix1, pix2 (to be tested for equality)
+ *              pix1, pix2 (to be tested for near equality)
  *              mindiff (minimum pixel difference to be counted; > 0)
  *              maxfract (maximum fraction of pixels allowed to have
  *                        diff greater than or equal to mindiff)
@@ -323,12 +399,15 @@ l_int32  same;
  *              is not an error)
  *
  *  Notes:
- *      (1) This function compares two pix for equality.  If not in compare
- *          mode, on failure it writes to stderr.
- *      (2) To identify two images as 'similar', select @maxfract to be
- *          the upper bound for what you expect.  Typical values might
- *          be @mindiff = 15 and @maxfract = 0.01.
- *      (3) Normally, use @printstats = 0.  In debugging mode, to see
+ *      (1) This function compares two pix for near equality.  On failure,
+ *          this writes to stderr.
+ *      (2) The pix are similar if the fraction of non-conforming pixels
+ *          does not exceed @maxfract.  Pixels are non-conforming if
+ *          the difference in pixel values equals or exceeds @mindiff.
+ *          Typical values might be @mindiff = 15 and @maxfract = 0.01.
+ *      (3) The input images must have the same size and depth.  The
+ *          pixels for comparison are typically subsampled from the images.
+ *      (4) Normally, use @printstats = 0.  In debugging mode, to see
  *          the relation between @mindiff and the minimum value of
  *          @maxfract for success, set this to 1.
  */
@@ -493,7 +572,7 @@ SARRAY  *sa;
     if (sarrayGetCount(sa) != 1) {
         sarrayDestroy(&sa);
         rp->success = FALSE;
-        L_ERROR_STRING("golden file %s not found", procName, namebuf);
+        L_ERROR("golden file %s not found\n", procName, namebuf);
         return 1;
     }
     name1 = sarrayGetString(sa, 0, L_COPY);
@@ -505,7 +584,7 @@ SARRAY  *sa;
         sarrayDestroy(&sa);
         rp->success = FALSE;
         FREE(name1);
-        L_ERROR_STRING("golden file %s not found", procName, namebuf);
+        L_ERROR("golden file %s not found\n", procName, namebuf);
         return 1;
     }
     name2 = sarrayGetString(sa, 0, L_COPY);
@@ -573,6 +652,8 @@ char   namebuf[256];
              rp->index + 1, ImageFileFormatExtensions[format]);
 
         /* Write the local file */
+    if (pixGetDepth(pix) < 8)
+        pixSetPadBits(pix, 0);
     pixWrite(namebuf, pix, format);
 
         /* Either write the golden file ("generate") or check the
@@ -630,3 +711,4 @@ char    *root;
     root[len - 4] = '\0';  /* remove the suffix */
     return root;
 }
+

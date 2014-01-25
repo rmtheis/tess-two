@@ -83,16 +83,16 @@
 #include <string.h>
 #include "allheaders.h"
 
-    /* MS VC++ can't handle array initialization in C with static consts */
-#define  L_BUF_SIZE   512
+static const l_int32  L_BUF_SIZE = 512;
 
-    /* Cygwin needs any extension, or it will append ".exe" to the filename! */
+    /* Cygwin needs an extension to prevent it from appending
+     * ".exe" to the filename */
 static const char *tempfile = "/tmp/temp_cpp_output.txt";
 static const char *version = "1.5";
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *str, *prestring, *outprotos, *protostr;
 const char  *spacestr = " ";
@@ -130,15 +130,14 @@ static char  mainName[] = "xtractprotos";
                     fprintf(stderr, "parse failure for prestring\n");
                     return 1;
                 }
-                if ((len = strlen(buf)) > L_BUF_SIZE - 3)
-                    L_WARNING("prestring too large; omitting!", mainName);
-                else {
+                if ((len = strlen(buf)) > L_BUF_SIZE - 3) {
+                    L_WARNING("prestring too large; omitting!\n", mainName);
+                } else {
                     buf[len] = ' ';
                     buf[len + 1] = '\0';
                     prestring = stringNew(buf);
                 }
-            }
-            else if (!strncmp(argv[i], "-protos", 7)) {
+            } else if (!strncmp(argv[i], "-protos", 7)) {
                 nflags++;
                 ret = sscanf(argv[i] + 1, "protos=%s", buf);
                 if (ret != 1) {
@@ -242,9 +241,9 @@ static char  mainName[] = "xtractprotos";
         snprintf(buf, sizeof(buf), "#include \"%s\"\n", outprotos);
         l_byteaAppendString(ba, buf);
         l_binaryWrite(outprotos, "w", protostr, nbytes);
-    }
-    else
+    } else {
         l_byteaAppendString(ba, protostr);
+    }
     ba2 = l_byteaInitFromFile("allheaders_bot.txt");
     l_byteaJoin(ba, &ba2);
     l_byteaWrite("allheaders.h", ba, 0, 0);

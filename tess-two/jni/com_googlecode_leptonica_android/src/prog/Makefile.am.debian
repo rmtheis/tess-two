@@ -21,9 +21,9 @@ bin_PROGRAMS = binarize_reg \
 	threshnorm_reg \
 	warper_reg \
 	convertfilestopdf convertfilestops \
-	convertformat \
+	convertformat convertjpegfilestopdf \
 	convertsegfilestopdf convertsegfilestops \
-	converttops \
+	converttopdf converttops \
 	dewarptest1 \
 	fcombautogen fhmtautogen fileinfo \
 	fmorphautogen \

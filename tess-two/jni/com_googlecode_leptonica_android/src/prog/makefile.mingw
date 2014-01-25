@@ -187,7 +187,7 @@ SRC =		adaptnorm_reg.c affine_reg.c alphaclean_reg.c \
 		sheartest.c showedges.c \
 		skewtest.c snapcolortest.c \
 		sorttest.c splitimage2pdf.c \
-		textlinemask.c trctest.c \
+		trctest.c \
 		viewertest.c watershedtest.c \
 		wordsinorder.c xtractprotos.c xvdisp.c
 
@@ -713,9 +713,6 @@ sorttest:	sorttest.o $(LEPTLIB)
 
 splitimage2pdf:	splitimage2pdf.o $(LEPTLIB)
 	$(CC) -o splitimage2pdf splitimage2pdf.o $(ALL_LIBS) $(EXTRALIBS)
-
-textlinemask:	textlinemask.o $(LEPTLIB)
-	$(CC) -o textlinemask textlinemask.o $(ALL_LIBS) $(EXTRALIBS)
 
 trctest:	trctest.o $(LEPTLIB)
 	$(CC) -o trctest trctest.o $(ALL_LIBS) $(EXTRALIBS)

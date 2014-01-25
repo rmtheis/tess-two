@@ -48,8 +48,8 @@ static const char  *filename[] = {
                          "test24.jpg"        /* rgb */
                             };
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char          buf[256];
 size_t        size;

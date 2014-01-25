@@ -40,8 +40,8 @@
     /* All images scaled to this width  */
 static const l_int32  WIDTH = 800;
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      h;
 l_float32    scalefactor;
@@ -158,6 +158,7 @@ L_REGPARAMS  *rp;
     convertSegmentedFilesToPdf("/tmp/segtest", ".jpg", 100, L_G4_ENCODE,
                                140, baa, 75, 0.6, "Segmentation Test",
                                "/tmp/pdfseg.7.pdf");
+    L_INFO("Generated pdf file: /tmp/pdfseg.7.pdf\n", rp->testname);
     regTestCheckFile(rp, "/tmp/pdfseg.7.pdf");   /* 7 */
 
     boxaaDestroy(&baa);

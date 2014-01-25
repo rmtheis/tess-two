@@ -29,8 +29,8 @@
  *
  *      Composable coordinate transforms
  *           l_float32   *createMatrix2dTranslate()
- *           l_float32   *createMatrixScale()
- *           l_float32   *createMatrixRotate()
+ *           l_float32   *createMatrix2dScale()
+ *           l_float32   *createMatrix2dRotate()
  *
  *      Special coordinate transforms on pta
  *           PTA         *ptaTranslate()

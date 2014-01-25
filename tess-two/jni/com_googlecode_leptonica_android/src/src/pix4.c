@@ -360,9 +360,11 @@ PIXCMAP    *cmap;
 
     PROCNAME("pixGetColorHistogram");
 
+    if (pnar) *pnar = NULL;
+    if (pnag) *pnag = NULL;
+    if (pnab) *pnab = NULL;
     if (!pnar || !pnag || !pnab)
         return ERROR_INT("&nar, &nag, &nab not all defined", procName, 1);
-    *pnar = *pnag = *pnab = NULL;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     pixGetDimensions(pixs, &w, &h, &d);
@@ -407,8 +409,7 @@ PIXCMAP    *cmap;
                 barray[bval] += 1.0;
             }
         }
-    }
-    else {  /* 32 bpp rgb */
+    } else {  /* 32 bpp rgb */
         for (i = 0; i < h; i += factor) {
             line = data + i * wpl;
             for (j = 0; j < w; j += factor) {
@@ -465,9 +466,11 @@ PIXCMAP    *cmap;
     if (!pixm)
         return pixGetColorHistogram(pixs, factor, pnar, pnag, pnab);
 
+    if (pnar) *pnar = NULL;
+    if (pnag) *pnag = NULL;
+    if (pnab) *pnab = NULL;
     if (!pnar || !pnag || !pnab)
         return ERROR_INT("&nar, &nag, &nab not all defined", procName, 1);
-    *pnar = *pnag = *pnab = NULL;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     pixGetDimensions(pixs, &w, &h, &d);
@@ -522,8 +525,7 @@ PIXCMAP    *cmap;
                 }
             }
         }
-    }
-    else {  /* 32 bpp rgb */
+    } else {  /* 32 bpp rgb */
         for (i = 0; i < hm; i += factor) {
             if (y + i < 0 || y + i >= h) continue;
             lines = datas + (y + i) * wpls;
@@ -797,8 +799,7 @@ PIXCMAP   *cmap;
     if (d == 8) {
         pixGetRankValueMasked(pixt, NULL, 0, 0, factor, rank, &val, NULL);
         *pvalue = lept_roundftoi(val);
-    }
-    else {
+    } else {
         pixGetRankValueMaskedRGB(pixt, NULL, 0, 0, factor, rank,
                                  &rval, &gval, &bval);
         composeRGBPixel(lept_roundftoi(rval), lept_roundftoi(gval),
@@ -851,6 +852,9 @@ PIX       *pixmt, *pixt;
 
     PROCNAME("pixGetRankValueMaskedRGB");
 
+    if (prval) *prval = 0.0;
+    if (pgval) *pgval = 0.0;
+    if (pbval) *pbval = 0.0;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     if (pixGetDepth(pixs) != 32)
@@ -936,8 +940,10 @@ NUMA  *na;
 
     PROCNAME("pixGetRankValueMasked");
 
-    if (pna)
-        *pna = NULL;
+    if (pna) *pna = NULL;
+    if (!pval)
+        return ERROR_INT("&val not defined", procName, 1);
+    *pval = 0.0;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     if (pixGetDepth(pixs) != 8 && !pixGetColormap(pixs))
@@ -948,9 +954,6 @@ NUMA  *na;
         return ERROR_INT("sampling factor < 1", procName, 1);
     if (rank < 0.0 || rank > 1.0)
         return ERROR_INT("rank not in [0.0 ... 1.0]", procName, 1);
-    if (!pval)
-        return ERROR_INT("&val not defined", procName, 1);
-    *pval = 0.0;  /* init */
 
     if ((na = pixGetGrayHistogramMasked(pixs, pixm, x, y, factor)) == NULL)
         return ERROR_INT("na not made", procName, 1);
@@ -1008,8 +1011,7 @@ PIXCMAP   *cmap;
     if (d == 8) {
         pixGetAverageMasked(pixt, NULL, 0, 0, factor, type, &val);
         *pvalue = lept_roundftoi(val);
-    }
-    else {
+    } else {
         pixGetAverageMaskedRGB(pixt, NULL, 0, 0, factor, type,
                                &rval, &gval, &bval);
         composeRGBPixel(lept_roundftoi(rval), lept_roundftoi(gval),
@@ -1053,15 +1055,16 @@ pixGetAverageMaskedRGB(PIX        *pixs,
                        l_float32  *pgval,
                        l_float32  *pbval)
 {
-l_int32   color;
 PIX      *pixt;
 PIXCMAP  *cmap;
 
     PROCNAME("pixGetAverageMaskedRGB");
 
+    if (prval) *prval = 0.0;
+    if (pgval) *pgval = 0.0;
+    if (pbval) *pbval = 0.0;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
-    color = 0;
     cmap = pixGetColormap(pixs);
     if (pixGetDepth(pixs) != 32 && !cmap)
         return ERROR_INT("pixs neither 32 bpp nor colormapped", procName, 1);
@@ -1150,6 +1153,9 @@ PIX       *pixg;
 
     PROCNAME("pixGetAverageMasked");
 
+    if (!pval)
+        return ERROR_INT("&val not defined", procName, 1);
+    *pval = 0.0;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     d = pixGetDepth(pixs);
@@ -1162,9 +1168,6 @@ PIX       *pixg;
     if (type != L_MEAN_ABSVAL && type != L_ROOT_MEAN_SQUARE &&
         type != L_STANDARD_DEVIATION && type != L_VARIANCE)
         return ERROR_INT("invalid measure type", procName, 1);
-    if (!pval)
-        return ERROR_INT("&val not defined", procName, 1);
-    *pval = 0.0;  /* init */
 
     if (pixGetColormap(pixs))
         pixg = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
@@ -1191,8 +1194,7 @@ PIX       *pixg;
                 count++;
             }
         }
-    }
-    else {
+    } else {
         pixGetDimensions(pixm, &wm, &hm, NULL);
         datam = pixGetData(pixm);
         wplm = pixGetWpl(pixm);
@@ -1266,6 +1268,9 @@ PIXCMAP  *cmap;
 
     PROCNAME("pixGetAverageTiledRGB");
 
+    if (ppixr) *ppixr = NULL;
+    if (ppixg) *ppixg = NULL;
+    if (ppixb) *ppixb = NULL;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     cmap = pixGetColormap(pixs);
@@ -1406,6 +1411,7 @@ PIX       *pixt, *pixd;
  *  pixRowStats()
  *
  *      Input:  pixs (8 bpp; not cmapped)
+ *              box (<optional> clipping box; can be null)
  *              &namean (<optional return> numa of mean values)
  *              &namedian (<optional return> numa of median values)
  *              &namode (<optional return> numa of mode intensity values)
@@ -1420,11 +1426,13 @@ PIX       *pixt, *pixd;
  *      (2) Use NULL on input to prevent computation of any of the 5 numas.
  *      (3) Other functions that compute pixel row statistics are:
  *             pixCountPixelsByRow()
- *             pixSumPixelsByRow()
+ *             pixAverageByRow()
+ *             pixVarianceByRow()
  *             pixGetRowStats()
  */
 l_int32
 pixRowStats(PIX    *pixs,
+            BOX    *box,
             NUMA  **pnamean,
             NUMA  **pnamedian,
             NUMA  **pnamode,
@@ -1433,6 +1441,7 @@ pixRowStats(PIX    *pixs,
             NUMA  **pnarootvar)
 {
 l_int32     i, j, k, w, h, val, wpls, sum, sumsq, target, max, modeval;
+l_int32     xstart, xend, ystart, yend, bw, bh;
 l_int32    *histo;
 l_uint32   *lines, *datas;
 l_float32   norm;
@@ -1449,25 +1458,30 @@ l_float32  *famedian, *famode, *famodecount;
     if (pnarootvar) *pnarootvar = NULL;
     if (!pixs || pixGetDepth(pixs) != 8)
         return ERROR_INT("pixs undefined or not 8 bpp", procName, 1);
+    famean = fameansq = favar = farootvar = NULL;
+    famedian = famode = famodecount = NULL;
 
     pixGetDimensions(pixs, &w, &h, NULL);
-    datas = pixGetData(pixs);
-    wpls = pixGetWpl(pixs);
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return ERROR_INT("invalid clipping box", procName, 1);
 
         /* We need the mean for variance and root variance */
+    datas = pixGetData(pixs);
+    wpls = pixGetWpl(pixs);
     if (pnamean || pnavar || pnarootvar) {
-        norm = 1. / (l_float32)w;
-        famean = (l_float32 *)CALLOC(h, sizeof(l_float32));
-        fameansq = (l_float32 *)CALLOC(h, sizeof(l_float32));
+        norm = 1. / (l_float32)bw;
+        famean = (l_float32 *)CALLOC(bh, sizeof(l_float32));
+        fameansq = (l_float32 *)CALLOC(bh, sizeof(l_float32));
         if (pnavar || pnarootvar) {
-            favar = (l_float32 *)CALLOC(h, sizeof(l_float32));
+            favar = (l_float32 *)CALLOC(bh, sizeof(l_float32));
             if (pnarootvar)
-                farootvar = (l_float32 *)CALLOC(h, sizeof(l_float32));
+                farootvar = (l_float32 *)CALLOC(bh, sizeof(l_float32));
         }
-        for (i = 0; i < h; i++) {
+        for (i = ystart; i < yend; i++) {
             sum = sumsq = 0;
             lines = datas + i * wpls;
-            for (j = 0; j < w; j++) {
+            for (j = xstart; j < xend; j++) {
                 val = GET_DATA_BYTE(lines, j);
                 sum += val;
                 sumsq += val * val;
@@ -1482,43 +1496,43 @@ l_float32  *famedian, *famode, *famodecount;
         }
         FREE(fameansq);
         if (pnamean)
-            *pnamean = numaCreateFromFArray(famean, h, L_INSERT);
+            *pnamean = numaCreateFromFArray(famean, bh, L_INSERT);
         else
             FREE(famean);
         if (pnavar)
-            *pnavar = numaCreateFromFArray(favar, h, L_INSERT);
+            *pnavar = numaCreateFromFArray(favar, bh, L_INSERT);
         else
             FREE(favar);
         if (pnarootvar)
-            *pnarootvar = numaCreateFromFArray(farootvar, h, L_INSERT);
+            *pnarootvar = numaCreateFromFArray(farootvar, bh, L_INSERT);
     }
 
         /* We need a histogram to find the median and/or mode values */
     if (pnamedian || pnamode || pnamodecount) {
         histo = (l_int32 *)CALLOC(256, sizeof(l_int32));
         if (pnamedian) {
-            *pnamedian = numaMakeConstant(0, h);
+            *pnamedian = numaMakeConstant(0, bh);
             famedian = numaGetFArray(*pnamedian, L_NOCOPY);
         }
         if (pnamode) {
-            *pnamode = numaMakeConstant(0, h);
+            *pnamode = numaMakeConstant(0, bh);
             famode = numaGetFArray(*pnamode, L_NOCOPY);
         }
         if (pnamodecount) {
-            *pnamodecount = numaMakeConstant(0, h);
+            *pnamodecount = numaMakeConstant(0, bh);
             famodecount = numaGetFArray(*pnamodecount, L_NOCOPY);
         }
-        for (i = 0; i < h; i++) {
+        for (i = ystart; i < yend; i++) {
             lines = datas + i * wpls;
             memset(histo, 0, 1024);
-            for (j = 0; j < w; j++) {
+            for (j = xstart; j < xend; j++) {
                 val = GET_DATA_BYTE(lines, j);
                 histo[val]++;
             }
 
             if (pnamedian) {
                 sum = 0;
-                target = (w + 1) / 2;
+                target = (bw + 1) / 2;
                 for (k = 0; k < 256; k++) {
                     sum += histo[k];
                     if (sum >= target) {
@@ -1554,6 +1568,7 @@ l_float32  *famedian, *famode, *famodecount;
  *  pixColumnStats()
  *
  *      Input:  pixs (8 bpp; not cmapped)
+ *              box (<optional> clipping box; can be null)
  *              &namean (<optional return> numa of mean values)
  *              &namedian (<optional return> numa of median values)
  *              &namode (<optional return> numa of mode intensity values)
@@ -1569,11 +1584,13 @@ l_float32  *famedian, *famode, *famodecount;
  *      (2) Use NULL on input to prevent computation of any of the 5 numas.
  *      (3) Other functions that compute pixel column statistics are:
  *             pixCountPixelsByColumn()
- *             pixSumPixelsByColumn()
+ *             pixAverageByColumn()
+ *             pixVarianceByColumn()
  *             pixGetColumnStats()
  */
 l_int32
 pixColumnStats(PIX    *pixs,
+               BOX    *box,
                NUMA  **pnamean,
                NUMA  **pnamedian,
                NUMA  **pnamode,
@@ -1582,6 +1599,7 @@ pixColumnStats(PIX    *pixs,
                NUMA  **pnarootvar)
 {
 l_int32     i, j, k, w, h, val, wpls, sum, sumsq, target, max, modeval;
+l_int32     xstart, xend, ystart, yend, bw, bh;
 l_int32    *histo;
 l_uint32   *lines, *datas;
 l_float32   norm;
@@ -1598,24 +1616,29 @@ l_float32  *famedian, *famode, *famodecount;
     if (pnarootvar) *pnarootvar = NULL;
     if (!pixs || pixGetDepth(pixs) != 8)
         return ERROR_INT("pixs undefined or not 8 bpp", procName, 1);
+    famean = fameansq = favar = farootvar = NULL;
+    famedian = famode = famodecount = NULL;
 
     pixGetDimensions(pixs, &w, &h, NULL);
-    datas = pixGetData(pixs);
-    wpls = pixGetWpl(pixs);
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return ERROR_INT("invalid clipping box", procName, 1);
 
         /* We need the mean for variance and root variance */
+    datas = pixGetData(pixs);
+    wpls = pixGetWpl(pixs);
     if (pnamean || pnavar || pnarootvar) {
-        norm = 1. / (l_float32)h;
-        famean = (l_float32 *)CALLOC(w, sizeof(l_float32));
-        fameansq = (l_float32 *)CALLOC(w, sizeof(l_float32));
+        norm = 1. / (l_float32)bh;
+        famean = (l_float32 *)CALLOC(bw, sizeof(l_float32));
+        fameansq = (l_float32 *)CALLOC(bw, sizeof(l_float32));
         if (pnavar || pnarootvar) {
-            favar = (l_float32 *)CALLOC(w, sizeof(l_float32));
+            favar = (l_float32 *)CALLOC(bw, sizeof(l_float32));
             if (pnarootvar)
-                farootvar = (l_float32 *)CALLOC(w, sizeof(l_float32));
+                farootvar = (l_float32 *)CALLOC(bw, sizeof(l_float32));
         }
-        for (j = 0; j < w; j++) {
+        for (j = xstart; j < xend; j++) {
             sum = sumsq = 0;
-            for (i = 0, lines = datas; i < h; lines += wpls, i++) {
+            for (i = ystart, lines = datas; i < yend; lines += wpls, i++) {
                 val = GET_DATA_BYTE(lines, j);
                 sum += val;
                 sumsq += val * val;
@@ -1630,42 +1653,42 @@ l_float32  *famedian, *famode, *famodecount;
         }
         FREE(fameansq);
         if (pnamean)
-            *pnamean = numaCreateFromFArray(famean, w, L_INSERT);
+            *pnamean = numaCreateFromFArray(famean, bw, L_INSERT);
         else
             FREE(famean);
         if (pnavar)
-            *pnavar = numaCreateFromFArray(favar, w, L_INSERT);
+            *pnavar = numaCreateFromFArray(favar, bw, L_INSERT);
         else
             FREE(favar);
         if (pnarootvar)
-            *pnarootvar = numaCreateFromFArray(farootvar, w, L_INSERT);
+            *pnarootvar = numaCreateFromFArray(farootvar, bw, L_INSERT);
     }
 
         /* We need a histogram to find the median and/or mode values */
     if (pnamedian || pnamode || pnamodecount) {
         histo = (l_int32 *)CALLOC(256, sizeof(l_int32));
         if (pnamedian) {
-            *pnamedian = numaMakeConstant(0, w);
+            *pnamedian = numaMakeConstant(0, bw);
             famedian = numaGetFArray(*pnamedian, L_NOCOPY);
         }
         if (pnamode) {
-            *pnamode = numaMakeConstant(0, w);
+            *pnamode = numaMakeConstant(0, bw);
             famode = numaGetFArray(*pnamode, L_NOCOPY);
         }
         if (pnamodecount) {
-            *pnamodecount = numaMakeConstant(0, w);
+            *pnamodecount = numaMakeConstant(0, bw);
             famodecount = numaGetFArray(*pnamodecount, L_NOCOPY);
         }
-        for (j = 0; j < w; j++) {
+        for (j = xstart; j < xend; j++) {
             memset(histo, 0, 1024);
-            for (i = 0, lines = datas; i < h; lines += wpls, i++) {
+            for (i = ystart, lines = datas; i < yend; lines += wpls, i++) {
                 val = GET_DATA_BYTE(lines, j);
                 histo[val]++;
             }
 
             if (pnamedian) {
                 sum = 0;
-                target = (h + 1) / 2;
+                target = (bh + 1) / 2;
                 for (k = 0; k < 256; k++) {
                     sum += histo[k];
                     if (sum >= target) {
@@ -1749,21 +1772,19 @@ PIXCMAP  *cmap;
                            pminval, NULL, NULL, NULL);
         pixGetExtremeValue(pixs, factor, L_SELECT_MAX,
                            pmaxval, NULL, NULL, NULL);
-    }
-    else if (color == L_SELECT_GREEN) {
+    } else if (color == L_SELECT_GREEN) {
         pixGetExtremeValue(pixs, factor, L_SELECT_MIN,
                            NULL, pminval, NULL, NULL);
         pixGetExtremeValue(pixs, factor, L_SELECT_MAX,
                            NULL, pmaxval, NULL, NULL);
-    }
-    else if (color == L_SELECT_BLUE) {
+    } else if (color == L_SELECT_BLUE) {
         pixGetExtremeValue(pixs, factor, L_SELECT_MIN,
                            NULL, NULL, pminval, NULL);
         pixGetExtremeValue(pixs, factor, L_SELECT_MAX,
                            NULL, NULL, pmaxval, NULL);
-    }
-    else
+    } else {
         return ERROR_INT("invalid color", procName, 1);
+    }
 
     return 0;
 }
@@ -1778,7 +1799,7 @@ PIXCMAP  *cmap;
  *              &rval (<optional return> red component)
  *              &gval (<optional return> green component)
  *              &bval (<optional return> blue component)
- *              &grayval (<optional return> min gray value)
+ *              &grayval (<optional return> min or max gray value)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -1804,13 +1825,15 @@ PIXCMAP   *cmap;
 
     PROCNAME("pixGetExtremeValue");
 
+    if (prval) *prval = 0;
+    if (pgval) *pgval = 0;
+    if (pbval) *pbval = 0;
+    if (pgrayval) *pgrayval = 0;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
-
     cmap = pixGetColormap(pixs);
     if (cmap)
         return pixcmapGetExtremeValue(cmap, type, prval, pgval, pbval);
-
     pixGetDimensions(pixs, &w, &h, &d);
     if (type != L_SELECT_MIN && type != L_SELECT_MAX)
         return ERROR_INT("invalid type", procName, 1);
@@ -1849,8 +1872,7 @@ PIXCMAP   *cmap;
         extrval = 100000;
         extgval = 100000;
         extbval = 100000;
-    }
-    else {
+    } else {
         extrval = 0;
         extgval = 0;
         extbval = 0;
@@ -1917,11 +1939,11 @@ l_uint32  *data, *line;
 
     PROCNAME("pixGetMaxValueInRect");
 
-    if (!pmaxval && !pxmax && !pymax)
-        return ERROR_INT("nothing to do", procName, 1);
     if (pmaxval) *pmaxval = 0;
     if (pxmax) *pxmax = 0;
     if (pymax) *pymax = 0;
+    if (!pmaxval && !pxmax && !pymax)
+        return ERROR_INT("nothing to do", procName, 1);
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     if (pixGetColormap(pixs) != NULL)
@@ -2143,10 +2165,10 @@ PIXCMAP   *cmap;
          * (3) narbin: bin number of discretized rank as a function of
          *     intensity.  This is the 'inverse' of nai.
          * (4) nabb: intensity value of the right bin boundary, for each
-         *     of the @nbins descretized rank bins. */
-    if (!debugflag)
+         *     of the @nbins discretized rank bins. */
+    if (!debugflag) {
         numaDiscretizeRankAndIntensity(nan, nbins, &narbin, NULL, NULL, NULL);
-    else {
+    } else {
         l_int32  type;
         NUMA    *nai, *nar, *nabb;
         numaDiscretizeRankAndIntensity(nan, nbins, &narbin, &nai, &nar, &nabb);
@@ -2174,7 +2196,7 @@ PIXCMAP   *cmap;
     pixGetBinnedColor(pixc, pixg, 1, nbins, narbin, pcarray, debugflag);
     ret = 0;
     if ((array = *pcarray) == NULL) {
-        L_ERROR("color array not returned", procName);
+        L_ERROR("color array not returned\n", procName);
         ret = 1;
         debugflag = 0;  /* make sure to skip the following */
     }
@@ -2192,7 +2214,7 @@ PIXCMAP   *cmap;
     numaDestroy(&na);
     numaDestroy(&nan);
     numaDestroy(&narbin);
-    return 0;
+    return ret;
 }
 
 
@@ -2249,7 +2271,7 @@ l_float64  *rarray, *garray, *barray, *narray;
     if (!nalut)
         return ERROR_INT("nalut not defined", procName, 1);
     if (factor < 1) {
-        L_WARNING("sampling factor less than 1; setting to 1", procName);
+        L_WARNING("sampling factor less than 1; setting to 1\n", procName);
         factor = 1;
     }
 
@@ -2379,9 +2401,9 @@ PIXA    *pixa;
                      "%d: (%d %d %d)", i, rval, gval, bval);
             pixSaveTiledWithText(pixt, pixa, side, (i % ncols == 0) ? 1 : 0,
                                  20, 2, bmf6, textstr, 0xff000000, L_ADD_BELOW);
+        } else {
+            pixSaveTiled(pixt, pixa, 1.0, (i % ncols == 0) ? 1 : 0, 20, 32);
         }
-        else
-            pixSaveTiled(pixt, pixa, 1, (i % ncols == 0) ? 1 : 0, 20, 32);
         pixDestroy(&pixt);
     }
     pixd = pixaDisplay(pixa, 0, 0);
@@ -2599,8 +2621,7 @@ l_uint32  *lines, *datas;
                     break;
                 }
             }
-        }
-        else if (type == L_MODE_VAL) {
+        } else if (type == L_MODE_VAL) {
             max = 0;
             modeval = 0;
             for (k = 0; k < nbins; k++) {
@@ -2613,8 +2634,7 @@ l_uint32  *lines, *datas;
                 colvect[i] = 0;
             else
                 colvect[i] = bin2gray[modeval];
-        }
-        else {  /* type == L_MODE_COUNT */
+        } else {  /* type == L_MODE_COUNT */
             max = 0;
             modeval = 0;
             for (k = 0; k < nbins; k++) {
@@ -2720,8 +2740,7 @@ l_uint32  *datas;
                     break;
                 }
             }
-        }
-        else if (type == L_MODE_VAL) {
+        } else if (type == L_MODE_VAL) {
             max = 0;
             modeval = 0;
             for (k = 0; k < nbins; k++) {
@@ -2734,8 +2753,7 @@ l_uint32  *datas;
                 rowvect[j] = 0;
             else
                 rowvect[j] = bin2gray[modeval];
-        }
-        else {  /* type == L_MODE_COUNT */
+        } else {  /* type == L_MODE_COUNT */
             max = 0;
             modeval = 0;
             for (k = 0; k < nbins; k++) {
@@ -2817,6 +2835,8 @@ PIX       *pixg, *pixm;
 
     PROCNAME("pixThresholdForFgBg");
 
+    if (pfgval) *pfgval = 0;
+    if (pbgval) *pbgval = 0;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
 
@@ -2891,10 +2911,10 @@ PIX       *pixg;
         numaSplitDistribution(na, scorefract, &thresh, &avefg, &avebg,
                               NULL, NULL, &nascore);
         numaDestroy(&nascore);
-    }
-    else
+    } else {
         numaSplitDistribution(na, scorefract, &thresh, &avefg, &avebg,
                               NULL, NULL, NULL);
+    }
 
     if (pthresh) *pthresh = thresh;
     if (pfgval) *pfgval = (l_int32)(avefg + 0.5);

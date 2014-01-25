@@ -268,7 +268,7 @@ PIX       *pixd;
  *  pixMeasureEdgeSmoothness()
  *
  *      Input:  pixs (1 bpp)
- *              side (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOTTOM)
+ *              side (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOT)
  *              minjump (minimum jump to be counted; >= 1)
  *              minreversal (minimum reversal size for new peak or valley)
  *              &jpl (<optional return> jumps/length: number of jumps,
@@ -320,7 +320,7 @@ NUMA    *na, *nae;
     if (!pixs || pixGetDepth(pixs) != 1)
         return ERROR_INT("pixs not defined or not 1 bpp", procName, 1);
     if (side != L_FROM_LEFT && side != L_FROM_RIGHT &&
-        side != L_FROM_TOP && side != L_FROM_BOTTOM)
+        side != L_FROM_TOP && side != L_FROM_BOT)
         return ERROR_INT("invalid side", procName, 1);
     if (minjump < 1)
         return ERROR_INT("invalid minjump; must be >= 1", procName, 1);
@@ -369,7 +369,7 @@ NUMA    *na, *nae;
  *  pixGetEdgeProfile()
  *
  *      Input:  pixs (1 bpp)
- *              side (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOTTOM)
+ *              side (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOT)
  *              debugfile (<optional> displays constructed edge; use NULL
  *                         for no output)
  *      Return: na (of fg edge pixel locations), or null on error
@@ -379,7 +379,7 @@ pixGetEdgeProfile(PIX         *pixs,
                   l_int32      side,
                   const char  *debugfile)
 {
-l_int32   x, y, w, h, loc, n, index, ival;
+l_int32   x, y, w, h, loc, index, ival;
 l_uint32  val;
 NUMA     *na;
 PIX      *pixt;
@@ -390,7 +390,7 @@ PIXCMAP  *cmap;
     if (!pixs || pixGetDepth(pixs) != 1)
         return (NUMA *)ERROR_PTR("pixs undefined or not 1 bpp", procName, NULL);
     if (side != L_FROM_LEFT && side != L_FROM_RIGHT &&
-        side != L_FROM_TOP && side != L_FROM_BOTTOM)
+        side != L_FROM_TOP && side != L_FROM_BOT)
         return (NUMA *)ERROR_PTR("invalid side", procName, NULL);
 
     pixGetDimensions(pixs, &w, &h, NULL);
@@ -404,9 +404,9 @@ PIXCMAP  *cmap;
         numaAddNumber(na, loc);
         for (y = 1; y < h; y++) {
             pixGetPixel(pixs, loc, y, &val);
-            if (val == 1)
+            if (val == 1) {
                 pixGetLastOnPixelInRun(pixs, loc, y, L_FROM_RIGHT, &loc);
-            else {
+            } else {
                 pixGetLastOffPixelInRun(pixs, loc, y, L_FROM_LEFT, &loc);
                 loc = (loc == w - 1) ? 0 : loc + 1;
             }
@@ -419,9 +419,9 @@ PIXCMAP  *cmap;
         numaAddNumber(na, loc);
         for (y = 1; y < h; y++) {
             pixGetPixel(pixs, loc, y, &val);
-            if (val == 1)
+            if (val == 1) {
                 pixGetLastOnPixelInRun(pixs, loc, y, L_FROM_LEFT, &loc);
-            else {
+            } else {
                 pixGetLastOffPixelInRun(pixs, loc, y, L_FROM_RIGHT, &loc);
                 loc = (loc == 0) ? w - 1 : loc - 1;
             }
@@ -434,25 +434,25 @@ PIXCMAP  *cmap;
         numaAddNumber(na, loc);
         for (x = 1; x < w; x++) {
             pixGetPixel(pixs, x, loc, &val);
-            if (val == 1)
-                pixGetLastOnPixelInRun(pixs, x, loc, L_FROM_BOTTOM, &loc);
-            else {
+            if (val == 1) {
+                pixGetLastOnPixelInRun(pixs, x, loc, L_FROM_BOT, &loc);
+            } else {
                 pixGetLastOffPixelInRun(pixs, x, loc, L_FROM_TOP, &loc);
                 loc = (loc == h - 1) ? 0 : loc + 1;
             }
             numaAddNumber(na, loc);
         }
     }
-    else {  /* side == L_FROM_BOTTOM */
-        pixGetLastOffPixelInRun(pixs, 0, h - 1, L_FROM_BOTTOM, &loc);
+    else {  /* side == L_FROM_BOT */
+        pixGetLastOffPixelInRun(pixs, 0, h - 1, L_FROM_BOT, &loc);
         loc = (loc == 0) ? h - 1 : loc - 1;  /* back to the bottom edge */
         numaAddNumber(na, loc);
         for (x = 1; x < w; x++) {
             pixGetPixel(pixs, x, loc, &val);
-            if (val == 1)
+            if (val == 1) {
                 pixGetLastOnPixelInRun(pixs, x, loc, L_FROM_TOP, &loc);
-            else {
-                pixGetLastOffPixelInRun(pixs, x, loc, L_FROM_BOTTOM, &loc);
+            } else {
+                pixGetLastOffPixelInRun(pixs, x, loc, L_FROM_BOT, &loc);
                 loc = (loc == 0) ? h - 1 : loc - 1;
             }
             numaAddNumber(na, loc);
@@ -464,13 +464,12 @@ PIXCMAP  *cmap;
         cmap = pixGetColormap(pixt);
         pixcmapAddColor(cmap, 255, 0, 0);
         index = pixcmapGetCount(cmap) - 1;
-        n = numaGetCount(na);
         if (side == L_FROM_LEFT || side == L_FROM_RIGHT) {
             for (y = 0; y < h; y++) {
                 numaGetIValue(na, y, &ival);
                 pixSetPixel(pixt, ival, y, index);
             }
-        } else {  /* L_FROM_TOP or L_FROM_BOTTOM */
+        } else {  /* L_FROM_TOP or L_FROM_BOT */
             for (x = 0; x < w; x++) {
                 numaGetIValue(na, x, &ival);
                 pixSetPixel(pixt, x, ival, index);
@@ -489,7 +488,7 @@ PIXCMAP  *cmap;
  *
  *      Input:  pixs (1 bpp)
  *              x, y (starting location)
- *              direction (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOTTOM)
+ *              direction (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOT)
  *              &loc (<return> location in scan direction coordinate
  *                    of last OFF pixel found)
  *      Return: na (of fg edge pixel locations), or null on error
@@ -522,7 +521,7 @@ l_uint32  val;
     if (!pixs || pixGetDepth(pixs) != 1)
         return ERROR_INT("pixs undefined or not 1 bpp", procName, 1);
     if (direction != L_FROM_LEFT && direction != L_FROM_RIGHT &&
-        direction != L_FROM_TOP && direction != L_FROM_BOTTOM)
+        direction != L_FROM_TOP && direction != L_FROM_BOT)
         return ERROR_INT("invalid side", procName, 1);
 
     pixGetDimensions(pixs, &w, &h, NULL);
@@ -549,7 +548,7 @@ l_uint32  val;
         }
         *ploc = loc - 1;
     }
-    else if (direction == L_FROM_BOTTOM) {
+    else if (direction == L_FROM_BOT) {
         for (loc = y; loc >= 0; loc--) {
             pixGetPixel(pixs, x, loc, &val);
             if (val == 1)
@@ -566,7 +565,7 @@ l_uint32  val;
  *
  *      Input:  pixs (1 bpp)
  *              x, y (starting location)
- *              direction (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOTTOM)
+ *              direction (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOT)
  *              &loc (<return> location in scan direction coordinate
  *                    of first ON pixel found)
  *      Return: na (of fg edge pixel locations), or null on error
@@ -594,7 +593,7 @@ l_uint32  val;
     if (!pixs || pixGetDepth(pixs) != 1)
         return ERROR_INT("pixs undefined or not 1 bpp", procName, 1);
     if (direction != L_FROM_LEFT && direction != L_FROM_RIGHT &&
-        direction != L_FROM_TOP && direction != L_FROM_BOTTOM)
+        direction != L_FROM_TOP && direction != L_FROM_BOT)
         return ERROR_INT("invalid side", procName, 1);
 
     pixGetDimensions(pixs, &w, &h, NULL);
@@ -621,7 +620,7 @@ l_uint32  val;
         }
         *ploc = loc - 1;
     }
-    else if (direction == L_FROM_BOTTOM) {
+    else if (direction == L_FROM_BOT) {
         for (loc = y; loc >= 0; loc--) {
             pixGetPixel(pixs, x, loc, &val);
             if (val == 0)

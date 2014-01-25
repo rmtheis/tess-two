@@ -39,8 +39,8 @@
 #include "allheaders.h"
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       i, nbins, ival;
 l_float64     pi, angle, val, sum;

@@ -44,7 +44,7 @@
  *
  *         Extension of sela:
  *            SELA      *selaAddSel()
- *            l_int32    selaExtendArray()
+ *            static l_int32  selaExtendArray()
  *
  *         Accessors:
  *            l_int32    selaGetCount()
@@ -139,12 +139,12 @@
 #include <string.h>
 #include "allheaders.h"
 
-    /* MS VC++ can't handle array initialization with static consts ! */
-#define L_BUF_SIZE      256
-
+static const l_int32  L_BUF_SIZE = 256;
 static const l_int32  INITIAL_PTR_ARRAYSIZE = 50;  /* n'import quoi */
 static const l_int32  MANY_SELS = 1000;
 
+    /* Static functions */
+static l_int32 selaExtendArray(SELA *sela);
 static SEL *selCreateFromSArray(SARRAY *sa, l_int32 first, l_int32 last);
 
 struct CompParameterMap
@@ -243,7 +243,7 @@ SELA  *sela;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
     if (n > MANY_SELS)
-        L_WARNING_INT("%d sels", procName, n);
+        L_WARNING("%d sels\n", procName, n);
 
     if ((sela = (SELA *)CALLOC(1, sizeof(SELA))) == NULL)
         return (SELA *)ERROR_PTR("sela not made", procName, NULL);
@@ -334,7 +334,7 @@ SEL     *sel;
     PROCNAME("selDestroy");
 
     if (psel == NULL)  {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
     if ((sel = *psel) == NULL)
@@ -461,8 +461,7 @@ SEL     *sel;
     if (direction == L_HORIZ) {
         sel = selCreate(1, size, NULL);
         selSetOrigin(sel, 0, size / 2);
-    }
-    else {
+    } else {
         sel = selCreate(size, 1, NULL);
         selSetOrigin(sel, size / 2, 0);
     }
@@ -558,9 +557,9 @@ SEL     *csel;
     if (copyflag == TRUE) {
         if ((csel = selCopy(sel)) == NULL)
             return ERROR_INT("csel not made", procName, 1);
-    }
-    else   /* copyflag is false; insert directly */
+    } else {  /* copyflag is false; insert directly */
         csel = sel;
+    }
     if (!csel->name)
         csel->name = stringNew(selname);
 
@@ -580,7 +579,7 @@ SEL     *csel;
  *      Input:  sela
  *      Return: 0 if OK; 1 on error
  */
-l_int32
+static l_int32
 selaExtendArray(SELA  *sela)
 {
     PROCNAME("selaExtendArray");
@@ -719,7 +718,7 @@ SEL     *sel;
     for (i = 0; i < n; i++)
     {
         if ((sel = selaGetSel(sela, i)) == NULL) {
-            L_WARNING("missing sel", procName);
+            L_WARNING("missing sel\n", procName);
             continue;
         }
 
@@ -1019,8 +1018,7 @@ SELA    *selabasic, *selacomb;
         if (size2 > 1) {
             nameh2 = selaGetCombName(selacomb, size1 * size2, L_HORIZ);
             namev2 = selaGetCombName(selacomb, size1 * size2, L_VERT);
-        }
-        else {
+        } else {
             nameh2 = stringNew("");
             namev2 = stringNew("");
         }
@@ -2054,9 +2052,9 @@ l_uint32  pixval;
         for (j = 0; j < w; j++) {
             pixGetPixel (pixs, j, i, &pixval);
 
-            if (cmap)
+            if (cmap) {
                 pixcmapGetColor (cmap, pixval, &red, &green, &blue);
-            else {
+            } else {
                 red = GET_DATA_BYTE (&pixval, COLOR_RED);
                 green = GET_DATA_BYTE (&pixval, COLOR_GREEN);
                 blue = GET_DATA_BYTE (&pixval, COLOR_BLUE);
@@ -2064,19 +2062,18 @@ l_uint32  pixval;
 
             if (red < 255 && green < 255 && blue < 255) {
                 if (hasorigin)
-                    L_WARNING("multiple origins in sel image", procName);
+                    L_WARNING("multiple origins in sel image\n", procName);
                 selSetOrigin (sel, i, j);
                 hasorigin = TRUE;
             }
             if (!red && green && !blue) {
                 nohits = FALSE;
                 selSetElement (sel, i, j, SEL_HIT);
-            }
-            else if (red && !green && !blue)
+            } else if (red && !green && !blue) {
                 selSetElement (sel, i, j, SEL_MISS);
-            else if (red && green && blue)
+            } else if (red && green && blue) {
                 selSetElement (sel, i, j, SEL_DONT_CARE);
-            else {
+            } else {
                 selDestroy(&sel);
                 return (SEL *)ERROR_PTR("invalid color", procName, NULL);
             }
@@ -2125,13 +2122,13 @@ PTA     *pta1, *pta2, *pta1t, *pta2t;
     if (!sel)
         return (PIX *)ERROR_PTR("sel not defined", procName, NULL);
     if (size < 13) {
-        L_WARNING("size < 13; setting to 13", procName);
+        L_WARNING("size < 13; setting to 13\n", procName);
         size = 13;
     }
     if (size % 2 == 0)
         size++;
     if (gthick < 2) {
-        L_WARNING("grid thickness < 2; setting to 2", procName);
+        L_WARNING("grid thickness < 2; setting to 2\n", procName);
         gthick = 2;
     }
     selGetParameters(sel, &sy, &sx, &cy, &cx);
@@ -2243,17 +2240,17 @@ SEL     *sel;
     if (!sela)
         return (PIX *)ERROR_PTR("sela not defined", procName, NULL);
     if (size < 13) {
-        L_WARNING("size < 13; setting to 13", procName);
+        L_WARNING("size < 13; setting to 13\n", procName);
         size = 13;
     }
     if (size % 2 == 0)
         size++;
     if (gthick < 2) {
-        L_WARNING("grid thickness < 2; setting to 2", procName);
+        L_WARNING("grid thickness < 2; setting to 2\n", procName);
         gthick = 2;
     }
     if (spacing < 5) {
-        L_WARNING("spacing < 5; setting to 5", procName);
+        L_WARNING("spacing < 5; setting to 5\n", procName);
         spacing = 5;
     }
 

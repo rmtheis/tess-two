@@ -27,22 +27,25 @@
 /*
  * locminmax_reg.c
  *
+ *    Note: you can remove all minima that are touching the border, using:
+ *             pix3 = pixRemoveBorderConnComps(pix1, 8);
+ *             pixPaintThroughMask(pixd, pix3, 0, 0, redval);
  */
 
 #include <math.h>
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i, j;
 l_float32    f;
 l_uint32     redval, greenval;
-PIX         *pixs, *pixd, *pixt0, *pixt1, *pixt2, *pixt3;
+PIX         *pixs, *pixd, *pix0, *pix1, *pix2;
 static char  mainName[] = "locminmax_reg";
 
     if (argc != 1)
-        exit(ERROR_INT("syntax: locminmax_reg", mainName, 1));
+        return ERROR_INT("syntax: locminmax_reg", mainName, 1);
 
     pixs = pixCreate(500, 500, 8);
     for (i = 0; i < 500; i++) {
@@ -58,42 +61,40 @@ static char  mainName[] = "locminmax_reg";
     pixWrite("/tmp/junkpattern.png", pixs, IFF_PNG);
 
     startTimer();
-/*    pixSelectedLocalExtrema(pixs, 1, &pixt1, &pixt2); */
-    pixLocalExtrema(pixs, 0, 0, &pixt1, &pixt2);
+/*    pixSelectedLocalExtrema(pixs, 1, &pix1, &pix2); */
+    pixLocalExtrema(pixs, 0, 0, &pix1, &pix2);
     fprintf(stderr, "Time for extrema: %7.3f\n", stopTimer());
     composeRGBPixel(255, 0, 0, &redval);
     composeRGBPixel(0, 255, 0, &greenval);
     pixd = pixConvertTo32(pixs);
-    pixPaintThroughMask(pixd, pixt2, 0, 0, greenval);
-    pixPaintThroughMask(pixd, pixt1, 0, 0, redval);
+    pixPaintThroughMask(pixd, pix2, 0, 0, greenval);
+    pixPaintThroughMask(pixd, pix1, 0, 0, redval);
     pixDisplay(pixd, 510, 0);
     pixWrite("/tmp/junkpixd.png", pixd, IFF_PNG);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
     pixDestroy(&pixs);
     pixDestroy(&pixd);
 
-    pixt0 = pixRead("karen8.jpg");
-    pixs = pixBlockconv(pixt0, 10, 10);
+    pix0 = pixRead("karen8.jpg");
+    pixs = pixBlockconv(pix0, 10, 10);
     pixDisplay(pixs, 0, 400);
     pixWrite("/tmp/junkconv.png", pixs, IFF_PNG);
     startTimer();
-/*    pixSelectedLocalExtrema(pixs, 1, &pixt1, &pixt2); */
-    pixLocalExtrema(pixs, 50, 100, &pixt1, &pixt2);
+/*    pixSelectedLocalExtrema(pixs, 1, &pix1, &pix2); */
+    pixLocalExtrema(pixs, 50, 100, &pix1, &pix2);
     fprintf(stderr, "Time for extrema: %7.3f\n", stopTimer());
     composeRGBPixel(255, 0, 0, &redval);
     composeRGBPixel(0, 255, 0, &greenval);
     pixd = pixConvertTo32(pixs);
-    pixPaintThroughMask(pixd, pixt2, 0, 0, greenval);
-    pixPaintThroughMask(pixd, pixt1, 0, 0, redval);
+    pixPaintThroughMask(pixd, pix2, 0, 0, greenval);
+    pixPaintThroughMask(pixd, pix1, 0, 0, redval);
     pixDisplay(pixd, 350, 400);
     pixWrite("/tmp/junkpixd2.png", pixd, IFF_PNG);
-    pixDestroy(&pixt0);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pixDestroy(&pix0);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
     pixDestroy(&pixs);
     pixDestroy(&pixd);
-
     return 0;
 }
-

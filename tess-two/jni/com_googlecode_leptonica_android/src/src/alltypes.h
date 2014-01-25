@@ -30,31 +30,34 @@
     /* Standard */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
     /* General and configuration defs */
 #include "environ.h"
 
-    /* Imaging */
+    /* Generic and non-image-specific containers */
 #include "array.h"
-#include "arrayaccess.h"
 #include "bbuffer.h"
+#include "heap.h"
+#include "list.h"
+#include "ptra.h"
+#include "queue.h"
+#include "stack.h"
+
+    /* Imaging */
+#include "arrayaccess.h"
 #include "bmf.h"
 #include "ccbord.h"
 #include "dewarp.h"
 #include "gplot.h"
-#include "heap.h"
 #include "imageio.h"
 #include "jbclass.h"
-#include "list.h"
 #include "morph.h"
 #include "pix.h"
-#include "ptra.h"
-#include "queue.h"
+#include "recog.h"
 #include "regutils.h"
 #include "sudoku.h"
-#include "stack.h"
 #include "watershed.h"
 
 
 #endif /* LEPTONICA_ALLTYPES_H */
-

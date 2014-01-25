@@ -28,8 +28,6 @@
 /*
  * plottest.c
  *
- *	      plottest
- *
  *     This tests the gplot library functions that generate
  *     the plot commands and data required for input to gnuplot.
  */
@@ -57,8 +55,8 @@
 #define  GPLOT_OUTPUT   GPLOT_X11
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *str1, *str2;
 l_int32      i;
@@ -69,25 +67,25 @@ NUMA        *nax, *nay1, *nay2;
 static char  mainName[] = "plottest";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax:  plottest", mainName, 1));
+        return ERROR_INT(" Syntax:  plottest", mainName, 1);
 
-	/* Generate plot data */
+        /* Generate plot data */
     nax = numaCreate(0);
     nay1 = numaCreate(0);
     nay2 = numaCreate(0);
     pi = 3.1415926535;
     for (i = 0; i < 180; i++) {
-	x = (pi / 180.) * i;
-	y1 = (l_float32)sin(2.4 * x);
-	y2 = (l_float32)cos(2.4 * x);
-	numaAddNumber(nax, x);
-	numaAddNumber(nay1, y1);
-	numaAddNumber(nay2, y2);
+        x = (pi / 180.) * i;
+        y1 = (l_float32)sin(2.4 * x);
+        y2 = (l_float32)cos(2.4 * x);
+        numaAddNumber(nax, x);
+        numaAddNumber(nay1, y1);
+        numaAddNumber(nay2, y2);
     }
 
-	/* Show the plot */
+        /* Show the plot */
     gplot1 = gplotCreate("/tmp/plotroot1", GPLOT_OUTPUT, "Example plots",
-			 "theta", "f(theta)");
+                         "theta", "f(theta)");
     gplotAddPlot(gplot1, nax, nay1, GPLOT_STYLE, "sin (2.4 * theta)");
     gplotAddPlot(gplot1, nax, nay2, GPLOT_STYLE, "cos (2.4 * theta)");
     gplotMakeOutput(gplot1);
@@ -100,16 +98,17 @@ static char  mainName[] = "plottest";
         /* Test gplot serialization */
     gplotWrite("/tmp/gplot1", gplot1);
     if ((gplot2 = gplotRead("/tmp/gplot1")) == NULL)
-        exit(ERROR_INT("gplotRead failure!", mainName, 1));
+        return ERROR_INT("gplotRead failure!", mainName, 1);
     gplotWrite("/tmp/gplot2", gplot2);
 
         /* Are the two written gplot files the same? */
     str1 = (char *)l_binaryRead("/tmp/gplot1", &size1);
     str2 = (char *)l_binaryRead("/tmp/gplot2", &size2);
     if (size1 != size2)
-        fprintf(stderr, "Error: size1 = %ld, size2 = %ld\n", size1, size2);
+        fprintf(stderr, "Error: size1 = %lu, size2 = %lu\n",
+                (unsigned long)size1, (unsigned long)size2);
     else
-        fprintf(stderr, "Correct: size1 = size2 = %ld\n", size1);
+        fprintf(stderr, "Correct: size1 = size2 = %lu\n", (unsigned long)size1);
     if (strcmp(str1, str2))
         fprintf(stderr, "Error: str1 != str2\n");
     else
@@ -125,14 +124,14 @@ static char  mainName[] = "plottest";
 
         /* Build gplot but do not make the output formatted stuff */
     gplot4 = gplotCreate("/tmp/plotroot2", GPLOT_OUTPUT, "Example plots 2",
-			 "theta", "f(theta)");
+                         "theta", "f(theta)");
     gplotAddPlot(gplot4, nax, nay1, GPLOT_STYLE, "sin (2.4 * theta)");
     gplotAddPlot(gplot4, nax, nay2, GPLOT_STYLE, "cos (2.4 * theta)");
 
         /* Write, read back, and generate the plot */
     gplotWrite("/tmp/gplot4", gplot4);
     if ((gplot5 = gplotRead("/tmp/gplot4")) == NULL)
-        exit(ERROR_INT("gplotRead failure!", mainName, 1));
+        return ERROR_INT("gplotRead failure!", mainName, 1);
     gplotMakeOutput(gplot5);
 
     gplotDestroy(&gplot1);
@@ -145,4 +144,3 @@ static char  mainName[] = "plottest";
     numaDestroy(&nay2);
     return 0;
 }
-

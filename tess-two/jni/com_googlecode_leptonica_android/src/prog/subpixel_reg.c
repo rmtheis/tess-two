@@ -43,8 +43,8 @@ const char  *textstr[] =
             "Subpixel scaling; vert R-G-B",
             "Subpixel scaling; vert B-G-R"};
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_float32     scalefact;
 L_BMF        *bmf, *bmftop;
@@ -195,7 +195,7 @@ PIX     *pixt;
 
     pixt = pixAddSingleTextblock(pixs, bmf, textstr, val, location, &ovf);
     n = pixaGetCount(pixa);
-    pixSaveTiledOutline(pixt, pixa, 1, newrow, 30, 2, 32);
+    pixSaveTiledOutline(pixt, pixa, 1.0, newrow, 30, 2, 32);
     if (ovf) fprintf(stderr, "Overflow writing text in image %d\n", n + 1);
     pixDestroy(&pixt);
     return;

@@ -1,0 +1,193 @@
+/*====================================================================*
+ -  Copyright (C) 2001 Leptonica.  All rights reserved.
+ -  This software is distributed in the hope that it will be
+ -  useful, but with NO WARRANTY OF ANY KIND.
+ -  No author or distributor accepts responsibility to anyone for the
+ -  consequences of using this software, or for whether it serves any
+ -  particular purpose or works at all, unless he or she says so in
+ -  writing.  Everyone is granted permission to copy, modify and
+ -  redistribute this source code, for commercial or non-commercial
+ -  purposes, with the following restrictions: (1) the origin of this
+ -  source code must not be misrepresented; (2) modified versions must
+ -  be plainly marked as such; and (3) this notice may not be removed
+ -  or altered from any source or modified source distribution.
+ *====================================================================*/
+
+                        style-guide.txt
+
+                         24 Jan 2014
+
+   [This is not complete.  You need to look at existing code to verify
+    your code meets the style guidelines.  And if you find any aberrant
+    code, please let me know!]
+
+
+The C code in leptonica follows these conventions:
+
+(1) ANSI C, with no exceptions
+
+   (a) C-style comments only:   /*  */
+
+   (b) Variables are declared at the beginning of a function.
+       [This is more strict than ANSI C, which only requires declarations
+       to be at the beginning of a scope delineated by braces.]
+
+   (c) Use typedefs for structs like Pix; e.g.,
+          function(PIX  *pixs)
+       Do not do this; it is valid C++, but not C:
+          function(Pix  *pixs)
+
+(2) Formatting
+
+   (a) White space:  4 space indentation.  No tabs, ever.  No trailing spaces.
+
+   (b) Function header is in this format:
+
+      /*!
+       *  boxContains()
+       *
+       *      Input:  box1, box2
+       *              &result (<return> 1 if box2 is entirely contained within
+       *                       box1, and 0 otherwise)
+       *      Return: 0 if OK, 1 on error
+       */
+
+   (c) Function definition has return value on separate line and starting
+       brace on separate line.
+     
+       PIX *
+       function(...)
+       {
+
+   (d) Function arguments and local variables line up vertically;
+       allow at least 2 spaces between type and variable name (including '*')
+
+       function(PIX        *pixs,
+                l_int32     factor,
+                l_float32  *pave)
+       {
+       char        buf[BUF_SIZE];
+       l_int32     w, h, d;
+       l_float32  *vect;
+
+   (e) Braces are placed like this for 'if', 'while', 'do':
+
+       if (...) {
+           ...
+       } else if (...) {
+           ...
+       }
+  
+       The exceptions are for the beginning of a function and for the switch:
+
+       switch (x)
+       {
+       case 1:
+           ...
+       ...
+       }
+
+       Braces are required if any of the clauses have a single statement:
+       
+       if (...) {
+           x = 0;
+       } else {
+           x++;
+           y = 3.0 * x;
+       }
+
+   (f) Section headers should look like this:
+
+   /*----------------------------------------------------------------------*
+    *                  Statistics in an arbitrary rectangle                *
+    *----------------------------------------------------------------------*/
+
+   (g) Major inline comments (starting a section) should be indented
+       4 extra spaces and start with a capital.  Multiple line comments
+       should be formatted like this:
+
+           /* If w and h not input, determine the minimum size required
+            * to contain the origin and all c.c. */
+
+   (h) Minor inline comments (e.g., at the end of a line) should have
+       2 spaces and no leading capital; e.g.
+
+          if (i && ((i % ncols) == 0)) {  /* start new row */
+          
+(3) Naming
+
+   (a) Function names begin with lower case and successive words have
+       the first letter capitalized; e.g., boxIntersects().
+
+   (b) The first word in the function name is the name of the primary
+       input data structure (if there is one).
+
+   (c) Variable names are as short as possible, without causing confusion.
+
+   (d) Pointers to data structures are typically named by the type of
+       struct, without a leading 'p'; e.g., pixt, boxt.
+
+   (e) When ptrs are input to a function, in order to return a value,
+       if the local name would be 'ave', the pointer is 'pave'.
+
+   (f) Preprocessor variables and enums are named all caps,
+       with '_' between parts.
+
+   (g) There are very few globals in the library.  Of these, there
+       are just a handful of static globals that can be changed.
+       Globals are named with each word beginning with a capital; e.g.,
+            ImageFileFormatExtensions[]
+       Static globals are named like preprocessor variables, except
+       they are prepended by 'var_'; e.g.,
+            var_PNG_WRITE_ALPHA
+       Functions that set globals are named with a pre-pended 'l_'; e.g.,
+            l_pngSetWriteAlpha()
+
+(4) Arg checking
+
+   Both number values and ptrs can be returned in function arguments.
+   The following applies equally to both types, and happens at the
+   beginning of the function.  We distinguish between returned entities
+   that are optional and required.
+
+   (a) First, all optional values are initialized if possible:
+   
+          if (ppixd) *ppixd = NULL;  // Pix **ppixd is optional
+
+   (b) Second, if there is more than 1 required value, each is
+       initialized if possible:
+   
+          if (pnar) *pnar = NULL;  // Numa **pnar is required
+          if (pnag) *pnag = NULL;  // Numa **pnag is required
+
+       Then all required arguments are tested in arbitrary order.
+
+       But if there is exactly 1 required value, it is checked and
+       initialized if possible:
+
+          if (!ppixd)
+              return ERROR_INT("&pixd not defined, procName, 1);
+          *ppixd = NULL;
+
+(5) Miscellaneous
+
+   (a) Look around at the code after reviewing the guidelines.
+
+   (b) Return nothing on stdout.
+
+   (c) Returns to stderr should be blockable by compiler flags, such
+       as NO_CONSOLE_IO, and by setting message severity thresholds
+       both at compile and at run time.  Naked fprintf(stderr, ...)
+       should be avoided in the library.
+
+   (d) Applications (in prog) that hand a FILE ptr to a library function,
+       or accept heap-allocated data from a library function, should
+       use special wrappers.  See lept_*() functions in utils.c.
+       
+   (e) Changes to existing data structures and API changes should be
+       avoided if possible.
+
+   (f) Accessors are typically provided for struct fields that have
+       extensive use.
+
+

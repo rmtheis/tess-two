@@ -39,8 +39,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
 l_int32      i, j, w, d, nhue, nsat, tilewidth;

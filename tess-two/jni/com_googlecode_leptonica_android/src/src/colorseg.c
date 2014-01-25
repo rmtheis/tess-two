@@ -55,6 +55,10 @@ static const l_int32  LEVEL_IN_OCTCUBE = 4;
 static l_int32 pixColorSegmentTryCluster(PIX *pixd, PIX *pixs,
                                          l_int32 maxdist, l_int32 maxcolors);
 
+#ifndef  NO_CONSOLE_IO
+#define   DEBUG    0
+#endif  /* ~NO_CONSOLE_IO */
+
 
 /*------------------------------------------------------------------*
  *                 Unsupervised color segmentation                  *
@@ -140,18 +144,24 @@ PIX       *pixd;
         /* Phase 1; original segmentation */
     if ((pixd = pixColorSegmentCluster(pixs, maxdist, maxcolors)) == NULL)
         return (PIX *)ERROR_PTR("pixt1 not made", procName, NULL);
-/*    pixWrite("junkpixd1", pixd, IFF_PNG);  */
+#if DEBUG
+    pixWrite("/tmp/colorseg1.png", pixd, IFF_PNG);
+#endif  /* DEBUG */
 
         /* Phase 2; refinement in pixel assignment */
     if ((countarray = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
         return (PIX *)ERROR_PTR("countarray not made", procName, NULL);
     pixAssignToNearestColor(pixd, pixs, NULL, LEVEL_IN_OCTCUBE, countarray);
-/*    pixWrite("junkpixd2", pixd, IFF_PNG);  */
+#if DEBUG
+    pixWrite("/tmp/colorseg2.png", pixd, IFF_PNG);
+#endif  /* DEBUG */
 
         /* Phase 3: noise removal by separately closing each color */
     pixColorSegmentClean(pixd, selsize, countarray);
-/*    pixWrite("junkpixd3", pixd, IFF_PNG);  */
     FREE(countarray);
+#if DEBUG
+    pixWrite("/tmp/colorseg3.png", pixd, IFF_PNG);
+#endif  /* DEBUG */
 
         /* Phase 4: removal of colors with small population and
          * reassignment of pixels to remaining colors */
@@ -211,13 +221,13 @@ PIXCMAP   *cmap;
         niters++;
         if (!ret) {
             ncolors = pixcmapGetCount(cmap);
-            L_INFO_INT2("Success with %d colors after %d iters", procName,
-                       ncolors, niters);
+            L_INFO("Success with %d colors after %d iters\n", procName,
+                   ncolors, niters);
             break;
         }
         if (niters == MAX_ALLOWED_ITERATIONS) {
-            L_WARNING_INT("too many iters; newmaxdist = %d",
-                          procName, newmaxdist);
+            L_WARNING("too many iters; newmaxdist = %d\n",
+                      procName, newmaxdist);
             success = FALSE;
             break;
         }
@@ -318,10 +328,9 @@ PIXCMAP   *cmap;
                     rsum[index] = rval;
                     gsum[index] = gval;
                     bsum[index] = bval;
-                }
-                else  {
-                    L_INFO_INT("maxcolors exceeded for maxdist = %d",
-                               procName, maxdist);
+                } else {
+                    L_INFO("maxcolors exceeded for maxdist = %d\n",
+                           procName, maxdist);
                     return 1;
                 }
             }

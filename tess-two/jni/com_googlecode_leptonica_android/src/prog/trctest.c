@@ -32,8 +32,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 PIX         *pixs, *pixd;
 l_int32      minval, maxval;
@@ -42,17 +42,16 @@ char        *filein, *fileout;
 static char  mainName[] = "trctest";
 
     if (argc != 6)
-	exit(ERROR_INT(" Syntax:  trctest filein gamma minval maxval fileout",
-             mainName, 1));
+        return ERROR_INT(" Syntax:  trctest filein gamma minval maxval fileout",
+                         mainName, 1);
 
     filein = argv[1];
     gamma = atof(argv[2]);
     minval = atoi(argv[3]);
     maxval = atoi(argv[4]);
     fileout = argv[5];
-
     if ((pixs = pixRead(filein)) == NULL)
-        exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
 
     pixd = pixGammaTRC(NULL, pixs, gamma, minval, maxval);
 

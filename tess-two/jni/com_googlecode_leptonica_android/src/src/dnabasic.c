@@ -39,7 +39,7 @@
  *
  *      Dna: add/remove number and extend array
  *          l_int32      l_dnaAddNumber()
- *          l_int32      l_dnaExtendArray()
+ *          static l_int32  l_dnaExtendArray()
  *          l_int32      l_dnaInsertNumber()
  *          l_int32      l_dnaRemoveNumber()
  *          l_int32      l_dnaReplaceNumber()
@@ -55,9 +55,9 @@
  *          l_float64   *l_dnaGetDArray()
  *          l_int32      l_dnaGetRefcount()
  *          l_int32      l_dnaChangeRefcount()
- *          l_int32      l_dnaGetXParameters()
- *          l_int32      l_dnaSetXParameters()
- *          l_int32      l_dnaCopyXParameters()
+ *          l_int32      l_dnaGetParameters()
+ *          l_int32      l_dnaSetParameters()
+ *          l_int32      l_dnaCopyParameters()
  *
  *      Serialize Dna for I/O
  *          L_DNA       *l_dnaRead()
@@ -92,6 +92,7 @@
  *          L_DNA       *l_dnaMakeDelta()
  *          NUMA        *l_dnaConvertToNuma()
  *          L_DNA       *numaConvertToDna()
+ *          l_int32     *l_dnaJoin()
  *
  *    (1) The Dna is a struct holding an array of doubles.  It can also
  *        be used to store l_int32 values, up to the full precision
@@ -151,6 +152,10 @@
 #include "allheaders.h"
 
 static const l_int32 INITIAL_PTR_ARRAYSIZE = 50;      /* n'importe quoi */
+
+    /* Static functions */
+static l_int32 l_dnaExtendArray(L_DNA *da);
+static l_int32 l_dnaaExtendArray(L_DNAA *daa);
 
 
 /*--------------------------------------------------------------------------*
@@ -257,8 +262,7 @@ L_DNA   *da;
         if (da->array) FREE(da->array);
         da->array = darray;
         da->n = size;
-    }
-    else {  /* just copy the contents */
+    } else {  /* just copy the contents */
         for (i = 0; i < size; i++)
             l_dnaAddNumber(da, darray[i]);
     }
@@ -316,7 +320,7 @@ L_DNA  *da;
     PROCNAME("l_dnaDestroy");
 
     if (pda == NULL) {
-        L_WARNING("ptr address is NULL", procName);
+        L_WARNING("ptr address is NULL\n", procName);
         return;
     }
 
@@ -445,7 +449,7 @@ l_int32  n;
  *      Input:  da
  *      Return: 0 if OK, 1 on error
  */
-l_int32
+static l_int32
 l_dnaExtendArray(L_DNA  *da)
 {
     PROCNAME("l_dnaExtendArray");
@@ -809,9 +813,9 @@ l_float64  *array;
     if (!da)
         return (l_float64 *)ERROR_PTR("da not defined", procName, NULL);
 
-    if (copyflag == L_NOCOPY)
+    if (copyflag == L_NOCOPY) {
         array = da->array;
-    else {  /* copyflag == L_COPY */
+    } else {  /* copyflag == L_COPY */
         n = l_dnaGetCount(da);
         if ((array = (l_float64 *)CALLOC(n, sizeof(l_float64))) == NULL)
             return (l_float64 *)ERROR_PTR("array not made", procName, NULL);
@@ -861,7 +865,7 @@ l_dnaChangeRefcount(L_DNA   *da,
 
 
 /*!
- *  l_dnaGetXParameters()
+ *  l_dnaGetParameters()
  *
  *      Input:  da
  *              &startx (<optional return> startx)
@@ -869,11 +873,11 @@ l_dnaChangeRefcount(L_DNA   *da,
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-l_dnaGetXParameters(L_DNA     *da,
+l_dnaGetParameters(L_DNA     *da,
                    l_float64  *pstartx,
                    l_float64  *pdelx)
 {
-    PROCNAME("l_dnaGetXParameters");
+    PROCNAME("l_dnaGetParameters");
 
     if (!da)
         return ERROR_INT("da not defined", procName, 1);
@@ -885,7 +889,7 @@ l_dnaGetXParameters(L_DNA     *da,
 
 
 /*!
- *  l_dnaSetXParameters()
+ *  l_dnaSetParameters()
  *
  *      Input:  da
  *              startx (x value corresponding to da[0])
@@ -895,11 +899,11 @@ l_dnaGetXParameters(L_DNA     *da,
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-l_dnaSetXParameters(L_DNA     *da,
-                    l_float64  startx,
-                    l_float64  delx)
+l_dnaSetParameters(L_DNA     *da,
+                   l_float64  startx,
+                   l_float64  delx)
 {
-    PROCNAME("l_dnaSetXParameters");
+    PROCNAME("l_dnaSetParameters");
 
     if (!da)
         return ERROR_INT("da not defined", procName, 1);
@@ -911,25 +915,25 @@ l_dnaSetXParameters(L_DNA     *da,
 
 
 /*!
- *  l_dnaCopyXParameters()
+ *  l_dnaCopyParameters()
  *
  *      Input:  dad (destination DNuma)
  *              das (source DNuma)
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-l_dnaCopyXParameters(L_DNA  *dad,
-                     L_DNA  *das)
+l_dnaCopyParameters(L_DNA  *dad,
+                    L_DNA  *das)
 {
 l_float64  start, binsize;
 
-    PROCNAME("l_dnaCopyXParameters");
+    PROCNAME("l_dnaCopyParameters");
 
     if (!das || !dad)
         return ERROR_INT("das and dad not both defined", procName, 1);
 
-    l_dnaGetXParameters(das, &start, &binsize);
-    l_dnaSetXParameters(dad, start, binsize);
+    l_dnaGetParameters(das, &start, &binsize);
+    l_dnaSetParameters(dad, start, binsize);
     return 0;
 }
 
@@ -1004,7 +1008,7 @@ L_DNA     *da;
 
         /* Optional data */
     if (fscanf(fp, "startx = %lf, delx = %lf\n", &startx, &delx) == 2)
-        l_dnaSetXParameters(da, startx, delx);
+        l_dnaSetParameters(da, startx, delx);
 
     return da;
 }
@@ -1067,7 +1071,7 @@ l_float64  startx, delx;
     fprintf(fp, "\n");
 
         /* Optional data */
-    l_dnaGetXParameters(da, &startx, &delx);
+    l_dnaGetParameters(da, &startx, &delx);
     if (startx != 0.0 || delx != 1.0)
         fprintf(fp, "startx = %lf, delx = %lf\n", startx, delx);
 
@@ -1122,7 +1126,7 @@ L_DNAA  *daa;
     PROCNAME("l_dnaaDestroy");
 
     if (pdaa == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
 
@@ -1165,16 +1169,16 @@ L_DNA   *dac;
     if (!da)
         return ERROR_INT("da not defined", procName, 1);
 
-    if (copyflag == L_INSERT)
+    if (copyflag == L_INSERT) {
         dac = da;
-    else if (copyflag == L_COPY) {
+    } else if (copyflag == L_COPY) {
         if ((dac = l_dnaCopy(da)) == NULL)
             return ERROR_INT("dac not made", procName, 1);
-    }
-    else if (copyflag == L_CLONE)
+    } else if (copyflag == L_CLONE) {
         dac = l_dnaClone(da);
-    else
+    } else {
         return ERROR_INT("invalid copyflag", procName, 1);
+    }
 
     n = l_dnaaGetCount(daa);
     if (n >= daa->nalloc)
@@ -1191,7 +1195,7 @@ L_DNA   *dac;
  *      Input:  daa
  *      Return: 0 if OK, 1 on error
  */
-l_int32
+static l_int32
 l_dnaaExtendArray(L_DNAA  *daa)
 {
     PROCNAME("l_dnaaExtendArray");
@@ -1636,4 +1640,51 @@ L_DNA     *da;
         l_dnaAddNumber(da, val);
     }
     return da;
+}
+
+
+/*!
+ *  l_dnaJoin()
+ *
+ *      Input:  dad  (dest dma; add to this one)
+ *              das  (<optional> source dna; add from this one)
+ *              istart  (starting index in das)
+ *              iend  (ending index in das; use -1 to cat all)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) istart < 0 is taken to mean 'read from the start' (istart = 0)
+ *      (2) iend < 0 means 'read to the end'
+ *      (3) if das == NULL, this is a no-op
+ */
+l_int32
+l_dnaJoin(L_DNA   *dad,
+          L_DNA   *das,
+          l_int32  istart,
+          l_int32  iend)
+{
+l_int32    n, i;
+l_float64  val;
+
+    PROCNAME("l_dnaJoin");
+
+    if (!dad)
+        return ERROR_INT("dad not defined", procName, 1);
+    if (!das)
+        return 0;
+
+    if (istart < 0)
+        istart = 0;
+    n = l_dnaGetCount(das);
+    if (iend < 0 || iend >= n)
+        iend = n - 1;
+    if (istart > iend)
+        return ERROR_INT("istart > iend; nothing to add", procName, 1);
+
+    for (i = istart; i <= iend; i++) {
+        l_dnaGetDValue(das, i, &val);
+        l_dnaAddNumber(dad, val);
+    }
+
+    return 0;
 }

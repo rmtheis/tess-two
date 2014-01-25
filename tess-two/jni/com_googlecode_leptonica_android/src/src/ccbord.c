@@ -36,7 +36,7 @@
  *
  *     CCBORDA addition
  *         l_int32      ccbaAddCcb()
- *         l_int32      ccbaExtendArray()
+ *         static l_int32  ccbaExtendArray()
  *
  *     CCBORDA accessors
  *         l_int32      ccbaGetCount()
@@ -274,11 +274,12 @@ static const l_int32   xpostab[] = {-1, -1, 0, 1, 1, 1, 0, -1};
 static const l_int32   ypostab[] = {0, -1, -1, -1, 0, 1, 1, 1};
 static const l_int32   qpostab[] = {6, 6, 0, 0, 2, 2, 4, 4};
 
+    /* Static function */
+static l_int32 ccbaExtendArray(CCBORDA  *ccba);
 
 #ifndef  NO_CONSOLE_IO
 #define  DEBUG_PRINT   0
 #endif   /* NO CONSOLE_IO */
-
 
 
 /*---------------------------------------------------------------------*
@@ -334,7 +335,7 @@ CCBORDA  *ccba;
     PROCNAME("ccbaDestroy");
 
     if (pccba == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
 
@@ -405,7 +406,7 @@ CCBORD  *ccb;
     PROCNAME("ccbDestroy");
 
     if (pccb == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
 
@@ -475,7 +476,7 @@ l_int32  n;
  *      Input:  ccba
  *      Return: 0 if OK; 1 on error
  */
-l_int32
+static l_int32
 ccbaExtendArray(CCBORDA  *ccba)
 {
     PROCNAME("ccbaExtendArray");
@@ -690,7 +691,7 @@ PIXA     *pixa;
             }
         }
         if (x == boxt->w) {
-            L_WARNING("no hole pixel found!", procName);
+            L_WARNING("no hole pixel found!\n", procName);
             continue;
         }
         for (x = xh + boxt->x; x < w; x++) {  /* look for (fg) border pixel */
@@ -823,8 +824,7 @@ PTA     *ptaloc, *ptad;
     if (box) {
         boxGetGeometry(box, &x, &y, NULL, NULL);
         ptad = ptaTransform(ptaloc, x, y, 1.0, 1.0);
-    }
-    else {
+    } else {
         ptad = ptaClone(ptaloc);
     }
 
@@ -1088,16 +1088,13 @@ l_int32  dx, dy;
     if (dx * dy == 1) {
         *pxs = fpx + dx;
         *pys = fpy;
-    }
-    else if (dx * dy == -1) {
+    } else if (dx * dy == -1) {
         *pxs = fpx;
         *pys = fpy + dy;
-    }
-    else if (dx == 0) {
+    } else if (dx == 0) {
         *pxs = fpx + dy;
         *pys = fpy + dy;
-    }
-    else  /* dy == 0 */ {
+    } else  /* dy == 0 */ {
         *pxs = fpx + dx;
         *pys = fpy - dx;
     }
@@ -1223,9 +1220,9 @@ PTAA    *ptaal;  /* local chain code */
         for (j = 0; j < nb; j++) {
             ptal = ptaaGetPta(ptaal, j, L_CLONE);
             n = ptaGetCount(ptal);   /* number of pixels in border */
-            if (n == 1)  /* isolated pixel */
+            if (n == 1) {  /* isolated pixel */
                 na = numaCreate(1);   /* but leave it empty */
-            else {   /* trace out the boundary */
+            } else {   /* trace out the boundary */
                 if ((na = numaCreate(n)) == NULL)
                     return ERROR_INT("na not made", procName, 1);
                 ptaGetIPt(ptal, 0, &px, &py);
@@ -1296,8 +1293,7 @@ PTA     *ptas, *ptan;
         if (coordtype == CCB_LOCAL_COORDS) {
             xul = 0;
             yul = 0;
-        }
-        else {  /* coordtype == CCB_GLOBAL_COORDS */
+        } else {  /* coordtype == CCB_GLOBAL_COORDS */
                 /* Get UL corner in global coords */
             if (boxaGetBoxGeometry(boxa, 0, &xul, &yul, NULL, NULL))
                 return ERROR_INT("bounding rectangle not found", procName, 1);
@@ -1311,8 +1307,7 @@ PTA     *ptas, *ptan;
             if (ccb->local)   /* remove old one */
                 ptaaDestroy(&ccb->local);
             ccb->local = ptaan;  /* save new local chain */
-        }
-        else {   /* coordtype == CCB_GLOBAL_COORDS */
+        } else {   /* coordtype == CCB_GLOBAL_COORDS */
             if (ccb->global)   /* remove old one */
                 ptaaDestroy(&ccb->global);
             ccb->global = ptaan;  /* save new global chain */
@@ -1405,15 +1400,13 @@ PTA     *ptal, *ptag;
                 ptaGetIPt(ptal, j, &x, &y);
                 ptaAddPt(ptag, x  + xul, y + yul);
             }
-        }
-        else {   /* ptsflag = CCB_SAVE_TURNING_PTS */
+        } else {   /* ptsflag = CCB_SAVE_TURNING_PTS */
             ptaGetIPt(ptal, 0, &xp, &yp);   /* get the 1st pt */
             ptaAddPt(ptag, xp  + xul, yp + yul);   /* save the 1st pt */
             if (npt == 2) {  /* get and save the 2nd pt  */
                 ptaGetIPt(ptal, 1, &x, &y);
                 ptaAddPt(ptag, x  + xul, y + yul);
-            }
-            else if (npt > 2)  {
+            } else if (npt > 2)  {
                 ptaGetIPt(ptal, 1, &x, &y);
                 delxp = x - xp;
                 delyp = y - yp;
@@ -1505,7 +1498,7 @@ PTAA     *ptaap;  /* ptaa for all paths between borders */
     for (i = 0; i < ncc; i++) {
         ccb = ccbaGetCcb(ccba, i);
         if ((ptaa = ccb->local) == NULL) {
-            L_WARNING("local pixel loc array not found", procName);
+            L_WARNING("local pixel loc array not found\n", procName);
             continue;
         }
         nb = ptaaGetCount(ptaa);   /* number of borders in the c.c.  */
@@ -1520,7 +1513,7 @@ PTAA     *ptaap;  /* ptaa for all paths between borders */
             /* If no holes, just concat the outer border */
         pta = ptaaGetPta(ptaa, 0, L_CLONE);
         if (nb == 1 || nb > NMAX_HOLES + 1) {
-            ptaJoin(ptas, pta, 0, 0);
+            ptaJoin(ptas, pta, 0, -1);
             ptaDestroy(&pta);  /* remove clone */
             ccbDestroy(&ccb);  /* remove clone */
             continue;
@@ -1555,8 +1548,7 @@ PTAA     *ptaap;  /* ptaa for all paths between borders */
             if (ncut == 0) {   /* missed hole; neg coords won't match */
                 ptaAddPt(ptaf, -1, -1);
                 ptaAddPt(ptal, -1, -1);
-            }
-            else {
+            } else {
                 ptaGetIPt(ptac, 0, &x, &y);
                 ptaAddPt(ptaf, x, y);
                 ptaGetIPt(ptac, ncut - 1, &x, &y);
@@ -1588,9 +1580,9 @@ PTAA     *ptaap;  /* ptaa for all paths between borders */
                     ptah = ptaaGetPta(ptaa, j + 1, L_CLONE);
                     ptahc = ptaCyclicPerm(ptah, xf, yf);
 /*                    ptaWriteStream(stderr, ptahc, 1); */
-                    ptaJoin(ptas, ptarp, 0, 0);
-                    ptaJoin(ptas, ptahc, 0, 0);
-                    ptaJoin(ptas, ptap, 0, 0);
+                    ptaJoin(ptas, ptarp, 0, -1);
+                    ptaJoin(ptas, ptahc, 0, -1);
+                    ptaJoin(ptas, ptap, 0, -1);
                     ptaDestroy(&ptap);
                     ptaDestroy(&ptarp);
                     ptaDestroy(&ptah);
@@ -1611,7 +1603,7 @@ PTAA     *ptaap;  /* ptaa for all paths between borders */
     }
 
     if (lostholes > 0)
-        L_WARNING_INT("***** %d lost holes *****", procName, lostholes);
+        L_WARNING("***** %d lost holes *****\n", procName, lostholes);
 
     return 0;
 }
@@ -1765,7 +1757,7 @@ PTA      *ptac;
 
         /* If we get here, we've failed! */
     ptaEmpty(ptac);
-/*    L_WARNING("no path found", procName); */
+    L_WARNING("no path found\n", procName);
     *plen = 0;
     return ptac;
 }
@@ -1856,7 +1848,7 @@ PTA     *ptag;
     for (i = 0; i < ncc; i++) {
         ccb = ccbaGetCcb(ccba, i);
         if ((ptag = ccb->spglobal) == NULL) {
-            L_WARNING("spglobal pixel loc array not found", procName);
+            L_WARNING("spglobal pixel loc array not found\n", procName);
             continue;
         }
         npt = ptaGetCount(ptag);   /* number of pixels on path */
@@ -1952,7 +1944,7 @@ PTA     *pta;
 
             /* Render border in pixt */
         if ((ptaa = ccb->local) == NULL) {
-            L_WARNING("local chain array not found", procName);
+            L_WARNING("local chain array not found\n", procName);
             continue;
         }
 
@@ -1963,8 +1955,9 @@ PTA     *pta;
             if (j == 0) {
                 boxGetGeometry(box, &xul, &yul, &w, &h);
                 xoff = yoff = 0;
-            } else
+            } else {
                 boxGetGeometry(box, &xoff, &yoff, &w, &h);
+            }
             boxDestroy(&box);
 
                 /* Render the border in a minimum-sized pix;
@@ -1995,8 +1988,7 @@ PTA     *pta;
             if (j == 0) {  /* if outer border, fill from outer boundary */
                 if ((pixh = pixFillClosedBorders(pixt, 4)) == NULL)
                     return (PIX *)ERROR_PTR("pixh not made", procName, NULL);
-            }
-            else {   /* fill the hole from inside */
+            } else {   /* fill the hole from inside */
                     /* get the location of a seed pixel in the hole */
                 locateOutsideSeedPixel(fpx, fpy, spx, spy, &xs, &ys);
 
@@ -2078,7 +2070,7 @@ PTA     *pta;
             return (PIX *)ERROR_PTR("pixs not made", procName, NULL);
 
         if ((ptaa = ccb->local) == NULL) {
-            L_WARNING("local chain array not found", procName);
+            L_WARNING("local chain array not found\n", procName);
             continue;
         }
         nb = ptaaGetCount(ptaa);   /* number of borders in the c.c.  */
@@ -2093,8 +2085,7 @@ PTA     *pta;
                 if (k == 0) {
                     fpx = x + 1;
                     fpy = y + 1;
-                }
-                else if (k == 1) {
+                } else if (k == 1) {
                     spx = x + 1;
                     spy = y + 1;
                 }
@@ -2259,8 +2250,7 @@ PTA      *pta;
                 bval |= 0x8;
                 bbufferRead(bbuf, (l_uint8 *)&bval, 1); /* end with 0xz8,   */
                                              /* where z = {0..7} */
-            }
-            else {  /* n % 2 == 0 */
+            } else {  /* n % 2 == 0 */
                 bval = 0x88;
                 bbufferRead(bbuf, (l_uint8 *)&bval, 1);   /* end with 0x88 */
             }

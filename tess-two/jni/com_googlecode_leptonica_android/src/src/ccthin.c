@@ -300,7 +300,7 @@ SEL     *sel, *selr;
         pixEqual(pixd, pixt, &same);
         pixDestroy(&pixt);
         if (same) {
-            L_INFO_INT("%d iterations to completion", procName, i);
+            L_INFO("%d iterations to completion\n", procName, i);
             break;
         }
     }
@@ -432,7 +432,7 @@ SELA  *sela;
         selaAddSel(sela, sel, NULL, 0);
         sel = selCreateFromString(sel_8_7, 3, 3, "sel_8_7");
         selaAddSel(sela, sel, NULL, 0);
-	sel = selRotateOrth(sel, 1);
+        sel = selRotateOrth(sel, 1);
         selaAddSel(sela, sel, "sel_8_7_rot", 0);
         break;
     case 8:  /* thicken for this one; just a few iterations */

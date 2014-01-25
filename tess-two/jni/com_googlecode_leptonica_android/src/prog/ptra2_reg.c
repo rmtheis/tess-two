@@ -38,16 +38,13 @@
 void BoxaSortTest(const char *fname, l_int32 index, const char *text);
 void PixaSortTest(const char *fname, l_int32 index, const char *text);
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-static char  mainName[] = "ptra2_reg";
-
     BoxaSortTest("feyn-fract.tif", 1, "Boxa sort test on small image");
     BoxaSortTest("feyn.tif", 2, "Boxa sort test on large image");
     PixaSortTest("feyn-fract.tif", 3, "Pixa sort test on small image");
     PixaSortTest("feyn.tif", 4, "Pixa sort test on large image");
-
     return 0;
 }
 
@@ -115,7 +112,7 @@ char     buf[256];
         box = boxaGetBox(boxa, i, L_CLONE);
         boxGetGeometry(box, &x, NULL, NULL, NULL);
         pa = ptraaGetPtra(paa, x, L_HANDLE_ONLY);
-        na = (NUMA *)ptraGetHandle(paindex, x);
+        na = (NUMA *)ptraGetPtrToItem(paindex, x);
         if (!pa) {  /* na also needs to be made */
             pa = ptraCreate(1);
             ptraaInsertPtra(paa, x, pa);
@@ -150,7 +147,7 @@ char     buf[256];
     fprintf(stderr, "imax = %d\n", imax);
     for (i = 0; i <= imax; i++) {
         na = (NUMA *)ptraRemove(paindex, i, L_NO_COMPACTION);
-        numaJoin(nad3, na, 0, 0);
+        numaJoin(nad3, na, 0, -1);
         numaDestroy(&na);
     }
 

@@ -40,8 +40,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *dirin, *dirout, *infile, *outfile, *tail;
 l_int32      i, nfiles, border, x, y, w, h, xb, yb, wb, hb;
@@ -52,7 +52,7 @@ SARRAY      *safiles;
 static char  mainName[] = "croptext";
 
     if (argc != 4)
-        exit(ERROR_INT("Syntax: croptext dirin border dirout", mainName, 1));
+        return ERROR_INT("Syntax: croptext dirin border dirout", mainName, 1);
 
     dirin = argv[1];
     border = atoi(argv[2]);
@@ -63,8 +63,8 @@ static char  mainName[] = "croptext";
 
     for (i = 0; i < nfiles; i++) {
         infile = sarrayGetString(safiles, i, 0);
-	splitPathAtDirectory(infile, NULL, &tail);
-	outfile = genPathname(dirout, tail);
+        splitPathAtDirectory(infile, NULL, &tail);
+        outfile = genPathname(dirout, tail);
         pixs = pixRead(infile);
         pixt1 = pixMorphSequence(pixs, "r11 + c10.40 + o5.5 + x4", 0);
         boxa1 = pixConnComp(pixt1, NULL, 8);
@@ -83,11 +83,11 @@ static char  mainName[] = "croptext";
         pixd = pixClipRectangle(pixs, box2, NULL);
         pixWrite(outfile, pixd, IFF_TIFF_G4);
 
-	pixDestroy(&pixs);
-	pixDestroy(&pixt1);
-	pixDestroy(&pixd);
-	boxaDestroy(&boxa1);
-	boxaDestroy(&boxa2);
+        pixDestroy(&pixs);
+        pixDestroy(&pixt1);
+        pixDestroy(&pixd);
+        boxaDestroy(&boxa1);
+        boxaDestroy(&boxa2);
     }
 
     return 0;

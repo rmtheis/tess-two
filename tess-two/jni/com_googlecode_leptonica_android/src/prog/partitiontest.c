@@ -42,8 +42,8 @@
 
 #define  REDUCTION     1
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filename;
 l_int32      w, h, type, maxboxes;
@@ -156,7 +156,7 @@ static char  mainName[] = "partitiontest";
     pixDestroy(&pixt);
     pixDestroy(&pixd);
 
-    pixDisplayMultiple("/tmp/junk_write_display*");
+    pixDisplayMultiple("/tmp/display/file*");
 
     pixDestroy(&pix);
     pixDestroy(&pixs);

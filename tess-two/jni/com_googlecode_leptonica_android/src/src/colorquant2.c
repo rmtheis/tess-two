@@ -335,9 +335,9 @@ PIXCMAP   *cmap;
         maxsub = 10;  /* default will prevail for 10^7 pixels or less */
 
         /* Determine if the image has sufficient color content.
-	 * If pixfract << 1, most pixels are close to black or white.
-	 * If colorfract << 1, the pixels that are not near
-	 *   black or white have very little color.
+         * If pixfract << 1, most pixels are close to black or white.
+         * If colorfract << 1, the pixels that are not near
+         *   black or white have very little color.
          * If with little color, quantize with a grayscale colormap. */
     pixGetDimensions(pixs, &w, &h, NULL);
     if (checkbw) {
@@ -345,21 +345,21 @@ PIXCMAP   *cmap;
         factor = L_MAX(1, minside / 400);
         pixColorFraction(pixs, 20, 244, 20, factor, &pixfract, &colorfract);
         if (pixfract * colorfract < 0.00025) {
-            L_INFO_FLOAT2("\n  Pixel fraction neither white nor black = %6.3f"
-                          "\n  Color fraction of those pixels = %6.3f"
-                          "\n  Quantizing in gray",
-                          procName, pixfract, colorfract);
+            L_INFO("\n  Pixel fraction neither white nor black = %6.3f"
+                   "\n  Color fraction of those pixels = %6.3f"
+                   "\n  Quantizing in gray\n",
+                   procName, pixfract, colorfract);
             return pixConvertTo8(pixs, 1);
         }
     }
 
         /* Compute the color space histogram.  Default sampling
-	 * is about 10^5 pixels.  */
-    if (maxsub == 1)
+         * is about 10^5 pixels.  */
+    if (maxsub == 1) {
         subsample = 1;
-    else {
+    } else {
         subsample = (l_int32)(sqrt((l_float64)(w * h) / 100000.));
-	subsample = L_MAX(1, L_MIN(maxsub, subsample));
+        subsample = L_MAX(1, L_MIN(maxsub, subsample));
     }
     histo = pixMedianCutHisto(pixs, sigbits, subsample);
     histosize = 1 << (3 * sigbits);
@@ -420,7 +420,7 @@ PIXCMAP   *cmap;
         }
         medianCutApply(histo, sigbits, vbox, &vbox1, &vbox2);
         if (!vbox1) {
-            L_WARNING("vbox1 not defined; shouldn't happen!", procName);
+            L_WARNING("vbox1 not defined; shouldn't happen!\n", procName);
             break;
         }
         if (vbox1->vol > 1)
@@ -436,13 +436,13 @@ PIXCMAP   *cmap;
         if (ncolors >= popcolors)
             break;
         if (niters++ > MAX_ITERS_ALLOWED) {
-            L_WARNING("infinite loop; perhaps too few pixels!", procName);
+            L_WARNING("infinite loop; perhaps too few pixels!\n", procName);
             break;
         }
     }
 
         /* Re-sort by the product of pixel occupancy times the size
-	 * in color space. */
+         * in color space. */
     lhs = lheapCreate(0, L_SORT_DECREASING);
     while ((vbox = (L_BOX3D *)lheapRemove(lh))) {
         vbox->sortparam = vbox->npix * vbox->vol;
@@ -460,7 +460,7 @@ PIXCMAP   *cmap;
         }
         medianCutApply(histo, sigbits, vbox, &vbox1, &vbox2);
         if (!vbox1) {
-            L_WARNING("vbox1 not defined; shouldn't happen!", procName);
+            L_WARNING("vbox1 not defined; shouldn't happen!\n", procName);
             break;
         }
         if (vbox1->vol > 1)
@@ -476,7 +476,7 @@ PIXCMAP   *cmap;
         if (ncolors >= maxcolors)
             break;
         if (niters++ > MAX_ITERS_ALLOWED) {
-            L_WARNING("infinite loop; perhaps too few pixels!", procName);
+            L_WARNING("infinite loop; perhaps too few pixels!\n", procName);
             break;
         }
     }
@@ -605,9 +605,9 @@ PIXCMAP   *cmap;
     pixColorFraction(pixs, darkthresh, lightthresh, diffthresh, factor,
                      &pixfract, &colorfract);
     if (pixfract * colorfract < 0.0001) {
-        L_INFO_FLOAT2("\n  Pixel fraction neither white nor black = %6.3f"
+        L_INFO("\n  Pixel fraction neither white nor black = %6.3f"
                       "\n  Color fraction of those pixels = %6.3f"
-                      "\n  Quantizing in gray",
+                      "\n  Quantizing in gray\n",
                       procName, pixfract, colorfract);
         pixg = pixConvertTo8(pixs, 0);
         pixd = pixThresholdOn8bpp(pixg, ngray, 1);
@@ -660,9 +660,9 @@ PIXCMAP   *cmap;
     nc = pixcmapGetCount(cmap);
     unused = ncolor  + 1 - nc;
     if (unused < 0)
-        L_ERROR_INT("Too many colors: extra = %d", procName, -unused);
+        L_ERROR("Too many colors: extra = %d\n", procName, -unused);
     if (unused > 0) {  /* fill in with black; these won't be used */
-        L_INFO_INT("%d unused colors", procName, unused);
+        L_INFO("%d unused colors\n", procName, unused);
         for (i = 0; i < unused; i++)
             pixcmapAddColor(cmap, 0, 0, 0);
     }
@@ -762,11 +762,11 @@ PIX     *pixg, *pixd;
     if (lightthresh <= 0) lightthresh = 244;
     if (diffthresh <= 0) diffthresh = 15;
     if (ncolor < maxncolors) {
-        L_WARNING_INT("ncolor too small; setting to %d", procName, maxncolors);
+        L_WARNING("ncolor too small; setting to %d\n", procName, maxncolors);
         ncolor = maxncolors;
     }
     if (ngray < maxncolors) {
-        L_WARNING_INT("ngray too small; setting to %d", procName, maxncolors);
+        L_WARNING("ngray too small; setting to %d\n", procName, maxncolors);
         ngray = maxncolors;
     }
 
@@ -845,7 +845,7 @@ l_uint32  *data, *line;
         line = data + i * wpl;
         for (j = 0; j < w; j += subsample) {
             pixel = line[j];
-	    getColorIndexMedianCut(pixel, rshift, mask, sigbits, &index);
+            getColorIndexMedianCut(pixel, rshift, mask, sigbits, &index);
             histo[index]++;
         }
     }
@@ -894,15 +894,15 @@ PIXCMAP  *cmap;
         return (PIXCMAP *)ERROR_PTR("histo not defined", procName, NULL);
 
         /* Capture the rgb values of each occupied cube in the histo,
-	 * and re-label the histo value with the colormap index. */
+         * and re-label the histo value with the colormap index. */
     cmap = pixcmapCreate(depth);
     shift = 8 - sigbits;
     mask = 0xff >> shift;
     for (i = 0, index = 0; i < histosize; i++) {
         if (histo[i]) {
             rval = (i >> (2 * sigbits)) << shift;
-	    gval = ((i >> sigbits) & mask) << shift;
-	    bval = (i & mask) << shift;
+            gval = ((i >> sigbits) & mask) << shift;
+            bval = (i & mask) << shift;
             pixcmapAddColor(cmap, rval, gval, bval);
             histo[i] = index++;
         }
@@ -983,24 +983,21 @@ PIX       *pixd;
                     if (indexmap[index])
                         SET_DATA_BIT(lined, j);
                 }
-            }
-            else if (outdepth == 2) {
+            } else if (outdepth == 2) {
                 for (j = 0; j < w; j++) {
                     pixel = lines[j];
                     getColorIndexMedianCut(pixel, rshift, mask,
                                            sigbits, &index);
                     SET_DATA_DIBIT(lined, j, indexmap[index]);
                 }
-            }
-            else if (outdepth == 4) {
+            } else if (outdepth == 4) {
                 for (j = 0; j < w; j++) {
                     pixel = lines[j];
                     getColorIndexMedianCut(pixel, rshift, mask,
                                            sigbits, &index);
                     SET_DATA_QBIT(lined, j, indexmap[index]);
                 }
-            }
-            else {  /* outdepth == 8 */
+            } else {  /* outdepth == 8 */
                 for (j = 0; j < w; j++) {
                     pixel = lines[j];
                     getColorIndexMedianCut(pixel, rshift, mask,
@@ -1008,9 +1005,8 @@ PIX       *pixd;
                     SET_DATA_BYTE(lined, j, indexmap[index]);
                 }
             }
-	}
-    }
-    else {  /* ditherflag == 1 */
+        }
+    } else {  /* ditherflag == 1 */
         bufu8r = (l_uint8 *)CALLOC(w, sizeof(l_uint8));
         bufu8g = (l_uint8 *)CALLOC(w, sizeof(l_uint8));
         bufu8b = (l_uint8 *)CALLOC(w, sizeof(l_uint8));
@@ -1068,8 +1064,7 @@ PIX       *pixd;
                         buf1r[j + 1] = L_MIN(16383, val1);
                         buf2r[j] = L_MIN(16383, val2);
                         buf2r[j + 1] = L_MIN(16383, val3);
-                    }
-                    else if (dif < 0) {
+                    } else if (dif < 0) {
                         buf1r[j + 1] = L_MAX(0, val1);
                         buf2r[j] = L_MAX(0, val2);
                         buf2r[j + 1] = L_MAX(0, val3);
@@ -1087,8 +1082,7 @@ PIX       *pixd;
                         buf1g[j + 1] = L_MIN(16383, val1);
                         buf2g[j] = L_MIN(16383, val2);
                         buf2g[j + 1] = L_MIN(16383, val3);
-                    }
-                    else if (dif < 0) {
+                    } else if (dif < 0) {
                         buf1g[j + 1] = L_MAX(0, val1);
                         buf2g[j] = L_MAX(0, val2);
                         buf2g[j + 1] = L_MAX(0, val3);
@@ -1106,8 +1100,7 @@ PIX       *pixd;
                         buf1b[j + 1] = L_MIN(16383, val1);
                         buf2b[j] = L_MIN(16383, val2);
                         buf2b[j + 1] = L_MIN(16383, val3);
-                    }
-                    else if (dif < 0) {
+                    } else if (dif < 0) {
                         buf1b[j + 1] = L_MAX(0, val1);
                         buf2b[j] = L_MAX(0, val2);
                         buf2b[j + 1] = L_MAX(0, val3);
@@ -1223,17 +1216,17 @@ l_uint32  *data, *line;
             rval = pixel >> (24 + rshift);
             gval = (pixel >> (16 + rshift)) & mask;
             bval = (pixel >> (8 + rshift)) & mask;
-	    if (rval < rmin)
+            if (rval < rmin)
                 rmin = rval;
-	    else if (rval > rmax)
+            else if (rval > rmax)
                 rmax = rval;
-	    if (gval < gmin)
+            if (gval < gmin)
                 gmin = gval;
-	    else if (gval > gmax)
+            else if (gval > gmax)
                 gmax = gval;
-	    if (bval < bmin)
+            if (bval < bmin)
                 bmin = bval;
-	    else if (bval > bmax)
+            else if (bval > bmax)
                 bmax = bval;
         }
     }
@@ -1315,8 +1308,7 @@ L_BOX3D  *vbox1, *vbox2;
             total += sum;
             partialsum[i] = total;
         }
-    }
-    else if (maxw == gw) {
+    } else if (maxw == gw) {
         for (i = vbox->g1; i <= vbox->g2; i++) {
             sum = 0;
             for (j = vbox->r1; j <= vbox->r2; j++) {
@@ -1328,8 +1320,7 @@ L_BOX3D  *vbox1, *vbox2;
             total += sum;
             partialsum[i] = total;
         }
-    }
-    else {  /* maxw == bw */
+    } else {  /* maxw == bw */
         for (i = vbox->b1; i <= vbox->b2; i++) {
             sum = 0;
             for (j = vbox->r1; j <= vbox->r2; j++) {
@@ -1367,8 +1358,7 @@ L_BOX3D  *vbox1, *vbox2;
                 break;
             }
         }
-    }
-    else if (maxw == gw) {
+    } else if (maxw == gw) {
         for (i = vbox->g1; i <= vbox->g2; i++) {
             if (partialsum[i] > total / 2) {
                 vbox1 = box3dCopy(vbox);
@@ -1383,8 +1373,7 @@ L_BOX3D  *vbox1, *vbox2;
                 break;
             }
         }
-    }
-    else {  /* maxw == bw */
+    } else {  /* maxw == bw */
         for (i = vbox->b1; i <= vbox->b2; i++) {
             if (partialsum[i] > total / 2) {
                 vbox1 = box3dCopy(vbox);
@@ -1448,10 +1437,10 @@ PIXCMAP  *cmap;
     index = 0;
     while (lheapGetCount(lh) > 0) {
         vbox = (L_BOX3D *)lheapRemove(lh);
-	vboxGetAverageColor(vbox, histo, sigbits, index, &rval, &gval, &bval);
-	pixcmapAddColor(cmap, rval, gval, bval);
-	FREE(vbox);
-	index++;
+        vboxGetAverageColor(vbox, histo, sigbits, index, &rval, &gval, &bval);
+        pixcmapAddColor(cmap, rval, gval, bval);
+        FREE(vbox);
+        index++;
     }
 
     return cmap;
@@ -1474,6 +1463,12 @@ PIXCMAP  *cmap;
  *          the histo corresponding to the vbox are labeled with this
  *          cmap index for that vbox.  Otherwise, the histo array
  *          is not changed.
+ *      (3) The vbox is quantized in sigbits.  So the actual 8-bit color
+ *          components are found by multiplying the quantized value
+ *          by either 4 or 8.  We must add 0.5 to the quantized index
+ *          before multiplying to get the approximate 8-bit color in
+ *          the center of the vbox; otherwise we get values on
+ *          the lower corner.
  */
 static l_int32
 vboxGetAverageColor(L_BOX3D  *vbox,
@@ -1517,8 +1512,7 @@ l_int32  i, j, k, ntot, mult, histoindex, rsum, gsum, bsum;
         *prval = mult * (vbox->r1 + vbox->r2 + 1) / 2;
         *pgval = mult * (vbox->g1 + vbox->g2 + 1) / 2;
         *pbval = mult * (vbox->b1 + vbox->b2 + 1) / 2;
-    }
-    else {
+    } else {
         *prval = rsum / ntot;
         *pgval = gsum / ntot;
         *pbval = bsum / ntot;

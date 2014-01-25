@@ -44,11 +44,11 @@ void TranslateAndSave1(PIXA *pixa, l_int32 depth, PIX *pix,
 void TranslateAndSave2(PIXA *pixa, PIX *pix, l_int32 xshift, l_int32 yshift);
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 BOX          *box;
-PIX          *pix, *pixs, *pixd;
+PIX          *pixs, *pixd;
 PIX          *pix1, *pix2, *pix3, *pix4, *pix5, *pix6, *pix7;
 PIXA         *pixa;
 L_REGPARAMS  *rp;
@@ -132,10 +132,10 @@ PIX  *pix1, *pix2, *pix3, *pix4;
     pix2 = pixTranslate(NULL, pix, xshift, yshift, L_BRING_IN_BLACK);
     pix3 = pixTranslate(NULL, pix, -xshift, -yshift, L_BRING_IN_WHITE);
     pix4 = pixTranslate(NULL, pix, -xshift, -yshift, L_BRING_IN_BLACK);
-    pixSaveTiled(pix1, pixa, 1, 1, 25, depth);
-    pixSaveTiled(pix2, pixa, 1, 0, 25, depth);
-    pixSaveTiled(pix3, pixa, 1, 0, 25, depth);
-    pixSaveTiled(pix4, pixa, 1, 0, 25, depth);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 25, depth);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 25, depth);
+    pixSaveTiled(pix3, pixa, 1.0, 0, 25, depth);
+    pixSaveTiled(pix4, pixa, 1.0, 0, 25, depth);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixDestroy(&pix3);

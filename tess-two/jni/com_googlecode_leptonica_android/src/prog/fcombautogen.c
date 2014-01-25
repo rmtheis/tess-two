@@ -46,8 +46,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filename;
 l_int32      index, ret;
@@ -55,8 +55,8 @@ SELA        *sela;
 static char  mainName[] = "fcombautogen";
 
     if (argc != 2 && argc != 3)
-	exit(ERROR_INT(" Syntax:  fcombautogen index <filename>",
-                       mainName, 1));
+        return ERROR_INT(" Syntax:  fcombautogen index <filename>",
+                         mainName, 1);
 
     index = atoi(argv[1]);
     sela = selaAddDwaCombs(NULL);

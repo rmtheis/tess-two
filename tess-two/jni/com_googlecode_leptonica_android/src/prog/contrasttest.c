@@ -34,8 +34,8 @@
 
 #define   NPLOTS       5
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
 char         bigbuf[512];

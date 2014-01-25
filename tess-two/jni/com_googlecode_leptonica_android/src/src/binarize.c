@@ -261,7 +261,7 @@ PIX      *pixn, *pixt, *pixd;
     if (sx < 4 || sy < 4)
         return (PIX *)ERROR_PTR("sx and sy must be >= 4", procName, NULL);
     if (mincount > sx * sy) {
-        L_WARNING("mincount too large for tile size", procName);
+        L_WARNING("mincount too large for tile size\n", procName);
         mincount = (sx * sy) / 3;
     }
 
@@ -356,7 +356,7 @@ PIX      *pixn, *pixm, *pixd, *pixt1, *pixt2, *pixt3, *pixt4;
     if (sx < 4 || sy < 4)
         return (PIX *)ERROR_PTR("sx and sy must be >= 4", procName, NULL);
     if (mincount > sx * sy) {
-        L_WARNING("mincount too large for tile size", procName);
+        L_WARNING("mincount too large for tile size\n", procName);
         mincount = (sx * sy) / 3;
     }
 
@@ -485,11 +485,11 @@ PIXTILING  *pt;
     yrat = h / ny;
     if (xrat < whsize + 2) {
         nx = w / (whsize + 2);
-        L_WARNING_INT("tile width too small; nx reduced to %d", procName, nx);
+        L_WARNING("tile width too small; nx reduced to %d\n", procName, nx);
     }
     if (yrat < whsize + 2) {
         ny = h / (whsize + 2);
-        L_WARNING_INT("tile height too small; ny reduced to %d", procName, ny);
+        L_WARNING("tile height too small; ny reduced to %d\n", procName, ny);
     }
     if (nx <= 1 && ny <= 1)
         return pixSauvolaBinarize(pixs, whsize, factor, 1, NULL, NULL,
@@ -605,8 +605,7 @@ PIX     *pixg, *pixsc, *pixm, *pixms, *pixth, *pixd;
         pixg = pixAddMirroredBorder(pixs, whsize + 1, whsize + 1,
                                     whsize + 1, whsize + 1);
         pixsc = pixClone(pixs);
-    }
-    else {
+    } else {
         pixg = pixClone(pixs);
         pixsc = pixRemoveBorder(pixs, whsize + 1);
     }
@@ -740,7 +739,7 @@ PIX        *pixsd, *pixd;
             if (usetab)
                 sd = tab[var];
             else
-                sd = (l_float32)sqrt(var);
+                sd = (l_float32)sqrt((l_float32)var);
             if (ppixsd) SET_DATA_BYTE(linesd, j, (l_int32)sd);
             thresh = (l_int32)(mv * (1.0 - factor * (1.0 - sd / 128.)));
             SET_DATA_BYTE(lined, j, thresh);

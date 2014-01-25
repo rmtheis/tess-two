@@ -61,8 +61,8 @@
 #define   MAX_OUTPUT_WIDTH        400
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char         filename[BUF_SIZE];
 char        *dirin, *rootname, *fname;

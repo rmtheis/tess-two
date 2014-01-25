@@ -33,9 +33,8 @@
  *
  *      Add/insert/remove/replace generic ptr object
  *          l_int32      ptraAdd()
- *          l_int32      ptraExtendArray()
+ *          static l_int32  ptraExtendArray()
  *          l_int32      ptraInsert()
- *          void        *ptraGetHandle()
  *          void        *ptraRemove()
  *          void        *ptraRemoveLast()
  *          void        *ptraReplace()
@@ -121,6 +120,9 @@
 
 static const l_int32 INITIAL_PTR_ARRAYSIZE = 20;      /* n'importe quoi */
 
+    /* Static function */
+static l_int32 ptraExtendArray(L_PTRA *pa);
+
 
 /*--------------------------------------------------------------------------*
  *                       Ptra creation and destruction                      *
@@ -188,7 +190,7 @@ L_PTRA  *pa;
     PROCNAME("ptraDestroy");
 
     if (ppa == NULL) {
-        L_WARNING("ptr address is NULL", procName);
+        L_WARNING("ptr address is NULL\n", procName);
         return;
     }
     if ((pa = *ppa) == NULL)
@@ -201,10 +203,10 @@ L_PTRA  *pa;
                 if ((item = ptraRemove(pa, i, L_NO_COMPACTION)) != NULL)
                     FREE(item);
             }
+        } else if (warnflag) {
+            L_WARNING("potential memory leak of %d items in ptra\n",
+                      procName, nactual);
         }
-        else if (warnflag)
-            L_WARNING_INT("potential memory leak of %d items in ptra",
-                          procName, nactual);
     }
 
     FREE(pa->array);
@@ -260,7 +262,7 @@ l_int32  imax;
  *      Input:  ptra
  *      Return: 0 if OK, 1 on error
  */
-l_int32
+static l_int32
 ptraExtendArray(L_PTRA  *pa)
 {
     PROCNAME("ptraExtendArray");
@@ -370,12 +372,12 @@ l_float32  nexpected;
         /* If there are no holes, do a full downshift.
          * Otherwise, if L_AUTO_DOWNSHIFT, use the expected number
          * of holes between index and n to determine the shift mode */
-    if (imax + 1 == pa->nactual)
+    if (imax + 1 == pa->nactual) {
         shiftflag = L_FULL_DOWNSHIFT;
-    else if (shiftflag == L_AUTO_DOWNSHIFT) {
-        if (imax < 10)
+    } else if (shiftflag == L_AUTO_DOWNSHIFT) {
+        if (imax < 10) {
             shiftflag = L_FULL_DOWNSHIFT;  /* no big deal */
-        else {
+        } else {
             nexpected = (l_float32)(imax - pa->nactual) *
                          (l_float32)((imax - index) / imax);
             shiftflag = (nexpected > 2.0) ? L_MIN_DOWNSHIFT : L_FULL_DOWNSHIFT;
@@ -387,9 +389,9 @@ l_float32  nexpected;
              if (pa->array[ihole] == NULL)
                  break;
         }
-    }
-    else   /* L_FULL_DOWNSHIFT */
+    } else {  /* L_FULL_DOWNSHIFT */
         ihole = imax + 1;
+    }
 
     for (i = ihole; i > index; i--)
         pa->array[i] = pa->array[i - 1];
@@ -398,36 +400,6 @@ l_float32  nexpected;
         pa->imax++;
 
     return 0;
-}
-
-
-/*!
- *  ptraGetHandle()
- *
- *      Input:  ptra
- *              index (element to be retrieved)
- *      Return: item, or null on error
- *
- *  Notes:
- *      (1) This returns a ptr to the item.  You must cast it to
- *          the type of item.  Do not destroy it; the item belongs
- *          to the Ptra.
- *      (2) This can access all possible items on the ptr array.
- *          If an item doesn't exist, it returns null.
- */
-void *
-ptraGetHandle(L_PTRA  *pa,
-              l_int32  index)
-{
-    PROCNAME("ptraGetHandle");
-
-    if (!pa)
-        return (void *)ERROR_PTR("pa not defined", procName, NULL);
-    if (index < 0 || index >= pa->nalloc)
-        return (void *)ERROR_PTR("index not in [0 ... nalloc-1]",
-                                 procName, NULL);
-
-    return pa->array[index];
 }
 
 
@@ -478,7 +450,6 @@ void    *item;
                 break;
         }
         pa->imax = i;
-        imax = i + 1;
     }
 
         /* Compact from index to the end of the array */
@@ -624,7 +595,7 @@ l_int32  i, imax, nactual, index;
     }
     pa->imax = index - 1;
     if (nactual != index)
-        L_ERROR_INT("index = %d; != nactual", procName, index);
+        L_ERROR("index = %d; != nactual\n", procName, index);
 
     return 0;
 }
@@ -757,12 +728,15 @@ ptraGetActualCount(L_PTRA   *pa,
  *  ptraGetPtrToItem()
  *
  *      Input:  ptra
- *              index (element to fetch pointer to)
- *      Return: item (just a pointer to it)
+ *              index (of element to be retrieved)
+ *      Return: a ptr to the element, or null on error
  *
  *  Notes:
- *      (1) The item remains on the Ptra and is 'owned' by it, so
- *          the item must not be destroyed.
+ *      (1) This returns a ptr to the item.  You must cast it to
+ *          the type of item.  Do not destroy it; the item belongs
+ *          to the Ptra.
+ *      (2) This can access all possible items on the ptr array.
+ *          If an item doesn't exist, it returns null.
  */
 void *
 ptraGetPtrToItem(L_PTRA  *pa,
@@ -772,8 +746,9 @@ ptraGetPtrToItem(L_PTRA  *pa,
 
     if (!pa)
         return (void *)ERROR_PTR("pa not defined", procName, NULL);
-    if (index < 0 || index > pa->imax)
-        return (void *)ERROR_PTR("index not in [0 ... imax]", procName, NULL);
+    if (index < 0 || index >= pa->nalloc)
+        return (void *)ERROR_PTR("index not in [0 ... nalloc-1]",
+                                 procName, NULL);
 
     return pa->array[index];
 }
@@ -837,7 +812,7 @@ L_PTRAA  *paa;
     PROCNAME("ptraaDestroy");
 
     if (ppaa == NULL) {
-        L_WARNING("ptr address is NULL", procName);
+        L_WARNING("ptr address is NULL\n", procName);
         return;
     }
     if ((paa = *ppaa) == NULL)

@@ -41,31 +41,35 @@
 
 #include "allheaders.h"
 
-    /* Needed for checking libraries and HAVE_FMEMOPEN */
+    /* Needed for checking libraries */
 #ifdef HAVE_CONFIG_H
 #include <config_auto.h>
 #endif /* HAVE_CONFIG_H */
 
-#define   FILE_1BPP     "rabi.png"
-#define   FILE_2BPP     "speckle2.png"
-#define   FILE_2BPP_C   "weasel2.4g.png"
-#define   FILE_4BPP     "speckle4.png"
-#define   FILE_4BPP_C   "weasel4.16c.png"
-#define   FILE_8BPP     "dreyfus8.png"
-#define   FILE_8BPP_C   "weasel8.240c.png"
-#define   FILE_16BPP    "test16.png"
-#define   FILE_32BPP    "weasel32.png"
+#define   FILE_1BPP          "rabi.png"
+#define   FILE_2BPP          "speckle2.png"
+#define   FILE_2BPP_C        "weasel2.4g.png"
+#define   FILE_4BPP          "speckle4.png"
+#define   FILE_4BPP_C        "weasel4.16c.png"
+#define   FILE_8BPP          "dreyfus8.png"
+#define   FILE_8BPP_C        "weasel8.240c.png"
+#define   FILE_16BPP         "test16.png"
+#define   FILE_32BPP         "weasel32.png"
+#define   FILE_32BPP_ALPHA   "test32-alpha.png"
+#define   FILE_CMAP_ALPHA    "test-cmap-alpha.png"
+#define   FILE_CMAP_ALPHA2   "test-cmap-alpha2.png"
+#define   FILE_TRANS_ALPHA   "test-fulltrans-alpha.png"
+#define   FILE_GRAY_ALPHA    "test-gray-alpha.png"
 
 static l_int32 test_mem_png(const char *fname);
 static l_int32 get_header_data(const char *filename);
 
 LEPT_DLL extern const char *ImageFileFormatExtensions[];
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       success, failure;
-l_int32       w, h;
 L_REGPARAMS  *rp;
 
 #if !HAVE_LIBPNG || !HAVE_LIBZ
@@ -96,19 +100,28 @@ L_REGPARAMS  *rp;
     if (ioFormatTest(FILE_8BPP_C)) success = FALSE;
     fprintf(stderr, "\nTest 16 bpp file:\n");
     if (ioFormatTest(FILE_16BPP)) success = FALSE;
-    fprintf(stderr, "\nTest 32 bpp file:\n");
+    fprintf(stderr, "\nTest 32 bpp RGB file:\n");
     if (ioFormatTest(FILE_32BPP)) success = FALSE;
-    if (success)
+    fprintf(stderr, "\nTest 32 bpp RGBA file:\n");
+    if (ioFormatTest(FILE_32BPP_ALPHA)) success = FALSE;
+    fprintf(stderr, "\nTest spp = 1, cmap with alpha file:\n");
+    if (ioFormatTest(FILE_CMAP_ALPHA)) success = FALSE;
+    fprintf(stderr, "\nTest spp = 1, cmap with alpha (small alpha array):\n");
+    if (ioFormatTest(FILE_CMAP_ALPHA2)) success = FALSE;
+    fprintf(stderr, "\nTest spp = 1, fully transparent with alpha file:\n");
+    if (ioFormatTest(FILE_TRANS_ALPHA)) success = FALSE;
+    fprintf(stderr, "\nTest spp = 2, gray with alpha file:\n");
+    if (ioFormatTest(FILE_GRAY_ALPHA)) success = FALSE;
+    if (success) {
         fprintf(stderr,
             "\n  ********** Success on lossless r/w to file *********\n");
-    else
+    } else {
         fprintf(stderr,
             "\n  ******* Failure on at least one r/w to file ******\n");
+    }
     if (!success) failure = TRUE;
 
-
     /* ------------ Part 2: Test lossless r/w to memory ------------ */
-#if HAVE_FMEMOPEN
     pixDisplayWrite(NULL, -1);
     success = TRUE;
     if (test_mem_png(FILE_1BPP)) success = FALSE;
@@ -120,19 +133,19 @@ L_REGPARAMS  *rp;
     if (test_mem_png(FILE_8BPP_C)) success = FALSE;
     if (test_mem_png(FILE_16BPP)) success = FALSE;
     if (test_mem_png(FILE_32BPP)) success = FALSE;
-    if (success)
+    if (test_mem_png(FILE_32BPP_ALPHA)) success = FALSE;
+    if (test_mem_png(FILE_CMAP_ALPHA)) success = FALSE;
+    if (test_mem_png(FILE_CMAP_ALPHA2)) success = FALSE;
+    if (test_mem_png(FILE_TRANS_ALPHA)) success = FALSE;
+    if (test_mem_png(FILE_GRAY_ALPHA)) success = FALSE;
+    if (success) {
         fprintf(stderr,
             "\n  ****** Success on lossless r/w to memory *****\n");
-    else
+    } else {
         fprintf(stderr,
             "\n  ******* Failure on at least one r/w to memory ******\n");
+    }
     if (!success) failure = TRUE;
-
-#else
-        fprintf(stderr,
-            "\n  *****  r/w to memory not enabled *****\n\n");
-#endif  /*  HAVE_FMEMOPEN  */
-
 
     /* -------------- Part 3: Read header information -------------- */
     success = TRUE;
@@ -145,21 +158,28 @@ L_REGPARAMS  *rp;
     if (get_header_data(FILE_8BPP_C)) success = FALSE;
     if (get_header_data(FILE_16BPP)) success = FALSE;
     if (get_header_data(FILE_32BPP)) success = FALSE;
+    if (get_header_data(FILE_32BPP_ALPHA)) success = FALSE;
+    if (get_header_data(FILE_CMAP_ALPHA)) success = FALSE;
+    if (get_header_data(FILE_CMAP_ALPHA2)) success = FALSE;
+    if (get_header_data(FILE_TRANS_ALPHA)) success = FALSE;
+    if (get_header_data(FILE_GRAY_ALPHA)) success = FALSE;
 
-    if (success)
+    if (success) {
         fprintf(stderr,
             "\n  ******* Success on reading headers *******\n\n");
-    else
+    } else {
         fprintf(stderr,
             "\n  ******* Failure on reading headers *******\n\n");
+    }
     if (!success) failure = TRUE;
 
-    if (!failure)
+    if (!failure) {
         fprintf(stderr,
             "  ******* Success on all tests *******\n\n");
-    else
+    } else {
         fprintf(stderr,
             "  ******* Failure on at least one test *******\n\n");
+    }
 
     if (failure) rp->success = FALSE;
     return regTestCleanup(rp);
@@ -192,7 +212,7 @@ PIX      *pixd = NULL;
 
     pixEqual(pixs, pixd, &same);
     if (!same)
-        fprintf(stderr, "Mem write/read fail for format %d\n", IFF_PNG);
+        fprintf(stderr, "Mem write/read fail for file %s\n", fname);
     pixDestroy(&pixs);
     pixDestroy(&pixd);
     lept_free(data);
@@ -213,15 +233,15 @@ size_t    nbytes1, nbytes2;
     ret1 = pixReadHeader(filename, &format1, &w1, &h1, &bps1, &spp1, &iscmap1);
     d1 = bps1 * spp1;
     if (d1 == 24) d1 = 32;
-    if (ret1)
+    if (ret1) {
         fprintf(stderr, "Error: couldn't read header data from file: %s\n",
                 filename);
-    else {
+    } else {
         fprintf(stderr, "Format data for image %s with format %s:\n"
-            "  nbytes = %ld, size (w, h, d) = (%d, %d, %d)\n"
+            "  nbytes = %lu, size (w, h, d) = (%d, %d, %d)\n"
             "  bps = %d, spp = %d, iscmap = %d\n",
-            filename, ImageFileFormatExtensions[format1], nbytes1,
-            w1, h1, d1, bps1, spp1, iscmap1);
+            filename, ImageFileFormatExtensions[format1],
+            (unsigned long)nbytes1, w1, h1, d1, bps1, spp1, iscmap1);
         if (format1 != IFF_PNG) {
             fprintf(stderr, "Error: format is %d; should be %d\n",
                     format1, IFF_PNG);
@@ -231,16 +251,15 @@ size_t    nbytes1, nbytes2;
 
         /* Read header from array in memory */
     ret2 = 0;
-#if HAVE_FMEMOPEN
     data = l_binaryRead(filename, &nbytes2);
     ret2 = pixReadHeaderMem(data, nbytes2, &format2, &w2, &h2, &bps2,
                             &spp2, &iscmap2);
     lept_free(data);
     d2 = bps2 * spp2;
     if (d2 == 24) d2 = 32;
-    if (ret2)
+    if (ret2) {
         fprintf(stderr, "Error: couldn't mem-read header data: %s\n", filename);
-    else {
+    } else {
         if (nbytes1 != nbytes2 || format1 != format2 || w1 != w2 ||
             h1 != h2 || d1 != d2 || bps1 != bps2 || spp1 != spp2 ||
             iscmap1 != iscmap2) {
@@ -249,7 +268,6 @@ size_t    nbytes1, nbytes2;
             ret2 = 1;
         }
     }
-#endif  /* HAVE_FMEMOPEN */
 
     return ret1 || ret2;
 }

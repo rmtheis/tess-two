@@ -47,12 +47,12 @@ static const l_float32  VERY_SMALL_ANGLE = 0.001;  /* radians; ~0.06 degrees */
 static PIX *pixRotateAMColorFast2(PIX *pixs, l_float32 angle, l_uint8 grayval);
 static PIX *pixShiftRGB258(PIX  *pixs);
 static void rotateAMColorFastLow2(l_uint32  *datad, l_int32  w, l_int32  h,
-	                          l_int32  wpld, l_uint32  *datas,
-				  l_int32  wpls, l_float32  angle,
-				  l_uint8  grayval);
+                                  l_int32  wpld, l_uint32  *datas,
+                                  l_int32  wpls, l_float32  angle,
+                                  l_uint8  grayval);
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char      *filein, *fileout;
 l_float32  angle, deg2rad;
@@ -60,16 +60,14 @@ PIX       *pixs, *pixd;
 static char  mainName[] = "rotatefastalt";
 
     if (argc != 4)
-	exit(ERROR_INT("Syntax:  rotatefastalt filein angle fileout",
-	               mainName, 1));
+        return ERROR_INT("Syntax:  rotatefastalt filein angle fileout",
+                         mainName, 1);
     filein = argv[1];
     angle = atof(argv[2]);
     fileout = argv[3];
-
     deg2rad = 3.1415926535 / 180.;
-
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not read", mainName, 1));
+        return ERROR_INT("pixs not read", mainName, 1);
 
     startTimer();
     pixd = pixRotateAMColorFast2(pixs, deg2rad * angle, 255);
@@ -104,12 +102,12 @@ static char  mainName[] = "rotatefastalt";
  */
 PIX *
 pixRotateAMColorFast2(PIX       *pixs,
-	              l_float32  angle,
-		      l_uint8    grayval)
+                      l_float32  angle,
+                      l_uint8    grayval)
 {
 l_int32    w, h, wpls, wpld;
 l_uint32  *datas, *datad;
-PIX    	  *pixshft, *pixd;
+PIX       *pixshft, *pixd;
 
     PROCNAME("pixRotateAMColorFast2");
 
@@ -119,7 +117,7 @@ PIX    	  *pixshft, *pixd;
         return (PIX *)ERROR_PTR("pixs must be 32 bpp", procName, NULL);
 
     if (L_ABS(angle) < VERY_SMALL_ANGLE)
-	return pixClone(pixs);
+        return pixClone(pixs);
 
     if ((pixshft = pixShiftRGB258(pixs)) == NULL)
         return (PIX *)ERROR_PTR("pixshft not defined", procName, NULL);
@@ -131,7 +129,6 @@ PIX    	  *pixshft, *pixd;
     pixd = pixCreateTemplate(pixshft);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
-
     rotateAMColorFastLow2(datad, w, h, wpld, datas, wpls, angle, grayval);
 
     pixDestroy(&pixshft);
@@ -172,11 +169,11 @@ PIX       *pixd;
     for (i = 0; i < h; i++) {
         lines = datas + i * wpls;
         lined = datad + i * wpld;
-	for (j = 0; j < w; j++) {
-	    word = *(lines + j);
-	    *(lined + j) = ((word & 0xff000000) >> 2) |
-		           ((word & 0x00ff0000) >> 5) |
-		           ((word & 0x0000ff00) >> 8);
+        for (j = 0; j < w; j++) {
+            word = *(lines + j);
+            *(lined + j) = ((word & 0xff000000) >> 2) |
+                           ((word & 0x00ff0000) >> 5) |
+                           ((word & 0x0000ff00) >> 8);
         }
     }
 
@@ -194,12 +191,12 @@ PIX       *pixd;
 void
 rotateAMColorFastLow2(l_uint32  *datad,
                       l_int32    w,
-	              l_int32    h,
-	              l_int32    wpld,
-	              l_uint32  *datas,
-	              l_int32    wpls,
-	              l_float32  angle,
-		      l_uint8    grayval)
+                      l_int32    h,
+                      l_int32    wpld,
+                      l_uint32  *datas,
+                      l_int32    wpls,
+                      l_float32  angle,
+                      l_uint8    grayval)
 {
 l_int32    i, j, xcen, ycen, wm2, hm2;
 l_int32    xdif, ydif, xpm, ypm, xp, yp, xf, yf;
@@ -216,134 +213,133 @@ l_float32  sina, cosa;
 
     edgeval = (grayval << 24) | (grayval << 16) | (grayval << 8);
     for (i = 0; i < h; i++) {
-	ydif = ycen - i;
-	lined = datad + i * wpld;
-	for (j = 0; j < w; j++) {
-	    xdif = xcen - j;
-	    xpm = (l_int32)(-xdif * cosa - ydif * sina + 0.5);
-	    ypm = (l_int32)(-ydif * cosa + xdif * sina + 0.5);
-	    xp = xcen + (xpm >> 2);
-	    yp = ycen + (ypm >> 2);
-	    xf = xpm & 0x03;
-	    yf = ypm & 0x03;
+        ydif = ycen - i;
+        lined = datad + i * wpld;
+        for (j = 0; j < w; j++) {
+            xdif = xcen - j;
+            xpm = (l_int32)(-xdif * cosa - ydif * sina + 0.5);
+            ypm = (l_int32)(-ydif * cosa + xdif * sina + 0.5);
+            xp = xcen + (xpm >> 2);
+            yp = ycen + (ypm >> 2);
+            xf = xpm & 0x03;
+            yf = ypm & 0x03;
 
-		/* if off the edge, write the input grayval */
-	    if (xp < 0 || yp < 0 || xp > wm2 || yp > hm2) {
-	        *(lined + j) = edgeval;
-		continue;
-	    }
+                /* if off the edge, write the input grayval */
+            if (xp < 0 || yp < 0 || xp > wm2 || yp > hm2) {
+                *(lined + j) = edgeval;
+                continue;
+            }
 
-	    lines = datas + yp * wpls;
-	    pword = lines + xp;
+            lines = datas + yp * wpls;
+            pword = lines + xp;
 
-	    switch (xf + 4 * yf)
-	    {
+            switch (xf + 4 * yf)
+            {
             case 0:
-	        word = *pword;
-	        *(lined + j) = ((word & 0x3fc00000) << 2) |
-		               ((word & 0x0007f800) << 5) |
-			       ((word & 0x000000ff) << 8);
-	        break;
+                word = *pword;
+                *(lined + j) = ((word & 0x3fc00000) << 2) |
+                               ((word & 0x0007f800) << 5) |
+                               ((word & 0x000000ff) << 8);
+                break;
             case 1:
-	        word = 3 * (*pword) + *(pword + 1);
-	        *(lined + j) = (word & 0xff000000) |
-		               ((word & 0x001fe000) << 3) |
-		               ((word & 0x000003fc) << 6);
+                word = 3 * (*pword) + *(pword + 1);
+                *(lined + j) = (word & 0xff000000) |
+                               ((word & 0x001fe000) << 3) |
+                               ((word & 0x000003fc) << 6);
                 break;
             case 2:
-	        word = *pword + *(pword + 1);
-	        *(lined + j) = ((word & 0x7f800000) << 1) |
-		               ((word & 0x000ff000) << 4) |
-		               ((word & 0x000001fe) << 7);
+                word = *pword + *(pword + 1);
+                *(lined + j) = ((word & 0x7f800000) << 1) |
+                               ((word & 0x000ff000) << 4) |
+                               ((word & 0x000001fe) << 7);
                 break;
             case 3:
-	        word = *pword + 3 * (*(pword + 1));
-	        *(lined + j) = (word & 0xff000000) |
-		               ((word & 0x001fe000) << 3) |
-		               ((word & 0x000003fc) << 6);
+                word = *pword + 3 * (*(pword + 1));
+                *(lined + j) = (word & 0xff000000) |
+                               ((word & 0x001fe000) << 3) |
+                               ((word & 0x000003fc) << 6);
                 break;
             case 4:
-	        word = 3 * (*pword) + *(pword + wpls);
-	        *(lined + j) = (word & 0xff000000) |
-		               ((word & 0x001fe000) << 3) |
-		               ((word & 0x000003fc) << 6);
+                word = 3 * (*pword) + *(pword + wpls);
+                *(lined + j) = (word & 0xff000000) |
+                               ((word & 0x001fe000) << 3) |
+                               ((word & 0x000003fc) << 6);
                 break;
             case 5:
-	        word = 2 * (*pword) + *(pword + 1) + *(pword + wpls);
-	        *(lined + j) = (word & 0xff000000) |
-		               ((word & 0x001fe000) << 3) |
-		               ((word & 0x000003fc) << 6);
+                word = 2 * (*pword) + *(pword + 1) + *(pword + wpls);
+                *(lined + j) = (word & 0xff000000) |
+                               ((word & 0x001fe000) << 3) |
+                               ((word & 0x000003fc) << 6);
                 break;
             case 6:
-	        word = *pword + *(pword + 1);
-	        *(lined + j) = ((word & 0x7f800000) << 1) |
-		               ((word & 0x000ff000) << 4) |
-		               ((word & 0x000001fe) << 7);
+                word = *pword + *(pword + 1);
+                *(lined + j) = ((word & 0x7f800000) << 1) |
+                               ((word & 0x000ff000) << 4) |
+                               ((word & 0x000001fe) << 7);
                 break;
             case 7:
-	        word = *pword + 2 * (*(pword + 1)) + *(pword + wpls + 1);
-	        *(lined + j) = (word & 0xff000000) |
-		               ((word & 0x001fe000) << 3) |
-		               ((word & 0x000003fc) << 6);
+                word = *pword + 2 * (*(pword + 1)) + *(pword + wpls + 1);
+                *(lined + j) = (word & 0xff000000) |
+                               ((word & 0x001fe000) << 3) |
+                               ((word & 0x000003fc) << 6);
                 break;
             case 8:
-	        word = *pword + *(pword + wpls);
-	        *(lined + j) = ((word & 0x7f800000) << 1) |
-		               ((word & 0x000ff000) << 4) |
-		               ((word & 0x000001fe) << 7);
+                word = *pword + *(pword + wpls);
+                *(lined + j) = ((word & 0x7f800000) << 1) |
+                               ((word & 0x000ff000) << 4) |
+                               ((word & 0x000001fe) << 7);
                 break;
             case 9:
-	        word = *pword + *(pword + wpls);
-	        *(lined + j) = ((word & 0x7f800000) << 1) |
-		               ((word & 0x000ff000) << 4) |
-		               ((word & 0x000001fe) << 7);
+                word = *pword + *(pword + wpls);
+                *(lined + j) = ((word & 0x7f800000) << 1) |
+                               ((word & 0x000ff000) << 4) |
+                               ((word & 0x000001fe) << 7);
                 break;
             case 10:
-	        word = *pword + *(pword + 1) + *(pword + wpls) +
-		       *(pword + wpls + 1);
-	        *(lined + j) = (word & 0xff000000) |
-		               ((word & 0x001fe000) << 3) |
-		               ((word & 0x000003fc) << 6);
+                word = *pword + *(pword + 1) + *(pword + wpls) +
+                       *(pword + wpls + 1);
+                *(lined + j) = (word & 0xff000000) |
+                               ((word & 0x001fe000) << 3) |
+                               ((word & 0x000003fc) << 6);
                 break;
             case 11:
-	        word = *(pword + 1) + *(pword + wpls + 1);
-	        *(lined + j) = ((word & 0x7f800000) << 1) |
-		               ((word & 0x000ff000) << 4) |
-		               ((word & 0x000001fe) << 7);
+                word = *(pword + 1) + *(pword + wpls + 1);
+                *(lined + j) = ((word & 0x7f800000) << 1) |
+                               ((word & 0x000ff000) << 4) |
+                               ((word & 0x000001fe) << 7);
                 break;
             case 12:
-	        word = *pword + 3 * (*(pword + wpls));
-	        *(lined + j) = (word & 0xff000000) |
-		               ((word & 0x001fe000) << 3) |
-		               ((word & 0x000003fc) << 6);
+                word = *pword + 3 * (*(pword + wpls));
+                *(lined + j) = (word & 0xff000000) |
+                               ((word & 0x001fe000) << 3) |
+                               ((word & 0x000003fc) << 6);
                 break;
             case 13:
-	        word = *pword + 2 * (*(pword + wpls)) + *(pword + wpls + 1);
-	        *(lined + j) = (word & 0xff000000) |
-		               ((word & 0x001fe000) << 3) |
-		               ((word & 0x000003fc) << 6);
+                word = *pword + 2 * (*(pword + wpls)) + *(pword + wpls + 1);
+                *(lined + j) = (word & 0xff000000) |
+                               ((word & 0x001fe000) << 3) |
+                               ((word & 0x000003fc) << 6);
                 break;
             case 14:
-	        word = *(pword + wpls) + *(pword + wpls + 1);
-	        *(lined + j) = ((word & 0x7f800000) << 1) |
-		               ((word & 0x000ff000) << 4) |
-		               ((word & 0x000001fe) << 7);
+                word = *(pword + wpls) + *(pword + wpls + 1);
+                *(lined + j) = ((word & 0x7f800000) << 1) |
+                               ((word & 0x000ff000) << 4) |
+                               ((word & 0x000001fe) << 7);
                 break;
             case 15:
-	        word = *(pword + 1) + *(pword + wpls) +
-		           2 * (*(pword + wpls + 1));
-	        *(lined + j) = (word & 0xff000000) |
-		               ((word & 0x001fe000) << 3) |
-		               ((word & 0x000003fc) << 6);
+                word = *(pword + 1) + *(pword + wpls) +
+                           2 * (*(pword + wpls + 1));
+                *(lined + j) = (word & 0xff000000) |
+                               ((word & 0x001fe000) << 3) |
+                               ((word & 0x000003fc) << 6);
                 break;
             default:  /* for testing only; no interpolation, no shift */
-	        fprintf(stderr, "shouldn't get here\n");
+                fprintf(stderr, "shouldn't get here\n");
                 *(lined + j) = *pword;
-		break;
+                break;
             }
-	}
+        }
     }
 
     return;
 }
-

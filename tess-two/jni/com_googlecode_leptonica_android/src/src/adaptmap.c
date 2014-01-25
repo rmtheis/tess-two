@@ -152,7 +152,6 @@ static l_int32 *iaaGetLinearTRC(l_int32 **iaa, l_int32 diff);
 #endif  /* ~NO_CONSOLE_IO */
 
 
-
 /*------------------------------------------------------------------*
  *                Adaptive background normalization                 *
  *------------------------------------------------------------------*/
@@ -265,7 +264,7 @@ PIX     *pixmr, *pixmg, *pixmb, *pixmri, *pixmgi, *pixmbi;
     if (sx < 4 || sy < 4)
         return (PIX *)ERROR_PTR("sx and sy must be >= 4", procName, NULL);
     if (mincount > sx * sy) {
-        L_WARNING("mincount too large for tile size", procName);
+        L_WARNING("mincount too large for tile size\n", procName);
         mincount = (sx * sy) / 3;
     }
 
@@ -283,7 +282,7 @@ PIX     *pixmr, *pixmg, *pixmb, *pixmri, *pixmgi, *pixmbi;
         pixm = NULL;
         pixGetBackgroundGrayMap(pixs, pixim, sx, sy, thresh, mincount, &pixm);
         if (!pixm) {
-            L_WARNING("map not made; returning a copy of the source", procName);
+            L_WARNING("map not made; return a copy of the source\n", procName);
             return pixCopy(NULL, pixs);
         }
 
@@ -304,7 +303,7 @@ PIX     *pixmr, *pixmg, *pixmb, *pixmri, *pixmgi, *pixmbi;
             pixDestroy(&pixmr);
             pixDestroy(&pixmg);
             pixDestroy(&pixmb);
-            L_WARNING("map not made; returning a copy of the source", procName);
+            L_WARNING("map not made; return a copy of the source\n", procName);
             return pixCopy(NULL, pixs);
         }
 
@@ -505,7 +504,7 @@ PIX     *pixm;
     if (sx < 4 || sy < 4)
         return ERROR_INT("sx and sy must be >= 4", procName, 1);
     if (mincount > sx * sy) {
-        L_WARNING("mincount too large for tile size", procName);
+        L_WARNING("mincount too large for tile size\n", procName);
         mincount = (sx * sy) / 3;
     }
 
@@ -582,7 +581,7 @@ PIX     *pixmr, *pixmg, *pixmb;
     if (sx < 4 || sy < 4)
         return ERROR_INT("sx and sy must be >= 4", procName, 1);
     if (mincount > sx * sy) {
-        L_WARNING("mincount too large for tile size", procName);
+        L_WARNING("mincount too large for tile size\n", procName);
         mincount = (sx * sy) / 3;
     }
 
@@ -799,7 +798,7 @@ PIX       *pixd, *piximi, *pixb, *pixf, *pixims;
     if (sx < 4 || sy < 4)
         return ERROR_INT("sx and sy must be >= 4", procName, 1);
     if (mincount > sx * sy) {
-        L_WARNING("mincount too large for tile size", procName);
+        L_WARNING("mincount too large for tile size\n", procName);
         mincount = (sx * sy) / 3;
     }
 
@@ -902,7 +901,7 @@ PIX       *pixd, *piximi, *pixb, *pixf, *pixims;
         /* Fill all the holes in the map. */
     if (pixFillMapHoles(pixd, nx, ny, L_FILL_BLACK)) {
         pixDestroy(&pixd);
-        L_WARNING("can't make the map", procName);
+        L_WARNING("can't make the map\n", procName);
         return 1;
     }
 
@@ -979,7 +978,7 @@ PIX       *pixmr, *pixmg, *pixmb;
     if (sx < 4 || sy < 4)
         return ERROR_INT("sx and sy must be >= 4", procName, 1);
     if (mincount > sx * sy) {
-        L_WARNING("mincount too large for tile size", procName);
+        L_WARNING("mincount too large for tile size\n", procName);
         mincount = (sx * sy) / 3;
     }
 
@@ -1091,7 +1090,7 @@ PIX       *pixmr, *pixmg, *pixmb;
         pixDestroy(&pixmr);
         pixDestroy(&pixmg);
         pixDestroy(&pixmb);
-        L_WARNING("can't make the maps", procName);
+        L_WARNING("can't make the maps\n", procName);
         return 1;
     }
 
@@ -1186,7 +1185,7 @@ PIX       *pixm, *pixt1, *pixt2, *pixt3, *pixims;
     ny = pixGetHeight(pixs) / reduction;
     if (pixFillMapHoles(pixm, nx, ny, L_FILL_BLACK)) {
         pixDestroy(&pixm);
-        L_WARNING("can't make the map", procName);
+        L_WARNING("can't make the map\n", procName);
         return 1;
     }
 
@@ -1307,7 +1306,7 @@ PIX       *pixm, *pixmr, *pixmg, *pixmb, *pixt1, *pixt2, *pixt3, *pixims;
         pixDestroy(&pixmr);
         pixDestroy(&pixmg);
         pixDestroy(&pixmb);
-        L_WARNING("can't make the maps", procName);
+        L_WARNING("can't make the maps\n", procName);
         return 1;
     }
 
@@ -1417,7 +1416,7 @@ PIX      *pixt;
 
     if (nmiss == nx) {  /* no data in any column! */
         numaDestroy(&na);
-        L_WARNING("no bg found; no data in any column", procName);
+        L_WARNING("no bg found; no data in any column\n", procName);
         return 1;
     }
 
@@ -1550,14 +1549,14 @@ PIXA      *pixa;
     if (pixGetColormap(pixs))
         return ERROR_INT("pixs has colormap", procName, 1);
     if (!pixm) {
-        L_INFO("pixm not defined", procName);
+        L_INFO("pixm not defined\n", procName);
         return 0;
     }
     if (pixGetDepth(pixm) != 1)
         return ERROR_INT("pixm not 1 bpp", procName, 1);
     pixZero(pixm, &empty);
     if (empty) {
-        L_INFO("pixm has no fg pixels; nothing to do", procName);
+        L_INFO("pixm has no fg pixels; nothing to do\n", procName);
         return 0;
     }
 
@@ -1565,7 +1564,7 @@ PIXA      *pixa;
     n = boxaGetCount(boxa);
     for (i = 0; i < n; i++) {
         if ((pixmc = pixaGetPix(pixa, i, L_CLONE)) == NULL) {
-            L_WARNING("missing pixmc!", procName);
+            L_WARNING("missing pixmc!\n", procName);
             continue;
         }
         boxaGetBoxGeometry(boxa, i, &x, &y, NULL, NULL);
@@ -1767,7 +1766,7 @@ PIX       *pixsm, *pixd;
             if (val > 0)
                 val16 = (256 * bgval) / val;
             else {  /* shouldn't happen */
-                L_WARNING("smoothed bg has 0 pixel!", procName);
+                L_WARNING("smoothed bg has 0 pixel!\n", procName);
                 val16 = bgval / 2;
             }
             SET_DATA_TWO_BYTES(lined, j, val16);
@@ -2086,7 +2085,7 @@ PIXCMAP   *cmap;
     if (!cmap && d != 32)
         return (PIX *)ERROR_PTR("pixs not cmapped or 32 bpp", procName, NULL);
     if (mapval <= 0) {
-        L_WARNING("mapval must be > 0; setting to 255", procName);
+        L_WARNING("mapval must be > 0; setting to 255\n", procName);
         mapval = 255;
     }
 
@@ -2645,7 +2644,7 @@ l_uint32  *data1, *data2, *line1, *line2;
         if (found) break;
     }
     if (!found) {
-        L_WARNING("no pixel pair diffs as large as mindiff", procName);
+        L_WARNING("no pixel pair diffs as large as mindiff\n", procName);
         pixClearAll(pixs1);
         pixClearAll(pixs2);
         return 1;

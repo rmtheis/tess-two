@@ -38,8 +38,8 @@
 #include "allheaders.h"
 #include "readbarcode.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein;
 PIX         *pixs;
@@ -47,11 +47,11 @@ SARRAY      *saw1, *saw2, *saw3, *sad1, *sad2, *sad3;
 static char  mainName[] = "barcodetest";
 
     if (argc != 2)
-	exit(ERROR_INT(" Syntax:  barcodetest filein", mainName, 1));
+        return ERROR_INT(" Syntax:  barcodetest filein", mainName, 1);
 
     filein = argv[1];
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
 
     sad1 = pixProcessBarcodes(pixs, L_BF_ANY, L_USE_WIDTHS, &saw1, 0);
     sarrayWrite("/tmp/junksaw1", saw1);
@@ -73,6 +73,6 @@ static char  mainName[] = "barcodetest";
     sarrayDestroy(&sad3); */
 
     pixDestroy(&pixs);
-    exit(0);
+    return 0;
 }
 

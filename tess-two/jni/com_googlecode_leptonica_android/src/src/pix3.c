@@ -32,7 +32,7 @@
  *      (1) Mask-directed operations
  *      (2) Full-image bit-logical operations
  *      (3) Foreground pixel counting operations on 1 bpp images
- *      (4) Sum of pixel values
+ *      (4) Average and variance of pixel values
  *      (5) Mirrored tiling of a smaller image
  *
  *
@@ -56,22 +56,36 @@
  *    Foreground pixel counting in 1 bpp images
  *           l_int32     pixZero()
  *           l_int32     pixForegroundFraction()
- *           l_int32     pixCountPixels()
  *           NUMA       *pixaCountPixels()
- *           l_int32     pixCountPixelsInRow()
+ *           l_int32     pixCountPixels()
+ *           NUMA       *pixCountByRow()
+ *           NUMA       *pixCountByColumn()
  *           NUMA       *pixCountPixelsByRow()
  *           NUMA       *pixCountPixelsByColumn()
- *           NUMA       *pixSumPixelsByRow()
- *           NUMA       *pixSumPixelsByColumn()
+ *           l_int32     pixCountPixelsInRow()
+ *           NUMA       *pixGetMomentByColumn()
  *           l_int32     pixThresholdPixelSum()
  *           l_int32    *makePixelSumTab8()
  *           l_int32    *makePixelCentroidTab8()
  *
- *    Pixel counting in gray and colormapped images
- *           l_int32     pixCountArbInRect()
+ *    Average of pixel values in gray images
+ *           NUMA       *pixAverageByRow()
+ *           NUMA       *pixAverageByColumn()
+ *           l_int32     pixAverageInRect()
  *
- *    Sum of pixel values
- *           l_int32     pixSumPixelValues()
+ *    Variance of pixel values in gray images
+ *           NUMA       *pixVarianceByRow()
+ *           NUMA       *pixVarianceByColumn()
+ *           l_int32     pixVarianceInRect()
+ *
+ *    Average of absolute value of pixel differences in gray images
+ *           NUMA       *pixAbsDiffByRow()
+ *           NUMA       *pixAbsDiffByColumn()
+ *           l_int32     pixAbsDiffInRect()
+ *           l_int32     pixAbsDiffOnLine()
+ *
+ *    Count of pixels with specific value            *
+ *           l_int32     pixCountArbInRect()
  *
  *    Mirrored tiling
  *           PIX        *pixMirroredTiling()
@@ -81,6 +95,7 @@
  */
 
 #include <string.h>
+#include <math.h>
 #include "allheaders.h"
 
 static l_int32 findTilePatchCenter(PIX *pixs, BOX *box, l_int32 dir,
@@ -138,7 +153,7 @@ l_uint32  *datad, *datam, *lined, *linem;
     if (!pixd)
         return ERROR_INT("pixd not defined", procName, 1);
     if (!pixm) {
-        L_WARNING("no mask; nothing to do", procName);
+        L_WARNING("no mask; nothing to do\n", procName);
         return 0;
     }
     if (pixGetColormap(pixd)) {
@@ -169,9 +184,9 @@ l_uint32  *datad, *datam, *lined, *linem;
             PIX *pixmi = pixInvert(NULL, pixm);
             pixRasterop(pixd, 0, 0, wm, hm, PIX_MASK, pixmi, 0, 0);
             pixDestroy(&pixmi);
-        }
-        else  /* val == 1 */
+        } else {  /* val == 1 */
             pixRasterop(pixd, 0, 0, wm, hm, PIX_PAINT, pixm, 0, 0);
+        }
         return 0;
     }
 
@@ -195,7 +210,7 @@ l_uint32  *datad, *datam, *lined, *linem;
     w = L_MIN(wd, wm);
     h = L_MIN(hd, hm);
     if (L_ABS(wd - wm) > 7 || L_ABS(hd - hm) > 7)  /* allow a small tolerance */
-        L_WARNING("pixd and pixm sizes differ", procName);
+        L_WARNING("pixd and pixm sizes differ\n", procName);
 
     datad = pixGetData(pixd);
     datam = pixGetData(pixm);
@@ -400,8 +415,7 @@ PIX       *pixt;
                 }
             }
         }
-    }
-    else {  /* d == 32 */
+    } else {  /* d == 32 */
         for (i = 0; i < hmin; i++) {
             line = data + i * wpl;
             lines = datas + i * wpls;
@@ -622,9 +636,9 @@ l_uint32  *data, *datam, *line, *linem;
             PIX *pixmi = pixInvert(NULL, pixm);
             pixRasterop(pixd, x, y, wm, hm, PIX_MASK, pixmi, 0, 0);
             pixDestroy(&pixmi);
-        }
-        else  /* val == 1 */
+        } else {  /* val == 1 */
             pixRasterop(pixd, x, y, wm, hm, PIX_PAINT, pixm, 0, 0);
+        }
         return 0;
     }
 
@@ -753,14 +767,14 @@ PIXA     *pixa;
     if (wm < w || hm < h) {
         pixf = pixCreate(w, h, 1);
         pixRasterop(pixf, x, y, wm, hm, PIX_SRC, pixm, 0, 0);
-    }
-    else
+    } else {
         pixf = pixCopy(NULL, pixm);
+    }
 
         /* Get connected components of mask */
     boxa = pixConnComp(pixf, &pixa, 8);
     if ((n = pixaGetCount(pixa)) == 0) {
-        L_WARNING("no fg in mask", procName);
+        L_WARNING("no fg in mask\n", procName);
         pixDestroy(&pixf);
         pixaDestroy(&pixa);
         boxaDestroy(&boxa);
@@ -782,13 +796,13 @@ PIXA     *pixa;
         pix = pixaGetPix(pixa, i, L_CLONE);
         box = pixaGetBox(pixa, i, L_CLONE);
         boxGetGeometry(box, &bx, &by, &bw, &bh);
-	minside = L_MIN(bw, bh);
+        minside = L_MIN(bw, bh);
 
         findTilePatchCenter(pixdf, box, searchdir, L_MIN(minside, tilesize),
                             &dist, &xc, &yc);
         cctilesize = L_MIN(tilesize, dist);  /* for this c.c. */
         if (cctilesize < 1) {
-            L_WARNING("region not found!", procName);
+            L_WARNING("region not found!\n", procName);
             pixDestroy(&pix);
             boxDestroy(&box);
             retval = 1;
@@ -877,54 +891,58 @@ PIX       *pixd;
  *
  *      Input:  pixs (32 bpp rgba)
  *              val (32 bit unsigned color to use where alpha == 0)
- *              debugflag (generates intermediate images)
+ *              debug (displays layers of pixs)
  *      Return: pixd (32 bpp rgba), or null on error
  *
  *  Notes:
- *      (1) This is one of the few operations in leptonica that uses
- *          the alpha blending component in rgba images.  It sets
- *          the r, g and b components under every fully transparent alpha
- *          component to @val.
- *      (2) Full transparency is denoted by alpha == 0.  By setting
- *          all pixels to @val where alpha == 0, this can improve
- *          compressibility by reducing the entropy.
+ *      (1) This sets the r, g and b components under every fully
+ *          transparent alpha component to @val.  The alpha components
+ *          are unchanged.
+ *      (2) Full transparency is denoted by alpha == 0.  Setting
+ *          all pixels to a constant @val where alpha is transparent
+ *          can improve compressibility by reducing the entropy.
  *      (3) The visual result depends on how the image is displayed.
  *          (a) For display devices that respect the use of the alpha
  *              layer, this will not affect the appearance.
  *          (b) For typical leptonica operations, alpha is ignored,
  *              so there will be a change in appearance because this
  *              resets the rgb values in the fully transparent region.
- *      (4) For reading and writing rgba pix in png format, use
- *          pixReadRGBAPng() and pixWriteRGBAPng().
- *      (5) For example, if you want to rewrite all fully transparent
- *          pixels in a png file to white:
- *              pixs = pixReadRGBAPng(<infile>);  // special read
+ *      (4) pixRead() and pixWrite() will, by default, read and write
+ *          4-component (rgba) pix in png format.  To ignore the alpha
+ *          component after reading, or omit it on writing, pixSetSpp(..., 3).
+ *      (5) Here are some examples:
+ *          * To convert all fully transparent pixels in a 4 component
+ *            (rgba) png file to white:
+ *              pixs = pixRead(<infile>);
  *              pixd = pixSetUnderTransparency(pixs, 0xffffff00, 0);
- *          Then either use a normal write if you won't be using transparency:
+ *          * To write pixd with the alpha component:
  *              pixWrite(<outfile>, pixd, IFF_PNG);
- *          or an RGBA write if you want to preserve the transparency layer
- *              pixWriteRGBAPng(<outfile>, pixd);  // special write
- *      (6) Caution.  Because rgb images in leptonica typically
- *          have value 0 in the alpha channel, this function would
- *          interpret the entire image as fully transparent, and set
- *          every pixel to @val.  Because this is not desirable, instead
- *          we issue a warning and return a copy of the input pix.
+ *          * To write and rgba image without the alpha component, first do:
+ *              pixSetSpp(pixd, 3);
+ *            If you later want to use the alpha, spp must be reset to 4.
+ *          * (fancier) To remove the alpha by blending the image over
+ *            a white background:
+ *              pixRemoveAlpha()
+ *            This changes all pixel values where the alpha component is
+ *            not opaque (255).
+ *      (6) Caution.  rgb images in leptonica typically have value 0 in
+ *          the alpha channel, which is fully transparent.  If spp for
+ *          such an image were changed from 3 to 4, the image becomes
+ *          fully transparent, and this function will set each pixel to @val.
  *          If you really want to set every pixel to the same value,
  *          use pixSetAllArbitrary().
  *      (7) This is useful for compressing an RGBA image where the part
- *          of the image that is fully transparent is random; compression
+ *          of the image that is fully transparent is random junk; compression
  *          is typically improved by setting that region to a constant.
  *          For rendering as a 3 component RGB image over a uniform
- *          background, use pixAlphaBlendUniform().
+ *          background of arbitrary color, use pixAlphaBlendUniform().
  */
 PIX *
 pixSetUnderTransparency(PIX      *pixs,
                         l_uint32  val,
-                        l_int32   debugflag)
+                        l_int32   debug)
 {
-l_int32   isblack, rval, gval, bval;
-PIX      *pixr, *pixg, *pixb, *pixalpha, *pixm, *pixt, *pixd;
-PIXA     *pixa;
+PIX  *pixg, *pixm, *pixt, *pixd;
 
     PROCNAME("pixSetUnderTransparency");
 
@@ -932,64 +950,34 @@ PIXA     *pixa;
         return (PIX *)ERROR_PTR("pixs not defined or not 32 bpp",
                                 procName, NULL);
 
-    pixalpha = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
-    pixZero(pixalpha, &isblack);
-    if (isblack) {
-        L_WARNING(
-            "alpha channel is fully transparent; likely invalid; ignoring",
-            procName);
-        pixDestroy(&pixalpha);
+    if (pixGetSpp(pixs) != 4) {
+        L_WARNING("no alpha channel; returning a copy\n", procName);
         return pixCopy(NULL, pixs);
     }
-    pixr = pixGetRGBComponent(pixs, COLOR_RED);
-    pixg = pixGetRGBComponent(pixs, COLOR_GREEN);
-    pixb = pixGetRGBComponent(pixs, COLOR_BLUE);
 
         /* Make a mask from the alpha component with ON pixels
          * wherever the alpha component is fully transparent (0).
-         * One can do this:
+         * The hard way:
          *     l_int32 *lut = (l_int32 *)CALLOC(256, sizeof(l_int32));
          *     lut[0] = 1;
-         *     pixm = pixMakeMaskFromLUT(pixalpha, lut);
+         *     pixg = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
+         *     pixm = pixMakeMaskFromLUT(pixg, lut);
          *     FREE(lut);
          * But there's an easier way to set pixels in a mask where
          * the alpha component is 0 ...  */
-    pixm = pixThresholdToBinary(pixalpha, 1);
+    pixg = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
+    pixm = pixThresholdToBinary(pixg, 1);
 
-    if (debugflag) {
-        pixa = pixaCreate(0);
-        pixSaveTiled(pixs, pixa, 1, 1, 20, 32);
-        pixSaveTiled(pixm, pixa, 1, 0, 20, 0);
-        pixSaveTiled(pixr, pixa, 1, 1, 20, 0);
-        pixSaveTiled(pixg, pixa, 1, 0, 20, 0);
-        pixSaveTiled(pixb, pixa, 1, 0, 20, 0);
-        pixSaveTiled(pixalpha, pixa, 1, 0, 20, 0);
-    }
-
-        /* Clean each component and reassemble */
-    extractRGBValues(val, &rval, &gval, &bval);
-    pixSetMasked(pixr, pixm, rval);
-    pixSetMasked(pixg, pixm, gval);
-    pixSetMasked(pixb, pixm, bval);
-    pixd = pixCreateRGBImage(pixr, pixg, pixb);
-    pixSetRGBComponent(pixd, pixalpha, L_ALPHA_CHANNEL);
-
-    if (debugflag) {
-        pixSaveTiled(pixr, pixa, 1, 1, 20, 0);
-        pixSaveTiled(pixg, pixa, 1, 0, 20, 0);
-        pixSaveTiled(pixb, pixa, 1, 0, 20, 0);
-        pixSaveTiled(pixd, pixa, 1, 1, 20, 0);
-        pixt = pixaDisplay(pixa, 0, 0);
-        pixWriteTempfile("/tmp", "rgb.png", pixt, IFF_PNG, NULL);
+    if (debug) {
+        pixt = pixDisplayLayersRGBA(pixs, 0xffffff00, 600);
+        pixDisplay(pixt, 0, 0);
         pixDestroy(&pixt);
-        pixaDestroy(&pixa);
     }
 
-    pixDestroy(&pixr);
+    pixd = pixCopy(NULL, pixs);
+    pixSetMasked(pixd, pixm, (val & 0xffffff00));
     pixDestroy(&pixg);
-    pixDestroy(&pixb);
     pixDestroy(&pixm);
-    pixDestroy(&pixalpha);
     return pixd;
 }
 
@@ -1083,7 +1071,7 @@ pixOr(PIX  *pixd,
 
 #if  EQUAL_SIZE_WARNING
     if (!pixSizesEqual(pixs1, pixs2))
-        L_WARNING("pixs1 and pixs2 not equal sizes", procName);
+        L_WARNING("pixs1 and pixs2 not equal sizes\n", procName);
 #endif  /* EQUAL_SIZE_WARNING */
 
         /* Prepare pixd to be a copy of pixs1 */
@@ -1145,7 +1133,7 @@ pixAnd(PIX  *pixd,
 
 #if  EQUAL_SIZE_WARNING
     if (!pixSizesEqual(pixs1, pixs2))
-        L_WARNING("pixs1 and pixs2 not equal sizes", procName);
+        L_WARNING("pixs1 and pixs2 not equal sizes\n", procName);
 #endif  /* EQUAL_SIZE_WARNING */
 
         /* Prepare pixd to be a copy of pixs1 */
@@ -1207,7 +1195,7 @@ pixXor(PIX  *pixd,
 
 #if  EQUAL_SIZE_WARNING
     if (!pixSizesEqual(pixs1, pixs2))
-        L_WARNING("pixs1 and pixs2 not equal sizes", procName);
+        L_WARNING("pixs1 and pixs2 not equal sizes\n", procName);
 #endif  /* EQUAL_SIZE_WARNING */
 
         /* Prepare pixd to be a copy of pixs1 */
@@ -1270,7 +1258,7 @@ l_int32  w, h;
 
 #if  EQUAL_SIZE_WARNING
     if (!pixSizesEqual(pixs1, pixs2))
-        L_WARNING("pixs1 and pixs2 not equal sizes", procName);
+        L_WARNING("pixs1 and pixs2 not equal sizes\n", procName);
 #endif  /* EQUAL_SIZE_WARNING */
 
     pixGetDimensions(pixs1, &w, &h, NULL);
@@ -1278,16 +1266,13 @@ l_int32  w, h;
         pixd = pixCopy(NULL, pixs1);
         pixRasterop(pixd, 0, 0, w, h, PIX_DST & PIX_NOT(PIX_SRC),
             pixs2, 0, 0);   /* src1 & (~src2)  */
-    }
-    else if (pixd == pixs1) {
+    } else if (pixd == pixs1) {
         pixRasterop(pixd, 0, 0, w, h, PIX_DST & PIX_NOT(PIX_SRC),
             pixs2, 0, 0);   /* src1 & (~src2)  */
-    }
-    else if (pixd == pixs2) {
+    } else if (pixd == pixs2) {
         pixRasterop(pixd, 0, 0, w, h, PIX_NOT(PIX_DST) & PIX_SRC,
             pixs1, 0, 0);   /* src1 & (~src2)  */
-    }
-    else  { /* pixd != pixs1 && pixd != pixs2 */
+    } else  { /* pixd != pixs1 && pixd != pixs2 */
         pixCopy(pixd, pixs1);  /* sizes pixd to pixs1 if unequal */
         pixRasterop(pixd, 0, 0, w, h, PIX_DST & PIX_NOT(PIX_SRC),
             pixs2, 0, 0);   /* src1 & (~src2)  */
@@ -1387,6 +1372,49 @@ l_int32  w, h, count;
 
 
 /*!
+ *  pixaCountPixels()
+ *
+ *      Input:  pixa (array of 1 bpp pix)
+ *      Return: na of ON pixels in each pix, or null on error
+ */
+NUMA *
+pixaCountPixels(PIXA  *pixa)
+{
+l_int32   d, i, n, count;
+l_int32  *tab;
+NUMA     *na;
+PIX      *pix;
+
+    PROCNAME("pixaCountPixels");
+
+    if (!pixa)
+        return (NUMA *)ERROR_PTR("pix not defined", procName, NULL);
+
+    if ((n = pixaGetCount(pixa)) == 0)
+        return numaCreate(1);
+
+    pix = pixaGetPix(pixa, 0, L_CLONE);
+    d = pixGetDepth(pix);
+    pixDestroy(&pix);
+    if (d != 1)
+        return (NUMA *)ERROR_PTR("pixa not 1 bpp", procName, NULL);
+
+    tab = makePixelSumTab8();
+    if ((na = numaCreate(n)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    for (i = 0; i < n; i++) {
+        pix = pixaGetPix(pixa, i, L_CLONE);
+        pixCountPixels(pix, &count, tab);
+        numaAddNumber(na, count);
+        pixDestroy(&pix);
+    }
+
+    FREE(tab);
+    return na;
+}
+
+
+/*!
  *  pixCountPixels()
  *
  *      Input:  pix (1 bpp)
@@ -1455,44 +1483,177 @@ l_uint32  *data;
 
 
 /*!
- *  pixaCountPixels()
+ *  pixCountByRow()
  *
- *      Input:  pixa (array of 1 bpp pix)
- *      Return: na of ON pixels in each pix, or null on error
+ *      Input:  pix (1 bpp)
+ *              box (<optional> clipping box for count; can be null)
+ *      Return: na of number of ON pixels by row, or null on error
+ *
+ *  Notes:
+ *      (1) To resample for a bin size different from 1, use
+ *          numaUniformSampling() on the result of this function.
  */
 NUMA *
-pixaCountPixels(PIXA  *pixa)
+pixCountByRow(PIX      *pix,
+              BOX      *box)
 {
-l_int32   d, i, n, count;
-l_int32  *tab;
-NUMA     *na;
-PIX      *pix;
+l_int32    i, j, w, h, wpl, count, xstart, xend, ystart, yend, bw, bh;
+l_uint32  *line, *data;
+NUMA      *na;
 
-    PROCNAME("pixaCountPixels");
+    PROCNAME("pixCountByRow");
 
-    if (!pixa)
-        return (NUMA *)ERROR_PTR("pix not defined", procName, NULL);
+    if (!pix || pixGetDepth(pix) != 1)
+        return (NUMA *)ERROR_PTR("pix undefined or not 1 bpp", procName, NULL);
+    if (!box)
+        return pixCountPixelsByRow(pix, NULL);
 
-    if ((n = pixaGetCount(pixa)) == 0)
-        return numaCreate(1);
+    pixGetDimensions(pix, &w, &h, NULL);
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return (NUMA *)ERROR_PTR("invalid clipping box", procName, NULL);
 
-    pix = pixaGetPix(pixa, 0, L_CLONE);
-    d = pixGetDepth(pix);
-    pixDestroy(&pix);
-    if (d != 1)
-        return (NUMA *)ERROR_PTR("pixa not 1 bpp", procName, NULL);
-
-    tab = makePixelSumTab8();
-    if ((na = numaCreate(n)) == NULL)
+    if ((na = numaCreate(bh)) == NULL)
         return (NUMA *)ERROR_PTR("na not made", procName, NULL);
-    for (i = 0; i < n; i++) {
-        pix = pixaGetPix(pixa, i, L_CLONE);
-        pixCountPixels(pix, &count, tab);
+    numaSetParameters(na, ystart, 1);
+    data = pixGetData(pix);
+    wpl = pixGetWpl(pix);
+    for (i = ystart; i < yend; i++) {
+        count = 0;
+        line = data + i * wpl;
+        for (j = xstart; j < xend; j++) {
+            if (GET_DATA_BIT(line, j))
+                count++;
+        }
         numaAddNumber(na, count);
-        pixDestroy(&pix);
     }
 
-    FREE(tab);
+    return na;
+}
+
+
+/*!
+ *  pixCountByColumn()
+ *
+ *      Input:  pix (1 bpp)
+ *              box (<optional> clipping box for count; can be null)
+ *      Return: na of number of ON pixels by column, or null on error
+ *
+ *  Notes:
+ *      (1) To resample for a bin size different from 1, use
+ *          numaUniformSampling() on the result of this function.
+ */
+NUMA *
+pixCountByColumn(PIX      *pix,
+                 BOX      *box)
+{
+l_int32    i, j, w, h, wpl, count, xstart, xend, ystart, yend, bw, bh;
+l_uint32  *line, *data;
+NUMA      *na;
+
+    PROCNAME("pixCountByColumn");
+
+    if (!pix || pixGetDepth(pix) != 1)
+        return (NUMA *)ERROR_PTR("pix undefined or not 1 bpp", procName, NULL);
+    if (!box)
+        return pixCountPixelsByColumn(pix);
+
+    pixGetDimensions(pix, &w, &h, NULL);
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return (NUMA *)ERROR_PTR("invalid clipping box", procName, NULL);
+
+    if ((na = numaCreate(bw)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    numaSetParameters(na, xstart, 1);
+    data = pixGetData(pix);
+    wpl = pixGetWpl(pix);
+    for (j = xstart; j < xend; j++) {
+        count = 0;
+        for (i = ystart; i < yend; i++) {
+            line = data + i * wpl;
+            if (GET_DATA_BIT(line, j))
+                count++;
+        }
+        numaAddNumber(na, count);
+    }
+
+    return na;
+}
+
+
+/*!
+ *  pixCountPixelsByRow()
+ *
+ *      Input:  pix (1 bpp)
+ *              tab8  (<optional> 8-bit pixel lookup table)
+ *      Return: na of counts, or null on error
+ */
+NUMA *
+pixCountPixelsByRow(PIX      *pix,
+                    l_int32  *tab8)
+{
+l_int32   h, i, count;
+l_int32  *tab;
+NUMA     *na;
+
+    PROCNAME("pixCountPixelsByRow");
+
+    if (!pix || pixGetDepth(pix) != 1)
+        return (NUMA *)ERROR_PTR("pix undefined or not 1 bpp", procName, NULL);
+
+    if (!tab8)
+        tab = makePixelSumTab8();
+    else
+        tab = tab8;
+
+    h = pixGetHeight(pix);
+    if ((na = numaCreate(h)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    for (i = 0; i < h; i++) {
+        pixCountPixelsInRow(pix, i, &count, tab);
+        numaAddNumber(na, count);
+    }
+
+    if (!tab8) FREE(tab);
+    return na;
+}
+
+
+/*!
+ *  pixCountPixelsByColumn()
+ *
+ *      Input:  pix (1 bpp)
+ *      Return: na of counts in each column, or null on error
+ */
+NUMA *
+pixCountPixelsByColumn(PIX  *pix)
+{
+l_int32     i, j, w, h, wpl;
+l_uint32   *line, *data;
+l_float32  *array;
+NUMA       *na;
+
+    PROCNAME("pixCountPixelsByColumn");
+
+    if (!pix || pixGetDepth(pix) != 1)
+        return (NUMA *)ERROR_PTR("pix undefined or not 1 bpp", procName, NULL);
+
+    pixGetDimensions(pix, &w, &h, NULL);
+    if ((na = numaCreate(w)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    numaSetCount(na, w);
+    array = numaGetFArray(na, L_NOCOPY);
+    data = pixGetData(pix);
+    wpl = pixGetWpl(pix);
+    for (i = 0; i < h; i++) {
+        line = data + wpl * i;
+        for (j = 0; j < w; j++) {
+            if (GET_DATA_BIT(line, j))
+                array[j] += 1.0;
+        }
+    }
+
     return na;
 }
 
@@ -1568,63 +1729,27 @@ l_uint32  *line;
 
 
 /*!
- *  pixCountPixelsByRow()
+ *  pixGetMomentByColumn()
  *
  *      Input:  pix (1 bpp)
- *              tab8  (<optional> 8-bit pixel lookup table)
- *      Return: na of counts, or null on error
+ *              order (of moment, either 1 or 2)
+ *      Return: na of first moment of fg pixels, by column, or null on error
  */
 NUMA *
-pixCountPixelsByRow(PIX      *pix,
-                    l_int32  *tab8)
-{
-l_int32   h, i, count;
-l_int32  *tab;
-NUMA     *na;
-
-    PROCNAME("pixCountPixelsByRow");
-
-    if (!pix || pixGetDepth(pix) != 1)
-        return (NUMA *)ERROR_PTR("pix undefined or not 1 bpp", procName, NULL);
-
-    if (!tab8)
-        tab = makePixelSumTab8();
-    else
-        tab = tab8;
-
-    h = pixGetHeight(pix);
-    if ((na = numaCreate(h)) == NULL)
-        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
-    for (i = 0; i < h; i++) {
-        pixCountPixelsInRow(pix, i, &count, tab);
-        numaAddNumber(na, count);
-    }
-
-    if (!tab8)
-        FREE(tab);
-
-    return na;
-}
-
-
-/*!
- *  pixCountPixelsByColumn()
- *
- *      Input:  pix (1 bpp)
- *      Return: na of counts in each column, or null on error
- */
-NUMA *
-pixCountPixelsByColumn(PIX  *pix)
+pixGetMomentByColumn(PIX     *pix,
+                     l_int32  order)
 {
 l_int32     i, j, w, h, wpl;
 l_uint32   *line, *data;
 l_float32  *array;
 NUMA       *na;
 
-    PROCNAME("pixCountPixelsByColumn");
+    PROCNAME("pixGetMomentByColumn");
 
     if (!pix || pixGetDepth(pix) != 1)
         return (NUMA *)ERROR_PTR("pix undefined or not 1 bpp", procName, NULL);
+    if (order != 1 && order != 2)
+        return (NUMA *)ERROR_PTR("order of moment not 1 or 2", procName, NULL);
 
     pixGetDimensions(pix, &w, &h, NULL);
     if ((na = numaCreate(w)) == NULL)
@@ -1636,118 +1761,12 @@ NUMA       *na;
     for (i = 0; i < h; i++) {
         line = data + wpl * i;
         for (j = 0; j < w; j++) {
-            if (GET_DATA_BIT(line, j))
-                array[j] += 1.0;
-        }
-    }
-
-    return na;
-}
-
-
-/*!
- *  pixSumPixelsByRow()
- *
- *      Input:  pix (1, 8 or 16 bpp; no colormap)
- *              tab8  (<optional> lookup table for 1 bpp; use null for 8 bpp)
- *      Return: na of pixel sums by row, or null on error
- *
- *  Notes:
- *      (1) To resample for a bin size different from 1, use
- *          numaUniformSampling() on the result of this function.
- */
-NUMA *
-pixSumPixelsByRow(PIX      *pix,
-                  l_int32  *tab8)
-{
-l_int32    i, j, w, h, d, wpl;
-l_uint32  *line, *data;
-l_float32  sum;
-NUMA      *na;
-
-    PROCNAME("pixSumPixelsByRow");
-
-    if (!pix)
-        return (NUMA *)ERROR_PTR("pix not defined", procName, NULL);
-    pixGetDimensions(pix, &w, &h, &d);
-    if (d != 1 && d != 8 && d != 16)
-        return (NUMA *)ERROR_PTR("pix not 1, 8 or 16 bpp", procName, NULL);
-    if (pixGetColormap(pix) != NULL)
-        return (NUMA *)ERROR_PTR("pix colormapped", procName, NULL);
-
-    if (d == 1)
-        return pixCountPixelsByRow(pix, tab8);
-
-    if ((na = numaCreate(h)) == NULL)
-        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
-    data = pixGetData(pix);
-    wpl = pixGetWpl(pix);
-    for (i = 0; i < h; i++) {
-        sum = 0.0;
-        line = data + i * wpl;
-        if (d == 8) {
-            sum += w * 255;
-            for (j = 0; j < w; j++)
-                sum -= GET_DATA_BYTE(line, j);
-        }
-        else {  /* d == 16 */
-            sum += w * 0xffff;
-            for (j = 0; j < w; j++)
-                sum -= GET_DATA_TWO_BYTES(line, j);
-        }
-        numaAddNumber(na, sum);
-    }
-
-    return na;
-}
-
-
-/*!
- *  pixSumPixelsByColumn()
- *
- *      Input:  pix (1, 8 or 16 bpp; no colormap)
- *      Return: na of pixel sums by column, or null on error
- *
- *  Notes:
- *      (1) To resample for a bin size different from 1, use
- *          numaUniformSampling() on the result of this function.
- */
-NUMA *
-pixSumPixelsByColumn(PIX  *pix)
-{
-l_int32     i, j, w, h, d, wpl;
-l_uint32   *line, *data;
-l_float32  *array;
-NUMA       *na;
-
-    PROCNAME("pixSumPixelsByColumn");
-
-    if (!pix)
-        return (NUMA *)ERROR_PTR("pix not defined", procName, NULL);
-    pixGetDimensions(pix, &w, &h, &d);
-    if (d != 1 && d != 8 && d != 16)
-        return (NUMA *)ERROR_PTR("pix not 1, 8 or 16 bpp", procName, NULL);
-    if (pixGetColormap(pix) != NULL)
-        return (NUMA *)ERROR_PTR("pix colormapped", procName, NULL);
-
-    if (d == 1)
-        return pixCountPixelsByColumn(pix);
-
-    if ((na = numaCreate(w)) == NULL)
-        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
-    numaSetCount(na, w);
-    array = numaGetFArray(na, L_NOCOPY);
-    data = pixGetData(pix);
-    wpl = pixGetWpl(pix);
-    for (i = 0; i < h; i++) {
-        line = data + wpl * i;
-        if (d == 8) {
-            for (j = 0; j < w; j++)
-                array[j] += 255 - GET_DATA_BYTE(line, j);
-        }
-        else {  /* d == 16 */
-            for (j = 0; j < w; j++)
-                array[j] += 0xffff - GET_DATA_TWO_BYTES(line, j);
+            if (GET_DATA_BIT(line, j)) {
+                if (order == 1)
+                    array[j] += i;
+                else  /* order == 2 */
+                    array[j] += i * i;
+            }
         }
     }
 
@@ -1933,7 +1952,671 @@ l_int32  *tab;
 
 
 /*-------------------------------------------------------------*
- *        Pixel counting in gray and colormapped images        *
+ *             Average of pixel values in gray images          *
+ *-------------------------------------------------------------*/
+/*!
+ *  pixAverageByRow()
+ *
+ *      Input:  pix (8 or 16 bpp; no colormap)
+ *              box (<optional> clipping box for sum; can be null)
+ *              type (L_WHITE_IS_MAX, L_BLACK_IS_MAX)
+ *      Return: na of pixel averages by row, or null on error
+ *
+ *  Notes:
+ *      (1) To resample for a bin size different from 1, use
+ *          numaUniformSampling() on the result of this function.
+ *      (2) If type == L_BLACK_IS_MAX, black pixels get the maximum
+ *          value (0xff for 8 bpp, 0xffff for 16 bpp) and white get 0.
+ */
+NUMA *
+pixAverageByRow(PIX     *pix,
+                BOX     *box,
+                l_int32  type)
+{
+l_int32    i, j, w, h, d, wpl, xstart, xend, ystart, yend, bw, bh;
+l_uint32  *line, *data;
+l_float64  norm, sum;
+NUMA      *na;
+
+    PROCNAME("pixAverageByRow");
+
+    if (!pix)
+        return (NUMA *)ERROR_PTR("pix not defined", procName, NULL);
+    pixGetDimensions(pix, &w, &h, &d);
+    if (d != 8 && d != 16)
+        return (NUMA *)ERROR_PTR("pix not 8 or 16 bpp", procName, NULL);
+    if (type != L_WHITE_IS_MAX && type != L_BLACK_IS_MAX)
+        return (NUMA *)ERROR_PTR("invalid type", procName, NULL);
+    if (pixGetColormap(pix) != NULL)
+        return (NUMA *)ERROR_PTR("pix colormapped", procName, NULL);
+
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return (NUMA *)ERROR_PTR("invalid clipping box", procName, NULL);
+
+    norm = 1. / (l_float32)bw;
+    if ((na = numaCreate(bh)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    numaSetParameters(na, ystart, 1);
+    data = pixGetData(pix);
+    wpl = pixGetWpl(pix);
+    for (i = ystart; i < yend; i++) {
+        sum = 0.0;
+        line = data + i * wpl;
+        if (d == 8) {
+            for (j = xstart; j < xend; j++)
+                sum += GET_DATA_BYTE(line, j);
+            if (type == L_BLACK_IS_MAX)
+                sum = bw * 255 - sum;
+        } else {  /* d == 16 */
+            for (j = xstart; j < xend; j++)
+                sum += GET_DATA_TWO_BYTES(line, j);
+            if (type == L_BLACK_IS_MAX)
+                sum = bw * 0xffff - sum;
+        }
+        numaAddNumber(na, (l_float32)(norm * sum));
+    }
+
+    return na;
+}
+
+
+/*!
+ *  pixAverageByColumn()
+ *
+ *      Input:  pix (8 or 16 bpp; no colormap)
+ *              box (<optional> clipping box for sum; can be null)
+ *              type (L_WHITE_IS_MAX, L_BLACK_IS_MAX)
+ *      Return: na of pixel averages by column, or null on error
+ *
+ *  Notes:
+ *      (1) To resample for a bin size different from 1, use
+ *          numaUniformSampling() on the result of this function.
+ *      (2) If type == L_BLACK_IS_MAX, black pixels get the maximum
+ *          value (0xff for 8 bpp, 0xffff for 16 bpp) and white get 0.
+ */
+NUMA *
+pixAverageByColumn(PIX     *pix,
+                   BOX     *box,
+                   l_int32  type)
+{
+l_int32     i, j, w, h, d, wpl, xstart, xend, ystart, yend, bw, bh;
+l_uint32   *line, *data;
+l_float32   norm, sum;
+NUMA       *na;
+
+    PROCNAME("pixAverageByColumn");
+
+    if (!pix)
+        return (NUMA *)ERROR_PTR("pix not defined", procName, NULL);
+    pixGetDimensions(pix, &w, &h, &d);
+
+    if (d != 8 && d != 16)
+        return (NUMA *)ERROR_PTR("pix not 8 or 16 bpp", procName, NULL);
+    if (type != L_WHITE_IS_MAX && type != L_BLACK_IS_MAX)
+        return (NUMA *)ERROR_PTR("invalid type", procName, NULL);
+    if (pixGetColormap(pix) != NULL)
+        return (NUMA *)ERROR_PTR("pix colormapped", procName, NULL);
+
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return (NUMA *)ERROR_PTR("invalid clipping box", procName, NULL);
+
+    if ((na = numaCreate(bw)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    numaSetParameters(na, xstart, 1);
+    norm = 1. / (l_float32)bh;
+    data = pixGetData(pix);
+    wpl = pixGetWpl(pix);
+    for (j = xstart; j < xend; j++) {
+        sum = 0.0;
+        if (d == 8) {
+            for (i = ystart; i < yend; i++) {
+                line = data + i * wpl;
+                sum += GET_DATA_BYTE(line, j);
+            }
+            if (type == L_BLACK_IS_MAX)
+                sum = bh * 255 - sum;
+        } else {  /* d == 16 */
+            for (i = ystart; i < yend; i++) {
+                line = data + i * wpl;
+                sum += GET_DATA_TWO_BYTES(line, j);
+            }
+            if (type == L_BLACK_IS_MAX)
+                sum = bh * 0xffff - sum;
+        }
+        numaAddNumber(na, (l_float32)(norm * sum));
+    }
+
+    return na;
+}
+
+
+/*!
+ *  pixAverageInRect()
+ *
+ *      Input:  pix (1, 2, 4, 8 bpp; not cmapped)
+ *              box (<optional> if null, use entire image)
+ *              &ave (<return> average of pixel values in region)
+ *      Return: 0 if OK; 1 on error
+ */
+l_int32
+pixAverageInRect(PIX        *pix,
+                 BOX        *box,
+                 l_float32  *pave)
+{
+l_int32    w, h, d, wpl, i, j, xstart, xend, ystart, yend, bw, bh;
+l_uint32  *data, *line;
+l_float64  ave;
+
+    PROCNAME("pixAverageInRect");
+
+    if (!pave)
+        return ERROR_INT("pave not defined", procName, 1);
+    *pave = 0;
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+    pixGetDimensions(pix, &w, &h, &d);
+    if (d != 1 && d != 2 && d != 4 && d != 8)
+        return ERROR_INT("pix not 1, 2, 4 or 8 bpp", procName, 1);
+    if (pixGetColormap(pix) != NULL)
+        return ERROR_INT("pix is colormapped", procName, 1);
+
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return ERROR_INT("invalid clipping box", procName, 1);
+
+    wpl = pixGetWpl(pix);
+    data = pixGetData(pix);
+    ave = 0;
+    for (i = ystart; i < yend; i++) {
+        line = data + i * wpl;
+        for (j = xstart; j < xend; j++) {
+            if (d == 1)
+                ave += GET_DATA_BIT(line, j);
+            else if (d == 2)
+                ave += GET_DATA_DIBIT(line, j);
+            else if (d == 4)
+                ave += GET_DATA_QBIT(line, j);
+            else  /* d == 8 */
+                ave += GET_DATA_BYTE(line, j);
+        }
+    }
+
+    *pave = ave / (bw * bh);
+    return 0;
+}
+
+
+/*------------------------------------------------------------------*
+ *               Variance of pixel values in gray images            *
+ *------------------------------------------------------------------*/
+/*!
+ *  pixVarianceByRow()
+ *
+ *      Input:  pix (8 or 16 bpp; no colormap)
+ *              box (<optional> clipping box for variance; can be null)
+ *      Return: na of rmsdev by row, or null on error
+ *
+ *  Notes:
+ *      (1) To resample for a bin size different from 1, use
+ *          numaUniformSampling() on the result of this function.
+ *      (2) We are actually computing the RMS deviation in each row.
+ *          This is the square root of the variance.
+ */
+NUMA *
+pixVarianceByRow(PIX     *pix,
+                 BOX     *box)
+{
+l_int32     i, j, w, h, d, wpl, xstart, xend, ystart, yend, bw, bh, val;
+l_uint32   *line, *data;
+l_float64   sum1, sum2, norm, ave, var, rootvar;
+NUMA       *na;
+
+    PROCNAME("pixVarianceByRow");
+
+    if (!pix)
+        return (NUMA *)ERROR_PTR("pix not defined", procName, NULL);
+    pixGetDimensions(pix, &w, &h, &d);
+    if (d != 8 && d != 16)
+        return (NUMA *)ERROR_PTR("pix not 8 or 16 bpp", procName, NULL);
+    if (pixGetColormap(pix) != NULL)
+        return (NUMA *)ERROR_PTR("pix colormapped", procName, NULL);
+
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return (NUMA *)ERROR_PTR("invalid clipping box", procName, NULL);
+
+    if ((na = numaCreate(bh)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    numaSetParameters(na, ystart, 1);
+    norm = 1. / (l_float32)bw;
+    data = pixGetData(pix);
+    wpl = pixGetWpl(pix);
+    for (i = ystart; i < yend; i++) {
+        sum1 = sum2 = 0.0;
+        line = data + i * wpl;
+        for (j = xstart; j < xend; j++) {
+            if (d == 8)
+                val = GET_DATA_BYTE(line, j);
+            else  /* d == 16 */
+                val = GET_DATA_TWO_BYTES(line, j);
+            sum1 += val;
+            sum2 += val * val;
+        }
+        ave = norm * sum1;
+        var = norm * sum2 - ave * ave;
+        rootvar = sqrt(var);
+        numaAddNumber(na, (l_float32)rootvar);
+    }
+
+    return na;
+}
+
+
+/*!
+ *  pixVarianceByColumn()
+ *
+ *      Input:  pix (8 or 16 bpp; no colormap)
+ *              box (<optional> clipping box for variance; can be null)
+ *      Return: na of rmsdev by column, or null on error
+ *
+ *  Notes:
+ *      (1) To resample for a bin size different from 1, use
+ *          numaUniformSampling() on the result of this function.
+ *      (2) We are actually computing the RMS deviation in each row.
+ *          This is the square root of the variance.
+ */
+NUMA *
+pixVarianceByColumn(PIX     *pix,
+                    BOX     *box)
+{
+l_int32     i, j, w, h, d, wpl, xstart, xend, ystart, yend, bw, bh, val;
+l_uint32   *line, *data;
+l_float64   sum1, sum2, norm, ave, var, rootvar;
+NUMA       *na;
+
+    PROCNAME("pixVarianceByColumn");
+
+    if (!pix)
+        return (NUMA *)ERROR_PTR("pix not defined", procName, NULL);
+    pixGetDimensions(pix, &w, &h, &d);
+    if (d != 8 && d != 16)
+        return (NUMA *)ERROR_PTR("pix not 8 or 16 bpp", procName, NULL);
+    if (pixGetColormap(pix) != NULL)
+        return (NUMA *)ERROR_PTR("pix colormapped", procName, NULL);
+
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return (NUMA *)ERROR_PTR("invalid clipping box", procName, NULL);
+
+    if ((na = numaCreate(bw)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    numaSetParameters(na, xstart, 1);
+    norm = 1. / (l_float32)bh;
+    data = pixGetData(pix);
+    wpl = pixGetWpl(pix);
+    for (j = xstart; j < xend; j++) {
+        sum1 = sum2 = 0.0;
+        for (i = ystart; i < yend; i++) {
+            line = data + wpl * i;
+            if (d == 8)
+                val = GET_DATA_BYTE(line, j);
+            else  /* d == 16 */
+                val = GET_DATA_TWO_BYTES(line, j);
+            sum1 += val;
+            sum2 += val * val;
+        }
+        ave = norm * sum1;
+        var = norm * sum2 - ave * ave;
+        rootvar = sqrt(var);
+        numaAddNumber(na, (l_float32)rootvar);
+    }
+
+    return na;
+}
+
+
+/*!
+ *  pixVarianceInRect()
+ *
+ *      Input:  pix (1, 2, 4, 8 bpp; not cmapped)
+ *              box (<optional> if null, use entire image)
+ *              &rootvar (<return> sqrt variance of pixel values in region)
+ *      Return: 0 if OK; 1 on error
+ */
+l_int32
+pixVarianceInRect(PIX        *pix,
+                  BOX        *box,
+                  l_float32  *prootvar)
+{
+l_int32    w, h, d, wpl, i, j, xstart, xend, ystart, yend, bw, bh, val;
+l_uint32  *data, *line;
+l_float64  sum1, sum2, norm, ave, var;
+
+    PROCNAME("pixVarianceInRect");
+
+    if (!prootvar)
+        return ERROR_INT("prootvar not defined", procName, 1);
+    *prootvar = 0;
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+    pixGetDimensions(pix, &w, &h, &d);
+    if (d != 1 && d != 2 && d != 4 && d != 8)
+        return ERROR_INT("pix not 1, 2, 4 or 8 bpp", procName, 1);
+    if (pixGetColormap(pix) != NULL)
+        return ERROR_INT("pix is colormapped", procName, 1);
+
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return ERROR_INT("invalid clipping box", procName, 1);
+
+    wpl = pixGetWpl(pix);
+    data = pixGetData(pix);
+    sum1 = sum2 = 0.0;
+    for (i = ystart; i < yend; i++) {
+        line = data + i * wpl;
+        for (j = xstart; j < xend; j++) {
+            if (d == 1) {
+                val = GET_DATA_BIT(line, j);
+                sum1 += val;
+                sum2 += val * val;
+            } else if (d == 2) {
+                val = GET_DATA_DIBIT(line, j);
+                sum1 += val;
+                sum2 += val * val;
+            } else if (d == 4) {
+                val = GET_DATA_QBIT(line, j);
+                sum1 += val;
+                sum2 += val * val;
+            } else {  /* d == 8 */
+                val = GET_DATA_BYTE(line, j);
+                sum1 += val;
+                sum2 += val * val;
+            }
+        }
+    }
+    norm = 1.0 / (bw * bh);
+    ave = norm * sum1;
+    var = norm * sum2 - ave * ave;
+    *prootvar = (l_float32)sqrt(var);
+    return 0;
+}
+
+
+/*---------------------------------------------------------------------*
+ *    Average of absolute value of pixel differences in gray images    *
+ *---------------------------------------------------------------------*/
+/*!
+ *  pixAbsDiffByRow()
+ *
+ *      Input:  pix (8 bpp; no colormap)
+ *              box (<optional> clipping box for region; can be null)
+ *      Return: na of abs val pixel difference averages by row, or null on error
+ *
+ *  Notes:
+ *      (1) This is an average over differences of adjacent pixels along
+ *          each row.
+ *      (2) To resample for a bin size different from 1, use
+ *          numaUniformSampling() on the result of this function.
+ */
+NUMA *
+pixAbsDiffByRow(PIX  *pix,
+                BOX  *box)
+{
+l_int32    i, j, w, h, wpl, xstart, xend, ystart, yend, bw, bh, val0, val1;
+l_uint32  *line, *data;
+l_float64  norm, sum;
+NUMA      *na;
+
+    PROCNAME("pixAbsDiffByRow");
+
+    if (!pix || pixGetDepth(pix) != 8)
+        return (NUMA *)ERROR_PTR("pix undefined or not 8 bpp", procName, NULL);
+    if (pixGetColormap(pix) != NULL)
+        return (NUMA *)ERROR_PTR("pix colormapped", procName, NULL);
+
+    pixGetDimensions(pix, &w, &h, NULL);
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return (NUMA *)ERROR_PTR("invalid clipping box", procName, NULL);
+    if (bw < 2)
+        return (NUMA *)ERROR_PTR("row width must be >= 2", procName, NULL);
+
+    norm = 1. / (l_float32)(bw - 1);
+    if ((na = numaCreate(bh)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    numaSetParameters(na, ystart, 1);
+    data = pixGetData(pix);
+    wpl = pixGetWpl(pix);
+    for (i = ystart; i < yend; i++) {
+        sum = 0.0;
+        line = data + i * wpl;
+        val0 = GET_DATA_BYTE(line, xstart);
+        for (j = xstart + 1; j < xend; j++) {
+            val1 = GET_DATA_BYTE(line, j);
+            sum += L_ABS(val1 - val0);
+            val0 = val1;
+        }
+        numaAddNumber(na, (l_float32)(norm * sum));
+    }
+
+    return na;
+}
+
+
+/*!
+ *  pixAbsDiffByColumn()
+ *
+ *      Input:  pix (8 bpp; no colormap)
+ *              box (<optional> clipping box for region; can be null)
+ *      Return: na of abs val pixel difference averages by column,
+ *              or null on error
+ *
+ *  Notes:
+ *      (1) This is an average over differences of adjacent pixels along
+ *          each column.
+ *      (2) To resample for a bin size different from 1, use
+ *          numaUniformSampling() on the result of this function.
+ */
+NUMA *
+pixAbsDiffByColumn(PIX  *pix,
+                   BOX  *box)
+{
+l_int32    i, j, w, h, wpl, xstart, xend, ystart, yend, bw, bh, val0, val1;
+l_uint32  *line, *data;
+l_float64  norm, sum;
+NUMA      *na;
+
+    PROCNAME("pixAbsDiffByColumn");
+
+    if (!pix || pixGetDepth(pix) != 8)
+        return (NUMA *)ERROR_PTR("pix undefined or not 8 bpp", procName, NULL);
+    if (pixGetColormap(pix) != NULL)
+        return (NUMA *)ERROR_PTR("pix colormapped", procName, NULL);
+
+    pixGetDimensions(pix, &w, &h, NULL);
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return (NUMA *)ERROR_PTR("invalid clipping box", procName, NULL);
+    if (bh < 2)
+        return (NUMA *)ERROR_PTR("column height must be >= 2", procName, NULL);
+
+    norm = 1. / (l_float32)(bh - 1);
+    if ((na = numaCreate(bw)) == NULL)
+        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    numaSetParameters(na, xstart, 1);
+    data = pixGetData(pix);
+    wpl = pixGetWpl(pix);
+    for (j = xstart; j < xend; j++) {
+        sum = 0.0;
+        line = data + ystart * wpl;
+        val0 = GET_DATA_BYTE(line, j);
+        for (i = ystart + 1; i < yend; i++) {
+            line = data + i * wpl;
+            val1 = GET_DATA_BYTE(line, j);
+            sum += L_ABS(val1 - val0);
+            val0 = val1;
+        }
+        numaAddNumber(na, (l_float32)(norm * sum));
+    }
+
+    return na;
+}
+
+
+/*!
+ *  pixAbsDiffInRect()
+ *
+ *      Input:  pix (8 bpp; not cmapped)
+ *              box (<optional> if null, use entire image)
+ *              dir (differences along L_HORIZONTAL_LINE or L_VERTICAL_LINE)
+ *              &absdiff (<return> average of abs diff pixel values in region)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) This gives the average over the abs val of differences of
+ *          adjacent pixels values, along either each
+ *             row:     dir == L_HORIZONTAL_LINE
+ *             column:  dir == L_VERTICAL_LINE
+ */
+l_int32
+pixAbsDiffInRect(PIX        *pix,
+                 BOX        *box,
+                 l_int32     dir,
+                 l_float32  *pabsdiff)
+{
+l_int32    w, h, wpl, i, j, xstart, xend, ystart, yend, bw, bh, val0, val1;
+l_uint32  *data, *line;
+l_float64  norm, sum;
+
+    PROCNAME("pixAbsDiffInRect");
+
+    if (!pabsdiff)
+        return ERROR_INT("pave not defined", procName, 1);
+    *pabsdiff = 0;
+    if (!pix || pixGetDepth(pix) != 8)
+        return ERROR_INT("pix undefined or not 8 bpp", procName, 1);
+    if (dir != L_HORIZONTAL_LINE && dir != L_VERTICAL_LINE)
+        return ERROR_INT("invalid direction", procName, 1);
+    if (pixGetColormap(pix) != NULL)
+        return ERROR_INT("pix is colormapped", procName, 1);
+
+    pixGetDimensions(pix, &w, &h, NULL);
+    if (boxClipToRectangleParams(box, w, h, &xstart, &ystart, &xend, &yend,
+                                 &bw, &bh) == 1)
+        return ERROR_INT("invalid clipping box", procName, 1);
+
+    wpl = pixGetWpl(pix);
+    data = pixGetData(pix);
+    if (dir == L_HORIZONTAL_LINE) {
+        norm = 1. / (l_float32)(bh * (bw - 1));
+        sum = 0.0;
+        for (i = ystart; i < yend; i++) {
+            line = data + i * wpl;
+            val0 = GET_DATA_BYTE(line, xstart);
+            for (j = xstart + 1; j < xend; j++) {
+                val1 = GET_DATA_BYTE(line, j);
+                sum += L_ABS(val1 - val0);
+                val0 = val1;
+            }
+        }
+    } else {  /* vertical line */
+        norm = 1. / (l_float32)(bw * (bh - 1));
+        sum = 0.0;
+        for (j = xstart; j < xend; j++) {
+            line = data + ystart * wpl;
+            val0 = GET_DATA_BYTE(line, j);
+            for (i = ystart + 1; i < yend; i++) {
+                line = data + i * wpl;
+                val1 = GET_DATA_BYTE(line, j);
+                sum += L_ABS(val1 - val0);
+                val0 = val1;
+            }
+        }
+    }
+    *pabsdiff = (l_float32)(norm * sum);
+    return 0;
+}
+
+
+/*!
+ *  pixAbsDiffOnLine()
+ *
+ *      Input:  pix (8 bpp; not cmapped)
+ *              x1, y1 (first point; x1 <= x2, y1 <= y2)
+ *              x2, y2 (first point)
+ *              &absdiff (<return> average of abs diff pixel values on line)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) This gives the average over the abs val of differences of
+ *          adjacent pixels values, along a line that is either horizontal
+ *          or vertical.
+ *      (2) If horizontal, require x1 < x2; if vertical, require y1 < y2.
+ */
+l_int32
+pixAbsDiffOnLine(PIX        *pix,
+                 l_int32     x1,
+                 l_int32     y1,
+                 l_int32     x2,
+                 l_int32     y2,
+                 l_float32  *pabsdiff)
+{
+l_int32    w, h, i, j, dir, size, sum;
+l_uint32   val0, val1;
+
+    PROCNAME("pixAbsDiffOnLine");
+
+    if (!pabsdiff)
+        return ERROR_INT("pave not defined", procName, 1);
+    *pabsdiff = 0;
+    if (!pix || pixGetDepth(pix) != 8)
+        return ERROR_INT("pix undefined or not 8 bpp", procName, 1);
+    if (y1 == y2) {
+        dir = L_HORIZONTAL_LINE;
+    } else if (x1 == x2) {
+        dir = L_VERTICAL_LINE;
+    } else {
+        return ERROR_INT("line is neither horiz nor vert", procName, 1);
+    }
+    if (pixGetColormap(pix) != NULL)
+        return ERROR_INT("pix is colormapped", procName, 1);
+
+    pixGetDimensions(pix, &w, &h, NULL);
+    sum = 0;
+    if (dir == L_HORIZONTAL_LINE) {
+        x1 = L_MAX(x1, 0);
+        x2 = L_MIN(x2, w - 1);
+        if (x1 >= x2)
+            return ERROR_INT("x1 >= x2", procName, 1);
+        size = x2 - x1;
+        pixGetPixel(pix, x1, y1, &val0);
+        for (j = x1 + 1; j <= x2; j++) {
+            pixGetPixel(pix, j, y1, &val1);
+            sum += L_ABS((l_int32)val1 - (l_int32)val0);
+            val0 = val1;
+        }
+    } else {  /* vertical */
+        y1 = L_MAX(y1, 0);
+        y2 = L_MIN(y2, h - 1);
+        if (y1 >= y2)
+            return ERROR_INT("y1 >= y2", procName, 1);
+        size = y2 - y1;
+        pixGetPixel(pix, x1, y1, &val0);
+        for (i = y1 + 1; i <= y2; i++) {
+            pixGetPixel(pix, x1, i, &val1);
+            sum += L_ABS((l_int32)val1 - (l_int32)val0);
+            val0 = val1;
+        }
+    }
+    *pabsdiff = (l_float32)sum / (l_float32)size;
+    return 0;
+}
+
+
+/*-------------------------------------------------------------*
+ *              Count of pixels with specific value            *
  *-------------------------------------------------------------*/
 /*!
  *  pixCountArbInRect()
@@ -1987,8 +2670,7 @@ l_uint32  *data, *line;
                 if (pixval == val) (*pcount)++;
             }
         }
-    }
-    else {
+    } else {
         boxGetGeometry(box, &bx, &by, &bw, &bh);
         for (i = 0; i < bh; i += factor) {
             if (by + i < 0 || by + i >= h) continue;
@@ -2005,83 +2687,6 @@ l_uint32  *data, *line;
         *pcount = *pcount * factor * factor;
     return 0;
 }
-
-
-/*-------------------------------------------------------------*
- *                       Sum of pixel values                   *
- *-------------------------------------------------------------*/
-/*!
- *  pixSumPixelValues()
- *
- *      Input:  pix (1, 2, 4, 8, 16, 32 bpp; not cmapped)
- *              box (<optional> if null, use entire image)
- *              &sum (<return> sum of pixel values in region)
- *      Return: 0 if OK; 1 on error
- */
-l_int32
-pixSumPixelValues(PIX        *pix,
-                  BOX        *box,
-                  l_float64  *psum)
-{
-l_int32    w, h, d, wpl, i, j, xstart, xend, ystart, yend, bw, bh;
-l_uint32  *data, *line;
-l_float64  sum;
-BOX       *boxc;
-
-    PROCNAME("pixSumPixelValues");
-
-    if (!psum)
-        return ERROR_INT("psum not defined", procName, 1);
-    *psum = 0;
-    if (!pix)
-        return ERROR_INT("pix not defined", procName, 1);
-    if (pixGetColormap(pix) != NULL)
-        return ERROR_INT("pix is colormapped", procName, 1);
-    pixGetDimensions(pix, &w, &h, &d);
-    if (d != 1 && d != 2 && d != 4 && d != 8 && d != 16 && d != 32)
-        return ERROR_INT("pix not 1, 2, 4, 8, 16 or 32 bpp", procName, 1);
-
-    wpl = pixGetWpl(pix);
-    data = pixGetData(pix);
-    boxc = NULL;
-    if (box) {
-        boxc = boxClipToRectangle(box, w, h);
-        if (!boxc)
-            return ERROR_INT("box outside image", procName, 1);
-    }
-    xstart = ystart = 0;
-    xend = w;
-    yend = h;
-    if (boxc) {
-        boxGetGeometry(boxc, &xstart, &ystart, &bw, &bh);
-        xend = xstart + bw;  /* 1 past the end */
-        yend = ystart + bh;  /* 1 past the end */
-        boxDestroy(&boxc);
-    }
-
-    sum = 0;
-    for (i = ystart; i < yend; i++) {
-        line = data + i * wpl;
-        for (j = xstart; j < xend; j++) {
-            if (d == 1)
-                sum += GET_DATA_BIT(line, j);
-            else if (d == 2)
-                sum += GET_DATA_DIBIT(line, j);
-            else if (d == 4)
-                sum += GET_DATA_QBIT(line, j);
-            else if (d == 8)
-                sum += GET_DATA_BYTE(line, j);
-            else if (d == 16)
-                sum += GET_DATA_TWO_BYTES(line, j);
-            else if (d == 32)
-                sum += line[j];
-        }
-    }
-    *psum = sum;
-
-    return 0;
-}
-
 
 
 /*-------------------------------------------------------------*
@@ -2123,8 +2728,10 @@ PIX      *pixd, *pixsfx, *pixsfy, *pixsfxy, *pix;
         return (PIX *)ERROR_PTR("pixs size illegal", procName, NULL);
     if (d != 8 && d != 32)
         return (PIX *)ERROR_PTR("depth not 32 bpp", procName, NULL);
+
     if ((pixd = pixCreate(w, h, d)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopySpp(pixd, pixs);
 
     nx = (w + wt - 1) / wt;
     ny = (h + ht - 1) / ht;
@@ -2224,8 +2831,7 @@ l_uint32  val, maxval;
                     }
                 }
             }
-        }
-        else {  /* search to right */
+        } else {  /* search to right */
             for (j = bx + bw; j < w; j++) {
                 for (i = ystart; i <= yend; i++) {
                     pixGetPixel(pixs, j, i, &val);
@@ -2240,8 +2846,7 @@ l_uint32  val, maxval;
                 }
             }
         }
-    }
-    else {  /* searchdir == L_VERT */
+    } else {  /* searchdir == L_VERT */
         top = by;    /* distance above box */
         bot = h - by - bh + 1;   /* distance below box */
         xstart = bx + bw / 3;
@@ -2261,8 +2866,7 @@ l_uint32  val, maxval;
                     }
                 }
             }
-        }
-        else {  /* search below */
+        } else {  /* search below */
             for (i = by + bh; i < h; i++) {
                 for (j = xstart; j <=xend; j++) {
                     pixGetPixel(pixs, j, i, &val);

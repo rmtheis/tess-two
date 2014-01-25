@@ -41,7 +41,7 @@
  *      We also make this code available here ("out of the box") so that you
  *      can build and run dwamorph1_reg and dwamorph2_reg, without
  *      first building and running dwalineargen.c
- *   
+ *
  *   Q. Why do we build code for operations up to 63 in width and height?
  *   A. Atomic DWA operations work on Sels that have hits and misses
  *      that are not larger than 31 pixel positions from the origin.
@@ -55,14 +55,14 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 SELA        *sela;
 static char  mainName[] = "dwalineargen";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax:  dwalineargen", mainName, 1));
+        return ERROR_INT(" Syntax:  dwalineargen", mainName, 1);
 
         /* Generate the linear sel dwa code */
     sela = selaAddDwaLinear(NULL);

@@ -41,8 +41,8 @@
 void RotateOrthTest(PIX *pix, L_REGPARAMS *rp);
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 PIX          *pixs;
 L_REGPARAMS  *rp;

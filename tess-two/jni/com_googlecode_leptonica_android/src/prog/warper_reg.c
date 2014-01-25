@@ -44,8 +44,8 @@ static const l_int32 nx[] = {4, 3, 2, 1};
 static const l_int32 ny[] = {4, 3, 2, 1};
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       i, k, newline;
 PIX          *pixs, *pixt, *pixg, *pixd;
@@ -108,7 +108,7 @@ PIX      *pixt;
             ((rand() >> 16) & 0xff) << L_GREEN_SHIFT |
             ((rand() >> 16) & 0xff) << L_BLUE_SHIFT;
     pixt = pixColorizeGray(*ppixd, color, 0);
-    pixSaveTiled(pixt, pixac, 1, newline, 20, 32);
+    pixSaveTiled(pixt, pixac, 1.0, newline, 20, 32);
     pixDestroy(&pixt);
     pixDestroy(ppixd);
     return;
@@ -130,7 +130,7 @@ PIX      *pixd;
             ((rand() >> 16) & 0xff) << L_GREEN_SHIFT |
             ((rand() >> 16) & 0xff) << L_BLUE_SHIFT;
     pixd = pixSimpleCaptcha(pixs, 25, nterms, seed, color, 0);
-    pixSaveTiled(pixd, pixac, 1, newline, 20, 32);
+    pixSaveTiled(pixd, pixac, 1.0, newline, 20, 32);
     pixDestroy(&pixd);
     return;
 }

@@ -52,6 +52,27 @@
  *        l_int32     pixSaveTiledOutline()
  *        l_int32     pixSaveTiledWithText()
  *        void        l_chooseDisplayProg()
+ *
+ *  Supported file formats:
+ *  (1) Writing is supported without any external libraries:
+ *          bmp
+ *          pnm   (including pbm, pgm, etc)
+ *          spix  (raw serialized)
+ *  (2) Writing is supported with installation of external libraries:
+ *          png
+ *          jpg   (standard jfif version)
+ *          tiff  (including most varieties of compression)
+ *          gif
+ *          webp
+ *  (3) Writing is supported through special interfaces:
+ *          ps (PostScript, in psio1.c, psio2.c):
+ *              level 1 (uncompressed)
+ *              level 2 (g4 and dct encoding: requires tiff, jpg)
+ *              level 3 (g4, dct and flate encoding: requires tiff, jpg, zlib)
+ *          pdf (PDF, in pdfio.c):
+ *              level 1 (g4 and dct encoding: requires tiff, jpg)
+ *              level 2 (g4, dct and flate encoding: requires tiff, jpg, zlib)
+ *  (4) No other output formats are supported, such as jp2 (jpeg2000)
  */
 
 #include <string.h>
@@ -62,15 +83,16 @@
     /*   insuring the filename extension matches the image compression.  */
 #define  WRITE_AS_NAMED    1
 
-    /* MS VC++ can't handle array initialization with static consts !   */
-#define L_BUF_SIZE   512
-
-    /* Display program (xv, xli or xzgv) to be invoked by pixDisplay()  */
+    /* Display program (xv, xli, xzgv, open) to be invoked by pixDisplay()  */
 #ifdef _WIN32
 static l_int32  var_DISPLAY_PROG = L_DISPLAY_WITH_IV;  /* default */
+#elif  defined(__APPLE__)
+static l_int32  var_DISPLAY_PROG = L_DISPLAY_WITH_OPEN;  /* default */
 #else
 static l_int32  var_DISPLAY_PROG = L_DISPLAY_WITH_XZGV;  /* default */
 #endif  /* _WIN32 */
+
+static const l_int32  L_BUF_SIZE = 512;
 static const l_int32  MAX_DISPLAY_WIDTH = 1000;
 static const l_int32  MAX_DISPLAY_HEIGHT = 800;
 static const l_int32  MAX_SIZE_FOR_PNG = 200;
@@ -242,9 +264,9 @@ FILE  *fp;
             strncpy(filebuf, fname, strlen(fname));
             strcat(filebuf, ".");
             strcat(filebuf, ImageFileFormatExtensions[format]);
-        }
-        else
+        } else {
             filebuf = (char *)fname;
+        }
 
         fp = fopenWriteStream(filebuf, "wb+");
         if (filebuf != fname)
@@ -340,7 +362,7 @@ pixWriteStream(FILE    *fp,
         break;
 
     case IFF_WEBP:
-        return pixWriteStreamWebP(fp, pix, 80);
+        return pixWriteStreamWebP(fp, pix, 80, 0);
         break;
 
     case IFF_LPDF:
@@ -391,9 +413,9 @@ l_int32  format;
 
         /* Determine output format */
     format = getImpliedFileFormat(filename);
-    if (format == IFF_UNKNOWN)
+    if (format == IFF_UNKNOWN) {
         format = IFF_PNG;
-    else if (format == IFF_TIFF) {
+    } else if (format == IFF_TIFF) {
         if (pixGetDepth(pix) == 1)
             format = IFF_TIFF_G4;
         else
@@ -409,14 +431,14 @@ l_int32  format;
         quality = L_MAX(quality, 0);
         if (progressive != 0 && progressive != 1) {
             progressive = 0;
-            L_WARNING("invalid progressive; setting to baseline", procName);
+            L_WARNING("invalid progressive; setting to baseline\n", procName);
         }
         if (quality == 0)
             quality = 75;
         pixWriteJpeg (filename, pix, quality, progressive);
-    }
-    else
+    } else {
         pixWrite(filename, pix, format);
+    }
 
     return 0;
 }
@@ -667,20 +689,24 @@ l_int32  ret;
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
- *      (1) This displays the image using xv, xli or xzgv on Unix,
+ *      (1) This displays the image using xzgv, xli or xv on Unix,
  *          or i_view on Windows.  The display program must be on
  *          your $PATH variable.  It is chosen by setting the global
  *          var_DISPLAY_PROG, using l_chooseDisplayProg().
- *          Default on Unix is xv.
+ *          Default on Unix is xzgv.
  *      (2) Images with dimensions larger than MAX_DISPLAY_WIDTH or
  *          MAX_DISPLAY_HEIGHT are downscaled to fit those constraints.
  *          This is particulary important for displaying 1 bpp images
  *          with xv, because xv automatically downscales large images
- *          by subsampling, which looks lousy.  For 1 bpp, we use
+ *          by subsampling, which looks poor.  For 1 bpp, we use
  *          scale-to-gray to get decent-looking anti-aliased images.
  *          In all cases, we write a temporary file to /tmp, that is
  *          read by the display program.
- *      (3) Note: this function uses a static internal variable to number
+ *      (3) For spp == 4, we call pixDisplayLayersRGBA() to show 3
+ *          versions of the image: the image with a fully opaque
+ *          alpha, the alpha, and the image as it would appear with
+ *          a white background.
+ *      (4) Note: this function uses a static internal variable to number
  *          output files written by a single process.  Behavior with a
  *          shared library may be unpredictable.
  */
@@ -716,9 +742,10 @@ pixDisplayWithTitle(PIX         *pixs,
 char           *tempname;
 char            buffer[L_BUF_SIZE];
 static l_int32  index = 0;  /* caution: not .so or thread safe */
-l_int32         w, h, d, ignore;
+l_int32         w, h, d, spp, maxheight, opaque, threeviews, ignore;
 l_float32       ratw, rath, ratmin;
-PIX            *pixt;
+PIX            *pix0, *pix1, *pix2;
+PIXCMAP        *cmap;
 #ifndef _WIN32
 l_int32         wt, ht;
 #else
@@ -731,82 +758,107 @@ char            fullpath[_MAX_PATH];
     if (dispflag != 1) return 0;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
-    if (var_DISPLAY_PROG != L_DISPLAY_WITH_XV &&
+    if (var_DISPLAY_PROG != L_DISPLAY_WITH_XZGV &&
         var_DISPLAY_PROG != L_DISPLAY_WITH_XLI &&
-        var_DISPLAY_PROG != L_DISPLAY_WITH_XZGV &&
-        var_DISPLAY_PROG != L_DISPLAY_WITH_IV)
+        var_DISPLAY_PROG != L_DISPLAY_WITH_XV &&
+        var_DISPLAY_PROG != L_DISPLAY_WITH_IV &&
+        var_DISPLAY_PROG != L_DISPLAY_WITH_OPEN) {
         return ERROR_INT("no program chosen for display", procName, 1);
-
-    pixGetDimensions(pixs, &w, &h, &d);
-    if (w <= MAX_DISPLAY_WIDTH && h <= MAX_DISPLAY_HEIGHT) {
-        if (d == 16)  /* take MSB */
-            pixt = pixConvert16To8(pixs, 1);
-        else
-            pixt = pixClone(pixs);
     }
-    else {
+
+        /* Display with three views if either spp = 4 or if colormapped
+         * and the alpha component is not fully opaque */
+    opaque = TRUE;
+    if ((cmap = pixGetColormap(pixs)) != NULL)
+        pixcmapIsOpaque(cmap, &opaque);
+    spp = pixGetSpp(pixs);
+    threeviews = (spp == 4 || !opaque) ? TRUE : FALSE;
+
+        /* If colormapped and not opaque, remove the colormap to RGBA */
+    if (!opaque)
+        pix0 = pixRemoveColormap(pixs, REMOVE_CMAP_WITH_ALPHA);
+    else
+        pix0 = pixClone(pixs);
+
+        /* Scale if necessary; this will also remove a colormap */
+    pixGetDimensions(pix0, &w, &h, &d);
+    maxheight = (threeviews) ? MAX_DISPLAY_HEIGHT / 3 : MAX_DISPLAY_HEIGHT;
+    if (w <= MAX_DISPLAY_WIDTH && h <= maxheight) {
+        if (d == 16)  /* take MSB */
+            pix1 = pixConvert16To8(pix0, 1);
+        else
+            pix1 = pixClone(pix0);
+    } else {
         ratw = (l_float32)MAX_DISPLAY_WIDTH / (l_float32)w;
-        rath = (l_float32)MAX_DISPLAY_HEIGHT / (l_float32)h;
+        rath = (l_float32)maxheight / (l_float32)h;
         ratmin = L_MIN(ratw, rath);
         if (ratmin < 0.125 && d == 1)
-            pixt = pixScaleToGray8(pixs);
+            pix1 = pixScaleToGray8(pix0);
         else if (ratmin < 0.25 && d == 1)
-            pixt = pixScaleToGray4(pixs);
+            pix1 = pixScaleToGray4(pix0);
         else if (ratmin < 0.33 && d == 1)
-            pixt = pixScaleToGray3(pixs);
+            pix1 = pixScaleToGray3(pix0);
         else if (ratmin < 0.5 && d == 1)
-            pixt = pixScaleToGray2(pixs);
+            pix1 = pixScaleToGray2(pix0);
         else
-            pixt = pixScale(pixs, ratmin, ratmin);
-        if (!pixt)
-            return ERROR_INT("pixt not made", procName, 1);
+            pix1 = pixScale(pix0, ratmin, ratmin);
     }
+    pixDestroy(&pix0);
+    if (!pix1)
+        return ERROR_INT("pix1 not made", procName, 1);
+
+        /* Generate the three views if required */
+    if (threeviews)
+        pix2 = pixDisplayLayersRGBA(pix1, 0xffffff00, 0);
+    else
+        pix2 = pixClone(pix1);
 
     if (index == 0) {
-        lept_rmdir("display");
-        lept_mkdir("display");
+        lept_rmdir("disp");
+        lept_mkdir("disp");
     }
 
     index++;
-    if (pixGetDepth(pixt) < 8 ||
+    if (pixGetDepth(pix2) < 8 ||
         (w < MAX_SIZE_FOR_PNG && h < MAX_SIZE_FOR_PNG)) {
-        snprintf(buffer, L_BUF_SIZE, "/tmp/display/write.%03d.png", index);
-        pixWrite(buffer, pixt, IFF_PNG);
-    }
-    else {
-        snprintf(buffer, L_BUF_SIZE, "/tmp/display/write.%03d.jpg", index);
-        pixWrite(buffer, pixt, IFF_JFIF_JPEG);
+        snprintf(buffer, L_BUF_SIZE, "/tmp/disp/write.%03d.png", index);
+        pixWrite(buffer, pix2, IFF_PNG);
+    } else {
+        snprintf(buffer, L_BUF_SIZE, "/tmp/disp/write.%03d.jpg", index);
+        pixWrite(buffer, pix2, IFF_JFIF_JPEG);
     }
     tempname = stringNew(buffer);
 
 #ifndef _WIN32
 
         /* Unix */
-    if (var_DISPLAY_PROG == L_DISPLAY_WITH_XV) {
-        if (title)
-            snprintf(buffer, L_BUF_SIZE,
-                     "xv -quit -geometry +%d+%d -name \"%s\" %s &",
-                     x, y, title, tempname);
-        else
-            snprintf(buffer, L_BUF_SIZE,
-                     "xv -quit -geometry +%d+%d %s &", x, y, tempname);
-    }
-    else if (var_DISPLAY_PROG == L_DISPLAY_WITH_XLI) {
-        if (title)
-            snprintf(buffer, L_BUF_SIZE,
-               "xli -dispgamma 1.0 -quiet -geometry +%d+%d -title \"%s\" %s &",
-               x, y, title, tempname);
-        else
-            snprintf(buffer, L_BUF_SIZE,
-               "xli -dispgamma 1.0 -quiet -geometry +%d+%d %s &",
-               x, y, tempname);
-    }
-    else if (var_DISPLAY_PROG == L_DISPLAY_WITH_XZGV) {
+    if (var_DISPLAY_PROG == L_DISPLAY_WITH_XZGV) {
             /* no way to display title */
-        pixGetDimensions(pixt, &wt, &ht, NULL);
+        pixGetDimensions(pix2, &wt, &ht, NULL);
         snprintf(buffer, L_BUF_SIZE,
                  "xzgv --geometry %dx%d+%d+%d %s &", wt + 10, ht + 10,
                  x, y, tempname);
+    } else if (var_DISPLAY_PROG == L_DISPLAY_WITH_XLI) {
+        if (title) {
+            snprintf(buffer, L_BUF_SIZE,
+               "xli -dispgamma 1.0 -quiet -geometry +%d+%d -title \"%s\" %s &",
+               x, y, title, tempname);
+        } else {
+            snprintf(buffer, L_BUF_SIZE,
+               "xli -dispgamma 1.0 -quiet -geometry +%d+%d %s &",
+               x, y, tempname);
+        }
+    } else if (var_DISPLAY_PROG == L_DISPLAY_WITH_XV) {
+        if (title) {
+            snprintf(buffer, L_BUF_SIZE,
+                     "xv -quit -geometry +%d+%d -name \"%s\" %s &",
+                     x, y, title, tempname);
+        } else {
+            snprintf(buffer, L_BUF_SIZE,
+                     "xv -quit -geometry +%d+%d %s &", x, y, tempname);
+        }
+    } else if (var_DISPLAY_PROG == L_DISPLAY_WITH_OPEN) {
+        snprintf(buffer, L_BUF_SIZE, "open %s &", tempname);
     }
     ignore = system(buffer);
 
@@ -815,19 +867,21 @@ char            fullpath[_MAX_PATH];
         /* Windows: L_DISPLAY_WITH_IV */
     pathname = genPathname(tempname, NULL);
     _fullpath(fullpath, pathname, sizeof(fullpath));
-    if (title)
+    if (title) {
         snprintf(buffer, L_BUF_SIZE,
                  "i_view32.exe \"%s\" /pos=(%d,%d) /title=\"%s\"",
                  fullpath, x, y, title);
-    else
+    } else {
         snprintf(buffer, L_BUF_SIZE, "i_view32.exe \"%s\" /pos=(%d,%d)",
                  fullpath, x, y);
+    }
     ignore = system(buffer);
     FREE(pathname);
 
 #endif  /* _WIN32 */
 
-    pixDestroy(&pixt);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
     FREE(tempname);
     return 0;
 }
@@ -914,7 +968,7 @@ pixDisplayWrite(PIX     *pixs,
  *
  *  Notes:
  *      (1) This writes files if reduction > 0.  These can be displayed using
- *            pixDisplayMultiple("/tmp/junk_write_display*");
+ *            pixDisplayMultiple("/tmp/display/file*");
  *      (2) All previously written files can be erased by calling with
  *          reduction < 0; the value of pixs is ignored.
  *      (3) If reduction > 1 and depth == 1, this does a scale-to-gray
@@ -939,8 +993,8 @@ pixDisplayWriteFormat(PIX     *pixs,
                       l_int32  reduction,
                       l_int32  format)
 {
-char            buffer[L_BUF_SIZE];
-l_int32         ignore;
+char            buf[L_BUF_SIZE];
+char           *fname;
 l_float32       scale;
 PIX            *pixt, *pix8;
 static l_int32  index = 0;  /* caution: not .so or thread safe */
@@ -960,15 +1014,14 @@ static l_int32  index = 0;  /* caution: not .so or thread safe */
         return ERROR_INT("pixs not defined", procName, 1);
 
     if (index == 0) {
-        snprintf(buffer, L_BUF_SIZE,
-           "rm -f /tmp/junk_write_display.*.png /tmp/junk_write_display.*.jpg");
-        ignore = system(buffer);
+        lept_rmdir("display");
+        lept_mkdir("display");
     }
     index++;
 
-    if (reduction == 1)
+    if (reduction == 1) {
         pixt = pixClone(pixs);
-    else {
+    } else {
         scale = 1. / (l_float32)reduction;
         if (pixGetDepth(pixs) == 1)
             pixt = pixScaleToGray(pixs, scale);
@@ -978,19 +1031,21 @@ static l_int32  index = 0;  /* caution: not .so or thread safe */
 
     if (pixGetDepth(pixt) == 16) {
         pix8 = pixMaxDynamicRange(pixt, L_LOG_SCALE);
-        snprintf(buffer, L_BUF_SIZE, "/tmp/junk_write_display.%03d.png", index);
-        pixWrite(buffer, pix8, IFF_PNG);
+        snprintf(buf, L_BUF_SIZE, "file.%03d.png", index);
+        fname = genPathname("/tmp/display", buf);
+        pixWrite(fname, pix8, IFF_PNG);
         pixDestroy(&pix8);
-    }
-    else if (pixGetDepth(pixt) < 8 || pixGetColormap(pixt) ||
+    } else if (pixGetDepth(pixt) < 8 || pixGetColormap(pixt) ||
              format == IFF_PNG) {
-        snprintf(buffer, L_BUF_SIZE, "/tmp/junk_write_display.%03d.png", index);
-        pixWrite(buffer, pixt, IFF_PNG);
+        snprintf(buf, L_BUF_SIZE, "file.%03d.png", index);
+        fname = genPathname("/tmp/display", buf);
+        pixWrite(fname, pixt, IFF_PNG);
+    } else {
+        snprintf(buf, L_BUF_SIZE, "file.%03d.jpg", index);
+        fname = genPathname("/tmp/display", buf);
+        pixWrite(fname, pixt, format);
     }
-    else {
-        snprintf(buffer, L_BUF_SIZE, "/tmp/junk_write_display.%03d.jpg", index);
-        pixWrite(buffer, pixt, format);
-    }
+    FREE(fname);
     pixDestroy(&pixt);
 
     return 0;
@@ -1002,22 +1057,22 @@ static l_int32  index = 0;  /* caution: not .so or thread safe */
  *
  *      Input:  pixs (1, 2, 4, 8, 32 bpp)
  *              pixa (the pix are accumulated here)
- *              reduction (0 to disable; otherwise this is a reduction factor)
+ *              scalefactor (0.0 to disable; otherwise this is a scale factor)
  *              newrow (0 if placed on the same row as previous; 1 otherwise)
  *              space (horizontal and vertical spacing, in pixels)
  *              dp (depth of pixa; 8 or 32 bpp; only used on first call)
  *      Return: 0 if OK, 1 on error.
  */
 l_int32
-pixSaveTiled(PIX     *pixs,
-             PIXA    *pixa,
-             l_int32  reduction,
-             l_int32  newrow,
-             l_int32  space,
-             l_int32  dp)
+pixSaveTiled(PIX       *pixs,
+             PIXA      *pixa,
+             l_float32  scalefactor,
+             l_int32    newrow,
+             l_int32    space,
+             l_int32    dp)
 {
         /* Save without an outline */
-    return pixSaveTiledOutline(pixs, pixa, reduction, newrow, space, 0, dp);
+    return pixSaveTiledOutline(pixs, pixa, scalefactor, newrow, space, 0, dp);
 }
 
 
@@ -1026,7 +1081,7 @@ pixSaveTiled(PIX     *pixs,
  *
  *      Input:  pixs (1, 2, 4, 8, 32 bpp)
  *              pixa (the pix are accumulated here)
- *              reduction (0 to disable; otherwise this is a reduction factor)
+ *              scalefactor (0.0 to disable; otherwise this is a scale factor)
  *              newrow (0 if placed on the same row as previous; 1 otherwise)
  *              space (horizontal and vertical spacing, in pixels)
  *              linewidth (width of added outline for image; 0 for no outline)
@@ -1037,11 +1092,11 @@ pixSaveTiled(PIX     *pixs,
  *      (1) Before calling this function for the first time, use
  *          pixaCreate() to make the @pixa that will accumulate the pix.
  *          This is passed in each time pixSaveTiled() is called.
- *      (2) @reduction is the integer reduction factor for the input
- *          image.  After reduction and possible depth conversion,
- *          the image is saved in the input pixa, along with a box
- *          that specifies the location to place it when tiled later.
- *          Disable saving the pix by setting reduction == 0.
+ *      (2) @scalefactor scales the input image.  After scaling and
+ *          possible depth conversion, the image is saved in the input
+ *          pixa, along with a box that specifies the location to
+ *          place it when tiled later.  Disable saving the pix by
+ *          setting @scalefactor == 0.0.
  *      (3) @newrow and @space specify the location of the new pix
  *          with respect to the last one(s) that were entered.
  *      (4) @dp specifies the depth at which all pix are saved.  It can
@@ -1058,22 +1113,21 @@ pixSaveTiled(PIX     *pixs,
  *          field, which is the only field available for storing an int.
  */
 l_int32
-pixSaveTiledOutline(PIX     *pixs,
-                    PIXA    *pixa,
-                    l_int32  reduction,
-                    l_int32  newrow,
-                    l_int32  space,
-                    l_int32  linewidth,
-                    l_int32  dp)
+pixSaveTiledOutline(PIX       *pixs,
+                    PIXA      *pixa,
+                    l_float32  scalefactor,
+                    l_int32    newrow,
+                    l_int32    space,
+                    l_int32    linewidth,
+                    l_int32    dp)
 {
-l_int32         n, top, left, bx, by, bw, w, h, depth, bottom;
-l_float32       scale;
-BOX            *box;
-PIX            *pix, *pixt1, *pixt2, *pixt3;
+l_int32  n, top, left, bx, by, bw, w, h, depth, bottom;
+BOX     *box;
+PIX     *pix1, *pix2, *pix3, *pix4;
 
     PROCNAME("pixSaveTiledOutline");
 
-    if (reduction == 0) return 0;
+    if (scalefactor == 0.0) return 0;
 
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
@@ -1084,67 +1138,70 @@ PIX            *pix, *pixt1, *pixt2, *pixt3;
     if (n == 0) {
         bottom = 0;
         if (dp != 8 && dp != 32) {
-            L_WARNING("dp not 8 or 32 bpp; using 32", procName);
+            L_WARNING("dp not 8 or 32 bpp; using 32\n", procName);
             depth = 32;
-        } else
+        } else {
             depth = dp;
-    }
-    else {  /* extract the depth and bottom params from the first pix */
-        pix = pixaGetPix(pixa, 0, L_CLONE);
-        depth = pixGetDepth(pix);
-        bottom = pixGetInputFormat(pix);  /* not typical usage! */
-        pixDestroy(&pix);
+        }
+    } else {  /* extract the depth and bottom params from the first pix */
+        pix1 = pixaGetPix(pixa, 0, L_CLONE);
+        depth = pixGetDepth(pix1);
+        bottom = pixGetInputFormat(pix1);  /* not typical usage! */
+        pixDestroy(&pix1);
     }
 
+        /* Remove colormap if it exists; otherwise a copy.  This
+         * guarantees that pix4 is not a clone of pixs. */
+    pix1 = pixRemoveColormapGeneral(pixs, REMOVE_CMAP_BASED_ON_SRC, L_COPY);
+
         /* Scale and convert to output depth */
-    if (reduction == 1)
-        pixt1 = pixClone(pixs);
-    else {
-        scale = 1. / (l_float32)reduction;
-        if (pixGetDepth(pixs) == 1)
-            pixt1 = pixScaleToGray(pixs, scale);
+    if (scalefactor == 1.0) {
+        pix2 = pixClone(pix1);
+    } else if (scalefactor > 1.0) {
+        pix2 = pixScale(pix1, scalefactor, scalefactor);
+    } else if (scalefactor < 1.0) {
+        if (pixGetDepth(pix1) == 1)
+            pix2 = pixScaleToGray(pix1, scalefactor);
         else
-            pixt1 = pixScale(pixs, scale, scale);
+            pix2 = pixScale(pix1, scalefactor, scalefactor);
     }
+    pixDestroy(&pix1);
     if (depth == 8)
-        pixt2 = pixConvertTo8(pixt1, 0);
+        pix3 = pixConvertTo8(pix2, 0);
     else
-        pixt2 = pixConvertTo32(pixt1);
-    pixDestroy(&pixt1);
+        pix3 = pixConvertTo32(pix2);
+    pixDestroy(&pix2);
 
         /* Add black outline */
     if (linewidth > 0)
-        pixt3 = pixAddBorder(pixt2, linewidth, 0);
+        pix4 = pixAddBorder(pix3, linewidth, 0);
     else
-        pixt3 = pixClone(pixt2);
-    pixDestroy(&pixt2);
+        pix4 = pixClone(pix3);
+    pixDestroy(&pix3);
 
         /* Find position of current pix (UL corner plus size) */
     if (n == 0) {
         top = 0;
         left = 0;
-    }
-    else if (newrow == 1) {
+    } else if (newrow == 1) {
         top = bottom + space;
         left = 0;
-    }
-    else if (n > 0) {
+    } else if (n > 0) {
         pixaGetBoxGeometry(pixa, n - 1, &bx, &by, &bw, NULL);
         top = by;
         left = bx + bw + space;
     }
 
-    pixGetDimensions(pixt3, &w, &h, NULL);
+    pixGetDimensions(pix4, &w, &h, NULL);
     bottom = L_MAX(bottom, top + h);
     box = boxCreate(left, top, w, h);
-    pixaAddPix(pixa, pixt3, L_INSERT);
+    pixaAddPix(pixa, pix4, L_INSERT);
     pixaAddBox(pixa, box, L_INSERT);
 
         /* Save the new bottom value */
-    pix = pixaGetPix(pixa, 0, L_CLONE);
-    pixSetInputFormat(pix, bottom);  /* not typical usage! */
-    pixDestroy(&pix);
-
+    pix1 = pixaGetPix(pixa, 0, L_CLONE);
+    pixSetInputFormat(pix1, bottom);  /* not typical usage! */
+    pixDestroy(&pix1);
     return 0;
 }
 
@@ -1161,8 +1218,7 @@ PIX            *pix, *pixt1, *pixt2, *pixt3;
  *              bmf (<optional> font struct)
  *              textstr (<optional> text string to be added)
  *              val (color to set the text)
- *              location (L_ADD_ABOVE, L_ADD_AT_TOP, L_ADD_AT_BOTTOM,
- *                        L_ADD_BELOW)
+ *              location (L_ADD_ABOVE, L_ADD_AT_TOP, L_ADD_AT_BOT, L_ADD_BELOW)
  *      Return: 0 if OK, 1 on error.
  *
  *  Notes:
@@ -1196,7 +1252,7 @@ pixSaveTiledWithText(PIX         *pixs,
                      l_uint32     val,
                      l_int32      location)
 {
-PIX  *pixt1, *pixt2, *pixt3, *pixt4;
+PIX  *pix1, *pix2, *pix3, *pix4;
 
     PROCNAME("pixSaveTiledWithText");
 
@@ -1207,21 +1263,21 @@ PIX  *pixt1, *pixt2, *pixt3, *pixt4;
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
 
-    pixt1 = pixConvertTo32(pixs);
+    pix1 = pixConvertTo32(pixs);
     if (linewidth > 0)
-        pixt2 = pixAddBorder(pixt1, linewidth, 0);
+        pix2 = pixAddBorder(pix1, linewidth, 0);
     else
-        pixt2 = pixClone(pixt1);
+        pix2 = pixClone(pix1);
     if (bmf && textstr)
-        pixt3 = pixAddSingleTextblock(pixt2, bmf, textstr, val, location, NULL);
+        pix3 = pixAddSingleTextblock(pix2, bmf, textstr, val, location, NULL);
     else
-        pixt3 = pixClone(pixt2);
-    pixt4 = pixScaleToSize(pixt3, outwidth, 0);
-    pixSaveTiled(pixt4, pixa, 1, newrow, space, 32);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+        pix3 = pixClone(pix2);
+    pix4 = pixScaleToSize(pix3, outwidth, 0);
+    pixSaveTiled(pix4, pixa, 1.0, newrow, space, 32);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
     return 0;
 }
 
@@ -1231,9 +1287,12 @@ l_chooseDisplayProg(l_int32  selection)
 {
     if (selection == L_DISPLAY_WITH_XLI ||
         selection == L_DISPLAY_WITH_XZGV ||
-        selection == L_DISPLAY_WITH_XV)
+        selection == L_DISPLAY_WITH_XV ||
+        selection == L_DISPLAY_WITH_IV ||
+        selection == L_DISPLAY_WITH_OPEN) {
         var_DISPLAY_PROG = selection;
-    else
-        L_ERROR("invalid unix display program", "l_chooseDisplayProg");
+    } else {
+        L_ERROR("invalid display program\n", "l_chooseDisplayProg");
+    }
     return;
 }

@@ -34,9 +34,11 @@
 #include <string.h>
 #include "allheaders.h"
 
-    /* MS VC++ can't handle array initialization with static consts ! */
-#define L_BUF_SIZE      512
+#ifdef _WIN32
+#include <windows.h>   /* for CreateDirectory() */
+#endif
 
+static const l_int32  L_BUF_SIZE = 512;
 static const l_int32  DEFAULT_THUMB_WIDTH = 120;
 static const l_int32  DEFAULT_VIEW_WIDTH = 800;
 static const l_int32  MIN_THUMB_WIDTH = 50;
@@ -85,7 +87,7 @@ char      *shtml, *slink;
 char       charbuf[L_BUF_SIZE];
 char       htmlstring[] = "<html>";
 char       framestring[] = "</frameset></html>";
-l_int32    i, nfiles, index, w, nimages, ignore;
+l_int32    i, nfiles, index, w, nimages, ret;
 l_float32  factor;
 PIX       *pix, *pixthumb, *pixview;
 SARRAY    *safiles, *sathumbs, *saviews, *sahtml, *salink;
@@ -102,19 +104,27 @@ SARRAY    *safiles, *sathumbs, *saviews, *sahtml, *salink;
     if (thumbwidth == 0)
         thumbwidth = DEFAULT_THUMB_WIDTH;
     if (thumbwidth < MIN_THUMB_WIDTH) {
-        L_WARNING("thumbwidth too small; using min value", procName);
+        L_WARNING("thumbwidth too small; using min value\n", procName);
         thumbwidth = MIN_THUMB_WIDTH;
     }
     if (viewwidth == 0)
         viewwidth = DEFAULT_VIEW_WIDTH;
     if (viewwidth < MIN_VIEW_WIDTH) {
-        L_WARNING("viewwidth too small; using min value", procName);
+        L_WARNING("viewwidth too small; using min value\n", procName);
         viewwidth = MIN_VIEW_WIDTH;
     }
 
         /* Make the output directory if it doesn't already exist */
+#ifndef _WIN32
     sprintf(charbuf, "mkdir -p %s", dirout);
-    ignore = system(charbuf);
+    ret = system(charbuf);
+#else
+    ret = CreateDirectory(dirout, NULL) ? 0 : 1;
+#endif  /* !_WIN32 */
+    if (ret) {
+        L_ERROR("output directory %s not made\n", procName, dirout);
+        return 1;
+    }
 
         /* Capture the filenames in the input directory */
     if ((safiles = getFilenamesInDirectory(dirin)) == NULL)
@@ -165,9 +175,9 @@ SARRAY    *safiles, *sathumbs, *saviews, *sahtml, *salink;
 
             /* Make and store the view */
         factor = (l_float32)viewwidth / (l_float32)w;
-        if (factor >= 1.0)
+        if (factor >= 1.0) {
             pixview = pixClone(pix);   /* no upscaling */
-        else {
+        } else {
             if ((pixview = pixScale(pix, factor, factor)) == NULL)
                 return ERROR_INT("pixview not made", procName, 1);
         }

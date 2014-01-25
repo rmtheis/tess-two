@@ -50,6 +50,7 @@ PTA        *pta, *ptad;
 PTAA       *ptaa1, *ptaa2;
 
     pixs = pixRead("cat-35.jpg");
+/*    pixs = pixRead("zanotti-78.jpg"); */
 
         /* Normalize for varying background and binarize */
     pixn = pixBackgroundNormSimple(pixs, NULL, NULL);

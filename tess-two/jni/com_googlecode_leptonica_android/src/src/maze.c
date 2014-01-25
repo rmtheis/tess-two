@@ -135,7 +135,7 @@ static l_int32 localSearchForBackground(PIX  *pix, l_int32  *px,
  *                0.70         0.19
  *                0.75         0.15
  *                0.80         0.11
- *      (3) Because here is a considerable amount of overhead in calling
+ *      (3) Because there is a considerable amount of overhead in calling
  *          pixGetPixel() and pixSetPixel(), this function can be sped
  *          up with little effort using raster line pointers and the
  *          GET_DATA* and SET_DATA* macros.
@@ -474,7 +474,7 @@ PTA       *pta;
 
 
     if (!found) {
-        L_INFO(" No path found", procName);
+        L_INFO(" No path found\n", procName);
         if (pixd) {  /* paint all visited locations */
             lined32 = pixGetLinePtrs(pixd, NULL);
             for (i = 0; i < h; i++) {
@@ -488,7 +488,7 @@ PTA       *pta;
         }
     }
     else {   /* write path onto pixd */
-        L_INFO(" Path found", procName);
+        L_INFO(" Path found\n", procName);
         pta = ptaCreate(0);
         x = xf;
         y = yf;

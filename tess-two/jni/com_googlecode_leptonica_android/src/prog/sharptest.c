@@ -36,8 +36,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 PIX         *pixs, *pixd;
 l_int32      smooth;
@@ -46,21 +46,18 @@ char        *filein, *fileout;
 static char  mainName[] = "sharptest";
 
     if (argc != 5)
-	exit(ERROR_INT(" Syntax:  sharptest filein smooth fract fileout",
-	    mainName, 1));
+        return ERROR_INT(" Syntax:  sharptest filein smooth fract fileout",
+                         mainName, 1);
 
     filein = argv[1];
     smooth = atoi(argv[2]);
     fract = atof(argv[3]);
     fileout = argv[4];
-
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
 
     pixd = pixUnsharpMasking(pixs, smooth, fract);
-
     pixWrite(fileout, pixd, IFF_JFIF_JPEG);
-
     pixDestroy(&pixs);
     pixDestroy(&pixd);
     return 0;

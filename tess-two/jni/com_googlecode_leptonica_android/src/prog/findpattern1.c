@@ -51,8 +51,8 @@ static const l_uint32  HitColor = 0xff880000;
 static const l_uint32  MissColor = 0x00ff8800;
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout, *patternfile;
 l_int32      w, h, i, n;
@@ -64,17 +64,17 @@ SEL         *sel_2h, *sel;
 static char  mainName[] = "findpattern1";
 
     if (argc != 4)
-	exit(ERROR_INT(" Syntax:  findpattern1 filein patternfile fileout",
-	    mainName, 1));
+        return ERROR_INT(" Syntax:  findpattern1 filein patternfile fileout",
+                         mainName, 1);
 
     filein = argv[1];
     patternfile = argv[2];
     fileout = argv[3];
 
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
     if ((pixp = pixRead(patternfile)) == NULL)
-	exit(ERROR_INT("pixp not made", mainName, 1));
+        return ERROR_INT("pixp not made", mainName, 1);
     pixGetDimensions(pixp, &w, &h, NULL);
 
         /* generate the hit-miss Sel with runs */
@@ -93,12 +93,12 @@ static char  mainName[] = "findpattern1";
     fprintf(stderr, "Time to find patterns = %7.3f\n", stopTimer());
 
         /* small erosion to remove noise; typically not necessary if
-	 * there are enough elements in the Sel */
+         * there are enough elements in the Sel */
     sel_2h = selCreateBrick(1, 2, 0, 0, SEL_HIT);
     pixt2 = pixErode(NULL, pixhmt, sel_2h);
 
         /* display the result visually by placing the Sel at each
-	 * location found */
+         * location found */
     pixd = pixDilate(NULL, pixt2, sel);
     pixWrite(fileout, pixd, IFF_TIFF_G4);
 

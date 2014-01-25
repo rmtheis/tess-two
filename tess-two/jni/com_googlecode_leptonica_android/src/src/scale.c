@@ -28,79 +28,82 @@
  *  scale.c
  *
  *         Top-level scaling
- *               PIX    *pixScale()     ***
- *               PIX    *pixScaleToSize()     ***
- *               PIX    *pixScaleGeneral()     ***
+ *               PIX      *pixScale()     ***
+ *               PIX      *pixScaleToSize()     ***
+ *               PIX      *pixScaleGeneral()     ***
  *
  *         Linearly interpreted (usually up-) scaling
- *               PIX    *pixScaleLI()     ***
- *               PIX    *pixScaleColorLI()
- *               PIX    *pixScaleColor2xLI()   ***
- *               PIX    *pixScaleColor4xLI()   ***
- *               PIX    *pixScaleGrayLI()
- *               PIX    *pixScaleGray2xLI()
- *               PIX    *pixScaleGray4xLI()
+ *               PIX      *pixScaleLI()     ***
+ *               PIX      *pixScaleColorLI()
+ *               PIX      *pixScaleColor2xLI()   ***
+ *               PIX      *pixScaleColor4xLI()   ***
+ *               PIX      *pixScaleGrayLI()
+ *               PIX      *pixScaleGray2xLI()
+ *               PIX      *pixScaleGray4xLI()
  *
  *         Scaling by closest pixel sampling
- *               PIX    *pixScaleBySampling()
- *               PIX    *pixScaleByIntSubsampling()
+ *               PIX      *pixScaleBySampling()
+ *               PIX      *pixScaleBySamplingToSize()
+ *               PIX      *pixScaleByIntSubsampling()
  *
  *         Fast integer factor subsampling RGB to gray and to binary
- *               PIX    *pixScaleRGBToGrayFast()
- *               PIX    *pixScaleRGBToBinaryFast()
- *               PIX    *pixScaleGrayToBinaryFast()
+ *               PIX      *pixScaleRGBToGrayFast()
+ *               PIX      *pixScaleRGBToBinaryFast()
+ *               PIX      *pixScaleGrayToBinaryFast()
  *
  *         Downscaling with (antialias) smoothing
- *               PIX    *pixScaleSmooth() ***
- *               PIX    *pixScaleRGBToGray2()   [special 2x reduction to gray]
+ *               PIX      *pixScaleSmooth() ***
+ *               PIX      *pixScaleRGBToGray2()   [special 2x reduction to gray]
  *
  *         Downscaling with (antialias) area mapping
- *               PIX    *pixScaleAreaMap()     ***
- *               PIX    *pixScaleAreaMap2()
+ *               PIX      *pixScaleAreaMap()     ***
+ *               PIX      *pixScaleAreaMap2()
  *
  *         Binary scaling by closest pixel sampling
- *               PIX    *pixScaleBinary()
+ *               PIX      *pixScaleBinary()
  *
  *         Scale-to-gray (1 bpp --> 8 bpp; arbitrary downscaling)
- *               PIX    *pixScaleToGray()
- *               PIX    *pixScaleToGrayFast()
+ *               PIX      *pixScaleToGray()
+ *               PIX      *pixScaleToGrayFast()
  *
  *         Scale-to-gray (1 bpp --> 8 bpp; integer downscaling)
- *               PIX    *pixScaleToGray2()
- *               PIX    *pixScaleToGray3()
- *               PIX    *pixScaleToGray4()
- *               PIX    *pixScaleToGray6()
- *               PIX    *pixScaleToGray8()
- *               PIX    *pixScaleToGray16()
+ *               PIX      *pixScaleToGray2()
+ *               PIX      *pixScaleToGray3()
+ *               PIX      *pixScaleToGray4()
+ *               PIX      *pixScaleToGray6()
+ *               PIX      *pixScaleToGray8()
+ *               PIX      *pixScaleToGray16()
  *
  *         Scale-to-gray by mipmap(1 bpp --> 8 bpp, arbitrary reduction)
- *               PIX    *pixScaleToGrayMipmap()
+ *               PIX      *pixScaleToGrayMipmap()
  *
  *         Grayscale scaling using mipmap
- *               PIX    *pixScaleMipmap()
+ *               PIX      *pixScaleMipmap()
  *
  *         Replicated (integer) expansion (all depths)
- *               PIX    *pixExpandReplicate()
+ *               PIX      *pixExpandReplicate()
  *
  *         Upscale 2x followed by binarization
- *               PIX    *pixScaleGray2xLIThresh()
- *               PIX    *pixScaleGray2xLIDither()
+ *               PIX      *pixScaleGray2xLIThresh()
+ *               PIX      *pixScaleGray2xLIDither()
  *
  *         Upscale 4x followed by binarization
- *               PIX    *pixScaleGray4xLIThresh()
- *               PIX    *pixScaleGray4xLIDither()
+ *               PIX      *pixScaleGray4xLIThresh()
+ *               PIX      *pixScaleGray4xLIDither()
  *
  *         Grayscale downscaling using min and max
- *               PIX    *pixScaleGrayMinMax()
- *               PIX    *pixScaleGrayMinMax2()
+ *               PIX      *pixScaleGrayMinMax()
+ *               PIX      *pixScaleGrayMinMax2()
  *
  *         Grayscale downscaling using rank value
- *               PIX    *pixScaleGrayRankCascade()
- *               PIX    *pixScaleGrayRank2()
+ *               PIX      *pixScaleGrayRankCascade()
+ *               PIX      *pixScaleGrayRank2()
  *
- *         RGB scaling including alpha (blend) component and gamma transform
- *               PIX    *pixScaleWithAlpha()   ***
- *               PIX    *pixScaleGammaXform()  ***
+ *         Helper function for transferring alpha with scaling
+ *               l_int32   pixScaleAndTransferAlpha()
+ *
+ *         RGB scaling including alpha (blend) component
+ *               PIX      *pixScaleWithAlpha()   ***
  *
  *  *** Note: these functions make an implicit assumption about RGB
  *            component ordering.
@@ -156,33 +159,36 @@ extern l_float32  AlphaMaskBorderVals[2];
  *  a sharpening filter.
  *
  *  For images with sharp edges, sharpening substantially improves the
- *  image quality for scale factors between about 0.2 and about 2.0.  However,
- *  the generic sharpening operation is about 3 times slower than linear
- *  interpolation, so there is a speed-vs-quality tradeoff.  (Note: the
- *  cases where the sharpening halfwidth is 1 or 2 have special
- *  implementations and are about twice as fast as the general case).
- *  When the scale factor is larger than 1.4, the cost, which is
- *  proportional to image area, is very large for the incremental
- *  quality improvement, so we cut off the use of sharpening at 1.4.
- *  For scale factors greater than 1.4, these high-level scaling
- *  functions only do linear interpolation.
- *
- *  Because sharpening is computationally expensive, we provide the
- *  option of not doing it.  To avoid sharpening, call pixScaleGeneral()
- *  with @sharpfract = 0.0.  pixScale() uses a small amount of
- *  of sharpening because it strengthens edge pixels that are weak
- *  due to anti-aliasing.  The sharpening factors are:
+ *  image quality for scale factors between about 0.2 and about 2.0.
+ *  pixScale() uses a small amount of sharpening by default because
+ *  it strengthens edge pixels that are weak due to anti-aliasing.
+ *  The default sharpening factors are:
  *      * for scaling factors < 0.7:   sharpfract = 0.2    sharpwidth = 1
  *      * for scaling factors >= 0.7:  sharpfract = 0.4    sharpwidth = 2
+ *  The cases where the sharpening halfwidth is 1 or 2 have special
+ *  implementations and are about twice as fast as the general case.
  *
- *  The constraints that tie sharpening to the scale factor
- *  in pixScaleGeneral() can be circumvented by calling with
- *  @sharpfract = 0.0.  This can be followed by the sharpening of
- *  choice; e.g., pixUnsharpMasking().
+ *  However, sharpening is computationally expensive, and one needs
+ *  to consider the speed-quality tradeoff:
+ *      * For upscaling of RGB images, linear interpolation plus default
+ *        sharpening is about 5 times slower than upscaling alone.
+ *      * For downscaling, area mapping plus default sharpening is
+ *        about 10 times slower than downscaling alone.
+ *  When the scale factor is larger than 1.4, the cost of sharpening,
+ *  which is proportional to image area, is very large compared to the
+ *  incremental quality improvement, so we cut off the default use of
+ *  sharpening at 1.4.  Thus, for scale factors greater than 1.4,
+ *  pixScale() only does linear interpolation.
  *
- *  Binary images are scaled by sampling the closest pixel, without
- *  any low-pass filtering (averaging of neighboring pixels).
- *  This will introduce aliasing for reductions, which can be
+ *  In many situations you will get a satisfactory result by scaling
+ *  without sharpening: call pixScaleGeneral() with @sharpfract = 0.0.
+ *  Alternatively, if you wish to sharpen but not use the default
+ *  value, first call pixScaleGeneral() with @sharpfract = 0.0, and
+ *  then sharpen explicitly using pixUnsharpMasking().
+ *
+ *  Binary images are scaled to binary by sampling the closest pixel,
+ *  without any low-pass filtering (averaging of neighboring pixels).
+ *  This will introduce aliasing for reductions.  Aliasing can be
  *  prevented by using pixScaleToGray() instead.
  *
  *  *** Warning: implicit assumption about RGB component order
@@ -219,7 +225,7 @@ l_float32  maxscale, sharpfract;
  *      Return: pixd, or null on error
  *
  *  Notes:
- *      (1) The guarantees that the output scaled image has the
+ *      (1) This guarantees that the output scaled image has the
  *          dimension(s) you specify.
  *           - To specify the width with isotropic scaling, set @hd = 0.
  *           - To specify the height with isotropic scaling, set @wd = 0.
@@ -246,12 +252,10 @@ l_float32  scalex, scaley;
     if (wd <= 0) {
         scaley = (l_float32)hd / (l_float32)h;
         scalex = scaley;
-    }
-    else if (hd <= 0) {
+    } else if (hd <= 0) {
         scalex = (l_float32)wd / (l_float32)w;
         scaley = scalex;
-    }
-    else {
+    } else {
         scalex = (l_float32)wd / (l_float32)w;
         scaley = (l_float32)hd / (l_float32)h;
     }
@@ -324,8 +328,7 @@ PIX       *pixt, *pixt2, *pixd;
             pixd = pixUnsharpMasking(pixt2, sharpwidth, sharpfract);
         else
             pixd = pixClone(pixt2);
-    }
-    else {  /* use linear interpolation */
+    } else {  /* use linear interpolation */
         if (d == 8)
             pixt2 = pixScaleGrayLI(pixt, scalex, scaley);
         else  /* d == 32 */
@@ -361,7 +364,7 @@ PIX       *pixt, *pixt2, *pixd;
  *          2, 4 and 8 bpp images that have a colormap.  If there is a
  *          colormap, it is removed to either gray or RGB, depending
  *          on the colormap.
- *      (3) The does a linear interpolation on the src image.
+ *      (3) This does a linear interpolation on the src image.
  *      (4) It dispatches to much faster implementations for
  *          the special cases of 2x and 4x expansion.
  *
@@ -382,7 +385,7 @@ PIX       *pixt, *pixd;
         return (PIX *)ERROR_PTR("pixs not defined or 1 bpp", procName, NULL);
     maxscale = L_MAX(scalex, scaley);
     if (maxscale < 0.7) {
-        L_WARNING("scaling factors < 0.7; doing regular scaling", procName);
+        L_WARNING("scaling factors < 0.7; do regular scaling\n", procName);
         return pixScale(pixs, scalex, scaley);
     }
     d = pixGetDepth(pixs);
@@ -441,7 +444,7 @@ PIX       *pixd;
         return (PIX *)ERROR_PTR("pixs undefined or not 32 bpp", procName, NULL);
     maxscale = L_MAX(scalex, scaley);
     if (maxscale < 0.7) {
-        L_WARNING("scaling factors < 0.7; doing regular scaling", procName);
+        L_WARNING("scaling factors < 0.7; do regular scaling\n", procName);
         return pixScale(pixs, scalex, scaley);
     }
 
@@ -466,6 +469,8 @@ PIX       *pixd;
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
     scaleColorLILow(datad, wd, hd, wpld, datas, ws, hs, wpls);
+    if (pixGetSpp(pixs) == 4)
+        pixScaleAndTransferAlpha(pixd, pixs, scalex, scaley);
     return pixd;
 }
 
@@ -483,7 +488,7 @@ PIX       *pixd;
  *          using the special 2x scale function pixScaleGray2xLI()
  *          on each of the three components separately.
  *      (2) The speed on intel hardware is about
- *          80 * 10^6 dest-pixels/sec/GHz (!!)
+ *          80 * 10^6 dest-pixels/sec/GHz.
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
  */
@@ -509,6 +514,8 @@ PIX       *pixd;
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
     scaleColor2xLILow(datad, wpld, datas, ws, hs, wpls);
+    if (pixGetSpp(pixs) == 4)
+        pixScaleAndTransferAlpha(pixd, pixs, 2.0, 2.0);
     return pixd;
 }
 
@@ -554,6 +561,8 @@ PIX  *pixd;
 
     if ((pixd = pixCreateRGBImage(pixrs, pixgs, pixbs)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    if (pixGetSpp(pixs) == 4)
+        pixScaleAndTransferAlpha(pixd, pixs, 4.0, 4.0);
 
     pixDestroy(&pixrs);
     pixDestroy(&pixgs);
@@ -565,7 +574,7 @@ PIX  *pixd;
 /*!
  *  pixScaleGrayLI()
  *
- *      Input:  pixs (8 bpp grayscale)
+ *      Input:  pixs (8 bpp grayscale, no cmap)
  *              scalex, scaley (must both be >= 0.7)
  *      Return: pixd, or null on error
  *
@@ -648,15 +657,14 @@ PIX       *pixd;
 
     PROCNAME("pixScaleGrayLI");
 
-    if (!pixs || (pixGetDepth(pixs) != 8))
-        return (PIX *)ERROR_PTR("pixs undefined or not 8 bpp", procName, NULL);
+    if (!pixs || pixGetDepth(pixs) != 8 || pixGetColormap(pixs))
+        return (PIX *)ERROR_PTR("pixs undefined, cmapped or not 8 bpp",
+                                procName, NULL);
     maxscale = L_MAX(scalex, scaley);
     if (maxscale < 0.7) {
-        L_WARNING("scaling factors < 0.7; doing regular scaling", procName);
+        L_WARNING("scaling factors < 0.7; do regular scaling\n", procName);
         return pixScale(pixs, scalex, scaley);
     }
-    if (pixGetColormap(pixs))
-        L_WARNING("pix has colormap; poor results are likely", procName);
 
         /* Do fast special cases if possible */
     if (scalex == 1.0 && scaley == 1.0)
@@ -674,6 +682,7 @@ PIX       *pixd;
     hd = (l_int32)(scaley * (l_float32)hs + 0.5);
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyText(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, scalex, scaley);
     datad = pixGetData(pixd);
@@ -686,7 +695,7 @@ PIX       *pixd;
 /*!
  *  pixScaleGray2xLI()
  *
- *      Input:  pixs (8 bpp grayscale)
+ *      Input:  pixs (8 bpp grayscale, not cmapped)
  *      Return: pixd, or null on error
  *
  *  Notes:
@@ -705,10 +714,9 @@ PIX       *pixd;
 
     PROCNAME("pixScaleGray2xLI");
 
-    if (!pixs || (pixGetDepth(pixs) != 8))
-        return (PIX *)ERROR_PTR("pixs undefined or not 8 bpp", procName, NULL);
-    if (pixGetColormap(pixs))
-        L_WARNING("pix has colormap", procName);
+    if (!pixs || pixGetDepth(pixs) != 8 || pixGetColormap(pixs))
+        return (PIX *)ERROR_PTR("pixs undefined, cmapped or not 8 bpp",
+                                procName, NULL);
 
     pixGetDimensions(pixs, &ws, &hs, NULL);
     datas = pixGetData(pixs);
@@ -727,7 +735,7 @@ PIX       *pixd;
 /*!
  *  pixScaleGray4xLI()
  *
- *      Input:  pixs (8 bpp grayscale)
+ *      Input:  pixs (8 bpp grayscale, not cmapped)
  *      Return: pixd, or null on error
  *
  *  Notes:
@@ -735,7 +743,7 @@ PIX       *pixd;
  *          for 4x upscaling.  It is about 12x faster than using
  *          the generic pixScaleGrayLI().
  *      (2) The speed on intel hardware is about
- *          160 * 10^6 dest-pixels/sec/GHz  (!!)
+ *          160 * 10^6 dest-pixels/sec/GHz.
  */
 PIX *
 pixScaleGray4xLI(PIX  *pixs)
@@ -746,10 +754,9 @@ PIX       *pixd;
 
     PROCNAME("pixScaleGray4xLI");
 
-    if (!pixs || (pixGetDepth(pixs) != 8))
-        return (PIX *)ERROR_PTR("pixs undefined or not 8 bpp", procName, NULL);
-    if (pixGetColormap(pixs))
-        L_WARNING("pix has colormap", procName);
+    if (!pixs || pixGetDepth(pixs) != 8 || pixGetColormap(pixs))
+        return (PIX *)ERROR_PTR("pixs undefined, cmapped or not 8 bpp",
+                                procName, NULL);
 
     pixGetDimensions(pixs, &ws, &hs, NULL);
     datas = pixGetData(pixs);
@@ -812,10 +819,63 @@ PIX       *pixd;
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, scalex, scaley);
     pixCopyColormap(pixd, pixs);
+    pixCopyText(pixd, pixs);
+    pixCopySpp(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
     scaleBySamplingLow(datad, wd, hd, wpld, datas, ws, hs, d, wpls);
+    if (d == 32 && pixGetSpp(pixs) == 4)
+        pixScaleAndTransferAlpha(pixd, pixs, scalex, scaley);
+
     return pixd;
+}
+
+
+/*!
+ *  pixScaleBySamplingToSize()
+ *
+ *      Input:  pixs (1, 2, 4, 8, 16 and 32 bpp)
+ *              wd  (target width; use 0 if using height as target)
+ *              hd  (target height; use 0 if using width as target)
+ *      Return: pixd, or null on error
+ *
+ *  Notes:
+ *      (1) This guarantees that the output scaled image has the
+ *          dimension(s) you specify.
+ *           - To specify the width with isotropic scaling, set @hd = 0.
+ *           - To specify the height with isotropic scaling, set @wd = 0.
+ *           - If both @wd and @hd are specified, the image is scaled
+ *             (in general, anisotropically) to that size.
+ *           - It is an error to set both @wd and @hd to 0.
+ */
+PIX *
+pixScaleBySamplingToSize(PIX     *pixs,
+                         l_int32  wd,
+                         l_int32  hd)
+{
+l_int32    w, h;
+l_float32  scalex, scaley;
+
+    PROCNAME("pixScaleBySamplingToSize");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+    if (wd <= 0 && hd <= 0)
+        return (PIX *)ERROR_PTR("neither wd nor hd > 0", procName, NULL);
+
+    pixGetDimensions(pixs, &w, &h, NULL);
+    if (wd <= 0) {
+        scaley = (l_float32)hd / (l_float32)h;
+        scalex = scaley;
+    } else if (hd <= 0) {
+        scalex = (l_float32)wd / (l_float32)w;
+        scaley = scalex;
+    } else {
+        scalex = (l_float32)wd / (l_float32)w;
+        scaley = (l_float32)hd / (l_float32)h;
+    }
+
+    return pixScaleBySampling(pixs, scalex, scaley);
 }
 
 
@@ -843,7 +903,7 @@ l_float32  scale;
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
     if (factor <= 1) {
         if (factor < 1)
-            L_ERROR("factor must be >= 1; returning a copy", procName);
+            L_ERROR("factor must be >= 1; returning a copy\n", procName);
         return pixCopy(NULL, pixs);
     }
 
@@ -1102,7 +1162,7 @@ PIX       *pixs, *pixd;
     if (!pix)
         return (PIX *)ERROR_PTR("pix not defined", procName, NULL);
     if (scalex >= 0.7 || scaley >= 0.7) {
-        L_WARNING("scaling factor not < 0.7; doing regular scaling", procName);
+        L_WARNING("scaling factor not < 0.7; do regular scaling\n", procName);
         return pixScale(pix, scalex, scaley);
     }
 
@@ -1110,19 +1170,18 @@ PIX       *pixs, *pixd;
          * If 2 bpp or 4 bpp gray, convert to 8 bpp */
     d = pixGetDepth(pix);
     if ((d == 2 || d == 4 || d == 8) && pixGetColormap(pix)) {
-        L_WARNING("pix has colormap; removing", procName);
+        L_WARNING("pix has colormap; removing\n", procName);
         pixs = pixRemoveColormap(pix, REMOVE_CMAP_BASED_ON_SRC);
         d = pixGetDepth(pixs);
-    }
-    else if (d == 2 || d == 4) {
+    } else if (d == 2 || d == 4) {
         pixs = pixConvertTo8(pix, FALSE);
         d = 8;
-    }
-    else
+    } else {
         pixs = pixClone(pix);
+    }
 
     if (d != 8 && d != 32) {   /* d == 1 or d == 16 */
-        L_WARNING("depth not 8 or 32 bpp; doing regular scaling", procName);
+        L_WARNING("depth not 8 or 32 bpp; do regular scaling\n", procName);
         pixDestroy(&pixs);
         return pixScale(pix, scalex, scaley);
     }
@@ -1156,6 +1215,8 @@ PIX       *pixs, *pixd;
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
     scaleSmoothLow(datad, wd, hd, wpld, datas, ws, hs, d, wpls, isize);
+    if (d == 32 && pixGetSpp(pixs) == 4)
+        pixScaleAndTransferAlpha(pixd, pixs, scalex, scaley);
 
     pixDestroy(&pixs);
     return pixd;
@@ -1252,7 +1313,7 @@ PIX       *pixs, *pixd, *pixt1, *pixt2, *pixt3;
         return (PIX *)ERROR_PTR("pix not 2, 4, 8 or 32 bpp", procName, NULL);
     maxscale = L_MAX(scalex, scaley);
     if (maxscale >= 0.7) {
-        L_WARNING("scaling factors not < 0.7; doing regular scaling", procName);
+        L_WARNING("scaling factors not < 0.7; do regular scaling\n", procName);
         return pixScale(pix, scalex, scaley);
     }
 
@@ -1287,16 +1348,15 @@ PIX       *pixs, *pixd, *pixt1, *pixt2, *pixt3;
         /* Remove colormap if necessary.
          * If 2 bpp or 4 bpp gray, convert to 8 bpp */
     if ((d == 2 || d == 4 || d == 8) && pixGetColormap(pix)) {
-        L_WARNING("pix has colormap; removing", procName);
+        L_WARNING("pix has colormap; removing\n", procName);
         pixs = pixRemoveColormap(pix, REMOVE_CMAP_BASED_ON_SRC);
         d = pixGetDepth(pixs);
-    }
-    else if (d == 2 || d == 4) {
+    } else if (d == 2 || d == 4) {
         pixs = pixConvertTo8(pix, FALSE);
         d = 8;
-    }
-    else
+    } else {
         pixs = pixClone(pix);
+    }
 
     pixGetDimensions(pixs, &ws, &hs, NULL);
     datas = pixGetData(pixs);
@@ -1315,10 +1375,13 @@ PIX       *pixs, *pixd, *pixt1, *pixt2, *pixt3;
     pixScaleResolution(pixd, scalex, scaley);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
-    if (d == 8)
+    if (d == 8) {
         scaleGrayAreaMapLow(datad, wd, hd, wpld, datas, ws, hs, wpls);
-    else  /* RGB, d == 32 */
+    } else {  /* RGB, d == 32 */
         scaleColorAreaMapLow(datad, wd, hd, wpld, datas, ws, hs, wpls);
+        if (pixGetSpp(pixs) == 4)
+            pixScaleAndTransferAlpha(pixd, pixs, scalex, scaley);
+    }
 
     pixDestroy(&pixs);
     return pixd;
@@ -1366,16 +1429,15 @@ PIX       *pixs, *pixd;
         /* Remove colormap if necessary.
          * If 2 bpp or 4 bpp gray, convert to 8 bpp */
     if ((d == 2 || d == 4 || d == 8) && pixGetColormap(pix)) {
-        L_WARNING("pix has colormap; removing", procName);
+        L_WARNING("pix has colormap; removing\n", procName);
         pixs = pixRemoveColormap(pix, REMOVE_CMAP_BASED_ON_SRC);
         d = pixGetDepth(pixs);
-    }
-    else if (d == 2 || d == 4) {
+    } else if (d == 2 || d == 4) {
         pixs = pixConvertTo8(pix, FALSE);
         d = 8;
-    }
-    else
+    } else {
         pixs = pixClone(pix);
+    }
 
     wd = pixGetWidth(pixs) / 2;
     hd = pixGetHeight(pixs) / 2;
@@ -1387,6 +1449,8 @@ PIX       *pixs, *pixd;
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 0.5, 0.5);
     scaleAreaMapLow2(datad, wd, hd, wpld, datas, d, wpls);
+    if (pixGetSpp(pixs) == 4)
+        pixScaleAndTransferAlpha(pixd, pixs, 0.5, 0.5);
     pixDestroy(&pixs);
     return pixd;
 }
@@ -1435,6 +1499,7 @@ PIX       *pixd;
     if ((pixd = pixCreate(wd, hd, 1)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyColormap(pixd, pixs);
+    pixCopyText(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, scalex, scaley);
     datad = pixGetData(pixd);
@@ -1542,53 +1607,47 @@ PIX       *pixt, *pixd;
         if ((pixt = pixScaleBinary(pixs, mag, mag)) == NULL)
             return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
         pixd = pixScaleToGray2(pixt);
-    }
-    else if (scalefactor == 0.5)
+    } else if (scalefactor == 0.5) {
         return pixd = pixScaleToGray2(pixs);
-    else if (scalefactor > 0.33333) {   /* see note (5) */
+    } else if (scalefactor > 0.33333) {   /* see note (5) */
         mag = 3.0 * scalefactor;   /* will be < 1.5 */
 /*        fprintf(stderr, "3x with mag %7.3f\n", mag);  */
         if ((pixt = pixScaleBinary(pixs, mag, mag)) == NULL)
             return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
         pixd = pixScaleToGray3(pixt);
-    }
-    else if (scalefactor > 0.25) {  /* see note (5) */
+    } else if (scalefactor > 0.25) {  /* see note (5) */
         mag = 4.0 * scalefactor;   /* will be < 1.3333 */
 /*        fprintf(stderr, "4x with mag %7.3f\n", mag);  */
         if ((pixt = pixScaleBinary(pixs, mag, mag)) == NULL)
             return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
         pixd = pixScaleToGray4(pixt);
-    }
-    else if (scalefactor == 0.25)
+    } else if (scalefactor == 0.25) {
         return pixd = pixScaleToGray4(pixs);
-    else if (scalefactor > 0.16667) {  /* see note (5) */
+    } else if (scalefactor > 0.16667) {  /* see note (5) */
         mag = 6.0 * scalefactor;   /* will be < 1.5 */
 /*        fprintf(stderr, "6x with mag %7.3f\n", mag); */
         if ((pixt = pixScaleBinary(pixs, mag, mag)) == NULL)
             return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
         pixd = pixScaleToGray6(pixt);
-    }
-    else if (scalefactor == 0.16667)
+    } else if (scalefactor == 0.16667) {
         return pixd = pixScaleToGray6(pixs);
-    else if (scalefactor > 0.125) {  /* see note (5) */
+    } else if (scalefactor > 0.125) {  /* see note (5) */
         mag = 8.0 * scalefactor;   /*  will be < 1.3333  */
 /*        fprintf(stderr, "8x with mag %7.3f\n", mag);  */
         if ((pixt = pixScaleBinary(pixs, mag, mag)) == NULL)
             return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
         pixd = pixScaleToGray8(pixt);
-    }
-    else if (scalefactor == 0.125)
+    } else if (scalefactor == 0.125) {
         return pixd = pixScaleToGray8(pixs);
-    else if (scalefactor > 0.0625) {  /* see note (6) */
+    } else if (scalefactor > 0.0625) {  /* see note (6) */
         red = 8.0 * scalefactor;   /* will be > 0.5 */
 /*        fprintf(stderr, "8x with red %7.3f\n", red);  */
         if ((pixt = pixScaleBinary(pixs, red, red)) == NULL)
             return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
         pixd = pixScaleToGray8(pixt);
-    }
-    else if (scalefactor == 0.0625)
+    } else if (scalefactor == 0.0625) {
         return pixd = pixScaleToGray16(pixs);
-    else {  /* see note (7) */
+    } else {  /* see note (7) */
         red = 16.0 * scalefactor;  /* will be <= 1.0 */
 /*        fprintf(stderr, "16x with red %7.3f\n", red);  */
         if ((pixt = pixScaleToGray16(pixs)) == NULL)
@@ -1672,8 +1731,7 @@ PIX       *pixt, *pixd;
         if ((pixt = pixScaleBinary(pixs, factor, factor)) == NULL)
             return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
         pixd = pixScaleToGray2(pixt);
-    }
-    else {  /* scalefactor < 0.0625; scale-to-gray first */
+    } else {  /* scalefactor < 0.0625; scale-to-gray first */
         factor = 16.0 * scalefactor;  /* will be < 1.0 */
         if ((pixt = pixScaleToGray16(pixs)) == NULL)
             return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
@@ -2073,35 +2131,27 @@ PIX       *pixs1, *pixs2, *pixt, *pixd;
         pixs1 = pixConvert1To8(NULL, pixs, 255, 0);
         pixs2 = pixScaleToGray2(pixs);
         red = scalefactor;
-    }
-    else if (scalefactor == 0.5) {
+    } else if (scalefactor == 0.5) {
         return pixScaleToGray2(pixs);
-    }
-    else if (scalefactor > 0.25) {
+    } else if (scalefactor > 0.25) {
         pixs1 = pixScaleToGray2(pixs);
         pixs2 = pixScaleToGray4(pixs);
         red = 2. * scalefactor;
-    }
-    else if (scalefactor == 0.25) {
+    } else if (scalefactor == 0.25) {
         return pixScaleToGray4(pixs);
-    }
-    else if (scalefactor > 0.125) {
+    } else if (scalefactor > 0.125) {
         pixs1 = pixScaleToGray4(pixs);
         pixs2 = pixScaleToGray8(pixs);
         red = 4. * scalefactor;
-    }
-    else if (scalefactor == 0.125) {
+    } else if (scalefactor == 0.125) {
         return pixScaleToGray8(pixs);
-    }
-    else if (scalefactor > 0.0625) {
+    } else if (scalefactor > 0.0625) {
         pixs1 = pixScaleToGray8(pixs);
         pixs2 = pixScaleToGray16(pixs);
         red = 8. * scalefactor;
-    }
-    else if (scalefactor == 0.0625) {
+    } else if (scalefactor == 0.0625) {
         return pixScaleToGray16(pixs);
-    }
-    else {  /* end of the pyramid; just do it */
+    } else {  /* end of the pyramid; just do it */
         red = 16.0 * scalefactor;  /* will be <= 1.0 */
         if ((pixt = pixScaleToGray16(pixs)) == NULL)
             return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
@@ -2127,8 +2177,8 @@ PIX       *pixs1, *pixs2, *pixt, *pixd;
 /*!
  *  pixScaleMipmap()
  *
- *      Input:  pixs1 (high res 8 bpp)
- *              pixs2 (low res -- 2x reduced -- 8 bpp)
+ *      Input:  pixs1 (high res 8 bpp, no cmap)
+ *              pixs2 (low res -- 2x reduced -- 8 bpp, no cmap)
  *              scale (reduction with respect to high res image, > 0.5)
  *      Return: 8 bpp pix, scaled down by reduction in each direction,
  *              or NULL on error.
@@ -2143,24 +2193,22 @@ pixScaleMipmap(PIX       *pixs1,
                PIX       *pixs2,
                l_float32  scale)
 {
-l_int32    ws1, hs1, ds1, ws2, hs2, ds2, wd, hd, wpls1, wpls2, wpld;
+l_int32    ws1, hs1, ws2, hs2, wd, hd, wpls1, wpls2, wpld;
 l_uint32  *datas1, *datas2, *datad;
 PIX       *pixd;
 
     PROCNAME("pixScaleMipmap");
 
-    if (!pixs1)
-        return (PIX *)ERROR_PTR("pixs1 not defined", procName, NULL);
-    if (!pixs2)
-        return (PIX *)ERROR_PTR("pixs2 not defined", procName, NULL);
-    pixGetDimensions(pixs1, &ws1, &hs1, &ds1);
-    pixGetDimensions(pixs2, &ws2, &hs2, &ds2);
-    if (ds1 != 8 || ds2 != 8)
-        return (PIX *)ERROR_PTR("pixs1, pixs2 not both 8 bpp", procName, NULL);
+    if (!pixs1 || pixGetDepth(pixs1) != 8 || pixGetColormap(pixs1))
+        return (PIX *)ERROR_PTR("pixs1 underdefined, not 8 bpp, or cmapped",
+                                procName, NULL);
+    if (!pixs2 || pixGetDepth(pixs2) != 8 || pixGetColormap(pixs2))
+        return (PIX *)ERROR_PTR("pixs2 underdefined, not 8 bpp, or cmapped",
+                                procName, NULL);
+    pixGetDimensions(pixs1, &ws1, &hs1, NULL);
+    pixGetDimensions(pixs2, &ws2, &hs2, NULL);
     if (scale > 1.0 || scale < 0.5)
         return (PIX *)ERROR_PTR("scale not in [0.5, 1.0]", procName, NULL);
-    if (pixGetColormap(pixs1) || pixGetColormap(pixs2))
-        L_WARNING("pixs1 or pixs2 has colormap", procName);
     if (ws1 < 2 * ws2)
         return (PIX *)ERROR_PTR("invalid width ratio", procName, NULL);
     if (hs1 < 2 * hs2)
@@ -2200,7 +2248,7 @@ PIX *
 pixExpandReplicate(PIX     *pixs,
                    l_int32  factor)
 {
-l_int32    w, h, d, wd, hd, wpls, wpld, bpld, start, i, j, k;
+l_int32    w, h, d, wd, hd, wpls, wpld, start, i, j, k;
 l_uint8    sval;
 l_uint16   sval16;
 l_uint32   sval32;
@@ -2236,7 +2284,6 @@ PIX       *pixd;
 
     switch (d) {
     case 2:
-        bpld = (wd + 3) / 4;  /* occupied bytes only */
         for (i = 0; i < h; i++) {
             lines = datas + i * wpls;
             lined = datad + factor * i * wpld;
@@ -2251,7 +2298,6 @@ PIX       *pixd;
         }
         break;
     case 4:
-        bpld = (wd + 1) / 2;  /* occupied bytes only */
         for (i = 0; i < h; i++) {
             lines = datas + i * wpls;
             lined = datad + factor * i * wpld;
@@ -2311,6 +2357,9 @@ PIX       *pixd;
         fprintf(stderr, "invalid depth\n");
     }
 
+    if (d == 32 && pixGetSpp(pixs) == 4)
+        pixScaleAndTransferAlpha(pixd, pixs, (l_float32)factor,
+                                 (l_float32)factor);
     return pixd;
 }
 
@@ -2321,7 +2370,7 @@ PIX       *pixd;
 /*!
  *  pixScaleGray2xLIThresh()
  *
- *      Input:  pixs (8 bpp)
+ *      Input:  pixs (8 bpp, not cmapped)
  *              thresh  (between 0 and 256)
  *      Return: pixd (1 bpp), or null on error
  *
@@ -2340,15 +2389,12 @@ PIX       *pixd;
 
     PROCNAME("pixScaleGray2xLIThresh");
 
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (pixGetDepth(pixs) != 8)
-        return (PIX *)ERROR_PTR("pixs must be 8 bpp", procName, NULL);
+    if (!pixs || pixGetDepth(pixs) != 8 || pixGetColormap(pixs))
+        return (PIX *)ERROR_PTR("pixs undefined, not 8 bpp, or cmapped",
+                                procName, NULL);
     if (thresh < 0 || thresh > 256)
         return (PIX *)ERROR_PTR("thresh must be in [0, ... 256]",
             procName, NULL);
-    if (pixGetColormap(pixs))
-        L_WARNING("pixs has colormap", procName);
 
     pixGetDimensions(pixs, &ws, &hs, NULL);
     wd = 2 * ws;
@@ -2394,7 +2440,7 @@ PIX       *pixd;
 /*!
  *  pixScaleGray2xLIDither()
  *
- *      Input:  pixs (8 bpp)
+ *      Input:  pixs (8 bpp, not cmapped)
  *      Return: pixd (1 bpp), or null on error
  *
  *  Notes:
@@ -2420,12 +2466,9 @@ PIX       *pixd;
 
     PROCNAME("pixScaleGray2xLIDither");
 
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (pixGetDepth(pixs) != 8)
-        return (PIX *)ERROR_PTR("pixs must be 8 bpp", procName, NULL);
-    if (pixGetColormap(pixs))
-        L_WARNING("pixs has colormap", procName);
+    if (!pixs || pixGetDepth(pixs) != 8 || pixGetColormap(pixs))
+        return (PIX *)ERROR_PTR("pixs undefined, not 8 bpp, or cmapped",
+                                procName, NULL);
 
     pixGetDimensions(pixs, &ws, &hs, NULL);
     wd = 2 * ws;
@@ -2529,15 +2572,12 @@ PIX       *pixd;
 
     PROCNAME("pixScaleGray4xLIThresh");
 
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (pixGetDepth(pixs) != 8)
-        return (PIX *)ERROR_PTR("pixs must be 8 bpp", procName, NULL);
+    if (!pixs || pixGetDepth(pixs) != 8 || pixGetColormap(pixs))
+        return (PIX *)ERROR_PTR("pixs undefined, not 8 bpp, or cmapped",
+                                procName, NULL);
     if (thresh < 0 || thresh > 256)
         return (PIX *)ERROR_PTR("thresh must be in [0, ... 256]",
             procName, NULL);
-    if (pixGetColormap(pixs))
-        L_WARNING("pixs has colormap", procName);
 
     pixGetDimensions(pixs, &ws, &hs, NULL);
     wd = 4 * ws;
@@ -2587,7 +2627,7 @@ PIX       *pixd;
 /*!
  *  pixScaleGray4xLIDither()
  *
- *      Input:  pixs (8 bpp)
+ *      Input:  pixs (8 bpp, not cmapped)
  *      Return: pixd (1 bpp), or null on error
  *
  *  Notes:
@@ -2618,12 +2658,9 @@ PIX       *pixd;
 
     PROCNAME("pixScaleGray4xLIDither");
 
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (pixGetDepth(pixs) != 8)
-        return (PIX *)ERROR_PTR("pixs must be 8 bpp", procName, NULL);
-    if (pixGetColormap(pixs))
-        L_WARNING("pixs has colormap", procName);
+    if (!pixs || pixGetDepth(pixs) != 8 || pixGetColormap(pixs))
+        return (PIX *)ERROR_PTR("pixs undefined, not 8 bpp, or cmapped",
+                                procName, NULL);
 
     pixGetDimensions(pixs, &ws, &hs, NULL);
     wd = 4 * ws;
@@ -2711,7 +2748,7 @@ PIX       *pixd;
 /*!
  *  pixScaleGrayMinMax()
  *
- *      Input:  pixs (8 bpp)
+ *      Input:  pixs (8 bpp, not cmapped)
  *              xfact (x downscaling factor; integer)
  *              yfact (y downscaling factor; integer)
  *              type (L_CHOOSE_MIN, L_CHOOSE_MAX, L_CHOOSE_MAX_MIN_DIFF)
@@ -2735,18 +2772,17 @@ pixScaleGrayMinMax(PIX     *pixs,
                    l_int32  yfact,
                    l_int32  type)
 {
-l_int32    ws, hs, d, wd, hd, wpls, wpld, i, j, k, m;
+l_int32    ws, hs, wd, hd, wpls, wpld, i, j, k, m;
 l_int32    minval, maxval, val;
 l_uint32  *datas, *datad, *lines, *lined;
 PIX       *pixd;
 
     PROCNAME("pixScaleGrayMinMax");
 
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    pixGetDimensions(pixs, &ws, &hs, &d);
-    if (d != 8)
-        return (PIX *)ERROR_PTR("pixs not 8 bpp", procName, NULL);
+    if (!pixs || pixGetDepth(pixs) != 8 || pixGetColormap(pixs))
+        return (PIX *)ERROR_PTR("pixs undefined, not 8 bpp, or cmapped",
+                                procName, NULL);
+    pixGetDimensions(pixs, &ws, &hs, NULL);
     if (type != L_CHOOSE_MIN && type != L_CHOOSE_MAX &&
         type != L_CHOOSE_MAX_MIN_DIFF)
         return (PIX *)ERROR_PTR("invalid type", procName, NULL);
@@ -2813,7 +2849,7 @@ PIX       *pixd;
 /*!
  *  pixScaleGrayMinMax2()
  *
- *      Input:  pixs (8 bpp)
+ *      Input:  pixs (8 bpp, not cmapped)
  *              type (L_CHOOSE_MIN, L_CHOOSE_MAX, L_CHOOSE_MAX_MIN_DIFF)
  *      Return: pixd (8 bpp downscaled by 2x)
  *
@@ -2838,7 +2874,7 @@ PIX *
 pixScaleGrayMinMax2(PIX     *pixs,
                     l_int32  type)
 {
-l_int32    ws, hs, d, wd, hd, wpls, wpld, i, j, k;
+l_int32    ws, hs, wd, hd, wpls, wpld, i, j, k;
 l_int32    minval, maxval;
 l_int32    val[4];
 l_uint32  *datas, *datad, *lines, *lined;
@@ -2846,13 +2882,12 @@ PIX       *pixd;
 
     PROCNAME("pixScaleGrayMinMax2");
 
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    pixGetDimensions(pixs, &ws, &hs, &d);
+    if (!pixs || pixGetDepth(pixs) != 8 || pixGetColormap(pixs))
+        return (PIX *)ERROR_PTR("pixs undefined, not 8 bpp, or cmapped",
+                                procName, NULL);
+    pixGetDimensions(pixs, &ws, &hs, NULL);
     if (ws < 2 || hs < 2)
         return (PIX *)ERROR_PTR("too small: ws < 2 or hs < 2", procName, NULL);
-    if (d != 8)
-        return (PIX *)ERROR_PTR("pixs not 8 bpp", procName, NULL);
     if (type != L_CHOOSE_MIN && type != L_CHOOSE_MAX &&
         type != L_CHOOSE_MAX_MIN_DIFF)
         return (PIX *)ERROR_PTR("invalid type", procName, NULL);
@@ -2906,7 +2941,7 @@ PIX       *pixd;
 /*!
  *  pixScaleGrayRankCascade()
  *
- *      Input:  pixs (8 bpp)
+ *      Input:  pixs (8 bpp, not cmapped)
  *              level1, ... level4 (rank thresholds, in set {0, 1, 2, 3, 4})
  *      Return: pixd (8 bpp, downscaled by up to 16x)
  *
@@ -2925,15 +2960,14 @@ PIX  *pixt1, *pixt2, *pixt3, *pixt4;
 
     PROCNAME("pixScaleGrayRankCascade");
 
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (pixGetDepth(pixs) != 8)
-        return (PIX *)ERROR_PTR("pixs not 8 bpp", procName, NULL);
+    if (!pixs || pixGetDepth(pixs) != 8 || pixGetColormap(pixs))
+        return (PIX *)ERROR_PTR("pixs undefined, not 8 bpp, or cmapped",
+                                procName, NULL);
     if (level1 > 4 || level2 > 4 || level3 > 4 || level4 > 4)
         return (PIX *)ERROR_PTR("levels must not exceed 4", procName, NULL);
 
     if (level1 <= 0) {
-        L_WARNING("no reduction because level1 not > 0", procName);
+        L_WARNING("no reduction because level1 not > 0\n", procName);
         return pixCopy(NULL, pixs);
     }
 
@@ -2960,7 +2994,7 @@ PIX  *pixt1, *pixt2, *pixt3, *pixt4;
 /*!
  *  pixScaleGrayRank2()
  *
- *      Input:  pixs (8 bpp)
+ *      Input:  pixs (8 bpp, no cmap)
  *              rank (1 (darkest), 2, 3, 4 (lightest))
  *      Return: pixd (8 bpp, downscaled by 2x)
  *
@@ -2981,7 +3015,7 @@ PIX *
 pixScaleGrayRank2(PIX     *pixs,
                   l_int32  rank)
 {
-l_int32    d, ws, hs, wd, hd, wpls, wpld, i, j, k, m;
+l_int32    ws, hs, wd, hd, wpls, wpld, i, j, k, m;
 l_int32    minval, maxval, rankval, minindex, maxindex;
 l_int32    val[4];
 l_int32    midval[4];  /* should only use 2 of these */
@@ -2990,11 +3024,9 @@ PIX       *pixd;
 
     PROCNAME("pixScaleGrayRank2");
 
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    pixGetDimensions(pixs, &ws, &hs, &d);
-    if (d != 8)
-        return (PIX *)ERROR_PTR("pixs not 8 bpp", procName, NULL);
+    if (!pixs || pixGetDepth(pixs) != 8 || pixGetColormap(pixs))
+        return (PIX *)ERROR_PTR("pixs undefined, not 8 bpp, or cmapped",
+                                procName, NULL);
     if (rank < 1 || rank > 4)
         return (PIX *)ERROR_PTR("invalid rank", procName, NULL);
 
@@ -3003,6 +3035,7 @@ PIX       *pixd;
     if (rank == 4)
         return pixScaleGrayMinMax2(pixs, L_CHOOSE_MAX);
 
+    pixGetDimensions(pixs, &ws, &hs, NULL);
     wd = ws / 2;
     hd = hs / 2;
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
@@ -3052,17 +3085,62 @@ PIX       *pixd;
 
 
 /*------------------------------------------------------------------------*
+ *           Helper function for transferring alpha with scaling          *
+ *------------------------------------------------------------------------*/
+/*!
+ *  pixScaleAndTransferAlpha()
+ *
+ *      Input:  pixd  (32 bpp, scaled image)
+ *              pixs  (32 bpp, original unscaled image)
+ *              scalex, scaley (both > 0.0)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) This scales the alpha component of pixs and inserts into pixd.
+ */
+l_int32
+pixScaleAndTransferAlpha(PIX       *pixd,
+                         PIX       *pixs,
+                         l_float32  scalex,
+                         l_float32  scaley)
+{
+PIX  *pix1, *pix2;
+
+    PROCNAME("pixScaleAndTransferAlpha");
+
+    if (!pixs || !pixd)
+        return ERROR_INT("pixs and pixd not both defined", procName, 1);
+    if (pixGetDepth(pixs) != 32 || pixGetSpp(pixs) != 4)
+        return ERROR_INT("pixs not 32 bpp and 4 spp", procName, 1);
+    if (pixGetDepth(pixd) != 32)
+        return ERROR_INT("pixd not 32 bpp", procName, 1);
+
+    if (scalex == 1.0 && scaley == 1.0) {
+        pixCopyRGBComponent(pixd, pixs, L_ALPHA_CHANNEL);
+        return 0;
+    }
+
+    pix1 = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
+    pix2 = pixScale(pix1, scalex, scaley);
+    pixSetRGBComponent(pixd, pix2, L_ALPHA_CHANNEL);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    return 0;
+}
+
+
+/*------------------------------------------------------------------------*
  *    RGB scaling including alpha (blend) component and gamma transform   *
  *------------------------------------------------------------------------*/
 /*!
  *  pixScaleWithAlpha()
  *
- *      Input:  pixs (32 bpp rgb)
+ *      Input:  pixs (32 bpp rgb or cmapped)
  *              scalex, scaley (must be > 0.0)
  *              pixg (<optional> 8 bpp, can be null)
  *              fract (between 0.0 and 1.0, with 0.0 fully transparent
  *                     and 1.0 fully opaque)
- *      Return: pixd, or null on error
+ *      Return: pixd (32 bpp rgba), or null on error
  *
  *  Notes:
  *      (1) The alpha channel is transformed separately from pixs,
@@ -3076,7 +3154,7 @@ PIX       *pixd;
  *          partially opaque, using @fract.  Otherwise, it is cropped
  *          to pixs if required, and @fract is ignored.  The alpha
  *          channel in pixs is never used.
- *      (4) Colormaps are removed.
+ *      (4) Colormaps are removed to 32 bpp.
  *      (5) The default setting for the border values in the alpha channel
  *          is 0 (transparent) for the outermost ring of pixels and
  *          (0.5 * fract * 255) for the second ring.  When blended over
@@ -3085,6 +3163,16 @@ PIX       *pixd;
  *              with an image below, and
  *          (b) softens the edges by weakening the aliasing there.
  *          Use l_setAlphaMaskBorder() to change these values.
+ *      (6) A subtle use of gamma correction is to remove gamma correction
+ *          before scaling and restore it afterwards.  This is done
+ *          by sandwiching this function between a gamma/inverse-gamma
+ *          photometric transform:
+ *              pixt = pixGammaTRCWithAlpha(NULL, pixs, 1.0 / gamma, 0, 255);
+ *              pixd = pixScaleWithAlpha(pixt, scalex, scaley, NULL, fract);
+ *              pixGammaTRCWithAlpha(pixd, pixd, gamma, 0, 255);
+ *              pixDestroy(&pixt);
+ *          This has the side-effect of producing artifacts in the very
+ *          dark regions.
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
  */
@@ -3095,40 +3183,50 @@ pixScaleWithAlpha(PIX       *pixs,
                   PIX       *pixg,
                   l_float32  fract)
 {
-l_int32  ws, hs, d;
-PIX     *pixd, *pixg2, *pixgs;
+l_int32  ws, hs, d, spp;
+PIX     *pixd, *pix32, *pixg2, *pixgs;
 
     PROCNAME("pixScaleWithAlpha");
 
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
     pixGetDimensions(pixs, &ws, &hs, &d);
-    if (d != 32 && pixGetColormap(pixs) == NULL)
+    if (d != 32 && !pixGetColormap(pixs))
         return (PIX *)ERROR_PTR("pixs not cmapped or 32 bpp", procName, NULL);
     if (scalex <= 0.0 || scaley <= 0.0)
         return (PIX *)ERROR_PTR("scale factor <= 0.0", procName, NULL);
     if (pixg && pixGetDepth(pixg) != 8) {
-        L_WARNING("pixg not 8 bpp; using @fract transparent alpha", procName);
+        L_WARNING("pixg not 8 bpp; using @fract transparent alpha\n", procName);
         pixg = NULL;
     }
     if (!pixg && (fract < 0.0 || fract > 1.0)) {
-        L_WARNING("invalid fract; using 1.0 (fully transparent)", procName);
+        L_WARNING("invalid fract; using fully opaque\n", procName);
         fract = 1.0;
     }
     if (!pixg && fract == 0.0)
-        L_WARNING("fully opaque alpha; image will not be blended", procName);
+        L_WARNING("transparent alpha; image will not be blended\n", procName);
 
-        /* Do separate scaling of rgb channels of pixs and of pixg */
-    pixd = pixScale(pixs, scalex, scaley);
+        /* Make sure input to scaling is 32 bpp rgb, and scale it */
+    if (d != 32)
+        pix32 = pixConvertTo32(pixs);
+    else
+        pix32 = pixClone(pixs);
+    spp = pixGetSpp(pix32);
+    pixSetSpp(pix32, 3);  /* ignore the alpha channel for scaling */
+    pixd = pixScale(pix32, scalex, scaley);
+    pixSetSpp(pix32, spp);  /* restore initial value in case it's a clone */
+    pixDestroy(&pix32);
+
+        /* Set up alpha layer with a fading border and scale it */
     if (!pixg) {
         pixg2 = pixCreate(ws, hs, 8);
         if (fract == 1.0)
             pixSetAll(pixg2);
-        else
+        else if (fract > 0.0)
             pixSetAllArbitrary(pixg2, (l_int32)(255.0 * fract));
-    }
-    else
+    } else {
         pixg2 = pixResizeToMatch(pixg, NULL, ws, hs);
+    }
     if (ws > 10 && hs > 10) {  /* see note 4 */
         pixSetBorderRingVal(pixg2, 1,
                             (l_int32)(255.0 * fract * AlphaMaskBorderVals[0]));
@@ -3136,6 +3234,8 @@ PIX     *pixd, *pixg2, *pixgs;
                             (l_int32)(255.0 * fract * AlphaMaskBorderVals[1]));
     }
     pixgs = pixScaleGeneral(pixg2, scalex, scaley, 0.0, 0);
+
+        /* Combine into a 4 spp result */
     pixSetRGBComponent(pixd, pixgs, L_ALPHA_CHANNEL);
 
     pixDestroy(&pixg2);
@@ -3143,53 +3243,3 @@ PIX     *pixd, *pixg2, *pixgs;
     return pixd;
 }
 
-
-/*!
- *  pixScaleGammaXform()
- *
- *      Input:  pixs (32 bpp rgb)
- *              gamma (gamma correction; must be > 0.0)
- *              scalex, scaley (must be > 0.0)
- *              fract (between 0.0 and 1.0, with 1.0 fully transparent)
- *      Return: pixd, or null on error
- *
- *  Notes:
- *      (1) This wraps a gamma/inverse-gamma photometric transform
- *          around pixScaleWithAlpha().
- *      (2) For usage, see notes in pixScaleWithAlpha() and
- *          pixGammaTRCWithAlpha().
- *      (3) The basic idea of a gamma/inverse-gamma transform is
- *          to remove gamma correction before scaling and restore
- *          it afterward.  The effects can be subtle, but important for
- *          some applications.  For example, using gamma > 1.0 will
- *          cause the dark areas to become somewhat lighter and slightly
- *          reduce aliasing effects when blending using the alpha channel.
- */
-PIX *
-pixScaleGammaXform(PIX       *pixs,
-                   l_float32  gamma,
-                   l_float32  scalex,
-                   l_float32  scaley,
-                   l_float32  fract)
-{
-PIX  *pixg, *pixd;
-
-    PROCNAME("pixScaleGammaXform");
-
-    if (!pixs || (pixGetDepth(pixs) != 32))
-        return (PIX *)ERROR_PTR("pixs undefined or not 32 bpp", procName, NULL);
-    if (scalex <= 0.0 || scaley <= 0.0)
-        return (PIX *)ERROR_PTR("scale factor <= 0.0", procName, NULL);
-    if (fract == 0.0)
-        L_WARNING("fully opaque alpha; image cannot be blended", procName);
-    if (gamma <= 0.0)  {
-        L_WARNING("gamma must be > 0.0; setting to 1.0", procName);
-        gamma = 1.0;
-    }
-
-    pixg = pixGammaTRCWithAlpha(NULL, pixs, 1.0 / gamma, 0, 255);
-    pixd = pixScaleWithAlpha(pixg, scalex, scaley, NULL, fract);
-    pixGammaTRCWithAlpha(pixd, pixd, gamma, 0, 255);
-    pixDestroy(&pixg);
-    return pixd;
-}

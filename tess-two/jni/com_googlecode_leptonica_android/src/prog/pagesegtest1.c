@@ -27,14 +27,14 @@
 /*
  * pagesegtest1.c
  *
- *   Use on, e.g.:   feyn1.tif, witten.tif,
- *                   pageseg1.tif, pageseg1.tif, pageseg3.tif, pageseg4.tif
+ *   Use on, e.g.:   feyn.tif, witten.tif,
+ *                   pageseg1.tif, pageseg2.tif, pageseg3.tif, pageseg4.tif
  */
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 PIX         *pixs, *pixhm, *pixtm, *pixtb, *pixd;
 PIXA        *pixa;
@@ -42,12 +42,11 @@ char        *filein;
 static char  mainName[] = "pagesegtest1";
 
     if (argc != 2)
-	return ERROR_INT(" Syntax:  pagesegtest1 filein", mainName, 1);
+        return ERROR_INT(" Syntax:  pagesegtest1 filein", mainName, 1);
 
     filein = argv[1];
-
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
 
     pixGetRegionsBinary(pixs, &pixhm, &pixtm, &pixtb, 1);
     pixDestroy(&pixhm);
@@ -58,7 +57,7 @@ static char  mainName[] = "pagesegtest1";
         /* Display intermediate images in a single image */
     pixa = pixaReadFiles("/tmp", "junk_write");
     pixd = pixaDisplayTiledAndScaled(pixa, 32, 400, 4, 0, 20, 3);
-    pixWrite("junkpixd", pixd, IFF_PNG);
+    pixWrite("/tmp/segstuff.png", pixd, IFF_PNG);
     pixaDestroy(&pixa);
     pixDestroy(&pixd);
     return 0;

@@ -32,25 +32,34 @@
 
 #include "allheaders.h"
 
-static const char  *kdatastr = " 20    50   80  50   20 "
-                               " 50   100  140  100  50 "
-                               " 90   160  200  160  90 "
-                               " 50   100  140  100  50 "
-                               " 20    50   80   50  20 ";
+static const char  *kel1str = " 20    50   80  50   20 "
+                              " 50   100  140  100  50 "
+                              " 90   160  200  160  90 "
+                              " 50   100  140  100  50 "
+                              " 20    50   80   50  20 ";
+
+static const char  *kel2str = " -20  -50  -80  -50  -20 "
+                              " -50   50   80   50  -50 "
+                              " -90   90  200   90  -90 "
+                              " -50   50   80   50  -50 "
+                              " -20  -50  -80  -50  -20 ";
+
+static const char  *kel3xstr = " -70   40  100   40  -70 ";
+static const char  *kel3ystr = "  20  -70   40  100   40  -70  20 ";
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-l_int32       i, j, sizex, sizey;
+l_int32       i, j, sizex, sizey, bias;
 FPIX         *fpixv, *fpixrv;
-L_KERNEL     *kel1, *kel2;
+L_KERNEL     *kel1, *kel2, *kel3x, *kel3y;
 PIX          *pixs, *pixacc, *pixg, *pixt, *pixd;
 PIX          *pixb, *pixm, *pixms, *pixrv, *pix1, *pix2, *pix3, *pix4;
 L_REGPARAMS  *rp;
 
     if (regTestSetup(argc, argv, &rp))
-	return 1;
+        return 1;
 
         /* Test pixBlockconvGray() on 8 bpp */
     pixs = pixRead("test8.jpg");
@@ -95,7 +104,7 @@ L_REGPARAMS  *rp;
     pixDestroy(&pixd);
 
         /* Test generic convolution with kel1 */
-    kel1 = kernelCreateFromString(5, 5, 2, 2, kdatastr);
+    kel1 = kernelCreateFromString(5, 5, 2, 2, kel1str);
     pixd = pixConvolve(pixg, kel1, 8, 1);
     regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 7 */
     pixDisplayWithTitle(pixd, 100, 500, NULL, rp->display);
@@ -121,6 +130,30 @@ L_REGPARAMS  *rp;
     regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 9 */
     pixDisplayWithTitle(pixd, 300, 500, NULL, rp->display);
     pixDestroy(&pixt);
+    pixDestroy(&pixs);
+    pixDestroy(&pixg);
+    pixDestroy(&pixd);
+
+        /* Test bias convolution non-separable with kel2 */
+    pixs = pixRead("marge.jpg");
+    pixg = pixScaleRGBToGrayFast(pixs, 2, COLOR_GREEN);
+    kel2 = kernelCreateFromString(5, 5, 2, 2, kel2str);
+    pixd = pixConvolveWithBias(pixg, kel2, NULL, TRUE, &bias);
+    regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 10 */
+    pixDisplayWithTitle(pixd, 400, 500, NULL, rp->display);
+    fprintf(stderr, "bias = %d\n", bias);
+    kernelDestroy(&kel2);
+    pixDestroy(&pixd);
+
+        /* Test bias convolution separable with kel3x and kel3y */
+    kel3x = kernelCreateFromString(1, 5, 0, 2, kel3xstr);
+    kel3y = kernelCreateFromString(7, 1, 3, 0, kel3ystr);
+    pixd = pixConvolveWithBias(pixg, kel3x, kel3y, TRUE, &bias);
+    regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 11 */
+    pixDisplayWithTitle(pixd, 500, 500, NULL, rp->display);
+    fprintf(stderr, "bias = %d\n", bias);
+    kernelDestroy(&kel3x);
+    kernelDestroy(&kel3y);
     pixDestroy(&pixd);
     pixDestroy(&pixs);
     pixDestroy(&pixg);
@@ -134,7 +167,7 @@ L_REGPARAMS  *rp;
                                sizey + 1, sizey + 1, 0);
     pixm = pixWindowedMean(pixb, sizex, sizey, 1, 1);
     pixms = pixWindowedMeanSquare(pixb, sizex, sizey, 1);
-    regTestWritePixAndCheck(rp, pixm, IFF_JFIF_JPEG);  /* 10 */
+    regTestWritePixAndCheck(rp, pixm, IFF_JFIF_JPEG);  /* 12 */
     pixDisplayWithTitle(pixm, 100, 0, NULL, rp->display);
     pixDestroy(&pixs);
     pixDestroy(&pixb);
@@ -142,27 +175,26 @@ L_REGPARAMS  *rp;
         /* Test pixWindowedVariance() on 8 bpp */
     pixWindowedVariance(pixm, pixms, &fpixv, &fpixrv);
     pixrv = fpixConvertToPix(fpixrv, 8, L_CLIP_TO_ZERO, 1);
-    regTestWritePixAndCheck(rp, pixrv, IFF_JFIF_JPEG);  /* 11 */
+    regTestWritePixAndCheck(rp, pixrv, IFF_JFIF_JPEG);  /* 13 */
     pixDisplayWithTitle(pixrv, 100, 250, NULL, rp->display);
     pix1 = fpixDisplayMaxDynamicRange(fpixv);
     pix2 = fpixDisplayMaxDynamicRange(fpixrv);
     pixDisplayWithTitle(pix1, 100, 500, "Variance", rp->display);
     pixDisplayWithTitle(pix2, 100, 750, "RMS deviation", rp->display);
-    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 12 */
-    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 13 */
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 14 */
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 15 */
     fpixDestroy(&fpixv);
     fpixDestroy(&fpixrv);
     pixDestroy(&pixm);
     pixDestroy(&pixms);
     pixDestroy(&pixrv);
 
-#if 1
         /* Test again all windowed functions with simpler interface */
     pixWindowedStats(pixg, sizex, sizey, 0, NULL, NULL, &fpixv, &fpixrv);
     pix3 = fpixDisplayMaxDynamicRange(fpixv);
     pix4 = fpixDisplayMaxDynamicRange(fpixrv);
-    regTestComparePix(rp, pix1, pix3);  /* 14 */
-    regTestComparePix(rp, pix2, pix4);  /* 15 */
+    regTestComparePix(rp, pix1, pix3);  /* 16 */
+    regTestComparePix(rp, pix2, pix4);  /* 17 */
     pixDestroy(&pixg);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
@@ -170,7 +202,6 @@ L_REGPARAMS  *rp;
     pixDestroy(&pix4);
     fpixDestroy(&fpixv);
     fpixDestroy(&fpixrv);
-#endif
 
     return regTestCleanup(rp);
 }

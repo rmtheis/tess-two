@@ -53,8 +53,8 @@ static const char *patname[3] = {
     "tribune-t.png"};     /* patno = 2 */
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      patno, reduction, width, cols, cx, cy;
 BOX         *box;
@@ -65,14 +65,14 @@ SEL         *selhm;
 static char  mainName[] = "livre_hmt";
 
     if (argc != 3)
-	exit(ERROR_INT(" Syntax:  livre_hmt pattern reduction", mainName, 1));
+        return ERROR_INT(" Syntax:  livre_hmt pattern reduction", mainName, 1);
     patno = atoi(argv[1]);
     reduction = atoi(argv[2]);
 
     if ((pixs = pixRead(patname[patno])) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
     if (reduction != 4 && reduction != 8 && reduction != 16)
-	exit(ERROR_INT("reduction not 4, 8 or 16", mainName, 1));
+        return ERROR_INT("reduction not 4, 8 or 16", mainName, 1);
 
     if (reduction == 4)
         pixt = pixReduceRankBinaryCascade(pixs, 4, 4, 0, 0);
@@ -144,4 +144,3 @@ static char  mainName[] = "livre_hmt";
     pixDestroy(&pixt);
     return 0;
 }
-

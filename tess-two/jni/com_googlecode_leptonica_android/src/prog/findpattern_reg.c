@@ -58,8 +58,8 @@ static const char *patname[2] = {
 l_int32 GeneratePattern(l_int32 patno, l_int32 red, L_REGPARAMS  *rp);
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      patno, red;
 L_REGPARAMS  *rp;

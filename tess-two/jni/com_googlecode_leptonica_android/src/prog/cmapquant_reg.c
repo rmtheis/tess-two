@@ -39,8 +39,8 @@
 #define  LEVEL       3
 #define  MIN_DEPTH   4
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      same;
 l_uint32    *rtab, *gtab, *btab;
@@ -52,7 +52,7 @@ static char  mainName[] = "cmapquant_reg";
 
     pixs = pixRead("lucasta-frag.jpg");
     if (argc != 1)
-        exit(ERROR_INT("syntax: cmapquant_req", mainName, 1));
+        return ERROR_INT("syntax: cmapquant_req", mainName, 1);
 
         /* Convert to 4 bpp with 6 levels and a colormap */
     pixt1 = pixThresholdTo4bpp(pixs, 6, 1);
@@ -100,7 +100,7 @@ static char  mainName[] = "cmapquant_reg";
     lept_free(gtab);
     lept_free(btab);
 
-    pixDisplayMultiple("/tmp/junk_write_display*");
+    pixDisplayMultiple("/tmp/display/file*");
 
     pixDestroy(&pixs);
     pixDestroy(&pixt1);

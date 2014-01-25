@@ -46,8 +46,8 @@
 #include <string.h>
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *dirin, *fileout, *fname, *fullname;
 l_int32      depth, width, background, i, index, nfiles, n;
@@ -58,9 +58,9 @@ PIXA        *pixa;
 static char  mainName[] = "maketile";
 
     if (argc != 7)
-	exit(ERROR_INT(
-	    "Syntax:  maketile dirin depth scale width background fileout",
-	    mainName, 1));
+        return ERROR_INT(
+            "Syntax:  maketile dirin depth scale width background fileout",
+            mainName, 1);
 
     dirin = argv[1];
     depth = atoi(argv[2]);
@@ -71,26 +71,26 @@ static char  mainName[] = "maketile";
 
         /* capture the filenames in the input directory; ignore directories */
     if ((safiles = getFilenamesInDirectory(dirin)) == NULL)
-	exit(ERROR_INT("safiles not made", mainName, 1));
+        return ERROR_INT("safiles not made", mainName, 1);
 
-    	/* capture images with the requisite depth */
+            /* capture images with the requisite depth */
     nfiles = sarrayGetCount(safiles);
     pixa = pixaCreate(nfiles);
     for (i = 0, index = 0; i < nfiles; i++) {
         fname = sarrayGetString(safiles, i, 0);
-	fullname = genPathname(dirin, fname);
+        fullname = genPathname(dirin, fname);
         pix = pixRead(fullname);
-	lept_free(fullname);
+        lept_free(fullname);
         if (!pix)
             continue;
         if (pixGetDepth(pix) != depth) {
             pixDestroy(&pix);
             continue;
         }
-	if (pixGetHeight(pix) > 5000) {
-	    fprintf(stderr, "%s too tall\n", fname);
-	    continue;
-	}
+        if (pixGetHeight(pix) > 5000) {
+            fprintf(stderr, "%s too tall\n", fname);
+            continue;
+        }
         pixt = pixScale(pix, scale, scale);
         pixaAddPix(pixa, pixt, L_INSERT);
         pixDestroy(&pix);

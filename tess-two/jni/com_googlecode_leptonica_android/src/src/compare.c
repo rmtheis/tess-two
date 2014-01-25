@@ -29,6 +29,7 @@
  *
  *      Test for pix equality
  *           l_int32     pixEqual()
+ *           l_int32     pixEqualWithAlpha()
  *           l_int32     pixEqualWithCmap()
  *           l_int32     pixUsesCmapColor()
  *
@@ -45,13 +46,15 @@
  *
  *      Other measures of the difference of two images of the same size
  *           NUMA       *pixCompareRankDifference()
- *           l_int32     pixTestforSimilarity()
+ *           l_int32     pixTestForSimilarity()
  *           l_int32     pixGetDifferenceStats()
  *           NUMA       *pixGetDifferenceHistogram()
+ *           l_int32     pixGetPerceptualDiff()
  *           l_int32     pixGetPSNR()
  *
  *      Translated images at the same resolution
  *           l_int32     pixCompareWithTranslation()
+ *           l_int32     pixBestCorrelation()
  */
 
 #include <string.h>
@@ -79,18 +82,17 @@ static const l_float32  TINY = 0.00001;
  *      (2) This works on two pix of any depth.  If one or both pix
  *          have a colormap, the depths can be different and the
  *          two pix can still be equal.
- *      (3) If both pix have colormaps and the depths are equal,
+ *      (3) This ignores the alpha component for 32 bpp images.
+ *      (4) If both pix have colormaps and the depths are equal,
  *          use the pixEqualWithCmap() function, which does a fast
  *          comparison if the colormaps are identical and a relatively
  *          slow comparison otherwise.
- *      (4) In all other cases, any existing colormaps must first be
+ *      (5) In all other cases, any existing colormaps must first be
  *          removed before doing pixel comparison.  After the colormaps
  *          are removed, the resulting two images must have the same depth.
  *          The "lowest common denominator" is RGB, but this is only
  *          chosen when necessary, or when both have colormaps but
  *          different depths.
- *      (5) For 32 bpp, ignore the bits in the 4th byte (the 'A' byte
- *          of the RGBA pixel)
  *      (6) For images without colormaps that are not 32 bpp, all bits
  *          in the image part of the data array must be identical.
  */
@@ -99,35 +101,81 @@ pixEqual(PIX      *pix1,
          PIX      *pix2,
          l_int32  *psame)
 {
-l_int32    w1, h1, d1, w2, h2, d2, wpl1, wpl2, i, j, color;
+    return pixEqualWithAlpha(pix1, pix2, 0, psame);
+}
+
+
+/*!
+ *  pixEqualWithAlpha()
+ *
+ *      Input:  pix1
+ *              pix2
+ *              use_alpha (1 to compare alpha in RGBA; 0 to ignore)
+ *              &same  (<return> 1 if same; 0 if different)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) See notes in pixEqual().
+ *      (2) This is more general than pixEqual(), in that for 32 bpp
+ *          RGBA images, where spp = 4, you can optionally include
+ *          the alpha component in the comparison.
+ */
+l_int32
+pixEqualWithAlpha(PIX      *pix1,
+                  PIX      *pix2,
+                  l_int32   use_alpha,
+                  l_int32  *psame)
+{
+l_int32    w1, h1, d1, w2, h2, d2, wpl1, wpl2;
+l_int32    spp1, spp2, i, j, color, mismatch, opaque;
 l_int32    fullwords, linebits, endbits;
-l_uint32   endmask;
+l_uint32   endmask, wordmask;
 l_uint32  *data1, *data2, *line1, *line2;
-PIX       *pixs1, *pixs2, *pixt1, *pixt2;
+PIX       *pixs1, *pixs2, *pixt1, *pixt2, *pixalpha;
 PIXCMAP   *cmap1, *cmap2;
 
-    PROCNAME("pixEqual");
+    PROCNAME("pixEqualWithAlpha");
 
     if (!psame)
-        return ERROR_INT("psamel not defined", procName, 1);
-    *psame = 0;  /* pix are different unless we exit after checking all data */
-
+        return ERROR_INT("psame not defined", procName, 1);
+    *psame = 0;  /* init to not equal */
     if (!pix1)
         return ERROR_INT("pix1 not defined", procName, 1);
     if (!pix2)
         return ERROR_INT("pix2 not defined", procName, 1);
-
     pixGetDimensions(pix1, &w1, &h1, &d1);
     pixGetDimensions(pix2, &w2, &h2, &d2);
     if (w1 != w2 || h1 != h2) {
-        L_INFO("pix sizes differ", procName);
+        L_INFO("pix sizes differ\n", procName);
         return 0;
+    }
+
+        /* Suppose the use_alpha flag is true.
+         * If only one of two 32 bpp images has spp == 4, we call that
+         * a "mismatch" of the alpha component.  In the case of a mismatch,
+         * if the 4 bpp pix does not have all alpha components opaque (255),
+         * the images are not-equal.  However if they are all opaque,
+         * this image is equivalent to spp == 3, so we allow the
+         * comparison to go forward, testing only for the RGB equality. */
+    spp1 = pixGetSpp(pix1);
+    spp2 = pixGetSpp(pix2);
+    mismatch = 0;
+    if (use_alpha && d1 == 32 && d2 == 32) {
+        mismatch = ((spp1 == 4 && spp2 != 4) || (spp1 != 4 && spp2 == 4));
+        if (mismatch) {
+            pixalpha = (spp1 == 4) ? pix1 : pix2;
+            pixAlphaIsOpaque(pixalpha, &opaque);
+            if (!opaque) {
+                L_INFO("just one pix has a non-opaque alpha layer\n", procName);
+                return 0;
+            }
+        }
     }
 
     cmap1 = pixGetColormap(pix1);
     cmap2 = pixGetColormap(pix2);
     if (!cmap1 && !cmap2 && (d1 != d2) && (d1 == 32 || d2 == 32)) {
-        L_INFO("no colormaps, pix depths unequal, and one of them is RGB",
+        L_INFO("no colormaps, pix depths unequal, and one of them is RGB\n",
                procName);
         return 0;
     }
@@ -149,8 +197,7 @@ PIXCMAP   *cmap1, *cmap2;
             pixs1 = pixRemoveColormap(pix1, REMOVE_CMAP_TO_GRAYSCALE);
         else
             pixs1 = pixRemoveColormap(pix1, REMOVE_CMAP_TO_FULL_COLOR);
-    }
-    else if (!cmap1 && cmap2) {
+    } else if (!cmap1 && cmap2) {
         pixUsesCmapColor(pix2, &color);
         if (color && d1 <= 8)  /* can't be equal */
             return 0;
@@ -162,12 +209,10 @@ PIXCMAP   *cmap1, *cmap2;
             pixs2 = pixRemoveColormap(pix2, REMOVE_CMAP_TO_GRAYSCALE);
         else
             pixs2 = pixRemoveColormap(pix2, REMOVE_CMAP_TO_FULL_COLOR);
-    }
-    else if (cmap1 && cmap2) {  /* depths not equal; use rgb */
+    } else if (cmap1 && cmap2) {  /* depths not equal; use rgb */
         pixs1 = pixRemoveColormap(pix1, REMOVE_CMAP_TO_FULL_COLOR);
         pixs2 = pixRemoveColormap(pix2, REMOVE_CMAP_TO_FULL_COLOR);
-    }
-    else {  /* no colormaps */
+    } else {  /* no colormaps */
         pixs1 = pixClone(pix1);
         pixs2 = pixClone(pix2);
     }
@@ -177,7 +222,7 @@ PIXCMAP   *cmap1, *cmap2;
     d2 = pixGetDepth(pixs2);
     if (d1 != d2) {
         if (d1 == 16 || d2 == 16) {
-            L_INFO("one pix is 16 bpp", procName);
+            L_INFO("one pix is 16 bpp\n", procName);
             pixDestroy(&pixs1);
             pixDestroy(&pixs2);
             return 0;
@@ -185,15 +230,14 @@ PIXCMAP   *cmap1, *cmap2;
         pixt1 = pixConvertLossless(pixs1, 8);
         pixt2 = pixConvertLossless(pixs2, 8);
         if (!pixt1 || !pixt2) {
-            L_INFO("failure to convert to 8 bpp", procName);
+            L_INFO("failure to convert to 8 bpp\n", procName);
             pixDestroy(&pixs1);
             pixDestroy(&pixs2);
             pixDestroy(&pixt1);
             pixDestroy(&pixt2);
             return 0;
         }
-    }
-    else {
+    } else {
         pixt1 = pixClone(pixs1);
         pixt2 = pixClone(pixs2);
     }
@@ -208,12 +252,16 @@ PIXCMAP   *cmap1, *cmap2;
     data1 = pixGetData(pixt1);
     data2 = pixGetData(pixt2);
 
-    if (d1 == 32) {  /* assume RGBA, with A = don't-care */
+    if (d1 == 32) {  /* test either RGB or RGBA pixels */
+        if (use_alpha && !mismatch)
+            wordmask = (spp1 == 3) ? 0xffffff00 : 0xffffffff;
+        else
+            wordmask = 0xffffff00;
         for (i = 0; i < h1; i++) {
             line1 = data1 + wpl1 * i;
             line2 = data2 + wpl2 * i;
             for (j = 0; j < wpl1; j++) {
-                if ((*line1 ^ *line2) & 0xffffff00) {
+                if ((*line1 ^ *line2) & wordmask) {
                     pixDestroy(&pixt1);
                     pixDestroy(&pixt2);
                     return 0;
@@ -222,8 +270,7 @@ PIXCMAP   *cmap1, *cmap2;
                 line2++;
             }
         }
-    }
-    else  {  /* all bits count */
+    } else {  /* all bits count */
         linebits = d1 * w1;
         fullwords = linebits / 32;
         endbits = linebits & 31;
@@ -303,12 +350,12 @@ PIXCMAP   *cmap1, *cmap2;
     cmap1 = pixGetColormap(pix1);
     cmap2 = pixGetColormap(pix2);
     if (!cmap1 || !cmap2) {
-        L_INFO("both images don't have colormap", procName);
+        L_INFO("both images don't have colormap\n", procName);
         return 0;
     }
     d = pixGetDepth(pix1);
     if (d != 1 && d != 2 && d != 4 && d != 8) {
-        L_INFO("pix depth not in {1, 2, 4, 8}", procName);
+        L_INFO("pix depth not in {1, 2, 4, 8}\n", procName);
         return 0;
     }
 
@@ -316,7 +363,7 @@ PIXCMAP   *cmap1, *cmap2;
     nc2 = pixcmapGetCount(cmap2);
     samecmaps = TRUE;
     if (nc1 != nc2) {
-        L_INFO("colormap sizes are different", procName);
+        L_INFO("colormap sizes are different\n", procName);
         samecmaps = FALSE;
     }
 
@@ -456,7 +503,7 @@ PIXCMAP  *cmap;
  *          If they have no fg pixels in common, this is 0.0.
  *          If one or both images have no fg pixels, the correlation is 0.0.
  *      (2) Typically the two images are of equal size, but this
- *          is not enforced.  Instead, the UL corners are be aligned.
+ *          is not enforced.  Instead, the UL corners are aligned.
  */
 l_int32
 pixCorrelationBinary(PIX        *pix1,
@@ -834,8 +881,7 @@ PIX       *pixr1, *pixr2, *pixg1, *pixg2, *pixb1, *pixb2, *pixr, *pixg, *pixb;
         pixr = pixSubtractGray(NULL, pixr1, pixr2);
         pixg = pixSubtractGray(NULL, pixg1, pixg2);
         pixb = pixSubtractGray(NULL, pixb1, pixb2);
-    }
-    else  { /* comptype == L_COMPARE_ABS_DIFF) */
+    } else { /* comptype == L_COMPARE_ABS_DIFF) */
         pixr = pixAbsDifference(pixr1, pixr2);
         pixg = pixAbsDifference(pixg1, pixg2);
         pixb = pixAbsDifference(pixb1, pixb2);
@@ -975,9 +1021,9 @@ PIXACC    *pixacc;
         return ERROR_INT("invalid type", procName, 1);
 
     pixt = pixAbsDifference(pix1, pix2);
-    if (d1 == 8)
+    if (d1 == 8) {
         *ppixdiff = pixGetAverageTiled(pixt, sx, sy, type);
-    else {  /* d1 == 32 */
+    } else {  /* d1 == 32 */
         pixr = pixGetRGBComponent(pixt, COLOR_RED);
         pixg = pixGetRGBComponent(pixt, COLOR_GREEN);
         pixb = pixGetRGBComponent(pixt, COLOR_BLUE);
@@ -1344,8 +1390,7 @@ PIX        *pixt1, *pixt2;
                 array[val]++;
             }
         }
-    }
-    else {  /* d1 == 32 */
+    } else {  /* d1 == 32 */
         for (i = 0; i < h; i += factor) {
             line1 = data1 + i * wpl1;
             line2 = data2 + i * wpl2;
@@ -1369,6 +1414,184 @@ PIX        *pixt1, *pixt2;
 
 
 /*!
+ *  pixGetPerceptualDiff()
+ *
+ *      Input:  pix1 (8 bpp gray or 32 bpp rgb, or colormapped)
+ *              pix2 (8 bpp gray or 32 bpp rgb, or colormapped)
+ *              sampling (subsampling factor; use 0 or 1 for no subsampling)
+ *              dilation (size of grayscale or color Sel; odd)
+ *              mindiff (minimum pixel difference to be counted; > 0)
+ *              &fract (<return> fraction of pixels with diff greater than
+ *                      mindiff)
+ *              &pixdiff1 (<optional return> showing difference (gray or color))
+ *              &pixdiff2 (<optional return> showing pixels of sufficient diff)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This takes 2 pix and determines, using 2 input parameters:
+ *           * @dilation specifies the amount of grayscale or color
+ *             dilation to apply to the images, to compensate for
+ *             a small amount of misregistration.  A typical number might
+ *             be 5, which uses a 5x5 Sel.  Grayscale dilation expands
+ *             lighter pixels into darker pixel regions.
+ *           * @mindiff determines the threshold on the difference in
+ *             pixel values to be counted -- two pixels are not similar
+ *             if their difference in value is at least @mindiff.  For
+ *             color pixels, we use the maximum component difference.
+ *      (2) The pixelwise comparison is always done with the UL corners
+ *          aligned.  The sizes of pix1 and pix2 need not be the same,
+ *          although in practice it can be useful to scale to the same size.
+ *      (3) If there is a colormap, it is removed and the result
+ *          is either gray or RGB depending on the colormap.
+ *      (4) Two optional diff images can be retrieved (typ. for debugging):
+ *           pixdiff1: the gray or color difference
+ *           pixdiff2: thresholded to 1 bpp for pixels exceeding @mindiff
+ *      (5) The returned value of fract can be compared to some threshold,
+ *          which is application dependent.
+ *      (6) This method is in analogy to the two-sided hausdorff transform,
+ *          except here it is for d > 1.  For d == 1 (see pixRankHaustest()),
+ *          we verify that when one pix1 is dilated, it covers at least a
+ *          given fraction of the pixels in pix2, and v.v.; in that
+ *          case, the two pix are sufficiently similar.  Here, we
+ *          do an analogous thing: subtract the dilated pix1 from pix2 to
+ *          get a 1-sided hausdorff-like transform.  Then do it the
+ *          other way.  Take the component-wise max of the two results,
+ *          and threshold to get the fraction of pixels with a difference
+ *          below the threshold.
+ */
+l_int32
+pixGetPerceptualDiff(PIX        *pixs1,
+                     PIX        *pixs2,
+                     l_int32     sampling,
+                     l_int32     dilation,
+                     l_int32     mindiff,
+                     l_float32  *pfract,
+                     PIX       **ppixdiff1,
+                     PIX       **ppixdiff2)
+{
+l_int32  d1, d2, w, h, count;
+PIX     *pix1, *pix2, *pix3, *pix4, *pix5, *pix6, *pix7, *pix8, *pix9;
+PIX     *pix10, *pix11;
+
+    PROCNAME("pixGetPerceptualDiff");
+
+    if (!pfract)
+        return ERROR_INT("&fract not defined", procName, 1);
+    *pfract = 1.0;  /* init to completely different */
+    if (ppixdiff1) *ppixdiff1 = NULL;
+    if (ppixdiff2) *ppixdiff2 = NULL;
+    if ((dilation & 1) == 0)
+        return ERROR_INT("dilation must be odd", procName, 1);
+    if (!pixs1)
+        return ERROR_INT("pixs1 not defined", procName, 1);
+    if (!pixs2)
+        return ERROR_INT("pixs2 not defined", procName, 1);
+    d1 = pixGetDepth(pixs1);
+    d2 = pixGetDepth(pixs2);
+    if (!pixGetColormap(pixs1) && d1 < 8)
+        return ERROR_INT("pixs1 not cmapped or >=8 bpp", procName, 1);
+    if (!pixGetColormap(pixs2) && d2 < 8)
+        return ERROR_INT("pixs2 not cmapped or >=8 bpp", procName, 1);
+
+        /* Integer downsample if requested */
+    if (sampling > 1) {
+        pix1 = pixScaleByIntSubsampling(pixs1, sampling);
+        pix2 = pixScaleByIntSubsampling(pixs2, sampling);
+    } else {
+        pix1 = pixClone(pixs1);
+        pix2 = pixClone(pixs2);
+    }
+
+        /* Remove colormaps */
+    if (pixGetColormap(pix1)) {
+        pix3 = pixRemoveColormap(pix1, REMOVE_CMAP_BASED_ON_SRC);
+        d1 = pixGetDepth(pix3);
+    } else {
+        pix3 = pixClone(pix1);
+    }
+    if (pixGetColormap(pix2)) {
+        pix4 = pixRemoveColormap(pix2, REMOVE_CMAP_BASED_ON_SRC);
+        d2 = pixGetDepth(pix4);
+    } else {
+        pix4 = pixClone(pix2);
+    }
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    if (d1 != d2) {
+        pixDestroy(&pix3);
+        pixDestroy(&pix4);
+        return ERROR_INT("pix3 and pix4 depths not equal", procName, 1);
+    }
+
+        /* In each direction, do a small dilation and subtract the dilated
+         * image from the other image to get a one-sided difference.
+         * Then take the max of the differences for each direction
+         * and clipping each component to 255 if necessary.  Note that
+         * for RGB images, the dilations and max selection are done
+         * component-wise, and the conversion to grayscale also uses the
+         * maximum component.  The resulting grayscale images are
+         * thresholded using @mindiff. */
+    if (d1 == 8) {
+        pix5 = pixDilateGray(pix3, dilation, dilation);
+        pixCompareGray(pix4, pix5, L_COMPARE_SUBTRACT, 0, NULL, NULL, NULL,
+                       &pix7);
+        pix6 = pixDilateGray(pix4, dilation, dilation);
+        pixCompareGray(pix3, pix6, L_COMPARE_SUBTRACT, 0, NULL, NULL, NULL,
+                       &pix8);
+        pix9 = pixMinOrMax(NULL, pix7, pix8, L_CHOOSE_MAX);
+        pix10 = pixThresholdToBinary(pix9, mindiff);
+        pixInvert(pix10, pix10);
+        pixCountPixels(pix10, &count, NULL);
+        pixGetDimensions(pix10, &w, &h, NULL);
+        *pfract = (l_float32)count / (l_float32)(w * h);
+        pixDestroy(&pix5);
+        pixDestroy(&pix6);
+        pixDestroy(&pix7);
+        pixDestroy(&pix8);
+        if (ppixdiff1)
+            *ppixdiff1 = pix9;
+        else
+            pixDestroy(&pix9);
+        if (ppixdiff2)
+            *ppixdiff2 = pix10;
+        else
+            pixDestroy(&pix10);
+    } else {  /* d1 == 32 */
+        pix5 = pixColorMorph(pix3, L_MORPH_DILATE, dilation, dilation);
+        pixCompareRGB(pix4, pix5, L_COMPARE_SUBTRACT, 0, NULL, NULL, NULL,
+                       &pix7);
+        pix6 = pixColorMorph(pix4, L_MORPH_DILATE, dilation, dilation);
+        pixCompareRGB(pix3, pix6, L_COMPARE_SUBTRACT, 0, NULL, NULL, NULL,
+                      &pix8);
+        pix9 = pixMinOrMax(NULL, pix7, pix8, L_CHOOSE_MAX);
+        pix10 = pixConvertRGBToGrayMinMax(pix9, L_CHOOSE_MAX);
+        pix11 = pixThresholdToBinary(pix10, mindiff);
+        pixInvert(pix11, pix11);
+        pixCountPixels(pix11, &count, NULL);
+        pixGetDimensions(pix11, &w, &h, NULL);
+        *pfract = (l_float32)count / (l_float32)(w * h);
+        pixDestroy(&pix5);
+        pixDestroy(&pix6);
+        pixDestroy(&pix7);
+        pixDestroy(&pix8);
+        pixDestroy(&pix10);
+        if (ppixdiff1)
+            *ppixdiff1 = pix9;
+        else
+            pixDestroy(&pix9);
+        if (ppixdiff2)
+            *ppixdiff2 = pix11;
+        else
+            pixDestroy(&pix11);
+
+    }
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    return 0;
+}
+
+
+/*!
  *  pixGetPSNR()
  *
  *      Input:  pix1, pix2 (8 or 32 bpp; no colormap)
@@ -1385,6 +1608,17 @@ PIX        *pixt1, *pixt2;
  *                 = 4.3429 * ln((255/MSE)^2)
  *                 = -4.3429 * ln((MSE/255)^2)
  *          where MSE is the mean squared error.
+ *          Here are some examples:
+ *             MSE             PSNR
+ *             ---             ----
+ *             10              28.1
+ *             3               38.6
+ *             1               48.1
+ *             0.1             68.1
+ *      (2) If pix1 and pix2 have the same pixel values, the MSE = 0.0
+ *          and the PSNR is infinity.  For that case, this returns
+ *          PSNR = 1000, which corresponds to the very small MSE of
+ *          about 10^(-48).
  */
 l_int32
 pixGetPSNR(PIX        *pix1,
@@ -1392,7 +1626,7 @@ pixGetPSNR(PIX        *pix1,
            l_int32     factor,
            l_float32  *ppsnr)
 {
-l_int32    i, j, w, h, d, wpl1, wpl2, v1, v2, r1, g1, b1, r2, g2, b2;
+l_int32    same, i, j, w, h, d, wpl1, wpl2, v1, v2, r1, g1, b1, r2, g2, b2;
 l_uint32  *data1, *data2, *line1, *line2;
 l_float32  mse;  /* mean squared error */
 
@@ -1415,6 +1649,12 @@ l_float32  mse;  /* mean squared error */
     if (factor < 1)
         return ERROR_INT("invalid sampling factor", procName, 1);
 
+    pixEqual(pix1, pix2, &same);
+    if (same) {
+        *ppsnr = 1000.0;  /* crazy big exponent */
+        return 0;
+    }
+
     data1 = pixGetData(pix1);
     data2 = pixGetData(pix2);
     wpl1 = pixGetWpl(pix1);
@@ -1430,8 +1670,7 @@ l_float32  mse;  /* mean squared error */
                 mse += (v1 - v2) * (v1 - v2);
             }
         }
-    }
-    else {  /* d == 32 */
+    } else {  /* d == 32 */
         for (i = 0; i < h; i += factor) {
             line1 = data1 + i * wpl1;
             line2 = data2 + i * wpl2;
@@ -1553,8 +1792,7 @@ PIXA      *pixa1, *pixa2, *pixadb;
             etransx = lept_roundftoi(cx1 - cx2);
             etransy = lept_roundftoi(cy1 - cy2);
             maxshift = 6;
-        }
-        else {
+        } else {
             etransx = 2 * delx;
             etransy = 2 * dely;
             maxshift = 2;
@@ -1577,10 +1815,10 @@ PIXA      *pixa1, *pixa2, *pixadb;
 
     if (debugflag) {
         pixaConvertToPdf(pixadb, 300, 1.0, L_FLATE_ENCODE, 0, NULL,
-                         "/tmp/junkcmp.pdf");
-        convertFilesToPdf("/tmp", "junkcorrel_", 30, 1.0, L_FLATE_ENCODE,
+                         "/tmp/cmp.pdf");
+        convertFilesToPdf("/tmp", "correl_", 30, 1.0, L_FLATE_ENCODE,
                           0, "Correlation scores at levels 1 through 5",
-                          "/tmp/junkcorrel.pdf");
+                          "/tmp/correl.pdf");
         pixaDestroy(&pixadb);
     }
 
@@ -1592,5 +1830,125 @@ PIXA      *pixa1, *pixa2, *pixadb;
     FREE(subtab);
     FREE(stab);
     FREE(ctab);
+    return 0;
+}
+
+
+/*!
+ *  pixBestCorrelation()
+ *
+ *      Input:  pix1   (1 bpp)
+ *              pix2   (1 bpp)
+ *              area1  (number of on pixels in pix1)
+ *              area2  (number of on pixels in pix2)
+ *              etransx (estimated x translation of pix2 to align with pix1)
+ *              etransy (estimated y translation of pix2 to align with pix1)
+ *              maxshift  (max x and y shift of pix2, around the estimated
+ *                          alignment location, relative to pix1)
+ *              tab8 (<optional> sum tab for ON pixels in byte; can be NULL)
+ *              &delx (<optional return> best x shift of pix2 relative to pix1
+ *              &dely (<optional return> best y shift of pix2 relative to pix1
+ *              &score (<optional return> maximum score found; can be NULL)
+ *              debugflag (<= 0 to skip; positive to generate output.
+ *                         The integer is used to label the debug image.)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This maximizes the correlation score between two 1 bpp images,
+ *          by starting with an estimate of the alignment
+ *          (@etransx, @etransy) and computing the correlation around this.
+ *          It optionally returns the shift (@delx, @dely) that maximizes
+ *          the correlation score when pix2 is shifted by this amount
+ *          relative to pix1.
+ *      (2) Get the centroids of pix1 and pix2, using pixCentroid(),
+ *          to compute (@etransx, @etransy).  Get the areas using
+ *          pixCountPixels().
+ *      (3) The centroid of pix2 is shifted with respect to the centroid
+ *          of pix1 by all values between -maxshiftx and maxshiftx,
+ *          and likewise for the y shifts.  Therefore, the number of
+ *          correlations computed is:
+ *               (2 * maxshiftx + 1) * (2 * maxshifty + 1)
+ *          Consequently, if pix1 and pix2 are large, you should do this
+ *          in a coarse-to-fine sequence.  See the use of this function
+ *          in pixCompareWithTranslation().
+ */
+l_int32
+pixBestCorrelation(PIX        *pix1,
+                   PIX        *pix2,
+                   l_int32     area1,
+                   l_int32     area2,
+                   l_int32     etransx,
+                   l_int32     etransy,
+                   l_int32     maxshift,
+                   l_int32    *tab8,
+                   l_int32    *pdelx,
+                   l_int32    *pdely,
+                   l_float32  *pscore,
+                   l_int32     debugflag)
+{
+l_int32    shiftx, shifty, delx, dely;
+l_int32   *tab;
+l_float32  maxscore, score;
+FPIX      *fpix;
+PIX       *pixt1, *pixt2;
+
+    PROCNAME("pixBestCorrelation");
+
+    if (pdelx) *pdelx = 0;
+    if (pdely) *pdely = 0;
+    if (pscore) *pscore = 0.0;
+    if (!pix1 || pixGetDepth(pix1) != 1)
+        return ERROR_INT("pix1 not defined or not 1 bpp", procName, 1);
+    if (!pix2 || pixGetDepth(pix2) != 1)
+        return ERROR_INT("pix2 not defined or not 1 bpp", procName, 1);
+    if (!area1 || !area2)
+        return ERROR_INT("areas must be > 0", procName, 1);
+
+    if (debugflag > 0)
+        fpix = fpixCreate(2 * maxshift + 1, 2 * maxshift + 1);
+
+    if (!tab8)
+        tab = makePixelSumTab8();
+    else
+        tab = tab8;
+
+        /* Search over a set of {shiftx, shifty} for the max */
+    maxscore = 0;
+    delx = etransx;
+    dely = etransy;
+    for (shifty = -maxshift; shifty <= maxshift; shifty++) {
+        for (shiftx = -maxshift; shiftx <= maxshift; shiftx++) {
+            pixCorrelationScoreShifted(pix1, pix2, area1, area2,
+                                       etransx + shiftx,
+                                       etransy + shifty, tab, &score);
+            if (debugflag > 0) {
+                fpixSetPixel(fpix, maxshift + shiftx, maxshift + shifty,
+                             1000.0 * score);
+/*                fprintf(stderr, "(sx, sy) = (%d, %d): score = %6.4f\n",
+                        shiftx, shifty, score); */
+            }
+            if (score > maxscore) {
+                maxscore = score;
+                delx = etransx + shiftx;
+                dely = etransy + shifty;
+            }
+        }
+    }
+
+    if (debugflag > 0) {
+        char  buf[128];
+        pixt1 = fpixDisplayMaxDynamicRange(fpix);
+        pixt2 = pixExpandReplicate(pixt1, 20);
+        snprintf(buf, sizeof(buf), "/tmp/correl_%d.png", debugflag);
+        pixWrite(buf, pixt2, IFF_PNG);
+        pixDestroy(&pixt1);
+        pixDestroy(&pixt2);
+        fpixDestroy(&fpix);
+    }
+
+    if (pdelx) *pdelx = delx;
+    if (pdely) *pdely = dely;
+    if (pscore) *pscore = maxscore;
+    if (!tab8) FREE(tab);
     return 0;
 }

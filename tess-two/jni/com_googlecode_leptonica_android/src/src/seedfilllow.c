@@ -248,7 +248,8 @@ l_uint32  *lines, *linem;
         break;
 
     default:
-        L_ERROR("connectivity must be 4 or 8", procName);
+        L_ERROR("connectivity must be 4 or 8\n", procName);
+        return;
     }
 
     return;
@@ -321,6 +322,11 @@ L_PIXEL *pixel;
 L_QUEUE  *lq_pixel;
 
     PROCNAME("seedfillGrayLow");
+
+    if (connectivity != 4 && connectivity != 8) {
+        L_ERROR("connectivity must be 4 or 8\n", procName);
+        return;
+    }
 
     imax = h - 1;
     jmax = w - 1;
@@ -707,8 +713,8 @@ L_QUEUE  *lq_pixel;
         break;
 
     default:
-        L_ERROR("connectivity must be 4 or 8", procName);
-        lqueueDestroy(&lq_pixel, TRUE);
+        L_ERROR("shouldn't get here!\n", procName);
+        break;
     }
 
     lqueueDestroy(&lq_pixel, TRUE);
@@ -766,6 +772,11 @@ L_PIXEL *pixel;
 L_QUEUE  *lq_pixel;
 
     PROCNAME("seedfillGrayInvLow");
+
+    if (connectivity != 4 && connectivity != 8) {
+        L_ERROR("connectivity must be 4 or 8\n", procName);
+        return;
+    }
 
     imax = h - 1;
     jmax = w - 1;
@@ -1166,8 +1177,8 @@ L_QUEUE  *lq_pixel;
         break;
 
     default:
-        lqueueDestroy(&lq_pixel, TRUE);
-        L_ERROR("connectivity must be 4 or 8", procName);
+        L_ERROR("shouldn't get here!\n", procName);
+        break;
     }
 
     lqueueDestroy(&lq_pixel, TRUE);
@@ -1336,7 +1347,7 @@ l_uint32  *lines, *linem;
         break;
 
     default:
-        L_ERROR("connectivity must be 4 or 8", procName);
+        L_ERROR("connectivity must be 4 or 8\n", procName);
     }
 
     return;
@@ -1494,7 +1505,7 @@ l_uint32  *lines, *linem;
         break;
 
     default:
-        L_ERROR("connectivity must be 4 or 8", procName);
+        L_ERROR("connectivity must be 4 or 8\n", procName);
     }
 
     return;
@@ -1557,8 +1568,7 @@ l_uint32  *lined;
                     }
                 }
             }
-        }
-        else {  /* d == 16 */
+        } else {  /* d == 16 */
                 /* UL --> LR scan */
             for (i = 1; i < imax; i++) {
                 lined = datad + i * wpld;
@@ -1626,8 +1636,7 @@ l_uint32  *lined;
                     }
                 }
             }
-        }
-        else {  /* d == 16 */
+        } else {  /* d == 16 */
                 /* UL --> LR scan */
             for (i = 1; i < imax; i++) {
                 lined = datad + i * wpld;
@@ -1667,7 +1676,7 @@ l_uint32  *lined;
         break;
 
     default:
-        L_ERROR("connectivity must be 4 or 8", procName);
+        L_ERROR("connectivity must be 4 or 8\n", procName);
         break;
     }
 
@@ -1810,7 +1819,7 @@ l_uint32  *linet, *lined;
         }
         break;
     default:
-        L_ERROR("connectivity must be 4 or 8", procName);
+        L_ERROR("connectivity must be 4 or 8\n", procName);
         break;
     }
 

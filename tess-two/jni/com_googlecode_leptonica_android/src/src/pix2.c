@@ -45,11 +45,16 @@
  *           l_int32     pixFlipPixel()
  *           void        setPixelLow()
  *
+ *      Find black or white value
+ *           l_int32     pixGetBlackOrWhiteVal()
+ *
  *      Full image clear/set/set-to-arbitrary-value
  *           l_int32     pixClearAll()
  *           l_int32     pixSetAll()
+ *           l_int32     pixSetAllGray()
  *           l_int32     pixSetAllArbitrary()
  *           l_int32     pixSetBlackOrWhite()
+ *           l_int32     pixSetComponentArbitrary()
  *
  *      Rectangular region clear/set/set-to-arbitrary-value/blend
  *           l_int32     pixClearInRect()
@@ -70,21 +75,30 @@
  *
  *      Add and remove border
  *           PIX        *pixAddBorder()
- *           PIX        *pixAddBlackBorder()
+ *           PIX        *pixAddBlackOrWhiteBorder()
  *           PIX        *pixAddBorderGeneral()
  *           PIX        *pixRemoveBorder()
  *           PIX        *pixRemoveBorderGeneral()
+ *           PIX        *pixRemoveBorderToSize()
  *           PIX        *pixAddMirroredBorder()
  *           PIX        *pixAddRepeatedBorder()
  *           PIX        *pixAddMixedBorder()
+ *           PIX        *pixAddContinuedBorder()
+ *
+ *      Helper functions using alpha
+ *           l_int32     pixShiftAndTransferAlpha()
+ *           PIX        *pixDisplayLayersRGBA()
  *
  *      Color sample setting and extraction
  *           PIX        *pixCreateRGBImage()
  *           PIX        *pixGetRGBComponent()
  *           l_int32     pixSetRGBComponent()
  *           PIX        *pixGetRGBComponentCmap()
+ *           l_int32     pixCopyRGBComponent()
  *           l_int32     composeRGBPixel()
+ *           l_int32     composeRGBAPixel()
  *           void        extractRGBValues()
+ *           void        extractRGBAValues()
  *           l_int32     extractMinMaxComponent()
  *           l_int32     pixGetRGBLine()
  *
@@ -97,6 +111,9 @@
  *
  *      Extract raster data as binary string
  *           l_int32     pixGetRasterData()
+ *
+ *      Test alpha component opaqueness
+ *           l_int32     pixAlphaIsOpaque
  *
  *      Setup helpers for 8 bpp byte processing
  *           l_uint8   **pixSetupByteProcessing()
@@ -405,9 +422,9 @@ PIXCMAP  *cmap;
     if ((cmap = pixGetColormap(pix)) != NULL) {
         pixcmapGetColor(cmap, val, &rval, &gval, &bval);
         composeRGBPixel(rval, gval, bval, pval);
-    }
-    else
+    } else {
         *pval = val;
+    }
 
     return 0;
 }
@@ -591,6 +608,62 @@ setPixelLow(l_uint32  *line,
 
 
 /*-------------------------------------------------------------*
+ *                     Find black or white value               *
+ *-------------------------------------------------------------*/
+/*!
+ *  pixGetBlackOrWhiteVal()
+ *
+ *      Input:  pixs (all depths; cmap ok)
+ *              op (L_GET_BLACK_VAL, L_GET_WHITE_VAL)
+ *              &val (<return> pixel value)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) Side effect.  For a colormapped image, if the requested
+ *          color is not present and there is room to add it in the cmap,
+ *          it is added and the new index is returned.  If there is no room,
+ *          the index of the closest color in intensity is returned.
+ */
+l_int32
+pixGetBlackOrWhiteVal(PIX       *pixs,
+                      l_int32    op,
+                      l_uint32  *pval)
+{
+l_int32   d, val;
+PIXCMAP  *cmap;
+
+    PROCNAME("pixGetBlackOrWhiteVal");
+
+    if (!pval)
+        return ERROR_INT("&val not defined", procName, 1);
+    *pval = 0;
+    if (!pixs)
+        return ERROR_INT("pixs not defined", procName, 1);
+    if (op != L_GET_BLACK_VAL && op != L_GET_WHITE_VAL)
+        return ERROR_INT("invalid op", procName, 1);
+
+    cmap = pixGetColormap(pixs);
+    d = pixGetDepth(pixs);
+    if (!cmap) {
+        if ((d == 1 && op == L_GET_WHITE_VAL) ||
+            (d > 1 && op == L_GET_BLACK_VAL)) {  /* min val */
+            val = 0;
+        } else {  /* max val */
+            val = (d == 32) ? 0xffffff00 : (1 << d) - 1;
+        }
+    } else {  /* handle colormap */
+        if (op == L_GET_BLACK_VAL)
+            pixcmapAddBlackOrWhite(cmap, 0, &val);
+        else  /* L_GET_WHITE_VAL */
+            pixcmapAddBlackOrWhite(cmap, 1, &val);
+    }
+    *pval = val;
+
+    return 0;
+}
+
+
+/*-------------------------------------------------------------*
  *     Full image clear/set/set-to-arbitrary-value/invert      *
  *-------------------------------------------------------------*/
 /*!
@@ -655,6 +728,88 @@ PIXCMAP  *cmap;
 
 
 /*!
+ *  pixSetAllGray()
+ *
+ *      Input:  pix (all depths, cmap ok)
+ *              grayval (in range 0 ... 255)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) N.B.  For all images, @grayval == 0 represents black and
+ *          @grayval == 255 represents white.
+ *      (2) For depth < 8, we do our best to approximate the gray level.
+ *          For 1 bpp images, any @grayval < 128 is black; >= 128 is white.
+ *          For 32 bpp images, each r,g,b component is set to @grayval,
+ *          and the alpha component is preserved.
+ *      (3) If pix is colormapped, it adds the gray value, replicated in
+ *          all components, to the colormap if it's not there and there
+ *          is room.  If the colormap is full, it finds the closest color in
+ *          L2 distance of components.  This index is written to all pixels.
+ */
+l_int32
+pixSetAllGray(PIX     *pix,
+              l_int32  grayval)
+{
+l_int32   d, spp, index;
+l_uint32  val32;
+PIX      *alpha;
+PIXCMAP  *cmap;
+
+    PROCNAME("pixSetAllGray");
+
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+    if (grayval < 0) {
+        L_WARNING("grayval < 0; setting to 0\n", procName);
+        grayval = 0;
+    } else if (grayval > 255) {
+        L_WARNING("grayval > 255; setting to 255\n", procName);
+        grayval = 255;
+    }
+
+        /* Handle the colormap case */
+    cmap = pixGetColormap(pix);
+    if (cmap) {
+        pixcmapAddNearestColor(cmap, grayval, grayval, grayval, &index);
+        pixSetAllArbitrary(pix, index);
+        return 0;
+    }
+
+        /* Non-cmapped */
+    d = pixGetDepth(pix);
+    spp = pixGetSpp(pix);
+    if (d == 1) {
+        if (grayval < 128)  /* black */
+            pixSetAll(pix);
+        else
+            pixClearAll(pix);  /* white */
+    } else if (d < 8) {
+        grayval >>= 8 - d;
+        pixSetAllArbitrary(pix, grayval);
+    } else if (d == 8) {
+        pixSetAllArbitrary(pix, grayval);
+    } else if (d == 16) {
+        grayval |= (grayval << 8);
+        pixSetAllArbitrary(pix, grayval);
+    } else if (d == 32 && spp == 3) {
+        composeRGBPixel(grayval, grayval, grayval, &val32);
+        pixSetAllArbitrary(pix, val32);
+    } else if (d == 32 && spp == 4) {
+        alpha = pixGetRGBComponent(pix, L_ALPHA_CHANNEL);
+        composeRGBPixel(grayval, grayval, grayval, &val32);
+        pixSetAllArbitrary(pix, val32);
+        pixSetRGBComponent(pix, alpha, L_ALPHA_CHANNEL);
+        pixDestroy(&alpha);
+    } else {
+        L_ERROR("invalid depth: %d\n", procName, d);
+        return 1;
+    }
+
+    return 0;
+}
+
+
+/*!
  *  pixSetAllArbitrary()
  *
  *      Input:  pix (all depths; use cmapped with caution)
@@ -662,11 +817,10 @@ PIXCMAP  *cmap;
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
- *      (1) For colormapped pix, be sure the value is the intended
- *          one in the colormap.
- *      (2) Caution: for colormapped pix, this sets each pixel to the
- *          color at the index equal to val.  Be sure that this index
- *          exists in the colormap and that it is the intended one!
+ *      (1) Caution!  For colormapped pix, @val is used as an index
+ *          into a colormap.  Be sure that index refers to the intended color.
+ *          If the color is not in the colormap, you should first add it
+ *          and then call this function.
  */
 l_int32
 pixSetAllArbitrary(PIX      *pix,
@@ -681,30 +835,23 @@ PIXCMAP   *cmap;
 
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
+
+        /* If colormapped, make sure that val is less than the size
+         * of the cmap array. */
     if ((cmap = pixGetColormap(pix)) != NULL) {
         n = pixcmapGetCount(cmap);
-        if (val < 0) {
-            L_WARNING("index not in colormap; using first color", procName);
-            val = 0;
-        }
-        else if (val >= n) {
-            L_WARNING("index not in colormap; using last color", procName);
+        if (val >= n) {
+            L_WARNING("index not in colormap; using last color\n", procName);
             val = n - 1;
         }
     }
 
+        /* Make sure val isn't too large for the pixel depth.
+         * If it is too large, set the pixel color to white.  */
     pixGetDimensions(pix, &w, &h, &d);
-    if (d == 32)
-        maxval = 0xffffffff;
-    else
-        maxval = (1 << d) - 1;
-    if (val < 0) {
-        L_WARNING("invalid pixel value; set to 0", procName);
-        val = 0;
-    }
+    maxval = (d == 32) ? 0xffffff00 : (1 << d) - 1;
     if (val > maxval) {
-        L_WARNING_INT("invalid pixel val; set to maxval = %d",
-                      procName, maxval);
+        L_WARNING("val too large for depth; using maxval\n", procName);
         val = maxval;
     }
 
@@ -713,7 +860,6 @@ PIXCMAP   *cmap;
     npix = 32 / d;    /* number of pixels per 32 bit word */
     for (j = 0; j < npix; j++)
         wordval |= (val << (j * d));
-
     wpl = pixGetWpl(pix);
     data = pixGetData(pix);
     for (i = 0; i < h; i++) {
@@ -722,7 +868,6 @@ PIXCMAP   *cmap;
             *(line + j) = wordval;
         }
     }
-
     return 0;
 }
 
@@ -759,18 +904,60 @@ PIXCMAP  *cmap;
     cmap = pixGetColormap(pixs);
     d = pixGetDepth(pixs);
     if (!cmap) {
-        if ((d == 1 && op == L_SET_BLACK) ||
-            (d > 1 && op == L_SET_WHITE))
+        if ((d == 1 && op == L_SET_BLACK) || (d > 1 && op == L_SET_WHITE))
             pixSetAll(pixs);
         else
             pixClearAll(pixs);
-    }
-    else {  /* handle colormap */
+    } else {  /* handle colormap */
         if (op == L_SET_BLACK)
             pixcmapAddBlackOrWhite(cmap, 0, &index);
         else  /* L_SET_WHITE */
             pixcmapAddBlackOrWhite(cmap, 1, &index);
         pixSetAllArbitrary(pixs, index);
+    }
+
+    return 0;
+}
+
+
+/*!
+ *  pixSetComponentArbitrary()
+ *
+ *      Input:  pix (32 bpp)
+ *              comp (COLOR_RED, COLOR_GREEN, COLOR_BLUE, L_ALPHA_CHANNEL)
+ *              val  (value to set this component)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) For example, this can be used to set the alpha component to opaque:
+ *              pixSetComponentArbitrary(pix, L_ALPHA_CHANNEL, 255)
+ */
+l_int32
+pixSetComponentArbitrary(PIX     *pix,
+                         l_int32  comp,
+                         l_int32  val)
+{
+l_int32    i, nwords;
+l_uint32   mask1, mask2;
+l_uint32  *data;
+
+    PROCNAME("pixSetComponentArbitrary");
+
+    if (!pix || pixGetDepth(pix) != 32)
+        return ERROR_INT("pix not defined or not 32 bpp", procName, 1);
+    if (comp != COLOR_RED && comp != COLOR_GREEN && comp != COLOR_BLUE &&
+        comp != L_ALPHA_CHANNEL)
+        return ERROR_INT("invalid component", procName, 1);
+    if (val < 0 || val > 255)
+        return ERROR_INT("val not in [0 ... 255]", procName, 1);
+
+    mask1 = ~(255 << (8 * (3 - comp)));
+    mask2 = val << (8 * (3 - comp));
+    nwords = pixGetHeight(pix) * pixGetWpl(pix);
+    data = pixGetData(pix);
+    for (i = 0; i < nwords; i++) {
+        data[i] &= mask1;  /* clear out the component */
+        data[i] |= mask2;  /* insert the new component value */
     }
 
     return 0;
@@ -887,29 +1074,14 @@ PIXCMAP   *cmap;
         return ERROR_INT("depth must be in {1,2,4,8,16,32} bpp", procName, 1);
     if ((cmap = pixGetColormap(pix)) != NULL) {
         n = pixcmapGetCount(cmap);
-        if (val < 0) {
-            L_WARNING("index not in colormap; using first color", procName);
-            val = 0;
-        }
-        else if (val >= n) {
-            L_WARNING("index not in colormap; using last color", procName);
+        if (val >= n) {
+            L_WARNING("index not in colormap; using last color\n", procName);
             val = n - 1;
         }
     }
 
-    if (d == 32)
-        maxval = 0xffffffff;
-    else
-        maxval = (1 << d) - 1;
-    if (val < 0) {
-        L_WARNING("invalid pixel value; set to 0", procName);
-        val = 0;
-    }
-    if (val > maxval) {
-        L_WARNING_INT("invalid pixel val; set to maxval = %d",
-                      procName, maxval);
-        val = maxval;
-    }
+    maxval = (d == 32) ? 0xffffff00 : (1 << d) - 1;
+    if (val > maxval) val = maxval;
 
         /* Handle the simple cases: the min and max values */
     if (val == 0) {
@@ -1272,8 +1444,7 @@ l_uint32  *datas, *lines;
             for (j = 0; j < w; j++)
                 SET_DATA_BYTE(lines, j, val);
         }
-    }
-    else if (d == 16) {
+    } else if (d == 16) {
         val &= 0xffff;
         for (i = 0; i < top; i++) {
             lines = datas + i * wpls;
@@ -1294,8 +1465,7 @@ l_uint32  *datas, *lines;
             for (j = 0; j < w; j++)
                 SET_DATA_TWO_BYTES(lines, j, val);
         }
-    }
-    else {   /* d == 32 */
+    } else {   /* d == 32 */
         for (i = 0; i < top; i++) {
             lines = datas + i * wpls;
             for (j = 0; j < w; j++)
@@ -1447,14 +1617,13 @@ l_int32  w, h;
 
     if (pixd) {
         if (pixd == pixs) {
-            L_WARNING("same: nothing to do", procName);
+            L_WARNING("same: nothing to do\n", procName);
             return pixd;
-        }
-        else if (!pixSizesEqual(pixs, pixd))
+        } else if (!pixSizesEqual(pixs, pixd)) {
             return (PIX *)ERROR_PTR("pixs and pixd sizes differ",
                                     procName, pixd);
-    }
-    else {
+        }
+    } else {
         if ((pixd = pixCreateTemplateNoInit(pixs)) == NULL)
             return (PIX *)ERROR_PTR("pixd not made", procName, pixd);
     }
@@ -1482,7 +1651,7 @@ l_int32  w, h;
  *      Return: pixd (with the added exterior pixels), or null on error
  *
  *  Notes:
- *      (1) See pixAddBorderGeneral() for values of white & black pixels.
+ *      (1) See pixGetBlackOrWhiteVal() for values of black and white pixels.
  */
 PIX *
 pixAddBorder(PIX      *pixs,
@@ -1500,33 +1669,47 @@ pixAddBorder(PIX      *pixs,
 
 
 /*!
- *  pixAddBlackBorder()
+ *  pixAddBlackOrWhiteBorder()
  *
  *      Input:  pixs (all depths; colormap ok)
- *              npix (number of pixels to be added to each side)
+ *              left, right, top, bot  (number of pixels added)
+ *              op (L_GET_BLACK_VAL, L_GET_WHITE_VAL)
  *      Return: pixd (with the added exterior pixels), or null on error
+ *
+ *  Notes:
+ *      (1) See pixGetBlackOrWhiteVal() for possible side effect (adding
+ *          a color to a colormap).
+ *      (2) The only complication is that pixs may have a colormap.
+ *          There are two ways to add the black or white border:
+ *          (a) As done here (simplest, most efficient)
+ *          (b) l_int32 ws, hs, d;
+ *              pixGetDimensions(pixs, &ws, &hs, &d);
+ *              Pix *pixd = pixCreate(ws + left + right, hs + top + bot, d);
+ *              PixColormap *cmap = pixGetColormap(pixs);
+ *              if (cmap != NULL)
+ *                  pixSetColormap(pixd, pixcmapCopy(cmap));
+ *              pixSetBlackOrWhite(pixd, L_SET_WHITE);  // uses cmap
+ *              pixRasterop(pixd, left, top, ws, hs, PIX_SET, pixs, 0, 0);
  */
 PIX *
-pixAddBlackBorder(PIX      *pixs,
-                  l_int32   npix)
+pixAddBlackOrWhiteBorder(PIX     *pixs,
+                         l_int32  left,
+                         l_int32  right,
+                         l_int32  top,
+                         l_int32  bot,
+                         l_int32  op)
 {
-l_int32   d, val;
-PIXCMAP  *cmap;
+l_uint32  val;
 
-    PROCNAME("pixAddBlackBorder");
+    PROCNAME("pixAddBlackOrWhiteBorder");
 
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (npix == 0)
-        return pixClone(pixs);
+    if (op != L_GET_BLACK_VAL && op != L_GET_WHITE_VAL)
+        return (PIX *)ERROR_PTR("invalid op", procName, NULL);
 
-    if ((cmap = pixGetColormap(pixs)) != NULL)
-        pixcmapGetRankIntensity(cmap, 0.0, &val);
-    else {
-        d = pixGetDepth(pixs);
-        val = (d == 1) ? 1 : 0;
-    }
-    return pixAddBorderGeneral(pixs, npix, npix, npix, npix, val);
+    pixGetBlackOrWhiteVal(pixs, op, &val);
+    return pixAddBorderGeneral(pixs, left, right, top, bot, val);
 }
 
 
@@ -1548,9 +1731,17 @@ PIXCMAP  *cmap;
  *          For rgb color images:
  *             white:  val = 0xffffff00
  *             black:  val = 0
- *          For colormapped images, use 'index' found this way:
+ *          For colormapped images, set val to the appropriate colormap index.
+ *      (2) If the added border is either black or white, you can use
+ *             pixAddBlackOrWhiteBorder()
+ *          The black and white values for all images can be found with
+ *             pixGetBlackOrWhiteVal()
+ *          which, if pixs is cmapped, may add an entry to the colormap.
+ *          Alternatively, if pixs has a colormap, you can find the index
+ *          of the pixel whose intensity is closest to white or black:
  *             white: pixcmapGetRankIntensity(cmap, 1.0, &index);
  *             black: pixcmapGetRankIntensity(cmap, 0.0, &index);
+ *          and use that for val.
  */
 PIX *
 pixAddBorderGeneral(PIX      *pixs,
@@ -1560,7 +1751,7 @@ pixAddBorderGeneral(PIX      *pixs,
                     l_int32   bot,
                     l_uint32  val)
 {
-l_int32  ws, hs, wd, hd, d, op;
+l_int32  ws, hs, wd, hd, d, maxval, op;
 PIX     *pixd;
 
     PROCNAME("pixAddBorderGeneral");
@@ -1579,16 +1770,15 @@ PIX     *pixd;
     pixCopyColormap(pixd, pixs);
 
         /* Set the new border pixels */
+    maxval = (d == 32) ? 0xffffff00 : (1 << d) - 1;
     op = UNDEF;
     if (val == 0)
         op = PIX_CLR;
-    else if ((d == 1 && val == 1) || (d == 2 && val == 3) ||
-             (d == 4 && val == 0xf) || (d == 8 && val == 0xff) ||
-             (d == 16 && val == 0xffff) || (d == 32 && (val >> 8) == 0xffffff))
+    else if (val >= maxval)
         op = PIX_SET;
-    if (op == UNDEF)
-        pixSetAllArbitrary(pixd, val);   /* a little extra writing ! */
-    else {
+    if (op == UNDEF) {
+        pixSetAllArbitrary(pixd, val);
+    } else {  /* just set or clear the border pixels */
         pixRasterop(pixd, 0, 0, left, hd, op, NULL, 0, 0);
         pixRasterop(pixd, wd - right, 0, right, hd, op, NULL, 0, 0);
         pixRasterop(pixd, 0, 0, wd, top, op, NULL, 0, 0);
@@ -1656,10 +1846,58 @@ PIX     *pixd;
     if ((pixd = pixCreateNoInit(wd, hd, d)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopySpp(pixd, pixs);
     pixCopyColormap(pixd, pixs);
 
     pixRasterop(pixd, 0, 0, wd, hd, PIX_SRC, pixs, left, top);
+    if (pixGetDepth(pixs) == 32 && pixGetSpp(pixs) == 4)
+        pixShiftAndTransferAlpha(pixd, pixs, -left, -top);
     return pixd;
+}
+
+
+/*!
+ *  pixRemoveBorderToSize()
+ *
+ *      Input:  pixs (all depths; colormap ok)
+ *              wd  (target width; use 0 if only removing from height)
+ *              hd  (target height; use 0 if only removing from width)
+ *      Return: pixd (with pixels removed around border), or null on error
+ *
+ *  Notes:
+ *      (1) Removes pixels as evenly as possible from the sides of the
+ *          image, leaving the central part.
+ *      (2) Returns clone if no pixels requested removed, or the target
+ *          sizes are larger than the image.
+ */
+PIX *
+pixRemoveBorderToSize(PIX     *pixs,
+                      l_int32  wd,
+                      l_int32  hd)
+{
+l_int32  w, h, top, bot, left, right, delta;
+
+    PROCNAME("pixRemoveBorderToSize");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+
+    pixGetDimensions(pixs, &w, &h, NULL);
+    if ((wd <= 0 || wd >= w) && (hd <= 0 || hd >= h))
+        return pixClone(pixs);
+
+    left = right = (w - wd) / 2;
+    delta = w - 2 * left - wd;
+    right += delta;
+    top = bot = (h - hd) / 2;
+    delta = h - hd - 2 * top;
+    bot += delta;
+    if (wd <= 0 || wd > w)
+        left = right = 0;
+    else if (hd <= 0 || hd > h)
+        top = bot = 0;
+
+    return pixRemoveBorderGeneral(pixs, left, right, top, bot);
 }
 
 
@@ -1824,6 +2062,154 @@ PIX     *pixd;
 }
 
 
+/*!
+ *  pixAddContinuedBorder()
+ *
+ *      Input:  pixs
+ *              left, right, top, bot (pixels on each side to be added)
+ *      Return: pixd, or null on error
+ *
+ *  Notes:
+ *      (1) This adds pixels on each side whose values are equal to
+ *          the value on the closest boundary pixel.
+ */
+PIX *
+pixAddContinuedBorder(PIX     *pixs,
+                      l_int32  left,
+                      l_int32  right,
+                      l_int32  top,
+                      l_int32  bot)
+{
+l_int32  i, j, w, h;
+PIX     *pixd;
+
+    PROCNAME("pixAddContinuedBorder");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+
+    pixd = pixAddBorderGeneral(pixs, left, right, top, bot, 0);
+    pixGetDimensions(pixs, &w, &h, NULL);
+    for (j = 0; j < left; j++)
+        pixRasterop(pixd, j, top, 1, h, PIX_SRC, pixd, left, top);
+    for (j = 0; j < right; j++)
+        pixRasterop(pixd, left + w + j, top, 1, h,
+                    PIX_SRC, pixd, left + w - 1, top);
+    for (i = 0; i < top; i++)
+        pixRasterop(pixd, 0, i, left + w + right, 1, PIX_SRC, pixd, 0, top);
+    for (i = 0; i < bot; i++)
+        pixRasterop(pixd, 0, top + h + i, left + w + right, 1,
+                    PIX_SRC, pixd, 0, top + h - 1);
+
+    return pixd;
+}
+
+
+/*-------------------------------------------------------------------*
+ *                     Helper functions using alpha                  *
+ *-------------------------------------------------------------------*/
+/*!
+ *  pixShiftAndTransferAlpha()
+ *
+ *      Input:  pixd  (32 bpp)
+ *              pixs  (32 bpp)
+ *              shiftx, shifty
+ *      Return: 0 if OK; 1 on error
+ */
+l_int32
+pixShiftAndTransferAlpha(PIX       *pixd,
+                         PIX       *pixs,
+                         l_float32  shiftx,
+                         l_float32  shifty)
+{
+l_int32  w, h;
+PIX     *pix1, *pix2;
+
+    PROCNAME("pixShiftAndTransferAlpha");
+
+    if (!pixs || !pixd)
+        return ERROR_INT("pixs and pixd not both defined", procName, 1);
+    if (pixGetDepth(pixs) != 32 || pixGetSpp(pixs) != 4)
+        return ERROR_INT("pixs not 32 bpp and 4 spp", procName, 1);
+    if (pixGetDepth(pixd) != 32)
+        return ERROR_INT("pixd not 32 bpp", procName, 1);
+
+    if (shiftx == 0 && shifty == 0) {
+        pixCopyRGBComponent(pixd, pixs, L_ALPHA_CHANNEL);
+        return 0;
+    }
+
+    pix1 = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
+    pixGetDimensions(pixd, &w, &h, NULL);
+    pix2 = pixCreate(w, h, 8);
+    pixRasterop(pix2, 0, 0, w, h, PIX_SRC, pix1, -shiftx, -shifty);
+    pixSetRGBComponent(pixd, pix2, L_ALPHA_CHANNEL);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    return 0;
+}
+
+
+/*!
+ *  pixDisplayLayersRGBA()
+ *
+ *      Input:  pixs (cmap or 32 bpp rgba)
+ *              val (32 bit unsigned color to use as background)
+ *              maxw (max output image width; 0 for no scaling)
+ *      Return: pixd (showing various image views), or null on error
+ *
+ *  Notes:
+ *      (1) Use @val == 0xffffff00 for white background.
+ *      (2) Three views are given:
+ *           - the image with a fully opaque alpha
+ *           - the alpha layer
+ *           - the image as it would appear with a white background.
+ */
+PIX *
+pixDisplayLayersRGBA(PIX      *pixs,
+                     l_uint32  val,
+                     l_int32   maxw)
+{
+l_int32    w, width;
+l_float32  scalefact;
+PIX       *pix1, *pix2, *pixd;
+PIXA      *pixa;
+PIXCMAP   *cmap;
+
+    PROCNAME("pixDisplayLayersRGBA");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+    cmap = pixGetColormap(pixs);
+    if (!cmap && !(pixGetDepth(pixs) == 32 && pixGetSpp(pixs) == 4))
+        return (PIX *)ERROR_PTR("pixs not cmap and not 32 bpp rgba",
+                                procName, NULL);
+    if ((w = pixGetWidth(pixs)) == 0)
+        return (PIX *)ERROR_PTR("pixs width 0 !!", procName, NULL);
+
+    if (cmap)
+        pix1 = pixRemoveColormap(pixs, REMOVE_CMAP_WITH_ALPHA);
+    else
+        pix1 = pixCopy(NULL, pixs);
+
+        /* Scale if necessary so the output width is not larger than maxw */
+    scalefact = (maxw == 0) ? 1.0 : L_MIN(1.0, maxw / w);
+    width = (l_int32)(scalefact * w);
+
+    pixa = pixaCreate(3);
+    pixSetSpp(pix1, 3);
+    pixaAddPix(pixa, pix1, L_INSERT);  /* show the rgb values */
+    pix1 = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
+    pix2 = pixConvertTo32(pix1);
+    pixaAddPix(pixa, pix2, L_INSERT);  /* show the alpha channel */
+    pixDestroy(&pix1);
+    pix1 = pixAlphaBlendUniform(pixs, (val & 0xffffff00));
+    pixaAddPix(pixa, pix1, L_INSERT);  /* with @val color bg showing */
+    pixd = pixaDisplayTiledInRows(pixa, 32, width, scalefact, 0, 25, 2);
+    pixaDestroy(&pixa);
+    return pixd;
+}
+
 
 /*-------------------------------------------------------------*
  *                Color sample setting and extraction          *
@@ -1889,42 +2275,40 @@ PIX     *pixd;
 /*!
  *  pixGetRGBComponent()
  *
- *      Input:  pixs  (32 bpp)
- *              color  (one of {COLOR_RED, COLOR_GREEN, COLOR_BLUE,
- *                      L_ALPHA_CHANNEL})
- *      Return: pixd, the selected 8 bpp component image of the
- *              input 32 bpp image, or null on error
+ *      Input:  pixs (32 bpp, or colormapped)
+ *              comp (one of {COLOR_RED, COLOR_GREEN, COLOR_BLUE,
+ *                    L_ALPHA_CHANNEL})
+ *      Return: pixd (the selected 8 bpp component image of the
+ *                    input 32 bpp image) or null on error
  *
  *  Notes:
- *      (1) The alpha channel (in the 4th byte of each RGB pixel)
- *          is mostly ignored in leptonica.
- *      (2) Three calls to this function generate the three 8 bpp component
- *          images.  This is much faster than generating the three
- *          images in parallel, by extracting a src pixel and setting
+ *      (1) Three calls to this function generate the r, g and b 8 bpp
+ *          component images.  This is much faster than generating the
+ *          three images in parallel, by extracting a src pixel and setting
  *          the pixels of each component image from it.  The reason is
  *          there are many more cache misses when writing to three
  *          output images simultaneously.
  */
 PIX *
 pixGetRGBComponent(PIX     *pixs,
-                   l_int32  color)
+                   l_int32  comp)
 {
-l_uint8    srcbyte;
+l_int32    i, j, w, h, wpls, wpld, val;
 l_uint32  *lines, *lined;
 l_uint32  *datas, *datad;
-l_int32    i, j, w, h;
-l_int32    wpls, wpld;
-PIX           *pixd;
+PIX       *pixd;
 
     PROCNAME("pixGetRGBComponent");
 
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+    if (pixGetColormap(pixs))
+        return pixGetRGBComponentCmap(pixs, comp);
     if (pixGetDepth(pixs) != 32)
         return (PIX *)ERROR_PTR("pixs not 32 bpp", procName, NULL);
-    if (color != COLOR_RED && color != COLOR_GREEN &&
-        color != COLOR_BLUE && color != L_ALPHA_CHANNEL)
-        return (PIX *)ERROR_PTR("invalid color", procName, NULL);
+    if (comp != COLOR_RED && comp != COLOR_GREEN &&
+        comp != COLOR_BLUE && comp != L_ALPHA_CHANNEL)
+        return (PIX *)ERROR_PTR("invalid comp", procName, NULL);
 
     pixGetDimensions(pixs, &w, &h, NULL);
     if ((pixd = pixCreate(w, h, 8)) == NULL)
@@ -1934,13 +2318,12 @@ PIX           *pixd;
     wpld = pixGetWpl(pixd);
     datas = pixGetData(pixs);
     datad = pixGetData(pixd);
-
     for (i = 0; i < h; i++) {
         lines = datas + i * wpls;
         lined = datad + i * wpld;
         for (j = 0; j < w; j++) {
-            srcbyte = GET_DATA_BYTE(lines + j, color);
-            SET_DATA_BYTE(lined, j, srcbyte);
+            val = GET_DATA_BYTE(lines + j, comp);
+            SET_DATA_BYTE(lined, j, val);
         }
     }
 
@@ -1953,22 +2336,23 @@ PIX           *pixd;
  *
  *      Input:  pixd  (32 bpp)
  *              pixs  (8 bpp)
- *              color  (one of {COLOR_RED, COLOR_GREEN, COLOR_BLUE,
- *                      L_ALPHA_CHANNEL})
+ *              comp  (one of the set: {COLOR_RED, COLOR_GREEN,
+ *                                      COLOR_BLUE, L_ALPHA_CHANNEL})
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
  *      (1) This places the 8 bpp pixel in pixs into the
- *          specified color component (properly interleaved) in pixd.
- *      (2) The alpha channel component mostly ignored in leptonica.
+ *          specified component (properly interleaved) in pixd,
+ *      (2) The two images are registered to the UL corner; the sizes
+ *          need not be the same, but a warning is issued if they differ.
  */
 l_int32
 pixSetRGBComponent(PIX     *pixd,
                    PIX     *pixs,
-                   l_int32  color)
+                   l_int32  comp)
 {
 l_uint8    srcbyte;
-l_int32    i, j, w, h;
+l_int32    i, j, w, h, ws, hs, wd, hd;
 l_int32    wpls, wpld;
 l_uint32  *lines, *lined;
 l_uint32  *datas, *datad;
@@ -1979,18 +2363,21 @@ l_uint32  *datas, *datad;
         return ERROR_INT("pixd not defined", procName, 1);
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
-
     if (pixGetDepth(pixd) != 32)
         return ERROR_INT("pixd not 32 bpp", procName, 1);
     if (pixGetDepth(pixs) != 8)
         return ERROR_INT("pixs not 8 bpp", procName, 1);
-    if (color != COLOR_RED && color != COLOR_GREEN &&
-        color != COLOR_BLUE && color != L_ALPHA_CHANNEL)
-        return ERROR_INT("invalid color", procName, 1);
-    pixGetDimensions(pixs, &w, &h, NULL);
-    if (w != pixGetWidth(pixd) || h != pixGetHeight(pixd))
-        return ERROR_INT("sizes not commensurate", procName, 1);
-
+    if (comp != COLOR_RED && comp != COLOR_GREEN &&
+        comp != COLOR_BLUE && comp != L_ALPHA_CHANNEL)
+        return ERROR_INT("invalid comp", procName, 1);
+    pixGetDimensions(pixs, &ws, &hs, NULL);
+    pixGetDimensions(pixd, &wd, &hd, NULL);
+    if (ws != wd || hs != hd)
+        L_WARNING("images sizes not equal\n", procName);
+    w = L_MIN(ws, wd);
+    h = L_MIN(hs, hd);
+    if (comp == L_ALPHA_CHANNEL)
+        pixSetSpp(pixd, 4);
     datas = pixGetData(pixs);
     datad = pixGetData(pixd);
     wpls = pixGetWpl(pixs);
@@ -2000,7 +2387,7 @@ l_uint32  *datas, *datad;
         lined = datad + i * wpld;
         for (j = 0; j < w; j++) {
             srcbyte = GET_DATA_BYTE(lines, j);
-            SET_DATA_BYTE(lined + j, color, srcbyte);
+            SET_DATA_BYTE(lined + j, comp, srcbyte);
         }
     }
 
@@ -2012,13 +2399,16 @@ l_uint32  *datas, *datad;
  *  pixGetRGBComponentCmap()
  *
  *      Input:  pixs  (colormapped)
- *              color  (one of {COLOR_RED, COLOR_GREEN, COLOR_BLUE})
+ *              comp  (one of the set: {COLOR_RED, COLOR_GREEN, COLOR_BLUE})
  *      Return: pixd  (the selected 8 bpp component image of the
  *                     input cmapped image), or null on error
+ *
+ *  Notes:
+ *      (1) In leptonica, we do not support alpha in colormaps.
  */
 PIX *
 pixGetRGBComponentCmap(PIX     *pixs,
-                       l_int32  color)
+                       l_int32  comp)
 {
 l_int32     i, j, w, h, val, index;
 l_int32     wplc, wpld;
@@ -2034,9 +2424,10 @@ RGBA_QUAD  *cta;
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
     if ((cmap = pixGetColormap(pixs)) == NULL)
         return (PIX *)ERROR_PTR("pixs not cmapped", procName, NULL);
-    if (color != COLOR_RED && color != COLOR_GREEN &&
-        color != COLOR_BLUE)
-        return (PIX *)ERROR_PTR("invalid color", procName, NULL);
+    if (comp == L_ALPHA_CHANNEL)
+        return (PIX *)ERROR_PTR("alpha in cmaps not supported", procName, NULL);
+    if (comp != COLOR_RED && comp != COLOR_GREEN && comp != COLOR_BLUE)
+        return (PIX *)ERROR_PTR("invalid comp", procName, NULL);
 
         /* If not 8 bpp, make a cmapped 8 bpp pix */
     if (pixGetDepth(pixs) == 8)
@@ -2057,24 +2448,22 @@ RGBA_QUAD  *cta;
     for (i = 0; i < h; i++) {
         linec = datac + i * wplc;
         lined = datad + i * wpld;
-        if (color == COLOR_RED) {
+        if (comp == COLOR_RED) {
             for (j = 0; j < w; j++) {
                 index = GET_DATA_BYTE(linec, j);
                 val = cta[index].red;
                 SET_DATA_BYTE(lined, j, val);
             }
-        }
-        else if (color == COLOR_GREEN) {
+        } else if (comp == COLOR_GREEN) {
             for (j = 0; j < w; j++) {
                 index = GET_DATA_BYTE(linec, j);
                 val = cta[index].green;
                 SET_DATA_BYTE(lined, j, val);
             }
-        }
-        else if (color == COLOR_BLUE) {
+        } else if (comp == COLOR_BLUE) {
             for (j = 0; j < w; j++) {
                 index = GET_DATA_BYTE(linec, j);
-                val = cta[index].green;
+                val = cta[index].blue;
                 SET_DATA_BYTE(lined, j, val);
             }
         }
@@ -2086,14 +2475,73 @@ RGBA_QUAD  *cta;
 
 
 /*!
- *  composeRGBPixel()
+ *  pixCopyRGBComponent()
  *
- *      Input:  rval, gval, bval
- *              &rgbpixel  (<return> 32-bit pixel)
+ *      Input:  pixd (32 bpp)
+ *              pixs (32 bpp)
+ *              comp (one of the set: {COLOR_RED, COLOR_GREEN,
+ *                                     COLOR_BLUE, L_ALPHA_CHANNEL})
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
- *      (1) A slower implementation uses macros:
+ *      (1) The two images are registered to the UL corner.  The sizes
+ *          are usually the same, and a warning is issued if they differ.
+ */
+l_int32
+pixCopyRGBComponent(PIX     *pixd,
+                    PIX     *pixs,
+                    l_int32  comp)
+{
+l_int32    i, j, w, h, ws, hs, wd, hd, val;
+l_int32    wpls, wpld;
+l_uint32  *lines, *lined;
+l_uint32  *datas, *datad;
+
+    PROCNAME("pixCopyRGBComponent");
+
+    if (!pixd && pixGetDepth(pixd) != 32)
+        return ERROR_INT("pixd not defined or not 32 bpp", procName, 1);
+    if (!pixs && pixGetDepth(pixs) != 32)
+        return ERROR_INT("pixs not defined or not 32 bpp", procName, 1);
+    if (comp != COLOR_RED && comp != COLOR_GREEN &&
+        comp != COLOR_BLUE && comp != L_ALPHA_CHANNEL)
+        return ERROR_INT("invalid component", procName, 1);
+    pixGetDimensions(pixs, &ws, &hs, NULL);
+    pixGetDimensions(pixd, &wd, &hd, NULL);
+    if (ws != wd || hs != hd)
+        L_WARNING("images sizes not equal\n", procName);
+    w = L_MIN(ws, wd);
+    h = L_MIN(hs, hd);
+    if (comp == L_ALPHA_CHANNEL)
+        pixSetSpp(pixd, 4);
+    wpls = pixGetWpl(pixs);
+    wpld = pixGetWpl(pixd);
+    datas = pixGetData(pixs);
+    datad = pixGetData(pixd);
+    for (i = 0; i < h; i++) {
+        lines = datas + i * wpls;
+        lined = datad + i * wpld;
+        for (j = 0; j < w; j++) {
+            val = GET_DATA_BYTE(lines + j, comp);
+            SET_DATA_BYTE(lined + j, comp, val);
+        }
+    }
+    return 0;
+}
+
+
+/*!
+ *  composeRGBPixel()
+ *
+ *      Input:  rval, gval, bval
+ *              &pixel  (<return> 32-bit pixel)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) All channels are 8 bits: the input values must be between
+ *          0 and 255.  For speed, this is not enforced by masking
+ *          with 0xff before shifting.
+ *      (2) A slower implementation uses macros:
  *            SET_DATA_BYTE(ppixel, COLOR_RED, rval);
  *            SET_DATA_BYTE(ppixel, COLOR_GREEN, gval);
  *            SET_DATA_BYTE(ppixel, COLOR_BLUE, bval);
@@ -2111,6 +2559,36 @@ composeRGBPixel(l_int32    rval,
 
     *ppixel = (rval << L_RED_SHIFT) | (gval << L_GREEN_SHIFT) |
               (bval << L_BLUE_SHIFT);
+    return 0;
+}
+
+
+/*!
+ *  composeRGBAPixel()
+ *
+ *      Input:  rval, gval, bval, aval
+ *              &pixel  (<return> 32-bit pixel)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) All channels are 8 bits: the input values must be between
+ *          0 and 255.  For speed, this is not enforced by masking
+ *          with 0xff before shifting.
+ */
+l_int32
+composeRGBAPixel(l_int32    rval,
+                 l_int32    gval,
+                 l_int32    bval,
+                 l_int32    aval,
+                 l_uint32  *ppixel)
+{
+    PROCNAME("composeRGBAPixel");
+
+    if (!ppixel)
+        return ERROR_INT("&pixel not defined", procName, 1);
+
+    *ppixel = (rval << L_RED_SHIFT) | (gval << L_GREEN_SHIFT) |
+              (bval << L_BLUE_SHIFT) | aval;
     return 0;
 }
 
@@ -2144,11 +2622,36 @@ extractRGBValues(l_uint32  pixel,
 
 
 /*!
+ *  extractRGBAValues()
+ *
+ *      Input:  pixel (32 bit)
+ *              &rval (<optional return> red component)
+ *              &gval (<optional return> green component)
+ *              &bval (<optional return> blue component)
+ *              &aval (<optional return> alpha component)
+ *      Return: void
+ */
+void
+extractRGBAValues(l_uint32  pixel,
+                  l_int32  *prval,
+                  l_int32  *pgval,
+                  l_int32  *pbval,
+                  l_int32  *paval)
+{
+    if (prval) *prval = (pixel >> L_RED_SHIFT) & 0xff;
+    if (pgval) *pgval = (pixel >> L_GREEN_SHIFT) & 0xff;
+    if (pbval) *pbval = (pixel >> L_BLUE_SHIFT) & 0xff;
+    if (paval) *paval = (pixel >> L_ALPHA_SHIFT) & 0xff;
+    return;
+}
+
+
+/*!
  *  extractMinMaxComponent()
  *
  *      Input:  pixel (32 bpp RGB)
  *              type (L_CHOOSE_MIN or L_CHOOSE_MAX)
- *      Return: componet (in range [0 ... 255], or null on error
+ *      Return: component (in range [0 ... 255], or null on error
  */
 l_int32
 extractMinMaxComponent(l_uint32  pixel,
@@ -2160,8 +2663,7 @@ l_int32  rval, gval, bval, val;
     if (type == L_CHOOSE_MIN) {
         val = L_MIN(rval, gval);
         val = L_MIN(val, bval);
-    }
-    else {  /* type == L_CHOOSE_MAX */
+    } else {  /* type == L_CHOOSE_MAX */
         val = L_MAX(rval, gval);
         val = L_MAX(val, bval);
     }
@@ -2559,12 +3061,10 @@ l_uint32  *rline, *rdata;  /* data in pix raster */
          if (d <= 8) {
              for (j = 0; j < databpl; j++)
                   line[j] = GET_DATA_BYTE(rline, j);
-         }
-         else if (d == 16) {
+         } else if (d == 16) {
              for (j = 0; j < w; j++)
                   line[2 * j] = GET_DATA_TWO_BYTES(rline, j);
-         }
-         else {  /* d == 32 bpp rgb */
+         } else {  /* d == 32 bpp rgb */
              for (j = 0; j < w; j++) {
                   extractRGBValues(rline[j], &rval, &gval, &bval);
                   *(line + 3 * j) = rval;
@@ -2574,6 +3074,55 @@ l_uint32  *rline, *rdata;  /* data in pix raster */
          }
     }
 
+    return 0;
+}
+
+
+/*-------------------------------------------------------------*
+ *                 Test alpha component opaqueness             *
+ *-------------------------------------------------------------*/
+/*!
+ *  pixAlphaIsOpaque()
+ *
+ *      Input:  pix (32 bpp, spp == 4)
+ *              &opaque (<return> 1 if spp == 4 and all alpha component
+ *                       values are 255 (opaque); 0 otherwise)
+ *      Return: 0 if OK, 1 on error
+ *      Notes:
+ *          (1) On error, opaque is returned as 0 (FALSE).
+ */
+l_int32
+pixAlphaIsOpaque(PIX      *pix,
+                 l_int32  *popaque)
+{
+l_int32    w, h, wpl, i, j, alpha;
+l_uint32  *data, *line;
+
+    PROCNAME("pixAlphaIsOpaque");
+
+    if (!popaque)
+        return ERROR_INT("&opaque not defined", procName, 1);
+    *popaque = FALSE;
+    if (!pix)
+        return ERROR_INT("&pix not defined", procName, 1);
+    if (pixGetDepth(pix) != 32)
+        return ERROR_INT("&pix not 32 bpp", procName, 1);
+    if (pixGetSpp(pix) != 4)
+        return ERROR_INT("&pix not 4 spp", procName, 1);
+
+    data = pixGetData(pix);
+    wpl = pixGetWpl(pix);
+    pixGetDimensions(pix, &w, &h, NULL);
+    for (i = 0; i < h; i++) {
+        line = data + i * wpl;
+        for (j = 0; j < w; j++) {
+            alpha = GET_DATA_BYTE(line + j, L_ALPHA_CHANNEL);
+            if (alpha ^ 0xff)  /* not opaque */
+                return 0;
+        }
+    }
+
+    *popaque = TRUE;
     return 0;
 }
 
@@ -2676,6 +3225,8 @@ pixCleanupByteProcessing(PIX      *pix,
  *          in the second ring).  When the image is blended, this
  *          completely removes the outer ring (shrinking the image by
  *          2 in each direction), and alpha-blends with 0.5 the second ring.
+ *          Using val1 = 0.25 and val2 = 0.75 gives a slightly more
+ *          blurred border, with no perceptual difference at screen resolution.
  *      (3) The actual mask values are found by multiplying these
  *          normalized opacity values by 255.
  */

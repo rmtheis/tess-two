@@ -38,7 +38,7 @@
  *
  *      Add/remove number (float or integer)
  *          l_int32      numaAddNumber()
- *          l_int32      numaExtendArray()
+ *          static l_int32  numaExtendArray()
  *          l_int32      numaInsertNumber()
  *          l_int32      numaRemoveNumber()
  *          l_int32      numaReplaceNumber()
@@ -54,9 +54,12 @@
  *          l_float32   *numaGetFArray()
  *          l_int32      numaGetRefcount()
  *          l_int32      numaChangeRefcount()
- *          l_int32      numaGetXParameters()
- *          l_int32      numaSetXParameters()
- *          l_int32      numaCopyXParameters()
+ *          l_int32      numaGetParameters()
+ *          l_int32      numaSetParameters()
+ *          l_int32      numaCopyParameters()
+ *
+ *      Convert to string array
+ *          SARRAY      *numaConvertToSarray()
  *
  *      Serialize numa for I/O
  *          NUMA        *numaRead()
@@ -64,8 +67,10 @@
  *          l_int32      numaWrite()
  *          l_int32      numaWriteStream()
  *
- *      Numaa creation, destruction
+ *      Numaa creation, destruction, truncation
  *          NUMAA       *numaaCreate()
+ *          NUMAA       *numaaCreateFull()
+ *          NUMAA       *numaaTruncate()
  *          void        *numaaDestroy()
  *
  *      Add Numa to Numaa
@@ -164,7 +169,7 @@
  *        has startx and delx fields, initialized to 0.0 and 1.0, that can
  *        be used to represent the "x" value for the location of the
  *        first bin and the bin width, respectively.  Accessors are the
- *        numa*XParameters() functions.  All functions that make numa
+ *        numa*Parameters() functions.  All functions that make numa
  *        histograms must set these fields properly, and many functions
  *        that use numa histograms rely on the correctness of these values.
  */
@@ -174,6 +179,9 @@
 #include "allheaders.h"
 
 static const l_int32 INITIAL_PTR_ARRAYSIZE = 50;      /* n'importe quoi */
+
+    /* Static function */
+static l_int32 numaExtendArray(NUMA  *na);
 
 
 /*--------------------------------------------------------------------------*
@@ -280,8 +288,7 @@ NUMA    *na;
         if (na->array) FREE(na->array);
         na->array = farray;
         na->n = size;
-    }
-    else {  /* just copy the contents */
+    } else {  /* just copy the contents */
         for (i = 0; i < size; i++)
             numaAddNumber(na, farray[i]);
     }
@@ -308,7 +315,7 @@ NUMA  *na;
     PROCNAME("numaDestroy");
 
     if (pna == NULL) {
-        L_WARNING("ptr address is NULL", procName);
+        L_WARNING("ptr address is NULL\n", procName);
         return;
     }
 
@@ -437,7 +444,7 @@ l_int32  n;
  *      Input:  na
  *      Return: 0 if OK, 1 on error
  */
-l_int32
+static l_int32
 numaExtendArray(NUMA  *na)
 {
     PROCNAME("numaExtendArray");
@@ -801,9 +808,9 @@ l_float32  *array;
     if (!na)
         return (l_float32 *)ERROR_PTR("na not defined", procName, NULL);
 
-    if (copyflag == L_NOCOPY)
+    if (copyflag == L_NOCOPY) {
         array = na->array;
-    else {  /* copyflag == L_COPY */
+    } else {  /* copyflag == L_COPY */
         n = numaGetCount(na);
         if ((array = (l_float32 *)CALLOC(n, sizeof(l_float32))) == NULL)
             return (l_float32 *)ERROR_PTR("array not made", procName, NULL);
@@ -853,7 +860,7 @@ numaChangeRefcount(NUMA    *na,
 
 
 /*!
- *  numaGetXParameters()
+ *  numaGetParameters()
  *
  *      Input:  na
  *              &startx (<optional return> startx)
@@ -861,11 +868,11 @@ numaChangeRefcount(NUMA    *na,
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-numaGetXParameters(NUMA       *na,
-                   l_float32  *pstartx,
-                   l_float32  *pdelx)
+numaGetParameters(NUMA       *na,
+                  l_float32  *pstartx,
+                  l_float32  *pdelx)
 {
-    PROCNAME("numaGetXParameters");
+    PROCNAME("numaGetParameters");
 
     if (!na)
         return ERROR_INT("na not defined", procName, 1);
@@ -877,7 +884,7 @@ numaGetXParameters(NUMA       *na,
 
 
 /*!
- *  numaSetXParameters()
+ *  numaSetParameters()
  *
  *      Input:  na
  *              startx (x value corresponding to na[0])
@@ -887,11 +894,11 @@ numaGetXParameters(NUMA       *na,
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-numaSetXParameters(NUMA      *na,
-                   l_float32  startx,
-                   l_float32  delx)
+numaSetParameters(NUMA      *na,
+                  l_float32  startx,
+                  l_float32  delx)
 {
-    PROCNAME("numaSetXParameters");
+    PROCNAME("numaSetParameters");
 
     if (!na)
         return ERROR_INT("na not defined", procName, 1);
@@ -903,26 +910,92 @@ numaSetXParameters(NUMA      *na,
 
 
 /*!
- *  numaCopyXParameters()
+ *  numaCopyParameters()
  *
  *      Input:  nad (destination Numa)
  *              nas (source Numa)
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-numaCopyXParameters(NUMA  *nad,
-                    NUMA  *nas)
+numaCopyParameters(NUMA  *nad,
+                   NUMA  *nas)
 {
 l_float32  start, binsize;
 
-    PROCNAME("numaCopyXParameters");
+    PROCNAME("numaCopyParameters");
 
     if (!nas || !nad)
         return ERROR_INT("nas and nad not both defined", procName, 1);
 
-    numaGetXParameters(nas, &start, &binsize);
-    numaSetXParameters(nad, start, binsize);
+    numaGetParameters(nas, &start, &binsize);
+    numaSetParameters(nad, start, binsize);
     return 0;
+}
+
+
+/*----------------------------------------------------------------------*
+ *                      Convert to string array                         *
+ *----------------------------------------------------------------------*/
+/*!
+ *  numaConvertToSarray()
+ *
+ *      Input:  na
+ *              size1 (size of conversion field)
+ *              size2 (for float conversion: size of field to the right
+ *                     of the decimal point)
+ *              addzeros (for integer conversion: to add lead zeros)
+ *              type (L_INTEGER_VALUE, L_FLOAT_VALUE)
+ *      Return: a sarray of the float values converted to strings
+ *              representing either integer or float values; or null on error.
+ *
+ *  Notes:
+ *      (1) For integer conversion, size2 is ignored.
+ *          For float conversion, addzeroes is ignored.
+ */
+SARRAY *
+numaConvertToSarray(NUMA    *na,
+                    l_int32  size1,
+                    l_int32  size2,
+                    l_int32  addzeros,
+                    l_int32  type)
+{
+char       fmt[32], strbuf[64];
+l_int32    i, n, ival;
+l_float32  fval;
+SARRAY    *sa;
+
+    PROCNAME("numaConvertToSarray");
+
+    if (!na)
+        return (SARRAY *)ERROR_PTR("na not defined", procName, NULL);
+    if (type != L_INTEGER_VALUE && type != L_FLOAT_VALUE)
+        return (SARRAY *)ERROR_PTR("invalid type", procName, NULL);
+
+    if (type == L_INTEGER_VALUE) {
+        if (addzeros)
+            snprintf(fmt, sizeof(fmt), "%%0%dd", size1);
+        else
+            snprintf(fmt, sizeof(fmt), "%%%dd", size1);
+    } else {  /* L_FLOAT_VALUE */
+        snprintf(fmt, sizeof(fmt), "%%%d.%df", size1, size2);
+    }
+
+    n = numaGetCount(na);
+    if ((sa = sarrayCreate(n)) == NULL)
+        return (SARRAY *)ERROR_PTR("sa not made", procName, NULL);
+
+    for (i = 0; i < n; i++) {
+        if (type == L_INTEGER_VALUE) {
+            numaGetIValue(na, i, &ival);
+            snprintf(strbuf, sizeof(strbuf), fmt, ival);
+        } else {  /* L_FLOAT_VALUE */
+            numaGetFValue(na, i, &fval);
+            snprintf(strbuf, sizeof(strbuf), fmt, fval);
+        }
+        sarrayAddString(sa, strbuf, L_COPY);
+    }
+
+    return sa;
 }
 
 
@@ -996,7 +1069,7 @@ NUMA      *na;
 
         /* Optional data */
     if (fscanf(fp, "startx = %f, delx = %f\n", &startx, &delx) == 2)
-        numaSetXParameters(na, startx, delx);
+        numaSetParameters(na, startx, delx);
 
     return na;
 }
@@ -1059,7 +1132,7 @@ l_float32  startx, delx;
     fprintf(fp, "\n");
 
         /* Optional data */
-    numaGetXParameters(na, &startx, &delx);
+    numaGetParameters(na, &startx, &delx);
     if (startx != 0.0 || delx != 1.0)
         fprintf(fp, "startx = %f, delx = %f\n", startx, delx);
 
@@ -1101,6 +1174,76 @@ NUMAA  *naa;
 
 
 /*!
+ *  numaaCreateFull()
+ *
+ *      Input:  ntop: size of numa ptr array to be alloc'd
+ *              n: size of individual numa arrays to be alloc'd (0 for default)
+ *      Return: naa, or null on error
+ *
+ *  Notes:
+ *      (1) This allocates numaa and fills the array with allocated numas.
+ *          In use, after calling this function, use
+ *              numaaAddNumber(naa, index, val);
+ *          to add val to the index-th numa in naa.
+ */
+NUMAA *
+numaaCreateFull(l_int32  ntop,
+                l_int32  n)
+{
+l_int32  i;
+NUMAA   *naa;
+NUMA    *na;
+
+    naa = numaaCreate(ntop);
+    for (i = 0; i < ntop; i++) {
+        na = numaCreate(n);
+        numaaAddNuma(naa, na, L_INSERT);
+    }
+
+    return naa;
+}
+
+
+/*!
+ *  numaaTruncate()
+ *
+ *      Input:  naa
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This identifies the largest index containing a numa that
+ *          has any numbers within it, destroys all numa above that index,
+ *          and resets the count.
+ */
+l_int32
+numaaTruncate(NUMAA  *naa)
+{
+l_int32  i, n, nn;
+NUMA    *na;
+
+    PROCNAME("numaaTruncate");
+
+    if (!naa)
+        return ERROR_INT("naa not defined", procName, 1);
+
+    n = numaaGetCount(naa);
+    for (i = n - 1; i >= 0; i--) {
+        na = numaaGetNuma(naa, i, L_CLONE);
+        if (!na)
+            continue;
+        nn = numaGetCount(na);
+        numaDestroy(&na);
+        if (nn == 0)
+            numaDestroy(&naa->numa[i]);
+        else
+            break;
+    }
+    naa->n = i + 1;
+    return 0;
+}
+
+
+/*!
  *  numaaDestroy()
  *
  *      Input: &numaa <to be nulled if it exists>
@@ -1115,7 +1258,7 @@ NUMAA   *naa;
     PROCNAME("numaaDestroy");
 
     if (pnaa == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
 
@@ -1159,16 +1302,16 @@ NUMA    *nac;
     if (!na)
         return ERROR_INT("na not defined", procName, 1);
 
-    if (copyflag == L_INSERT)
+    if (copyflag == L_INSERT) {
         nac = na;
-    else if (copyflag == L_COPY) {
+    } else if (copyflag == L_COPY) {
         if ((nac = numaCopy(na)) == NULL)
             return ERROR_INT("nac not made", procName, 1);
-    }
-    else if (copyflag == L_CLONE)
+    } else if (copyflag == L_CLONE) {
         nac = numaClone(na);
-    else
+    } else {
         return ERROR_INT("invalid copyflag", procName, 1);
+    }
 
     n = numaaGetCount(naa);
     if (n >= naa->nalloc)
@@ -1382,23 +1525,26 @@ l_int32  n;
  *      Input:  naa
  *              i (index of numa within numaa)
  *              j (index into numa)
- *              val (<return> float value)
+ *              fval (<optional return> float value)
+ *              ival (<optional return> int value)
  *      Return: 0 if OK, 1 on error
  */
 l_int32
 numaaGetValue(NUMAA      *naa,
               l_int32     i,
               l_int32     j,
-              l_float32  *pval)
+              l_float32  *pfval,
+              l_int32    *pival)
 {
 l_int32  n;
 NUMA    *na;
 
-    PROCNAME("numaaGetFValue");
+    PROCNAME("numaaGetValue");
 
-    if (!pval)
-        return ERROR_INT("&val not defined", procName, 1);
-    *pval = 0.0;
+    if (!pfval && !pival)
+        return ERROR_INT("no return val requested", procName, 1);
+    if (pfval) *pfval = 0.0;
+    if (pival) *pival = 0;
     if (!naa)
         return ERROR_INT("naa not defined", procName, 1);
     n = numaaGetCount(naa);
@@ -1407,7 +1553,8 @@ NUMA    *na;
     na = naa->numa[i];
     if (j < 0 || j >= na->n)
         return ERROR_INT("invalid index into na", procName, 1);
-    *pval = na->array[j];
+    if (pfval) *pfval = na->array[j];
+    if (pival) *pival = (l_int32)(na->array[j]);
     return 0;
 }
 
@@ -1646,7 +1793,7 @@ NUMA2D  *na2d;
     PROCNAME("numa2dDestroy");
 
     if (pna2d == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
 
@@ -1893,7 +2040,7 @@ l_int32    i;
     PROCNAME("numaHashDestroy");
 
     if (pnahash == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
 
@@ -1957,8 +2104,6 @@ NUMA    *na;
 
     if (!nahash)
         return ERROR_INT("nahash not defined", procName, 1);
-    if (key < 0)
-        return ERROR_INT("key < 0", procName, 1);
     bucket = key % nahash->nbuckets;
     na = nahash->numa[bucket];
     if (!na) {

@@ -60,8 +60,8 @@
  *
  *    FPixa addition
  *          l_int32        fpixaAddFPix()
- *          l_int32        fpixaExtendArray()
- *          l_int32        fpixaExtendArrayToSize()
+ *          static l_int32 fpixaExtendArray()
+ *          static l_int32 fpixaExtendArrayToSize()
  *
  *    FPixa accessors
  *          l_int32        fpixaGetCount()
@@ -117,6 +117,10 @@
 
 static const l_int32  INITIAL_PTR_ARRAYSIZE = 20;   /* must be > 0 */
 
+    /* Static functions */
+static l_int32 fpixaExtendArray(FPIXA *fpixa);
+static l_int32 fpixaExtendArrayToSize(FPIXA *fpixa, l_int32 size);
+
 
 /*--------------------------------------------------------------------*
  *                     FPix Create/copy/destroy                       *
@@ -137,6 +141,7 @@ fpixCreate(l_int32  width,
            l_int32  height)
 {
 l_float32  *data;
+l_uint64    bignum;
 FPIX       *fpixd;
 
     PROCNAME("fpixCreate");
@@ -146,10 +151,17 @@ FPIX       *fpixd;
     if (height <= 0)
         return (FPIX *)ERROR_PTR("height must be > 0", procName, NULL);
 
+        /* Avoid overflow in malloc arg, malicious or otherwise */
+    bignum = 4L * width * height;   /* max number of bytes requested */
+    if (bignum > ((1LL << 31) - 1)) {
+        L_ERROR("requested w = %d, h = %d\n", procName, width, height);
+        return (FPIX *)ERROR_PTR("requested bytes >= 2^31", procName, NULL);
+    }
+
     if ((fpixd = (FPIX *)CALLOC(1, sizeof(FPIX))) == NULL)
         return (FPIX *)ERROR_PTR("CALLOC fail for fpixd", procName, NULL);
     fpixSetDimensions(fpixd, width, height);
-    fpixSetWpl(fpixd, width);
+    fpixSetWpl(fpixd, width);  /* 4-byte words */
     fpixd->refcount = 1;
 
     data = (l_float32 *)CALLOC(width * height, sizeof(l_float32));
@@ -342,7 +354,7 @@ FPIX       *fpix;
     PROCNAME("fpixDestroy");
 
     if (!pfpix) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
 
@@ -415,7 +427,7 @@ fpixGetWpl(FPIX  *fpix)
     PROCNAME("fpixGetWpl");
 
     if (!fpix)
-        return ERROR_INT("fpix not defined", procName, 1);
+        return ERROR_INT("fpix not defined", procName, UNDEF);
     return fpix->wpl;
 }
 
@@ -694,7 +706,7 @@ FPIXA   *fpixa;
     PROCNAME("fpixaDestroy");
 
     if (pfpixa == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
 
@@ -771,7 +783,7 @@ FPIX    *fpixc;
  *  Notes:
  *      (1) Doubles the size of the fpixa ptr array.
  */
-l_int32
+static l_int32
 fpixaExtendArray(FPIXA  *fpixa)
 {
     PROCNAME("fpixaExtendArray");
@@ -792,7 +804,7 @@ fpixaExtendArray(FPIXA  *fpixa)
  *  Notes:
  *      (1) If necessary, reallocs new fpixa ptrs array to @size.
  */
-l_int32
+static l_int32
 fpixaExtendArrayToSize(FPIXA   *fpixa,
                        l_int32  size)
 {
@@ -1003,6 +1015,7 @@ dpixCreate(l_int32  width,
            l_int32  height)
 {
 l_float64  *data;
+l_uint64    bignum;
 DPIX       *dpix;
 
     PROCNAME("dpixCreate");
@@ -1012,10 +1025,17 @@ DPIX       *dpix;
     if (height <= 0)
         return (DPIX *)ERROR_PTR("height must be > 0", procName, NULL);
 
+        /* Avoid overflow in malloc arg, malicious or otherwise */
+    bignum = 8L * width * height;   /* max number of bytes requested */
+    if (bignum > ((1LL << 31) - 1)) {
+        L_ERROR("requested w = %d, h = %d\n", procName, width, height);
+        return (DPIX *)ERROR_PTR("requested bytes >= 2^31", procName, NULL);
+    }
+
     if ((dpix = (DPIX *)CALLOC(1, sizeof(DPIX))) == NULL)
         return (DPIX *)ERROR_PTR("CALLOC fail for dpix", procName, NULL);
     dpixSetDimensions(dpix, width, height);
-    dpixSetWpl(dpix, width);  /* Note: 8 byte words here */
+    dpixSetWpl(dpix, width);  /* 8 byte words */
     dpix->refcount = 1;
 
     data = (l_float64 *)CALLOC(width * height, sizeof(l_float64));
@@ -1172,7 +1192,7 @@ l_float64  *data;
         return 0;
 
     dpixSetDimensions(dpixd, ws, hs);
-    dpixSetWpl(dpixd, ws);  /* Note: 8 byte words */
+    dpixSetWpl(dpixd, ws);  /* 8 byte words */
     bytes = 8 * ws * hs;
     data = dpixGetData(dpixd);
     if (data) FREE(data);
@@ -1202,7 +1222,7 @@ DPIX       *dpix;
     PROCNAME("dpixDestroy");
 
     if (!pdpix) {
-        L_WARNING("ptr address is null!", procName);
+        L_WARNING("ptr address is null!\n", procName);
         return;
     }
 

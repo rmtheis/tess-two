@@ -38,8 +38,8 @@
 #define  YS                 150
 #define  DFLAG              1
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
 l_int32      i;
@@ -49,24 +49,24 @@ PIX         *pixs, *pixd, *pixm, *pixmi, *pixt1, *pixt2, *pixt3;
 static char  mainName[] = "seedfilltest";
 
     if (argc != 3)
-	exit(ERROR_INT(" Syntax:  seedfilltest filein fileout", mainName, 1));
+        return ERROR_INT(" Syntax:  seedfilltest filein fileout", mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
     pixd = NULL;
 
     if ((pixm = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixm not made", mainName, 1));
+        return ERROR_INT("pixm not made", mainName, 1);
     pixmi = pixInvert(NULL, pixm);
 
     size = pixGetWidth(pixm) * pixGetHeight(pixm);
     pixs = pixCreateTemplate(pixm);
     for (i = 0; i < 100; i++) {
-	pixGetPixel(pixm, XS + 5 * i, YS + 5 * i, &val);
-	if (val == 0) break;
+        pixGetPixel(pixm, XS + 5 * i, YS + 5 * i, &val);
+        if (val == 0) break;
     }
     if (i == 100)
-	exit(ERROR_INT("no seed pixel found", mainName, 1));
+        return ERROR_INT("no seed pixel found", mainName, 1);
     pixSetPixel(pixs, XS + 5 * i, YS + 5 * i, 1);
 
 #if 0
@@ -120,7 +120,7 @@ static char  mainName[] = "seedfilltest";
 #endif
 
 #if 0
-	/* test in-place seedfill for speed */
+        /* test in-place seedfill for speed */
     pixd = pixClone(pixs);
     startTimer();
     pixSeedfillBinary(pixs, pixs, pixmi, CONNECTIVITY);
@@ -133,11 +133,11 @@ static char  mainName[] = "seedfilltest";
 #endif
 
 #if 0
-	/* test seedfill to dest for speed */
+        /* test seedfill to dest for speed */
     pixd = pixCreateTemplate(pixm);
     startTimer();
     for (i = 0; i < NTIMES; i++) {
-	pixSeedfillBinary(pixd, pixs, pixmi, CONNECTIVITY);
+        pixSeedfillBinary(pixd, pixs, pixmi, CONNECTIVITY);
     }
     fprintf(stderr, "Filling rate: %7.4f Mpix/sec\n",
         (size/1000000.) * NTIMES / stopTimer());
@@ -148,10 +148,10 @@ static char  mainName[] = "seedfilltest";
 #endif
 
         /* use same connectivity to compare with the result of the
-	 * slow parallel operation */
-#if 0
+         * slow parallel operation */
+#if 1
     pixDestroy(&pixd);
-    pixd = pixSeedfillMorph(pixs, pixmi, CONNECTIVITY);
+    pixd = pixSeedfillMorph(pixs, pixmi, 100, CONNECTIVITY);
     pixOr(pixd, pixd, pixm);
     pixWrite("/tmp/junkout2.png", pixd, IFF_PNG);
 #endif
@@ -160,7 +160,6 @@ static char  mainName[] = "seedfilltest";
     pixDestroy(&pixm);
     pixDestroy(&pixmi);
     pixDestroy(&pixd);
-
     return 0;
 }
 

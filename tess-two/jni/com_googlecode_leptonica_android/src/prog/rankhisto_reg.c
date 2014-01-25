@@ -43,8 +43,8 @@
 static PIXA *PixSavePlots1(void);
 static PIXA *PixSavePlots2(void);
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char          fname[256];
 l_int32       i, w, h, nbins, factor;
@@ -162,28 +162,28 @@ PIXA   *pixa;
 
     pixa = pixaCreate(8);
     pixt = pixRead("/tmp/rtnan.png");
-    pixSaveTiled(pixt, pixa, 1, 1, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 1, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnar.png");
-    pixSaveTiled(pixt, pixa, 1, 0, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnai.png");
-    pixSaveTiled(pixt, pixa, 1, 0, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnarbin.png");
-    pixSaveTiled(pixt, pixa, 1, 1, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 1, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnabb.png");
-    pixSaveTiled(pixt, pixa, 1, 0, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnared.png");
-    pixSaveTiled(pixt, pixa, 1, 1, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 1, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnagreen.png");
-    pixSaveTiled(pixt, pixa, 1, 0, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnablue.png");
-    pixSaveTiled(pixt, pixa, 1, 0, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixt);
     return pixa;
 }
@@ -197,31 +197,31 @@ PIXA   *pixa;
 
     pixa = pixaCreate(9);
     pixt = pixRead("/tmp/rtnan1.png");
-    pixSaveTiled(pixt, pixa, 1, 1, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 1, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnai1.png");
-    pixSaveTiled(pixt, pixa, 1, 0, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnarbin1.png");
-    pixSaveTiled(pixt, pixa, 1, 0, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnan2.png");
-    pixSaveTiled(pixt, pixa, 1, 1, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 1, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnai2.png");
-    pixSaveTiled(pixt, pixa, 1, 0, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnarbin2.png");
-    pixSaveTiled(pixt, pixa, 1, 0, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnan3.png");
-    pixSaveTiled(pixt, pixa, 1, 1, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 1, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnai3.png");
-    pixSaveTiled(pixt, pixa, 1, 0, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixt);
     pixt = pixRead("/tmp/rtnarbin3.png");
-    pixSaveTiled(pixt, pixa, 1, 0, 20, 8);
+    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixt);
     return pixa;
 }

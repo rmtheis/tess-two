@@ -42,9 +42,8 @@
  *           PIX      *pixProjectivePtaGray()
  *           PIX      *pixProjectiveGray()
  *
- *      Projective transform including alpha (blend) component and gamma xform
+ *      Projective transform including alpha (blend) component
  *           PIX      *pixProjectivePtaWithAlpha()
- *           PIX      *pixProjectivePtaGammaXform()
  *
  *      Projective coordinate transformation
  *           l_int32   getProjectiveXformCoeffs()
@@ -213,13 +212,13 @@ PIXCMAP    *cmap;
             color = 0;
         pixcmapAddBlackOrWhite(cmap, color, &cmapindex);
         pixSetAllArbitrary(pixd, cmapindex);
-    }
-    else {
+    } else {
         if ((d == 1 && incolor == L_BRING_IN_WHITE) ||
-            (d > 1 && incolor == L_BRING_IN_BLACK))
+            (d > 1 && incolor == L_BRING_IN_BLACK)) {
             pixClearAll(pixd);
-        else
+        } else {
             pixSetAll(pixd);
+        }
     }
 
         /* Scan over the dest pixels */
@@ -237,19 +236,15 @@ PIXCMAP    *cmap;
             if (d == 1) {
                 val = GET_DATA_BIT(lines, x);
                 SET_DATA_BIT_VAL(lined, j, val);
-            }
-            else if (d == 8) {
+            } else if (d == 8) {
                 val = GET_DATA_BYTE(lines, x);
                 SET_DATA_BYTE(lined, j, val);
-            }
-            else if (d == 32) {
+            } else if (d == 32) {
                 lined[j] = lines[x];
-            }
-            else if (d == 2) {
+            } else if (d == 2) {
                 val = GET_DATA_DIBIT(lines, x);
                 SET_DATA_DIBIT(lined, j, val);
-            }
-            else if (d == 4) {
+            } else if (d == 4) {
                 val = GET_DATA_QBIT(lines, x);
                 SET_DATA_QBIT(lined, j, val);
             }
@@ -450,7 +445,7 @@ l_int32    i, j, w, h, d, wpls, wpld;
 l_uint32   val;
 l_uint32  *datas, *datad, *lined;
 l_float32  x, y;
-PIX       *pixd;
+PIX       *pix1, *pix2, *pixd;
 
     PROCNAME("pixProjectiveColor");
 
@@ -479,6 +474,15 @@ PIX       *pixd;
                                         &val);
             *(lined + j) = val;
         }
+    }
+
+        /* If rgba, transform the pixs alpha channel and insert in pixd */
+    if (pixGetSpp(pixs) == 4) {
+        pix1 = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
+        pix2 = pixProjectiveGray(pix1, vc, 255);  /* bring in opaque */
+        pixSetRGBComponent(pixd, pix2, L_ALPHA_CHANNEL);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
     }
 
     return pixd;
@@ -622,6 +626,17 @@ PIX       *pixd;
  *              with an image below, and
  *          (b) softens the edges by weakening the aliasing there.
  *          Use l_setAlphaMaskBorder() to change these values.
+ *      (8) A subtle use of gamma correction is to remove gamma correction
+ *          before scaling and restore it afterwards.  This is done
+ *          by sandwiching this function between a gamma/inverse-gamma
+ *          photometric transform:
+ *              pixt = pixGammaTRCWithAlpha(NULL, pixs, 1.0 / gamma, 0, 255);
+ *              pixd = pixProjectivePtaWithAlpha(pixt, ptad, ptas,
+ *                                               NULL, fract, border);
+ *              pixGammaTRCWithAlpha(pixd, pixd, gamma, 0, 255);
+ *              pixDestroy(&pixt);
+ *          This has the side-effect of producing artifacts in the very
+ *          dark regions.
  */
 PIX *
 pixProjectivePtaWithAlpha(PIX       *pixs,
@@ -643,15 +658,15 @@ PTA     *ptad2, *ptas2;
     if (d != 32 && pixGetColormap(pixs) == NULL)
         return (PIX *)ERROR_PTR("pixs not cmapped or 32 bpp", procName, NULL);
     if (pixg && pixGetDepth(pixg) != 8) {
-        L_WARNING("pixg not 8 bpp; using @fract transparent alpha", procName);
+        L_WARNING("pixg not 8 bpp; using @fract transparent alpha\n", procName);
         pixg = NULL;
     }
     if (!pixg && (fract < 0.0 || fract > 1.0)) {
-        L_WARNING("invalid fract; using 1.0 (fully transparent)", procName);
+        L_WARNING("invalid fract; using 1.0 (fully transparent)\n", procName);
         fract = 1.0;
     }
     if (!pixg && fract == 0.0)
-        L_WARNING("fully opaque alpha; image will not be blended", procName);
+        L_WARNING("fully opaque alpha; image will not be blended\n", procName);
     if (!ptad)
         return (PIX *)ERROR_PTR("ptad not defined", procName, NULL);
     if (!ptas)
@@ -673,9 +688,9 @@ PTA     *ptad2, *ptas2;
             pixSetAll(pixg2);
         else
             pixSetAllArbitrary(pixg2, (l_int32)(255.0 * fract));
-    }
-    else
+    } else {
         pixg2 = pixResizeToMatch(pixg, NULL, ws, hs);
+    }
     if (ws > 10 && hs > 10) {  /* see note 7 */
         pixSetBorderRingVal(pixg2, 1,
                             (l_int32)(255.0 * fract * AlphaMaskBorderVals[0]));
@@ -686,6 +701,7 @@ PTA     *ptad2, *ptas2;
     pixb2 = pixAddBorder(pixg2, border, 0);  /* must be black border */
     pixga = pixProjectivePtaGray(pixb2, ptad2, ptas2, 0);
     pixSetRGBComponent(pixd, pixga, L_ALPHA_CHANNEL);
+    pixSetSpp(pixd, 4);
 
     pixDestroy(&pixg2);
     pixDestroy(&pixb1);
@@ -695,59 +711,6 @@ PTA     *ptad2, *ptas2;
     ptaDestroy(&ptas2);
     return pixd;
 }
-
-
-/*!
- *  pixProjectivePtaGammaXform()
- *
- *      Input:  pixs (32 bpp rgb)
- *              gamma (gamma correction; must be > 0.0)
- *              ptad  (3 pts of final coordinate space)
- *              ptas  (3 pts of initial coordinate space)
- *              fract (between 0.0 and 1.0, with 1.0 fully transparent)
- *              border (of pixels to capture transformed source pixels)
- *      Return: pixd, or null on error
- *
- *  Notes:
- *      (1) This wraps a gamma/inverse-gamma photometric transform around
- *          pixProjectivePtaWithAlpha().
- *      (2) For usage, see notes in pixProjectivePtaWithAlpha() and
- *          pixGammaTRCWithAlpha().
- *      (3) The basic idea of a gamma/inverse-gamma transform is to remove
- *          any gamma correction before the projective transform, and restore
- *          it afterward.  The effects can be subtle, but important for
- *          some applications.  For example, using gamma > 1.0 will
- *          cause the dark areas to become somewhat lighter and slightly
- *          reduce aliasing effects when blending using the alpha channel.
- */
-PIX *
-pixProjectivePtaGammaXform(PIX       *pixs,
-                           l_float32  gamma,
-                           PTA       *ptad,
-                           PTA       *ptas,
-                           l_float32  fract,
-                           l_int32    border)
-{
-PIX  *pixg, *pixd;
-
-    PROCNAME("pixProjectivePtaGammaXform");
-
-    if (!pixs || (pixGetDepth(pixs) != 32))
-        return (PIX *)ERROR_PTR("pixs undefined or not 32 bpp", procName, NULL);
-    if (fract == 0.0)
-        L_WARNING("fully opaque alpha; image cannot be blended", procName);
-    if (gamma <= 0.0)  {
-        L_WARNING("gamma must be > 0.0; setting to 1.0", procName);
-        gamma = 1.0;
-    }
-
-    pixg = pixGammaTRCWithAlpha(NULL, pixs, 1.0 / gamma, 0, 255);
-    pixd = pixProjectivePtaWithAlpha(pixg, ptad, ptas, NULL, fract, border);
-    pixGammaTRCWithAlpha(pixd, pixd, gamma, 0, 255);
-    pixDestroy(&pixg);
-    return pixd;
-}
-
 
 
 /*-------------------------------------------------------------*

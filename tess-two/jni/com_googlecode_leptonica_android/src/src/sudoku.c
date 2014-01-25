@@ -203,7 +203,7 @@ SARRAY   *saline, *sa1, *sa2;
     nlines = sarrayGetCount(sa2);
     if (nlines != 9) {
         sarrayDestroy(&sa2);
-        L_ERROR_INT("file has %d lines", procName, nlines);
+        L_ERROR("file has %d lines\n", procName, nlines);
         return (l_int32 *)ERROR_PTR("invalid file", procName, NULL);
     }
 
@@ -335,7 +335,7 @@ L_SUDOKU  *sud;
     PROCNAME("sudokuDestroy");
 
     if (psud == NULL) {
-        L_WARNING("ptr address is NULL", procName);
+        L_WARNING("ptr address is NULL\n", procName);
         return;
     }
     if ((sud = *psud) == NULL)
@@ -452,8 +452,7 @@ l_int32  *locs, *state;
         }
         state[index] = 0;
         sud->current--;
-    }
-    else {  /* increment current value and test */
+    } else {  /* increment current value and test */
         sud->nguess++;
         state[index]++;
         valid = sudokuTestState(state, index);
@@ -461,9 +460,9 @@ l_int32  *locs, *state;
             if (sud->current == sud->num - 1) {  /* we're done */
                 sud->finished = TRUE;
                 return 0;
-            }
-            else  /* advance to next position */
+            } else {  /* advance to next position */
                 sud->current++;
+            }
         }
     }
 
@@ -671,16 +670,14 @@ l_int32  *rarray;
                  rarray[dindex++] = array[sindex];
              }
         }
-    }
-    else if (quads == 2) {
+    } else if (quads == 2) {
         for (i = 8, dindex = 0; i >= 0; i--) {
              for (j = 8; j >= 0; j--) {
                  sindex = 9 * i + j;
                  rarray[dindex++] = array[sindex];
              }
         }
-    }
-    else {  /* quads == 3 */
+    } else {  /* quads == 3 */
         for (j = 8, dindex = 0; j >= 0; j--) {
              for (i = 0; i < 9; i++) {
                  sindex = 9 * i + j;
@@ -752,13 +749,13 @@ L_SUDOKU  *sud, *testsud;
     sudokuSolve(testsud);
     if (testsud->failure) {
         sudokuDestroy(&testsud);
-        L_ERROR("invalid initial solution", procName);
+        L_ERROR("invalid initial solution\n", procName);
         return NULL;
     }
     sudokuTestUniqueness(testsud->init, &unique);
     sudokuDestroy(&testsud);
     if (!unique) {
-        L_ERROR("non-unique result with 30 zeroes", procName);
+        L_ERROR("non-unique result with 30 zeroes\n", procName);
         return NULL;
     }
 
@@ -803,8 +800,7 @@ L_SUDOKU  *sud, *testsud;
         if (!unique) {  /* revert and try again */
             array[index] = oldval;
             tries++;
-        }
-        else {  /* accept this */
+        } else {  /* accept this */
             tries = 0;
             fprintf(stderr, "Have %d zeros\n", nzeros);
             nzeros++;

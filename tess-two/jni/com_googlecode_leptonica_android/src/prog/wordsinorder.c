@@ -48,8 +48,8 @@ static const l_int32  MAX_WORD_HEIGHT = 100;
 #define   BUF_SIZE                  512
 #define   RENDER_PAGES              1
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char         filename[BUF_SIZE];
 char        *dirin, *rootname, *fname;
@@ -68,16 +68,16 @@ PIXCMAP     *cmap;
 static char  mainName[] = "wordsinorder";
 
     if (argc != 3 && argc != 5)
-	exit(ERROR_INT(
-	     " Syntax: wordsinorder dirin rootname [firstpage, npages]",
-	     mainName, 1));
+        return ERROR_INT(
+            " Syntax: wordsinorder dirin rootname [firstpage, npages]",
+            mainName, 1);
 
     dirin = argv[1];
     rootname = argv[2];
 
     if (argc == 3) {
         firstpage = 0;
-	npages = 0;
+        npages = 0;
     }
     else {
         firstpage = atoi(argv[3]);
@@ -93,12 +93,12 @@ static char  mainName[] = "wordsinorder";
     for (i = 0; i < nfiles; i++) {
         fname = sarrayGetString(safiles, i, 0);
         if ((pixs = pixRead(fname)) == NULL) {
-            L_WARNING_INT("image file %d not read", mainName, i);
+            L_WARNING("image file %d not read\n", mainName, i);
             continue;
         }
         pixGetWordBoxesInTextlines(pixs, 2, MIN_WORD_WIDTH, MIN_WORD_HEIGHT,
-			           MAX_WORD_WIDTH, MAX_WORD_HEIGHT,
-				   &boxa, &nai);
+                                   MAX_WORD_WIDTH, MAX_WORD_HEIGHT,
+                                   &boxa, &nai);
         boxaaAddBoxa(baa, boxa, L_INSERT);
         numaaAddNuma(naa, nai, L_INSERT);
 
@@ -106,7 +106,7 @@ static char  mainName[] = "wordsinorder";
             /* Show the results on a 2x reduced image, where each
              * word is outlined and the color of the box depends on the
              * computed textline. */
-	pixt1 = pixReduceRankBinary2(pixs, 2, NULL);
+        pixt1 = pixReduceRankBinary2(pixs, 2, NULL);
         pixGetDimensions(pixt1, &w, &h, NULL);
         pixd = pixCreate(w, h, 8);
         cmap = pixcmapCreateRandom(8, 1, 1);  /* first color is black */
@@ -124,13 +124,13 @@ static char  mainName[] = "wordsinorder";
             boxDestroy(&box);
         }
 
-	snprintf(filename, BUF_SIZE, "%s.%05d", rootname, i);
-	fprintf(stderr, "filename: %s\n", filename);
-	pixWrite(filename, pixd, IFF_PNG);
-	pixDestroy(&pixt1);
-	pixDestroy(&pixt2);
-	pixDestroy(&pixs);
-	pixDestroy(&pixd);
+        snprintf(filename, BUF_SIZE, "%s.%05d", rootname, i);
+        fprintf(stderr, "filename: %s\n", filename);
+        pixWrite(filename, pixd, IFF_PNG);
+        pixDestroy(&pixt1);
+        pixDestroy(&pixt2);
+        pixDestroy(&pixs);
+        pixDestroy(&pixd);
 #endif  /* RENDER_PAGES */
     }
 

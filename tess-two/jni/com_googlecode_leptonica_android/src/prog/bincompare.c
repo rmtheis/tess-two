@@ -37,32 +37,29 @@
 #define   SUBTRACT_1_FROM_2     0
 #define   SUBTRACT_2_FROM_1     0
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      w, h, d, n;
 char        *filein1, *filein2, *fileout;
-PIX         *pixs1, *pixs2, *pixd;
+PIX         *pixs1, *pixs2;
 static char  mainName[] = "bincompare";
 
     if (argc != 4)
-	exit(ERROR_INT(" Syntax:  bincompare filein1 filein2 fileout",
-	               mainName, 1));
+        return ERROR_INT(" Syntax:  bincompare filein1 filein2 fileout",
+                         mainName, 1);
 
     filein1 = argv[1];
     filein2 = argv[2];
     fileout = argv[3];
-
     if ((pixs1 = pixRead(filein1)) == NULL)
-	exit(ERROR_INT("pixs1 not made", mainName, 1));
+        return ERROR_INT("pixs1 not made", mainName, 1);
     if ((pixs2 = pixRead(filein2)) == NULL)
-	exit(ERROR_INT("pixs2 not made", mainName, 1));
+        return ERROR_INT("pixs2 not made", mainName, 1);
 
-    w = pixGetWidth(pixs1);
-    h = pixGetHeight(pixs1);
-    d = pixGetDepth(pixs1);
+    pixGetDimensions(pixs1, &w, &h, &d);
     if (d != 1)
-	exit(ERROR_INT("pixs1 not binary", mainName, 1));
+        return ERROR_INT("pixs1 not binary", mainName, 1);
 
     pixCountPixels(pixs1, &n, NULL);
     fprintf(stderr, "Number of fg pixels in file1 = %d\n", n);

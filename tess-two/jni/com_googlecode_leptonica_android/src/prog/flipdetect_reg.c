@@ -37,8 +37,8 @@
 
 static void printStarredMessage(const char *msg);
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein;
 l_int32      i, orient;
@@ -47,12 +47,12 @@ PIX         *pixs, *pixt1, *pixt2;
 static char  mainName[] = "flipdetect_reg";
 
     if (argc != 2)
-	exit(ERROR_INT(" Syntax: flipdetect_reg filein", mainName, 1));
+        return ERROR_INT(" Syntax: flipdetect_reg filein", mainName, 1);
 
     filein = argv[1];
 
     if ((pixt1 = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixt1 not made", mainName, 1));
+        return ERROR_INT("pixt1 not made", mainName, 1);
     pixs = pixConvertTo1(pixt1, 130);
     pixDestroy(&pixt1);
 

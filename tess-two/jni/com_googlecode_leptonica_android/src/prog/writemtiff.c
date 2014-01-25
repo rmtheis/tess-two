@@ -32,20 +32,19 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *dirin, *pattern, *fileout;
 static char  mainName[] = "writemtiff";
 
     if (argc != 4)
-	exit(ERROR_INT(" Syntax:  writemtiff dirin pattern fileout",
-                       mainName, 1));
+        return ERROR_INT(" Syntax:  writemtiff dirin pattern fileout",
+                         mainName, 1);
 
     dirin = argv[1];
     pattern = argv[2];
     fileout = argv[3];
-
     writeMultipageTiff(dirin, pattern, fileout);
     return 0;
 }

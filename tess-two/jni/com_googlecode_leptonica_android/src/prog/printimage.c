@@ -34,8 +34,16 @@
  *
  *   If neither a printer nor a number of copies is specified, the
  *   only action is that a new PostScript file,
- *          /tmp/junk_print_image.ps
+ *          /tmp/print_image.ps
  *   is generated for the image.
+ *
+ *   To get color output, you may need a special lpr flag.  In that case,
+ *   first generate the PostScript file and then use a printer-dependent
+ *   output flag, such as "-o ColorModel=Color" or "-o ColorModel=CMYK":
+ *         lpr -P<printer> <output flag> /tmp/print_image.ps
+ *   A simple way to get the flag in linux is to bring up the print-driver
+ *   interface in acroread, select the color printer, select properties,
+ *   select color, and look at the print command line that would be used.
  *
  *   The PS file generated is level 1.  This is large, but will work
  *   on all PS printers.
@@ -46,10 +54,10 @@
 static const l_float32  FILL_FACTOR = 0.95;   /* fill factor on 8.5 x 11 page */
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
-char        *filein, *argp, *argn;
+char        *filein, *fname, *argp, *argn;
 char         buffer[512];
 l_int32      i, w, h, ignore;
 l_float32    scale;
@@ -74,7 +82,7 @@ static char  mainName[] = "printimage";
         }
     }
 
-    lept_rm(NULL, "junk_print_image.ps");
+    lept_rm(NULL, "print_image.ps");
 
     if ((pixs = pixRead(filein)) == NULL)
         return ERROR_INT("pixs not made", mainName, 1);
@@ -84,28 +92,28 @@ static char  mainName[] = "printimage";
         pixt = pixRotate90(pixs, 1);
         pixGetDimensions(pixt, &w, &h, NULL);
     }
-    else
+    else {
         pixt = pixClone(pixs);
+    }
     scale = L_MIN(FILL_FACTOR * 2550 / w, FILL_FACTOR * 3300 / h);
-    fp = lept_fopen("/tmp/junk_print_image.ps", "wb+");
+    fname = genPathname("/tmp", "print_image.ps");
+    fp = lept_fopen(fname, "wb+");
     pixWriteStreamPS(fp, pixt, NULL, 300, scale);
     lept_fclose(fp);
 
         /* print it out */
     if (argp && !argn) {
-        sprintf(buffer, "lpr %s /tmp/junk_print_image.ps &", argp);
+        sprintf(buffer, "lpr %s %s &", argp, fname);
         ignore = system(buffer);
-    }
-    else if (!argp && argn) {
-        sprintf(buffer, "lpr %s /tmp/junk_print_image.ps &", argn);
+    } else if (!argp && argn) {
+        sprintf(buffer, "lpr %s %s &", argn, fname);
         ignore = system(buffer);
-    }
-    else if (argp && argn) {
-        sprintf(buffer, "lpr %s %s /tmp/junk_print_image.ps &",
-                argp, argn);
+    } else if (argp && argn) {
+        sprintf(buffer, "lpr %s %s %s &", argp, argn, fname);
         ignore = system(buffer);
     }
 
+    lept_free(fname);
     pixDestroy(&pixs);
     pixDestroy(&pixt);
     return 0;

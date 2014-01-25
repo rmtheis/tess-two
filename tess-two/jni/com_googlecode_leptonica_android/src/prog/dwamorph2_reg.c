@@ -30,6 +30,11 @@
  *     Compare the timings of various binary morphological implementations.
  */
 
+#ifndef  _WIN32
+#include <unistd.h>
+#else
+#include <windows.h>   /* for Sleep() */
+#endif  /* _WIN32 */
 #include "allheaders.h"
 
 #define  HALFWIDTH   3
@@ -39,8 +44,8 @@ PIX *pixMorphDwa_3(PIX *pixd, PIX *pixs, l_int32 operation, char *selname);
 
 static const l_int32  NTIMES = 20;
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *selname;
 l_int32      i, j, nsels, sx, sy;
@@ -54,12 +59,10 @@ SELA        *selalinear;
 static char  mainName[] = "dwamorph2_reg";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax: dwamorph2_reg", mainName, 1));
+        return ERROR_INT(" Syntax: dwamorph2_reg", mainName, 1);
 
-    if ((pixs = pixRead("feyn-fract.tif")) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
+    pixs = pixRead("feyn-fract.tif");
     pixt = pixCreateTemplate(pixs);
-
     selalinear = selaAddDwaLinear(NULL);
     nsels = selaGetCount(selalinear);
 
@@ -76,7 +79,7 @@ static char  mainName[] = "dwamorph2_reg";
         sel = selaGetSel(selalinear, i);
         selGetParameters(sel, &sy, &sx, NULL, NULL);
         selname = selGetName(sel);
-	fprintf(stderr, " %d .", i);
+        fprintf(stderr, " %d .", i);
 
         startTimer();
         for (j = 0; j < NTIMES; j++)
@@ -132,7 +135,7 @@ static char  mainName[] = "dwamorph2_reg";
         sel = selaGetSel(selalinear, i);
         selGetParameters(sel, &sy, &sx, NULL, NULL);
         selname = selGetName(sel);
-	fprintf(stderr, " %d .", i);
+        fprintf(stderr, " %d .", i);
 
         startTimer();
         for (j = 0; j < NTIMES; j++)
@@ -187,7 +190,7 @@ static char  mainName[] = "dwamorph2_reg";
         sel = selaGetSel(selalinear, i);
         selGetParameters(sel, &sy, &sx, NULL, NULL);
         selname = selGetName(sel);
-	fprintf(stderr, " %d .", i);
+        fprintf(stderr, " %d .", i);
 
         startTimer();
         for (j = 0; j < NTIMES; j++)
@@ -242,7 +245,7 @@ static char  mainName[] = "dwamorph2_reg";
         sel = selaGetSel(selalinear, i);
         selGetParameters(sel, &sy, &sx, NULL, NULL);
         selname = selGetName(sel);
-	fprintf(stderr, " %d .", i);
+        fprintf(stderr, " %d .", i);
 
         startTimer();
         for (j = 0; j < NTIMES; j++)
@@ -280,6 +283,12 @@ static char  mainName[] = "dwamorph2_reg";
     gplotAddPlot(gplot, nax, nac3, GPLOT_LINES, "linear dwa");
     gplotAddPlot(gplot, nax, nac4, GPLOT_LINES, "composite dwa");
     gplotMakeOutput(gplot);
+#ifndef  _WIN32
+    sleep(1);
+#else
+    Sleep(1000);
+#endif  /* _WIN32 */
+
     gplotDestroy(&gplot);
     numaDestroy(&nac1);
     numaDestroy(&nac2);

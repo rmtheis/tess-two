@@ -41,17 +41,10 @@
 l_int32 main(int    argc,
              char **argv)
 {
-l_int32     i, n, ignore;
-l_float32   a, b, c, d, e;
 L_DEWARP   *dew1, *dew2;
 L_DEWARPA  *dewa;
-FILE       *fp;
-FPIX       *fpix;
-NUMA       *nax, *nay, *nafit;
-PIX        *pixs, *pixn, *pixg, *pixb, *pixt1, *pixt2, *pixt3;
-PIX        *pixs2, *pixn2, *pixg2, *pixb2;
-PTA        *pta, *ptad;
-PTAA       *ptaa1, *ptaa2;
+PIX        *pixs, *pixn, *pixg, *pixb, *pixd, *pixt1, *pixt2;
+PIX        *pixs2, *pixn2, *pixg2, *pixb2, *pixd2;
 
 /*    pixs = pixRead("1555-7.jpg"); */
     pixs = pixRead("cat-35.jpg");
@@ -64,10 +57,12 @@ PTAA       *ptaa1, *ptaa2;
 
         /* Run the basic functions */
     dewa = dewarpaCreate(2, 30, 1, 10, 30);
+    dewarpaUseBothArrays(dewa, 1);
     dew1 = dewarpCreate(pixb, 10);
     dewarpaInsertDewarp(dewa, dew1);
-    dewarpBuildModel(dew1, "/tmp/dewarp_model1.pdf");
-    dewarpaApplyDisparity(dewa, 10, pixg, "/tmp/dewarp_apply1.pdf");
+    dewarpBuildPageModel(dew1, "/tmp/dewarp_model1.pdf");
+    dewarpaApplyDisparity(dewa, 10, pixg, 200, 0, 0, &pixd,
+                          "/tmp/dewarp_apply1.pdf");
 
          /* Write out some of the files to be imaged */
     lept_rmdir("dewtest");
@@ -76,6 +71,7 @@ PTAA       *ptaa1, *ptaa2;
     pixWrite("/tmp/dewtest/002.jpg", pixn, IFF_JFIF_JPEG);
     pixWrite("/tmp/dewtest/003.jpg", pixg, IFF_JFIF_JPEG);
     pixWrite("/tmp/dewtest/004.png", pixb, IFF_TIFF_G4);
+    pixWrite("/tmp/dewtest/005.jpg", pixd, IFF_JFIF_JPEG);
     pixt1 = pixRead("/tmp/dewmod/002.png");
     pixWrite("/tmp/dewtest/006.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
@@ -122,31 +118,33 @@ PTAA       *ptaa1, *ptaa2;
         /* Apply the previous disparity model to this image */
     dew2 = dewarpCreate(pixb2, 14);
     dewarpaInsertDewarp(dewa, dew2);
-    dewarpaInsertRefModels(dewa, 1);
-/*    dewarpaInfo(stderr, dewa); */
-    dewarpaApplyDisparity(dewa, 14, pixg2, "/tmp/dewarp_apply2.pdf");
+    dewarpaInsertRefModels(dewa, 0, 1);
+    dewarpaInfo(stderr, dewa);
+    dewarpaApplyDisparity(dewa, 14, pixg2, 200, 0, 0, &pixd2,
+                          "/tmp/dewarp_apply2.pdf");
     dewarpaDestroy(&dewa);
 
         /* Write out files for the second image */
     pixWrite("/tmp/dewtest/017.jpg", pixs2, IFF_JFIF_JPEG);
     pixWrite("/tmp/dewtest/018.jpg", pixg2, IFF_JFIF_JPEG);
     pixWrite("/tmp/dewtest/019.png", pixb2, IFF_TIFF_G4);
+    pixWrite("/tmp/dewtest/020.jpg", pixd2, IFF_JFIF_JPEG);
     pixt1 = pixRead("/tmp/dewmod/006.png");
-    pixWrite("/tmp/dewtest/020.png", pixt1, IFF_PNG);
+    pixWrite("/tmp/dewtest/021.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
     pixt1 = pixRead("/tmp/dewapply/002.png");
-    pixWrite("/tmp/dewtest/021.png", pixt1, IFF_PNG);
+    pixWrite("/tmp/dewtest/022.png", pixt1, IFF_PNG);
     pixt2 = pixThresholdToBinary(pixt1, 130);
-    pixWrite("/tmp/dewtest/022.png", pixt2, IFF_TIFF_G4);
+    pixWrite("/tmp/dewtest/023.png", pixt2, IFF_TIFF_G4);
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
     pixt1 = pixRead("/tmp/dewmod/007.png");
-    pixWrite("/tmp/dewtest/023.png", pixt1, IFF_PNG);
+    pixWrite("/tmp/dewtest/024.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
     pixt1 = pixRead("/tmp/dewapply/003.png");
-    pixWrite("/tmp/dewtest/024.png", pixt1, IFF_PNG);
+    pixWrite("/tmp/dewtest/025.png", pixt1, IFF_PNG);
     pixt2 = pixThresholdToBinary(pixt1, 130);
-    pixWrite("/tmp/dewtest/025.png", pixt2, IFF_TIFF_G4);
+    pixWrite("/tmp/dewtest/026.png", pixt2, IFF_TIFF_G4);
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
 
@@ -159,9 +157,11 @@ PTAA       *ptaa1, *ptaa2;
     pixDestroy(&pixn);
     pixDestroy(&pixg);
     pixDestroy(&pixb);
+    pixDestroy(&pixd);
     pixDestroy(&pixs2);
     pixDestroy(&pixn2);
     pixDestroy(&pixg2);
     pixDestroy(&pixb2);
+    pixDestroy(&pixd2);
     return 0;
 }

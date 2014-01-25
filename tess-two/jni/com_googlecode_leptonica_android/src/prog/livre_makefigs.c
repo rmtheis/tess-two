@@ -35,15 +35,15 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char         buf[256];
 l_int32      ignore;
 static char  mainName[] = "livre_makefigs";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax:  livre_makefigs", mainName, 1));
+        return ERROR_INT(" Syntax:  livre_makefigs", mainName, 1);
 
         /* Generate Figure 1 (page segmentation) */
     ignore = system("livre_seedgen");

@@ -41,13 +41,13 @@
 #include "allheaders.h"
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       i, n, w, h;
 BOXA         *boxa;
 NUMA         *naindex, *naw, *nah, *naw_med, *nah_med;
-PIX          *pixs, *pixt, *pixd;
+PIX          *pixs, *pixt;
 L_REGPARAMS  *rp;
 
     if (regTestSetup(argc, argv, &rp))

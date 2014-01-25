@@ -39,7 +39,7 @@
  *
  *      Add/Remove string
  *          l_int32    sarrayAddString()
- *          l_int32    sarrayExtendArray()
+ *          static l_int32  sarrayExtendArray()
  *          char      *sarrayRemoveString()
  *          l_int32    sarrayReplaceString()
  *          l_int32    sarrayClear()
@@ -75,6 +75,7 @@
  *
  *      Sort
  *          SARRAY    *sarraySort()
+ *          SARRAY    *sarraySortByIndex()
  *          l_int32    stringCompareLexical()
  *
  *      Serialize for I/O
@@ -90,15 +91,20 @@
  *          SARRAY    *convertSortedToNumberedPathnames()
  *          SARRAY    *getFilenamesInDirectory()
  *
+ *      These functions are important for efficient manipulation
+ *      of string data, and they have found widespread use in
+ *      leptonica.  For example:
+ *         (1) to generate text files: e.g., PostScript and PDF
+ *             wrappers around sets of images
+ *         (2) to parse text files: e.g., extracting prototypes
+ *             from the source to generate allheaders.h
+ *         (3) to generate code for compilation: e.g., the fast
+ *             dwa code for arbitrary structuring elements.
+ *
  *      Comments on usage:
  *
- *          These functions are important for efficient manipulation
- *          of string data.  They have been used in leptonica for
- *          generating and parsing text files, and for generating
- *          code for compilation.  The user is responsible for
- *          correctly disposing of strings that have been extracted
- *          from sarrays.
- *
+ *          The user is responsible for correctly disposing of strings
+ *          that have been extracted from sarrays:
  *            - When you want a string from an Sarray to inspect it, or
  *              plan to make a copy of it later, use sarrayGetString()
  *              with copyflag = 0.  In this case, you must neither free
@@ -136,6 +142,9 @@
 
 static const l_int32  INITIAL_PTR_ARRAYSIZE = 50;     /* n'importe quoi */
 static const l_int32  L_BUF_SIZE = 512;
+
+    /* Static function */
+static l_int32 sarrayExtendArray(SARRAY *sa);
 
 
 /*--------------------------------------------------------------------------*
@@ -229,8 +238,7 @@ SARRAY  *sa;
            (string[i] != ' ' && string[i] != '\t' && string[i] != '\n')) {
            inword = TRUE;
            nsub++;
-        }
-        else if (inword == TRUE &&
+        } else if (inword == TRUE &&
            (string[i] == ' ' || string[i] == '\t' || string[i] == '\n')) {
            inword = FALSE;
         }
@@ -308,8 +316,7 @@ SARRAY  *sa;
 /*            fprintf(stderr, "substring = %s\n", substring); */
         }
         FREE(cstring);
-    }
-    else {  /* remove blank lines; use strtok */
+    } else {  /* remove blank lines; use strtok */
         sarraySplitString(sa, string, "\r\n");
     }
 
@@ -336,7 +343,7 @@ SARRAY  *sa;
     PROCNAME("sarrayDestroy");
 
     if (psa == NULL) {
-        L_WARNING("ptr address is NULL!", procName);
+        L_WARNING("ptr address is NULL!\n", procName);
         return;
     }
     if ((sa = *psa) == NULL)
@@ -455,7 +462,7 @@ l_int32  n;
  *      Input:  sarray
  *      Return: 0 if OK, 1 on error
  */
-l_int32
+static l_int32
 sarrayExtendArray(SARRAY  *sa)
 {
     PROCNAME("sarrayExtendArray");
@@ -703,7 +710,7 @@ sarrayGetRefcount(SARRAY  *sa)
  */
 l_int32
 sarrayChangeRefcount(SARRAY  *sa,
-		     l_int32  delta)
+                     l_int32  delta)
 {
     PROCNAME("sarrayChangeRefcount");
 
@@ -794,11 +801,11 @@ l_int32  n, i, last, size, index, len;
                 return stringNew("");
             if (addnlflag == 1)
                 return stringNew("\n");
-	    else  /* addnlflag == 2) */
+            else  /* addnlflag == 2) */
                 return stringNew(" ");
-        }
-        else
+        } else {
             return (char *)ERROR_PTR("first not valid", procName, NULL);
+        }
     }
 
     if (first < 0 || first >= n)
@@ -826,8 +833,7 @@ l_int32  n, i, last, size, index, len;
         if (addnlflag == 1) {
             dest[index] = '\n';
             index++;
-        }
-        else if (addnlflag == 2) {
+        } else if (addnlflag == 2) {
             dest[index] = ' ';
             index++;
         }
@@ -891,8 +897,8 @@ l_int32  n, i;
 l_int32
 sarrayAppendRange(SARRAY  *sa1,
                   SARRAY  *sa2,
-		  l_int32  start,
-		  l_int32  end)
+                  l_int32  start,
+                  l_int32  end)
 {
 char    *str;
 l_int32  n, i;
@@ -903,10 +909,11 @@ l_int32  n, i;
         return ERROR_INT("sa1 not defined", procName, 1);
     if (!sa2)
         return ERROR_INT("sa2 not defined", procName, 1);
+
     if (start < 0)
         start = 0;
     n = sarrayGetCount(sa2);
-    if (end == -1 || end >= n)
+    if (end < 0 || end >= n)
         end = n - 1;
     if (start > end)
         return ERROR_INT("start > end", procName, 1);
@@ -954,8 +961,7 @@ l_int32  i, n1, n2;
     if (n1 < n2) {
         for (i = n1; i < n2; i++)
             sarrayAddString(sa1, padstring, L_COPY);
-    }
-    else if (n1 > n2) {
+    } else if (n1 > n2) {
         for (i = n2; i < n1; i++)
             sarrayAddString(sa2, padstring, L_COPY);
     }
@@ -1030,11 +1036,9 @@ SARRAY  *sal, *saout;
             sarrayAddString(saout, emptystring, L_COPY);
             sarrayDestroy(&sal);
             totlen = 0;
-        }
-        else if (totlen == 0 && len + 1 > linesize) {  /* long word! */
+        } else if (totlen == 0 && len + 1 > linesize) {  /* long word! */
             sarrayAddString(saout, wd, L_COPY);  /* copy to one line */
-        }
-        else if (totlen + len + 1 > linesize) {  /* end line & start new one */
+        } else if (totlen + len + 1 > linesize) {  /* end line & start new */
             strl = sarrayToString(sal, 2);
             sarrayAddString(saout, strl, L_INSERT);
             sarrayDestroy(&sal);
@@ -1042,8 +1046,7 @@ SARRAY  *sal, *saout;
                 return (SARRAY *)ERROR_PTR("sal not made", procName, NULL);
             sarrayAddString(sal, wd, L_COPY);
             totlen = len + 1;
-        }
-        else {   /* add to current line */
+        } else {  /* add to current line */
             sarrayAddString(sal, wd, L_COPY);
             totlen += len + 1;
         }
@@ -1178,7 +1181,7 @@ SARRAY  *saout;
     n = sarrayGetCount(sain);
     if (last <= 0) last = n - 1;
     if (last >= n) {
-        L_WARNING("@last > n - 1; setting to n - 1", procName);
+        L_WARNING("@last > n - 1; setting to n - 1\n", procName);
         last = n - 1;
     }
     if (first > last)
@@ -1235,7 +1238,7 @@ sarrayParseRange(SARRAY      *sa,
                  l_int32     *pend,
                  l_int32     *pnewstart,
                  const char  *substr,
-		 l_int32      loc)
+                 l_int32      loc)
 {
 char    *str;
 l_int32  n, i, offset, found;
@@ -1258,11 +1261,11 @@ l_int32  n, i, offset, found;
         str = sarrayGetString(sa, i, L_NOCOPY);
         arrayFindSequence((l_uint8 *)str, strlen(str), (l_uint8 *)substr,
                           strlen(substr), &offset, &found);
-	if (loc < 0) {
+        if (loc < 0) {
             if (!found) break;
-	} else {
+        } else {
             if (!found || offset != loc) break;
-	}
+        }
     }
     start = i;
     if (i == n)  /* couldn't get started */
@@ -1274,11 +1277,11 @@ l_int32  n, i, offset, found;
         str = sarrayGetString(sa, i, L_NOCOPY);
         arrayFindSequence((l_uint8 *)str, strlen(str), (l_uint8 *)substr,
                           strlen(substr), &offset, &found);
-	if (loc < 0) {
+        if (loc < 0) {
             if (found) break;
-	} else {
+        } else {
             if (found && offset == loc) break;
-	}
+        }
     }
     *pend = i - 1;
     start = i;
@@ -1291,11 +1294,11 @@ l_int32  n, i, offset, found;
         str = sarrayGetString(sa, i, L_NOCOPY);
         arrayFindSequence((l_uint8 *)str, strlen(str), (l_uint8 *)substr,
                           strlen(substr), &offset, &found);
-	if (loc < 0) {
+        if (loc < 0) {
             if (!found) break;
-	} else {
+        } else {
             if (!found || offset != loc) break;
-	}
+        }
     }
     if (i < n)
         *pnewstart = i;
@@ -1357,6 +1360,40 @@ l_int32  n, i, j, gap;
                 }
             }
         }
+    }
+
+    return saout;
+}
+
+
+/*!
+ *  sarraySortByIndex()
+ *
+ *      Input:  sain
+ *              naindex (na that maps from the new sarray to the input sarray)
+ *      Return: saout (sorted), or null on error
+ */
+SARRAY *
+sarraySortByIndex(SARRAY  *sain,
+                  NUMA    *naindex)
+{
+char    *str;
+l_int32  i, n, index;
+SARRAY  *saout;
+
+    PROCNAME("sarraySortByIndex");
+
+    if (!sain)
+        return (SARRAY *)ERROR_PTR("sain not defined", procName, NULL);
+    if (!naindex)
+        return (SARRAY *)ERROR_PTR("naindex not defined", procName, NULL);
+
+    n = sarrayGetCount(sain);
+    saout = sarrayCreate(n);
+    for (i = 0; i < n; i++) {
+        numaGetIValue(naindex, i, &index);
+        str = sarrayGetString(sain, index, L_COPY);
+        sarrayAddString(saout, str, L_INSERT);
     }
 
     return saout;
@@ -1478,21 +1515,21 @@ SARRAY  *sa;
         return (SARRAY *)ERROR_PTR("stringbuf not made", procName, NULL);
 
     for (i = 0; i < n; i++) {
-	    /* Get the size of the stored string */
+            /* Get the size of the stored string */
         if (fscanf(fp, "%d[%d]:", &index, &size) != 2)
             return (SARRAY *)ERROR_PTR("error on string size", procName, NULL);
-	    /* Expand the string buffer if necessary */
-	if (size > bufsize - 5) {
+            /* Expand the string buffer if necessary */
+        if (size > bufsize - 5) {
             FREE(stringbuf);
-	    bufsize = (l_int32)(1.5 * size);
+            bufsize = (l_int32)(1.5 * size);
             stringbuf = (char *)CALLOC(bufsize, sizeof(char));
-	}
-	    /* Read the stored string, plus leading spaces and trailing \n */
-	if (fread(stringbuf, 1, size + 3, fp) != size + 3)
+        }
+            /* Read the stored string, plus leading spaces and trailing \n */
+        if (fread(stringbuf, 1, size + 3, fp) != size + 3)
             return (SARRAY *)ERROR_PTR("error reading string", procName, NULL);
-	    /* Remove the \n that was added by sarrayWriteStream() */
-	stringbuf[size + 2] = '\0';
-	    /* Copy it in, skipping the 2 leading spaces */
+            /* Remove the \n that was added by sarrayWriteStream() */
+        stringbuf[size + 2] = '\0';
+            /* Copy it in, skipping the 2 leading spaces */
         sarrayAddString(sa, stringbuf + 2, L_COPY);
     }
     ignore = fscanf(fp, "\n");
@@ -1673,27 +1710,27 @@ SARRAY  *sa, *saout;
  *
  *      Input:  directory name
  *              substr (<optional> substring filter on filenames; can be NULL)
- *              firstpage (0-based)
- *              npages (use 0 for all to the end)
+ *              first (0-based)
+ *              nfiles (use 0 for all to the end)
  *      Return: sarray of sorted pathnames, or NULL on error
  *
  *  Notes:
- *      (1) If @substr is not NULL, only filenames that contain
- *          the substring can be returned.  If @substr == NULL,
- *          none of the filenames are filtered out.
+ *      (1) Use @substr to filter filenames in the directory.  If
+ *          @substr == NULL, this takes all files.
  *      (2) The files in the directory, after optional filtering by
  *          the substring, are lexically sorted in increasing order.
- *          The full pathnames are returned for the requested sequence.
+ *          Use @first and @nfiles to select a contiguous set of files.
+ *      (3) The full pathnames are returned for the requested sequence.
  *          If no files are found after filtering, returns an empty sarray.
  */
 SARRAY *
 getSortedPathnamesInDirectory(const char  *dirname,
                               const char  *substr,
-                              l_int32      firstpage,
-                              l_int32      npages)
+                              l_int32      first,
+                              l_int32      nfiles)
 {
 char    *fname, *fullname;
-l_int32  i, nfiles, lastpage;
+l_int32  i, n, last;
 SARRAY  *sa, *safiles, *saout;
 
     PROCNAME("getSortedPathnamesInDirectory");
@@ -1705,21 +1742,21 @@ SARRAY  *sa, *safiles, *saout;
         return (SARRAY *)ERROR_PTR("sa not made", procName, NULL);
     safiles = sarraySelectBySubstring(sa, substr);
     sarrayDestroy(&sa);
-    nfiles = sarrayGetCount(safiles);
-    if (nfiles == 0) {
-        L_WARNING("no files found", procName);
+    n = sarrayGetCount(safiles);
+    if (n == 0) {
+        L_WARNING("no files found\n", procName);
         return safiles;
     }
 
     sarraySort(safiles, safiles, L_SORT_INCREASING);
 
-    firstpage = L_MIN(L_MAX(firstpage, 0), nfiles - 1);
-    if (npages == 0)
-        npages = nfiles - firstpage;
-    lastpage = L_MIN(firstpage + npages - 1, nfiles - 1);
+    first = L_MIN(L_MAX(first, 0), n - 1);
+    if (nfiles == 0)
+        nfiles = n - first;
+    last = L_MIN(first + nfiles - 1, n - 1);
 
-    saout = sarrayCreate(lastpage - firstpage + 1);
-    for (i = firstpage; i <= lastpage; i++) {
+    saout = sarrayCreate(last - first + 1);
+    for (i = first; i <= last; i++) {
         fname = sarrayGetString(safiles, i, L_NOCOPY);
         fullname = genPathname(dirname, fname);
         sarrayAddString(saout, fullname, L_INSERT);
@@ -1786,8 +1823,8 @@ SARRAY  *saout;
       if (index < 0 || index >= num) continue;
       str = sarrayGetString(saout, index, L_NOCOPY);
       if (str[0] != '\0')
-          L_WARNING_INT("\n  Multiple files with same number: %d",
-                        procName, index);
+          L_WARNING("\n  Multiple files with same number: %d\n",
+                    procName, index);
       sarrayReplaceString(saout, index, fname, L_COPY);
     }
 

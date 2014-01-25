@@ -259,11 +259,10 @@ l_float32  h;
     delta = max - min;
 
     *pvval = max;
-    if (delta == 0) {   /* gray; no chroma */
+    if (delta == 0) {  /* gray; no chroma */
         *phval = 0;
         *psval = 0;
-    }
-    else {
+    } else {
         *psval = (l_int32)(255. * (l_float32)delta / (l_float32)max + 0.5);
         if (rval == max)  /* between magenta and yellow */
             h = (l_float32)(gval - bval) / (l_float32)delta;
@@ -314,8 +313,7 @@ l_float32 h, f, s;
         *prval = vval;
         *pgval = vval;
         *pbval = vval;
-    }
-    else {
+    } else {
         if (hval < 0 || hval > 240)
             return ERROR_INT("invalid hval", procName, 1);
         if (hval == 240)
@@ -481,9 +479,9 @@ PIX       *pixt, *pixd;
             maxrg = L_MAX(rval, gval);
             max = L_MAX(maxrg, bval);
             delta = max - min;
-            if (delta == 0)  /* gray; no chroma */
+            if (delta == 0) {  /* gray; no chroma */
                 hval = 0;
-            else {
+            } else {
                 if (rval == max)  /* between magenta and yellow */
                     fh = (l_float32)(gval - bval) / (l_float32)delta;
                 else if (gval == max)  /* between yellow and cyan */
@@ -681,8 +679,7 @@ PIX       *pixt, *pixd;
     if (hstart < hend) {
         for (i = hstart; i <= hend; i++)
             hlut[i] = 1;
-    }
-    else {  /* wrap */
+    } else {  /* wrap */
         for (i = hstart; i < 240; i++)
             hlut[i] = 1;
         for (i = 0; i <= hend; i++)
@@ -779,8 +776,7 @@ PIX       *pixt, *pixd;
     if (hstart < hend) {
         for (i = hstart; i <= hend; i++)
             hlut[i] = 1;
-    }
-    else {
+    } else {
         for (i = hstart; i < 240; i++)
             hlut[i] = 1;
         for (i = 0; i <= hend; i++)
@@ -1273,13 +1269,12 @@ PTA      *pta;
             if (ymax - eheight < 0) {  /* overlap to bottom */
                 box = boxCreate(xmax - ewidth, 240 + ymax - eheight,
                                 2 * ewidth + 1, eheight - ymax);
-            }
-            else if (ymax + eheight > 239) {  /* overlap to top */
+            } else if (ymax + eheight > 239) {  /* overlap to top */
                 box = boxCreate(xmax - ewidth, 0, 2 * ewidth + 1,
                                 ymax + eheight - 239);
-            }
-            else
+            } else {
                 box = NULL;
+            }
             if (box) {
                 pixClearInRect(pixw, box);
                 boxDestroy(&box);

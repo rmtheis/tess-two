@@ -57,8 +57,8 @@ static const l_int32    SEL_SIZE      = 4;
 static const l_int32    FINAL_COLORS  = 15;
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      max_dist, max_colors, sel_size, final_colors;
 PIX         *pixs, *pixd, *pixt;
@@ -66,13 +66,13 @@ char        *filein, *fileout;
 static char  mainName[] = "colorsegtest";
 
     if (argc != 3 && argc != 7)
-	exit(ERROR_INT(
+        return ERROR_INT(
             "Syntax: colorsegtest filein fileout"
             " [max_dist max_colors sel_size final_colors]\n"
             " Default values are: max_dist = 120\n"
             "                     max_colors = 15\n"
             "                     sel_size = 4\n"
-            "                     final_colors = 15\n", mainName, 1));
+            "                     final_colors = 15\n", mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
@@ -90,8 +90,7 @@ static char  mainName[] = "colorsegtest";
     }
 
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
-
+        return ERROR_INT("pixs not made", mainName, 1);
     startTimer();
     pixt = pixRemoveColormap(pixs, REMOVE_CMAP_BASED_ON_SRC);
     pixd = pixColorSegment(pixt, max_dist, max_colors, sel_size, final_colors);

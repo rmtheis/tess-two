@@ -203,7 +203,7 @@ PIX     *pixt1, *pixt2, *pixt3;
     }
     selaDestroy(&sela);
     if (!found) {
-        L_INFO("Calling the decomposable dwa function", procName);
+        L_INFO("Calling the decomposable dwa function\n", procName);
 	if (selnameh) FREE(selnameh);
 	if (selnamev) FREE(selnamev);
 	return pixDilateCompBrickDwa(pixd, pixs, hsize, vsize);
@@ -305,7 +305,7 @@ PIX     *pixt1, *pixt2, *pixt3;
     }
     selaDestroy(&sela);
     if (!found) {
-        L_INFO("Calling the decomposable dwa function", procName);
+        L_INFO("Calling the decomposable dwa function\n", procName);
 	if (selnameh) FREE(selnameh);
 	if (selnamev) FREE(selnamev);
 	return pixErodeCompBrickDwa(pixd, pixs, hsize, vsize);
@@ -407,7 +407,7 @@ PIX     *pixt1, *pixt2, *pixt3;
     }
     selaDestroy(&sela);
     if (!found) {
-        L_INFO("Calling the decomposable dwa function", procName);
+        L_INFO("Calling the decomposable dwa function\n", procName);
 	if (selnameh) FREE(selnameh);
 	if (selnamev) FREE(selnamev);
 	return pixOpenCompBrickDwa(pixd, pixs, hsize, vsize);
@@ -514,7 +514,7 @@ PIX     *pixt1, *pixt2, *pixt3;
     }
     selaDestroy(&sela);
     if (!found) {
-        L_INFO("Calling the decomposable dwa function", procName);
+        L_INFO("Calling the decomposable dwa function\n", procName);
 	if (selnameh) FREE(selnameh);
 	if (selnamev) FREE(selnamev);
 	return pixCloseCompBrickDwa(pixd, pixs, hsize, vsize);

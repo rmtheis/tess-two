@@ -116,7 +116,7 @@ pixFindBaselines(PIX     *pixs,
                  PTA    **ppta,
                  l_int32  debug)
 {
-l_int32    w, h, i, j, nbox, val1, val2, ndiff, bx, by, bw, bh;
+l_int32    h, i, j, nbox, val1, val2, ndiff, bx, by, bw, bh;
 l_int32    imaxloc, peakthresh, zerothresh, inpeak;
 l_int32    mintosearch, max, maxloc, nloc, locval;
 l_int32   *array;
@@ -144,7 +144,6 @@ PTA       *pta;
          * The high positive-going peaks are the baselines */
     if ((nasum = pixCountPixelsByRow(pixt1, NULL)) == NULL)
         return (NUMA *)ERROR_PTR("nasum not made", procName, NULL);
-    w = pixGetWidth(pixs);
     h = pixGetHeight(pixs);
     nadiff = numaCreate(h);
     numaGetIValue(nasum, 0, &val2);
@@ -177,14 +176,12 @@ PTA       *pta;
                 max = array[i];
                 maxloc = i;
             }
-        }
-        else {  /* inpeak == TRUE; look for max */
+        } else {  /* inpeak == TRUE; look for max */
             if (array[i] > max) {
                 max = array[i];
                 maxloc = i;
                 mintosearch = i + MIN_DIST_IN_PEAK;
-            }
-            else if (i > mintosearch && array[i] <= zerothresh) {  /* leave */
+            } else if (i > mintosearch && array[i] <= zerothresh) {  /* leave */
                 inpeak = FALSE;
                 numaAddNumber(naval, max);
                 numaAddNumber(naloc, maxloc);

@@ -42,22 +42,25 @@
  *      to remove an object from an empty lstack, the result is null.
  *
  *      Create/Destroy
- *           L_STACK   *lstackCreate()
- *           void       lstackDestroy()
+ *           L_STACK        *lstackCreate()
+ *           void            lstackDestroy()
  *
  *      Accessors
- *           l_int32    lstackAdd()
- *           void      *lstackRemove()
- *           l_int32    lstackExtendArray()
- *           l_int32    lstackGetCount()
+ *           l_int32         lstackAdd()
+ *           void           *lstackRemove()
+ *           static l_int32  lstackExtendArray()
+ *           l_int32         lstackGetCount()
  *
  *      Text description
- *           l_int32    lstackPrint()
+ *           l_int32         lstackPrint()
  */
 
 #include "allheaders.h"
 
 static const l_int32  INITIAL_PTR_ARRAYSIZE = 20;
+
+    /* Static function */
+static l_int32 lstackExtendArray(L_STACK *lstack);
 
 
 /*---------------------------------------------------------------------*
@@ -119,7 +122,7 @@ L_STACK  *lstack;
     PROCNAME("lstackDestroy");
 
     if (plstack == NULL) {
-        L_WARNING("ptr address is NULL", procName);
+        L_WARNING("ptr address is NULL\n", procName);
         return;
     }
     if ((lstack = *plstack) == NULL)
@@ -130,9 +133,9 @@ L_STACK  *lstack;
             item = lstackRemove(lstack);
             FREE(item);
         }
+    } else if (lstack->n > 0) {
+        L_WARNING("memory leak of %d items in lstack\n", procName, lstack->n);
     }
-    else if (lstack->n > 0)
-        L_WARNING_INT("memory leak of %d items in lstack", procName, lstack->n);
 
     if (lstack->auxstack)
         lstackDestroy(&lstack->auxstack, freeflag);
@@ -211,7 +214,7 @@ void  *item;
  *      Input:  lstack
  *      Return: 0 if OK; 1 on error
  */
-l_int32
+static l_int32
 lstackExtendArray(L_STACK  *lstack)
 {
     PROCNAME("lstackExtendArray");

@@ -56,8 +56,8 @@ static const char *textsel4 = "xxxxxx"
                               " oo  x";
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 PIX          *pix;
 SEL          *sel;

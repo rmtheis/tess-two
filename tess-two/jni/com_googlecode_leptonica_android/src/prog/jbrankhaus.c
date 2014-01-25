@@ -65,8 +65,8 @@
 #define   MAX_OUTPUT_WIDTH        400
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char         filename[BUF_SIZE];
 char        *dirin, *rootname, *fname;
@@ -80,9 +80,9 @@ PIXA        *pixa, *pixadb;
 static char  mainName[] = "jbrankhaus";
 
     if (argc != 5 && argc != 7)
-	exit(ERROR_INT(
-	     " Syntax: jbrankhaus dirin size rank rootname [firstpage, npages]",
-	     mainName, 1));
+        return ERROR_INT(
+             " Syntax: jbrankhaus dirin size rank rootname [firstpage, npages]",
+             mainName, 1);
 
     dirin = argv[1];
     size = atoi(argv[2]);
@@ -91,7 +91,7 @@ static char  mainName[] = "jbrankhaus";
 
     if (argc == 5) {
         firstpage = 0;
-	npages = 0;
+        npages = 0;
     }
     else {
         firstpage = atoi(argv[5]);
@@ -126,20 +126,20 @@ static char  mainName[] = "jbrankhaus";
     jbDataWrite(rootname, data);
 
         /* Render the pages from the classifier data.
-	 * Use debugflag == FALSE to omit outlines of each component. */
+         * Use debugflag == FALSE to omit outlines of each component. */
     pixa = jbDataRender(data, FALSE);
 
         /* Write the pages out */
     npages = pixaGetCount(pixa);
     if (npages != nfiles)
         fprintf(stderr, "npages = %d, nfiles = %d, not equal!\n",
-	        npages, nfiles);
+                npages, nfiles);
     for (i = 0; i < npages; i++) {
         pix = pixaGetPix(pixa, i, L_CLONE);
-	snprintf(filename, BUF_SIZE, "%s.%05d", rootname, i);
-	fprintf(stderr, "filename: %s\n", filename);
-	pixWrite(filename, pix, IFF_PNG);
-	pixDestroy(&pix);
+        snprintf(filename, BUF_SIZE, "%s.%05d", rootname, i);
+        fprintf(stderr, "filename: %s\n", filename);
+        pixWrite(filename, pix, IFF_PNG);
+        pixDestroy(&pix);
     }
 
 #if  DISPLAY_DIFFERENCE
@@ -164,41 +164,41 @@ static char  mainName[] = "jbrankhaus";
     for (i = 0; i < npages; i++) {
         pix = pixaGetPix(pixa, i, L_CLONE);
         newpix = pixaGetPix(newpixa, i, L_CLONE);
-	pixEqual(pix, newpix, &same);
-	if (!same) {
-	    iofail = TRUE;
-	    fprintf(stderr, "pix on page %d are unequal!\n", i);
-	}
-	pixDestroy(&pix);
-	pixDestroy(&newpix);
+        pixEqual(pix, newpix, &same);
+        if (!same) {
+            iofail = TRUE;
+            fprintf(stderr, "pix on page %d are unequal!\n", i);
+        }
+        pixDestroy(&pix);
+        pixDestroy(&newpix);
 
     }
     if (iofail)
-	fprintf(stderr, "read/write for jbdata fails\n");
+        fprintf(stderr, "read/write for jbdata fails\n");
     else
-	fprintf(stderr, "read/write for jbdata succeeds\n");
+        fprintf(stderr, "read/write for jbdata succeeds\n");
     jbDataDestroy(&newdata);
     pixaDestroy(&newpixa);
 }
 #endif  /* DEBUG_TEST_DATA_IO */
 
 #if  RENDER_DEBUG
-	/* Use debugflag == TRUE to see outlines of each component. */
+        /* Use debugflag == TRUE to see outlines of each component. */
     pixadb = jbDataRender(data, TRUE);
         /* Write the debug pages out */
     npages = pixaGetCount(pixadb);
     for (i = 0; i < npages; i++) {
         pix = pixaGetPix(pixadb, i, L_CLONE);
-	snprintf(filename, BUF_SIZE, "%s.db.%05d", rootname, i);
-	fprintf(stderr, "filename: %s\n", filename);
-	pixWrite(filename, pix, IFF_PNG);
-	pixDestroy(&pix);
+        snprintf(filename, BUF_SIZE, "%s.db.%05d", rootname, i);
+        fprintf(stderr, "filename: %s\n", filename);
+        pixWrite(filename, pix, IFF_PNG);
+        pixDestroy(&pix);
     }
     pixaDestroy(&pixadb);
 #endif  /* RENDER_DEBUG */
 
 #if  DISPLAY_ALL_INSTANCES
-	/* display all instances, organized by template */
+        /* display all instances, organized by template */
     pix = pixaaDisplayByPixa(classer->pixaa,
                              X_SPACING, Y_SPACING, MAX_OUTPUT_WIDTH);
     pixWrite("output_instances", pix, IFF_PNG);

@@ -43,8 +43,8 @@ static const l_int32 y1[NPATHS] = {383, 383, 112, 168, 371, 341};
 static const l_int32  NBOXES = 20;
 static const l_int32  POLARITY = 0;  /* background */
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32       i, w, h, bx, by, bw, bh, index, rval, gval, bval;
 BOX          *box;
@@ -57,21 +57,21 @@ PTAA         *ptaa;
 L_REGPARAMS  *rp;
 
     if (regTestSetup(argc, argv, &rp))
-	return 1;
+        return 1;
     pixa = pixaCreate(0);
 
     /* ---------------- Shortest path in binary maze ---------------- */
         /* Generate the maze */
     pixm = generateBinaryMaze(200, 200, 20, 20, 0.65, 0.25);
     pixd = pixExpandBinaryReplicate(pixm, 3);
-    pixSaveTiledOutline(pixd, pixa, 1, 1, 20, 2, 32);
+    pixSaveTiledOutline(pixd, pixa, 1.0, 1, 20, 2, 32);
     pixDestroy(&pixd);
 
         /* Find the shortest path between two points */
     pta = pixSearchBinaryMaze(pixm, 20, 20, 170, 170, NULL);
     pixt = pixDisplayPta(NULL, pixm, pta);
     pixd = pixScaleBySampling(pixt, 3., 3.);
-    pixSaveTiledOutline(pixd, pixa, 1, 0, 20, 2, 32);
+    pixSaveTiledOutline(pixd, pixa, 1.0, 0, 20, 2, 32);
     regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 0 */
     ptaDestroy(&pta);
     pixDestroy(&pixt);
@@ -94,7 +94,7 @@ L_REGPARAMS  *rp;
 
     pixt = pixDisplayPtaa(pixg, ptaa);
     pixd = pixScaleBySampling(pixt, 2., 2.);
-    pixSaveTiledOutline(pixd, pixa, 1, 1, 20, 2, 32);
+    pixSaveTiledOutline(pixd, pixa, 1.0, 1, 20, 2, 32);
     regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 1 */
     ptaaDestroy(&ptaa);
     pixDestroy(&pixg);
@@ -126,7 +126,7 @@ L_REGPARAMS  *rp;
                             rval, gval, bval);
         boxDestroy(&box);
     }
-    pixSaveTiledOutline(pixd, pixa, 1, 1, 20, 2, 32);
+    pixSaveTiledOutline(pixd, pixa, 1.0, 1, 20, 2, 32);
     regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 2 */
     pixDestroy(&pixs);
     pixDestroy(&pixd);

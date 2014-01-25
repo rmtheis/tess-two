@@ -38,8 +38,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i, nsels, same1, same2, ok;
 char        *filein, *selname;
@@ -49,11 +49,11 @@ SELA        *sela;
 static char  mainName[] = "fhmtauto_reg";
 
     if (argc != 2)
-	exit(ERROR_INT(" Syntax:  fhmtauto_reg filein", mainName, 1));
+        return ERROR_INT(" Syntax:  fhmtauto_reg filein", mainName, 1);
 
     filein = argv[1];
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
 
     sela = selaAddHitMiss(NULL);
     nsels = selaGetCount(sela);
@@ -61,31 +61,31 @@ static char  mainName[] = "fhmtauto_reg";
     ok = TRUE;
     for (i = 0; i < nsels; i++)
     {
-	sel = selaGetSel(sela, i);
-	selname = selGetName(sel);
+        sel = selaGetSel(sela, i);
+        selname = selGetName(sel);
 
-	pixref = pixHMT(NULL, pixs, sel);
+        pixref = pixHMT(NULL, pixs, sel);
 
-	pixt1 = pixAddBorder(pixs, 32, 0);
-	pixt2 = pixFHMTGen_1(NULL, pixt1, selname);
-	pixt3 = pixRemoveBorder(pixt2, 32);
+        pixt1 = pixAddBorder(pixs, 32, 0);
+        pixt2 = pixFHMTGen_1(NULL, pixt1, selname);
+        pixt3 = pixRemoveBorder(pixt2, 32);
 
-	pixt4 = pixHMTDwa_1(NULL, pixs, selname);
+        pixt4 = pixHMTDwa_1(NULL, pixs, selname);
 
-	pixEqual(pixref, pixt3, &same1);
-	pixEqual(pixref, pixt4, &same2);
-	if (same1 && same2)
-	    fprintf(stderr, "hmt are identical for sel %d (%s)\n", i, selname);
-	else {
-	    fprintf(stderr, "hmt differ for sel %d (%s)\n", i, selname);
-	    ok = FALSE;
-	}
+        pixEqual(pixref, pixt3, &same1);
+        pixEqual(pixref, pixt4, &same2);
+        if (same1 && same2)
+            fprintf(stderr, "hmt are identical for sel %d (%s)\n", i, selname);
+        else {
+            fprintf(stderr, "hmt differ for sel %d (%s)\n", i, selname);
+            ok = FALSE;
+        }
 
-	pixDestroy(&pixref);
-	pixDestroy(&pixt1);
-	pixDestroy(&pixt2);
-	pixDestroy(&pixt3);
-	pixDestroy(&pixt4);
+        pixDestroy(&pixref);
+        pixDestroy(&pixt1);
+        pixDestroy(&pixt2);
+        pixDestroy(&pixt3);
+        pixDestroy(&pixt4);
     }
 
     if (ok)

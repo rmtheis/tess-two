@@ -101,7 +101,7 @@
  *  rotation angles greater than about 7 degrees, more pixels are
  *  lost at the edges than when using pixRotationBySampling(), which
  *  only loses pixels because they are rotated out of the image.
- *  For large rotations, use pixRotationBySampling() or, for
+ *  For larger rotations, use pixRotationBySampling() or, for
  *  more accuracy when d > 1 bpp, pixRotateAM().
  *
  *  For small angles, when comparing the quality of rotation by
@@ -110,7 +110,7 @@
  *  accuracy of rotation by sampling when compared to 3-shear and
  *  (for angles less than 2 degrees, when compared to 2-shear) is
  *  less than 1 pixel at any point.  For very small angles, rotation by
- *  sampling is slower than rotation by shear.  The speed difference
+ *  sampling is much slower than rotation by shear.  The speed difference
  *  depends on the pixel depth and the rotation angle.  Rotation
  *  by shear is very fast for small angles and for small depth (esp. 1 bpp).
  *  Rotation by sampling speed is independent of angle and relatively
@@ -123,8 +123,15 @@
  *          8                   5                  2.6
  *          32                  1.6                1.0
  *
- *  Consequently, for small angles and low bit depth, use rotation by shear.
- *  For large angles or large bit depth, use rotation by sampling.
+ *  In summary:
+ *    * For d == 1 and small angles, use rotation by shear.  By default
+ *      this will use 2-shear rotations, because 3-shears cause more
+ *      visible artifacts in straight lines and, for small angles, the
+ *      distortion in asperity ratio is small.
+ *    * For d > 1, shear is faster than sampling, which is faster than
+ *      area mapping.  However, area mapping gives the best results.
+ *  These results are used in selecting the rotation methods in
+ *  pixRotateShear().
  *
  *  There has been some work on what is called a "quasishear
  *  rotation" ("The Quasi-Shear Rotation, Eric Andres,
@@ -140,21 +147,24 @@
  *  better results are possible if each of the 4 quadrants is
  *  handled separately.
  *
- *  But the bottom line is that for binary images, the quality
- *  of the simple 3-shear rotation is about as good as you can do,
- *  visually, without dithering the result.  The effect of dither
- *  is to break up the horizontal and vertical shear lines.
- *  It's a bit tricky to dither with block shears -- you have to
- *  dither the pixels on the block boundaries!
+ *  But the bottom line is that you are going to see shear lines when
+ *  you rotate 1 bpp images.  Although the 3-shear rotation is
+ *  mathematically exact in the limit of infinitesimal pixels, artifacts
+ *  will be evident in real images.  One might imagine using dithering
+ *  to break up the horizontal and vertical shear lines, but this
+ *  is hard with block shears, where you need to dither on the block
+ *  boundaries.  Dithering (by accumulation of 'error') with sampling
+ *  makes more sense, but I haven't tried to do this.  There is only
+ *  so much you can do with 1 bpp images!
  */
 
 #include <math.h>
 #include <string.h>
 #include "allheaders.h"
 
-static const l_float32  VERY_SMALL_ANGLE = 0.001;  /* radians; ~0.06 degrees */
-static const l_float32  MAX_2_SHEAR_ANGLE = 0.05;  /* radians; ~3 degrees    */
-
+static const l_float32  MIN_ANGLE_TO_ROTATE = 0.001;  /* radians; ~0.06 deg */
+static const l_float32  MAX_2_SHEAR_ANGLE = 0.06;     /* radians; ~3 deg    */
+static const l_float32  LIMIT_SHEAR_ANGLE = 0.35;     /* radians; ~20 deg   */
 
 /*------------------------------------------------------------------*
  *                Rotations about an arbitrary point                *
@@ -174,6 +184,9 @@ static const l_float32  MAX_2_SHEAR_ANGLE = 0.05;  /* radians; ~3 degrees    */
  *          either 2 or 3 shears.
  *      (2) A positive angle gives a clockwise rotation.
  *      (3) This brings in 'incolor' pixels from outside the image.
+ *      (4) For rotation angles larger than about 0.35 radians, we issue
+ *          a warning because you should probably be using another method
+ *          (either sampling or area mapping)
  */
 PIX *
 pixRotateShear(PIX       *pixs,
@@ -189,14 +202,16 @@ pixRotateShear(PIX       *pixs,
     if (incolor != L_BRING_IN_WHITE && incolor != L_BRING_IN_BLACK)
         return (PIX *)(PIX *)ERROR_PTR("invalid incolor value", procName, NULL);
 
-    if (L_ABS(angle) < VERY_SMALL_ANGLE)
+    if (L_ABS(angle) < MIN_ANGLE_TO_ROTATE)
         return pixClone(pixs);
 
     if (L_ABS(angle) <= MAX_2_SHEAR_ANGLE)
         return pixRotate2Shear(pixs, xcen, ycen, angle, incolor);
-    else
-        return pixRotate3Shear(pixs, xcen, ycen, angle, incolor);
 
+    if (L_ABS(angle) > LIMIT_SHEAR_ANGLE)
+        L_WARNING("%6.2f radians; large angle for shear rotation\n",
+                  procName, L_ABS(angle));
+    return pixRotate3Shear(pixs, xcen, ycen, angle, incolor);
 }
 
 
@@ -210,9 +225,9 @@ pixRotateShear(PIX       *pixs,
  *      Return: pixd, or null on error.
  *
  *  Notes:
- *      (1) This rotates the image about the given point,
- *          using the 2-shear method.  It should only
- *          be used for angles smaller than MAX_2_SHEAR_ANGLE.
+ *      (1) This rotates the image about the given point, using the 2-shear
+ *          method.  It should only be used for angles smaller than
+ *          MAX_2_SHEAR_ANGLE.  For larger angles, a warning is issued.
  *      (2) A positive angle gives a clockwise rotation.
  *      (3) 2-shear rotation by a specified angle is equivalent
  *          to the sequential transformations
@@ -220,6 +235,8 @@ pixRotateShear(PIX       *pixs,
  *             y' = y + tan(angle) * (x - xcen)     for y-shear
  *      (4) Computation of tan(angle) is performed within the shear operation.
  *      (5) This brings in 'incolor' pixels from outside the image.
+ *      (6) If the image has an alpha layer, it is rotated separately by
+ *          two shears.
  */
 PIX *
 pixRotate2Shear(PIX       *pixs,
@@ -228,7 +245,7 @@ pixRotate2Shear(PIX       *pixs,
                 l_float32  angle,
                 l_int32    incolor)
 {
-PIX  *pixt, *pixd;
+PIX  *pix1, *pix2, *pixd;
 
     PROCNAME("pixRotate2Shear");
 
@@ -237,18 +254,28 @@ PIX  *pixt, *pixd;
     if (incolor != L_BRING_IN_WHITE && incolor != L_BRING_IN_BLACK)
         return (PIX *)(PIX *)ERROR_PTR("invalid incolor value", procName, NULL);
 
-    if (L_ABS(angle) < VERY_SMALL_ANGLE)
+    if (L_ABS(angle) < MIN_ANGLE_TO_ROTATE)
         return pixClone(pixs);
+    if (L_ABS(angle) > MAX_2_SHEAR_ANGLE)
+        L_WARNING("%6.2f radians; large angle for 2-shear rotation\n",
+                  procName, L_ABS(angle));
 
-    if ((pixt = pixHShear(NULL, pixs, ycen, angle, incolor)) == NULL)
-        return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
-    if ((pixd = pixVShear(NULL, pixt, xcen, angle, incolor)) == NULL)
+    if ((pix1 = pixHShear(NULL, pixs, ycen, angle, incolor)) == NULL)
+        return (PIX *)ERROR_PTR("pix1 not made", procName, NULL);
+    if ((pixd = pixVShear(NULL, pix1, xcen, angle, incolor)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
-    pixDestroy(&pixt);
+    pixDestroy(&pix1);
 
+    if (pixGetDepth(pixs) == 32 && pixGetSpp(pixs) == 4) {
+        pix1 = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
+            /* L_BRING_IN_WHITE brings in opaque for the alpha component */
+        pix2 = pixRotate2Shear(pix1, xcen, ycen, angle, L_BRING_IN_WHITE);
+        pixSetRGBComponent(pixd, pix2, L_ALPHA_CHANNEL);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+    }
     return pixd;
 }
-
 
 /*!
  *  pixRotate3Shear()
@@ -260,9 +287,9 @@ PIX  *pixt, *pixd;
  *      Return: pixd, or null on error.
  *
  *  Notes:
- *      (1) This rotates the image about the image center,
- *          using the 3-shear method.  It can be used for any angle, and
- *          should be used for angles larger than MAX_2_SHEAR_ANGLE.
+ *      (1) This rotates the image about the given point, using the 3-shear
+ *          method.  It should only be used for angles smaller than
+ *          LIMIT_SHEAR_ANGLE.  For larger angles, a warning is issued.
  *      (2) A positive angle gives a clockwise rotation.
  *      (3) 3-shear rotation by a specified angle is equivalent
  *          to the sequential transformations
@@ -271,7 +298,9 @@ PIX  *pixt, *pixd;
  *            y' = y + tan(angle/2) * (x - xcen)     for second y-shear
  *      (4) Computation of tan(angle) is performed in the shear operations.
  *      (5) This brings in 'incolor' pixels from outside the image.
- *      (6) The algorithm was published by Alan Paeth: "A Fast Algorithm
+ *      (6) If the image has an alpha layer, it is rotated separately by
+ *          two shears.
+ *      (7) The algorithm was published by Alan Paeth: "A Fast Algorithm
  *          for General Raster Rotation," Graphics Interface '86,
  *          pp. 77-81, May 1986.  A description of the method, along with
  *          an implementation, can be found in Graphics Gems, p. 179,
@@ -285,7 +314,7 @@ pixRotate3Shear(PIX       *pixs,
                 l_int32    incolor)
 {
 l_float32  hangle;
-PIX              *pixt, *pixd;
+PIX       *pix1, *pix2, *pixd;
 
     PROCNAME("pixRotate3Shear");
 
@@ -294,17 +323,29 @@ PIX              *pixt, *pixd;
     if (incolor != L_BRING_IN_WHITE && incolor != L_BRING_IN_BLACK)
         return (PIX *)(PIX *)ERROR_PTR("invalid incolor value", procName, NULL);
 
-    if (L_ABS(angle) < VERY_SMALL_ANGLE)
+    if (L_ABS(angle) < MIN_ANGLE_TO_ROTATE)
         return pixClone(pixs);
+    if (L_ABS(angle) > LIMIT_SHEAR_ANGLE) {
+        L_WARNING("%6.2f radians; large angle for 3-shear rotation\n",
+                  procName, L_ABS(angle));
+    }
 
     hangle = atan(sin(angle));
     if ((pixd = pixVShear(NULL, pixs, xcen, angle / 2., incolor)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
-    if ((pixt = pixHShear(NULL, pixd, ycen, hangle, incolor)) == NULL)
-        return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
-    pixVShear(pixd, pixt, xcen, angle / 2., incolor);
-    pixDestroy(&pixt);
+    if ((pix1 = pixHShear(NULL, pixd, ycen, hangle, incolor)) == NULL)
+        return (PIX *)ERROR_PTR("pix1 not made", procName, NULL);
+    pixVShear(pixd, pix1, xcen, angle / 2., incolor);
+    pixDestroy(&pix1);
 
+    if (pixGetDepth(pixs) == 32 && pixGetSpp(pixs) == 4) {
+        pix1 = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
+            /* L_BRING_IN_WHITE brings in opaque for the alpha component */
+        pix2 = pixRotate3Shear(pix1, xcen, ycen, angle, L_BRING_IN_WHITE);
+        pixSetRGBComponent(pixd, pix2, L_ALPHA_CHANNEL);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+    }
     return pixd;
 }
 
@@ -322,8 +363,10 @@ PIX              *pixt, *pixd;
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
- *      (1) This does an in-place rotation of the image
- *          about the image center, using the 3-shear method.
+ *      (1) This does an in-place rotation of the image about the
+ *          specified point, using the 3-shear method.  It should only
+ *          be used for angles smaller than LIMIT_SHEAR_ANGLE.
+ *          For larger angles, a warning is issued.
  *      (2) A positive angle gives a clockwise rotation.
  *      (3) 3-shear rotation by a specified angle is equivalent
  *          to the sequential transformations
@@ -355,12 +398,15 @@ l_float32  hangle;
 
     if (angle == 0.0)
         return 0;
+    if (L_ABS(angle) > LIMIT_SHEAR_ANGLE) {
+        L_WARNING("%6.2f radians; large angle for in-place 3-shear rotation\n",
+                  procName, L_ABS(angle));
+    }
 
     hangle = atan(sin(angle));
     pixHShearIP(pixs, ycen, angle / 2., incolor);
     pixVShearIP(pixs, xcen, hangle, incolor);
     pixHShearIP(pixs, ycen, angle / 2., incolor);
-
     return 0;
 }
 

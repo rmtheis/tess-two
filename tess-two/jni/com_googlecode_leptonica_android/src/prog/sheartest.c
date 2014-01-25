@@ -36,8 +36,8 @@
 
 #define   NTIMES   10
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char        *filein, *fileout;
 l_int32      i, w, h, liney, linex, same;
@@ -46,8 +46,8 @@ PIX         *pixt1, *pixt2, *pixs, *pixd;
 static char  mainName[] = "sheartest";
 
     if (argc != 4)
-	exit(ERROR_INT(" Syntax:  sheartest filein angle fileout",
-		    mainName, 1));
+        return ERROR_INT(" Syntax:  sheartest filein angle fileout",
+                         mainName, 1);
 
         /* Compare in-place H shear with H shear to a new pix */
     pixt1 = pixRead("marge.jpg");
@@ -81,13 +81,13 @@ static char  mainName[] = "sheartest";
     deg2rad = 3.1415926535 / 180.;
 
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
+        return ERROR_INT("pix not made", mainName, 1);
 
     pixGetDimensions(pixs, &w, &h, NULL);
 
 #if 0
         /* Select an operation from this list ...
-	 * ------------------------------------------
+         * ------------------------------------------
     pixd = pixHShear(NULL, pixs, liney, deg2rad * angle, L_BRING_IN_WHITE);
     pixd = pixVShear(NULL, pixs, linex, deg2rad * angle, L_BRING_IN_WHITE);
     pixd = pixHShearCorner(NULL, pixs, deg2rad * angle, L_BRING_IN_WHITE);
@@ -98,8 +98,8 @@ static char  mainName[] = "sheartest";
     pixVShearIP(pixs, linex, deg2rad * angle, L_BRING_IN_WHITE); pixd = pixs;
     pixRasteropHip(pixs, 0, h/3, -50, L_BRING_IN_WHITE); pixd = pixs;
     pixRasteropVip(pixs, 0, w/3, -50, L_BRING_IN_WHITE); pixd = pixs;
-	 * ------------------------------------------
-	 *  ... and use it in the following:         */
+         * ------------------------------------------
+         *  ... and use it in the following:         */
     pixd = pixHShear(NULL, pixs, liney, deg2rad * angle, L_BRING_IN_WHITE);
     pixWrite(fileout, pixd, IFF_PNG);
     pixDisplay(pixd, 50, 50);
@@ -107,53 +107,53 @@ static char  mainName[] = "sheartest";
 #endif
 
 #if 0
-	/* Do a horizontal shear about a line */
+        /* Do a horizontal shear about a line */
     for (i = 0; i < NTIMES; i++) {
-	liney = i * h / (NTIMES - 1);
-	if (liney >= h)
-	    liney = h - 1;
-	pixd = pixHShear(NULL, pixs, liney, deg2rad * angle, L_BRING_IN_WHITE);
-	pixDisplay(pixd, 50 + 10 * i, 50 + 10 * i);
-	pixDestroy(&pixd);
+        liney = i * h / (NTIMES - 1);
+        if (liney >= h)
+            liney = h - 1;
+        pixd = pixHShear(NULL, pixs, liney, deg2rad * angle, L_BRING_IN_WHITE);
+        pixDisplay(pixd, 50 + 10 * i, 50 + 10 * i);
+        pixDestroy(&pixd);
     }
 #endif
 
 #if 0
-	/* Do a vertical shear about a line */
+        /* Do a vertical shear about a line */
     for (i = 0; i < NTIMES; i++) {
-	linex = i * w / (NTIMES - 1);
-	if (linex >= w)
-	    linex = w - 1;
-	pixd = pixVShear(NULL, pixs, linex, deg2rad * angle, L_BRING_IN_WHITE);
-	pixDisplay(pixd, 50 + 10 * i, 50 + 10 * i);
-	pixDestroy(&pixd);
+        linex = i * w / (NTIMES - 1);
+        if (linex >= w)
+            linex = w - 1;
+        pixd = pixVShear(NULL, pixs, linex, deg2rad * angle, L_BRING_IN_WHITE);
+        pixDisplay(pixd, 50 + 10 * i, 50 + 10 * i);
+        pixDestroy(&pixd);
     }
 #endif
 
 #if 0
-	/* Do a horizontal in-place shear about a line */
+        /* Do a horizontal in-place shear about a line */
     pixSetPadBits(pixs, 0);
     for (i = 0; i < NTIMES; i++) {
-	pixd = pixCopy(NULL, pixs);
-	liney = i * h / (NTIMES - 1);
-	if (liney >= h)
-	    liney = h - 1;
-	pixHShearIP(pixd, liney, deg2rad * angle, L_BRING_IN_WHITE);
-	pixDisplay(pixd, 50 + 10 * i, 50 + 10 * i);
-	pixDestroy(&pixd);
+        pixd = pixCopy(NULL, pixs);
+        liney = i * h / (NTIMES - 1);
+        if (liney >= h)
+            liney = h - 1;
+        pixHShearIP(pixd, liney, deg2rad * angle, L_BRING_IN_WHITE);
+        pixDisplay(pixd, 50 + 10 * i, 50 + 10 * i);
+        pixDestroy(&pixd);
     }
 #endif
 
 #if 0
-	/* Do a vertical in-place shear about a line */
+        /* Do a vertical in-place shear about a line */
     for (i = 0; i < NTIMES; i++) {
-	pixd = pixCopy(NULL, pixs);
-	linex = i * w / (NTIMES - 1);
-	if (linex >= w)
-	    linex = w - 1;
-	pixVShearIP(pixd, linex, deg2rad * angle, L_BRING_IN_WHITE);
-	pixDisplay(pixd, 50 + 10 * i, 50 + 10 * i);
-	pixDestroy(&pixd);
+        pixd = pixCopy(NULL, pixs);
+        linex = i * w / (NTIMES - 1);
+        if (linex >= w)
+            linex = w - 1;
+        pixVShearIP(pixd, linex, deg2rad * angle, L_BRING_IN_WHITE);
+        pixDisplay(pixd, 50 + 10 * i, 50 + 10 * i);
+        pixDestroy(&pixd);
     }
 #endif
 

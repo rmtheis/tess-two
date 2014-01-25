@@ -38,14 +38,13 @@
 
 #define  NTIMES             10
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_uint8     *array1, *array2;
-l_int32      i, n, np, same, diff;
+l_int32      n, np, same, diff;
 size_t       nbytes1, nbytes2;
 FILE        *fp;
-BOX         *box;
 BOXA        *boxa, *boxa2;
 PIX         *pixs, *pixd;
 PIXA        *pixa;
@@ -53,13 +52,12 @@ PIXCMAP     *cmap;
 static char  mainName[] = "conncomp_reg";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax: conncomp_reg", mainName, 1));
+        return ERROR_INT(" Syntax: conncomp_reg", mainName, 1);
 
-    if ((pixs = pixRead("feyn.tif")) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+    pixs = pixRead("feyn.tif");
 
-	/* Test pixConnComp() with output to both boxa and pixa */
-	/* First, test with 4-cc */
+        /* Test pixConnComp() with output to both boxa and pixa */
+        /* First, test with 4-cc */
     boxa = pixConnComp(pixs, &pixa, 4);
     n = boxaGetCount(boxa);
     fprintf(stderr, "Number of 4 c.c. b.b: %d\n", n);
@@ -69,14 +67,14 @@ static char  mainName[] = "conncomp_reg";
     pixWrite("/tmp/junkout1.png", pixd, IFF_PNG);
     pixEqual(pixs, pixd, &same);
     if (same == 1)
-	fprintf(stderr, "Source and reconstructed pix are the same.\n");
+        fprintf(stderr, "Source and reconstructed pix are the same.\n");
     else
-	fprintf(stderr, "Error: source and reconstructed pix differ!\n");
+        fprintf(stderr, "Error: source and reconstructed pix differ!\n");
     pixaDestroy(&pixa);
     boxaDestroy(&boxa);
     pixDestroy(&pixd);
 
-	/* Test with 8-cc */
+        /* Test with 8-cc */
     boxa = pixConnComp(pixs, &pixa, 8);
     n = boxaGetCount(boxa);
     fprintf(stderr, "Number of 8 c.c. b.b: %d\n", n);
@@ -86,14 +84,14 @@ static char  mainName[] = "conncomp_reg";
     pixWrite("/tmp/junkout2.png", pixd, IFF_PNG);
     pixEqual(pixs, pixd, &same);
     if (same == 1)
-	fprintf(stderr, "Source and reconstructed pix are the same.\n");
+        fprintf(stderr, "Source and reconstructed pix are the same.\n");
     else
-	fprintf(stderr, "Error: source and reconstructed pix differ!\n");
+        fprintf(stderr, "Error: source and reconstructed pix differ!\n");
     pixaDestroy(&pixa);
     boxaDestroy(&boxa);
     pixDestroy(&pixd);
 
-	/* Test i/o */
+        /* Test i/o */
     boxa = pixConnComp(pixs, NULL, 4);
     fp = lept_fopen("/tmp/junk1.ba", "wb+");
     boxaWriteStream(fp, boxa);
@@ -108,16 +106,16 @@ static char  mainName[] = "conncomp_reg";
     array2 = l_binaryRead("/tmp/junk2.ba", &nbytes2);
     diff = strcmp((char *)array1, (char *)array2);
     if (nbytes1 != nbytes2 || diff)
-	fprintf(stderr, "I/O error for boxes.\n");
+        fprintf(stderr, "I/O error for boxes.\n");
     else
-	fprintf(stderr, "I/O valid for boxes.\n");
+        fprintf(stderr, "I/O valid for boxes.\n");
     lept_free(array1);
     lept_free(array2);
     boxaDestroy(&boxa);
     boxaDestroy(&boxa2);
 
         /* Just for fun, display each component as a random color
-	 * in cmapped 8 bpp.  Background is color 0; it is set to white. */
+         * in cmapped 8 bpp.  Background is color 0; it is set to white. */
     boxa = pixConnComp(pixs, &pixa, 4);
     pixd = pixaDisplayRandomCmap(pixa, pixGetWidth(pixs), pixGetHeight(pixs));
     cmap = pixGetColormap(pixd);

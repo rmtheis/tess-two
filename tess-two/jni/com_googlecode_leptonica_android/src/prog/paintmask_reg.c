@@ -47,18 +47,24 @@
  *    mask onto the result.
  *
  *    Finally we do a clip/mask operation on 1 bpp sources.
+ *
+ *    If you run 'paintmask_reg display', a pdf of the results is made.
  */
 
 #include "allheaders.h"
 
-main(int    argc,
-char **argv)
+int main(int    argc,
+         char **argv)
 {
-BOX         *box;
-PIX         *pixs, *pixs8, *pixm, *pixg, *pixt1, *pixt2, *pixd;
-static char  mainName[] = "paintmask_reg";
+BOX          *box;
+PIX          *pixs, *pixs8, *pixm, *pixt1, *pixt2, *pixd;
+PIXA         *pixa;
+L_REGPARAMS  *rp;
 
-    pixDisplayWrite(NULL, -1);  /* reset */
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
+
+    pixa = pixaCreate(0);
 
         /* Start with a 32 bpp image and a mask.  Use the
 	 * same mask for all clip/masked operations. */
@@ -70,99 +76,98 @@ static char  mainName[] = "paintmask_reg";
     boxDestroy(&box);
     box = boxCreate(100, 100, 800, 500);  /* clips on pixs and derivatives */
     pixt2 = pixClipRectangle(pixs, box, NULL);
-    pixDisplayWrite(pixt2, 1);
+    regTestWritePixAndCheck(rp, pixt2, IFF_JFIF_JPEG);  /* 0 */
+    pixaAddPix(pixa, pixt2, L_INSERT);
     pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
 
         /* Clip 32 bpp RGB */
     pixd = pixClipMasked(pixs, pixm, 100, 100, 0x03c08000);
-    pixDisplayWrite(pixd, 1);
-    pixDestroy(&pixd);
+    regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 1 */
+    pixaAddPix(pixa, pixd, L_INSERT);
 
         /* Clip 8 bpp colormapped */
     pixt1 = pixMedianCutQuant(pixs, 0);
     pixt2 = pixClipRectangle(pixt1, box, NULL);
-    pixDisplayWrite(pixt2, 1);
+    regTestWritePixAndCheck(rp, pixt2, IFF_PNG);  /* 2 */
+    pixaAddPix(pixa, pixt2, L_INSERT);
     pixd = pixClipMasked(pixt1, pixm, 100, 100, 0x03c08000);
-    pixDisplayWrite(pixd, 1);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 3 */
+    pixaAddPix(pixa, pixd, L_INSERT);
     pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixd);
 
         /* Clip 4 bpp colormapped */
     pixt1 = pixOctreeQuantNumColors(pixs, 16, 1);
     pixt2 = pixClipRectangle(pixt1, box, NULL);
-    pixDisplayWrite(pixt2, 1);
+    regTestWritePixAndCheck(rp, pixt2, IFF_PNG);  /* 4 */
+    pixaAddPix(pixa, pixt2, L_INSERT);
     pixd = pixClipMasked(pixt1, pixm, 100, 100, 0x03c08000);
-    pixDisplayWrite(pixd, 1);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 5 */
+    pixaAddPix(pixa, pixd, L_INSERT);
     pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixd);
 
         /* Clip 2 bpp colormapped */
     pixt1 = pixMedianCutQuantGeneral(pixs, 0, 2, 4, 5, 1, 1);
     pixt2 = pixClipRectangle(pixt1, box, NULL);
-    pixDisplayWrite(pixt2, 1);
+    regTestWritePixAndCheck(rp, pixt2, IFF_PNG);  /* 6 */
+    pixaAddPix(pixa, pixt2, L_INSERT);
     pixd = pixClipMasked(pixt1, pixm, 100, 100, 0x03608000);
-    pixDisplayWrite(pixd, 1);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 7 */
+    pixaAddPix(pixa, pixd, L_INSERT);
     pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixd);
 
         /* Clip 8 bpp gray */
     pixs8 = pixConvertRGBToLuminance(pixs);
     pixt2 = pixClipRectangle(pixs8, box, NULL);
-    pixDisplayWrite(pixt2, 1);
+    regTestWritePixAndCheck(rp, pixt2, IFF_JFIF_JPEG);  /* 8 */
+    pixaAddPix(pixa, pixt2, L_INSERT);
     pixd = pixClipMasked(pixs8, pixm, 100, 100, 90);
-    pixDisplayWrite(pixd, 1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixd);
+    regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 9 */
+    pixaAddPix(pixa, pixd, L_INSERT);
 
         /* Clip 4 bpp gray */
     pixt1 = pixThresholdTo4bpp(pixs8, 16, 0);
     pixt2 = pixClipRectangle(pixt1, box, NULL);
-    pixDisplayWrite(pixt2, 1);
+    regTestWritePixAndCheck(rp, pixt2, IFF_PNG);  /* 10 */
+    pixaAddPix(pixa, pixt2, L_INSERT);
     pixd = pixClipMasked(pixt1, pixm, 100, 100, 0);
-    pixDisplayWrite(pixd, 1);
-    pixDestroy(&pixd);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 11 */
+    pixaAddPix(pixa, pixd, L_INSERT);
     pixd = pixClipMasked(pixt1, pixm, 100, 100, 5);
-    pixDisplayWrite(pixd, 1);
-    pixDestroy(&pixd);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 12 */
+    pixaAddPix(pixa, pixd, L_INSERT);
     pixd = pixClipMasked(pixt1, pixm, 100, 100, 15);
-    pixDisplayWrite(pixd, 1);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 13 */
+    pixaAddPix(pixa, pixd, L_INSERT);
     pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixd);
 
         /* Clip 4 bpp gray, colormapped */
     pixt1 = pixThresholdTo4bpp(pixs8, 16, 1);
     pixt2 = pixClipRectangle(pixt1, box, NULL);
-    pixDisplayWrite(pixt2, 1);
+    regTestWritePixAndCheck(rp, pixt2, IFF_PNG);  /* 14 */
+    pixaAddPix(pixa, pixt2, L_INSERT);
     pixd = pixClipMasked(pixt1, pixm, 100, 100, 0x55555500);
-    pixDisplayWrite(pixd, 1);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 15 */
+    pixaAddPix(pixa, pixd, L_INSERT);
     pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixd);
 
         /* Clip 2 bpp gray */
     pixt1 = pixThresholdTo2bpp(pixs8, 4, 0);
     pixt2 = pixClipRectangle(pixt1, box, NULL);
-    pixDisplayWrite(pixt2, 1);
+    regTestWritePixAndCheck(rp, pixt2, IFF_PNG);  /* 16 */
+    pixaAddPix(pixa, pixt2, L_INSERT);
     pixd = pixClipMasked(pixt1, pixm, 100, 100, 1);
-    pixDisplayWrite(pixd, 1);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 17 */
+    pixaAddPix(pixa, pixd, L_INSERT);
     pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixd);
 
         /* Clip 2 bpp gray, colormapped */
     pixt1 = pixThresholdTo2bpp(pixs8, 4, 1);
     pixt2 = pixClipRectangle(pixt1, box, NULL);
-    pixDisplayWrite(pixt2, 1);
     pixd = pixClipMasked(pixt1, pixm, 100, 100, 0x55555500);
-    pixDisplayWrite(pixd, 1);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 18 */
+    pixaAddPix(pixa, pixd, L_INSERT);
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
-    pixDestroy(&pixd);
 
     pixDestroy(&pixm);
     pixDestroy(&pixs);
@@ -178,23 +183,29 @@ static char  mainName[] = "paintmask_reg";
     pixs = pixRead("feyn.tif");
     box = boxCreate(670, 827, 800, 500);
     pixt2 = pixClipRectangle(pixs, box, NULL);
+    regTestWritePixAndCheck(rp, pixt2, IFF_PNG);  /* 19 */
+    pixaAddPix(pixa, pixt2, L_INSERT);
     boxDestroy(&box);
-    pixDisplayWrite(pixt2, 1);
     pixt1 = pixRead("rabi.png");
     box = boxCreate(303, 1983, 800, 500);
     pixm = pixClipRectangle(pixt1, box, NULL);
     pixInvert(pixm, pixm);
-    pixDisplayWrite(pixm, 1);
+    regTestWritePixAndCheck(rp, pixm, IFF_PNG);  /* 20 */
+    pixaAddPix(pixa, pixm, L_INSERT);
     pixd = pixClipMasked(pixs, pixm, 670, 827, 1);
-    pixDisplayWrite(pixd, 1);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 21 */
+    pixaAddPix(pixa, pixd, L_INSERT);
     pixDestroy(&pixs);
     pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixm);
-    pixDestroy(&pixd);
     boxDestroy(&box);
 
-    pixDisplayMultiple("/tmp/junk_write_display*");
-    return 0;
-}
+        /* If in testing mode, make a pdf */
+    if (rp->display) {
+        L_INFO("Output written to /tmp/paintmask.pdf\n", rp->testname);
+        pixaConvertToPdf(pixa, 100, 1.0, L_FLATE_ENCODE, 0,
+                         "Paint through mask", "/tmp/paintmask.pdf");
+    }
 
+    pixaDestroy(&pixa);
+    return regTestCleanup(rp);
+}

@@ -25,7 +25,7 @@
  *====================================================================*/
 
 /*
- *   pixaatest.c
+ *  pixaatest.c
  *
  *     Syntax:  pixaatest
  */
@@ -33,11 +33,11 @@
 #include "allheaders.h"
 
 static const l_int32  nx = 10;
-static const l_int32  ny = 10;
+static const l_int32  ny = 12;
 static const l_int32  ncols = 3;
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      w, d, tilewidth;
 PIX         *pixs;
@@ -46,30 +46,50 @@ PIXAA       *pixaa1, *pixaa2;
 static char  mainName[] = "pixaatest";
 
     if (argc != 1)
-        exit(ERROR_INT(" Syntax: pixaatest", mainName, 1));
+        return ERROR_INT(" Syntax: pixaatest", mainName, 1);
 
-        /* Read in file; generate tiled pixaa; write pixaa to file */
+        /* Read in file, split it into a set of tiles, and generate a pdf.
+         * Two things to note for these tiny images:
+         *  (1) If you use dct format (jpeg) for each image instead of
+         *      flate (lossless), the quantization will be apparent.
+         *  (2) If the resolution in pixaConvertToPdf() is above 50, and
+         *      you add a red boundary, you will see errors in the boundary
+         *      width.
+         */
     pixs = pixRead("test24.jpg");
     pixGetDimensions(pixs, &w, NULL, &d);
-    tilewidth = w / nx;
     pixa = pixaSplitPix(pixs, nx, ny, 0, 0);
+/*    pixa = pixaSplitPix(pixs, nx, ny, 2, 0xff000000);  */ /* red border */
+    pixWrite("/tmp/junk0", pixa->pix[0], IFF_PNG);
+    pixWrite("/tmp/junk9", pixa->pix[9], IFF_PNG);
+    pixaConvertToPdf(pixa, 50, 1.0, 0, 95, "individual", "/tmp/junkout0.pdf");
+
+        /* Generate two pixaa by sampling the pixa, and write them to file */
     pixaa1 = pixaaCreateFromPixa(pixa, nx, L_CHOOSE_CONSECUTIVE, L_CLONE);
     pixaa2 = pixaaCreateFromPixa(pixa, nx, L_CHOOSE_SKIP_BY, L_CLONE);
-    pixaaWrite("/tmp/junkpixaa1", pixaa1);
-    pixaaWrite("/tmp/junkpixaa2", pixaa2);
+    pixaaWrite("/tmp/pixaa1.paa", pixaa1);
+    pixaaWrite("/tmp/pixaa2.paa", pixaa2);
     pixaDestroy(&pixa);
     pixaaDestroy(&pixaa1);
     pixaaDestroy(&pixaa2);
 
-        /* Read pixaa from file; tile/scale; write result; convert to PS */
-    pixaa1 = pixaaRead("/tmp/junkpixaa1");
-    pixaa2 = pixaaRead("/tmp/junkpixaa2");
+        /* Read each pixaa from file; tile/scale into a pixa */
+    pixaa1 = pixaaRead("/tmp/pixaa1.paa");
+    pixaa2 = pixaaRead("/tmp/pixaa2.paa");
+    tilewidth = w / nx;
     pixad1 = pixaaDisplayTiledAndScaled(pixaa1, d, tilewidth, ncols, 0, 10, 0);
     pixad2 = pixaaDisplayTiledAndScaled(pixaa2, d, tilewidth, ncols, 0, 10, 0);
+
+        /* Generate a pdf from each pixa */
+    pixaConvertToPdf(pixad1, 50, 1.0, 0, 75, "consecutive", "/tmp/junkout1.pdf");
+    pixaConvertToPdf(pixad2, 50, 1.0, 0, 75, "skip_by", "/tmp/junkout2.pdf");
+
+        /* Write each pixa to a set of files, and generate a PS */
     pixaWriteFiles("/tmp/junksplit1.", pixad1, IFF_JFIF_JPEG);
     pixaWriteFiles("/tmp/junksplit2.", pixad2, IFF_JFIF_JPEG);
     convertFilesToPS("/tmp", "junksplit1", 40, "/tmp/junkout1.ps");
     convertFilesToPS("/tmp", "junksplit2", 40, "/tmp/junkout2.ps");
+
     pixDestroy(&pixs);
     pixaaDestroy(&pixaa1);
     pixaaDestroy(&pixaa2);
@@ -77,4 +97,3 @@ static char  mainName[] = "pixaatest";
     pixaDestroy(&pixad2);
     return 0;
 }
-

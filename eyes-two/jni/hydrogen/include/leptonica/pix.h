@@ -1,16 +1,27 @@
 /*====================================================================*
  -  Copyright (C) 2001 Leptonica.  All rights reserved.
- -  This software is distributed in the hope that it will be
- -  useful, but with NO WARRANTY OF ANY KIND.
- -  No author or distributor accepts responsibility to anyone for the
- -  consequences of using this software, or for whether it serves any
- -  particular purpose or works at all, unless he or she says so in
- -  writing.  Everyone is granted permission to copy, modify and
- -  redistribute this source code, for commercial or non-commercial
- -  purposes, with the following restrictions: (1) the origin of this
- -  source code must not be misrepresented; (2) modified versions must
- -  be plainly marked as such; and (3) this notice may not be removed
- -  or altered from any source or modified source distribution.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ - 
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
 #ifndef  LEPTONICA_PIX_H
@@ -19,7 +30,23 @@
 /*
  *   pix.h
  *
- *   Contains the following structures:
+ *   Valid image types in leptonica:
+ *       Pix: 1 bpp, with and without colormap
+ *       Pix: 2 bpp, with and without colormap
+ *       Pix: 4 bpp, with and without colormap
+ *       Pix: 8 bpp, with and without colormap
+ *       Pix: 16 bpp (1 spp)
+ *       Pix: 32 bpp (rgb, 3 spp)
+ *       Pix: 32 bpp (rgba, 4 spp)
+ *       FPix: 32 bpp float
+ *       DPix: 64 bpp double
+ *       Notes:
+ *          (1) The only valid Pix image type with alpha is rgba.
+ *              In particular, the alpha component is not used in
+ *              cmapped images.
+ *          (2) PixComp can hold any Pix with IFF_PNG encoding.
+ *
+ *   This file defines most of the image-related structs used in leptonica:
  *       struct Pix
  *       struct PixColormap
  *       struct RGBA_Quad
@@ -33,11 +60,12 @@
  *       struct Pixacc
  *       struct PixTiling
  *       struct FPix
+ *       struct FPixa
  *       struct DPix
  *       struct PixComp
  *       struct PixaComp
  *
- *   Contains definitions for:
+ *   This file has definitions for:
  *       Colors for RGB
  *       Perceptual color weights
  *       Colormap conversion flags
@@ -48,9 +76,13 @@
  *       Graphics pixel setting flags
  *       Size filtering flags
  *       Color component selection flags
+ *       16-bit conversion flags
  *       Rotation and shear flags
  *       Affine transform order flags
  *       Grayscale filling flags
+ *       Flags for setting to white or black
+ *       Flags for getting white or black pixel value
+ *       Flags for 8 and 16 bit pixel sums
  *       Dithering flags
  *       Distance flags
  *       Statistical measures
@@ -59,6 +91,8 @@
  *       Edge orientation flags
  *       Line orientation flags
  *       Scan direction flags
+ *       Box size adjustment flags
+ *       Handling overlapping bounding boxes in boxa
  *       Horizontal warp
  *       Pixel selection for resampling
  *       Thinning flags
@@ -71,24 +105,29 @@
  *       Region flags (inclusion, exclusion)
  *       Flags for adding text to a pix
  *       Flags for selecting display program
+ *       Flags in the 'special' pix field for non-default operations
  */
 
 
 /*-------------------------------------------------------------------------*
  *                              Basic Pix                                  *
  *-------------------------------------------------------------------------*/
+    /* The 'special' field is by default 0, but it can hold integers
+     * that direct non-default actions, e.g., in png and jpeg I/O. */
 struct Pix
 {
     l_uint32             w;           /* width in pixels                   */
     l_uint32             h;           /* height in pixels                  */
-    l_uint32             d;           /* depth in bits                     */
+    l_uint32             d;           /* depth in bits (bpp)               */
+    l_uint32             spp;         /* number of samples per pixel       */
     l_uint32             wpl;         /* 32-bit words/line                 */
     l_uint32             refcount;    /* reference count (1 if no clones)  */
-    l_uint32             xres;        /* image res (ppi) in x direction    */
+    l_int32              xres;        /* image res (ppi) in x direction    */
                                       /* (use 0 if unknown)                */
-    l_uint32             yres;        /* image res (ppi) in y direction    */
+    l_int32              yres;        /* image res (ppi) in y direction    */
                                       /* (use 0 if unknown)                */
     l_int32              informat;    /* input file format, IFF_*          */
+    l_int32              special;     /* special instructions for I/O, etc */
     char                *text;        /* text string associated with pix   */
     struct PixColormap  *colormap;    /* colormap (may be null)            */
     l_uint32            *data;        /* the image data                    */
@@ -115,7 +154,7 @@ struct RGBA_Quad
     l_uint8     blue;
     l_uint8     green;
     l_uint8     red;
-    l_uint8     reserved;
+    l_uint8     alpha;
 };
 typedef struct RGBA_Quad  RGBA_QUAD;
 
@@ -128,14 +167,14 @@ typedef struct RGBA_Quad  RGBA_QUAD;
  *      (1) These are the byte indices for colors in 32 bpp images.
  *          They are used through the GET/SET_DATA_BYTE accessors.
  *          The 4th byte, typically known as the "alpha channel" and used
- *          for blending, is not explicitly used in leptonica.
- *      (2) If you redefine these values, functions that have the shifts
- *          hardcoded (instead of using the constants below) will break.
- *          These functions are labelled with "***" next to their names
- *          at the top of the files in which they are defined.
- *          Advice: Do not change these values!
- *      (3) The shifts to extract the red, green and blue components
- *          from a 32 bit pixel are defined in terms of these colors.
+ *          for blending, is used to a small extent in leptonica.
+ *      (2) Do not change these values!  If you redefine them, functions
+ *          that have the shifts hardcoded for efficiency and conciseness
+ *          (instead of using the constants below) will break.  These
+ *          functions are labelled with "***"  next to their names at
+ *          the top of the files in which they are defined.
+ *      (3) The shifts to extract the red, green, blue and alpha components
+ *          from a 32 bit pixel are defined here.
  */
 enum {
     COLOR_RED = 0,
@@ -176,7 +215,8 @@ enum {
     REMOVE_CMAP_TO_BINARY = 0,
     REMOVE_CMAP_TO_GRAYSCALE = 1,
     REMOVE_CMAP_TO_FULL_COLOR = 2,
-    REMOVE_CMAP_BASED_ON_SRC = 3
+    REMOVE_CMAP_WITH_ALPHA = 3,
+    REMOVE_CMAP_BASED_ON_SRC = 4
 };
 
 
@@ -273,45 +313,50 @@ enum {
  *           we re-order the bytes from this byte stream order, and
  *           reshuffle again for byte access on 32-bit entities.
  *           So if the bytes come in sequence from left to right, we
- *           store them on little-endians in byte order: 
+ *           store them on little-endians in byte order:
  *                3 2 1 0 7 6 5 4 ...
  *           This MSB to LSB ordering allows left and right shift
  *           operations on 32 bit words to move the pixels properly.
  *
- *       (4) For 24-bit color images, use 32 bpp data, leaving
- *           the fourth byte unused.  Within each 4 byte pixel, the
+ *       (4) We use 32 bit pixels for both RGB and RGBA color images.
+ *           The A (alpha) byte is ignored in most leptonica functions
+ *           operating on color images.  Within each 4 byte pixel, the
  *           colors are ordered from MSB to LSB, as follows:
  *
  *                |  MSB  |  2nd MSB  |  3rd MSB  |  LSB  |
- *                   red      green       blue      unused
+ *                   red      green       blue      alpha 
  *                    0         1           2         3   (big-endian)
  *                    3         2           1         0   (little-endian)
  *
  *           Because we use MSB to LSB ordering within the 32-bit word,
- *           the individual 8-bit samples can be accessed with 
+ *           the individual 8-bit samples can be accessed with
  *           GET_DATA_BYTE and SET_DATA_BYTE macros, using the
  *           (implicitly big-ending) ordering
  *                 red:    byte 0  (MSB)
  *                 green:  byte 1  (2nd MSB)
  *                 blue:   byte 2  (3rd MSB)
+ *                 alpha:  byte 3  (LSB)
  *
- *           This specific color assignment is made in this file,
+ *           The specific color assignment is made in this file,
  *           through the definitions of COLOR_RED, etc.  Then the R, G
- *           and B sample values can be retrieved using
+ *           B and A sample values can be retrieved using
  *                 redval = GET_DATA_BYTE(&pixel, COLOR_RED);
  *                 greenval = GET_DATA_BYTE(&pixel, COLOR_GREEN);
  *                 blueval = GET_DATA_BYTE(&pixel, COLOR_BLUE);
+ *                 alphaval = GET_DATA_BYTE(&pixel, L_ALPHA_CHANNEL);
  *           and they can be set with
  *                 SET_DATA_BYTE(&pixel, COLOR_RED, redval);
  *                 SET_DATA_BYTE(&pixel, COLOR_GREEN, greenval);
  *                 SET_DATA_BYTE(&pixel, COLOR_BLUE, blueval);
+ *                 SET_DATA_BYTE(&pixel, L_ALPHA_CHANNEL, alphaval);
  *
- *           For extra speed we extract the R, G and B colors directly
+ *           For extra speed we extract these components directly
  *           by shifting and masking, explicitly using the values in
- *           L_RED_SHIFT, L_GREEN_SHIFT and L_BLUE_SHIFT:
+ *           L_RED_SHIFT, etc.:
  *                 (pixel32 >> L_RED_SHIFT) & 0xff;         (red)
  *                 (pixel32 >> L_GREEN_SHIFT) & 0xff;       (green)
  *                 (pixel32 >> L_BLUE_SHIFT) & 0xff;        (blue)
+ *                 (pixel32 >> L_ALPHA_SHIFT) & 0xff;       (alpha)
  *           All these operations work properly on both big- and little-endians.
  *
  *           For a few situations, these color shift values are hard-coded.
@@ -420,7 +465,7 @@ struct Pta
 {
     l_int32            n;             /* actual number of pts              */
     l_int32            nalloc;        /* size of allocated arrays          */
-    l_int32            refcount;      /* reference count (1 if no clones)  */
+    l_uint32           refcount;      /* reference count (1 if no clones)  */
     l_float32         *x, *y;         /* arrays of floats                  */
 };
 typedef struct Pta PTA;
@@ -472,12 +517,14 @@ typedef struct PixTiling PIXTILING;
 /*-------------------------------------------------------------------------*
  *                       FPix: pix with float array                        *
  *-------------------------------------------------------------------------*/
+#define  FPIX_VERSION_NUMBER      2
+
 struct FPix
 {
     l_int32              w;           /* width in pixels                   */
     l_int32              h;           /* height in pixels                  */
     l_int32              wpl;         /* 32-bit words/line                 */
-    l_int32              refcount;    /* reference count (1 if no clones)  */
+    l_uint32             refcount;    /* reference count (1 if no clones)  */
     l_int32              xres;        /* image res (ppi) in x direction    */
                                       /* (use 0 if unknown)                */
     l_int32              yres;        /* image res (ppi) in y direction    */
@@ -487,15 +534,27 @@ struct FPix
 typedef struct FPix FPIX;
 
 
+struct FPixa
+{
+    l_int32             n;            /* number of fpix in ptr array       */
+    l_int32             nalloc;       /* number of fpix ptrs allocated     */
+    l_uint32            refcount;     /* reference count (1 if no clones)  */
+    struct FPix       **fpix;         /* the array of ptrs to fpix         */
+};
+typedef struct FPixa FPIXA;
+
+
 /*-------------------------------------------------------------------------*
  *                       DPix: pix with double array                       *
  *-------------------------------------------------------------------------*/
+#define  DPIX_VERSION_NUMBER      2
+
 struct DPix
 {
     l_int32              w;           /* width in pixels                   */
     l_int32              h;           /* height in pixels                  */
     l_int32              wpl;         /* 32-bit words/line                 */
-    l_int32              refcount;    /* reference count (1 if no clones)  */
+    l_uint32             refcount;    /* reference count (1 if no clones)  */
     l_int32              xres;        /* image res (ppi) in x direction    */
                                       /* (use 0 if unknown)                */
     l_int32              yres;        /* image res (ppi) in y direction    */
@@ -513,16 +572,16 @@ struct PixComp
     l_int32              w;           /* width in pixels                   */
     l_int32              h;           /* height in pixels                  */
     l_int32              d;           /* depth in bits                     */
-    l_uint32             xres;        /* image res (ppi) in x direction    */
+    l_int32              xres;        /* image res (ppi) in x direction    */
                                       /*   (use 0 if unknown)              */
-    l_uint32             yres;        /* image res (ppi) in y direction    */
+    l_int32              yres;        /* image res (ppi) in y direction    */
                                       /*   (use 0 if unknown)              */
     l_int32              comptype;    /* compressed format (IFF_TIFF_G4,   */
                                       /*   IFF_PNG, IFF_JFIF_JPEG)         */
     char                *text;        /* text string associated with pix   */
     l_int32              cmapflag;    /* flag (1 for cmap, 0 otherwise)    */
     l_uint8             *data;        /* the compressed image data         */
-    l_int32              size;        /* size of the data array            */
+    size_t               size;        /* size of the data array            */
 };
 typedef struct PixComp PIXC;
 
@@ -530,12 +589,13 @@ typedef struct PixComp PIXC;
 /*-------------------------------------------------------------------------*
  *                     PixaComp: array of compressed pix                   *
  *-------------------------------------------------------------------------*/
-#define  PIXACOMP_VERSION_NUMBER      1
+#define  PIXACOMP_VERSION_NUMBER      2
 
 struct PixaComp
 {
     l_int32              n;           /* number of PixComp in ptr array    */
     l_int32              nalloc;      /* number of PixComp ptrs allocated  */
+    l_int32              offset;      /* indexing offset into ptr array    */
     struct PixComp     **pixc;        /* the array of ptrs to PixComp      */
     struct Boxa         *boxa;        /* array of boxes                    */
 };
@@ -590,20 +650,27 @@ static const l_int32  L_NOCOPY = 0;  /* copyflag value in sarrayGetString() */
  *                              Sort flags                                  *
  *--------------------------------------------------------------------------*/
 enum {
+    L_SHELL_SORT = 1,             /* use shell sort                         */
+    L_BIN_SORT = 2                /* use bin sort                           */
+};
+
+enum {
     L_SORT_INCREASING = 1,        /* sort in increasing order               */
     L_SORT_DECREASING = 2         /* sort in decreasing order               */
 };
 
 enum {
-    L_SORT_BY_X = 3,              /* sort box or c.c. by horiz location     */
-    L_SORT_BY_Y = 4,              /* sort box or c.c. by vert location      */
-    L_SORT_BY_WIDTH = 5,          /* sort box or c.c. by width              */
-    L_SORT_BY_HEIGHT = 6,         /* sort box or c.c. by height             */
-    L_SORT_BY_MIN_DIMENSION = 7,  /* sort box or c.c. by min dimension      */
-    L_SORT_BY_MAX_DIMENSION = 8,  /* sort box or c.c. by max dimension      */
-    L_SORT_BY_PERIMETER = 9,      /* sort box or c.c. by perimeter          */
-    L_SORT_BY_AREA = 10,          /* sort box or c.c. by area               */
-    L_SORT_BY_ASPECT_RATIO = 11   /* sort box or c.c. by width/height ratio */
+    L_SORT_BY_X = 1,              /* sort box or c.c. by left edge location  */
+    L_SORT_BY_Y = 2,              /* sort box or c.c. by top edge location   */
+    L_SORT_BY_RIGHT = 3,          /* sort box or c.c. by right edge location */
+    L_SORT_BY_BOT = 4,            /* sort box or c.c. by bot edge location   */
+    L_SORT_BY_WIDTH = 5,          /* sort box or c.c. by width               */
+    L_SORT_BY_HEIGHT = 6,         /* sort box or c.c. by height              */
+    L_SORT_BY_MIN_DIMENSION = 7,  /* sort box or c.c. by min dimension       */
+    L_SORT_BY_MAX_DIMENSION = 8,  /* sort box or c.c. by max dimension       */
+    L_SORT_BY_PERIMETER = 9,      /* sort box or c.c. by perimeter           */
+    L_SORT_BY_AREA = 10,          /* sort box or c.c. by area                */
+    L_SORT_BY_ASPECT_RATIO = 11   /* sort box or c.c. by width/height ratio  */
 };
 
 
@@ -666,6 +733,16 @@ enum {
 
 
 /*-------------------------------------------------------------------------*
+ *                         16-bit conversion flags                         *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_LS_BYTE = 0,                /* use LSB                               */
+    L_MS_BYTE = 1,                /* use MSB                               */
+    L_CLIP_TO_255 = 2             /* use max(val, 255)                     */
+};
+
+
+/*-------------------------------------------------------------------------*
  *                        Rotate and shear flags                           *
  *-------------------------------------------------------------------------*/
 enum {
@@ -699,11 +776,38 @@ enum {
 
 
 /*-------------------------------------------------------------------------*
- *                         Grayscale fill flags                            *
+ *                       Grayscale filling flags                           *
  *-------------------------------------------------------------------------*/
 enum {
     L_FILL_WHITE = 1,           /* fill white pixels (e.g, in fg map)      */
     L_FILL_BLACK = 2            /* fill black pixels (e.g., in bg map)     */
+};
+
+
+/*-------------------------------------------------------------------------*
+ *                   Flags for setting to white or black                   *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_SET_WHITE = 1,           /* set pixels to white                      */
+    L_SET_BLACK = 2            /* set pixels to black                      */
+};
+
+
+/*-------------------------------------------------------------------------*
+ *                  Flags for getting white or black value                 *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_GET_WHITE_VAL = 1,       /* get white pixel value                    */
+    L_GET_BLACK_VAL = 2        /* get black pixel value                    */
+};
+
+
+/*-------------------------------------------------------------------------*
+ *                  Flags for 8 bit and 16 bit pixel sums                  *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_WHITE_IS_MAX = 1,   /* white pixels are 0xff or 0xffff; black are 0  */
+    L_BLACK_IS_MAX = 2    /* black pixels are 0xff or 0xffff; white are 0  */
 };
 
 
@@ -781,7 +885,8 @@ enum {
     L_HORIZONTAL_LINE = 0,     /* horizontal line                          */
     L_POS_SLOPE_LINE = 1,      /* 45 degree line with positive slope       */
     L_VERTICAL_LINE = 2,       /* vertical line                            */
-    L_NEG_SLOPE_LINE = 3       /* 45 degree line with negative slope       */
+    L_NEG_SLOPE_LINE = 3,      /* 45 degree line with negative slope       */
+    L_OBLIQUE_LINE = 4         /* neither horizontal nor vertical */
 };
 
 
@@ -792,9 +897,44 @@ enum {
     L_FROM_LEFT = 0,           /* scan from left                           */
     L_FROM_RIGHT = 1,          /* scan from right                          */
     L_FROM_TOP = 2,            /* scan from top                            */
-    L_FROM_BOTTOM = 3          /* scan from bottom                         */
+    L_FROM_BOT = 3,            /* scan from bottom                         */
+    L_SCAN_NEGATIVE = 4,       /* scan in negative direction               */
+    L_SCAN_POSITIVE = 5,       /* scan in positive direction               */
+    L_SCAN_BOTH = 6            /* scan in both directions                  */
 };
 
+
+/*-------------------------------------------------------------------------*
+ *                Box size adjustment and location flags                   *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_ADJUST_SKIP = 0,             /* do not adjust                        */
+    L_ADJUST_LEFT = 1,             /* adjust left edge                     */
+    L_ADJUST_RIGHT = 2,            /* adjust right edge                    */
+    L_ADJUST_LEFT_AND_RIGHT = 3,   /* adjust both left and right edges     */
+    L_ADJUST_TOP = 4,              /* adjust top edge                      */
+    L_ADJUST_BOT = 5,              /* adjust bottom edge                   */
+    L_ADJUST_TOP_AND_BOT = 6,      /* adjust both top and bottom edges     */
+    L_ADJUST_CHOOSE_MIN = 7,       /* choose the min median value          */
+    L_ADJUST_CHOOSE_MAX = 8,       /* choose the max median value          */
+    L_SET_LEFT = 9,                /* set left side to a given value       */
+    L_SET_RIGHT = 10,              /* set right side to a given value      */
+    L_SET_TOP = 11,                /* set top side to a given value        */
+    L_SET_BOT = 12,                /* set bottom side to a given value     */
+    L_GET_LEFT = 13,               /* get left side location               */
+    L_GET_RIGHT = 14,              /* get right side location              */
+    L_GET_TOP = 15,                /* get top side location                */
+    L_GET_BOT = 16                 /* get bottom side location             */
+};
+
+
+/*-------------------------------------------------------------------------*
+ *              Handling overlapping bounding boxes in boxa                *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_COMBINE = 1,           /* resize to bounding region; remove smaller  */
+    L_REMOVE_SMALL = 2       /* only remove smaller                        */
+};
 
 /*-------------------------------------------------------------------------*
  *                            Horizontal warp                              *
@@ -900,9 +1040,13 @@ enum {
  *-------------------------------------------------------------------------*/
 enum {
     L_ADD_ABOVE = 1,           /* Add text above the image                 */
-    L_ADD_AT_TOP = 2,          /* Add text over the top of the image       */
-    L_ADD_AT_BOTTOM = 3,       /* Add text over the bottom of the image    */
-    L_ADD_BELOW = 4            /* Add text below the image                 */
+    L_ADD_BELOW = 2,           /* Add text below the image                 */
+    L_ADD_LEFT = 3,            /* Add text to the left of the image        */
+    L_ADD_RIGHT = 4,           /* Add text to the right of the image       */
+    L_ADD_AT_TOP = 5,          /* Add text over the top of the image       */
+    L_ADD_AT_BOT = 6,          /* Add text over the bottom of the image    */
+    L_ADD_AT_LEFT = 7,         /* Add text over left side of the image     */
+    L_ADD_AT_RIGHT = 8         /* Add text over right side of the image    */
 };
 
 
@@ -910,10 +1054,20 @@ enum {
  *                   Flags for selecting display program                   *
  *-------------------------------------------------------------------------*/
 enum {
-    L_DISPLAY_WITH_XV = 1,      /* Use xv with pixDisplay()                */
+    L_DISPLAY_WITH_XZGV = 1,    /* Use xzgv with pixDisplay()              */
     L_DISPLAY_WITH_XLI = 2,     /* Use xli with pixDisplay()               */
-    L_DISPLAY_WITH_XZGV = 3,    /* Use xzgv with pixDisplay()              */
-    L_DISPLAY_WITH_IV = 4       /* Use irfvanview with pixDisplay()        */
+    L_DISPLAY_WITH_XV = 3,      /* Use xv with pixDisplay()                */
+    L_DISPLAY_WITH_IV = 4,      /* Use irfvanview (win) with pixDisplay()  */
+    L_DISPLAY_WITH_OPEN = 5     /* Use open (apple) with pixDisplay()      */
+};
+
+/*-------------------------------------------------------------------------*
+ *    Flag(s) used in the 'special' pix field for non-default operations   *
+ *      - 0 is default                                                     *
+ *      - 10-19 are reserved for zlib compression in png write             *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_NO_CHROMA_SAMPLING_JPEG = 1     /* Write full resolution chroma      */
 };
 
 #endif  /* LEPTONICA_PIX_H */

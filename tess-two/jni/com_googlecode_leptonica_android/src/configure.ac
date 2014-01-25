@@ -1,5 +1,5 @@
 AC_PREREQ([2.50])
-AC_INIT([leptonica], [1.69], [dan.bloomberg@gmail.com])
+AC_INIT([leptonica], [1.70])
 AC_CONFIG_AUX_DIR([config])
 AM_CONFIG_HEADER([config_auto.h:config/config.h.in])
 AC_CONFIG_SRCDIR([src/adaptmap.c])
@@ -26,6 +26,7 @@ AC_ARG_WITH([libpng], AS_HELP_STRING([--without-libpng], [do not include libpng 
 AC_ARG_WITH([jpeg], AS_HELP_STRING([--without-jpeg], [do not include jpeg support]))
 AC_ARG_WITH([giflib], AS_HELP_STRING([--without-giflib], [do not include giflib support]))
 AC_ARG_WITH([libtiff], AS_HELP_STRING([--without-libtiff], [do not include libtiff support]))
+AC_ARG_WITH([libwebp], AS_HELP_STRING([--without-libwebp], [do not include libwebp support]))
 
 AC_ARG_ENABLE([programs], AS_HELP_STRING([--disable-programs], [do not build additional programs]))
 AM_CONDITIONAL([ENABLE_PROGRAMS], [test "x$enable_programs" != xno])
@@ -80,6 +81,9 @@ case "$host_os" in
   mingw32*) AC_SUBST([GDI_LIBS], [-lgdi32]) ;;
 esac
 
+# Enable less verbose output when building.
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
 AC_C_BIGENDIAN
@@ -105,5 +109,5 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM()],
 # Checks for library functions.
 AC_CHECK_FUNCS([fmemopen])
 
-AC_CONFIG_FILES([Makefile src/endianness.h src/Makefile prog/Makefile])
+AC_CONFIG_FILES([Makefile src/endianness.h src/Makefile prog/Makefile lept.pc])
 AC_OUTPUT

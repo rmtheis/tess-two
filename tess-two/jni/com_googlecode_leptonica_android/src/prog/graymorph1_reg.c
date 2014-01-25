@@ -61,8 +61,8 @@
 static void pixCompare(PIX *pix, PIX *pix2, const char *msg1, const char *msg2);
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char         dilateseq[BUF_SIZE], erodeseq[BUF_SIZE];
 char         openseq[BUF_SIZE], closeseq[BUF_SIZE];
@@ -76,14 +76,14 @@ PIXCMAP     *cmap;
 static char  mainName[] = "graymorph1_reg";
 
     if (argc != 2)
-	exit(ERROR_INT(" Syntax:  graymorph1_reg filein", mainName, 1));
+        return ERROR_INT(" Syntax:  graymorph1_reg filein", mainName, 1);
 
     filein = argv[1];
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pixs not made", mainName, 1));
+        return ERROR_INT("pixs not made", mainName, 1);
     pixGetDimensions(pixs, &w, &h, &d);
     if (d != 8)
-	exit(ERROR_INT("pixs not 8 bpp", mainName, 1));
+        return ERROR_INT("pixs not 8 bpp", mainName, 1);
 
     /* -------- Test gray morph, including interpreter ------------ */
     pixd = pixDilateGray(pixs, WSIZE, HSIZE);
@@ -150,7 +150,7 @@ static char  mainName[] = "graymorph1_reg";
     pixInvert(pixs, pixs);
     pixd2 = pixTophat(pixs, WSIZE, HSIZE, L_TOPHAT_BLACK);
     pixCompare(pixd, pixd2, "Correct: images are duals",
-	       "Error: images are not duals" );
+               "Error: images are not duals" );
     pixDestroy(&pixd);
     pixDestroy(&pixd2);
     pixInvert(pixs, pixs);
@@ -159,16 +159,16 @@ static char  mainName[] = "graymorph1_reg";
     pixInvert(pixs, pixs);
     pixd2 = pixGrayMorphSequence(pixs, "Tb9.5", HORIZ_SEP, 300);
     pixCompare(pixd, pixd2, "Correct: images are duals",
-	       "Error: images are not duals" );
+               "Error: images are not duals" );
     pixDestroy(&pixd);
     pixDestroy(&pixd2);
 
     /* ------------- Test opening/closing for large sels -------------- */
     pixd = pixGrayMorphSequence(pixs,
-	    "C9.9 + C19.19 + C29.29 + C39.39 + C49.49", HORIZ_SEP, 100);
+            "C9.9 + C19.19 + C29.29 + C39.39 + C49.49", HORIZ_SEP, 100);
     pixDestroy(&pixd);
     pixd = pixGrayMorphSequence(pixs,
-	    "O9.9 + O19.19 + O29.29 + O39.39 + O49.49", HORIZ_SEP, 400);
+            "O9.9 + O19.19 + O29.29 + O39.39 + O49.49", HORIZ_SEP, 400);
     pixDestroy(&pixd);
 
     /* ---------- Closing plus white tophat result ------------ *
@@ -253,7 +253,7 @@ static char  mainName[] = "graymorph1_reg";
         /* Paste in the grayscale version */
     cmap = pixGetColormap(pixs);
     if (cmap)
-	pixt = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
+        pixt = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
     else
         pixt = pixConvertRGBToGray(pixs, 0.33, 0.34, 0.33);
     pixt2 = pixConvertTo32(pixt);  /* 8 --> 32 bpp */
@@ -291,7 +291,7 @@ static char  mainName[] = "graymorph1_reg";
     pixDestroy(&pixt4);
     pixDestroy(&pixd);
 
-    pixDisplayMultiple("/tmp/junk_write_display*");
+    pixDisplayMultiple("/tmp/display/file*");
     pixDestroy(&pixs);
     return 0;
 }
@@ -307,13 +307,13 @@ static void pixCompare(PIX         *pix1,
 l_int32  same;
     pixEqual(pix1, pix2, &same);
     if (same) {
-	fprintf(stderr, "%s\n", msg1);
-	pixDisplayWrite(pix1, 1);
+        fprintf(stderr, "%s\n", msg1);
+        pixDisplayWrite(pix1, 1);
     }
     else {
-	fprintf(stderr, "%s\n", msg2);
-	pixDisplayWrite(pix1, 1);
-	pixDisplayWrite(pix2, 1);
+        fprintf(stderr, "%s\n", msg2);
+        pixDisplayWrite(pix1, 1);
+        pixDisplayWrite(pix2, 1);
     }
     return;
 }

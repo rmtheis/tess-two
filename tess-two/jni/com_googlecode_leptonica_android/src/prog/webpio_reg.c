@@ -35,8 +35,9 @@
  *    This tests reading and writing of images in webp format.
  *         http://code.google.com/speed/webp/index.html
  *
- *    webp currently only supports 32 bpp rgb.  Writing is very
- *    slow; reading is fast, comparable to reading jpeg files.
+ *    webp supports 32 bpp rgb and rgba.
+ *    Lossy writing is slow; reading is fast, comparable to reading jpeg files.
+ *    Lossless writing is extremely slow.
  */
 
 #include <math.h>
@@ -49,13 +50,12 @@
 
 void DoWebpTest1(L_REGPARAMS *rp, const char *fname);
 void DoWebpTest2(L_REGPARAMS *rp, const char *fname, l_int32 quality,
-                 l_float32 expected, l_float32 delta);
+                 l_int32 lossless, l_float32 expected, l_float32 delta);
 
 
-main(int    argc,
-char **argv)
+int main(int    argc,
+         char **argv)
 {
-l_int32       success;
 L_REGPARAMS  *rp;
 
 #if !HAVE_LIBWEBP
@@ -80,9 +80,11 @@ L_REGPARAMS  *rp;
     DoWebpTest1(rp, "karen8.jpg");
     DoWebpTest1(rp, "test24.jpg");
 
-    DoWebpTest2(rp, "test24.jpg", 50, 43.217, 0.1);
-    DoWebpTest2(rp, "test24.jpg", 75, 45.989, 0.1);
-    DoWebpTest2(rp, "test24.jpg", 90, 52.243, 0.1);
+    DoWebpTest2(rp, "test24.jpg", 50, 0, 43.217, 0.1);
+    DoWebpTest2(rp, "test24.jpg", 75, 0, 45.759, 0.1);
+    DoWebpTest2(rp, "test24.jpg", 90, 0, 52.066, 0.1);
+    DoWebpTest2(rp, "test24.jpg", 100, 0, 57.879, 0.1);
+    DoWebpTest2(rp, "test24.jpg", 0, 1, 1000.0, 0.1);
 
     regTestCleanup(rp);
     return 0;
@@ -115,6 +117,7 @@ PIX  *pixs, *pix1;
 void DoWebpTest2(L_REGPARAMS  *rp,
                  const char   *fname,
                  l_int32       quality,
+                 l_int32       lossless,
                  l_float32     expected,
                  l_float32     delta)
 {
@@ -124,10 +127,15 @@ PIX       *pixs, *pix1;
 
     pixs = pixRead(fname);
     snprintf(buf, sizeof(buf), "/tmp/webpio.%d.webp", rp->index + 1);
-    pixWriteWebP("/tmp/junk.webp", pixs, quality);
+    if (lossless) startTimer();
+    pixWriteWebP("/tmp/junk.webp", pixs, quality, lossless);
+    if (lossless) fprintf(stderr, "Lossless write: %7.3f sec\n", stopTimer());
     pix1 = pixRead("/tmp/junk.webp");
     pixGetPSNR(pixs, pix1, 4, &psnr);
-    fprintf(stderr, "qual = %d, psnr = %7.3f\n", quality, psnr);
+    if (lossless)
+        fprintf(stderr, "lossless; psnr should be 1000: psnr = %7.3f\n", psnr);
+    else
+        fprintf(stderr, "qual = %d, psnr = %7.3f\n", quality, psnr);
     regTestCompareValues(rp, expected, psnr, delta);
     pixDestroy(&pixs);
     pixDestroy(&pix1);

@@ -405,15 +405,16 @@ PIX       *pixt, *pixd;
 /*!
  *  pixGenerateMaskByValue()
  *
- *      Input:  pixs (4 or 8 bpp, or colormapped)
+ *      Input:  pixs (2, 4 or 8 bpp, or colormapped)
  *              val (of pixels for which we set 1 in dest)
  *              usecmap (1 to retain cmap values; 0 to convert to gray)
  *      Return: pixd (1 bpp), or null on error
  *
  *  Notes:
- *      (1) @val is the gray value of the pixels that we are selecting.
+ *      (1) @val is the pixel value that we are selecting.  It can be
+ *          either a gray value or a colormap index.
  *      (2) If pixs is colormapped, @usecmap determines if the colormap
- *          values are used, or if the colormap is removed to gray and
+ *          index values are used, or if the colormap is removed to gray and
  *          the gray values are used.  For the latter, it generates
  *          an approximate grayscale value for each pixel, and then looks
  *          for gray pixels with the value @val.
@@ -432,21 +433,25 @@ PIX       *pixg, *pixd;
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
     d = pixGetDepth(pixs);
-    if (d != 4 && d != 8)
-        return (PIX *)ERROR_PTR("not 4 or 8 bpp", procName, NULL);
+    if (d != 2 && d != 4 && d != 8)
+        return (PIX *)ERROR_PTR("not 2, 4 or 8 bpp", procName, NULL);
 
     if (!usecmap && pixGetColormap(pixs))
         pixg = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
     else
         pixg = pixClone(pixs);
     pixGetDimensions(pixg, &w, &h, &d);
+    if (d == 8 && (val < 0 || val > 255)) {
+        pixDestroy(&pixg);
+        return (PIX *)ERROR_PTR("val out of 8 bpp range", procName, NULL);
+    }
     if (d == 4 && (val < 0 || val > 15)) {
         pixDestroy(&pixg);
         return (PIX *)ERROR_PTR("val out of 4 bpp range", procName, NULL);
     }
-    if (d == 8 && (val < 0 || val > 255)) {
+    if (d == 2 && (val < 0 || val > 3)) {
         pixDestroy(&pixg);
-        return (PIX *)ERROR_PTR("val out of 8 bpp range", procName, NULL);
+        return (PIX *)ERROR_PTR("val out of 2 bpp range", procName, NULL);
     }
 
     pixd = pixCreate(w, h, 1);
@@ -459,12 +464,14 @@ PIX       *pixg, *pixd;
         lineg = datag + i * wplg;
         lined = datad + i * wpld;
         for (j = 0; j < w; j++) {
-            if (d == 4) {
+            if (d == 8) {
+                if (GET_DATA_BYTE(lineg, j) == val)
+                    SET_DATA_BIT(lined, j);
+            } else if (d == 4) {
                 if (GET_DATA_QBIT(lineg, j) == val)
                     SET_DATA_BIT(lined, j);
-            }
-            else {  /* d == 8 */
-                if (GET_DATA_BYTE(lineg, j) == val)
+            } else {  /* d == 2 */
+                if (GET_DATA_DIBIT(lineg, j) == val)
                     SET_DATA_BIT(lined, j);
             }
         }
@@ -478,7 +485,7 @@ PIX       *pixg, *pixd;
 /*!
  *  pixGenerateMaskByBand()
  *
- *      Input:  pixs (4 or 8 bpp, or colormapped)
+ *      Input:  pixs (2, 4 or 8 bpp, or colormapped)
  *              lower, upper (two pixel values from which a range, either
  *                            between (inband) or outside of (!inband),
  *                            determines which pixels in pixs cause us to
@@ -515,8 +522,8 @@ PIX       *pixg, *pixd;
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
     d = pixGetDepth(pixs);
-    if (d != 4 && d != 8)
-        return (PIX *)ERROR_PTR("not 4 or 8 bpp", procName, NULL);
+    if (d != 2 && d != 4 && d != 8)
+        return (PIX *)ERROR_PTR("not 2, 4 or 8 bpp", procName, NULL);
     if (lower < 0 || lower > upper)
         return (PIX *)ERROR_PTR("lower < 0 or lower > upper!", procName, NULL);
 
@@ -525,13 +532,17 @@ PIX       *pixg, *pixd;
     else
         pixg = pixClone(pixs);
     pixGetDimensions(pixg, &w, &h, &d);
+    if (d == 8 && upper > 255) {
+        pixDestroy(&pixg);
+        return (PIX *)ERROR_PTR("d == 8 and upper > 255", procName, NULL);
+    }
     if (d == 4 && upper > 15) {
         pixDestroy(&pixg);
         return (PIX *)ERROR_PTR("d == 4 and upper > 15", procName, NULL);
     }
-    if (d == 8 && upper > 255) {
+    if (d == 2 && upper > 3) {
         pixDestroy(&pixg);
-        return (PIX *)ERROR_PTR("d == 8 and upper > 255", procName, NULL);
+        return (PIX *)ERROR_PTR("d == 2 and upper > 3", procName, NULL);
     }
 
     pixd = pixCreate(w, h, 1);
@@ -544,15 +555,16 @@ PIX       *pixg, *pixd;
         lineg = datag + i * wplg;
         lined = datad + i * wpld;
         for (j = 0; j < w; j++) {
-            if (d == 4)
-                val = GET_DATA_QBIT(lineg, j);
-            else  /* d == 8 */
+            if (d == 8)
                 val = GET_DATA_BYTE(lineg, j);
+            else if (d == 4)
+                val = GET_DATA_QBIT(lineg, j);
+            else  /* d == 2 */
+                val = GET_DATA_DIBIT(lineg, j);
             if (inband) {
                 if (val >= lower && val <= upper)
                     SET_DATA_BIT(lined, j);
-            }
-            else {  /* out of band */
+            } else {  /* out of band */
                 if (val < lower || val > upper)
                     SET_DATA_BIT(lined, j);
             }
@@ -1053,9 +1065,8 @@ PIXCMAP   *cmap;
             outdepth = 4;
         else
             outdepth = 8;
-    }
-    else if (n + 1 > (1 << outdepth)) {
-        L_WARNING("outdepth too small; setting to 8 bpp", procName);
+    } else if (n + 1 > (1 << outdepth)) {
+        L_WARNING("outdepth too small; setting to 8 bpp\n", procName);
         outdepth = 8;
     }
     numaSort(na, na, L_SORT_INCREASING);
@@ -1081,11 +1092,11 @@ PIXCMAP   *cmap;
     datat = pixGetData(pixt);
     wplt = pixGetWpl(pixt);
 
-    if (outdepth == 2)
+    if (outdepth == 2) {
         thresholdTo2bppLow(datad, h, wpld, datat, wplt, qtab);
-    else if (outdepth == 4)
+    } else if (outdepth == 4) {
         thresholdTo4bppLow(datad, h, wpld, datat, wplt, qtab);
-    else {
+    } else {
         for (i = 0; i < h; i++) {
             lined = datad + i * wpld;
             linet = datat + i * wplt;
@@ -1349,9 +1360,9 @@ l_uint32  *line, *data;
 	 * the center value of the bin. */
     *pcmap = pixcmapCreate(outdepth);
     for (i = 0; i < nbins; i++) {
-        if (bincount[i])
+        if (bincount[i]) {
             val = binave[i] / bincount[i];
-        else {  /* no samples in the bin */
+        } else {  /* no samples in the bin */
             if (i < nbins - 1)
                 val = (binstart[i] + binstart[i + 1]) / 2;
             else  /* last bin */
@@ -1497,8 +1508,7 @@ PIX       *pixd;
                 dist2 += L_ABS(gref2 - gval);
                 dist1 += L_ABS(bref1 - bval);
                 dist2 += L_ABS(bref2 - bval);
-            }
-            else {
+            } else {
                 dist1 = (rref1 - rval) * (rref1 - rval);
                 dist2 = (rref2 - rval) * (rref2 - rval);
                 dist1 += (gref1 - gval) * (gref1 - gval);
@@ -1586,11 +1596,11 @@ PIXCMAP   *cmap;
     if (!pixs || pixGetDepth(pixs) != 8)
         return (PIX *)ERROR_PTR("pixs undefined or not 8 bpp", procName, NULL);
     if (minfract < 0.01) {
-        L_WARNING("minfract < 0.01; setting to 0.05", procName);
+        L_WARNING("minfract < 0.01; setting to 0.05\n", procName);
         minfract = 0.05;
     }
     if (maxsize < 2) {
-        L_WARNING("maxsize < 2; setting to 10", procName);
+        L_WARNING("maxsize < 2; setting to 10\n", procName);
         maxsize = 10;
     }
     if ((pixd && !pixm) || (!pixd && pixm))
@@ -1609,21 +1619,20 @@ PIXCMAP   *cmap;
         nestim = nc + (l_int32)(1.5 * 255 / maxsize);
         fprintf(stderr, "nestim = %d\n", nestim);
         if (nestim > 255) {
-            L_ERROR_INT("Estimate %d colors!", procName, nestim);
+            L_ERROR("Estimate %d colors!\n", procName, nestim);
             return (PIX *)ERROR_PTR("probably too many colors", procName, NULL);
         }
         pixGetDimensions(pixm, &wm, &hm, NULL);
         if (w != wm || h != hm) {  /* resize the mask */
-            L_WARNING("mask and dest sizes not equal", procName);
+            L_WARNING("mask and dest sizes not equal\n", procName);
             pixmr = pixCreateNoInit(w, h, 1);
             pixRasterop(pixmr, 0, 0, wm, hm, PIX_SRC, pixm, 0, 0);
             pixRasterop(pixmr, wm, 0, w - wm, h, PIX_SET, NULL, 0, 0);
             pixRasterop(pixmr, 0, hm, wm, h - hm, PIX_SET, NULL, 0, 0);
-        }
-        else
+        } else {
             pixmr = pixClone(pixm);
-    }
-    else {
+        }
+    } else {
         pixd = pixCreateTemplate(pixs);
         cmap = pixcmapCreate(8);
         pixSetColormap(pixd, cmap);
@@ -1635,7 +1644,7 @@ PIXCMAP   *cmap;
         /* Fill out the cmap with gray colors, and generate the lut
          * for pixel assignment.  Issue a warning on failure.  */
     if (numaFillCmapFromHisto(na, cmap, minfract, maxsize, &lut))
-        L_ERROR("ran out of colors in cmap!", procName);
+        L_ERROR("ran out of colors in cmap!\n", procName);
     numaDestroy(&na);
 
         /* Assign the gray pixels to their cmap indices */
@@ -1802,7 +1811,7 @@ PIX       *pixd;
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
     if (pixGetColormap(pixs) != NULL) {
-        L_WARNING("pixs already has a colormap; returning a copy", procName);
+        L_WARNING("pixs already has a colormap; returning a copy\n", procName);
         return pixCopy(NULL, pixs);
     }
     pixGetDimensions(pixs, &w, &h, &d);
@@ -1816,11 +1825,11 @@ PIX       *pixd;
         /* Make sure the colormap is gray */
     pixcmapHasColor(cmap, &hascolor);
     if (hascolor) {
-        L_WARNING("Converting colormap colors to gray", procName);
+        L_WARNING("Converting colormap colors to gray\n", procName);
         cmapd = pixcmapColorToGray(cmap, 0.3, 0.5, 0.2);
-    }
-    else
+    } else {
         cmapd = pixcmapCopy(cmap);
+    }
 
         /* Make LUT into colormap */
     if ((tab = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)

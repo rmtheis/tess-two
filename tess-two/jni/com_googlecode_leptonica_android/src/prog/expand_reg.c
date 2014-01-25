@@ -41,8 +41,8 @@
 #define  RGB_IMAGE                "marge.jpg"
 
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i, w, h, same;
 char         filename[][64] = {BINARY_IMAGE,
@@ -55,7 +55,7 @@ PIX         *pix, *pixs, *pixt, *pixt1, *pixt2, *pixt3, *pixt4, *pixt5, *pixd;
 static char  mainName[] = "expand_reg";
 
     if (argc != 1)
-	exit(ERROR_INT(" Syntax:  expand_reg", mainName, 1));
+        return ERROR_INT(" Syntax:  expand_reg", mainName, 1);
 
     pixDisplayWrite(NULL, -1);
     for (i = 0; i < 8; i++) {
@@ -148,7 +148,7 @@ static char  mainName[] = "expand_reg";
     pixDestroy(&pixd);
     pixDestroy(&pixs);
 
-    pixDisplayMultiple("/tmp/junk_write_display*");
+    pixDisplayMultiple("/tmp/display/file*");
     return 0;
 }
 

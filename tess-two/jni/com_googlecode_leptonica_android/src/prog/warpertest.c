@@ -43,8 +43,8 @@ static const char  *dirstr[3] = {"", "to left", "to right"};
 #define  RUN_HORIZ_SHEAR          0
 #define  RUN_VERT_SHEAR           0
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 char       buf[256];
 l_int32    w, h, i, j, k, index, op, dir, stretch;
@@ -55,19 +55,19 @@ PIX       *pixs, *pixt, *pixt2, *pixd;
 static char  mainName[] = "warpertest";
 
     if (argc != 1)
-        exit(ERROR_INT("syntax: warpertest", mainName, 1));
+        return ERROR_INT("syntax: warpertest", mainName, 1);
 
     /* --------   Stereoscopic warping --------------*/
 #if RUN_WARP
     pixs = pixRead("german.png");
     pixGetDimensions(pixs, &w, &h, NULL);
-    l_jpegSetNoChromaSampling(1);
     for (i = 0; i < 50; i++) {  /* need to test > 2 widths ! */
         j = 7 * i;
         box = boxCreate(0, 0, w - j, h - j);
         pixt = pixClipRectangle(pixs, box, NULL);
         pixd = pixWarpStereoscopic(pixt, 15, 22, 8, 30, -20, 1);
         snprintf(buf, sizeof(buf), "/tmp/junkpixw.%02d.jpg", i);
+        pixSetChromaSampling(pixd, 0);
         pixWrite(buf, pixd, IFF_JFIF_JPEG);
         pixDestroy(&pixd);
         pixDestroy(&pixt);
@@ -226,5 +226,3 @@ static char  mainName[] = "warpertest";
 
     return 0;
 }
-
-

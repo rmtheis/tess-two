@@ -32,8 +32,8 @@
 
 #include "allheaders.h"
 
-main(int    argc,
-     char **argv)
+int main(int    argc,
+         char **argv)
 {
 l_int32      i, wf, hf, w, h, d, same;
 l_float32    rank, time;
@@ -43,8 +43,8 @@ char        *filein, *fileout;
 static char  mainName[] = "ranktest";
 
     if (argc != 6)
-	exit(ERROR_INT(" Syntax:  ranktest filein wf hf rank fileout",
-                       mainName, 1));
+        return ERROR_INT(" Syntax:  ranktest filein wf hf rank fileout",
+                         mainName, 1);
 
     filein = argv[1];
     wf = atoi(argv[2]);
@@ -53,10 +53,10 @@ static char  mainName[] = "ranktest";
     fileout = argv[5];
 
     if ((pixs = pixRead(filein)) == NULL)
-	exit(ERROR_INT("pix not made", mainName, 1));
+        return ERROR_INT("pix not made", mainName, 1);
     pixGetDimensions(pixs, &w, &h, &d);
     if (d != 8 && d != 32)
-	exit(ERROR_INT("pix neither 8 nor 32 bpp", mainName, 1));
+        return ERROR_INT("pix neither 8 nor 32 bpp", mainName, 1);
 
     startTimer();
     pixd = pixRankFilter(pixs, wf, hf, rank);
@@ -112,7 +112,7 @@ static char  mainName[] = "ranktest";
     pixDestroy(&pixt4);
 
         /* Display tiled */
-    pixa = pixaReadFiles("/tmp", "junk_write_display");
+    pixa = pixaReadFiles("/tmp/display", "file");
     pixd = pixaDisplayTiledAndScaled(pixa, d, 400, 3, 0, 25, 2);
     pixWrite("/tmp/junktiles.jpg", pixd, IFF_JFIF_JPEG);
     pixDestroy(&pixd);
