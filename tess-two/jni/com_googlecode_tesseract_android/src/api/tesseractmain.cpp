@@ -35,6 +35,7 @@
 #include "strngs.h"
 #include "tprintf.h"
 #include "openclwrapper.h"
+#include "osdetect.h"
 
 /**********************************************************************
  *  main()
@@ -61,7 +62,6 @@ int main(int argc, char **argv) {
     cl_uint num_platforms;
     cl_device_id devices[2];
     cl_uint num_devices;
-    cl_int err;
     char info[256];
     int i;
 
@@ -159,8 +159,10 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  tprintf("Tesseract Open Source OCR Engine v%s with Leptonica\n",
+  if (output != NULL && strcmp(output, "-") && strcmp(output, "stdout")) {
+    tprintf("Tesseract Open Source OCR Engine v%s with Leptonica\n",
            tesseract::TessBaseAPI::Version());
+  }
   PERF_COUNT_START("Tesseract:main")
   tesseract::TessBaseAPI api;
 
@@ -244,27 +246,50 @@ int main(int argc, char **argv) {
     pixs = pixReadMem(&ch_data[0], ch_data.size());
   }
 
-  if (pagesegmode == tesseract::PSM_AUTO_OSD) {
-    tesseract::Orientation orientation;
-    tesseract::WritingDirection direction;
-    tesseract::TextlineOrder order;
-    float deskew_angle;
+  if (pagesegmode == tesseract::PSM_AUTO_ONLY ||
+      pagesegmode == tesseract::PSM_OSD_ONLY) {
     int ret_val = 0;
 
     if (!pixs)
       pixs = pixRead(image);
+    if (!pixs) {
+      fprintf(stderr, "Cannot open input file: %s\n", image);
+      exit(2);
+    }
     api.SetImage(pixs);
-    tesseract::PageIterator* it =  api.AnalyseLayout();
-    if (it) {
-      it->Orientation(&orientation, &direction, &order, &deskew_angle);
-      tprintf("Orientation: %d\nWritingDirection: %d\nTextlineOrder: %d\n" \
-              "Deskew angle: %.4f\n",
-               orientation, direction, order, deskew_angle);
+
+    if (pagesegmode == tesseract::PSM_OSD_ONLY) {
+       OSResults osr;
+       if (api.DetectOS(&osr)) {
+         int orient = osr.best_result.orientation_id;
+         int script_id = osr.get_best_script(orient);
+         float orient_oco = osr.best_result.oconfidence;
+         float orient_sco = osr.best_result.sconfidence;
+         tprintf("Orientation: %d\nOrientation in degrees: %d\n" \
+                 "Orientation confidence: %.2f\n" \
+                 "Script: %d\nScript confidence: %.2f\n",
+                 orient, OrientationIdToValue(orient), orient_oco,
+                 script_id, orient_sco);
+       } else {
+         ret_val = 1;
+       }
     } else {
-      ret_val = 1;
+       tesseract::Orientation orientation;
+       tesseract::WritingDirection direction;
+       tesseract::TextlineOrder order;
+       float deskew_angle;
+       tesseract::PageIterator* it =  api.AnalyseLayout();
+       if (it) {
+         it->Orientation(&orientation, &direction, &order, &deskew_angle);
+         tprintf("Orientation: %d\nWritingDirection: %d\nTextlineOrder: %d\n" \
+                 "Deskew angle: %.4f\n",
+                  orientation, direction, order, deskew_angle);
+       } else {
+         ret_val = 1;
+       }
+       delete it;
     }
     pixDestroy(&pixs);
-    delete it;
     exit(ret_val);
   }
 

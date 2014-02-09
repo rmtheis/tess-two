@@ -346,7 +346,8 @@ inline bool SaveDataToFile(const GenericVector<char>& data,
                           const STRING& filename) {
   FILE* fp = fopen(filename.string(), "wb");
   if (fp == NULL) return false;
-  bool result = fwrite(&data[0], 1, data.size(), fp) == data.size();
+  bool result =
+      static_cast<int>(fwrite(&data[0], 1, data.size(), fp)) == data.size();
   fclose(fp);
   return result;
 }
@@ -497,9 +498,15 @@ class PointerVector : public GenericVector<T*> {
       T* item = NULL;
       if (non_null) {
         item = new T;
-        if (!item->DeSerialize(swap, fp)) return false;
+        if (!item->DeSerialize(swap, fp)) {
+          delete item;
+          return false;
+        }
+        this->push_back(item);
+      } else {
+        // Null elements should keep their place in the vector.
+        this->push_back(NULL);
       }
-      this->push_back(item);
     }
     return true;
   }
@@ -911,7 +918,7 @@ int GenericVector<T>::choose_nth_item(int target_index, int start, int end,
     }
   }
   // Place the pivot at start.
-  #if defined(_MSC_VER) || defined(ANDROID)  // TODO(zdenop): check this
+  #ifndef rand_r  // _MSC_VER, ANDROID
   srand(*seed);
   #define rand_r(seed) rand()
   #endif  // _MSC_VER

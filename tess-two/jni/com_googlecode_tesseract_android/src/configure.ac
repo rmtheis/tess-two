@@ -8,7 +8,7 @@
 
 AC_PREREQ(2.50)
 AC_INIT([tesseract], [3.03], [http://code.google.com/p/tesseract-ocr/issues/list])
-${CXXFLAGS=""}
+CXXFLAGS=${CXXFLAGS:-""}
 AC_CONFIG_MACRO_DIR([m4])
 AC_REVISION([$Revision$])
 AC_CONFIG_AUX_DIR(config)
@@ -63,6 +63,7 @@ AM_MAINTAINER_MODE
 
 # default conditional
 AM_CONDITIONAL(MINGW, false)
+AM_CONDITIONAL(OSX, false)
 AM_CONDITIONAL(GRAPHICS_DISABLED, false)
 
 OPENCL_INC="/opt/AMDAPP/include"
@@ -77,21 +78,24 @@ case "${host_os}" in
     mingw32*)
         AC_DEFINE_UNQUOTED(MINGW,1,[This is a MinGW system])
         AM_CONDITIONAL(MINGW, true)
+        AM_CONDITIONAL(ADD_RT, false)
         AC_SUBST([AM_LDFLAGS], ['-Wl,-no-undefined -Wl,--as-needed'])
         ;;
     solaris*)
         LIBS="-lsocket -lnsl -lrt -lxnet"
+        AM_CONDITIONAL(ADD_RT, true)
+        ;;
+    *darwin*)
+        OPENCL_LIBS="-framework OpenCL"
+        OPENCL_INC=""
+        AM_CONDITIONAL(ADD_RT, false)
         ;;
     powerpc-*-darwin*)
         OPENCL_LIBS=""
-        OPENCL_INC=""
         ;;
-    *-*-darwin*)
-        OPENCL_LIBS="-framework OpenCL"
-        OPENCL_INC=""
-        ;;
-     *)
+    *)
         # default
+        AM_CONDITIONAL(ADD_RT, true)
         ;;
 esac
 
@@ -281,10 +285,6 @@ AC_COMPILE_IFELSE(
      has_cpp11=no
    ])
 CXXFLAGS="$OLD_CXXFLAGS"
-if test "x$has_cpp11" = "xyes"
-then
-  CXXFLAGS="$CXXFLAGS -std=c++11"
-fi
 
 # ----------------------------------------
 # Check for libraries
@@ -347,6 +347,17 @@ else
   AC_MSG_ERROR([leptonica not found])
 fi
 
+AC_MSG_CHECKING([leptonica version >= 1.70])
+AC_PREPROC_IFELSE(
+    [AC_LANG_PROGRAM([#include <leptonica/allheaders.h>],
+[#if (LIBLEPT_MINOR_VERSION >= 1) && (LIBLEPT_MINOR_VERSION >= 70)
+int i = 0;
+#else
+#error You need to upgrade your leptonica library!
+#endif])],
+    [AC_MSG_RESULT(yes)],
+    [AC_MSG_FAILURE([leptonica 1.70 or higher is required])])
+
 # Check location of icu headers
 have_icu=false
 AC_CHECK_HEADERS(unicode/uchar.h, have_icu=true, have_icu=false)
@@ -377,6 +388,11 @@ else
       CPPFLAGS="$CPPFLAGS $(pkg-config --cflags cairo)"
 fi
 AM_CONDITIONAL(ENABLE_TRAINING, $have_cairo)
+
+if test "x$has_cpp11" = "xyes"
+then
+  CXXFLAGS="$CXXFLAGS -std=c++11"
+fi
 
 # ----------------------------------------
 # Final Tasks and Output

@@ -26,6 +26,25 @@
 #include <signal.h>
 #endif
 
+#if defined(_WIN32)
+#ifdef _MSC_VER
+#include "mathfix.h"
+#elif MINGW
+// workaround for stdlib.h with -std=c++11 for _splitpath and _MAX_FNAME
+#undef __STRICT_ANSI__
+#endif  // _MSC_VER
+#include <stdlib.h>
+#include <windows.h>
+#else
+#include <dirent.h>
+#include <libgen.h>
+#include <string.h>
+#endif  // _WIN32
+
+#if !defined(VERSION)
+#include "version.h"
+#endif
+
 #include "allheaders.h"
 
 #include "baseapi.h"
@@ -53,20 +72,6 @@
 #include "renderer.h"
 #include "strngs.h"
 #include "openclwrapper.h"
-
-#ifdef _WIN32
-#include <windows.h>
-#include <stdlib.h>
-#include "mathfix.h"
-#else
-#include <dirent.h>
-#include <libgen.h>
-#include <string.h>
-#endif
-
-#if !defined(VERSION)
-#include "version.h"
-#endif
 
 namespace tesseract {
 
@@ -368,7 +373,7 @@ void TessBaseAPI::GetAvailableLanguagesAsVector(
       }
       FindClose(handle);
     }
-#else
+#else  // _WIN32
     DIR *dir;
     struct dirent *dirent;
     char *dot;
@@ -1423,12 +1428,12 @@ char* TessBaseAPI::GetHOCRText(int page_number) {
         break;
     }
     hocr_str += ">";
-    const char *font_name;
     bool bold, italic, underlined, monospace, serif, smallcaps;
     int pointsize, font_id;
-    font_name = res_it->WordFontAttributes(&bold, &italic, &underlined,
-                                           &monospace, &serif, &smallcaps,
-                                           &pointsize, &font_id);
+    // TODO(rays): Is hOCR interested in the font name?
+    (void) res_it->WordFontAttributes(&bold, &italic, &underlined,
+                                      &monospace, &serif, &smallcaps,
+                                      &pointsize, &font_id);
     bool last_word_in_line = res_it->IsAtFinalElement(RIL_TEXTLINE, RIL_WORD);
     bool last_word_in_para = res_it->IsAtFinalElement(RIL_PARA, RIL_WORD);
     bool last_word_in_block = res_it->IsAtFinalElement(RIL_BLOCK, RIL_WORD);
@@ -2277,20 +2282,18 @@ void TessBaseAPI::AdaptToCharacter(const char *unichar_repr,
                                     tesseract_->classify_bln_numeric_mode,
                                     tesseract_->pix_binary());
   float threshold;
-  UNICHAR_ID best_class = 0;
   float best_rating = -100;
 
 
   // Classify to get a raw choice.
   BLOB_CHOICE_LIST choices;
-  tesseract_->AdaptiveClassifier(blob, &choices, NULL);
+  tesseract_->AdaptiveClassifier(blob, &choices);
   BLOB_CHOICE_IT choice_it;
   choice_it.set_to_list(&choices);
   for (choice_it.mark_cycle_pt(); !choice_it.cycled_list();
        choice_it.forward()) {
     if (choice_it.data()->rating() > best_rating) {
       best_rating = choice_it.data()->rating();
-      best_class = choice_it.data()->unichar_id();
     }
   }
 
@@ -2515,7 +2518,7 @@ void TessBaseAPI::RunAdaptiveClassifier(TBLOB* blob,
                                         float* ratings,
                                         int* num_matches_returned) {
   BLOB_CHOICE_LIST* choices = new BLOB_CHOICE_LIST;
-  tesseract_->AdaptiveClassifier(blob, choices, NULL);
+  tesseract_->AdaptiveClassifier(blob, choices);
   BLOB_CHOICE_IT choices_it(choices);
   int& index = *num_matches_returned;
   index = 0;
