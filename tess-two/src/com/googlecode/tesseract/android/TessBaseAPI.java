@@ -486,6 +486,56 @@ public class TessBaseAPI {
         return new ResultIterator(nativeResultIterator);
     }
     
+	/**
+	 * 
+	 * Make a HTML-formatted string with hOCR markup from the internal data
+	 * structures.  
+	 * GetHOCRText STL removed from original patch submission and refactored by
+	 * rays.
+	 * <b>Warning</b> make sure call {@link #setInputName} before this method
+	 * @param page is 0-based but will appear in the output as 1-based. 
+	 * @return HTML-formatted string with hOCR markup
+	 */
+    public String getHOCRText(int page){
+    	return nativeGetHOCRText(page);
+    }
+    
+    /**
+     * Set the name of the input file. Needed only for training and
+     * loading a UNLV zone file.
+     *  @param name input file name
+     */
+    public void setInputName(String name){
+    	nativeSetInputName(name);
+    } 
+    
+    /** Set the name of the output files. 
+     * Needed only for debugging. 
+     * @param name output file name
+     */
+    public void setOutputName(String name){
+    	nativeSetOutputName(name);
+    } 
+    
+    /**
+     * Read a "config" file containing a set of parameter name, value pairs.
+     * Searches the standard places: <i>tessdata/configs, tessdata/tessconfigs</i>
+     * and also accepts a relative or absolute path name.
+     * @param filename the configuration file name, without path, should be place in <b>tessdata/configs, tessdata/tessconfigs</b>
+     */
+    public void ReadConfigFile(String filename){
+    	nativeReadConfigFile(filename);
+    }
+    
+    /**
+     * The recognized text is returned which is coded
+     * as a UTF8 box file.
+     * @param page is a 0-base page index that will appear in the box file.
+     */
+    public String getBoxText(int page){
+    	return nativeGetBoxText(page);
+    }
+
     // ******************
     // * Native methods *
     // ******************
@@ -543,4 +593,14 @@ public class TessBaseAPI {
     private native int nativeGetWords();
 
     private native int nativeGetResultIterator();
+    
+    private native String nativeGetBoxText(int page_number);
+    
+    private native String nativeGetHOCRText(int page_number);
+    
+    private native void nativeSetInputName(String name);
+    
+    private native void nativeSetOutputName(String name);
+    
+    private native void nativeReadConfigFile(String fileName);
 }

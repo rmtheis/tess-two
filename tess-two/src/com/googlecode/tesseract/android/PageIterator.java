@@ -60,6 +60,16 @@ public class PageIterator {
         return nativeNext(mNativePageIterator, level);
     }
 
+    /**
+     * get bounding box x,y,w,h
+     * @param level
+     * @return
+     */
+    public int[] getBoundingBox(int level){
+    	return nativeBoundingBox(mNativePageIterator, level);
+    }
+    
     private static native void nativeBegin(int nativeIterator);
     private static native boolean nativeNext(int nativeIterator, int level);
+    private static native int[] nativeBoundingBox(int nativeIterator, int level);
 }
