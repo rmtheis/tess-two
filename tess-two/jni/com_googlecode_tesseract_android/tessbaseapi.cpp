@@ -422,6 +422,60 @@ jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetResultIterator(J
   return (jint) nat->api.GetIterator();
 }
 
+jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetHOCRText(JNIEnv *env,
+                                                                            jobject thiz, jint page) {
+
+  native_data_t *nat = get_native_data(env, thiz);
+
+  char *text = nat->api.GetHOCRText(page);
+
+  jstring result = env->NewStringUTF(text);
+
+  free(text);
+
+  return result;
+}
+
+jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetBoxText(JNIEnv *env,
+                                                                            jobject thiz, jint page) {
+
+  native_data_t *nat = get_native_data(env, thiz);
+
+  char *text = nat->api.GetBoxText(page);
+
+  jstring result = env->NewStringUTF(text);
+
+  free(text);
+
+  return result;
+}
+
+void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetInputName(JNIEnv *env,
+                                                                             jobject thiz,
+                                                                             jstring name) {  
+  native_data_t *nat = get_native_data(env, thiz);
+  const char *c_name = env->GetStringUTFChars(name, NULL);
+  nat->api.SetInputName(c_name);
+  env->ReleaseStringUTFChars(name, c_name);
+} 
+
+void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetOutputName(JNIEnv *env,
+                                                                             jobject thiz,
+                                                                             jstring name) {
+  native_data_t *nat = get_native_data(env, thiz);
+  const char *c_name = env->GetStringUTFChars(name, NULL);
+  nat->api.SetOutputName(c_name);
+  env->ReleaseStringUTFChars(name, c_name);
+} 
+
+void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeReadConfigFile(JNIEnv *env,
+                                                                             jobject thiz,
+                                                                             jstring fileName) {
+  native_data_t *nat = get_native_data(env, thiz);
+  const char *c_file_name = env->GetStringUTFChars(fileName, NULL);
+  nat->api.ReadConfigFile(c_file_name);
+  env->ReleaseStringUTFChars(fileName, c_file_name);
+} 
 #ifdef __cplusplus
 }
 #endif
