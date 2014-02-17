@@ -486,54 +486,54 @@ public class TessBaseAPI {
         return new ResultIterator(nativeResultIterator);
     }
     
-	/**
-	 * 
-	 * Make a HTML-formatted string with hOCR markup from the internal data
-	 * structures.  
-	 * GetHOCRText STL removed from original patch submission and refactored by
-	 * rays.
-	 * <b>Warning</b> make sure call {@link #setInputName} before this method
-	 * @param page is 0-based but will appear in the output as 1-based. 
-	 * @return HTML-formatted string with hOCR markup
-	 */
+    /**
+     * Make a HTML-formatted string with hOCR markup from the internal data
+     * structures.  
+     * 
+     * @param page is 0-based but will appear in the output as 1-based. 
+     * @return HTML-formatted string with hOCR markup
+     */
     public String getHOCRText(int page){
-    	return nativeGetHOCRText(page);
+        return nativeGetHOCRText(page);
     }
     
     /**
      * Set the name of the input file. Needed only for training and
-     * loading a UNLV zone file.
-     *  @param name input file name
+     * reading a UNLV zone file.
+     * 
+     * @param name input file name
      */
     public void setInputName(String name){
-    	nativeSetInputName(name);
+        nativeSetInputName(name);
     } 
     
-    /** Set the name of the output files. 
+    /**
+     * Set the name of the output files. 
      * Needed only for debugging. 
      * @param name output file name
      */
     public void setOutputName(String name){
-    	nativeSetOutputName(name);
+        nativeSetOutputName(name);
     } 
     
     /**
-     * Read a "config" file containing a set of parameter name, value pairs.
-     * Searches the standard places: <i>tessdata/configs, tessdata/tessconfigs</i>
-     * and also accepts a relative or absolute path name.
-     * @param filename the configuration file name, without path, should be place in <b>tessdata/configs, tessdata/tessconfigs</b>
+     * Read a "config" file containing a set of variable, value pairs.
+     * Searches the standard places: <i>tessdata/configs, tessdata/tessconfigs</i>.
+     * 
+     * @param filename the configuration filename, without path
      */
     public void ReadConfigFile(String filename){
-    	nativeReadConfigFile(filename);
+        nativeReadConfigFile(filename);
     }
     
     /**
-     * The recognized text is returned which is coded
-     * as a UTF8 box file.
-     * @param page is a 0-base page index that will appear in the box file.
+     * The recognized text is returned as coded in the same format as a UTF8 
+     * box file used in training.
+     * 
+     * @param page is a 0-based page index that will appear in the box file.
      */
     public String getBoxText(int page){
-    	return nativeGetBoxText(page);
+        return nativeGetBoxText(page);
     }
 
     // ******************

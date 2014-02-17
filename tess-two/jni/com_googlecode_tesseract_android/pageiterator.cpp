@@ -46,7 +46,7 @@ jintArray Java_com_googlecode_tesseract_android_PageIterator_nativeBoundingBox(J
   int size = 4;
   jintArray result = env->NewIntArray(size);
 
-  LOG_ASSERT((result != NULL), "Could not create Java confidence array!");
+  LOG_ASSERT((result != NULL), "Could not create Java bounding box array!");
   
   PageIterator *pageIterator = (PageIterator *) nativePageIterator;
   PageIteratorLevel enumLevel = (PageIteratorLevel) level;
@@ -61,7 +61,7 @@ jintArray Java_com_googlecode_tesseract_android_PageIterator_nativeBoundingBox(J
   fill[3] = y2;
  
   env->SetIntArrayRegion(result, 0, size, fill);
- return result;
+  return result;
 }
 
 #ifdef __cplusplus
