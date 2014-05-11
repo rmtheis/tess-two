@@ -43,6 +43,7 @@
 #include "degradeimage.h"
 #include "errcode.h"
 #include "fileio.h"
+#include "helpers.h"
 #include "normstrngs.h"
 #include "stringrenderer.h"
 #include "tlog.h"
@@ -54,6 +55,9 @@ using std::make_pair;
 using std::map;
 using std::pair;
 #endif
+
+// A number with which to initialize the random number generator.
+const int kRandomSeed = 0x18273645;
 
 // The text input file.
 STRING_PARAM_FLAG(text, "", "File name of text input to process");
@@ -116,6 +120,9 @@ BOOL_PARAM_FLAG(find_fonts, false,
 BOOL_PARAM_FLAG(render_per_font, true,
                 "If find_fonts==true, render each font to its own image. "
                 "Image filenames are of the form output_name.font_name.tif");
+DOUBLE_PARAM_FLAG(min_coverage, 1.0,
+                  "If find_fonts==true, the minimum coverage the font has of "
+                  "the characters in the text file to include it, between 0 and 1.");
 
 BOOL_PARAM_FLAG(list_available_fonts, false, "List available fonts and quit.");
 
@@ -356,7 +363,8 @@ bool MakeIndividualGlyphs(Pix* pix,
                                          FLAGS_glyph_num_border_pixels_to_pad,
                                          0);
     if (!pix_glyph_sq_pad) {
-      tprintf("ERROR: MakeIndividualGlyphs(): Failed to zero-pad, at i=%d\n", i);
+      tprintf("ERROR: MakeIndividualGlyphs(): Failed to zero-pad, at i=%d\n",
+              i);
       continue;
     }
     // Write out
@@ -531,6 +539,8 @@ int main(int argc, char** argv) {
   vector<float> page_rotation;
   const char* to_render_utf8 = src_utf8.c_str();
 
+  tesseract::TRand randomizer;
+  randomizer.set_seed(kRandomSeed);
   // We use a two pass mechanism to rotate images in both direction.
   // The first pass(0) will rotate the images in random directions and
   // the second pass(1) will mirror those rotations.
@@ -542,7 +552,8 @@ int main(int argc, char** argv) {
       tlog(1, "Starting page %d\n", im);
       Pix* pix = NULL;
       if (FLAGS_find_fonts) {
-        offset += render.RenderAllFontsToImage(to_render_utf8 + offset,
+        offset += render.RenderAllFontsToImage(FLAGS_min_coverage,
+                                               to_render_utf8 + offset,
                                                strlen(to_render_utf8 + offset),
                                                &font_used, &pix);
       } else {
@@ -556,7 +567,7 @@ int main(int argc, char** argv) {
           rotation = -1 * page_rotation[page_num];
         }
         if (FLAGS_degrade_image) {
-          pix = DegradeImage(pix, FLAGS_exposure, &rotation);
+          pix = DegradeImage(pix, FLAGS_exposure, &randomizer, &rotation);
         }
         render.RotatePageBoxes(rotation);
 
