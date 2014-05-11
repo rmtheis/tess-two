@@ -26,6 +26,8 @@
 #include "helpers.h"
 #include "tprintf.h"
 
+#ifndef GRAPHICS_DISABLED
+
 namespace tesseract {
 
 WordFeature::WordFeature() : x_(0), y_(0), dir_(0) {
@@ -454,3 +456,5 @@ const ImageData* DocumentCache::GetPageBySerial(int serial) const {
 }
 
 }  // namespace tesseract.
+
+#endif // GRAPHICS_DISABLED
