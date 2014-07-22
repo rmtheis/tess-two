@@ -73,9 +73,9 @@ typedef enum TessPageSegMode       { PSM_OSD_ONLY, PSM_AUTO_OSD, PSM_AUTO_ONLY, 
                                      PSM_SINGLE_BLOCK, PSM_SINGLE_LINE, PSM_SINGLE_WORD, PSM_CIRCLE_WORD, PSM_SINGLE_CHAR, PSM_SPARSE_TEXT,
                                      PSM_SPARSE_TEXT_OSD, PSM_COUNT } TessPageSegMode;
 typedef enum TessPageIteratorLevel { RIL_BLOCK, RIL_PARA, RIL_TEXTLINE, RIL_WORD, RIL_SYMBOL} TessPageIteratorLevel;
-typedef enum TessPolyBlockType     { PT_UNKNOWN, PT_FLOWING_TEXT, PT_HEADING_TEXT, PT_PULLOUT_TEXT, PT_TABLE, PT_VERTICAL_TEXT,
-                                     PT_CAPTION_TEXT, PT_FLOWING_IMAGE, PT_HEADING_IMAGE, PT_PULLOUT_IMAGE, PT_HORZ_LINE, PT_VERT_LINE,
-                                     PT_NOISE, PT_COUNT } TessPolyBlockType;
+typedef enum TessPolyBlockType     { PT_UNKNOWN, PT_FLOWING_TEXT, PT_HEADING_TEXT, PT_PULLOUT_TEXT, PT_EQUATION, PT_INLINE_EQUATION,
+                                     PT_TABLE, PT_VERTICAL_TEXT, PT_CAPTION_TEXT, PT_FLOWING_IMAGE, PT_HEADING_IMAGE,
+                                     PT_PULLOUT_IMAGE, PT_HORZ_LINE, PT_VERT_LINE, PT_NOISE, PT_COUNT } TessPolyBlockType;
 typedef enum TessOrientation       { ORIENTATION_PAGE_UP, ORIENTATION_PAGE_RIGHT, ORIENTATION_PAGE_DOWN, ORIENTATION_PAGE_LEFT } TessOrientation;
 typedef enum TessWritingDirection  { WRITING_DIRECTION_LEFT_TO_RIGHT, WRITING_DIRECTION_RIGHT_TO_LEFT, WRITING_DIRECTION_TOP_TO_BOTTOM } TessWritingDirection;
 typedef enum TessTextlineOrder     { TEXTLINE_ORDER_LEFT_TO_RIGHT, TEXTLINE_ORDER_RIGHT_TO_LEFT, TEXTLINE_ORDER_TOP_TO_BOTTOM } TessTextlineOrder;
@@ -98,11 +98,11 @@ TESS_API void  TESS_CALL TessDeleteBlockList(BLOCK_LIST* block_list);
 #endif
 
 /* Renderer API */
-TESS_API TessResultRenderer* TESS_CALL TessTextRendererCreate();
-TESS_API TessResultRenderer* TESS_CALL TessHOcrRendererCreate();
-TESS_API TessResultRenderer* TESS_CALL TessPDFRendererCreate(const char* datadir);
-TESS_API TessResultRenderer* TESS_CALL TessUnlvRendererCreate();
-TESS_API TessResultRenderer* TESS_CALL TessBoxTextRendererCreate();
+TESS_API TessResultRenderer* TESS_CALL TessTextRendererCreate(const char* outputbase);
+TESS_API TessResultRenderer* TESS_CALL TessHOcrRendererCreate(const char* outputbase);
+TESS_API TessResultRenderer* TESS_CALL TessPDFRendererCreate(const char* outputbase, const char* datadir);
+TESS_API TessResultRenderer* TESS_CALL TessUnlvRendererCreate(const char* outputbase);
+TESS_API TessResultRenderer* TESS_CALL TessBoxTextRendererCreate(const char* outputbase);
 
 TESS_API void TESS_CALL TessDeleteResultRenderer(TessResultRenderer* renderer);
 TESS_API void TESS_CALL TessResultRendererInsert(TessResultRenderer* renderer, TessResultRenderer* next);
@@ -110,11 +110,8 @@ TESS_API TessResultRenderer*
               TESS_CALL TessResultRendererNext(TessResultRenderer* renderer);
 TESS_API BOOL TESS_CALL TessResultRendererBeginDocument(TessResultRenderer* renderer, const char* title);
 TESS_API BOOL TESS_CALL TessResultRendererAddImage(TessResultRenderer* renderer, TessBaseAPI* api);
-TESS_API BOOL TESS_CALL TessResultRendererAddError(TessResultRenderer* renderer, TessBaseAPI* api);
 TESS_API BOOL TESS_CALL TessResultRendererEndDocument(TessResultRenderer* renderer);
-TESS_API BOOL TESS_CALL TessResultRendererGetOutput(TessResultRenderer* renderer, const char** data, int* data_len);
 
-TESS_API const char* TESS_CALL TessResultRendererTypename(TessResultRenderer* renderer);
 TESS_API const char* TESS_CALL TessResultRendererExtention(TessResultRenderer* renderer);
 TESS_API const char* TESS_CALL TessResultRendererTitle(TessResultRenderer* renderer);
 TESS_API int TESS_CALL TessResultRendererImageNum(TessResultRenderer* renderer);
@@ -194,7 +191,7 @@ TESS_API void  TESS_CALL TessBaseAPIClearAdaptiveClassifier(TessBaseAPI* handle)
 
 TESS_API void  TESS_CALL TessBaseAPISetImage(TessBaseAPI* handle, const unsigned char* imagedata, int width, int height,
                                              int bytes_per_pixel, int bytes_per_line);
-TESS_API void  TESS_CALL TessBaseAPISetImage2(TessBaseAPI* handle, const struct Pix* pix);
+TESS_API void  TESS_CALL TessBaseAPISetImage2(TessBaseAPI* handle, struct Pix* pix);
 
 TESS_API void TESS_CALL TessBaseAPISetSourceResolution(TessBaseAPI* handle, int ppi);
 
@@ -236,14 +233,10 @@ TESS_API TessPageIterator*
 
 TESS_API int   TESS_CALL TessBaseAPIRecognize(TessBaseAPI* handle, ETEXT_DESC* monitor);
 TESS_API int   TESS_CALL TessBaseAPIRecognizeForChopTest(TessBaseAPI* handle, ETEXT_DESC* monitor);
-TESS_API char* TESS_CALL TessBaseAPIProcessPages(TessBaseAPI* handle, const char* filename, const char* retry_config,
-                                                 int timeout_millisec);
-TESS_API BOOL TessBaseAPIProcessPages1(TessBaseAPI* handle,  const char* filename, const char* retry_config,
+TESS_API BOOL  TESS_CALL TessBaseAPIProcessPages(TessBaseAPI* handle,  const char* filename, const char* retry_config,
                                                  int timeout_millisec, TessResultRenderer* renderer);
-TESS_API char* TESS_CALL TessBaseAPIProcessPage(TessBaseAPI* handle, struct Pix* pix, int page_index, const char* filename,
-                                                const char* retry_config, int timeout_millisec);
-TESS_API BOOL TessBaseAPIProcessPage1(TessBaseAPI* handle, struct Pix* pix, int page_index, const char* filename,
-                                      const char* retry_config, int timeout_millisec, TessResultRenderer* renderer);
+TESS_API BOOL  TESS_CALL TessBaseAPIProcessPage(TessBaseAPI* handle, struct Pix* pix, int page_index, const char* filename,
+                                               const char* retry_config, int timeout_millisec, TessResultRenderer* renderer);
 
 TESS_API TessResultIterator*
                TESS_CALL TessBaseAPIGetIterator(TessBaseAPI* handle);
@@ -332,7 +325,7 @@ TESS_API struct Pix*
                TESS_CALL TessPageIteratorGetBinaryImage(const TessPageIterator* handle, TessPageIteratorLevel level);
 TESS_API struct Pix*
                TESS_CALL TessPageIteratorGetImage(const TessPageIterator* handle, TessPageIteratorLevel level, int padding,
-                                                  int* left, int* top);
+                                                  struct Pix* original_image, int* left, int* top);
 
 TESS_API BOOL  TESS_CALL TessPageIteratorBaseline(const TessPageIterator* handle, TessPageIteratorLevel level,
                                                   int* x1, int* y1, int* x2, int* y2);
@@ -356,7 +349,8 @@ TESS_API const TessChoiceIterator*
 TESS_API BOOL  TESS_CALL TessResultIteratorNext(TessResultIterator* handle, TessPageIteratorLevel level);
 TESS_API char* TESS_CALL TessResultIteratorGetUTF8Text(const TessResultIterator* handle, TessPageIteratorLevel level);
 TESS_API float TESS_CALL TessResultIteratorConfidence(const TessResultIterator* handle, TessPageIteratorLevel level);
-
+TESS_API const char*
+               TESS_CALL TessResultIteratorWordRecognitionLanguage(const TessResultIterator* handle);
 TESS_API const char*
                TESS_CALL TessResultIteratorWordFontAttributes(const TessResultIterator* handle, BOOL* is_bold, BOOL* is_italic,
                                                               BOOL* is_underlined, BOOL* is_monospace, BOOL* is_serif,
