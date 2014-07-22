@@ -224,7 +224,7 @@ public class TessBaseAPI {
      * @param datapath the parent directory of tessdata ending in a forward
      *            slash
      * @param language (optional) an ISO 639-3 string representing the language(s)
-     * @param mode the OCR engine mode to be set
+     * @param ocrEngineMode the OCR engine mode to be set
      * @return <code>true</code> on success
      */
     public boolean init(String datapath, String language, int ocrEngineMode) {
