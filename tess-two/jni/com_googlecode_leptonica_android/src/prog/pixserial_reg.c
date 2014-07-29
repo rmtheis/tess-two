@@ -71,8 +71,8 @@ L_REGPARAMS  *rp;
             /* Serialize to memory */
         pixSerializeToMemory(pixs, &data32, &size);
             /* Just for fun, write and read back from file */
-        l_binaryWrite("/tmp/array", "w", data32, size);
-        data32r = (l_uint32 *)l_binaryRead("/tmp/array", &size);
+        l_binaryWrite("/tmp/regout/array", "w", data32, size);
+        data32r = (l_uint32 *)l_binaryRead("/tmp/regout/array", &size);
             /* Deserialize */
         pixd = pixDeserializeFromMemory(data32r, size);
         regTestComparePix(rp, pixs, pixd);  /* i */
@@ -89,7 +89,7 @@ L_REGPARAMS  *rp;
         box = boxCreate(0, 0, L_MIN(150, w), L_MIN(150, h));
         pixt = pixClipRectangle(pixs, box, NULL);
         boxDestroy(&box);
-        snprintf(buf, sizeof(buf), "/tmp/pixs.%d.spix", rp->index + 1);
+        snprintf(buf, sizeof(buf), "/tmp/regout/pixs.%d.spix", rp->index + 1);
         pixWrite(buf, pixt, IFF_SPIX);
         regTestCheckFile(rp, buf);  /* nfiles + 2 * i */
         pixt2 = pixRead(buf);

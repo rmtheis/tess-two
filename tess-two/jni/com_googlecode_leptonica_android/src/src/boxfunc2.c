@@ -45,6 +45,7 @@
  *      Boxa statistics
  *           BOX             *boxaGetRankSize()
  *           BOX             *boxaGetMedian()
+ *           l_int32          boxaGetAverageSize()
  *
  *      Boxa array extraction
  *           l_int32          boxaExtractAsNuma()
@@ -1080,6 +1081,12 @@ l_int32  i, n, x, y, w, h;
  *              &ptab (<optional return> array of bottom locations vs. index)
  *              keepinvalid (1 to keep invalid boxes; 0 to remove them)
  *      Return: 0 if OK, 1 on error
+ *
+ *      Notes:
+ *          (1) For invalid boxes, this stores the values
+ *              (left, top, right, bot) = (0, 0, -1, -1)
+ *              If you plan to do a least square fit, you must use
+ *              @keepinvalid = 0.
  */
 l_int32
 boxaExtractAsPta(BOXA    *boxa,
@@ -1203,6 +1210,44 @@ boxaGetMedian(BOXA  *boxa)
         return (BOX *)ERROR_PTR("boxa is empty", procName, NULL);
 
     return boxaGetRankSize(boxa, 0.5);
+}
+
+
+/*!
+ *  boxaGetAverageSize()
+ *
+ *      Input:  boxa
+ *              &w  (<optional return> average width)
+ *              &h  (<optional return> average height)
+ *      Return: 0 if OK, 1 on error or if the boxa is empty
+ */
+l_int32
+boxaGetAverageSize(BOXA       *boxa,
+                   l_float32  *pw,
+                   l_float32  *ph)
+{
+l_int32    i, n, bw, bh;
+l_float32  sumw, sumh;
+
+    PROCNAME("boxaGetAverageSize");
+
+    if (pw) *pw = 0.0;
+    if (ph) *ph = 0.0;
+    if (!boxa)
+        return ERROR_INT("boxa not defined", procName, 1);
+    if ((n = boxaGetCount(boxa)) == 0)
+        return ERROR_INT("boxa is empty", procName, 1);
+
+    sumw = sumh = 0.0;
+    for (i = 0; i < n; i++) {
+        boxaGetBoxGeometry(boxa, i, NULL, NULL, &bw, &bh);
+        sumw += bw;
+        sumh += bh;
+    }
+
+    if (pw) *pw = sumw / n;
+    if (ph) *ph = sumh / n;
+    return 0;
 }
 
 

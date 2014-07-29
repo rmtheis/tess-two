@@ -37,7 +37,6 @@
 int main(int    argc,
          char **argv)
 {
-l_int32      d;
 PIX         *pixs, *pixc, *pixr, *pixg, *pixb, *pixsg, *pixsm, *pixd;
 PIXA        *pixa;
 static char  mainName[] = "livre_adapt";

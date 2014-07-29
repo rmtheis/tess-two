@@ -37,8 +37,8 @@ int main(int    argc,
 {
 char        *str;
 l_uint8     *data1, *data2;
-l_int32      i, n, start, end, same1, same2;
-size_t       size1, size2;
+l_int32      i, n, same1, same2;
+size_t       size1, size2, slice, total, start, end;
 FILE        *fp;
 L_DNA       *da;
 SARRAY      *sa;
@@ -47,6 +47,8 @@ static char  mainName[] = "byteatest";
 
     if (argc != 1)
         return ERROR_INT("syntax: byteatest", mainName, 1);
+
+    lept_mkdir("bytea");
 
         /* Test basic init, join and split */
     lba1 = l_byteaInitFromFile("feyn.tif");
@@ -58,10 +60,10 @@ static char  mainName[] = "byteatest";
     lba4 = l_byteaInitFromMem(lba1->data + size1, size2);
 
         /* Split by hand */
-    l_binaryWrite("junk1", "w", lba3->data, lba3->size);
-    l_binaryWrite("junk2", "w", lba4->data, lba4->size);
-    filesAreIdentical("feyn.tif", "junk1", &same1);
-    filesAreIdentical("test24.jpg", "junk2", &same2);
+    l_binaryWrite("/tmp/bytea/junk1.dat", "w", lba3->data, lba3->size);
+    l_binaryWrite("/tmp/bytea/junk2.dat", "w", lba4->data, lba4->size);
+    filesAreIdentical("feyn.tif", "/tmp/bytea/junk1.dat", &same1);
+    filesAreIdentical("test24.jpg", "/tmp/bytea/junk2.dat", &same2);
     if (same1 && same2)
         fprintf(stderr, "OK for join file\n");
     else
@@ -69,10 +71,10 @@ static char  mainName[] = "byteatest";
 
         /* Split by function */
     l_byteaSplit(lba1, size1, &lba5);
-    l_binaryWrite("junk3", "w", lba1->data, lba1->size);
-    l_binaryWrite("junk4", "w", lba5->data, lba5->size);
-    filesAreIdentical("feyn.tif", "junk3", &same1);
-    filesAreIdentical("test24.jpg", "junk4", &same2);
+    l_binaryWrite("/tmp/bytea/junk3.dat", "w", lba1->data, lba1->size);
+    l_binaryWrite("/tmp/bytea/junk4.dat", "w", lba5->data, lba5->size);
+    filesAreIdentical("feyn.tif", "/tmp/bytea/junk3.dat", &same1);
+    filesAreIdentical("test24.jpg", "/tmp/bytea/junk4.dat", &same2);
     if (same1 && same2)
         fprintf(stderr, "OK for split file\n");
     else
@@ -83,8 +85,8 @@ static char  mainName[] = "byteatest";
     l_byteaDestroy(&lba4);
     l_byteaDestroy(&lba5);
 
-        /* Test appending */
-    data1 = l_binaryRead("whatever10.c", &size1);
+        /* Test appending with strings */
+    data1 = l_binaryRead("kernel_reg.c", &size1);
     sa = sarrayCreateLinesFromString((char *)data1, 1);
     lba1 = l_byteaCreate(0);
     n = sarrayGetCount(sa);
@@ -94,34 +96,66 @@ static char  mainName[] = "byteatest";
         l_byteaAppendString(lba1, (char *)"\n");
     }
     data2 = l_byteaGetData(lba1, &size2);
-    l_binaryWrite("junk1.txt", "w", data2, size2);
-    filesAreIdentical("whatever10.c", "junk1.txt", &same1);
+    l_binaryWrite("/tmp/bytea/junk5.dat", "w", data2, size2);
+    filesAreIdentical("kernel_reg.c", "/tmp/bytea/junk5.dat", &same1);
     if (same1)
-        fprintf(stderr, "OK for appended file\n");
+        fprintf(stderr, "OK for appended string data\n");
     else
-        fprintf(stderr, "Error: appended file is different!\n");
+        fprintf(stderr, "Error: appended string data is different!\n");
     lept_free(data1);
     sarrayDestroy(&sa);
     l_byteaDestroy(&lba1);
 
+        /* Test appending with binary data */
+    slice = 1000;
+    total = nbytesInFile("breviar-a38.jp2");
+    lba1 = l_byteaCreate(100);
+    n = 1 + total / slice;
+    fprintf(stderr, "******************************************************\n");
+    fprintf(stderr, "* Testing error checking: ignore two reported errors *\n");
+    for (i = 0, start = 0; i <= n; i++, start += slice) {
+         data1 = l_binaryReadSelect("breviar-a38.jp2", start, slice, &size1);
+         l_byteaAppendData(lba1, data1, size1);
+         lept_free(data1);
+    }
+    fprintf(stderr, "******************************************************\n");
+    data2 = l_byteaGetData(lba1, &size2);
+    l_binaryWrite("/tmp/bytea/junk6.dat", "w", data2, size2);
+    filesAreIdentical("breviar-a38.jp2", "/tmp/bytea/junk6.dat", &same1);
+    if (same1)
+        fprintf(stderr, "OK for appended binary data\n");
+    else
+        fprintf(stderr, "Error: appended binary data is different!\n");
+    l_byteaDestroy(&lba1);
+
         /* Test search */
-    convertToPdf("test24.jpg", L_JPEG_ENCODE, 0, "junk3.pdf",
+    convertToPdf("test24.jpg", L_JPEG_ENCODE, 0, "/tmp/bytea/junk7.pdf",
                  0, 0, 100, NULL, NULL, 0);
-    lba1 = l_byteaInitFromFile("junk3.pdf");
+    lba1 = l_byteaInitFromFile("/tmp/bytea/junk7.pdf");
     l_byteaFindEachSequence(lba1, (l_uint8 *)" 0 obj\n", 7, &da);
-    l_dnaWriteStream(stderr, da);
+    /* l_dnaWriteStream(stderr, da); */
+    n = l_dnaGetCount(da);
+    if (n == 6)
+        fprintf(stderr, "OK for search: found 6 instances\n");
+    else
+        fprintf(stderr, "Error in search: found %d instances, not 6\n", n);
     l_byteaDestroy(&lba1);
     l_dnaDestroy(&da);
 
         /* Test write to file */
     lba1 = l_byteaInitFromFile("feyn.tif");
-    fp = lept_fopen("junk5", "wb");
+    fp = lept_fopen("/tmp/bytea/junk8.dat", "wb");
     size1 = l_byteaGetSize(lba1);
     for (start = 0; start < size1; start += 1000) {
          end = L_MIN(start + 1000 - 1, size1 - 1);
          l_byteaWriteStream(fp, lba1, start, end);
     }
     lept_fclose(fp);
+    filesAreIdentical("feyn.tif", "/tmp/bytea/junk8.dat", &same1);
+    if (same1)
+        fprintf(stderr, "OK for written binary data\n");
+    else
+        fprintf(stderr, "Error: written binary data is different!\n");
     l_byteaDestroy(&lba1);
 
     return 0;

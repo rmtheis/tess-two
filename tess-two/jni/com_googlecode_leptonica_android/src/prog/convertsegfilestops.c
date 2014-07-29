@@ -77,22 +77,26 @@ int main(int    argc,
          char **argv)
 {
 char      *pagedir, *pagestr, *maskdir, *maskstr, *fileout;
-l_int32    threshold, numpre, numpost, maxnum;
+l_int32    threshold, page_numpre, mask_numpre, numpost, maxnum;
 l_float32  textscale, imagescale;
 
-    if (argc != 12) {
+    if (argc != 13) {
 	fprintf(stderr,
-            " Syntax: convertsegfilestops pagedir pagestr maskdir maskstr \\ \n"
-            "                             numpre numpost maxnum \\ \n"
-            "                             textscale imagescale thresh fileout\n"
+            " Syntax: convertsegfilestops pagedir pagestr page_numpre \\ \n"
+            "                             maskdir maskstr mask_numpre \\ \n"
+            "                             numpost maxnum textscale \\ \n"
+            "                             imagescale thresh fileout\n"
             "     where\n"
             "         pagedir:  Input directory for page image files\n"
             "         pagestr:  Substring for matching; use 'allfiles' to\n"
             "                   convert all files in the page directory\n"
+            "         page_numpre:  Number of characters in page name "
+                      "before number\n"
             "         maskdir:  Input directory for mask image files\n"
             "         maskstr:  Substring for matching; use 'allfiles' to\n"
             "                   convert all files in the mask directory\n"
-            "         numpre:  Number of characters in name before number\n"
+            "         mask_numpre:  Number of characters in mask name "
+                      "before number\n"
             "         numpost:  Number of characters in name after number\n"
             "         maxnum:  Only consider page numbers up to this value\n"
             "         textscale:  Scale of text output relative to pixs\n"
@@ -105,24 +109,25 @@ l_float32  textscale, imagescale;
 
     pagedir = argv[1];
     pagestr = argv[2];
-    maskdir = argv[3];
-    maskstr = argv[4];
-    numpre = atoi(argv[5]);
-    numpost = atoi(argv[6]);
-    maxnum = atoi(argv[7]);
-    textscale = atof(argv[8]);
-    imagescale = atof(argv[9]);
-    threshold = atoi(argv[10]);
-    fileout = argv[11];
+    page_numpre = atoi(argv[3]);
+    maskdir = argv[4];
+    maskstr = argv[5];
+    mask_numpre = atoi(argv[6]);
+    numpost = atoi(argv[7]);
+    maxnum = atoi(argv[8]);
+    textscale = atof(argv[9]);
+    imagescale = atof(argv[10]);
+    threshold = atoi(argv[11]);
+    fileout = argv[12];
 
     if (!strcmp(pagestr, "allfiles"))
         pagestr = NULL;
     if (!strcmp(maskstr, "allfiles"))
         maskstr = NULL;
 
-    return convertSegmentedPagesToPS(pagedir, pagestr, maskdir, maskstr,
-                                     numpre, numpost, maxnum, textscale,
+    return convertSegmentedPagesToPS(pagedir, pagestr, page_numpre,
+                                     maskdir, maskstr, mask_numpre,
+                                     numpost, maxnum, textscale,
                                      imagescale, threshold, fileout);
 }
-
 

@@ -64,13 +64,13 @@ L_REGPARAMS  *rp;
         /* Conversion to Numa; I/O for Dna */
     na = l_dnaConvertToNuma(da1);
     da2 = numaConvertToDna(na);
-    l_dnaWrite("/tmp/dna1.da", da1);
-    l_dnaWrite("/tmp/dna2.da", da2);
-    da3 = l_dnaRead("/tmp/dna2.da");
-    l_dnaWrite("/tmp/dna3.da", da3);
-    regTestCheckFile(rp, "/tmp/dna1.da");  /* 0 */
-    regTestCheckFile(rp, "/tmp/dna2.da");  /* 1 */
-    regTestCheckFile(rp, "/tmp/dna3.da");  /* 2 */
+    l_dnaWrite("/tmp/regout/dna1.da", da1);
+    l_dnaWrite("/tmp/regout/dna2.da", da2);
+    da3 = l_dnaRead("/tmp/regout/dna2.da");
+    l_dnaWrite("/tmp/regout/dna3.da", da3);
+    regTestCheckFile(rp, "/tmp/regout/dna1.da");  /* 0 */
+    regTestCheckFile(rp, "/tmp/regout/dna2.da");  /* 1 */
+    regTestCheckFile(rp, "/tmp/regout/dna3.da");  /* 2 */
     regTestCompareFiles(rp, 1, 2);  /* 3 */
 
         /* I/O for Dnaa */
@@ -78,11 +78,11 @@ L_REGPARAMS  *rp;
     l_dnaaAddDna(daa1, da1, L_INSERT);
     l_dnaaAddDna(daa1, da2, L_INSERT);
     l_dnaaAddDna(daa1, da3, L_INSERT);
-    l_dnaaWrite("/tmp/dnaa1.daa", daa1);
-    daa2 = l_dnaaRead("/tmp/dnaa1.daa");
-    l_dnaaWrite("/tmp/dnaa2.daa", daa2);
-    regTestCheckFile(rp, "/tmp/dnaa1.daa");  /* 4 */
-    regTestCheckFile(rp, "/tmp/dnaa2.daa");  /* 5 */
+    l_dnaaWrite("/tmp/regout/dnaa1.daa", daa1);
+    daa2 = l_dnaaRead("/tmp/regout/dnaa1.daa");
+    l_dnaaWrite("/tmp/regout/dnaa2.daa", daa2);
+    regTestCheckFile(rp, "/tmp/regout/dnaa1.daa");  /* 4 */
+    regTestCheckFile(rp, "/tmp/regout/dnaa2.daa");  /* 5 */
     regTestCompareFiles(rp, 4, 5);  /* 6 */
     l_dnaaDestroy(&daa1);
     l_dnaaDestroy(&daa2);
@@ -91,7 +91,7 @@ L_REGPARAMS  *rp;
     nahisto = numaMakeHistogramClipped(na, 12, 2000);
     nbins = numaGetCount(nahisto);
     nax = numaMakeSequence(0, 1, nbins);
-    gplot = gplotCreate("/tmp/historoot", GPLOT_PNG, "Histo example",
+    gplot = gplotCreate("/tmp/regout/historoot", GPLOT_PNG, "Histo example",
                         "i", "histo[i]");
     gplotAddPlot(gplot, nax, nahisto, GPLOT_LINES, "sine");
     gplotMakeOutput(gplot);
@@ -100,7 +100,7 @@ L_REGPARAMS  *rp;
 #else
     Sleep(1000);
 #endif  /* _WIN32 */
-    regTestCheckFile(rp, "/tmp/historoot.png");  /* 7 */
+    regTestCheckFile(rp, "/tmp/regout/historoot.png");  /* 7 */
     gplotDestroy(&gplot);
     numaDestroy(&na);
     numaDestroy(&nax);
@@ -110,8 +110,8 @@ L_REGPARAMS  *rp;
     da4 = l_dnaCreate(25);
     for (i = 0; i < 1000; i++)
         l_dnaAddNumber(da4, 1928374 * i);
-    l_dnaWrite("/tmp/dna4.da", da4);
-    da5 = l_dnaRead("/tmp/dna4.da");
+    l_dnaWrite("/tmp/regout/dna4.da", da4);
+    da5 = l_dnaRead("/tmp/regout/dna4.da");
     sum = 0;
     for (i = 0; i < 1000; i++) {
         l_dnaGetIValue(da5, i, &ival);

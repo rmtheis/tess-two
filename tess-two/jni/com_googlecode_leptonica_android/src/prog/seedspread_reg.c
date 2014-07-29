@@ -154,7 +154,7 @@ L_REGPARAMS  *rp;
 
     pixd = pixaDisplay(pixa, 0, 0);
     regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 6 */
-    pixDisplayWithTitle(pixc, 720, 100, "Final", rp->display);
+    pixDisplayWithTitle(pixd, 720, 100, "Final", rp->display);
 
     pixaDestroy(&pixa);
     pixDestroy(&pixd);

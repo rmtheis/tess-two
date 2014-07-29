@@ -46,6 +46,8 @@ static char  mainName[] = "quadtreetest";
     if (argc != 1)
 	return ERROR_INT(" Syntax:  quadtreetest", mainName, 1);
 
+    lept_mkdir("quad");
+
         /* Test generation of quadtree regions. */
     baa = boxaaQuadtreeRegions(1000, 500, 3);
     boxaaWriteStream(stderr, baa);
@@ -63,28 +65,28 @@ static char  mainName[] = "quadtreetest";
     pixg = pixConvertTo8(pixs, 0);
 #endif
     pixQuadtreeMean(pixg, 8, NULL, &fpixam);
-    pixt1 = fpixaDisplayQuadtree(fpixam, 4);
+    pixt1 = fpixaDisplayQuadtree(fpixam, 4, "./fonts");
     pixDisplay(pixt1, 100, 0);
-    pixWrite("/tmp/quadtree1.png", pixt1, IFF_PNG);
+    pixWrite("/tmp/quad/tree1.png", pixt1, IFF_PNG);
     pixQuadtreeVariance(pixg, 8, NULL, NULL, &fpixav, &fpixarv);
-    pixt2 = fpixaDisplayQuadtree(fpixav, 4);
+    pixt2 = fpixaDisplayQuadtree(fpixav, 4, "./fonts");
     pixDisplay(pixt2, 100, 200);
-    pixWrite("/tmp/quadtree2.png", pixt2, IFF_PNG);
-    pixt3 = fpixaDisplayQuadtree(fpixarv, 4);
+    pixWrite("/tmp/quad/tree2.png", pixt2, IFF_PNG);
+    pixt3 = fpixaDisplayQuadtree(fpixarv, 4, "./fonts");
     pixDisplay(pixt3, 100, 400);
-    pixWrite("/tmp/quadtree3.png", pixt3, IFF_PNG);
+    pixWrite("/tmp/quad/tree3.png", pixt3, IFF_PNG);
 
         /* Compare with fixed-size tiling at a resolution corresponding
          * to the deepest level of the quadtree above */
     pixt4 = pixGetAverageTiled(pixg, 5, 6, L_MEAN_ABSVAL);
     pixt5 = pixExpandReplicate(pixt4, 4);
-    pixWrite("/tmp/quadtree4.png", pixt5, IFF_PNG);
+    pixWrite("/tmp/quad/tree4.png", pixt5, IFF_PNG);
     pixDisplay(pixt5, 800, 0);
     pixDestroy(&pixt4);
     pixDestroy(&pixt5);
     pixt4 = pixGetAverageTiled(pixg, 5, 6, L_STANDARD_DEVIATION);
     pixt5 = pixExpandReplicate(pixt4, 4);
-    pixWrite("/tmp/quadtree5.png", pixt5, IFF_PNG);
+    pixWrite("/tmp/quad/tree5.png", pixt5, IFF_PNG);
     pixDisplay(pixt5, 800, 400);
 
         /* Test quadtree parent/child access */

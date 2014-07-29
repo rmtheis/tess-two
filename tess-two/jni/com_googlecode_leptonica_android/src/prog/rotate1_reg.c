@@ -114,12 +114,10 @@ RotateTest(PIX          *pixs,
 l_int32   w, h, d, i, outformat;
 PIX      *pixt, *pixd;
 PIXA     *pixa;
-PIXCMAP  *cmap;
 
     pixa = pixaCreate(0);
     pixGetDimensions(pixs, &w, &h, &d);
     outformat = (d == 8 || d == 32) ? IFF_JFIF_JPEG : IFF_PNG;
-    cmap = pixGetColormap(pixs);
     pixd = pixRotate(pixs, ANGLE1, L_ROTATE_SHEAR, L_BRING_IN_WHITE, w, h);
     for (i = 1; i < NTIMES; i++) {
         if ((i % MODSIZE) == 0) {

@@ -57,63 +57,65 @@ am__EXEEXT_1 = convertfilestopdf$(EXEEXT) convertfilestops$(EXEEXT) \
 	splitimage2pdf$(EXEEXT) xtractprotos$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 am__EXEEXT_2 = alphaops_reg$(EXEEXT) alphaxform_reg$(EXEEXT) \
-	binarize_reg$(EXEEXT) blackwhite_reg$(EXEEXT) \
-	blend3_reg$(EXEEXT) blend4_reg$(EXEEXT) \
-	colorcontent_reg$(EXEEXT) coloring_reg$(EXEEXT) \
-	colormask_reg$(EXEEXT) colorquant_reg$(EXEEXT) \
-	colorspace_reg$(EXEEXT) compare_reg$(EXEEXT) \
-	convolve_reg$(EXEEXT) dewarp_reg$(EXEEXT) dna_reg$(EXEEXT) \
-	dwamorph1_reg$(EXEEXT) enhance_reg$(EXEEXT) \
-	findcorners_reg$(EXEEXT) findpattern_reg$(EXEEXT) \
-	fpix1_reg$(EXEEXT) fpix2_reg$(EXEEXT) graymorph2_reg$(EXEEXT) \
-	hardlight_reg$(EXEEXT) insert_reg$(EXEEXT) \
-	ioformats_reg$(EXEEXT) jpegio_reg$(EXEEXT) kernel_reg$(EXEEXT) \
-	label_reg$(EXEEXT) maze_reg$(EXEEXT) multitype_reg$(EXEEXT) \
-	nearline_reg$(EXEEXT) newspaper_reg$(EXEEXT) \
-	overlap_reg$(EXEEXT) paint_reg$(EXEEXT) paintmask_reg$(EXEEXT) \
-	pdfseg_reg$(EXEEXT) pixa2_reg$(EXEEXT) pixserial_reg$(EXEEXT) \
-	pngio_reg$(EXEEXT) projection_reg$(EXEEXT) psio_reg$(EXEEXT) \
-	psioseg_reg$(EXEEXT) rankbin_reg$(EXEEXT) \
-	rankhisto_reg$(EXEEXT) rasteropip_reg$(EXEEXT) \
-	rotate1_reg$(EXEEXT) rotate2_reg$(EXEEXT) \
-	rotateorth_reg$(EXEEXT) scale_reg$(EXEEXT) \
-	seedspread_reg$(EXEEXT) selio_reg$(EXEEXT) shear1_reg$(EXEEXT) \
-	shear2_reg$(EXEEXT) skew_reg$(EXEEXT) splitcomp_reg$(EXEEXT) \
-	subpixel_reg$(EXEEXT) threshnorm_reg$(EXEEXT) \
-	translate_reg$(EXEEXT) warper_reg$(EXEEXT) \
-	writetext_reg$(EXEEXT) xformbox_reg$(EXEEXT)
+	bilateral2_reg$(EXEEXT) binarize_reg$(EXEEXT) \
+	blackwhite_reg$(EXEEXT) blend3_reg$(EXEEXT) \
+	blend4_reg$(EXEEXT) colorcontent_reg$(EXEEXT) \
+	coloring_reg$(EXEEXT) colormask_reg$(EXEEXT) \
+	colorquant_reg$(EXEEXT) colorspace_reg$(EXEEXT) \
+	compare_reg$(EXEEXT) convolve_reg$(EXEEXT) dewarp_reg$(EXEEXT) \
+	dna_reg$(EXEEXT) dwamorph1_reg$(EXEEXT) enhance_reg$(EXEEXT) \
+	files_reg$(EXEEXT) findcorners_reg$(EXEEXT) \
+	findpattern_reg$(EXEEXT) fpix1_reg$(EXEEXT) fpix2_reg$(EXEEXT) \
+	graymorph2_reg$(EXEEXT) hardlight_reg$(EXEEXT) \
+	insert_reg$(EXEEXT) ioformats_reg$(EXEEXT) jpegio_reg$(EXEEXT) \
+	kernel_reg$(EXEEXT) label_reg$(EXEEXT) maze_reg$(EXEEXT) \
+	multitype_reg$(EXEEXT) nearline_reg$(EXEEXT) \
+	newspaper_reg$(EXEEXT) overlap_reg$(EXEEXT) paint_reg$(EXEEXT) \
+	paintmask_reg$(EXEEXT) pdfseg_reg$(EXEEXT) pixa2_reg$(EXEEXT) \
+	pixserial_reg$(EXEEXT) pngio_reg$(EXEEXT) \
+	projection_reg$(EXEEXT) psio_reg$(EXEEXT) psioseg_reg$(EXEEXT) \
+	pta_reg$(EXEEXT) rankbin_reg$(EXEEXT) rankhisto_reg$(EXEEXT) \
+	rasteropip_reg$(EXEEXT) rotate1_reg$(EXEEXT) \
+	rotate2_reg$(EXEEXT) rotateorth_reg$(EXEEXT) \
+	scale_reg$(EXEEXT) seedspread_reg$(EXEEXT) selio_reg$(EXEEXT) \
+	shear1_reg$(EXEEXT) shear2_reg$(EXEEXT) skew_reg$(EXEEXT) \
+	splitcomp_reg$(EXEEXT) subpixel_reg$(EXEEXT) \
+	threshnorm_reg$(EXEEXT) translate_reg$(EXEEXT) \
+	warper_reg$(EXEEXT) writetext_reg$(EXEEXT) \
+	xformbox_reg$(EXEEXT)
 am__EXEEXT_3 = alltests_reg$(EXEEXT) adaptnorm_reg$(EXEEXT) \
-	affine_reg$(EXEEXT) bilateral_reg$(EXEEXT) \
+	affine_reg$(EXEEXT) bilateral1_reg$(EXEEXT) \
 	bilinear_reg$(EXEEXT) binmorph1_reg$(EXEEXT) \
 	binmorph2_reg$(EXEEXT) binmorph3_reg$(EXEEXT) \
 	binmorph4_reg$(EXEEXT) binmorph5_reg$(EXEEXT) \
 	blend1_reg$(EXEEXT) blend2_reg$(EXEEXT) boxa1_reg$(EXEEXT) \
 	ccthin1_reg$(EXEEXT) ccthin2_reg$(EXEEXT) \
-	cmapquant_reg$(EXEEXT) colorseg_reg$(EXEEXT) \
-	compfilter_reg$(EXEEXT) conncomp_reg$(EXEEXT) \
-	conversion_reg$(EXEEXT) distance_reg$(EXEEXT) \
-	dwamorph2_reg$(EXEEXT) equal_reg$(EXEEXT) expand_reg$(EXEEXT) \
-	extrema_reg$(EXEEXT) fhmtauto_reg$(EXEEXT) \
-	flipdetect_reg$(EXEEXT) fmorphauto_reg$(EXEEXT) \
-	gifio_reg$(EXEEXT) grayfill_reg$(EXEEXT) \
-	graymorph1_reg$(EXEEXT) grayquant_reg$(EXEEXT) \
-	heap_reg$(EXEEXT) locminmax_reg$(EXEEXT) logicops_reg$(EXEEXT) \
+	cmapquant_reg$(EXEEXT) colorize_reg$(EXEEXT) \
+	colorseg_reg$(EXEEXT) compfilter_reg$(EXEEXT) \
+	conncomp_reg$(EXEEXT) conversion_reg$(EXEEXT) \
+	distance_reg$(EXEEXT) dwamorph2_reg$(EXEEXT) \
+	equal_reg$(EXEEXT) expand_reg$(EXEEXT) extrema_reg$(EXEEXT) \
+	fhmtauto_reg$(EXEEXT) flipdetect_reg$(EXEEXT) \
+	fmorphauto_reg$(EXEEXT) gifio_reg$(EXEEXT) \
+	grayfill_reg$(EXEEXT) graymorph1_reg$(EXEEXT) \
+	grayquant_reg$(EXEEXT) heap_reg$(EXEEXT) jp2kio_reg$(EXEEXT) \
+	locminmax_reg$(EXEEXT) logicops_reg$(EXEEXT) \
 	lowaccess_reg$(EXEEXT) morphseq_reg$(EXEEXT) \
 	numa1_reg$(EXEEXT) numa2_reg$(EXEEXT) pixa1_reg$(EXEEXT) \
 	pixadisp_reg$(EXEEXT) pixalloc_reg$(EXEEXT) \
 	pixcomp_reg$(EXEEXT) pixmem_reg$(EXEEXT) pixtile_reg$(EXEEXT) \
-	projective_reg$(EXEEXT) pta_reg$(EXEEXT) ptra1_reg$(EXEEXT) \
-	ptra2_reg$(EXEEXT) rank_reg$(EXEEXT) rasterop_reg$(EXEEXT) \
-	smallpix_reg$(EXEEXT) smoothedge_reg$(EXEEXT) \
-	string_reg$(EXEEXT) webpio_reg$(EXEEXT) wordboxes_reg$(EXEEXT)
+	projective_reg$(EXEEXT) ptra1_reg$(EXEEXT) ptra2_reg$(EXEEXT) \
+	rank_reg$(EXEEXT) rasterop_reg$(EXEEXT) smallpix_reg$(EXEEXT) \
+	smoothedge_reg$(EXEEXT) string_reg$(EXEEXT) \
+	webpio_reg$(EXEEXT) wordboxes_reg$(EXEEXT)
 am__EXEEXT_4 = adaptmaptest$(EXEEXT) adaptmap_dark$(EXEEXT) \
 	arabic_lines$(EXEEXT) arithtest$(EXEEXT) barcodetest$(EXEEXT) \
-	baselinetest$(EXEEXT) binarize_set$(EXEEXT) \
-	bincompare$(EXEEXT) blendcmaptest$(EXEEXT) buffertest$(EXEEXT) \
-	byteatest$(EXEEXT) ccbordtest$(EXEEXT) cctest1$(EXEEXT) \
-	colorizetest$(EXEEXT) colormorphtest$(EXEEXT) \
+	baselinetest$(EXEEXT) binarizefiles$(EXEEXT) \
+	binarize_set$(EXEEXT) bincompare$(EXEEXT) \
+	blendcmaptest$(EXEEXT) buffertest$(EXEEXT) byteatest$(EXEEXT) \
+	ccbordtest$(EXEEXT) cctest1$(EXEEXT) colormorphtest$(EXEEXT) \
 	colorsegtest$(EXEEXT) colorspacetest$(EXEEXT) \
-	comparepages$(EXEEXT) comparetest$(EXEEXT) \
+	comparepages$(EXEEXT) comparetest$(EXEEXT) concatpdf$(EXEEXT) \
 	contrasttest$(EXEEXT) converttogray$(EXEEXT) \
 	convolvetest$(EXEEXT) cornertest$(EXEEXT) croptest$(EXEEXT) \
 	croptext$(EXEEXT) dewarprules$(EXEEXT) dewarptest1$(EXEEXT) \
@@ -208,10 +210,15 @@ baselinetest_OBJECTS = baselinetest.$(OBJEXT)
 baselinetest_LDADD = $(LDADD)
 baselinetest_DEPENDENCIES = $(top_builddir)/src/liblept.la \
 	$(am__DEPENDENCIES_1)
-bilateral_reg_SOURCES = bilateral_reg.c
-bilateral_reg_OBJECTS = bilateral_reg.$(OBJEXT)
-bilateral_reg_LDADD = $(LDADD)
-bilateral_reg_DEPENDENCIES = $(top_builddir)/src/liblept.la \
+bilateral1_reg_SOURCES = bilateral1_reg.c
+bilateral1_reg_OBJECTS = bilateral1_reg.$(OBJEXT)
+bilateral1_reg_LDADD = $(LDADD)
+bilateral1_reg_DEPENDENCIES = $(top_builddir)/src/liblept.la \
+	$(am__DEPENDENCIES_1)
+bilateral2_reg_SOURCES = bilateral2_reg.c
+bilateral2_reg_OBJECTS = bilateral2_reg.$(OBJEXT)
+bilateral2_reg_LDADD = $(LDADD)
+bilateral2_reg_DEPENDENCIES = $(top_builddir)/src/liblept.la \
 	$(am__DEPENDENCIES_1)
 bilinear_reg_SOURCES = bilinear_reg.c
 bilinear_reg_OBJECTS = bilinear_reg.$(OBJEXT)
@@ -227,6 +234,11 @@ binarize_set_SOURCES = binarize_set.c
 binarize_set_OBJECTS = binarize_set.$(OBJEXT)
 binarize_set_LDADD = $(LDADD)
 binarize_set_DEPENDENCIES = $(top_builddir)/src/liblept.la \
+	$(am__DEPENDENCIES_1)
+binarizefiles_SOURCES = binarizefiles.c
+binarizefiles_OBJECTS = binarizefiles.$(OBJEXT)
+binarizefiles_LDADD = $(LDADD)
+binarizefiles_DEPENDENCIES = $(top_builddir)/src/liblept.la \
 	$(am__DEPENDENCIES_1)
 bincompare_SOURCES = bincompare.c
 bincompare_OBJECTS = bincompare.$(OBJEXT)
@@ -338,10 +350,10 @@ coloring_reg_OBJECTS = coloring_reg.$(OBJEXT)
 coloring_reg_LDADD = $(LDADD)
 coloring_reg_DEPENDENCIES = $(top_builddir)/src/liblept.la \
 	$(am__DEPENDENCIES_1)
-colorizetest_SOURCES = colorizetest.c
-colorizetest_OBJECTS = colorizetest.$(OBJEXT)
-colorizetest_LDADD = $(LDADD)
-colorizetest_DEPENDENCIES = $(top_builddir)/src/liblept.la \
+colorize_reg_SOURCES = colorize_reg.c
+colorize_reg_OBJECTS = colorize_reg.$(OBJEXT)
+colorize_reg_LDADD = $(LDADD)
+colorize_reg_DEPENDENCIES = $(top_builddir)/src/liblept.la \
 	$(am__DEPENDENCIES_1)
 colormask_reg_SOURCES = colormask_reg.c
 colormask_reg_OBJECTS = colormask_reg.$(OBJEXT)
@@ -397,6 +409,11 @@ compfilter_reg_SOURCES = compfilter_reg.c
 compfilter_reg_OBJECTS = compfilter_reg.$(OBJEXT)
 compfilter_reg_LDADD = $(LDADD)
 compfilter_reg_DEPENDENCIES = $(top_builddir)/src/liblept.la \
+	$(am__DEPENDENCIES_1)
+concatpdf_SOURCES = concatpdf.c
+concatpdf_OBJECTS = concatpdf.$(OBJEXT)
+concatpdf_LDADD = $(LDADD)
+concatpdf_DEPENDENCIES = $(top_builddir)/src/liblept.la \
 	$(am__DEPENDENCIES_1)
 conncomp_reg_SOURCES = conncomp_reg.c
 conncomp_reg_OBJECTS = conncomp_reg.$(OBJEXT)
@@ -610,6 +627,11 @@ fileinfo_OBJECTS = fileinfo.$(OBJEXT)
 fileinfo_LDADD = $(LDADD)
 fileinfo_DEPENDENCIES = $(top_builddir)/src/liblept.la \
 	$(am__DEPENDENCIES_1)
+files_reg_SOURCES = files_reg.c
+files_reg_OBJECTS = files_reg.$(OBJEXT)
+files_reg_LDADD = $(LDADD)
+files_reg_DEPENDENCIES = $(top_builddir)/src/liblept.la \
+	$(am__DEPENDENCIES_1)
 findcorners_reg_SOURCES = findcorners_reg.c
 findcorners_reg_OBJECTS = findcorners_reg.$(OBJEXT)
 findcorners_reg_LDADD = $(LDADD)
@@ -764,6 +786,11 @@ jbwords_SOURCES = jbwords.c
 jbwords_OBJECTS = jbwords.$(OBJEXT)
 jbwords_LDADD = $(LDADD)
 jbwords_DEPENDENCIES = $(top_builddir)/src/liblept.la \
+	$(am__DEPENDENCIES_1)
+jp2kio_reg_SOURCES = jp2kio_reg.c
+jp2kio_reg_OBJECTS = jp2kio_reg.$(OBJEXT)
+jp2kio_reg_LDADD = $(LDADD)
+jp2kio_reg_DEPENDENCIES = $(top_builddir)/src/liblept.la \
 	$(am__DEPENDENCIES_1)
 jpegio_reg_SOURCES = jpegio_reg.c
 jpegio_reg_OBJECTS = jpegio_reg.$(OBJEXT)
@@ -1373,37 +1400,39 @@ am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = adaptmap_dark.c adaptmaptest.c adaptnorm_reg.c affine_reg.c \
 	alltests_reg.c alphaops_reg.c alphaxform_reg.c arabic_lines.c \
-	arithtest.c barcodetest.c baselinetest.c bilateral_reg.c \
-	bilinear_reg.c binarize_reg.c binarize_set.c bincompare.c \
-	binmorph1_reg.c binmorph2_reg.c binmorph3_reg.c \
-	binmorph4_reg.c binmorph5_reg.c blackwhite_reg.c blend1_reg.c \
-	blend2_reg.c blend3_reg.c blend4_reg.c blendcmaptest.c \
-	boxa1_reg.c buffertest.c byteatest.c ccbordtest.c cctest1.c \
-	ccthin1_reg.c ccthin2_reg.c cmapquant_reg.c colorcontent_reg.c \
-	coloring_reg.c colorizetest.c colormask_reg.c colormorphtest.c \
+	arithtest.c barcodetest.c baselinetest.c bilateral1_reg.c \
+	bilateral2_reg.c bilinear_reg.c binarize_reg.c binarize_set.c \
+	binarizefiles.c bincompare.c binmorph1_reg.c binmorph2_reg.c \
+	binmorph3_reg.c binmorph4_reg.c binmorph5_reg.c \
+	blackwhite_reg.c blend1_reg.c blend2_reg.c blend3_reg.c \
+	blend4_reg.c blendcmaptest.c boxa1_reg.c buffertest.c \
+	byteatest.c ccbordtest.c cctest1.c ccthin1_reg.c ccthin2_reg.c \
+	cmapquant_reg.c colorcontent_reg.c coloring_reg.c \
+	colorize_reg.c colormask_reg.c colormorphtest.c \
 	colorquant_reg.c colorseg_reg.c colorsegtest.c \
 	colorspace_reg.c colorspacetest.c compare_reg.c comparepages.c \
-	comparetest.c compfilter_reg.c conncomp_reg.c contrasttest.c \
-	conversion_reg.c convertfilestopdf.c convertfilestops.c \
-	convertformat.c convertsegfilestopdf.c convertsegfilestops.c \
-	converttogray.c converttopdf.c converttops.c convolve_reg.c \
-	convolvetest.c cornertest.c croptest.c croptext.c dewarp_reg.c \
-	dewarprules.c dewarptest1.c dewarptest2.c dewarptest3.c \
-	dewarptest4.c digitprep1.c displayboxa.c displaypix.c \
-	displaypixa.c distance_reg.c dithertest.c dna_reg.c \
-	dwalineargen.c $(dwamorph1_reg_SOURCES) \
+	comparetest.c compfilter_reg.c concatpdf.c conncomp_reg.c \
+	contrasttest.c conversion_reg.c convertfilestopdf.c \
+	convertfilestops.c convertformat.c convertsegfilestopdf.c \
+	convertsegfilestops.c converttogray.c converttopdf.c \
+	converttops.c convolve_reg.c convolvetest.c cornertest.c \
+	croptest.c croptext.c dewarp_reg.c dewarprules.c dewarptest1.c \
+	dewarptest2.c dewarptest3.c dewarptest4.c digitprep1.c \
+	displayboxa.c displaypix.c displaypixa.c distance_reg.c \
+	dithertest.c dna_reg.c dwalineargen.c $(dwamorph1_reg_SOURCES) \
 	$(dwamorph2_reg_SOURCES) edgetest.c enhance_reg.c equal_reg.c \
 	expand_reg.c extrema_reg.c falsecolortest.c fcombautogen.c \
-	fhmtauto_reg.c fhmtautogen.c fileinfo.c findcorners_reg.c \
-	findpattern1.c findpattern2.c findpattern3.c findpattern_reg.c \
-	flipdetect_reg.c flipselgen.c fmorphauto_reg.c fmorphautogen.c \
-	fpix1_reg.c fpix2_reg.c fpixcontours.c gammatest.c genfonts.c \
-	gifio_reg.c graphicstest.c grayfill_reg.c graymorph1_reg.c \
+	fhmtauto_reg.c fhmtautogen.c fileinfo.c files_reg.c \
+	findcorners_reg.c findpattern1.c findpattern2.c findpattern3.c \
+	findpattern_reg.c flipdetect_reg.c flipselgen.c \
+	fmorphauto_reg.c fmorphautogen.c fpix1_reg.c fpix2_reg.c \
+	fpixcontours.c gammatest.c genfonts.c gifio_reg.c \
+	graphicstest.c grayfill_reg.c graymorph1_reg.c \
 	graymorph2_reg.c graymorphtest.c grayquant_reg.c \
 	hardlight_reg.c heap_reg.c histotest.c insert_reg.c \
 	ioformats_reg.c iotest.c italictest.c jbcorrelation.c \
-	jbrankhaus.c jbwords.c jpegio_reg.c kernel_reg.c label_reg.c \
-	lineremoval.c listtest.c livre_adapt.c livre_hmt.c \
+	jbrankhaus.c jbwords.c jp2kio_reg.c jpegio_reg.c kernel_reg.c \
+	label_reg.c lineremoval.c listtest.c livre_adapt.c livre_hmt.c \
 	livre_makefigs.c livre_orient.c livre_pageseg.c \
 	livre_seedgen.c livre_tophat.c locminmax_reg.c logicops_reg.c \
 	lowaccess_reg.c maketile.c maze_reg.c misctest1.c \
@@ -1435,36 +1464,38 @@ SOURCES = adaptmap_dark.c adaptmaptest.c adaptnorm_reg.c affine_reg.c \
 DIST_SOURCES = adaptmap_dark.c adaptmaptest.c adaptnorm_reg.c \
 	affine_reg.c alltests_reg.c alphaops_reg.c alphaxform_reg.c \
 	arabic_lines.c arithtest.c barcodetest.c baselinetest.c \
-	bilateral_reg.c bilinear_reg.c binarize_reg.c binarize_set.c \
-	bincompare.c binmorph1_reg.c binmorph2_reg.c binmorph3_reg.c \
+	bilateral1_reg.c bilateral2_reg.c bilinear_reg.c \
+	binarize_reg.c binarize_set.c binarizefiles.c bincompare.c \
+	binmorph1_reg.c binmorph2_reg.c binmorph3_reg.c \
 	binmorph4_reg.c binmorph5_reg.c blackwhite_reg.c blend1_reg.c \
 	blend2_reg.c blend3_reg.c blend4_reg.c blendcmaptest.c \
 	boxa1_reg.c buffertest.c byteatest.c ccbordtest.c cctest1.c \
 	ccthin1_reg.c ccthin2_reg.c cmapquant_reg.c colorcontent_reg.c \
-	coloring_reg.c colorizetest.c colormask_reg.c colormorphtest.c \
+	coloring_reg.c colorize_reg.c colormask_reg.c colormorphtest.c \
 	colorquant_reg.c colorseg_reg.c colorsegtest.c \
 	colorspace_reg.c colorspacetest.c compare_reg.c comparepages.c \
-	comparetest.c compfilter_reg.c conncomp_reg.c contrasttest.c \
-	conversion_reg.c convertfilestopdf.c convertfilestops.c \
-	convertformat.c convertsegfilestopdf.c convertsegfilestops.c \
-	converttogray.c converttopdf.c converttops.c convolve_reg.c \
-	convolvetest.c cornertest.c croptest.c croptext.c dewarp_reg.c \
-	dewarprules.c dewarptest1.c dewarptest2.c dewarptest3.c \
-	dewarptest4.c digitprep1.c displayboxa.c displaypix.c \
-	displaypixa.c distance_reg.c dithertest.c dna_reg.c \
-	dwalineargen.c $(dwamorph1_reg_SOURCES) \
+	comparetest.c compfilter_reg.c concatpdf.c conncomp_reg.c \
+	contrasttest.c conversion_reg.c convertfilestopdf.c \
+	convertfilestops.c convertformat.c convertsegfilestopdf.c \
+	convertsegfilestops.c converttogray.c converttopdf.c \
+	converttops.c convolve_reg.c convolvetest.c cornertest.c \
+	croptest.c croptext.c dewarp_reg.c dewarprules.c dewarptest1.c \
+	dewarptest2.c dewarptest3.c dewarptest4.c digitprep1.c \
+	displayboxa.c displaypix.c displaypixa.c distance_reg.c \
+	dithertest.c dna_reg.c dwalineargen.c $(dwamorph1_reg_SOURCES) \
 	$(dwamorph2_reg_SOURCES) edgetest.c enhance_reg.c equal_reg.c \
 	expand_reg.c extrema_reg.c falsecolortest.c fcombautogen.c \
-	fhmtauto_reg.c fhmtautogen.c fileinfo.c findcorners_reg.c \
-	findpattern1.c findpattern2.c findpattern3.c findpattern_reg.c \
-	flipdetect_reg.c flipselgen.c fmorphauto_reg.c fmorphautogen.c \
-	fpix1_reg.c fpix2_reg.c fpixcontours.c gammatest.c genfonts.c \
-	gifio_reg.c graphicstest.c grayfill_reg.c graymorph1_reg.c \
+	fhmtauto_reg.c fhmtautogen.c fileinfo.c files_reg.c \
+	findcorners_reg.c findpattern1.c findpattern2.c findpattern3.c \
+	findpattern_reg.c flipdetect_reg.c flipselgen.c \
+	fmorphauto_reg.c fmorphautogen.c fpix1_reg.c fpix2_reg.c \
+	fpixcontours.c gammatest.c genfonts.c gifio_reg.c \
+	graphicstest.c grayfill_reg.c graymorph1_reg.c \
 	graymorph2_reg.c graymorphtest.c grayquant_reg.c \
 	hardlight_reg.c heap_reg.c histotest.c insert_reg.c \
 	ioformats_reg.c iotest.c italictest.c jbcorrelation.c \
-	jbrankhaus.c jbwords.c jpegio_reg.c kernel_reg.c label_reg.c \
-	lineremoval.c listtest.c livre_adapt.c livre_hmt.c \
+	jbrankhaus.c jbwords.c jp2kio_reg.c jpegio_reg.c kernel_reg.c \
+	label_reg.c lineremoval.c listtest.c livre_adapt.c livre_hmt.c \
 	livre_makefigs.c livre_orient.c livre_pageseg.c \
 	livre_seedgen.c livre_tophat.c locminmax_reg.c logicops_reg.c \
 	lowaccess_reg.c maketile.c maze_reg.c misctest1.c \
@@ -1648,6 +1679,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 JPEG_LIBS = @JPEG_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
+LIBJP2K_LIBS = @LIBJP2K_LIBS@
 LIBM = @LIBM@
 LIBOBJS = @LIBOBJS@
 LIBPNG_LIBS = @LIBPNG_LIBS@
@@ -1746,14 +1778,14 @@ INSTALL_PROGS = convertfilestopdf convertfilestops \
 	splitimage2pdf xtractprotos
 
 AUTO_REG_PROGS = alphaops_reg alphaxform_reg \
-	binarize_reg blackwhite_reg \
+	bilateral2_reg binarize_reg blackwhite_reg \
 	blend3_reg blend4_reg \
 	colorcontent_reg coloring_reg \
 	colormask_reg colorquant_reg \
 	colorspace_reg compare_reg \
 	convolve_reg dewarp_reg \
 	dna_reg dwamorph1_reg enhance_reg \
-	findcorners_reg findpattern_reg \
+	files_reg findcorners_reg findpattern_reg \
 	fpix1_reg fpix2_reg \
 	graymorph2_reg hardlight_reg \
 	insert_reg ioformats_reg \
@@ -1764,7 +1796,7 @@ AUTO_REG_PROGS = alphaops_reg alphaxform_reg \
 	pdfseg_reg pixa2_reg \
 	pixserial_reg pngio_reg \
 	projection_reg psio_reg psioseg_reg \
-	rankbin_reg rankhisto_reg \
+	pta_reg rankbin_reg rankhisto_reg \
 	rasteropip_reg \
 	rotate1_reg rotate2_reg rotateorth_reg \
 	scale_reg seedspread_reg \
@@ -1774,22 +1806,23 @@ AUTO_REG_PROGS = alphaops_reg alphaxform_reg \
 	warper_reg writetext_reg xformbox_reg
 
 MANUAL_REG_PROGS = alltests_reg adaptnorm_reg affine_reg \
-	bilateral_reg bilinear_reg \
+	bilateral1_reg bilinear_reg \
 	binmorph1_reg binmorph2_reg binmorph3_reg \
 	binmorph4_reg binmorph5_reg \
 	blend1_reg blend2_reg boxa1_reg \
 	ccthin1_reg ccthin2_reg cmapquant_reg \
-	colorseg_reg compfilter_reg \
+	colorize_reg colorseg_reg compfilter_reg \
 	conncomp_reg conversion_reg distance_reg \
 	dwamorph2_reg equal_reg expand_reg extrema_reg \
 	fhmtauto_reg flipdetect_reg fmorphauto_reg \
 	gifio_reg grayfill_reg graymorph1_reg \
-	grayquant_reg heap_reg locminmax_reg \
+	grayquant_reg heap_reg \
+	jp2kio_reg locminmax_reg \
 	logicops_reg lowaccess_reg morphseq_reg \
 	numa1_reg numa2_reg pixa1_reg \
 	pixadisp_reg pixalloc_reg pixcomp_reg \
 	pixmem_reg pixtile_reg projective_reg \
-	pta_reg ptra1_reg ptra2_reg \
+	ptra1_reg ptra2_reg \
 	rank_reg rasterop_reg smallpix_reg \
 	smoothedge_reg string_reg \
 	webpio_reg wordboxes_reg
@@ -1797,12 +1830,11 @@ MANUAL_REG_PROGS = alltests_reg adaptnorm_reg affine_reg \
 OTHER_PROGS = adaptmaptest adaptmap_dark \
 	arabic_lines arithtest \
 	barcodetest baselinetest \
-	binarize_set bincompare \
+	binarizefiles binarize_set bincompare \
 	blendcmaptest buffertest \
 	byteatest ccbordtest cctest1 \
-	colorizetest colormorphtest \
-	colorsegtest colorspacetest \
-	comparepages comparetest \
+	colormorphtest colorsegtest colorspacetest \
+	comparepages comparetest concatpdf \
 	contrasttest converttogray \
 	convolvetest cornertest \
 	croptest croptext \
@@ -1976,9 +2008,12 @@ barcodetest$(EXEEXT): $(barcodetest_OBJECTS) $(barcodetest_DEPENDENCIES) $(EXTRA
 baselinetest$(EXEEXT): $(baselinetest_OBJECTS) $(baselinetest_DEPENDENCIES) $(EXTRA_baselinetest_DEPENDENCIES) 
 	@rm -f baselinetest$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(baselinetest_OBJECTS) $(baselinetest_LDADD) $(LIBS)
-bilateral_reg$(EXEEXT): $(bilateral_reg_OBJECTS) $(bilateral_reg_DEPENDENCIES) $(EXTRA_bilateral_reg_DEPENDENCIES) 
-	@rm -f bilateral_reg$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(bilateral_reg_OBJECTS) $(bilateral_reg_LDADD) $(LIBS)
+bilateral1_reg$(EXEEXT): $(bilateral1_reg_OBJECTS) $(bilateral1_reg_DEPENDENCIES) $(EXTRA_bilateral1_reg_DEPENDENCIES) 
+	@rm -f bilateral1_reg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(bilateral1_reg_OBJECTS) $(bilateral1_reg_LDADD) $(LIBS)
+bilateral2_reg$(EXEEXT): $(bilateral2_reg_OBJECTS) $(bilateral2_reg_DEPENDENCIES) $(EXTRA_bilateral2_reg_DEPENDENCIES) 
+	@rm -f bilateral2_reg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(bilateral2_reg_OBJECTS) $(bilateral2_reg_LDADD) $(LIBS)
 bilinear_reg$(EXEEXT): $(bilinear_reg_OBJECTS) $(bilinear_reg_DEPENDENCIES) $(EXTRA_bilinear_reg_DEPENDENCIES) 
 	@rm -f bilinear_reg$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(bilinear_reg_OBJECTS) $(bilinear_reg_LDADD) $(LIBS)
@@ -1988,6 +2023,9 @@ binarize_reg$(EXEEXT): $(binarize_reg_OBJECTS) $(binarize_reg_DEPENDENCIES) $(EX
 binarize_set$(EXEEXT): $(binarize_set_OBJECTS) $(binarize_set_DEPENDENCIES) $(EXTRA_binarize_set_DEPENDENCIES) 
 	@rm -f binarize_set$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(binarize_set_OBJECTS) $(binarize_set_LDADD) $(LIBS)
+binarizefiles$(EXEEXT): $(binarizefiles_OBJECTS) $(binarizefiles_DEPENDENCIES) $(EXTRA_binarizefiles_DEPENDENCIES) 
+	@rm -f binarizefiles$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(binarizefiles_OBJECTS) $(binarizefiles_LDADD) $(LIBS)
 bincompare$(EXEEXT): $(bincompare_OBJECTS) $(bincompare_DEPENDENCIES) $(EXTRA_bincompare_DEPENDENCIES) 
 	@rm -f bincompare$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(bincompare_OBJECTS) $(bincompare_LDADD) $(LIBS)
@@ -2054,9 +2092,9 @@ colorcontent_reg$(EXEEXT): $(colorcontent_reg_OBJECTS) $(colorcontent_reg_DEPEND
 coloring_reg$(EXEEXT): $(coloring_reg_OBJECTS) $(coloring_reg_DEPENDENCIES) $(EXTRA_coloring_reg_DEPENDENCIES) 
 	@rm -f coloring_reg$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(coloring_reg_OBJECTS) $(coloring_reg_LDADD) $(LIBS)
-colorizetest$(EXEEXT): $(colorizetest_OBJECTS) $(colorizetest_DEPENDENCIES) $(EXTRA_colorizetest_DEPENDENCIES) 
-	@rm -f colorizetest$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(colorizetest_OBJECTS) $(colorizetest_LDADD) $(LIBS)
+colorize_reg$(EXEEXT): $(colorize_reg_OBJECTS) $(colorize_reg_DEPENDENCIES) $(EXTRA_colorize_reg_DEPENDENCIES) 
+	@rm -f colorize_reg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(colorize_reg_OBJECTS) $(colorize_reg_LDADD) $(LIBS)
 colormask_reg$(EXEEXT): $(colormask_reg_OBJECTS) $(colormask_reg_DEPENDENCIES) $(EXTRA_colormask_reg_DEPENDENCIES) 
 	@rm -f colormask_reg$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(colormask_reg_OBJECTS) $(colormask_reg_LDADD) $(LIBS)
@@ -2090,6 +2128,9 @@ comparetest$(EXEEXT): $(comparetest_OBJECTS) $(comparetest_DEPENDENCIES) $(EXTRA
 compfilter_reg$(EXEEXT): $(compfilter_reg_OBJECTS) $(compfilter_reg_DEPENDENCIES) $(EXTRA_compfilter_reg_DEPENDENCIES) 
 	@rm -f compfilter_reg$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(compfilter_reg_OBJECTS) $(compfilter_reg_LDADD) $(LIBS)
+concatpdf$(EXEEXT): $(concatpdf_OBJECTS) $(concatpdf_DEPENDENCIES) $(EXTRA_concatpdf_DEPENDENCIES) 
+	@rm -f concatpdf$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(concatpdf_OBJECTS) $(concatpdf_LDADD) $(LIBS)
 conncomp_reg$(EXEEXT): $(conncomp_reg_OBJECTS) $(conncomp_reg_DEPENDENCIES) $(EXTRA_conncomp_reg_DEPENDENCIES) 
 	@rm -f conncomp_reg$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(conncomp_reg_OBJECTS) $(conncomp_reg_LDADD) $(LIBS)
@@ -2216,6 +2257,9 @@ fhmtautogen$(EXEEXT): $(fhmtautogen_OBJECTS) $(fhmtautogen_DEPENDENCIES) $(EXTRA
 fileinfo$(EXEEXT): $(fileinfo_OBJECTS) $(fileinfo_DEPENDENCIES) $(EXTRA_fileinfo_DEPENDENCIES) 
 	@rm -f fileinfo$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(fileinfo_OBJECTS) $(fileinfo_LDADD) $(LIBS)
+files_reg$(EXEEXT): $(files_reg_OBJECTS) $(files_reg_DEPENDENCIES) $(EXTRA_files_reg_DEPENDENCIES) 
+	@rm -f files_reg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(files_reg_OBJECTS) $(files_reg_LDADD) $(LIBS)
 findcorners_reg$(EXEEXT): $(findcorners_reg_OBJECTS) $(findcorners_reg_DEPENDENCIES) $(EXTRA_findcorners_reg_DEPENDENCIES) 
 	@rm -f findcorners_reg$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(findcorners_reg_OBJECTS) $(findcorners_reg_LDADD) $(LIBS)
@@ -2309,6 +2353,9 @@ jbrankhaus$(EXEEXT): $(jbrankhaus_OBJECTS) $(jbrankhaus_DEPENDENCIES) $(EXTRA_jb
 jbwords$(EXEEXT): $(jbwords_OBJECTS) $(jbwords_DEPENDENCIES) $(EXTRA_jbwords_DEPENDENCIES) 
 	@rm -f jbwords$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(jbwords_OBJECTS) $(jbwords_LDADD) $(LIBS)
+jp2kio_reg$(EXEEXT): $(jp2kio_reg_OBJECTS) $(jp2kio_reg_DEPENDENCIES) $(EXTRA_jp2kio_reg_DEPENDENCIES) 
+	@rm -f jp2kio_reg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(jp2kio_reg_OBJECTS) $(jp2kio_reg_LDADD) $(LIBS)
 jpegio_reg$(EXEEXT): $(jpegio_reg_OBJECTS) $(jpegio_reg_DEPENDENCIES) $(EXTRA_jpegio_reg_DEPENDENCIES) 
 	@rm -f jpegio_reg$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(jpegio_reg_OBJECTS) $(jpegio_reg_LDADD) $(LIBS)
@@ -2675,10 +2722,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arithtest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/barcodetest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/baselinetest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bilateral_reg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bilateral1_reg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bilateral2_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bilinear_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/binarize_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/binarize_set.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/binarizefiles.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bincompare.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/binmorph1_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/binmorph2_reg.Po@am__quote@
@@ -2701,7 +2750,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmapquant_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colorcontent_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coloring_reg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colorizetest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colorize_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colormask_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colormorphtest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/colorquant_reg.Po@am__quote@
@@ -2713,6 +2762,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comparepages.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comparetest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compfilter_reg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/concatpdf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/conncomp_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/contrasttest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/conversion_reg.Po@am__quote@
@@ -2757,6 +2807,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fhmtauto_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fhmtautogen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fileinfo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/files_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/findcorners_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/findpattern1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/findpattern2.Po@am__quote@
@@ -2788,6 +2839,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jbcorrelation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jbrankhaus.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jbwords.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jp2kio_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jpegio_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/kernel_reg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/label_reg.Po@am__quote@
@@ -3115,6 +3167,8 @@ alphaops_reg.log: alphaops_reg$(EXEEXT)
 	@p='alphaops_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
 alphaxform_reg.log: alphaxform_reg$(EXEEXT)
 	@p='alphaxform_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
+bilateral2_reg.log: bilateral2_reg$(EXEEXT)
+	@p='bilateral2_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
 binarize_reg.log: binarize_reg$(EXEEXT)
 	@p='binarize_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
 blackwhite_reg.log: blackwhite_reg$(EXEEXT)
@@ -3145,6 +3199,8 @@ dwamorph1_reg.log: dwamorph1_reg$(EXEEXT)
 	@p='dwamorph1_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
 enhance_reg.log: enhance_reg$(EXEEXT)
 	@p='enhance_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
+files_reg.log: files_reg$(EXEEXT)
+	@p='files_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
 findcorners_reg.log: findcorners_reg$(EXEEXT)
 	@p='findcorners_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
 findpattern_reg.log: findpattern_reg$(EXEEXT)
@@ -3195,6 +3251,8 @@ psio_reg.log: psio_reg$(EXEEXT)
 	@p='psio_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
 psioseg_reg.log: psioseg_reg$(EXEEXT)
 	@p='psioseg_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
+pta_reg.log: pta_reg$(EXEEXT)
+	@p='pta_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
 rankbin_reg.log: rankbin_reg$(EXEEXT)
 	@p='rankbin_reg$(EXEEXT)'; $(am__check_pre) $(LOG_COMPILE) "$$tst" $(am__check_post)
 rankhisto_reg.log: rankhisto_reg$(EXEEXT)

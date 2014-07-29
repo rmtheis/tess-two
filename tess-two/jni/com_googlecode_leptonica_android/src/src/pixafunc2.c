@@ -514,7 +514,8 @@ PIXA    *pixat;
             pixt = pixaGetPix(pixat, index, L_CLONE);
             pixGetDimensions(pixt, &wt, &ht, NULL);
             if (wt > cellw || ht > cellh) {
-                fprintf(stderr, "pix(%d) omitted; size %dx%d\n", index, wt, ht);
+                L_INFO("pix(%d) omitted; size %dx%x\n", procName, index,
+                       wt, ht);
                 box = boxCreate(0, 0, 0, 0);
                 boxaAddBox(boxa, box, L_INSERT);
                 pixDestroy(&pixt);
@@ -695,13 +696,6 @@ PIXA    *pixat;
         pixaDestroy(&pixat);
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     }
-
-#if 0
-    fprintf(stderr, " nrows = %d, ncols = %d, wmax = %d, hmax = %d\n",
-            nrows, ncols, wmax, hmax);
-    fprintf(stderr, " space = %d, wd = %d, hd = %d, n = %d\n",
-            space, wd, hd, n);
-#endif
 
         /* Reset the background color if necessary */
     if ((background == 1 && d == 1) || (background == 0 && d != 1))
@@ -1490,10 +1484,11 @@ PIXA    *pixad;
  *      Input:  indir (full path to directory of images)
  *              substr (<optional> can be null)
  *              nx, ny (in [1, ... 50], tiling factors in each direction)
- *              scaling (approximate overall scaling factor, after tiling)
+ *              tw (target width, in pixels; must be >= 20)
  *              spacing  (between images, and on outside)
  *              border (width of additional black border on each image;
  *                      use 0 for no border)
+ *              fontdir (<optional> prints tail of filename with image)
  *              outdir (subdirectory of /tmp to put N-up tiled images)
  *      Return: 0 if OK, 1 on error
  *
@@ -1504,22 +1499,22 @@ PIXA    *pixad;
  *          This is typically used when all images are roughly the same
  *          size.
  *      (3) Typical values for nx and ny are in [2 ... 5].
- *      (4) The reciprocal of nx is used for scaling.  If nx == ny, the
- *          resulting image shape is similar to that of the input images.
+ *      (4) All images are scaled to a width @tw.  They are not rescaled
+ *          when placed in the (nx,ny) mosaic.
  */
 l_int32
 convertToNUpFiles(const char  *dir,
                   const char  *substr,
                   l_int32      nx,
                   l_int32      ny,
-                  l_float32    scaling,
+                  l_int32      tw,
                   l_int32      spacing,
                   l_int32      border,
+                  const char  *fontdir,
                   const char  *outdir)
 {
 l_int32  d, format;
 char     rootpath[256];
-PIX     *pix;
 PIXA    *pixa;
 
     PROCNAME("convertToNUpFiles");
@@ -1528,28 +1523,20 @@ PIXA    *pixa;
         return ERROR_INT("dir not defined", procName, 1);
     if (nx < 1 || ny < 1 || nx > 50 || ny > 50)
         return ERROR_INT("invalid tiling N-factor", procName, 1);
-    if (scaling <= 0.0)
-        return ERROR_INT("invalid scaling factor", procName, 1);
     if (!outdir)
         return ERROR_INT("outdir not defined", procName, 1);
 
-    pixa = convertToNUpPixa(dir, substr, nx, ny, scaling, spacing, border);
+    pixa = convertToNUpPixa(dir, substr, nx, ny, tw, spacing, border,
+                            fontdir);
     if (!pixa)
         return ERROR_INT("pixa not made", procName, 1);
 
     lept_rmdir(outdir);
     lept_mkdir(outdir);
-    pix = pixaGetPix(pixa, 0, L_CLONE);
-    d = pixGetDepth(pix);
-    if (d == 1) {
-        format = IFF_TIFF_G4;
-    } else if (d < 8 || pixGetColormap(pix)) {
-        format = IFF_PNG;
-    } else {
-        format = IFF_JFIF_JPEG;
-    }
-    pixDestroy(&pix);
-    snprintf(rootpath, sizeof(rootpath), "/tmp/%s/", outdir);
+    pixaGetRenderingDepth(pixa, &d);
+    format = (d == 1) ? IFF_TIFF_G4 : IFF_JFIF_JPEG;
+    makeTempDirname(rootpath, 256, outdir);
+    modifyTrailingSlash(rootpath, 256, L_ADD_TRAIL_SLASH);
     pixaWriteFiles(rootpath, pixa, format);
     pixaDestroy(&pixa);
     return 0;
@@ -1562,28 +1549,30 @@ PIXA    *pixa;
  *      Input:  dir (full path to directory of images)
  *              substr (<optional> can be null)
  *              nx, ny (in [1, ... 50], tiling factors in each direction)
- *              scaling (approximate overall scaling factor, after tiling)
+ *              tw (target width, in pixels; must be >= 20)
  *              spacing  (between images, and on outside)
  *              border (width of additional black border on each image;
  *                      use 0 for no border)
+ *              fontdir (<optional> prints tail of filename with image)
  *      Return: pixad, or null on error
  *
  *  Notes:
- *      (1) See notes for filesTileNUp()
+ *      (1) See notes for convertToNUpFiles()
  */
 PIXA *
 convertToNUpPixa(const char  *dir,
                  const char  *substr,
                  l_int32      nx,
                  l_int32      ny,
-                 l_float32    scaling,
+                 l_int32      tw,
                  l_int32      spacing,
-                 l_int32      border)
+                 l_int32      border,
+                 const char  *fontdir)
 {
-l_int32    i, j, k, nt, n2, nout, w, d;
-l_float32  scalefactor;
-char      *fname;
-PIX       *pix1, *pix2, *pix3;
+l_int32    i, j, k, nt, n2, nout, d;
+char      *fname, *tail;
+L_BMF     *bmf;
+PIX       *pix1, *pix2, *pix3, *pix4;
 PIXA      *pixat, *pixad;
 SARRAY    *sa;
 
@@ -1593,15 +1582,15 @@ SARRAY    *sa;
         return (PIXA *)ERROR_PTR("dir not defined", procName, NULL);
     if (nx < 1 || ny < 1 || nx > 50 || ny > 50)
         return (PIXA *)ERROR_PTR("invalid tiling N-factor", procName, NULL);
-    if (scaling <= 0.0)
-        return (PIXA *)ERROR_PTR("invalid scaling factor", procName, NULL);
+    if (tw < 20)
+        return (PIXA *)ERROR_PTR("tw must be >= 20", procName, NULL);
 
     sa = getSortedPathnamesInDirectory(dir, substr, 0, 0);
     nt = sarrayGetCount(sa);
     n2 = nx * ny;
     nout = (nt + n2 - 1) / n2;
-    scalefactor = scaling / nx;
     pixad = pixaCreate(nout);
+    bmf = (fontdir) ? bmfCreate(fontdir, 6) : NULL;   /* 6 pt font */
     for (i = 0, j = 0; i < nout; i++) {
         pixat = pixaCreate(n2);
         for (k = 0; k < n2 && j < nt; j++, k++) {
@@ -1610,22 +1599,30 @@ SARRAY    *sa;
                 L_ERROR("image not read from %s\n", procName, fname);
                 continue;
             }
-            if (k == 0) {  /* use first image to set size and depth */
-                w = scalefactor * pixGetWidth(pix1);
-                d = pixGetDepth(pix1);
+            pix2 = pixScaleToSize(pix1, tw, 0);  /* all images have width tw */
+            if (fontdir) {
+                splitPathAtDirectory(fname, NULL, &tail);
+                pix3 = pixAddSingleTextline(pix2, bmf, tail, 0xff000000,
+                                            L_ADD_BELOW);
+                FREE(tail);
+            } else {
+                pix3 = pixClone(pix2);
             }
-            pix2 = pixScale(pix1, scalefactor, scalefactor);
-            pixaAddPix(pixat, pix2, L_INSERT);
+            pixaAddPix(pixat, pix3, L_INSERT);
             pixDestroy(&pix1);
+            pixDestroy(&pix2);
         }
         if (pixaGetCount(pixat) == 0) continue;
-        pix3 = pixaDisplayTiledAndScaled(pixat, d, w, nx, 0,
+        pixaGetRenderingDepth(pixat, &d);
+            /* add 2 * border to image width to prevent scaling */
+        pix4 = pixaDisplayTiledAndScaled(pixat, d, tw + 2 * border, nx, 0,
                                          spacing, border);
-        pixaAddPix(pixad, pix3, L_INSERT);
+        pixaAddPix(pixad, pix4, L_INSERT);
         pixaDestroy(&pixat);
     }
 
     sarrayDestroy(&sa);
+    bmfDestroy(&bmf);
     return pixad;
 }
 

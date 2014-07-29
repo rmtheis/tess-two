@@ -75,11 +75,11 @@ This work is licensed under a <a rel="license" href="http://creativecommons.org/
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-README  (24 Jan 2014; 1.70)
+README  (1.71: 28 June 2014)
 ---------------------------
 
-gunzip leptonica-1.70.tar.gz
-tar -xvf leptonica-1.70.tar
+gunzip leptonica-1.71.tar.gz
+tar -xvf leptonica-1.71.tar
 
 </pre>
 
@@ -110,13 +110,12 @@ Building leptonica
      -  Linux on x86 (i386) and AMD 64 (x64)
      -  OSX (both powerPC and x86).
      -  Cygwin, msys and mingw on x86
-  It should compile properly with any version of gcc from 2.95.3 onward.
   There is an additional zip file for building with MS Visual Studio.
 
   Libraries, executables and prototypes are easily made, as described below.
 
   When you extract from the archive, all files are put in a
-  subdirectory 'leptonica-1.70'.  In that directory you will
+  subdirectory 'leptonica-1.71'.  In that directory you will
   find a src directory containing the source files for the library,
   and a prog directory containing source files for various
   testing and example programs.
@@ -184,22 +183,24 @@ Building leptonica
 
        VERY IMPORTANT: the 240+ programs in the prog directory are
        an integral part of this package.  These can be divided into
-       three types:
-         (1) Programs that are used as regression tests.  The most
-             important of these are named *_reg, and about 60 of them
-             are invoked together (alltests_reg).  These have been
-             standardized and are relatively easy to write.  See
-             regutils.h for details.
-         (2) Programs that were used to test library functions or
-             auto-generate library code.  These are useful for testing
-             the behavior of small sets of functions, and for
-             providing example code.
-         (3) Programs that are useful applications for running on the
+       four groups:
+         (1) Programs that are useful applications for running on the
              command line.  They can be installed from autoconf builds
              using 'make install'.  Examples of these are the PostScript
              and pdf conversion programs: converttopdf, converttops,
              convertfilestopdf, convertfilestops, convertsegfilestopdf,
              convertsegfilestops, printimage and printsplitimage.
+         (2) Programs that are used as regression tests in alltests_reg.
+             These are named *_reg, and 63 of them are invoked together
+             (alltests_reg).  The regression test framework has been
+             standardized, and regresstion tests are relatively easy
+             to write.  See regutils.h for details.
+         (3) Other regression tests, some of which have not (yet) been
+             put into the framework.  They are also named *_reg.
+         (4) Programs that were used to test library functions or
+             auto-generate library code.  These are useful for testing
+             the behavior of small sets of functions, and for
+             providing example code.
 
     (2) Building using autoconf  (Thanks to James Le Cuirot)
 
@@ -215,7 +216,7 @@ Building leptonica
                              place from the distribution.]
 
        Configure also supports building in a separate directory from the
-       source.  Run "/(path-to)/leptonica-1.70/configure" and then "make"
+       source.  Run "/(path-to)/leptonica-1.71/configure" and then "make"
        from the desired build directory.
 
        Configure has a number of useful options; run "configure --help" for
@@ -228,10 +229,20 @@ Building leptonica
        By default, the library is built with debugging symbols.  If you do not
        want these, use "CFLAGS=-O2 ./configure" to eliminate symbols for
        subsequent compilations, or "make CFLAGS=-O2" to override for this
-       compilation only.
+       compilation only.  Another option is to use the 'install-strip' target
+       (i.e., "make install-strip") to remove the debugging symbols when
+       the library is installed.
 
-       For the debian distribution, we only build a small subset of
-       the programs in the prog directory, which have no dependency on
+       Finally, if you find that the installed programs are unable to link
+       at runtime to the installed library, which is in /usr/local/lib,
+       try to run configure in this way:
+           LDFLAGS="-Wl,-rpath -Wl,/usr/local/lib" ./configure
+       which causes the compiler to pass those options through to the linker.
+
+       For the debian distribution, out of all the programs in the prog
+       directory, we only build a small subset of general purpose
+       utility programs.  This subset is the same set of programs that
+       'make install' puts into /usr/local/bin.  It has no dependency on
        the image files that are bundled in the prog directory for testing.
 
     (3) Cross-compiling for windows
@@ -271,10 +282,10 @@ Building leptonica
        (Thanks to David Bryan)
 
        MSYS is a Unix-compatible build environment for the mingw compiler.
-       Installing the "MinGW Compiler Suite C Compiler" and the "MSYS Basic
-       System" will allow building the library with autoconf as in (2) above.
-       It will also allow building with the static makefile as in (1) above if
-       this option is added to the make command:
+       Installing the "MSYS Base System" and "MinGW Compiler Suite" will allow
+       building the library with autoconf as in (2) above.  It will also allow
+       building with the static makefile as in (1) above if this option
+       is added to the make command:
 
          CC="gcc -D_BSD_SOURCE -DANSI"
 
@@ -283,18 +294,20 @@ Building leptonica
 
        External image libraries (see below) must be downloaded separately,
        built, and installed before building the library.  Pre-built libraries
-       are available from the <a href="http://gnuwin32.sourceforge.net/packages.html">GnuWin project</a>.
+       are available from
+          <a href="http://sourceforge.net/projects/ezwinports/">ezwinports project</a>.
 
    (c) Building for <a href="http://www.cygwin.com/">Cygwin</a>
        (Thanks to David Bryan)
 
        Cygwin is a Unix-compatible build and runtime environment.  Installing
-       the "Base", "Devel", and "Graphics" packages will allow building the
-       library with autoconf as in (2) above.  If the graphics libraries are
-       not present in the /lib, /usr/lib, or /usr/local/lib directories, you
-       must run make with the "LDFLAGS=-L/(path-to-image)/lib" option.  It
-       will also allow building with the static makefile as in (1) above if
-       this option is added to the make command:
+       the "Base" and "Devel" packages, plus the desired graphics libraries
+       from the "Graphics" and "Libs" packages, will allow building the
+       library with autoconf as in (2) above.  If the graphics libraries
+       are not present in the /lib, /usr/lib, or /usr/local/lib directories,
+       you must run make with the "LDFLAGS=-L/(path-to-image)/lib" option.
+       It will also allow building with the static makefile as in (1)
+       above if this option is added to the make command:
 
          CC="gcc -ansi -D_BSD_SOURCE -DANSI"
 
@@ -303,14 +316,13 @@ Building leptonica
 </pre>
 
 
-
 <h2> <A NAME="DEPENDENCIES">
 I/O libraries leptonica is dependent on
 </h2>
 
 <pre>
    Leptonica is configured to handle image I/O using these external
-   libraries: libjpeg, libtiff, libpng, libz, libgif, libwebp
+   libraries: libjpeg, libtiff, libpng, libz, libgif, libwebp, libopenjp2
 
    These libraries are easy to obtain.  For example, using the
    debian package manager:
@@ -348,9 +360,9 @@ I/O libraries leptonica is dependent on
       tiff:  tiff.h, tiffio.h
 
    If for some reason you do not want to link to specific libraries,
-   even if you have them, stub files are included for the nine
+   even if you have them, stub files are included for the ten
    different output formats:
-        bmp, jpeg, png, pnm, ps, pdf, tiff, gif and webp.
+        bmp, jpeg, png, pnm, ps, pdf, tiff, gif, webp and jp2.
    For example, if you don't want to include the tiff library,
    in environ.h set:
        #define  HAVE_LIBTIFF   0
@@ -370,8 +382,14 @@ I/O libraries leptonica is dependent on
           that path to the LD_LIBRARY_PATH environment variable.
       (5) Note: do not use giflib-4.1.4: binary comp and decomp
           don't pack the pixel data and are ridiculously slow.
-</pre>
 
+   To read and write jpeg2000 files:
+      (1) Download libopenjp2, version 2.X, from their distribution,
+          along with cmake.  There is no debian version of openjpeg 2.X
+          as of 6/20/2014.
+      (2) #define HAVE_LIBJP2K   1  (in environ.h)
+      (3) In prog/makefile, edit ALL_LIBS to include -lopenjp2
+</pre>
 
 
 <h2> <A NAME="DEVELOP">
@@ -740,7 +758,7 @@ What's in leptonica?
    and many examples of such programs, most of which are for
    testing, can be built in the prog directory.  Functions have been
    provided to allow reading and writing of files in JPEG, PNG,
-   TIFF, BMP, PNM ,GIF and WEBPformats.  These formats were chosen
+   TIFF, BMP, PNM ,GIF, WEBP and JP2 formats.  These formats were chosen
    for the following reasons:
 
     - JFIF JPEG is the standard method for lossy compression
@@ -785,6 +803,14 @@ What's in leptonica?
       Leptonica provides an interface through webp into the underlying
       codec.  You need to download libwebp.
 
+    - JP2K (jpeg2000) is a wavelet encoding method, that has clear
+      advantages over jpeg in compression and quality (especially when
+      the image has sharp edges, such as scanned documents), but is
+      only slowly growing in acceptance.  For it to be widely supported,
+      it will require support on a major browser (as with webp).
+      Leptonica provides an interface through openjpeg into the underlying
+      codec.  You need to download libopenjp2, version 2.X.
+
     - GIF is still widely used in the world.  With the expiration
       of the LZW patent, it is practical to add support for GIF files.
       The open source gif library is relatively incomplete and
@@ -792,16 +818,21 @@ What's in leptonica?
       patent history).   See gifio.c.
 
    Here's a summary of compression support and limitations:
-      - All formats except JPEG support 1 bpp binary.
+      - All formats except JPEG, WEBP and JP2K support 1 bpp binary.
       - All formats support 8 bpp grayscale (GIF must have a colormap).
-      - All formats except GIF support 24 bpp rgb color.
-      - All formats except PNM support 8 bpp colormap.
+      - All formats except GIF support rgb color.
+      - All formats except PNM, JPEG, WEBP and JP2K support 8 bpp colormap.
       - PNG and PNM support 2 and 4 bpp images.
       - PNG supports 2 and 4 bpp colormap, and 16 bpp without colormap.
-      - PNG, JPEG, TIFF and GIF support image compression; PNM and BMP do not.
-      - WEBP supports 24 bpp rgb color.
-   Use prog/ioformats_reg for a regression test on all but GIF and WEBP.
+      - PNG, JPEG, TIFF, WEBP, JP2K and GIF support image compression;
+        PNM and BMP do not.
+      - WEBP supports rgb color and rgba.
+      - JP2K supports 8 bpp grayscale, rgb color and rgba.
+   Use prog/ioformats_reg for a regression test on all but GIF, WEBP, and JP2K.
+   Use prog/pngio_reg for a thorough testing of PNG.
    Use prog/gifio_reg for testing GIF.
+   Use prog/webpio_reg for testing WEBP.
+   Use prog/jp2kio_reg for testing JP2K.
 
    We provide generators for PS output, from all types of input images.
    The output can be either uncompressed or compressed with level 2
@@ -841,6 +872,8 @@ What's in leptonica?
    By default, these non-POSIX functions are disabled.  To enable memory
    I/O for image formatted read/writes, see environ.h.
 
+   We also provide fast serialization and deserialization between a pix
+   in memory and a file (spixio.c).  This works on all types of pix images.
 
 10. Colormap removal and color quantization
 
@@ -971,16 +1004,17 @@ What's in leptonica?
    6 times a year, and version numbers are provided for each release in
    the makefile and in allheaders.h.  All even versions from 1.42 to 1.60
    have been archived at http://code.google.com/p/leptonica, as well as all
-   versions after 1.60.  However, code.google.com is going away in the
-   near future, and these will be put somewhere else.  Consult the
-   leptonica site for the links.
+   versions after 1.60.  However, code.google.com no longer supports
+   uploads of new distributions, which you can get at the leptonica.org
+   web site.
 
-   Downloads of leptonica increased by nearly an order of magnitude with
-   1.69, due to bundling with tesseract and incorporation in ubuntu 12-04.
-   Leptonica has about 2400 functions, and the binary API has changed
-   with the new 1.70 release.  Having a proper binary release version
-   is required for all debian packages.  The binary release version
-   for 1.69 is 3.0.0, and for 1.70 it is 4.0.0.
+   The number of downloads of leptonica increased by nearly an order
+   of magnitude with 1.69, due to bundling with tesseract and
+   incorporation in ubuntu 12-04.  Leptonica has about 2400 functions,
+   and the binary API changed slightly with the new 1.71 release.  Having
+   a proper binary release version is required for all debian packages.
+   The binary release version for 1.69 is 3.0.0, for 1.70 it is 4.0.0,
+   and for 1.71 it is 4.2.0.
 
    A brief version chronology is maintained in version-notes.html.
    Starting with gcc 4.3.3, error warnings (-Werror) are given for

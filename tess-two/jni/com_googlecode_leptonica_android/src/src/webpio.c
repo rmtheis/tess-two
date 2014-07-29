@@ -33,6 +33,7 @@
  *
  *    Reading WebP header
  *          l_int32          readHeaderWebP()
+ *          l_int32          readHeaderMemWebP()
  *
  *    Writing WebP
  *          l_int32          pixWriteWebP()  [ special top level ]
@@ -162,7 +163,6 @@ l_uint8  data[100];  /* expect size info within the first 50 bytes or so */
 l_int32  nbytes, bytesread;
 size_t   filesize;
 FILE    *fp;
-WebPBitstreamFeatures  features;
 
     PROCNAME("readHeaderWebP");
 
@@ -185,7 +185,40 @@ WebPBitstreamFeatures  features;
     if (bytesread != nbytes)
         return ERROR_INT("failed to read requested data", procName, 1);
 
-    if (WebPGetFeatures(data, nbytes, &features))
+    return readHeaderMemWebP(data, nbytes, pw, ph, pspp);
+}
+
+
+/*!
+ *  readHeaderMemWebP()
+ *
+ *      Input:  data
+ *              size (100 bytes is sufficient)
+ *              &w (<return> width)
+ *              &h (<return> height)
+ *              &spp (<return> spp (3 or 4))
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+readHeaderMemWebP(const l_uint8  *data,
+                  size_t          size,
+                  l_int32        *pw,
+                  l_int32        *ph,
+                  l_int32        *pspp)
+{
+WebPBitstreamFeatures  features;
+
+    PROCNAME("readHeaderWebP");
+
+    if (pw) *pw = 0;
+    if (ph) *ph = 0;
+    if (pspp) *pspp = 0;
+    if (!data)
+        return ERROR_INT("data not defined", procName, 1);
+    if (!pw || !ph || !pspp)
+        return ERROR_INT("input ptr(s) not defined", procName, 1);
+
+    if (WebPGetFeatures(data, (l_int32)size, &features))
         return ERROR_INT("invalid WebP file", procName, 1);
     *pw = features.width;
     *ph = features.height;

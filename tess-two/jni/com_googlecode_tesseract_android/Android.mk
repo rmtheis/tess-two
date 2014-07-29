@@ -8,6 +8,7 @@ LOCAL_MODULE := libtess
 
 BLACKLIST_SRC_FILES := \
   %api/tesseractmain.cpp \
+  %ccstruct/imagedata.cpp \
   %viewer/svpaint.cpp
 
 TESSERACT_SRC_FILES := \

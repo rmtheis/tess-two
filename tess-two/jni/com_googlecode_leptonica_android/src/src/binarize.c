@@ -32,7 +32,8 @@
  *    grayquant.c:   standard, simple, general grayscale quantization
  *    adaptmap.c:    local adaptive; mostly gray-to-gray in preparation
  *                   for binarization
- *    binarize.c:    special binarization methods, locally adaptive.
+ *    binarize.c:    special binarization methods, locally adaptive and
+ *                   global.
  *  ===================================================================
  *
  *      Adaptive Otsu-based thresholding
@@ -50,6 +51,9 @@
  *          PIX       *pixSauvolaGetThreshold()
  *          PIX       *pixApplyLocalThreshold();
  *
+ *      Thresholding using connected components
+ *          PIX       *pixThresholdByConnComp()
+ *
  *  Notes:
  *      (1) pixOtsuAdaptiveThreshold() computes a global threshold over each
  *          tile and performs the threshold operation, resulting in a
@@ -63,6 +67,10 @@
  *          the window size for the measurment at each pixel and a
  *          parameter that determines the amount of normalized local
  *          standard deviation to subtract from the local average value.
+ *      (4) pixThresholdByCC() uses the numbers of 4 and 8 connected
+ *          components at different thresholding to determine if a
+ *          global threshold can be used (for text or line-art) and the
+ *          value it should have.
  */
 
 #include <math.h>
@@ -120,6 +128,9 @@
  *          the Otsu score is within a defined fraction, @scorefract,
  *          of the max score.  To get the original Otsu algorithm, set
  *          @scorefract == 0.
+ *      (8) N.B. This method is NOT recommended for images with weak text
+ *          and significant background noise, such as bleedthrough, because
+ *          of the problem noted in (3) above for tiling.  Use Sauvola.
  */
 l_int32
 pixOtsuAdaptiveThreshold(PIX       *pixs,
@@ -175,6 +186,7 @@ PIXTILING  *pt;
         /* Optionally apply the threshold array to binarize pixs */
     if (ppixd) {
         pixd = pixCreate(w, h, 1);
+        pixCopyResolution(pixd, pixs);
         for (i = 0; i < ny; i++) {
             for (j = 0; j < nx; j++) {
                 pixt = pixTilingGetTile(pt, i, j);
@@ -582,13 +594,12 @@ PIX     *pixg, *pixsc, *pixm, *pixms, *pixth, *pixd;
 
     PROCNAME("pixSauvolaBinarize");
 
-
-    if (!ppixm && !ppixsd && !ppixth && !ppixd)
-        return ERROR_INT("no outputs", procName, 1);
     if (ppixm) *ppixm = NULL;
     if (ppixsd) *ppixsd = NULL;
     if (ppixth) *ppixth = NULL;
     if (ppixd) *ppixd = NULL;
+    if (!ppixm && !ppixsd && !ppixth && !ppixd)
+        return ERROR_INT("no outputs", procName, 1);
     if (!pixs || pixGetDepth(pixs) != 8)
         return ERROR_INT("pixs undefined or not 8 bpp", procName, 1);
     if (pixGetColormap(pixs))
@@ -619,8 +630,10 @@ PIX     *pixg, *pixsc, *pixm, *pixms, *pixth, *pixd;
         pixms = pixWindowedMeanSquare(pixg, whsize, whsize, 1);
     if (ppixth || ppixd)
         pixth = pixSauvolaGetThreshold(pixm, pixms, factor, ppixsd);
-    if (ppixd)
+    if (ppixd) {
         pixd = pixApplyLocalThreshold(pixsc, pixth, 1);
+        pixCopyResolution(pixd, pixs);
+    }
 
     if (ppixm)
         *ppixm = pixm;
@@ -799,3 +812,188 @@ PIX       *pixd;
 
     return pixd;
 }
+
+
+/*----------------------------------------------------------------------*
+ *                  Thresholding using connected components             *
+ *----------------------------------------------------------------------*/
+/*!
+ *  pixThresholdByConnComp()
+ *
+ *      Input:  pixs (depth > 1, colormap OK)
+ *              pixm (<optional> 1 bpp mask giving region to ignore by setting
+ *                    pixels to white; use NULL if no mask)
+ *              start, end, incr (binarization threshold levels to test)
+ *              thresh48 (threshold on normalized difference between the
+ *                        numbers of 4 and 8 connected components)
+ *              threshdiff (threshold on normalized difference between the
+ *                          number of 4 cc at successive iterations)
+ *              &globthresh (<optional return> best global threshold; 0
+ *                           if no threshold is found)
+ *              &pixd (<optional return> image thresholded to binary, or
+ *                     null if no threshold is found)
+ *              debugflag (1 for plotted results)
+ *      Return: 0 if OK, 1 on error or if no threshold is found
+ *
+ *  Notes:
+ *      (1) This finds a global threshold based on connected components.
+ *          Although slow, it is reasonable to use it in a situation where
+ *          (a) the background in the image is relatively uniform, and
+ *          (b) the result will be fed to an OCR program that accepts 1 bpp
+ *              images and works best with easily segmented characters.
+ *          The reason for (b) is that this selects a threshold with a
+ *          minimum number of both broken characters and merged characters.
+ *      (2) If the pix has color, it is converted to gray using the
+ *          max component.
+ *      (3) Input 0 to use default values for any of these inputs:
+ *          @start, @end, @incr, @thresh48, @threshdiff.
+ *      (4) This approach can be understood as follows.  When the
+ *          binarization threshold is varied, the numbers of c.c. identify
+ *          four regimes:
+ *          (a) For low thresholds, text is broken into small pieces, and
+ *              the number of c.c. is large, with the 4 c.c. significantly
+ *              exceeding the 8 c.c.
+ *          (b) As the threshold rises toward the optimum value, the text
+ *              characters coalesce and there is very little difference
+ *              between the numbers of 4 and 8 c.c, which both go
+ *              through a minimum.
+ *          (c) Above this, the image background gets noisy because some
+ *              pixels are(thresholded to foreground, and the numbers
+ *              of c.c. quickly increase, with the 4 c.c. significantly
+ *              larger than the 8 c.c.
+ *          (d) At even higher thresholds, the image background noise
+ *              coalesces as it becomes mostly foreground, and the
+ *              number of c.c. drops quickly.
+ *      (5) If there is no global threshold that distinguishes foreground
+ *          text from background (e.g., weak text over a background that
+ *          has significant variation and/or bleedthrough), this returns 1,
+ *          which the caller should check.
+ */
+l_int32
+pixThresholdByConnComp(PIX       *pixs,
+                       PIX       *pixm,
+                       l_int32    start,
+                       l_int32    end,
+                       l_int32    incr,
+                       l_float32  thresh48,
+                       l_float32  threshdiff,
+                       l_int32   *pglobthresh,
+                       PIX      **ppixd,
+                       l_int32    debugflag)
+{
+l_int32    i, thresh, n, n4, n8, mincounts, found, globthresh;
+l_float32  count4, count8, firstcount4, prevcount4, diff48, diff4;
+GPLOT     *gplot;
+NUMA      *na4, *na8;
+PIX       *pix1, *pix2, *pix3;
+
+    PROCNAME("pixThresholdByConnComp");
+
+    if (pglobthresh) *pglobthresh = 0;
+    if (ppixd) *ppixd = NULL;
+    if (!pixs || pixGetDepth(pixs) == 1)
+        return ERROR_INT("pixs undefined or 1 bpp", procName, 1);
+    if (pixm && pixGetDepth(pixm) != 1)
+        return ERROR_INT("pixm must be 1 bpp", procName, 1);
+
+        /* Assign default values if requested */
+    if (start <= 0) start = 80;
+    if (end <= 0) end = 200;
+    if (incr <= 0) incr = 10;
+    if (thresh48 <= 0.0) thresh48 = 0.01;
+    if (threshdiff <= 0.0) threshdiff = 0.01;
+    if (start > end)
+        return ERROR_INT("invalid start,end", procName, 1);
+
+        /* Make 8 bpp, using the max component if color. */
+    if (pixGetColormap(pixs))
+        pix1 = pixRemoveColormap(pixs, REMOVE_CMAP_BASED_ON_SRC);
+    else
+        pix1 = pixClone(pixs);
+    if (pixGetDepth(pix1) == 32)
+        pix2 = pixConvertRGBToGrayMinMax(pix1, L_CHOOSE_MAX);
+    else
+        pix2 = pixConvertTo8(pix1, 0);
+    pixDestroy(&pix1);
+
+        /* Mask out any non-text regions.  Do this in-place, because pix2
+         * can never be the same pix as pixs. */
+    if (pixm)
+        pixSetMasked(pix2, pixm, 255);
+
+        /* Make sure there are enough components to get a valid signal */
+    pix3 = pixConvertTo1(pix2, start);
+    pixCountConnComp(pix3, 4, &n4);
+    pixDestroy(&pix3);
+    mincounts = 500;
+    if (n4 < mincounts) {
+        L_INFO("Insufficient component count: %d\n", procName, n4);
+        pixDestroy(&pix2);
+        return 1;
+    }
+
+        /* Compute the c.c. data */
+    na4 = numaCreate(0);
+    na8 = numaCreate(0);
+    numaSetParameters(na4, start, incr);
+    numaSetParameters(na8, start, incr);
+    for (thresh = start, i = 0; thresh <= end; thresh += incr, i++) {
+        pix3 = pixConvertTo1(pix2, thresh);
+        pixCountConnComp(pix3, 4, &n4);
+        pixCountConnComp(pix3, 8, &n8);
+        numaAddNumber(na4, n4);
+        numaAddNumber(na8, n8);
+        pixDestroy(&pix3);
+    }
+    if (debugflag) {
+        gplot = gplotCreate("/tmp/threshroot", GPLOT_PNG,
+                            "number of cc vs. threshold",
+                            "threshold", "number of cc");
+        gplotAddPlot(gplot, NULL, na4, GPLOT_LINES, "plot 4cc");
+        gplotAddPlot(gplot, NULL, na8, GPLOT_LINES, "plot 8cc");
+        gplotMakeOutput(gplot);
+        gplotDestroy(&gplot);
+    }
+
+    n = numaGetCount(na4);
+    found = FALSE;
+    for (i = 0; i < n; i++) {
+        if (i == 0) {
+            numaGetFValue(na4, i, &firstcount4);
+            prevcount4 = firstcount4;
+        } else {
+            numaGetFValue(na4, i, &count4);
+            numaGetFValue(na8, i, &count8);
+            diff48 = (count4 - count8) / firstcount4;
+            diff4 = L_ABS(prevcount4 - count4) / firstcount4;
+            if (debugflag) {
+                fprintf(stderr, "diff48 = %7.3f, diff4 = %7.3f\n",
+                        diff48, diff4);
+            }
+            if (diff48 < thresh48 && diff4 < threshdiff) {
+                found = TRUE;
+                break;
+            }
+            prevcount4 = count4;
+        }
+    }
+    numaDestroy(&na4);
+    numaDestroy(&na8);
+
+    if (found) {
+        globthresh = start + i * incr;
+        if (pglobthresh) *pglobthresh = globthresh;
+        if (ppixd) {
+            *ppixd = pixConvertTo1(pix2, globthresh);
+            pixCopyResolution(*ppixd, pixs);
+        }
+        if (debugflag) fprintf(stderr, "global threshold = %d\n", globthresh);
+        pixDestroy(&pix2);
+        return 0;
+    }
+
+    if (debugflag) fprintf(stderr, "no global threshold found\n");
+    pixDestroy(&pix2);
+    return 1;
+}
+

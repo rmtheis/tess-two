@@ -37,17 +37,14 @@ l_int32 main(int    argc,
 {
 char      *boxatxt;
 l_int32    i;
-BOX       *box, *box1, *box2;
-BOXA      *boxa, *boxa1, *boxa2, *boxa3;
+BOXA      *boxa1, *boxa2, *boxa3;
 BOXAA     *baa, *baa1;
 NUMAA     *naa1;
-PIX       *pixdb, *pix, *pix1, *pix2, *pix3, *pix4;
+PIX       *pixdb, *pix1, *pix2, *pix3, *pix4;
 PIXA      *pixa1, *pixa2, *pixa3, *pixat;
 L_RECOG   *recog;
 L_RECOGA  *recoga;
 SARRAY    *sa1;
-
-    PROCNAME("recogsort");
 
     /* ----- Example identifying samples using training data ----- */
 #if 1

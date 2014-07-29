@@ -185,7 +185,7 @@ public class LanguagesActivity extends Activity {
         }
 
         mAdapter.clear();
-        mAdapter.addAll(languages);
+        mAdapter.addAllOf(languages);
 
     }
 
@@ -309,7 +309,7 @@ public class LanguagesActivity extends Activity {
             return view;
         }
 
-        public void addAll(Collection<? extends LanguageData> items) {
+        public void addAllOf(Collection<? extends LanguageData> items) {
             for (LanguageData item : items) {
                 add(item);
             }

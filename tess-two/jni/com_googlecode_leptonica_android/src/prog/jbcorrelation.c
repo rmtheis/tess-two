@@ -65,13 +65,13 @@ int main(int    argc,
          char **argv)
 {
 char         filename[BUF_SIZE];
-char        *dirin, *rootname, *fname;
+char        *dirin, *rootname;
 l_int32      i, firstpage, npages, nfiles;
 l_float32    thresh, weight;
 JBDATA      *data;
 JBCLASSER   *classer;
 SARRAY      *safiles;
-PIX         *pix, *pixt;
+PIX         *pix;
 PIXA        *pixa, *pixadb;
 static char  mainName[] = "jbcorrelation";
 
@@ -140,6 +140,9 @@ static char  mainName[] = "jbcorrelation";
     }
 
 #if  DISPLAY_DIFFERENCE
+    {
+    char *fname;
+    PIX  *pixt;
     fname = sarrayGetString(safiles, 0, 0);
     pixt = pixRead(fname);
     pix = pixaGetPix(pixa, 0, L_CLONE);
@@ -147,6 +150,7 @@ static char  mainName[] = "jbcorrelation";
     pixWrite("junk_output_diff", pixt, IFF_PNG);
     pixDestroy(&pix);
     pixDestroy(&pixt);
+    }
 #endif  /* DISPLAY_DIFFERENCE */
 
 #if  DEBUG_TEST_DATA_IO

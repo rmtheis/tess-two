@@ -58,7 +58,7 @@
 int main(int    argc,
          char **argv)
 {
-char        *str1, *str2;
+char        *str1, *str2, *pngname;
 l_int32      i;
 size_t       size1, size2;
 l_float32    x, y1, y2, pi;
@@ -68,6 +68,8 @@ static char  mainName[] = "plottest";
 
     if (argc != 1)
         return ERROR_INT(" Syntax:  plottest", mainName, 1);
+
+    lept_mkdir("plot");
 
         /* Generate plot data */
     nax = numaCreate(0);
@@ -84,7 +86,7 @@ static char  mainName[] = "plottest";
     }
 
         /* Show the plot */
-    gplot1 = gplotCreate("/tmp/plotroot1", GPLOT_OUTPUT, "Example plots",
+    gplot1 = gplotCreate("/tmp/plot/root1", GPLOT_OUTPUT, "Example plots",
                          "theta", "f(theta)");
     gplotAddPlot(gplot1, nax, nay1, GPLOT_STYLE, "sin (2.4 * theta)");
     gplotAddPlot(gplot1, nax, nay2, GPLOT_STYLE, "cos (2.4 * theta)");
@@ -92,18 +94,20 @@ static char  mainName[] = "plottest";
 
         /* Also save the plot to png */
     gplot1->outformat = GPLOT_PNG;
-    stringReplace(&gplot1->outname, "/tmp/plotroot1.png");
+    pngname = genPathname("/tmp/plot", "root1.png");
+    stringReplace(&gplot1->outname, pngname);
     gplotMakeOutput(gplot1);
+    lept_free(pngname);
 
         /* Test gplot serialization */
-    gplotWrite("/tmp/gplot1", gplot1);
-    if ((gplot2 = gplotRead("/tmp/gplot1")) == NULL)
+    gplotWrite("/tmp/plot/gplot1", gplot1);
+    if ((gplot2 = gplotRead("/tmp/plot/gplot1")) == NULL)
         return ERROR_INT("gplotRead failure!", mainName, 1);
-    gplotWrite("/tmp/gplot2", gplot2);
+    gplotWrite("/tmp/plot/gplot2", gplot2);
 
         /* Are the two written gplot files the same? */
-    str1 = (char *)l_binaryRead("/tmp/gplot1", &size1);
-    str2 = (char *)l_binaryRead("/tmp/gplot2", &size2);
+    str1 = (char *)l_binaryRead("/tmp/plot/gplot1", &size1);
+    str2 = (char *)l_binaryRead("/tmp/plot/gplot2", &size2);
     if (size1 != size2)
         fprintf(stderr, "Error: size1 = %lu, size2 = %lu\n",
                 (unsigned long)size1, (unsigned long)size2);
@@ -117,20 +121,20 @@ static char  mainName[] = "plottest";
     lept_free(str2);
 
         /* Read from file and regenerate the plot */
-    gplot3 = gplotRead("/tmp/gplot2");
+    gplot3 = gplotRead("/tmp/plot/gplot2");
     stringReplace(&gplot3->title , "Example plots regen");
     gplot3->outformat = GPLOT_X11;
     gplotMakeOutput(gplot3);
 
         /* Build gplot but do not make the output formatted stuff */
-    gplot4 = gplotCreate("/tmp/plotroot2", GPLOT_OUTPUT, "Example plots 2",
+    gplot4 = gplotCreate("/tmp/plot/root2", GPLOT_OUTPUT, "Example plots 2",
                          "theta", "f(theta)");
     gplotAddPlot(gplot4, nax, nay1, GPLOT_STYLE, "sin (2.4 * theta)");
     gplotAddPlot(gplot4, nax, nay2, GPLOT_STYLE, "cos (2.4 * theta)");
 
         /* Write, read back, and generate the plot */
-    gplotWrite("/tmp/gplot4", gplot4);
-    if ((gplot5 = gplotRead("/tmp/gplot4")) == NULL)
+    gplotWrite("/tmp/plot/gplot4", gplot4);
+    if ((gplot5 = gplotRead("/tmp/plot/gplot4")) == NULL)
         return ERROR_INT("gplotRead failure!", mainName, 1);
     gplotMakeOutput(gplot5);
 

@@ -118,7 +118,7 @@ L_REGPARAMS  *rp;
     }
     pixt1 = pixaDisplayTiledAndScaled(pixa, 32, w, 5, 0, 10, 2);
     pixSaveTiled(pixt1, pixaf, 1.0, 1, 20, 0);
-    gplotSimple1(na, GPLOT_PNG, "/tmp/enhance.7", "Average Saturation");
+    gplotSimple1(na, GPLOT_PNG, "/tmp/regout/enhance.7", "Average Saturation");
     regTestWritePixAndCheck(rp, pixt1, IFF_PNG);  /* 3 */
     pixDisplayWithTitle(pixt1, 900, 100, "Saturation", rp->display);
     numaDestroy(&na);
@@ -177,7 +177,7 @@ L_REGPARAMS  *rp;
     pixDestroy(&pixd);
 
         /* Delayed testing of saturation plot */
-    regTestCheckFile(rp, "/tmp/enhance.7.png");  /* 7 */
+    regTestCheckFile(rp, "/tmp/regout/enhance.7.png");  /* 7 */
 
         /* Display results */
     pixd = pixaDisplay(pixaf, 0, 0);

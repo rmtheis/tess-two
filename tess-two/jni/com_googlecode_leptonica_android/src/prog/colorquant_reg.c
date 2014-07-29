@@ -219,7 +219,7 @@ PIXA      *pixa;
 
     pixd = pixaDisplay(pixa, 0, 0);
     pixDisplayWithTitle(pixd, 100, 100, NULL, rp->display);
-    sprintf(buf, "/tmp/disp.%d.jpg", i);
+    sprintf(buf, "/tmp/regout/disp.%d.jpg", i);
     pixWrite(buf, pixd, IFF_JFIF_JPEG);
 
     pixDestroy(&pixs);

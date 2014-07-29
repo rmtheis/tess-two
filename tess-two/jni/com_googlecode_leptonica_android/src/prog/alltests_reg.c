@@ -48,6 +48,7 @@
 static const char *tests[] = {
                               "alphaops_reg",
                               "alphaxform_reg",
+                              "bilateral2_reg",
                               "binarize_reg",
                               "blackwhite_reg",
                               "blend3_reg",
@@ -64,6 +65,7 @@ static const char *tests[] = {
                               "dna_reg",
                               "dwamorph1_reg",
                               "enhance_reg",
+                              "files_reg",
                               "findcorners_reg",
                               "findpattern_reg",
                               "fpix1_reg",
@@ -90,6 +92,7 @@ static const char *tests[] = {
                               "projection_reg",
                               "psio_reg",
                               "psioseg_reg",
+                              "pta_reg",
                               "rankbin_reg",
                               "rankhisto_reg",
                               "rasteropip_reg",
@@ -131,7 +134,7 @@ static char  mainName[] = "alltests_reg";
     l_getCurrentTime(&start, NULL);
     ntests = sizeof(tests) / sizeof(char *);
     fprintf(stderr, "Running alltests_reg:\n"
-            "This currently tests %d of the 97 Regression Test\n"
+            "This currently tests %d of the 120 Regression Test\n"
             "programs in the /prog directory.\n", ntests);
 
         /* Clear the output file if we're doing the set of reg tests */

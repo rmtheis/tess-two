@@ -10,10 +10,6 @@
 #include "cube_utils.h"
 #include "allheaders.h"
 
-#if !defined(VERSION)
-#include "version.h"
-#endif
-
 #ifdef _MSC_VER
 #include "mathfix.h"
 #endif
@@ -32,8 +28,8 @@ const int kCharWidth = 2;
  * PDF Renderer interface implementation
  **********************************************************************/
 
-TessPDFRenderer::TessPDFRenderer(const char *datadir)
-    : TessResultRenderer("PDF", "pdf") {
+TessPDFRenderer::TessPDFRenderer(const char* outputbase, const char *datadir)
+    : TessResultRenderer(outputbase, "pdf") {
   obj_  = 0;
   datadir_ = datadir;
   offsets_.push_back(0);
@@ -208,12 +204,17 @@ char* TessPDFRenderer::GetPDFTextObjects(TessBaseAPI* api,
     old_y = y;
 
     // Adjust font size on a per word granularity. Pay attention to
-    // pointsize, old_pointsize, and pdf_str.
+    // pointsize, old_pointsize, and pdf_str. We've found that for
+    // in Arabic, Tesseract will happily return a pointsize of zero,
+    //  so we make up a default number to protect ourselves.
     {
       bool bold, italic, underlined, monospace, serif, smallcaps;
       int font_id;
       res_it->WordFontAttributes(&bold, &italic, &underlined, &monospace,
                                  &serif, &smallcaps, &pointsize, &font_id);
+      const int kDefaultPointSize = 8;
+      if (pointsize <= 0)
+        pointsize = kDefaultPointSize;
       if (pointsize != old_pointsize) {
         char textfont[20];
         snprintf(textfont, sizeof(textfont), "/f-0-0 %d Tf ", pointsize);
@@ -228,7 +229,7 @@ char* TessPDFRenderer::GetPDFTextObjects(TessBaseAPI* api,
     int pdf_word_len = 0;
     do {
       const char *grapheme = res_it->GetUTF8Text(RIL_SYMBOL);
-      if (grapheme && grapheme[0] != 0) {
+      if (grapheme && grapheme[0] != '\0') {
         // TODO(jbreiden) Do a real UTF-16BE conversion
         // http://en.wikipedia.org/wiki/UTF-16#Example_UTF-16_encoding_procedure
         string_32 utf32;
@@ -435,20 +436,30 @@ bool TessPDFRenderer::fileToPDFObj(char *filename, long int objnum,
   FILE *fp = fopen(filename, "rb");
   if (!fp)
     return false;
-  int format;
 
+  const char *filter;
+  int bps, spp, w, h;
+  int cmyk = false;
+  int format;
   findFileFormatStream(fp, &format);
-  if (format != IFF_JFIF_JPEG) {
-    fclose(fp);
-    return false;
+  switch(format) {
+    case IFF_JFIF_JPEG:
+        freadHeaderJpeg(fp, &w, &h, &spp, NULL, &cmyk);
+        filter = "/DCTDecode";
+        break;
+    case IFF_JP2:
+#if LIBLEPT_MINOR_VERSION == 70 && LIBLEPT_MAJOR_VERSION <= 1
+        freadHeaderJp2k(fp, &w, &h, &spp);
+#else
+        freadHeaderJp2k(fp, &w, &h, &bps, &spp);
+#endif
+        filter = "/JPXDecode";
+        break;
+    default:
+      fclose(fp);
+      return false;
   }
 
-  fseek(fp, 0, SEEK_END);
-  long int jpeg_size = ftell(fp);
-  fseek(fp, 0, SEEK_SET);
-
-  int spp, cmyk, w, h;
-  freadHeaderJpeg(fp, &w, &h, &spp, NULL, &cmyk);
   const char *colorspace;
   switch (spp) {
     case 1:
@@ -467,6 +478,10 @@ bool TessPDFRenderer::fileToPDFObj(char *filename, long int objnum,
       return false;
   }
 
+  fseek(fp, 0, SEEK_END);
+  long int file_size = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+
   // IMAGE
   snprintf(b1, sizeof(b1),
            "%ld 0 obj\n"
@@ -477,10 +492,10 @@ bool TessPDFRenderer::fileToPDFObj(char *filename, long int objnum,
            "  /Width %d\n"
            "  /Height %d\n"
            "  /BitsPerComponent 8\n"
-           "  /Filter /DCTDecode\n"
+           "  /Filter %s\n"
            ">>\n"
-           "stream\n", objnum, jpeg_size,
-           colorspace, w, h);
+           "stream\n", objnum, file_size,
+           colorspace, w, h, filter);
   size_t b1_len = strlen(b1);
 
   snprintf(b2, sizeof(b2),
@@ -489,17 +504,17 @@ bool TessPDFRenderer::fileToPDFObj(char *filename, long int objnum,
            "endobj\n");
   size_t b2_len = strlen(b2);
 
-  *pdf_object_size = b1_len + jpeg_size + b2_len;
+  *pdf_object_size = b1_len + file_size + b2_len;
   *pdf_object = new char[*pdf_object_size];
   if (!pdf_object)
     return false;
   memcpy(*pdf_object, b1, b1_len);
-  if (static_cast<int>(fread(*pdf_object + b1_len, 1, jpeg_size, fp)) !=
-      jpeg_size) {
+  if (static_cast<int>(fread(*pdf_object + b1_len, 1, file_size, fp)) !=
+      file_size) {
     delete[] pdf_object;
     return false;
   }
-  memcpy(*pdf_object + b1_len + jpeg_size, b2, b2_len);
+  memcpy(*pdf_object + b1_len + file_size, b2, b2_len);
   fclose(fp);
   return true;
 }
@@ -716,7 +731,7 @@ bool TessPDFRenderer::EndDocumentHandler() {
            "  /CreationDate (D:%s)\n"
            "  /Title (%s)"
            ">>\n"
-           "endobj\n", obj_, VERSION, datestr, title());
+           "endobj\n", obj_, TESSERACT_VERSION_STR, datestr, title());
   lept_free(datestr);
   AppendPDFObject(buf);
 

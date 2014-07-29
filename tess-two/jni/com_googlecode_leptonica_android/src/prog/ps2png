@@ -8,7 +8,8 @@
 #     output: png binary files for each page
 #
 #     Restriction: the input PostScript file must be binary
-
+#
+#   N.B. Requires ghostscript
 
 scriptname=${0##*/}
 

@@ -51,7 +51,11 @@
 #if  USE_BMPIO   /* defined in environ.h */
 /* --------------------------------------------*/
 
-RGBA_QUAD   bwmap[2] = { {255,255,255,0}, {0,0,0,0} };
+    /* Here we're setting the pixel value 0 to white (255) and the
+     * value 1 to black (0).  This is the convention for grayscale, but
+     * the opposite of the convention for 1 bpp, where 0 is white
+     * and 1 is black.  Both colormap entries are opaque (alpha = 255) */
+RGBA_QUAD   bwmap[2] = { {255,255,255,255}, {0,0,0,255} };
 
     /* Colormap size limit */
 static const l_int32  L_MAX_ALLOWED_NUM_COLORS = 256;
@@ -307,14 +311,15 @@ PIXCMAP   *cmap;
         /* ----------------------------------------------
          * The bmp colormap determines the values of black
          * and white pixels for binary in the following way:
-         * if black = 1 (255), white = 0
-         *      255, 255, 255, 0, 0, 0, 0, 0
-         * if black = 0, white = 1 (255)
-         *      0, 0, 0, 0, 255, 255, 255, 0
+         * (a) white = 0 [255], black = 1 [0]
+         *      255, 255, 255, 255, 0, 0, 0, 255
+         * (b) black = 0 [0], white = 1 [255]
+         *      0, 0, 0, 255, 255, 255, 255, 255
          * We have no need for a 1 bpp pix with a colormap!
+         * Note: the alpha component here is 255 (opaque)
          * ---------------------------------------------- */
     if (depth == 1 && cmap) {
-        pixt = pixRemoveColormap(pix, REMOVE_CMAP_BASED_ON_SRC);
+        pixt = pixRemoveColormap(pix, REMOVE_CMAP_TO_BINARY);
         pixDestroy(&pix);
         pix = pixt;  /* rename */
     }
@@ -411,6 +416,7 @@ RGBA_QUAD  *pquad;
                  i < ncolors;
                  i++, val += stepsize, pquad++) {
                 pquad->blue = pquad->green = pquad->red = val;
+                pquad->alpha = 255;  /* opaque */
             }
         }
     }

@@ -38,12 +38,7 @@
 #include "unicode/uchar.h"  // from libicu
 #include "util.h"
 
-#ifndef USE_STD_NAMESPACE
-// Compatability with pango 1.20.
-#include "pango/pango-glyph-item-private.h"
-#define pango_glyph_item_iter_init_start _pango_glyph_item_iter_init_start
-#define pango_glyph_item_iter_next_cluster _pango_glyph_item_iter_next_cluster
-#else
+#ifdef USE_STD_NAMESPACE
 using std::map;
 using std::max;
 using std::min;
@@ -717,7 +712,7 @@ int StringRenderer::RenderToImage(const char* text, int text_length,
 // RenderString, except that it ignores the font set at construction and works
 // through all the fonts, returning 0 until they are exhausted, at which point
 // it returns the value it should have returned all along, but no pix this time.
-// Fonts that don't contain a large proportion of the characters in the string
+// Fonts that don't contain a given proportion of the characters in the string
 // get skipped.
 // Fonts that work each get rendered and the font name gets added
 // to the image.
@@ -728,12 +723,13 @@ int StringRenderer::RenderToImage(const char* text, int text_length,
 // int offset = 0;
 // do {
 //   Pix *pix;
-//   offset += renderer.RenderAllFontsToImage(txt + offset,
+//   offset += renderer.RenderAllFontsToImage(min_proportion, txt + offset,
 //                                            strlen(txt + offset), NULL, &pix);
 //   ...
 // } while (offset < strlen(text));
 //
-int StringRenderer::RenderAllFontsToImage(const char* text, int text_length,
+int StringRenderer::RenderAllFontsToImage(double min_coverage,
+                                          const char* text, int text_length,
                                           string* font_used, Pix** image) {
   // Select a suitable font to render the title with.
   const char kTitleTemplate[] = "%s : %d hits = %.2f%%, raw = %d = %.2f%%";
@@ -764,7 +760,7 @@ int StringRenderer::RenderAllFontsToImage(const char* text, int text_length,
     int raw_score = 0;
     int ok_chars = FontUtils::FontScore(char_map_, all_fonts[i], &raw_score,
                                         NULL);
-    if (ok_chars > 0 && ok_chars == total_chars_) {
+    if (ok_chars > 0 && ok_chars >= total_chars_ * min_coverage) {
       set_font(all_fonts[i]);
       int offset = RenderToBinaryImage(text, text_length, 128, image);
       ClearBoxes();  // Get rid of them as they are garbage.

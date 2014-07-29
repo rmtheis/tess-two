@@ -60,11 +60,12 @@ PIX        *pixs2, *pixn2, *pixg2, *pixb2, *pixd2;
     dewarpaUseBothArrays(dewa, 1);
     dew1 = dewarpCreate(pixb, 10);
     dewarpaInsertDewarp(dewa, dew1);
-    dewarpBuildPageModel(dew1, "/tmp/dewarp_model1.pdf");
+    dewarpBuildPageModel(dew1, "/tmp/lept/dewarp_model1.pdf");
     dewarpaApplyDisparity(dewa, 10, pixg, 200, 0, 0, &pixd,
-                          "/tmp/dewarp_apply1.pdf");
+                          "/tmp/lept/dewarp_apply1.pdf");
 
          /* Write out some of the files to be imaged */
+    lept_mkdir("lept");
     lept_rmdir("dewtest");
     lept_mkdir("dewtest");
     pixWrite("/tmp/dewtest/001.jpg", pixs, IFF_JFIF_JPEG);
@@ -72,16 +73,16 @@ PIX        *pixs2, *pixn2, *pixg2, *pixb2, *pixd2;
     pixWrite("/tmp/dewtest/003.jpg", pixg, IFF_JFIF_JPEG);
     pixWrite("/tmp/dewtest/004.png", pixb, IFF_TIFF_G4);
     pixWrite("/tmp/dewtest/005.jpg", pixd, IFF_JFIF_JPEG);
-    pixt1 = pixRead("/tmp/dewmod/002.png");
+    pixt1 = pixRead("/tmp/dewmod/0020.png");
     pixWrite("/tmp/dewtest/006.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
-    pixt1 = pixRead("/tmp/dewmod/003.png");
+    pixt1 = pixRead("/tmp/dewmod/0030.png");
     pixWrite("/tmp/dewtest/007.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
-    pixt1 = pixRead("/tmp/dewmod/006.png");
+    pixt1 = pixRead("/tmp/dewmod/0060.png");
     pixWrite("/tmp/dewtest/008.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
-    pixt1 = pixRead("/tmp/dewmod/007.png");
+    pixt1 = pixRead("/tmp/dewmod/0070.png");
     pixWrite("/tmp/dewtest/009.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
     pixt1 = pixRead("/tmp/dewapply/002.png");
@@ -93,16 +94,16 @@ PIX        *pixs2, *pixn2, *pixg2, *pixb2, *pixd2;
     pixWrite("/tmp/dewtest/012.png", pixt2, IFF_TIFF_G4);
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
-    pixt1 = pixRead("/tmp/dewmod/004a.png");
+    pixt1 = pixRead("/tmp/dewmod/0041.png");
     pixWrite("/tmp/dewtest/013.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
-    pixt1 = pixRead("/tmp/dewmod/004b.png");
+    pixt1 = pixRead("/tmp/dewmod/0042.png");
     pixWrite("/tmp/dewtest/014.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
-    pixt1 = pixRead("/tmp/dewmod/005a.png");
+    pixt1 = pixRead("/tmp/dewmod/0051.png");
     pixWrite("/tmp/dewtest/015.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
-    pixt1 = pixRead("/tmp/dewmod/005b.png");
+    pixt1 = pixRead("/tmp/dewmod/0052.png");
     pixWrite("/tmp/dewtest/016.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
 
@@ -121,7 +122,7 @@ PIX        *pixs2, *pixn2, *pixg2, *pixb2, *pixd2;
     dewarpaInsertRefModels(dewa, 0, 1);
     dewarpaInfo(stderr, dewa);
     dewarpaApplyDisparity(dewa, 14, pixg2, 200, 0, 0, &pixd2,
-                          "/tmp/dewarp_apply2.pdf");
+                          "/tmp/lept/dewarp_apply2.pdf");
     dewarpaDestroy(&dewa);
 
         /* Write out files for the second image */
@@ -129,7 +130,7 @@ PIX        *pixs2, *pixn2, *pixg2, *pixb2, *pixd2;
     pixWrite("/tmp/dewtest/018.jpg", pixg2, IFF_JFIF_JPEG);
     pixWrite("/tmp/dewtest/019.png", pixb2, IFF_TIFF_G4);
     pixWrite("/tmp/dewtest/020.jpg", pixd2, IFF_JFIF_JPEG);
-    pixt1 = pixRead("/tmp/dewmod/006.png");
+    pixt1 = pixRead("/tmp/dewmod/0060.png");
     pixWrite("/tmp/dewtest/021.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
     pixt1 = pixRead("/tmp/dewapply/002.png");
@@ -138,7 +139,7 @@ PIX        *pixs2, *pixn2, *pixg2, *pixb2, *pixd2;
     pixWrite("/tmp/dewtest/023.png", pixt2, IFF_TIFF_G4);
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
-    pixt1 = pixRead("/tmp/dewmod/007.png");
+    pixt1 = pixRead("/tmp/dewmod/0070.png");
     pixWrite("/tmp/dewtest/024.png", pixt1, IFF_PNG);
     pixDestroy(&pixt1);
     pixt1 = pixRead("/tmp/dewapply/003.png");
@@ -150,9 +151,11 @@ PIX        *pixs2, *pixn2, *pixg2, *pixb2, *pixd2;
 
         /* Generate the big pdf file */
     convertFilesToPdf("/tmp/dewtest", NULL, 135, 1.0, 0, 0, "Dewarp Test",
-                      "/tmp/dewarp.pdf");
-    fprintf(stderr, "pdf file made: /tmp/dewarp.pdf\n");
+                      "/tmp/lept/dewarptest1.pdf");
+    fprintf(stderr, "pdf file made: /tmp/lept/dewarptest1.pdf\n");
 
+    lept_rmdir("dewmod");
+    lept_rmdir("dewtest");
     pixDestroy(&pixs);
     pixDestroy(&pixn);
     pixDestroy(&pixg);

@@ -47,6 +47,8 @@
  *
  *   The PS file generated is level 1.  This is large, but will work
  *   on all PS printers.
+ *
+ *   N.B.  This requires lpr.
  */
 
 #include "allheaders.h"

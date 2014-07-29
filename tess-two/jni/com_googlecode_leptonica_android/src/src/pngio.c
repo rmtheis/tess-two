@@ -31,8 +31,9 @@
  *          PIX        *pixReadStreamPng()
  *          l_int32     readHeaderPng()
  *          l_int32     freadHeaderPng()
- *          l_int32     sreadHeaderPng()
+ *          l_int32     readHeaderMemPng()
  *          l_int32     fgetPngResolution()
+ *          l_int32     isPngInterlaced()
  *
  *    Write png to file
  *          l_int32     pixWritePng()  [ special top level ]
@@ -143,23 +144,30 @@ static l_int32   var_PNG_STRIP_16_TO_8 = 1;
  *          at the beginning of the file.
  *      (2) To do sequential reads of png format images from a stream,
  *          use pixReadStreamPng()
- *      (3) Grayscale-with-alpha pngs (spp = 2) are converted to RGBA
- *          on read; the returned pix has spp = 4 and equal red, green and
- *          blue channels.
- *      (4) spp = 1 with alpha (palette) is converted to RGBA with spp = 4.
- *      (5) We use the high level png interface, where the transforms are set
+ *      (3) Any image with alpha is converted to RGBA (spp = 4, with
+ *          equal red, green and blue channels) on reading.
+ *          There are three important cases with alpha:
+ *          (a) grayscale-with-alpha (spp = 2), where bpp = 8, and each
+ *              pixel has an associated alpha (transparency) value
+ *              in the second component of the image data.
+ *          (b) spp = 1, d = 1 with colormap and alpha in the trans array.
+ *              Transparency is usually associated with the white background.
+ *          (c) spp = 1, d = 8 with colormap and alpha in the trans array.
+ *              Each color in the colormap has a separate transparency value.
+ *      (4) We use the high level png interface, where the transforms are set
  *          up in advance and the header and image are read with a single
  *          call.  The more complicated interface, where the header is
  *          read first and the buffers for the raster image are user-
- *          allocated before reading the image, works OK for single images,
+ *          allocated before reading the image, works for single images,
  *          but I could not get it to work properly for the successive
  *          png reads that are required by pixaReadStream().
  */
 PIX *
 pixReadStreamPng(FILE  *fp)
 {
+l_uint8      byte;
 l_int32      rval, gval, bval;
-l_int32      i, j, k, index, ncolors;
+l_int32      i, j, k, index, ncolors, bitval;
 l_int32      wpl, d, spp, cindex, tRNS;
 l_uint32     png_transforms;
 l_uint32    *data, *line, *ppixel;
@@ -208,12 +216,16 @@ PIXCMAP     *cmap;
         /* ---------------------------------------------------------- *
          *  Set the transforms flags.  Whatever happens here,
          *  NEVER invert 1 bpp using PNG_TRANSFORM_INVERT_MONO.
+         *  Also, do not use PNG_TRANSFORM_EXPAND, which would
+         *  expand all images with bpp < 8 to 8 bpp.
          * ---------------------------------------------------------- */
         /* To strip 16 --> 8 bit depth, use PNG_TRANSFORM_STRIP_16 */
-    if (var_PNG_STRIP_16_TO_8 == 1)   /* our default */
+    if (var_PNG_STRIP_16_TO_8 == 1) {  /* our default */
         png_transforms = PNG_TRANSFORM_STRIP_16;
-    else
+    } else {
         png_transforms = PNG_TRANSFORM_IDENTITY;
+        L_INFO("not stripping 16 --> 8 in png reading\n", procName);
+    }
 
         /* Read it */
     png_read_png(png_ptr, info_ptr, png_transforms, NULL);
@@ -303,10 +315,14 @@ PIXCMAP     *cmap;
         }
     }
 
-        /* Special case: requires converting to RGBA */
+        /* Special spp == 1 cases with transparency:
+         *    (1) 8 bpp without colormap; assume full transparency
+         *    (2) 1 bpp with colormap + trans array (for alpha)
+         *    (3) 8 bpp with colormap + trans array (for alpha)
+         * These all require converting to RGBA */
     if (spp == 1 && tRNS) {
         if (!cmap) {
-                /* Trivial case: make fully transparent RGBA image */
+                /* Case 1: make fully transparent RGBA image */
             L_INFO("transparency, 1 spp, no colormap, no transparency array: "
                    "convention is fully transparent image\n", procName);
             L_INFO("converting (fully transparent 1 spp) ==> RGBA\n", procName);
@@ -352,19 +368,48 @@ PIXCMAP     *cmap;
 #endif  /* DEBUG_READ */
 
                 /* Extract the data and convert to RGBA */
-            for (i = 0; i < h; i++) {
-                ppixel = data + i * wpl;
-                rowptr = row_pointers[i];
-                for (j = 0; j < w; j++) {
-                    index = rowptr[j];
-                    pixcmapGetColor(cmap, index, &rval, &gval, &bval);
-                    composeRGBPixel(rval, gval, bval, ppixel);
-                        /* Assume missing entries to be 255 (opaque) according
-                         * to the spec:  http://www.w3.org/TR/PNG/#11tRNS */
-                    SET_DATA_BYTE(ppixel, L_ALPHA_CHANNEL,
-                                  index < num_trans ? trans[index] : 255);
-                    ppixel++;
+            if (d == 1) {
+                    /* Case 2: 1 bpp with transparency (usually) behind white */
+                L_INFO("converting 1 bpp cmap with alpha ==> RGBA\n", procName);
+                if (num_trans < 2)
+                    L_WARNING("num_trans = %d; should be 2\n", procName,
+                              num_trans);
+                for (i = 0; i < h; i++) {
+                    ppixel = data + i * wpl;
+                    rowptr = row_pointers[i];
+                    for (j = 0, index = 0; j < rowbytes; j++) {
+                        byte = rowptr[j];
+                        for (k = 0; k < 8 && index < w; k++, index++) {
+                            bitval = (byte >> (7 - k)) & 1;
+                            pixcmapGetColor(cmap, bitval, &rval, &gval, &bval);
+                            composeRGBPixel(rval, gval, bval, ppixel);
+                            SET_DATA_BYTE(ppixel, L_ALPHA_CHANNEL,
+                                      bitval < num_trans ? trans[bitval] : 255);
+                            ppixel++;
+                        }
+                    }
                 }
+            } else if (d == 8) {
+                    /* Case 3: 8 bpp with cmap and associated transparency */
+                L_INFO("converting 8 bpp cmap with alpha ==> RGBA\n", procName);
+                for (i = 0; i < h; i++) {
+                    ppixel = data + i * wpl;
+                    rowptr = row_pointers[i];
+                    for (j = 0; j < w; j++) {
+                        index = rowptr[j];
+                        pixcmapGetColor(cmap, index, &rval, &gval, &bval);
+                        composeRGBPixel(rval, gval, bval, ppixel);
+                            /* Assume missing entries to be 255 (opaque)
+                             * according to the spec:
+                             * http://www.w3.org/TR/PNG/#11tRNS */
+                        SET_DATA_BYTE(ppixel, L_ALPHA_CHANNEL,
+                                      index < num_trans ? trans[index] : 255);
+                        ppixel++;
+                    }
+                }
+            } else {
+                L_ERROR("spp == 1, cmap, trans array, invalid depth: %d\n",
+                        procName, d);
             }
             pixcmapDestroy(&cmap);
         }
@@ -394,20 +439,24 @@ PIXCMAP     *cmap;
          * white = 0, we don't need to do anything.
          *
          * How do we check the polarity of the colormap?
-         * The colormap determines the values of black and
+         * The RGBA colormap determines the values of black and
          * white pixels in the following way:
          *     if black = 1 (255), white = 0
-         *          255, 255, 255, 0, 0, 0, 0, 0, 0
+         *          255, 255, 255, 0, 0, 0, 0, 0
          *     if black = 0, white = 1 (255)
          *          0, 0, 0, 0, 255, 255, 255, 0
          * So we test the first byte to see if it is 0;
          * if so, invert the colors.
          *
          * If there is a colormap, after inverting the pixels it is
-         * necessary to destroy the colormap.  Otherwise, if someone were
-         * to call pixRemoveColormap(), this would cause the pixel
-         * values to be inverted again!
+         * necessary to destroy the colormap.  Otherwise, calling
+         * pixRemoveColormap() would invert the pixel values again!
+         *
+         * Note that if the input png is a 1-bit with colormap and
+         * transparency, we are rendering it as a 32 bpp, spp = 4 rgba pix.
+         * Do not invert the image data!
          */
+    d = pixGetDepth(pix);
     if (d == 1 && (!cmap || (cmap && ((l_uint8 *)(cmap->array))[0] == 0x0))) {
 /*        fprintf(stderr, "Inverting binary data on png read\n"); */
         pixInvert(pix, pix);
@@ -459,6 +508,11 @@ FILE    *fp;
 
     PROCNAME("readHeaderPng");
 
+    if (pw) *pw = 0;
+    if (ph) *ph = 0;
+    if (pbps) *pbps = 0;
+    if (pspp) *pspp = 0;
+    if (piscmap) *piscmap = 0;
     if (!filename)
         return ERROR_INT("filename not defined", procName, 1);
     if ((fp = fopenReadStream(filename)) == NULL)
@@ -481,7 +535,7 @@ FILE    *fp;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) See readHeaderPng().
+ *      (1) See readHeaderPng().  We only need the first 40 bytes in the file.
  */
 l_int32
 freadHeaderPng(FILE     *fp,
@@ -511,16 +565,17 @@ l_uint8  *data;
         return ERROR_INT("CALLOC fail for data", procName, 1);
     if (fread(data, 1, 40, fp) != 40)
         return ERROR_INT("error reading data", procName, 1);
-    ret = sreadHeaderPng(data, pw, ph, pbps, pspp, piscmap);
+    ret = readHeaderMemPng(data, 40, pw, ph, pbps, pspp, piscmap);
     FREE(data);
     return ret;
 }
 
 
 /*!
- *  sreadHeaderPng()
+ *  readHeaderMemPng()
  *
  *      Input:  data
+ *              size (40 bytes is sufficient)
  *              &w (<optional return>)
  *              &h (<optional return>)
  *              &bps (<optional return>, bits/sample)
@@ -541,27 +596,30 @@ l_uint8  *data;
  *            4 and 6 have separate alpha samples with each pixel.
  */
 l_int32
-sreadHeaderPng(const l_uint8  *data,
-               l_int32        *pw,
-               l_int32        *ph,
-               l_int32        *pbps,
-               l_int32        *pspp,
-               l_int32        *piscmap)
+readHeaderMemPng(const l_uint8  *data,
+                 size_t          size,
+                 l_int32        *pw,
+                 l_int32        *ph,
+                 l_int32        *pbps,
+                 l_int32        *pspp,
+                 l_int32        *piscmap)
 {
 l_uint16   twobytes;
 l_uint16  *pshort;
 l_int32    colortype, bps, spp;
 l_uint32  *pword;
 
-    PROCNAME("sreadHeaderPng");
+    PROCNAME("readHeaderMemPng");
 
-    if (!data)
-        return ERROR_INT("data not defined", procName, 1);
     if (pw) *pw = 0;
     if (ph) *ph = 0;
     if (pbps) *pbps = 0;
     if (pspp) *pspp = 0;
     if (piscmap) *piscmap = 0;
+    if (!data)
+        return ERROR_INT("data not defined", procName, 1);
+    if (size < 40)
+        return ERROR_INT("size < 40", procName, 1);
 
         /* Check password */
     if (data[0] != 137 || data[1] != 80 || data[2] != 78 ||
@@ -631,11 +689,12 @@ png_infop    info_ptr;
 
     PROCNAME("fgetPngResolution");
 
-    if (!pxres || !pyres)
-        return ERROR_INT("&xres and &yres not both defined", procName, 1);
-    *pxres = *pyres = 0;
+    if (pxres) *pxres = 0;
+    if (pyres) *pyres = 0;
     if (!fp)
         return ERROR_INT("stream not opened", procName, 1);
+    if (!pxres || !pyres)
+        return ERROR_INT("&xres and &yres not both defined", procName, 1);
 
        /* Make the two required structs */
     if ((png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
@@ -665,6 +724,39 @@ png_infop    info_ptr;
 
     png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
     rewind(fp);
+    return 0;
+}
+
+
+/*!
+ *  isPngInterlaced()
+ *
+ *      Input:  filename
+ *              &interlaced (<return> 1 if interlaced png; 0 otherwise)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+isPngInterlaced(const char *filename,
+                l_int32    *pinterlaced)
+{
+l_uint8  buf[32];
+FILE    *fp;
+
+    PROCNAME("isPngInterlaced");
+
+    if (!pinterlaced)
+        return ERROR_INT("&interlaced not defined", procName, 1);
+    *pinterlaced = 0;
+    if (!filename)
+        return ERROR_INT("filename not defined", procName, 1);
+
+    if ((fp = fopenReadStream(filename)) == NULL)
+        return ERROR_INT("stream not opened", procName, 1);
+    if (fread(buf, 1, 32, fp) != 32)
+        return ERROR_INT("data not read", procName, 1);
+    fclose(fp);
+
+    *pinterlaced = (buf[28] == 0) ? 0 : 1;
     return 0;
 }
 
@@ -1138,6 +1230,8 @@ FILE    *fp;
 
     PROCNAME("pixWriteMemPng");
 
+    if (pdata) *pdata = NULL;
+    if (psize) *psize = 0;
     if (!pdata)
         return ERROR_INT("&data not defined", procName, 1 );
     if (!psize)

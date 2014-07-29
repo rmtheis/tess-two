@@ -58,13 +58,12 @@ int main(int    argc,
          char **argv)
 {
 char         filename[BUF_SIZE];
-char        *dirin, *rootname, *fname;
-l_int32      reduction, i, firstpage, npages, nfiles;
+char        *dirin, *rootname;
+l_int32      reduction, i, firstpage, npages;
 l_float32    thresh, weight;
 JBDATA      *data;
 JBCLASSER   *classer;
 NUMA        *natl;
-SARRAY      *safiles;
 PIX         *pix;
 PIXA        *pixa, *pixadb;
 static char  mainName[] = "jbwords";

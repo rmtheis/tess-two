@@ -37,6 +37,11 @@
  *    This only tests properly written jpeg files.  To test
  *    reading of corrupted jpeg files to insure that the
  *    reader does not crash, use prog/corrupttest.c.
+ *
+ *    TODO (5/5/14): Add tests for
+ *    (1) different color spaces
+ *    (2) no chroma subsampling
+ *    (3) luminance only reading
  */
 
 #include <string.h>
@@ -50,6 +55,7 @@
 void DoJpegTest1(L_REGPARAMS *rp, const char *fname);
 void DoJpegTest2(L_REGPARAMS *rp, const char *fname);
 void DoJpegTest3(L_REGPARAMS *rp, const char *fname);
+void DoJpegTest4(L_REGPARAMS *rp, const char *fname);
 
 
 int main(int    argc,
@@ -70,15 +76,22 @@ L_REGPARAMS  *rp;
     DoJpegTest1(rp, "test8.jpg");
     DoJpegTest1(rp, "fish24.jpg");
     DoJpegTest1(rp, "test24.jpg");
-    DoJpegTest2(rp, "lucasta.150.jpg");
-    DoJpegTest2(rp, "tetons.jpg");
-    DoJpegTest3(rp, "karen8.jpg");
+    DoJpegTest2(rp, "weasel2.png");
+    DoJpegTest2(rp, "weasel2.4g.png");
+    DoJpegTest2(rp, "weasel4.png");
+    DoJpegTest2(rp, "weasel4.5g.png");
+    DoJpegTest2(rp, "weasel4.16c.png");
+    DoJpegTest2(rp, "weasel8.16g.png");
+    DoJpegTest2(rp, "weasel8.240c.png");
+    DoJpegTest3(rp, "lucasta.150.jpg");
+    DoJpegTest3(rp, "tetons.jpg");
+    DoJpegTest4(rp, "karen8.jpg");
 
-    regTestCleanup(rp);
-    return 0;
+    return regTestCleanup(rp);
 }
 
 
+/* Use this for 8 bpp (no cmap), 24 bpp or 32 bpp pix */
 void DoJpegTest1(L_REGPARAMS  *rp,
                  const char   *fname)
 {
@@ -89,7 +102,7 @@ PIX      *pixs, *pix1, *pix2, *pix3, *pix4, *pix5;
 
         /* Test file read/write (general functions) */
     pixs = pixRead(fname);
-    snprintf(buf, sizeof(buf), "/tmp/jpegio.%d.jpg", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/regout/jpegio.%d.jpg", rp->index + 1);
     pixWrite(buf, pixs, IFF_JFIF_JPEG);
     pix1 = pixRead(buf);
     regTestCompareSimilarPix(rp, pixs, pix1, 6, 0.01, 0);
@@ -102,11 +115,11 @@ PIX      *pixs, *pix1, *pix2, *pix3, *pix4, *pix5;
     lept_free(data);
 
         /* Test file read/write (specialized jpeg functions) */
-    pix3 = pixReadJpeg(fname, 0, 1, NULL);
+    pix3 = pixReadJpeg(fname, 0, 1, NULL, 0);
     regTestComparePix(rp, pixs, pix3);
-    snprintf(buf, sizeof(buf), "/tmp/jpegio.%d.jpg", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/regout/jpegio.%d.jpg", rp->index + 1);
     pixWriteJpeg(buf, pix3, 75, 0);
-    pix4 = pixReadJpeg(buf, 0, 1, NULL);
+    pix4 = pixReadJpeg(buf, 0, 1, NULL, 0);
     regTestComparePix(rp, pix2, pix4);
 
         /* Test memory read/write (specialized jpeg functions) */
@@ -124,7 +137,57 @@ PIX      *pixs, *pix1, *pix2, *pix3, *pix4, *pix5;
     return;
 }
 
+/* Use this for colormapped pix and for pix with d < 8 */
 void DoJpegTest2(L_REGPARAMS  *rp,
+                 const char   *fname)
+{
+size_t    size;
+l_uint8  *data;
+char      buf[256];
+PIX      *pixs, *pix1, *pix2, *pix3, *pix4, *pix5, *pix6;
+
+        /* Test file read/write (general functions) */
+    pixs = pixRead(fname);
+    snprintf(buf, sizeof(buf), "/tmp/regout/jpegio.%d.jpg", rp->index + 1);
+    pixWrite(buf, pixs, IFF_JFIF_JPEG);
+    pix1 = pixRead(buf);
+    if (pixGetColormap(pixs) != NULL)
+        pix2 = pixRemoveColormap(pixs, REMOVE_CMAP_BASED_ON_SRC);
+    else
+        pix2 = pixConvertTo8(pixs, 0);
+    regTestCompareSimilarPix(rp, pix1, pix2, 20, 0.2, 0);
+    pixDisplayWithTitle(pix1, 500, 100, "pix1", rp->display);
+
+        /* Test memory read/write (general functions) */
+    pixWriteMemJpeg(&data, &size, pixs, 75, 0);
+    pix3 = pixReadMem(data, size);
+    regTestComparePix(rp, pix1, pix3);
+    lept_free(data);
+
+        /* Test file write (specialized jpeg function) */
+    pix4 = pixRead(fname);
+    snprintf(buf, sizeof(buf), "/tmp/regout/jpegio.%d.jpg", rp->index + 1);
+    pixWriteJpeg(buf, pix4, 75, 0);
+    pix5 = pixReadJpeg(buf, 0, 1, NULL, 0);
+    regTestComparePix(rp, pix5, pix5);
+
+        /* Test memory write (specialized jpeg function) */
+    pixWriteMemJpeg(&data, &size, pixs, 75, 0);
+    pix6 = pixReadMemJpeg(data, size, 0, 1, NULL, 0);
+    regTestComparePix(rp, pix5, pix6);
+    lept_free(data);
+
+    pixDestroy(&pixs);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
+    pixDestroy(&pix6);
+    return;
+}
+
+void DoJpegTest3(L_REGPARAMS  *rp,
                  const char   *fname)
 {
 l_int32   w1, h1, bps1, spp1, w2, h2, bps2, spp2, format1, format2;
@@ -160,7 +223,7 @@ PIX      *pixs;
     return;
 }
 
-void DoJpegTest3(L_REGPARAMS  *rp,
+void DoJpegTest4(L_REGPARAMS  *rp,
                  const char   *fname)
 {
 char     buf[256];
@@ -175,7 +238,7 @@ PIX     *pixs;
     snprintf(comment1, sizeof(comment1), "Test %d", rp->index + 1);
     pixSetText(pixs, comment1);
     pixSetResolution(pixs, 137, 137);
-    snprintf(buf, sizeof(buf), "/tmp/jpegio.%d.jpg", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/regout/jpegio.%d.jpg", rp->index + 1);
     pixWrite(buf, pixs, IFF_JFIF_JPEG);
     regTestCheckFile(rp, buf);
     fp = lept_fopen(buf, "rb");

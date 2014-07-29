@@ -72,7 +72,7 @@
  *  Basic functioning to dewarp a specific single page:
  *     // Make the Dewarpa for the pages
  *     L_Dewarpa *dewa = dewarpaCreate(1, 30, 1, 15, 50);
- *     dewarpaSetCurvatures(dewa, -1, 5, -1, -1, -1);
+ *     dewarpaSetCurvatures(dewa, -1, 5, -1, -1, -1, -1);
  *     dewarpaUseBothArrays(dewa, 1);  // try to use both disparity
  *                                     // arrays for this example
  *
@@ -94,7 +94,7 @@
  *     // Make the Dewarpa for the set of pages; use fullres 1 bpp
  *     L_Dewarpa *dewa = dewarpaCreate(10, 30, 1, 15, 50);
  *     // Optionally set rendering parameters
- *     dewarpaSetCurvatures(dewa, -1, 10, -1, -1, -1);
+ *     dewarpaSetCurvatures(dewa, -1, 10, -1, -1, -1, -1);
  *     dewarpaUseBothArrays(dewa, 0);  // just use the vertical disparity
  *                                     // array for this example
  *
@@ -406,6 +406,7 @@ static const l_int32     DEFAULT_MIN_DIFF_LINECURV = 0;
 static const l_int32     DEFAULT_MAX_DIFF_LINECURV = 150;
 static const l_int32     DEFAULT_MAX_EDGECURV = 50;
 static const l_int32     DEFAULT_MAX_DIFF_EDGECURV = 30;
+static const l_int32     DEFAULT_MAX_EDGESLOPE = 100;
 
 
 /*----------------------------------------------------------------------*
@@ -596,6 +597,7 @@ L_DEWARPA  *dewa;
     dewa->max_linecurv = DEFAULT_MAX_LINECURV;
     dewa->min_diff_linecurv = DEFAULT_MIN_DIFF_LINECURV;
     dewa->max_diff_linecurv = DEFAULT_MAX_DIFF_LINECURV;
+    dewa->max_edgeslope = DEFAULT_MAX_EDGESLOPE;
     dewa->max_edgecurv = DEFAULT_MAX_EDGECURV;
     dewa->max_diff_edgecurv = DEFAULT_MAX_DIFF_EDGECURV;
 
@@ -895,6 +897,7 @@ dewarpaGetDewarp(L_DEWARPA  *dewa,
  *              max_diff_linecurv (-1 for default)
  *              max_edgecurv (-1 for default)
  *              max_diff_edgecurv (-1 for default)
+ *              max_edgeslope (-1 for default)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -903,7 +906,7 @@ dewarpaGetDewarp(L_DEWARPA  *dewa,
  *          units are in pixels (of course).  The curvature is very
  *          small, so we multiply by 10^6 and express the constraints
  *          on the model curvatures in micro-units.
- *      (2) This sets five curvature thresholds:
+ *      (2) This sets five curvature thresholds and a slope threshold:
  *          * the maximum absolute value of the vertical disparity
  *            line curvatures
  *          * the minimum absolute value of the largest difference in
@@ -932,7 +935,8 @@ dewarpaSetCurvatures(L_DEWARPA  *dewa,
                      l_int32     min_diff_linecurv,
                      l_int32     max_diff_linecurv,
                      l_int32     max_edgecurv,
-                     l_int32     max_diff_edgecurv)
+                     l_int32     max_diff_edgecurv,
+                     l_int32     max_edgeslope)
 {
     PROCNAME("dewarpaSetCurvatures");
 
@@ -963,6 +967,11 @@ dewarpaSetCurvatures(L_DEWARPA  *dewa,
         dewa->max_diff_edgecurv = DEFAULT_MAX_DIFF_EDGECURV;
     else
         dewa->max_diff_edgecurv = L_ABS(max_diff_edgecurv);
+
+    if (max_edgeslope == -1)
+        dewa->max_edgeslope = DEFAULT_MAX_EDGESLOPE;
+    else
+        dewa->max_edgeslope = L_ABS(max_edgeslope);
 
     dewa->modelsready = 0;  /* force validation */
     return 0;
@@ -1074,7 +1083,7 @@ dewarpReadStream(FILE  *fp)
 {
 l_int32    version, sampling, redfactor, minlines, pageno, hasref, refpage;
 l_int32    w, h, nx, ny, vdispar, hdispar, nlines;
-l_int32    mincurv, maxcurv, leftcurv, rightcurv;
+l_int32    mincurv, maxcurv, leftslope, rightslope, leftcurv, rightcurv;
 L_DEWARP  *dew;
 FPIX      *fpixv, *fpixh;
 
@@ -1113,6 +1122,10 @@ FPIX      *fpixv, *fpixh;
                                          procName, NULL);
     }
     if (hdispar) {
+        if (fscanf(fp, "left edge slope = %d, right edge slope = %d\n",
+                   &leftslope, &rightslope) != 2)
+            return (L_DEWARP *)ERROR_PTR("read fail for leftslope & rightslope",
+                                         procName, NULL);
         if (fscanf(fp, "left edge curvature = %d, right edge curvature = %d\n",
                    &leftcurv, &rightcurv) != 2)
             return (L_DEWARP *)ERROR_PTR("read fail for leftcurv & rightcurv",
@@ -1151,6 +1164,8 @@ FPIX      *fpixv, *fpixh;
         dew->sampvdispar = fpixv;
     }
     if (hdispar) {
+        dew->leftslope = leftslope;
+        dew->rightslope = rightslope;
         dew->leftcurv = leftcurv;
         dew->rightcurv = rightcurv;
         dew->hsuccess = 1;
@@ -1231,6 +1246,8 @@ l_int32  vdispar, hdispar;
         fprintf(fp, "min line curvature = %d, max line curvature = %d\n",
                 dew->mincurv, dew->maxcurv);
     if (hdispar) {
+        fprintf(fp, "left edge slope = %d, right edge slope = %d\n",
+                dew->leftslope, dew->rightslope);
         fprintf(fp, "left edge curvature = %d, right edge curvature = %d\n",
                 dew->leftcurv, dew->rightcurv);
     }
@@ -1294,7 +1311,7 @@ dewarpaReadStream(FILE  *fp)
 l_int32     i, version, ndewarp, maxpage;
 l_int32     sampling, redfactor, minlines, maxdist, useboth;
 l_int32     max_linecurv, min_diff_linecurv, max_diff_linecurv;
-l_int32     max_edgecurv, max_diff_edgecurv;
+l_int32     max_edgeslope, max_edgecurv, max_diff_edgecurv;
 L_DEWARP   *dew;
 L_DEWARPA  *dewa;
 NUMA       *namodels;
@@ -1319,8 +1336,9 @@ NUMA       *namodels;
           "max_linecurv = %d, min_diff_linecurv = %d, max_diff_linecurv = %d\n",
           &max_linecurv, &min_diff_linecurv, &max_diff_linecurv) != 3)
         return (L_DEWARPA *)ERROR_PTR("read fail for linecurv", procName, NULL);
-    if (fscanf(fp, "max_edgecurv = %d, max_diff_edgecurv = %d\n",
-               &max_edgecurv, &max_diff_edgecurv) != 2)
+    if (fscanf(fp,
+              "max_edgeslope = %d, max_edgecurv = %d, max_diff_edgecurv = %d\n",
+               &max_edgeslope, &max_edgecurv, &max_diff_edgecurv) != 3)
         return (L_DEWARPA *)ERROR_PTR("read fail for edgecurv", procName, NULL);
     if (fscanf(fp, "fullmodel = %d\n", &useboth) != 1)
         return (L_DEWARPA *)ERROR_PTR("read fail for useboth", procName, NULL);
@@ -1330,6 +1348,7 @@ NUMA       *namodels;
     dewa->max_linecurv = max_linecurv;
     dewa->min_diff_linecurv = min_diff_linecurv;
     dewa->max_diff_linecurv = max_diff_linecurv;
+    dewa->max_edgeslope = max_edgeslope;
     dewa->max_edgecurv = max_edgecurv;
     dewa->max_diff_edgecurv = max_diff_edgecurv;
     dewa->useboth = useboth;
@@ -1417,8 +1436,9 @@ l_int32  ndewarp, i, pageno;
     fprintf(fp,
         "max_linecurv = %d, min_diff_linecurv = %d, max_diff_linecurv = %d\n",
         dewa->max_linecurv, dewa->min_diff_linecurv, dewa->max_diff_linecurv);
-    fprintf(fp, "max_edgecurv = %d, max_diff_edgecurv = %d\n",
-            dewa->max_edgecurv, dewa->max_diff_edgecurv);
+    fprintf(fp,
+            "max_edgeslope = %d, max_edgecurv = %d, max_diff_edgecurv = %d\n",
+            dewa->max_edgeslope, dewa->max_edgecurv, dewa->max_diff_edgecurv);
     fprintf(fp, "fullmodel = %d\n", dewa->useboth);
     for (i = 0; i < ndewarp; i++) {
         numaGetIValue(dewa->namodels, i, &pageno);

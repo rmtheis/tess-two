@@ -134,10 +134,14 @@ L_REGPARAMS  *rp;
          * as a failure of the regression test. */
     rp->success = TRUE;
 
+        /* Make sure the regout subdirectory exists */
+    lept_mkdir("regout");
+
         /* Only open a stream to a temp file for the 'compare' case */
     if (argc == 1 || !strcmp(argv[1], "compare")) {
         rp->mode = L_REG_COMPARE;
-        rp->tempfile = genTempFilename("/tmp", "regtest_output.txt", 0, 1);
+        rp->tempfile = genTempFilename("/tmp/regout",
+                                       "regtest_output.txt", 0, 1);
         rp->fp = fopenWriteStream(rp->tempfile, "wb");
         if (rp->fp == NULL) {
             rp->success = FALSE;
@@ -319,15 +323,15 @@ char     buf[256];
         /* Output on failure */
     if (fail == TRUE) {
             /* Write the two strings to file */
-        snprintf(buf, sizeof(buf), "/tmp/string1_%d_%lu", rp->index,
+        snprintf(buf, sizeof(buf), "/tmp/regout/string1_%d_%lu", rp->index,
                  (unsigned long)bytes1);
         l_binaryWrite(buf, "w", string1, bytes1);
-        snprintf(buf, sizeof(buf), "/tmp/string2_%d_%lu", rp->index,
+        snprintf(buf, sizeof(buf), "/tmp/regout/string2_%d_%lu", rp->index,
                  (unsigned long)bytes2);
         l_binaryWrite(buf, "w", string2, bytes2);
 
             /* Report comparison failure */
-        snprintf(buf, sizeof(buf), "/tmp/string*_%d_*", rp->index);
+        snprintf(buf, sizeof(buf), "/tmp/regout/string*_%d_*", rp->index);
         if (rp->fp) {
             fprintf(rp->fp,
                     "Failure in %s_reg: string comp for index %d; "
@@ -477,7 +481,8 @@ regTestCheckFile(L_REGPARAMS  *rp,
 {
 char    *ext;
 char     namebuf[256];
-l_int32  ret, same;
+l_int32  ret, same, format;
+PIX     *pix1, *pix2;
 
     PROCNAME("regTestCheckFile");
 
@@ -494,6 +499,7 @@ l_int32  ret, same;
     }
     rp->index++;
 
+        /* If display mode, no generation and no testing */
     if (rp->mode == L_REG_DISPLAY) return 0;
 
         /* Generate the golden file name; used in 'generate' and 'compare' */
@@ -502,6 +508,7 @@ l_int32  ret, same;
              rp->testname, rp->index, ext);
     FREE(ext);
 
+        /* Generate mode.  No testing. */
     if (rp->mode == L_REG_GENERATE) {
             /* Save the file as a golden file */
 /*        fprintf(stderr, "%d: %s\n", rp->index, namebuf);  */
@@ -511,8 +518,30 @@ l_int32  ret, same;
         return ret;
     }
 
-        /* Compare mode: test and record on failure */
-    filesAreIdentical(localname, namebuf, &same);
+        /* Compare mode: test and record on failure.  GIF compression
+         * is lossless for images with up to 8 bpp (but not for RGB
+         * because it must generate a 256 color palette).  Although
+         * the read/write cycle for GIF is idempotent in the image
+         * pixels for bpp <= 8, it is not idempotent in the actual
+         * file bytes.  Tests comparing file bytes before and after
+         * a GIF read/write cycle will fail.  So for GIF we uncompress
+         * the two images and compare the actual pixels.  From my tests,
+         * PNG, in addition to being lossless, is idempotent in file
+         * bytes on read/write, so comparing the pixels is not necessary.
+         * (It also increases the regression test time by an an average
+         * of about 8%.)  JPEG is lossy and not idempotent in the image
+         * pixels, so no tests are constructed that would require it. */
+    findFileFormat(localname, &format);
+    if (format == IFF_GIF) {
+        same = 0;
+        pix1 = pixRead(localname);
+        pix2 = pixRead(namebuf);
+        pixEqual(pix1, pix2, &same);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+    } else {
+        filesAreIdentical(localname, namebuf, &same);
+    }
     if (!same) {
         fprintf(rp->fp, "Failure in %s_reg, index %d: comparing %s with %s\n",
                 rp->testname, rp->index, localname, namebuf);
@@ -623,9 +652,9 @@ SARRAY  *sa;
  *             (b) make a local file and "compare" with the golden file
  *             (c) make a local file and "display" the results
  *      (3) The canonical format of the local filename is:
- *            /tmp/<root of main name>.<count>.<format extension string>
+ *            /tmp/regout/<root of main name>.<count>.<format extension string>
  *          e.g., for scale_reg,
- *            /tmp/scale.0.png
+ *            /tmp/regout/scale.0.png
  */
 l_int32
 regTestWritePixAndCheck(L_REGPARAMS  *rp,
@@ -648,7 +677,7 @@ char   namebuf[256];
     }
 
         /* Generate the local file name */
-    snprintf(namebuf, sizeof(namebuf), "/tmp/%s.%d.%s", rp->testname,
+    snprintf(namebuf, sizeof(namebuf), "/tmp/regout/%s.%d.%s", rp->testname,
              rp->index + 1, ImageFileFormatExtensions[format]);
 
         /* Write the local file */

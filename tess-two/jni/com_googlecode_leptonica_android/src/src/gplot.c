@@ -40,6 +40,9 @@
  *          l_int32     gplotSimple1()
  *          l_int32     gplotSimple2()
  *          l_int32     gplotSimpleN()
+ *          l_int32     gplotSimpleXY1()
+ *          l_int32     gplotSimpleXY2()
+ *          l_int32     gplotSimpleXYN()
  *
  *     Serialize for I/O
  *          GPLOT      *gplotRead()
@@ -87,6 +90,9 @@
  *           latex <latexname>.tex
  *         and a PostScript file <psname>.ps from that using
  *           dvips -o <psname>.ps <latexname>.dvi
+ *
+ *     N.B. To generate plots, it is necessary to have gnuplot installed on
+ *          your Unix system, or wgnuplot on Windows.
  */
 
 #include <string.h>
@@ -160,7 +166,7 @@ GPLOT  *gplot;
     gplot->plotstyles = numaCreate(0);
 
         /* Save title, labels, rootname, outformat, cmdname, outname */
-    newroot = genPathname(rootname, NULL);  /* remove '/tmp' on windows */
+    newroot = genPathname(rootname, NULL);
     gplot->rootname = newroot;
     gplot->outformat = outformat;
     snprintf(buf, L_BUF_SIZE, "%s.cmd", newroot);
@@ -240,10 +246,17 @@ GPLOT  *gplot;
  *
  *  Notes:
  *      (1) There are 2 options for (x,y) values:
- *            o  To plot an array vs the index, set nax = NULL.
+ *            o  To plot an array vs a linear function of the
+ *               index, set nax = NULL.
  *            o  To plot one array vs another, use both nax and nay.
- *      (2) If nax is defined, it must be the same size as nay.
- *      (3) The 'plottitle' string can have spaces, double
+ *      (2) If nax is NULL, the x value corresponding to the i-th
+ *          value of nay is found from the startx and delx fields
+ *          in nay:
+ *               x = startx + i * delx
+ *          These are set with numaSetParameters().  Their default
+ *          values are startx = 0.0, delx = 1.0.
+ *      (3) If nax is defined, it must be the same size as nay.
+ *      (4) The 'plottitle' string can have spaces, double
  *          quotes and backquotes, but not single quotes.
  */
 l_int32
@@ -351,7 +364,9 @@ gplotSetScaling(GPLOT   *gplot,
  *      (1) This uses gplot and the new arrays to add a plot
  *          to the output, by writing a new data file and appending
  *          the appropriate plot commands to the command file.
- *      (2) The gnuplot program for windows is wgnuplot.exe.  The
+ *      (2) This is the only function in this file that requires the
+ *          gnuplot executable, to actually generate the plot.
+ *      (3) The gnuplot program for windows is wgnuplot.exe.  The
  *          standard gp426win32 distribution does not have a X11 terminal.
  */
 l_int32
@@ -370,7 +385,7 @@ l_int32  ignore;
 
 #ifndef _WIN32
     if (gplot->outformat != GPLOT_X11)
-        snprintf(buf, L_BUF_SIZE, "gnuplot %s &", gplot->cmdname);
+        snprintf(buf, L_BUF_SIZE, "gnuplot %s", gplot->cmdname);
     else
         snprintf(buf, L_BUF_SIZE,
                  "gnuplot -persist -geometry +10+10 %s &", gplot->cmdname);
@@ -381,7 +396,7 @@ l_int32  ignore;
        snprintf(buf, L_BUF_SIZE,
                "wgnuplot -persist %s", gplot->cmdname);
 #endif  /* _WIN32 */
-    ignore = system(buf);
+    ignore = system(buf);  /* gnuplot || wgnuplot */
     return 0;
 }
 
@@ -536,9 +551,8 @@ FILE    *fp;
  *      (1) This gives a line plot of a numa, where the array value
  *          is plotted vs the array index.  The plot is generated
  *          in the specified output format; the title  is optional.
- *      (2) When calling this function more than once, be sure the
- *          outroot strings are different; otherwise, you will
- *          overwrite the output files.
+ *      (2) When calling these simple plot functions more than once, use
+ *          different @outroot to avoid overwriting the output files.
  */
 l_int32
 gplotSimple1(NUMA        *na,
@@ -546,32 +560,14 @@ gplotSimple1(NUMA        *na,
              const char  *outroot,
              const char  *title)
 {
-GPLOT  *gplot;
-
-    PROCNAME("gplotSimple1");
-
-    if (!na)
-        return ERROR_INT("na not defined", procName, 1);
-    if (outformat != GPLOT_PNG && outformat != GPLOT_PS &&
-        outformat != GPLOT_EPS && outformat != GPLOT_X11 &&
-        outformat != GPLOT_LATEX)
-        return ERROR_INT("invalid outformat", procName, 1);
-    if (!outroot)
-        return ERROR_INT("outroot not specified", procName, 1);
-
-    if ((gplot = gplotCreate(outroot, outformat, title, NULL, NULL)) == 0)
-        return ERROR_INT("gplot not made", procName, 1);
-    gplotAddPlot(gplot, NULL, na, GPLOT_LINES, NULL);
-    gplotMakeOutput(gplot);
-    gplotDestroy(&gplot);
-    return 0;
+    return gplotSimpleXY1(NULL, na, outformat, outroot, title);
 }
 
 
 /*!
  *  gplotSimple2()
  *
- *      Input:  na1 (numa; we plot Y_VS_I)
+ *      Input:  na1 (numa; plotted with Y_VS_I)
  *              na2 (ditto)
  *              outformat (GPLOT_PNG, GPLOT_PS, GPLOT_EPS, GPLOT_X11,
  *                         GPLOT_LATEX)
@@ -583,9 +579,8 @@ GPLOT  *gplot;
  *      (1) This gives a line plot of two numa, where the array values
  *          are each plotted vs the array index.  The plot is generated
  *          in the specified output format; the title  is optional.
- *      (2) When calling this function more than once, be sure the
- *          outroot strings are different; otherwise, you will
- *          overwrite the output files.
+ *      (2) When calling these simple plot functions more than once, use
+ *          different @outroot to avoid overwriting the output files.
  */
 l_int32
 gplotSimple2(NUMA        *na1,
@@ -594,33 +589,14 @@ gplotSimple2(NUMA        *na1,
              const char  *outroot,
              const char  *title)
 {
-GPLOT  *gplot;
-
-    PROCNAME("gplotSimple2");
-
-    if (!na1 || !na2)
-        return ERROR_INT("na1 and na2 not both defined", procName, 1);
-    if (outformat != GPLOT_PNG && outformat != GPLOT_PS &&
-        outformat != GPLOT_EPS && outformat != GPLOT_X11 &&
-        outformat != GPLOT_LATEX)
-        return ERROR_INT("invalid outformat", procName, 1);
-    if (!outroot)
-        return ERROR_INT("outroot not specified", procName, 1);
-
-    if ((gplot = gplotCreate(outroot, outformat, title, NULL, NULL)) == 0)
-        return ERROR_INT("gplot not made", procName, 1);
-    gplotAddPlot(gplot, NULL, na1, GPLOT_LINES, NULL);
-    gplotAddPlot(gplot, NULL, na2, GPLOT_LINES, NULL);
-    gplotMakeOutput(gplot);
-    gplotDestroy(&gplot);
-    return 0;
+    return gplotSimpleXY2(NULL, na1, na2, outformat, outroot, title);
 }
 
 
 /*!
  *  gplotSimpleN()
  *
- *      Input:  naa (numaa; we plot Y_VS_I for each numa)
+ *      Input:  naa (numaa; we plotted with Y_VS_I for each numa)
  *              outformat (GPLOT_PNG, GPLOT_PS, GPLOT_EPS, GPLOT_X11,
  *                         GPLOT_LATEX)
  *              outroot (root of output files)
@@ -632,9 +608,8 @@ GPLOT  *gplot;
  *          where the array values are each plotted vs the array index.
  *          The plot is generated in the specified output format;
  *          the title  is optional.
- *      (2) When calling this function more than once, be sure the
- *          outroot strings are different; otherwise, you will
- *          overwrite the output files.
+ *      (2) When calling these simple plot functions more than once, use
+ *          different @outroot to avoid overwriting the output files.
  */
 l_int32
 gplotSimpleN(NUMAA       *naa,
@@ -642,15 +617,144 @@ gplotSimpleN(NUMAA       *naa,
              const char  *outroot,
              const char  *title)
 {
+    return gplotSimpleXYN(NULL, naa, outformat, outroot, title);
+}
+
+
+/*!
+ *  gplotSimpleXY1()
+ *
+ *      Input:  nax (<optional>)
+ *              nay
+ *              outformat (GPLOT_PNG, GPLOT_PS, GPLOT_EPS, GPLOT_X11,
+ *                         GPLOT_LATEX)
+ *              outroot (root of output files)
+ *              title  (<optional>, can be NULL)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This gives a line plot of a @nay vs @nax, generated in
+ *          the specified output format.  The title is optional.
+ *      (2) @nax is optional.  If NULL, @nay is plotted against
+ *          the array index.
+ *      (3) When calling these simple plot functions more than once, use
+ *          different @outroot to avoid overwriting the output files.
+ */
+l_int32
+gplotSimpleXY1(NUMA        *nax,
+               NUMA        *nay,
+               l_int32      outformat,
+               const char  *outroot,
+               const char  *title)
+{
+GPLOT  *gplot;
+
+    PROCNAME("gplotSimpleXY1");
+
+    if (!nay)
+        return ERROR_INT("nay not defined", procName, 1);
+    if (outformat != GPLOT_PNG && outformat != GPLOT_PS &&
+        outformat != GPLOT_EPS && outformat != GPLOT_X11 &&
+        outformat != GPLOT_LATEX)
+        return ERROR_INT("invalid outformat", procName, 1);
+    if (!outroot)
+        return ERROR_INT("outroot not specified", procName, 1);
+
+    if ((gplot = gplotCreate(outroot, outformat, title, NULL, NULL)) == 0)
+        return ERROR_INT("gplot not made", procName, 1);
+    gplotAddPlot(gplot, nax, nay, GPLOT_LINES, NULL);
+    gplotMakeOutput(gplot);
+    gplotDestroy(&gplot);
+    return 0;
+}
+
+
+/*!
+ *  gplotSimpleXY2()
+ *
+ *      Input:  nax (<optional; can be NULL)
+ *              nay1
+ *              nay2
+ *              outformat (GPLOT_PNG, GPLOT_PS, GPLOT_EPS, GPLOT_X11,
+ *                         GPLOT_LATEX)
+ *              outroot (root of output files)
+ *              title  (<optional>)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This gives line plots of @nay1 and @nay2 against nax, generated
+ *          in the specified output format.  The title is optional.
+ *      (2) @nax is optional.  If NULL, @nay1 and @nay2 are plotted
+ *          against the array index.
+ *      (3) When calling these simple plot functions more than once, use
+ *          different @outroot to avoid overwriting the output files.
+ */
+l_int32
+gplotSimpleXY2(NUMA        *nax,
+               NUMA        *nay1,
+               NUMA        *nay2,
+               l_int32      outformat,
+               const char  *outroot,
+               const char  *title)
+{
+GPLOT  *gplot;
+
+    PROCNAME("gplotSimpleXY2");
+
+    if (!nay1 || !nay2)
+        return ERROR_INT("nay1 and nay2 not both defined", procName, 1);
+    if (outformat != GPLOT_PNG && outformat != GPLOT_PS &&
+        outformat != GPLOT_EPS && outformat != GPLOT_X11 &&
+        outformat != GPLOT_LATEX)
+        return ERROR_INT("invalid outformat", procName, 1);
+    if (!outroot)
+        return ERROR_INT("outroot not specified", procName, 1);
+
+    if ((gplot = gplotCreate(outroot, outformat, title, NULL, NULL)) == 0)
+        return ERROR_INT("gplot not made", procName, 1);
+    gplotAddPlot(gplot, nax, nay1, GPLOT_LINES, NULL);
+    gplotAddPlot(gplot, nax, nay2, GPLOT_LINES, NULL);
+    gplotMakeOutput(gplot);
+    gplotDestroy(&gplot);
+    return 0;
+}
+
+
+/*!
+ *  gplotSimpleXYN()
+ *
+ *      Input:  nax (<optional>; can be NULL)
+ *              naay (numaa of arrays to plot against @nax)
+ *              outformat (GPLOT_PNG, GPLOT_PS, GPLOT_EPS, GPLOT_X11,
+ *                         GPLOT_LATEX)
+ *              outroot (root of output files)
+ *              title (<optional>)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This gives line plots of each Numa in @naa against nax,
+ *          generated in the specified output format.  The title is optional.
+ *      (2) @nax is optional.  If NULL, each Numa array is plotted against
+ *          the array index.
+ *      (3) When calling these simple plot functions more than once, use
+ *          different @outroot to avoid overwriting the output files.
+ */
+l_int32
+gplotSimpleXYN(NUMA        *nax,
+               NUMAA       *naay,
+               l_int32      outformat,
+               const char  *outroot,
+               const char  *title)
+{
 l_int32  i, n;
 GPLOT   *gplot;
-NUMA    *na;
+NUMA    *nay;
 
-    PROCNAME("gplotSimpleN");
+    PROCNAME("gplotSimpleXYN");
 
-    if (!naa)
-        return ERROR_INT("naa not defined", procName, 1);
-    if ((n = numaaGetCount(naa)) == 0)
+    if (!naay)
+        return ERROR_INT("naay not defined", procName, 1);
+    if ((n = numaaGetCount(naay)) == 0)
         return ERROR_INT("no numa in array", procName, 1);
     if (outformat != GPLOT_PNG && outformat != GPLOT_PS &&
         outformat != GPLOT_EPS && outformat != GPLOT_X11 &&
@@ -662,9 +766,9 @@ NUMA    *na;
     if ((gplot = gplotCreate(outroot, outformat, title, NULL, NULL)) == 0)
         return ERROR_INT("gplot not made", procName, 1);
     for (i = 0; i < n; i++) {
-        na = numaaGetNuma(naa, i, L_CLONE);
-        gplotAddPlot(gplot, NULL, na, GPLOT_LINES, NULL);
-        numaDestroy(&na);
+        nay = numaaGetNuma(naay, i, L_CLONE);
+        gplotAddPlot(gplot, nax, nay, GPLOT_LINES, NULL);
+        numaDestroy(&nay);
     }
     gplotMakeOutput(gplot);
     gplotDestroy(&gplot);

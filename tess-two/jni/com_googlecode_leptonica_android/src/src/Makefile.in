@@ -81,7 +81,8 @@ am__DEPENDENCIES_1 =
 liblept_la_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_liblept_la_OBJECTS = adaptmap.lo affine.lo affinecompose.lo \
 	arrayaccess.lo bardecode.lo baseline.lo bbuffer.lo \
 	bilateral.lo bilinear.lo binarize.lo binexpand.lo binreduce.lo \
@@ -97,25 +98,26 @@ am_liblept_la_OBJECTS = adaptmap.lo affine.lo affinecompose.lo \
 	fmorphauto.lo fmorphgen.1.lo fmorphgenlow.1.lo fpix1.lo \
 	fpix2.lo gifio.lo gifiostub.lo gplot.lo graphics.lo \
 	graymorph.lo graymorphlow.lo grayquant.lo grayquantlow.lo \
-	heap.lo jbclass.lo jp2kio.lo jp2kiostub.lo jpegio.lo \
-	jpegiostub.lo kernel.lo leptwin.lo libversions.lo list.lo \
-	maze.lo morph.lo morphapp.lo morphdwa.lo morphseq.lo \
-	numabasic.lo numafunc1.lo numafunc2.lo pageseg.lo paintcmap.lo \
-	parseprotos.lo partition.lo pdfio.lo pdfiostub.lo pix1.lo \
-	pix2.lo pix3.lo pix4.lo pix5.lo pixabasic.lo pixacc.lo \
-	pixafunc1.lo pixafunc2.lo pixalloc.lo pixarith.lo pixcomp.lo \
-	pixconv.lo pixlabel.lo pixtiling.lo pngio.lo pngiostub.lo \
-	pnmio.lo pnmiostub.lo projective.lo psio1.lo psio1stub.lo \
-	psio2.lo psio2stub.lo ptabasic.lo ptafunc1.lo ptra.lo \
-	quadtree.lo queue.lo rank.lo readbarcode.lo readfile.lo \
-	recogbasic.lo recogdid.lo recogident.lo recogtrain.lo \
-	regutils.lo rop.lo ropiplow.lo roplow.lo rotate.lo rotateam.lo \
-	rotateamlow.lo rotateorth.lo rotateorthlow.lo rotateshear.lo \
-	runlength.lo sarray.lo scale.lo scalelow.lo seedfill.lo \
-	seedfilllow.lo sel1.lo sel2.lo selgen.lo shear.lo skew.lo \
-	spixio.lo stack.lo sudoku.lo textops.lo tiffio.lo \
-	tiffiostub.lo utils.lo viewfiles.lo warper.lo watershed.lo \
-	webpio.lo webpiostub.lo writefile.lo zlibmem.lo zlibmemstub.lo
+	heap.lo jbclass.lo jp2kheader.lo jp2kheaderstub.lo jp2kio.lo \
+	jp2kiostub.lo jpegio.lo jpegiostub.lo kernel.lo leptwin.lo \
+	libversions.lo list.lo maze.lo morph.lo morphapp.lo \
+	morphdwa.lo morphseq.lo numabasic.lo numafunc1.lo numafunc2.lo \
+	pageseg.lo paintcmap.lo parseprotos.lo partition.lo pdfio1.lo \
+	pdfio1stub.lo pdfio2.lo pdfio2stub.lo pix1.lo pix2.lo pix3.lo \
+	pix4.lo pix5.lo pixabasic.lo pixacc.lo pixafunc1.lo \
+	pixafunc2.lo pixalloc.lo pixarith.lo pixcomp.lo pixconv.lo \
+	pixlabel.lo pixtiling.lo pngio.lo pngiostub.lo pnmio.lo \
+	pnmiostub.lo projective.lo psio1.lo psio1stub.lo psio2.lo \
+	psio2stub.lo ptabasic.lo ptafunc1.lo ptra.lo quadtree.lo \
+	queue.lo rank.lo readbarcode.lo readfile.lo recogbasic.lo \
+	recogdid.lo recogident.lo recogtrain.lo regutils.lo rop.lo \
+	ropiplow.lo roplow.lo rotate.lo rotateam.lo rotateamlow.lo \
+	rotateorth.lo rotateshear.lo runlength.lo sarray.lo scale.lo \
+	scalelow.lo seedfill.lo seedfilllow.lo sel1.lo sel2.lo \
+	selgen.lo shear.lo skew.lo spixio.lo stack.lo sudoku.lo \
+	textops.lo tiffio.lo tiffiostub.lo utils.lo viewfiles.lo \
+	warper.lo watershed.lo webpio.lo webpiostub.lo writefile.lo \
+	zlibmem.lo zlibmemstub.lo
 liblept_la_OBJECTS = $(am_liblept_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -198,6 +200,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 JPEG_LIBS = @JPEG_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
+LIBJP2K_LIBS = @LIBJP2K_LIBS@
 LIBM = @LIBM@
 LIBOBJS = @LIBOBJS@
 LIBPNG_LIBS = @LIBPNG_LIBS@
@@ -286,8 +289,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = $(DEBUG_FLAGS)
 lib_LTLIBRARIES = liblept.la
-liblept_la_LIBADD = $(LIBM) $(ZLIB_LIBS) $(LIBPNG_LIBS) $(JPEG_LIBS) $(GIFLIB_LIBS) $(LIBTIFF_LIBS) $(LIBWEBP_LIBS) $(GDI_LIBS)
-liblept_la_LDFLAGS = -no-undefined -version-info 4:0:0
+liblept_la_LIBADD = $(LIBM) $(ZLIB_LIBS) $(LIBPNG_LIBS) $(JPEG_LIBS) $(GIFLIB_LIBS) $(LIBTIFF_LIBS) $(LIBWEBP_LIBS) $(LIBJP2K_LIBS) $(GDI_LIBS)
+liblept_la_LDFLAGS = -no-undefined -version-info 4:2:0
 liblept_la_SOURCES = adaptmap.c affine.c                        \
  affinecompose.c arrayaccess.c                                  \
  bardecode.c baseline.c bbuffer.c                               \
@@ -311,13 +314,14 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  fpix1.c fpix2.c gifio.c gifiostub.c                            \
  gplot.c graphics.c graymorph.c graymorphlow.c                  \
  grayquant.c grayquantlow.c heap.c jbclass.c                    \
+ jp2kheader.c jp2kheaderstub.c                                  \
  jp2kio.c jp2kiostub.c jpegio.c jpegiostub.c                    \
  kernel.c leptwin.c libversions.c list.c maze.c                 \
  morph.c morphapp.c morphdwa.c morphseq.c                       \
  numabasic.c numafunc1.c numafunc2.c                            \
  pageseg.c paintcmap.c                                          \
  parseprotos.c partition.c                                      \
- pdfio.c pdfiostub.c                                            \
+ pdfio1.c pdfio1stub.c pdfio2.c pdfio2stub.c                    \
  pix1.c pix2.c pix3.c pix4.c pix5.c                             \
  pixabasic.c pixacc.c pixafunc1.c pixafunc2.c                   \
  pixalloc.c pixarith.c pixcomp.c pixconv.c	                \
@@ -331,7 +335,7 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  recogtrain.c regutils.c                                        \
  rop.c ropiplow.c roplow.c                                      \
  rotate.c rotateam.c rotateamlow.c                              \
- rotateorth.c rotateorthlow.c rotateshear.c                     \
+ rotateorth.c rotateshear.c                                     \
  runlength.c sarray.c                                           \
  scale.c scalelow.c	                                        \
  seedfill.c seedfilllow.c                                       \
@@ -516,6 +520,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grayquantlow.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jbclass.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jp2kheader.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jp2kheaderstub.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jp2kio.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jp2kiostub.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jpegio.Plo@am__quote@
@@ -536,8 +542,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paintcmap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parseprotos.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/partition.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pdfio.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pdfiostub.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pdfio1.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pdfio1stub.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pdfio2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pdfio2stub.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pix1.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pix2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pix3.Plo@am__quote@
@@ -582,7 +590,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rotateam.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rotateamlow.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rotateorth.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rotateorthlow.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rotateshear.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/runlength.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sarray.Plo@am__quote@

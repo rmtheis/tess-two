@@ -134,27 +134,33 @@ else
     LEPTLIB =		$(LIB_DIR)/liblept.a
 endif
 
+# To enable webp read/write:
+#    (1) In src/environ.h:  #define  HAVE_LIBWEBP
+#    (2) Install libwebp
 # To enable gif read/write:
 #    (1) In src/environ.h:  #define  HAVE_LIBGIF
-#    (2) Install giflib-4.1.4, and be sure your LD_LIBRARY_PATH includes
-#        the directory in which libgif.so.4 is installed.
-#    (3) Use the second line below for ALL_LIBS
+#    (2) Install libgif
+# Be sure LD_LIBRARY_PATH includes the appropriate library directories, such
+# as /usr/local/include, in which libwebp.so and/or libgif.so are installed
+#    (3) Use the appropriate line below for ALL_LIBS
 ALL_LIBS =	$(LEPTLIB) -ltiff -ljpeg -lpng -lz -lm
-#ALL_LIBS =	$(LEPTLIB) -ltiff -ljpeg -lpng -lgif -lz -lm
+#ALL_LIBS =	$(LEPTLIB) -ltiff -ljpeg -lpng -lwebp -lz -lm
 #ALL_LIBS =	$(LEPTLIB) -ltiff -ljpeg -lpng -lgif -lwebp -lz -lm
 
 #########################################################################
 
 SRC =		adaptnorm_reg.c affine_reg.c \
 		alltests_reg.c alphaops_reg.c alphaxform_reg.c \
-		bilateral_reg.c bilinear_reg.c binarize_reg.c \
+		bilateral1_reg.c bilateral2_reg.c \
+		bilinear_reg.c binarize_reg.c \
 		binmorph1_reg.c binmorph2_reg.c \
 		binmorph3_reg.c binmorph4_reg.c binmorph5_reg.c \
 		blackwhite_reg.c \
 		blend1_reg.c blend2_reg.c blend3_reg.c blend4_reg.c \
 		boxa1_reg.c \
 		ccthin1_reg.c ccthin2_reg.c \
-		cmapquant_reg.c colorcontent_reg.c coloring_reg.c \
+		cmapquant_reg.c colorcontent_reg.c \
+		coloring_reg.c colorize_reg.c \
 		colormask_reg.c colorquant_reg.c \
 		colorseg_reg.c colorspace_reg.c \
 		compare_reg.c compfilter_reg.c \
@@ -163,14 +169,15 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		dwamorph1_reg.c dwamorph2_reg.c \
 		enhance_reg.c equal_reg.c \
 		expand_reg.c extrema_reg.c \
-		fhmtauto_reg.c findcorners_reg.c findpattern_reg.c \
+		fhmtauto_reg.c files_reg.c \
+		findcorners_reg.c findpattern_reg.c \
 		flipdetect_reg.c fmorphauto_reg.c \
 		fpix1_reg.c fpix2_reg.c gifio_reg.c \
 		grayfill_reg.c graymorph1_reg.c \
 		graymorph2_reg.c  grayquant_reg.c \
 		hardlight_reg.c heap_reg.c \
 		insert_reg.c ioformats_reg.c \
-		jpegio_reg.c kernel_reg.c \
+		jp2kio_reg.c jpegio_reg.c kernel_reg.c \
 		label_reg.c locminmax_reg.c \
 		logicops_reg.c lowaccess_reg.c \
 		maze_reg.c morphseq_reg.c multitype_reg.c \
@@ -196,13 +203,13 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		adaptmaptest.c adaptmap_dark.c \
 		arabic_lines.c arithtest.c \
 		barcodetest.c baselinetest.c \
-		binarize_set.c bincompare.c \
+		binarizefiles.c binarize_set.c bincompare.c \
 		blendcmaptest.c buffertest.c \
 		byteatest.c ccbordtest.c cctest1.c \
-		colorizetest.c colormorphtest.c \
+		colormorphtest.c \
 		colorsegtest.c colorspacetest.c \
 		comparepages.c comparetest.c \
-		contrasttest.c \
+		concatpdf.c contrasttest.c \
 		convertfilestopdf.c convertfilestops.c \
 		convertformat.c \
 		convertsegfilestopdf.c convertsegfilestops.c \
@@ -257,15 +264,15 @@ SRC2 =		dwalinear.3.c dwalinearlow.3.c
 
 all:	$(SRC:%.c=%)
 
-#    Jan 2014
-debian:	convertfilestopdf convertfilestops convertformat \
-	convertsegfilestopdf convertsegfilestops \
-	converttopdf converttops fileinfo \
-	grayfill_reg histotest \
-	printimage printsplitimage \
-	printtiff splitimage2pdf \
-	sudokutest watershedtest xtractprotos
+#    Jan 2014  (minimal set of utility programs)
+#debian:	convertfilestopdf convertfilestops convertformat \
+#	convertsegfilestopdf convertsegfilestops \
+#	converttopdf converttops fileinfo \
+#	printimage printsplitimage printtiff \
+#	splitimage2pdf xtractprotos
 
+#    Jan 2014  (could have been in Jan 2014 debian, but left off)
+#	grayfill_reg histotest_reg sudokutest watershedtest 
 
 #    Jan 2012
 #debian:	binarize_reg binmorph2_reg ccthin2_reg colorquant_reg \
@@ -316,8 +323,11 @@ alphaops_reg:	alphaops_reg.o $(LEPTLIB)
 alphaxform_reg:	alphaxform_reg.o $(LEPTLIB)
 	$(CC) -o alphaxform_reg alphaxform_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
-bilateral_reg:	bilateral_reg.o $(LEPTLIB)
-	$(CC) -o bilateral_reg bilateral_reg.o $(ALL_LIBS) $(EXTRALIBS)
+bilateral1_reg:	bilateral1_reg.o $(LEPTLIB)
+	$(CC) -o bilateral1_reg bilateral1_reg.o $(ALL_LIBS) $(EXTRALIBS)
+
+bilateral2_reg:	bilateral2_reg.o $(LEPTLIB)
+	$(CC) -o bilateral2_reg bilateral2_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
 bilinear_reg:	bilinear_reg.o $(LEPTLIB)
 	$(CC) -o bilinear_reg bilinear_reg.o $(ALL_LIBS) $(EXTRALIBS)
@@ -372,6 +382,9 @@ colorcontent_reg:	colorcontent_reg.o $(LEPTLIB)
 
 coloring_reg:	coloring_reg.o $(LEPTLIB)
 	$(CC) -o coloring_reg coloring_reg.o $(ALL_LIBS) $(EXTRALIBS)
+
+colorize_reg:	colorize_reg.o $(LEPTLIB)
+	$(CC) -o colorize_reg colorize_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
 colormask_reg:	colormask_reg.o $(LEPTLIB)
 	$(CC) -o colormask_reg colormask_reg.o $(ALL_LIBS) $(EXTRALIBS)
@@ -430,6 +443,9 @@ extrema_reg:	extrema_reg.o $(LEPTLIB)
 fhmtauto_reg:	fhmtauto_reg.o $(LEPTLIB)
 	$(CC) -o fhmtauto_reg fhmtauto_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
+files_reg:	files_reg.o $(LEPTLIB)
+	$(CC) -o files_reg files_reg.o $(ALL_LIBS) $(EXTRALIBS)
+
 findcorners_reg:	findcorners_reg.o $(LEPTLIB)
 	$(CC) -o findcorners_reg findcorners_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -474,6 +490,9 @@ insert_reg:	insert_reg.o $(LEPTLIB)
 
 ioformats_reg:	ioformats_reg.o $(LEPTLIB)
 	$(CC) -o ioformats_reg ioformats_reg.o $(ALL_LIBS) $(EXTRALIBS)
+
+jp2kio_reg:	jp2kio_reg.o $(LEPTLIB)
+	$(CC) -o jp2kio_reg jp2kio_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
 jpegio_reg:	jpegio_reg.o $(LEPTLIB)
 	$(CC) -o jpegio_reg jpegio_reg.o $(ALL_LIBS) $(EXTRALIBS)
@@ -670,6 +689,9 @@ barcodetest:	barcodetest.o $(LEPTLIB)
 baselinetest:	baselinetest.o $(LEPTLIB)
 	$(CC) -o baselinetest baselinetest.o $(ALL_LIBS) $(EXTRALIBS)
 
+binarizefiles:	binarizefiles.o $(LEPTLIB)
+	$(CC) -o binarizefiles binarizefiles.o $(ALL_LIBS) $(EXTRALIBS)
+
 binarize_set:	binarize_set.o $(LEPTLIB)
 	$(CC) -o binarize_set binarize_set.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -694,9 +716,6 @@ cctest1:	cctest1.o $(LEPTLIB)
 colormasktest:	colormasktest.o $(LEPTLIB)
 	$(CC) -o colormasktest colormasktest.o $(ALL_LIBS) $(EXTRALIBS)
 
-colorizetest:	colorizetest.o $(LEPTLIB)
-	$(CC) -o colorizetest colorizetest.o $(ALL_LIBS) $(EXTRALIBS)
-
 colormorphtest:	colormorphtest.o $(LEPTLIB)
 	$(CC) -o colormorphtest colormorphtest.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -711,6 +730,9 @@ comparepages:	comparepages.o $(LEPTLIB)
 
 comparetest:	comparetest.o $(LEPTLIB)
 	$(CC) -o comparetest comparetest.o $(ALL_LIBS) $(EXTRALIBS)
+
+concatpdf:	concatpdf.o $(LEPTLIB)
+	$(CC) -o concatpdf concatpdf.o $(ALL_LIBS) $(EXTRALIBS)
 
 contrasttest:	contrasttest.o $(LEPTLIB)
 	$(CC) -o contrasttest contrasttest.o $(ALL_LIBS) $(EXTRALIBS)

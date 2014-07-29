@@ -201,9 +201,9 @@ L_REGPARAMS  *rp;
 
         /* If in testing mode, make a pdf */
     if (rp->display) {
-        L_INFO("Output written to /tmp/paintmask.pdf\n", rp->testname);
         pixaConvertToPdf(pixa, 100, 1.0, L_FLATE_ENCODE, 0,
-                         "Paint through mask", "/tmp/paintmask.pdf");
+                         "Paint through mask", "/tmp/regout/paintmask.pdf");
+        L_INFO("Output pdf: /tmp/regout/paintmask.pdf\n", rp->testname);
     }
 
     pixaDestroy(&pixa);

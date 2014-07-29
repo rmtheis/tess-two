@@ -138,7 +138,8 @@ L_REGPARAMS  *rp;
         /* If in testing mode, make a pdf */
     if (rp->display) {
         pixaConvertToPdf(pixa, 100, 1.0, L_FLATE_ENCODE, 0,
-                         "Colored background", "/tmp/coloring.pdf");
+                         "Colored background", "/tmp/regout/coloring.pdf");
+        L_INFO("Output pdf: /tmp/regout/coloring.pdf\n", rp->testname);
     }
 
     pixaDestroy(&pixa);

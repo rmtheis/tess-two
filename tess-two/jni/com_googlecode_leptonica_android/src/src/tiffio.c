@@ -233,7 +233,7 @@ TIFF    *tif;
     }
 
     if (pagefound == FALSE) {
-        L_WARNING("tiff page %d not found\n", procName, n);
+        L_ERROR("tiff page %d not found\n", procName, n);
         TIFFCleanup(tif);
         return NULL;
     }

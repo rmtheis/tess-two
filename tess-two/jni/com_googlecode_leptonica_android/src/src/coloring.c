@@ -126,29 +126,34 @@ pixColorGrayRegions(PIX     *pixs,
                     l_int32  gval,
                     l_int32  bval)
 {
-l_int32   i, n;
+l_int32   i, n, ncolors, ngray;
 BOX      *box;
 PIX      *pixd;
 PIXCMAP  *cmap;
 
     PROCNAME("pixColorGrayRegions");
 
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+    if (!pixs || pixGetDepth(pixs) == 1)
+        return (PIX *)ERROR_PTR("pixs undefined or not 1 bpp", procName, NULL);
     if (!boxa)
         return (PIX *)ERROR_PTR("boxa not defined", procName, NULL);
     if (type != L_PAINT_LIGHT && type != L_PAINT_DARK)
         return (PIX *)ERROR_PTR("invalid type", procName, NULL);
 
+        /* If cmapped and there is room in an 8 bpp colormap for
+         * expansion, convert pixs to 8 bpp, and colorize. */
     cmap = pixGetColormap(pixs);
-    if (cmap && (pixcmapGetCount(cmap) < 128)) {
-        pixd = pixConvertTo8(pixs, 1);  /* always new image */
-        pixColorGrayRegionsCmap(pixd, boxa, type, rval, gval, bval);
-        return pixd;
+    if (cmap) {
+        ncolors = pixcmapGetCount(cmap);
+        pixcmapCountGrayColors(cmap, &ngray);
+        if (ncolors + ngray < 255) {
+            pixd = pixConvertTo8(pixs, 1);  /* always new image */
+            pixColorGrayRegionsCmap(pixd, boxa, type, rval, gval, bval);
+            return pixd;
+        }
     }
 
-    if (pixGetDepth(pixs) < 8)
-        return (PIX *)ERROR_PTR("depth < 8 bpp", procName, NULL);
+        /* The output will be rgb.  Make sure the thresholds are valid */
     if (type == L_PAINT_LIGHT) {  /* thresh should be low */
         if (thresh >= 255)
             return (PIX *)ERROR_PTR("thresh must be < 255", procName, NULL);
@@ -257,6 +262,7 @@ PIXCMAP   *cmap;
             L_WARNING("threshold set very low\n", procName);
     }
 
+        /* In-place conversion to 32 bpp if necessary */
     if (d == 8) {
         pixt = pixConvertTo32(pixs);
         pixTransferAllData(pixs, &pixt, 1, 0);

@@ -28,6 +28,8 @@
  * string_reg.c
  *
  *    This tests several sarray functions.
+ *
+ *    N.B.  This requires 'diff' for testing.
  */
 
 #include <string.h>
@@ -86,7 +88,7 @@ static char  mainName[] = "string_reg";
     l_binaryWrite("/tmp/junk6.txt", "w", outstring, nbytesout);
     lept_free(outstring);
     sprintf(buf, "diff -s /tmp/junk6.txt %s", infile);
-    ignore = system(buf);
+    ignore = system(buf);  /* diff */
 
         /* write/read/write; compare /tmp/junkout5 with /tmp/junkout6 */
     sarrayWrite("/tmp/junk7.txt", sa2);

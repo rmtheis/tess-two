@@ -6,7 +6,8 @@
 #     input:  PostScript file
 #             root name of output files
 #     output: 24 bpp RGB jpeg files for each page
-
+#
+#   N.B. Requires ghostscript
 
 scriptname=${0##*/}
 
@@ -22,10 +23,10 @@ outjpgroot=$2
 # (need mysterious "primer")
 # choose one of the two options below
 
-# choice: output image size depending on resolution
-echo "0 neg 0 neg" translate | gs -sDEVICE=jpeg -sOutputFile=${outjpgroot}%03d.jpg -r300x300 -q - ${inpsfile}
+# output image size depending on resolution
+echo "0 neg 0 neg" translate | /usr/local/bin/gs -sDEVICE=jpeg -sOutputFile=${outjpgroot}%03d.jpg -r300x300 -q - ${inpsfile}
 
-# choice: output fixed image size
-echo "0 neg 0 neg" translate | gs -sDEVICE=jpeg -sOutputFile=${outjpgroot}%03d.jpg -g2550x3300 -r300x300 -q - ${inpsfile}
+# output fixed image size
+#echo "0 neg 0 neg" translate | gs -sDEVICE=jpeg -sOutputFile=${outjpgroot}%03d.jpg -g2550x3300 -r300x300 -q - ${inpsfile}
 
 

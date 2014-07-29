@@ -30,7 +30,7 @@
 
 #include "allheaders.h"
 
-static void pixCompare(PIX *pix, PIX *pix2, const char *msg1, const char *msg2);
+static void PixCompare(PIX *pix, PIX *pix2, const char *msg1, const char *msg2);
 
     /* MSVC can't handle arrays dimensioned by static const integers */
 #define L_BUF_SIZE    256
@@ -57,28 +57,28 @@ static char  mainName[] = "colormorphtest";
     pixt1 = pixColorMorph(pixs, L_MORPH_DILATE, size, size);
     sprintf(buf, "d%d.%d", size, size);
     pixt2 = pixColorMorphSequence(pixs, buf, 0, 0);
-    pixCompare(pixt1, pixt2, "Correct for dilation", "Error on dilation");
+    PixCompare(pixt1, pixt2, "Correct for dilation", "Error on dilation");
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
 
     pixt1 = pixColorMorph(pixs, L_MORPH_ERODE, size, size);
     sprintf(buf, "e%d.%d", size, size);
     pixt2 = pixColorMorphSequence(pixs, buf, 0, 0);
-    pixCompare(pixt1, pixt2, "Correct for erosion", "Error on erosion");
+    PixCompare(pixt1, pixt2, "Correct for erosion", "Error on erosion");
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
 
     pixt1 = pixColorMorph(pixs, L_MORPH_OPEN, size, size);
     sprintf(buf, "o%d.%d", size, size);
     pixt2 = pixColorMorphSequence(pixs, buf, 0, 0);
-    pixCompare(pixt1, pixt2, "Correct for opening", "Error on opening");
+    PixCompare(pixt1, pixt2, "Correct for opening", "Error on opening");
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
 
     pixt1 = pixColorMorph(pixs, L_MORPH_CLOSE, size, size);
     sprintf(buf, "c%d.%d", size, size);
     pixt2 = pixColorMorphSequence(pixs, buf, 0, 0);
-    pixCompare(pixt1, pixt2, "Correct for closing", "Error on closing");
+    PixCompare(pixt1, pixt2, "Correct for closing", "Error on closing");
     pixDestroy(&pixt1);
     pixDestroy(&pixt2);
 
@@ -89,7 +89,7 @@ static char  mainName[] = "colormorphtest";
 }
 
     /* Simple comparison function */
-static void pixCompare(PIX         *pix1,
+static void PixCompare(PIX         *pix1,
                        PIX         *pix2,
                        const char  *msg1,
                        const char  *msg2)

@@ -57,34 +57,35 @@ BOX         *box1, *box2;
 NUMA        *na, *na1, *na2, *na3, *na4;
 PIX         *pix, *pixs, *pix1, *pix2, *pix3, *pix4, *pix5, *pixg, *pixd;
 PIXA        *pixa;
-PTA         *pta;
 static char  mainName[] = "numa2_reg";
 
     if (argc != 1)
         return ERROR_INT(" Syntax:  numa2_reg", mainName, 1);
 
+    lept_mkdir("lept");
+
     /* -------------------------------------------------------------------*
      *                         Numa-windowed stats                        *
      * -------------------------------------------------------------------*/
 #if  DO_ALL
-    na = numaRead("lyra-5.numa");
+    na = numaRead("lyra.5.na");
     numaWindowedStats(na, 5, &na1, &na2, &na3, &na4);
-    gplotSimple1(na, GPLOT_PNG, "/tmp/lyraroot6", "Original");
-    gplotSimple1(na1, GPLOT_PNG, "/tmp/lyraroot7", "Mean");
-    gplotSimple1(na2, GPLOT_PNG, "/tmp/lyraroot8", "Mean Square");
-    gplotSimple1(na3, GPLOT_PNG, "/tmp/lyraroot9", "Variance");
-    gplotSimple1(na4, GPLOT_PNG, "/tmp/lyraroot10", "RMS Difference");
+    gplotSimple1(na, GPLOT_PNG, "/tmp/lept/numa_lyra6", "Original");
+    gplotSimple1(na1, GPLOT_PNG, "/tmp/lept/numa_lyra7", "Mean");
+    gplotSimple1(na2, GPLOT_PNG, "/tmp/lept/numa_lyra8", "Mean Square");
+    gplotSimple1(na3, GPLOT_PNG, "/tmp/lept/numa_lyra9", "Variance");
+    gplotSimple1(na4, GPLOT_PNG, "/tmp/lept/numa_lyra10", "RMS Difference");
 #ifndef  _WIN32
     sleep(1);
 #else
     Sleep(1000);
 #endif  /* _WIN32 */
     pixa = pixaCreate(5);
-    pix1 = pixRead("/tmp/lyraroot6.png");
-    pix2 = pixRead("/tmp/lyraroot7.png");
-    pix3 = pixRead("/tmp/lyraroot8.png");
-    pix4 = pixRead("/tmp/lyraroot9.png");
-    pix5 = pixRead("/tmp/lyraroot10.png");
+    pix1 = pixRead("/tmp/lept/numa_lyra6.png");
+    pix2 = pixRead("/tmp/lept/numa_lyra7.png");
+    pix3 = pixRead("/tmp/lept/numa_lyra8.png");
+    pix4 = pixRead("/tmp/lept/numa_lyra9.png");
+    pix5 = pixRead("/tmp/lept/numa_lyra10.png");
     pixSaveTiled(pix1, pixa, 1.0, 1, 25, 32);
     pixSaveTiled(pix2, pixa, 1.0, 1, 25, 32);
     pixSaveTiled(pix3, pixa, 1.0, 0, 25, 32);
@@ -92,7 +93,7 @@ static char  mainName[] = "numa2_reg";
     pixSaveTiled(pix5, pixa, 1.0, 0, 25, 32);
     pixd = pixaDisplay(pixa, 0, 0);
     pixDisplay(pixd, 100, 100);
-    pixWrite("/tmp/numawindow.png", pixd, IFF_PNG);
+    pixWrite("/tmp/lept/numa_window.png", pixd, IFF_PNG);
     numaDestroy(&na);
     numaDestroy(&na1);
     numaDestroy(&na2);
@@ -127,18 +128,18 @@ static char  mainName[] = "numa2_reg";
         }
     }
     pixg = pixConvertTo8(pixs, 0);  /* and a grayscale version */
-    pixWrite("/tmp/junkpixg", pixg, IFF_PNG);
+    pixWrite("/tmp/lept/numa_pixg.png", pixg, IFF_PNG);
     pixDisplay(pixg, 450, 100);
 
     na1 = pixExtractOnLine(pixg, 20, 20, 180, 20, 1);
     na2 = pixExtractOnLine(pixg, 40, 30, 40, 170, 1);
     na3 = pixExtractOnLine(pixg, 20, 170, 180, 30, 1);
     na4 = pixExtractOnLine(pixg, 20, 190, 180, 10, 1);
-    gplotSimple1(na1, GPLOT_PNG, "/tmp/extroot1", "Horizontal");
-    gplotSimple1(na2, GPLOT_PNG, "/tmp/extroot2", "Vertical");
-    gplotSimple1(na3, GPLOT_PNG, "/tmp/extroot3",
+    gplotSimple1(na1, GPLOT_PNG, "/tmp/lept/numa_ext1", "Horizontal");
+    gplotSimple1(na2, GPLOT_PNG, "/tmp/lept/numa_ext2", "Vertical");
+    gplotSimple1(na3, GPLOT_PNG, "/tmp/lept/numa_ext3",
                 "Slightly more horizontal than vertical");
-    gplotSimple1(na4, GPLOT_PNG, "/tmp/extroot4",
+    gplotSimple1(na4, GPLOT_PNG, "/tmp/lept/numa_ext4",
                 "Slightly more vertical than horizontal");
 #ifndef  _WIN32
     sleep(1);
@@ -146,17 +147,17 @@ static char  mainName[] = "numa2_reg";
     Sleep(1000);
 #endif  /* _WIN32 */
     pixa = pixaCreate(4);
-    pix1 = pixRead("/tmp/extroot1.png");
-    pix2 = pixRead("/tmp/extroot2.png");
-    pix3 = pixRead("/tmp/extroot3.png");
-    pix4 = pixRead("/tmp/extroot4.png");
+    pix1 = pixRead("/tmp/lept/numa_ext1.png");
+    pix2 = pixRead("/tmp/lept/numa_ext2.png");
+    pix3 = pixRead("/tmp/lept/numa_ext3.png");
+    pix4 = pixRead("/tmp/lept/numa_ext4.png");
     pixSaveTiled(pix1, pixa, 1.0, 1, 25, 32);
     pixSaveTiled(pix2, pixa, 1.0, 0, 25, 32);
     pixSaveTiled(pix3, pixa, 1.0, 1, 25, 32);
     pixSaveTiled(pix4, pixa, 1.0, 0, 25, 32);
     pixd = pixaDisplay(pixa, 0, 0);
     pixDisplay(pixd, 100, 500);
-    pixWrite("/tmp/numaextract.png", pixd, IFF_PNG);
+    pixWrite("/tmp/lept/numa_extract.png", pixd, IFF_PNG);
     numaDestroy(&na1);
     numaDestroy(&na2);
     numaDestroy(&na3);
@@ -190,15 +191,15 @@ static char  mainName[] = "numa2_reg";
         fprintf(stderr, "Same for columns\n");
     else
         fprintf(stderr, "Error for columns\n");
-    pta = generatePlotPtaFromNuma(na3, L_HORIZONTAL_LINE, 3, h / 2, 80, 1);
     pix = pixConvertTo32(pixs);
-    pixRenderPtaArb(pix, pta, 255, 0, 0);
+    pixRenderPlotFromNumaGen(&pix, na3, L_HORIZONTAL_LINE, 3, h / 2, 80, 1,
+                             0xff000000);
+    pixRenderPlotFromNuma(&pix, na3, L_PLOT_AT_BOT, 3, 80, 0xff000000);
     boxDestroy(&box1);
     boxDestroy(&box2);
     numaDestroy(&na1);
     numaDestroy(&na2);
     numaDestroy(&na3);
-    ptaDestroy(&pta);
 
         /* Sum by rows in two halves (top and bottom) */
     box1 = boxCreate(0, 0, w, h / 2);
@@ -212,8 +213,9 @@ static char  mainName[] = "numa2_reg";
         fprintf(stderr, "Same for rows\n");
     else
         fprintf(stderr, "Error for rows\n");
-    pta = generatePlotPtaFromNuma(na3, L_VERTICAL_LINE, 3, w / 2, 80, 1);
-    pixRenderPtaArb(pix, pta, 0, 255, 0);
+    pixRenderPlotFromNumaGen(&pix, na3, L_VERTICAL_LINE, 3, w / 2, 80, 1,
+                             0x00ff0000);
+    pixRenderPlotFromNuma(&pix, na3, L_PLOT_AT_RIGHT, 3, 80, 0x00ff0000);
     pixDisplay(pix, 500, 200);
     boxDestroy(&box1);
     boxDestroy(&box2);
@@ -221,7 +223,6 @@ static char  mainName[] = "numa2_reg";
     numaDestroy(&na2);
     numaDestroy(&na3);
     pixDestroy(&pix);
-    ptaDestroy(&pta);
 
         /* Average left by rows; right by columns; compare totals */
     box1 = boxCreate(0, 0, w / 2, h);
@@ -264,23 +265,31 @@ static char  mainName[] = "numa2_reg";
      *                     Row and column variances                       *
      * -------------------------------------------------------------------*/
 #if  DO_ALL
+
         /* Display variance by rows and columns */
     box1 = boxCreate(415, 0, 130, 425);
     boxGetGeometry(box1, NULL, NULL, &bw, &bh);
     na1 = pixVarianceByRow(pixs, box1);
     na2 = pixVarianceByColumn(pixs, box1);
     pix = pixConvertTo32(pixs);
-    pta = generatePlotPtaFromNuma(na1, L_VERTICAL_LINE, 3, 415, 100, 1);
-    pixRenderPtaArb(pix, pta, 255, 0, 0);
-    ptaDestroy(&pta);
-    pta = generatePlotPtaFromNuma(na2, L_HORIZONTAL_LINE, 3, bh / 2, 100, 1);
-    pixRenderPtaArb(pix, pta, 0, 255, 0);
+    pix1 = pixCopy(NULL, pix);
+    pixRenderPlotFromNumaGen(&pix, na1, L_VERTICAL_LINE, 3, 415, 100, 1,
+                             0xff000000);
+    pixRenderPlotFromNumaGen(&pix, na2, L_HORIZONTAL_LINE, 3, bh / 2, 100, 1,
+                          0x00ff0000);
+    pixRenderPlotFromNuma(&pix1, na1, L_PLOT_AT_LEFT, 3, 60, 0x00ff0000);
+    pixRenderPlotFromNuma(&pix1, na1, L_PLOT_AT_MID_VERT, 3, 60, 0x0000ff00);
+    pixRenderPlotFromNuma(&pix1, na1, L_PLOT_AT_RIGHT, 3, 60, 0xff000000);
+    pixRenderPlotFromNuma(&pix1, na2, L_PLOT_AT_TOP, 3, 60, 0x0000ff00);
+    pixRenderPlotFromNuma(&pix1, na2, L_PLOT_AT_MID_HORIZ, 3, 60, 0xff000000);
+    pixRenderPlotFromNuma(&pix1, na2, L_PLOT_AT_BOT, 3, 60, 0x00ff0000);
     pixDisplay(pix, 500, 900);
+    pixDisplay(pix1, 500, 1000);
     boxDestroy(&box1);
     numaDestroy(&na1);
     numaDestroy(&na2);
-    ptaDestroy(&pta);
     pixDestroy(&pix);
+    pixDestroy(&pix1);
     pixDestroy(&pixs);
 
         /* Again on a different image */
@@ -288,34 +297,30 @@ static char  mainName[] = "numa2_reg";
     pix2 = pixConvertTo8(pix1, 0);
     pixGetDimensions(pix2, &w, &h, NULL);
     na1 = pixVarianceByRow(pix2, NULL);
-    pta = generatePlotPtaFromNuma(na1, L_VERTICAL_LINE, 3, 0, 70, 1);
     pix3 = pixConvertTo32(pix1);
-    pixRenderPtaArb(pix3, pta, 255, 0, 0);
-    ptaDestroy(&pta);
+    pixRenderPlotFromNumaGen(&pix3, na1, L_VERTICAL_LINE, 3, 0, 70, 1,
+                             0xff000000);
     na2 = pixVarianceByColumn(pix2, NULL);
-    pta = generatePlotPtaFromNuma(na2, L_HORIZONTAL_LINE, 3, bh - 1, 70, 1);
-    pixRenderPtaArb(pix3, pta, 0, 255, 0);
+    pixRenderPlotFromNumaGen(&pix3, na2, L_HORIZONTAL_LINE, 3, bh - 1, 70, 1,
+                             0x00ff0000);
     pixDisplay(pix3, 1000, 0);
     numaDestroy(&na1);
     numaDestroy(&na2);
-    ptaDestroy(&pta);
     pixDestroy(&pix3);
 
         /* Again, with an erosion */
     pix3 = pixErodeGray(pix2, 3, 21);
     pixDisplay(pix3, 1400, 0);
     na1 = pixVarianceByRow(pix3, NULL);
-    pta = generatePlotPtaFromNuma(na1, L_VERTICAL_LINE, 3, 30, 70, 1);
     pix4 = pixConvertTo32(pix1);
-    pixRenderPtaArb(pix4, pta, 255, 0, 0);
-    ptaDestroy(&pta);
+    pixRenderPlotFromNumaGen(&pix4, na1, L_VERTICAL_LINE, 3, 30, 70, 1,
+                             0xff000000);
     na2 = pixVarianceByColumn(pix3, NULL);
-    pta = generatePlotPtaFromNuma(na2, L_HORIZONTAL_LINE, 3, bh - 1, 70, 1);
-    pixRenderPtaArb(pix4, pta, 0, 255, 0);
+    pixRenderPlotFromNumaGen(&pix4, na2, L_HORIZONTAL_LINE, 3, bh - 1, 70, 1,
+                             0x00ff0000);
     pixDisplay(pix4, 1000, 550);
     numaDestroy(&na1);
     numaDestroy(&na2);
-    ptaDestroy(&pta);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixDestroy(&pix3);
@@ -329,27 +334,30 @@ static char  mainName[] = "numa2_reg";
     pix1 = pixRead("boxedpage.jpg");
     pix2 = pixConvertTo8(pix1, 0);
     pixGetDimensions(pix2, &w, &h, NULL);
+    pix3 = pixCopy(NULL, pix1);
 
         /* Plot along horizontal line */
     pixWindowedVarianceOnLine(pix2, L_HORIZONTAL_LINE, h / 2 - 30, 0,
                               w, 5, &na1);
-    pta = generatePlotPtaFromNuma(na1, L_HORIZONTAL_LINE, 3,
-                                   h / 2 - 30, 80, 1);
-    pixRenderPtaArb(pix1, pta, 255, 0, 0);
-    numaDestroy(&na1);
-    ptaDestroy(&pta);
+    pixRenderPlotFromNumaGen(&pix1, na1, L_HORIZONTAL_LINE, 3, h / 2 - 30,
+                             80, 1, 0xff000000);
+    pixRenderPlotFromNuma(&pix3, na1, L_PLOT_AT_TOP, 3, 60, 0x00ff0000);
+    pixRenderPlotFromNuma(&pix3, na1, L_PLOT_AT_BOT, 3, 60, 0x0000ff00);
 
         /* Plot along vertical line */
     pixWindowedVarianceOnLine(pix2, L_VERTICAL_LINE, 0.78 * w, 0,
-                              h, 5, &na1);
-    pta = generatePlotPtaFromNuma(na1, L_VERTICAL_LINE, 3,
-                                   0.78 * w, 60, 1);
-    pixRenderPtaArb(pix1, pta, 0, 255, 0);
-    pixDisplay(pix1, 100, 100);
+                              h, 5, &na2);
+    pixRenderPlotFromNumaGen(&pix1, na2, L_VERTICAL_LINE, 3, 0.78 * w, 60,
+                             1, 0x00ff0000);
+    pixRenderPlotFromNuma(&pix3, na2, L_PLOT_AT_LEFT, 3, 60, 0xff000000);
+    pixRenderPlotFromNuma(&pix3, na2, L_PLOT_AT_RIGHT, 3, 60, 0x00ff0000);
+    pixDisplay(pix1, 1000, 1000);
+    pixDisplay(pix3, 1500, 1000);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
+    pixDestroy(&pix3);
     numaDestroy(&na1);
-    ptaDestroy(&pta);
+    numaDestroy(&na2);
 #endif
     return 0;
 }

@@ -160,8 +160,12 @@ static const struct ExtensionMap extension_map[] =
  *
  *      Input:  rootname
  *              pixa
- *              format  (defined in imageio.h)
+ *              format  (defined in imageio.h; see notes for default)
  *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) Use @format = IFF_DEFAULT to decide the output format
+ *          individually for each pix.
  */
 l_int32
 pixaWriteFiles(const char  *rootname,
@@ -169,7 +173,7 @@ pixaWriteFiles(const char  *rootname,
                l_int32      format)
 {
 char     bigbuf[L_BUF_SIZE];
-l_int32  i, n;
+l_int32  i, n, pixformat;
 PIX     *pix;
 
     PROCNAME("pixaWriteFiles");
@@ -178,15 +182,20 @@ PIX     *pix;
         return ERROR_INT("rootname not defined", procName, 1);
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
-    if (format < 0 || format >= NumImageFileFormatExtensions)
+    if (format < 0 || format == IFF_UNKNOWN ||
+        format >= NumImageFileFormatExtensions)
         return ERROR_INT("invalid format", procName, 1);
 
     n = pixaGetCount(pixa);
     for (i = 0; i < n; i++) {
-        snprintf(bigbuf, L_BUF_SIZE, "%s%03d.%s", rootname, i,
-                 ImageFileFormatExtensions[format]);
         pix = pixaGetPix(pixa, i, L_CLONE);
-        pixWrite(bigbuf, pix, format);
+        if (format == IFF_DEFAULT)
+            pixformat = pixChooseOutputFormat(pix);
+        else
+            pixformat = format;
+        snprintf(bigbuf, L_BUF_SIZE, "%s%03d.%s", rootname, i,
+                 ImageFileFormatExtensions[pixformat]);
+        pixWrite(bigbuf, pix, pixformat);
         pixDestroy(&pix);
     }
 
@@ -208,8 +217,8 @@ PIX     *pix;
  *          into CRLF, which corrupts image files.  On non-windows
  *          systems this flag should be ignored, per ISO C90.
  *          Thanks to Dave Bryan for pointing this out.
- *      (2) If the default image format is requested, we use the input format;
- *          if the input format is unknown, a lossless format is assigned.
+ *      (2) If the default image format IFF_DEFAULT is requested:
+ *          use the input format if known; otherwise, use a lossless format.
  *      (3) There are two modes with respect to file naming.
  *          (a) The default code writes to @filename.
  *          (b) If WRITE_AS_NAMED is defined to 0, it's a bit fancier.
@@ -233,8 +242,6 @@ FILE  *fp;
         return ERROR_INT("pix not defined", procName, 1);
     if (!filename)
         return ERROR_INT("filename not defined", procName, 1);
-    if (format == IFF_JP2)
-        return ERROR_INT("jp2 not supported", procName, 1);
 
     fname = genPathname(filename, NULL);
 
@@ -349,16 +356,16 @@ pixWriteStream(FILE    *fp,
         return pixWriteStreamPnm(fp, pix);
         break;
 
-    case IFF_GIF:
-        return pixWriteStreamGif(fp, pix);
-        break;
-
     case IFF_PS:
         return pixWriteStreamPS(fp, pix, NULL, 0, DEFAULT_SCALING);
         break;
 
+    case IFF_GIF:
+        return pixWriteStreamGif(fp, pix);
+        break;
+
     case IFF_JP2:
-        return ERROR_INT("jp2 format not supported", procName, 1);
+        return pixWriteStreamJp2k(fp, pix, 34, 0, 0);
         break;
 
     case IFF_WEBP:
@@ -662,7 +669,15 @@ l_int32  ret;
         break;
 
     case IFF_JP2:
-        return ERROR_INT("jp2 not supported", procName, 1);
+        ret = pixWriteMemJp2k(pdata, psize, pix, 34, 0, 0);
+        break;
+
+    case IFF_WEBP:
+        ret = pixWriteMemWebP(pdata, psize, pix, 80, 0);
+        break;
+
+    case IFF_LPDF:
+        ret = pixWriteMemPdf(pdata, psize, pix, 0, NULL);
         break;
 
     case IFF_SPIX:
@@ -827,7 +842,7 @@ char            fullpath[_MAX_PATH];
         snprintf(buffer, L_BUF_SIZE, "/tmp/disp/write.%03d.jpg", index);
         pixWrite(buffer, pix2, IFF_JFIF_JPEG);
     }
-    tempname = stringNew(buffer);
+    tempname = genPathname(buffer, NULL);
 
 #ifndef _WIN32
 
@@ -930,7 +945,7 @@ char     fullpath[_MAX_PATH];
     FREE(tail);
 #endif  /* _WIN32 */
 
-    ignore = system(buffer);
+    ignore = system(buffer);  /* gthumb || i_view32.exe */
     return 0;
 }
 

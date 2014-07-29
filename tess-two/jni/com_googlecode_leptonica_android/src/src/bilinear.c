@@ -83,12 +83,13 @@
  *
  *      where the eight coefficients have been computed from four
  *      sets of these equations, each for two corresponding data pts.
- *      In practice, for each point (x,y) in the dest image, this
- *      equation is used to compute the corresponding point (x',y')
- *      in the src.  That computed point in the src is then used
- *      to determine the dest value in one of two ways:
+ *      In practice, once the coefficients are known, we use the
+ *      equations "backwards": for each point (x,y) in the dest image,
+ *      these two equations are used to compute the corresponding point
+ *      (x',y') in the src.  That computed point in the src is then used
+ *      to determine the corresponding dest pixel value in one of two ways:
  *
- *       - sampling: take the value of the src pixel in which this
+ *       - sampling: simply take the value of the src pixel in which this
  *                   point falls
  *       - interpolation: take appropriate linear combinations of the
  *                        four src pixels that this dest pixel would
@@ -584,7 +585,7 @@ PIX       *pixd;
 
 
 /*-------------------------------------------------------------------------*
- *  Bilinear transform including alpha (blend) component and gamma xform   *
+ *           Bilinear transform including alpha (blend) component          *
  *-------------------------------------------------------------------------*/
 /*!
  *  pixBilinearPtaWithAlpha()
@@ -626,17 +627,6 @@ PIX       *pixd;
  *              with an image below, and
  *          (b) softens the edges by weakening the aliasing there.
  *          Use l_setAlphaMaskBorder() to change these values.
- *      (8) A subtle use of gamma correction is to remove gamma correction
- *          before scaling and restore it afterwards.  This is done
- *          by sandwiching this function between a gamma/inverse-gamma
- *          photometric transform:
- *              pixt = pixGammaTRCWithAlpha(NULL, pixs, 1.0 / gamma, 0, 255);
- *              pixd = pixBilinearPtaWithAlpha(pixt, ptad, ptas, NULL,
- *                                             fract, border);
- *              pixGammaTRCWithAlpha(pixd, pixd, gamma, 0, 255);
- *              pixDestroy(&pixt);
- *          This has the side-effect of producing artifacts in the very
- *          dark regions.
  */
 PIX *
 pixBilinearPtaWithAlpha(PIX       *pixs,

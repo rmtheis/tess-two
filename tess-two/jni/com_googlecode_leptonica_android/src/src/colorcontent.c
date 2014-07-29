@@ -63,6 +63,9 @@
  *         l_int32    makeRGBIndexTables()
  *         l_int32    getRGBFromIndex()
  *
+ *      Identify images that have highlight (red) color
+ *         l_int32    pixHasHighlightRed()
+ *
  *  Color is tricky.  If we consider gray (r = g = b) to have no color
  *  content, how should we define the color content in each component
  *  of an arbitrary pixel, as well as the overall color magnitude?
@@ -606,11 +609,11 @@ l_uint32  *data, *line;
 
     PROCNAME("pixColorFraction");
 
+    if (ppixfract) *ppixfract = 0.0;
+    if (pcolorfract) *pcolorfract = 0.0;
     if (!ppixfract || !pcolorfract)
-        return ERROR_INT("&pixfract and &colorfract not both defined",
+        return ERROR_INT("&pixfract and &colorfract not defined",
                          procName, 1);
-    *ppixfract = 0.0;
-    *pcolorfract = 0.0;
     if (!pixs || pixGetDepth(pixs) != 32)
         return ERROR_INT("pixs not defined or not 32 bpp", procName, 1);
 
@@ -713,7 +716,7 @@ NUMA    *na;
     if (factor < 1) factor = 1;
 
     pixGetDimensions(pixs, &w, &h, NULL);
-    mincount = (l_int32)(minfract * w * h);
+    mincount = (l_int32)(minfract * w * h * factor * factor);
     if ((na = pixGetGrayHistogram(pixs, factor)) == NULL)
         return ERROR_INT("na not made", procName, 1);
     ncolors = 2;  /* add in black and white */
@@ -1365,4 +1368,96 @@ getRGBFromIndex(l_uint32  index,
 
     return 0;
 }
+
+
+/* ----------------------------------------------------------------------- *
+ *             Identify images that have highlight (red) color             *
+ * ----------------------------------------------------------------------- */
+/*!
+ *  pixHasHighlightRed()
+ *
+ *      Input:  pixs  (32 bpp rgb)
+ *              factor (subsampling; an integer >= 1; use 1 for all pixels)
+ *              fract (threshold fraction of all image pixels)
+ *              fthresh (threshold on a function of the components; typ. ~2.5)
+ *              &hasred (<return> 1 if red pixels are above threshold)
+ *              &ratio (<optional return> normalized fraction of threshold
+ *                      red pixels that is actually observed)
+ *              &pixdb (<optional return> seed pixel mask)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) Pixels are identified as red if they satisfy two conditions:
+ *          (a) The components satisfy (R-B)/B > @fthresh   (red or dark fg)
+ *          (b) The red component satisfied R > 128  (red or light bg)
+ *          Masks are generated for (a) and (b), and the intersection
+ *          gives the pixels that are red but not either light bg or
+ *          dark fg.
+ *      (2) A typical value for fract = 0.0001, which gives sensitivity
+ *          to an image where a small fraction of the pixels are printed
+ *          in red.
+ *      (3) A typical value for fthresh = 2.5.  Higher values give less
+ *          sensitivity to red, and fewer false positives.
+ */
+l_int32
+pixHasHighlightRed(PIX        *pixs,
+                   l_int32     factor,
+                   l_float32   fract,
+                   l_float32   fthresh,
+                   l_int32    *phasred,
+                   l_float32  *pratio,
+                   PIX       **ppixdb)
+{
+l_int32    w, h, count;
+l_float32  ratio;
+PIX       *pix1, *pix2, *pix3, *pix4;
+FPIX      *fpix;
+
+    PROCNAME("pixHasHighlightRed");
+
+    if (pratio) *pratio = 0.0;
+    if (ppixdb) *ppixdb = NULL;
+    if (!phasred)
+        return ERROR_INT("&hasred not defined", procName, 1);
+    *phasred = 0;
+    if (!pixs || pixGetDepth(pixs) != 32)
+        return ERROR_INT("pixs not defined or not 32 bpp", procName, 1);
+    if (fthresh < 1.5 || fthresh > 3.5)
+        L_WARNING("fthresh = %f is out of normal bounds\n", procName, fthresh);
+
+    if (factor > 1)
+        pix1 = pixScaleByIntSampling(pixs, factor);
+    else
+        pix1 = pixClone(pixs);
+
+        /* Identify pixels that are either red or dark foreground */
+    fpix = pixComponentFunction(pix1, 1.0, 0.0, -1.0, 0.0, 0.0, 1.0);
+    pix2 = fpixThresholdToPix(fpix, fthresh);
+    pixInvert(pix2, pix2);
+
+        /* Identify pixels that are either red or light background */
+    pix3 = pixGetRGBComponent(pix1, COLOR_RED);
+    pix4 = pixThresholdToBinary(pix3, 130);
+    pixInvert(pix4, pix4);
+
+    pixAnd(pix4, pix4, pix2);
+    pixCountPixels(pix4, &count, NULL);
+    pixGetDimensions(pix4, &w, &h, NULL);
+    L_INFO("count = %d, thresh = %d\n", procName, count,
+           (l_int32)(fract * w * h));
+    ratio = (l_float32)count / (fract * w * h);
+    if (pratio) *pratio = ratio;
+    if (ratio >= 1.0)
+        *phasred = 1;
+    if (ppixdb)
+        *ppixdb = pix4;
+    else
+        pixDestroy(&pix4);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    fpixDestroy(&fpix);
+    return 0;
+}
+
 

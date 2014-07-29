@@ -69,11 +69,11 @@ L_REGPARAMS  *rp;
 
         /* selaRead() / selaWrite()  */
     sela1 = selaAddBasic(NULL);
-    selaWrite("/tmp/sel.0.sela", sela1);
-    regTestCheckFile(rp, "/tmp/sel.0.sela");  /* 0 */
-    sela2 = selaRead("/tmp/sel.0.sela");
-    selaWrite("/tmp/sel.1.sela", sela2);
-    regTestCheckFile(rp, "/tmp/sel.1.sela");  /* 1 */
+    selaWrite("/tmp/regout/sel.0.sela", sela1);
+    regTestCheckFile(rp, "/tmp/regout/sel.0.sela");  /* 0 */
+    sela2 = selaRead("/tmp/regout/sel.0.sela");
+    selaWrite("/tmp/regout/sel.1.sela", sela2);
+    regTestCheckFile(rp, "/tmp/regout/sel.1.sela");  /* 1 */
     regTestCompareFiles(rp, 0, 1);  /* 2 */
     selaDestroy(&sela1);
     selaDestroy(&sela2);
@@ -83,8 +83,8 @@ L_REGPARAMS  *rp;
     pix = selaDisplayInPix(sela1, 31, 3, 15, 4);
     regTestWritePixAndCheck(rp, pix, IFF_PNG);  /* 3 */
     pixDisplayWithTitle(pix, 100, 100, NULL, rp->display);
-    selaWrite("/tmp/sel.3.sela", sela1);
-    regTestCheckFile(rp, "/tmp/sel.3.sela");  /* 4 */
+    selaWrite("/tmp/regout/sel.3.sela", sela1);
+    regTestCheckFile(rp, "/tmp/regout/sel.3.sela");  /* 4 */
     pixDestroy(&pix);
     selaDestroy(&sela1);
 
@@ -98,8 +98,8 @@ L_REGPARAMS  *rp;
     selaAddSel(sela2, sel, NULL, 0);
     sel = selCreateFromString(textsel4, 5, 6, "textsel4");
     selaAddSel(sela2, sel, NULL, 0);
-    selaWrite("/tmp/sel.4.sela", sela2);
-    regTestCheckFile(rp, "/tmp/sel.4.sela");  /* 5 */
+    selaWrite("/tmp/regout/sel.4.sela", sela2);
+    regTestCheckFile(rp, "/tmp/regout/sel.4.sela");  /* 5 */
     regTestCompareFiles(rp, 4, 5);  /* 6 */
     selaDestroy(&sela2);
 

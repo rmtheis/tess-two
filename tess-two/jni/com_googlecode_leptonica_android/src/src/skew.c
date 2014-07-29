@@ -132,7 +132,7 @@ static const l_int32  DEFAULT_BINARY_THRESHOLD = 130;
 #define  DEBUG_PRINT_BINARY     0
 #define  DEBUG_PRINT_ORTH       0
 #define  DEBUG_THRESHOLD        0
-#define  DEBUG_PLOT_SCORES      0
+#define  DEBUG_PLOT_SCORES      0  /* requires the gnuplot executable */
 #endif  /* ~NO_CONSOLE_IO */
 
 

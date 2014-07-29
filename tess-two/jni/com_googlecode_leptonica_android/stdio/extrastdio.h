@@ -19,6 +19,9 @@ FILE *fmemopen(void *buf, size_t size, const char *mode);
 
 FILE *open_memstream(char **buf, size_t *size);
 
+FILE *__sfp(void);
+int __sflags(const char *, int *);
+
 #endif
 
 #endif  /* LEPTONICA__STDIO_H */

@@ -62,6 +62,14 @@ l_int32 readHeaderWebP(const char *filename, l_int32 *pw, l_int32 *ph,
 
 /* ----------------------------------------------------------------------*/
 
+l_int32 readHeaderMemWebP(const l_uint8 *data, size_t size,
+                          l_int32 *pw, l_int32 *ph, l_int32 *pspp)
+{
+    return ERROR_INT("function not present", "readHeaderMemWebP", 1);
+}
+
+/* ----------------------------------------------------------------------*/
+
 l_int32 pixWriteWebP(const char *filename, PIX *pixs, l_int32 quality,
                      l_int32 lossless)
 {

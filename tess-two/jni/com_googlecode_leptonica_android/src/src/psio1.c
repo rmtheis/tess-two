@@ -429,11 +429,12 @@ l_int32      format, retval;
  *      Input:  pagedir (input page image directory)
  *              pagestr (<optional> substring filter on page filenames;
  *                       can be NULL)
+ *              page_numpre (number of characters in page name before number)
  *              maskdir (input mask image directory)
  *              maskstr (<optional> substring filter on mask filenames;
  *                       can be NULL)
- *              numpre (number of characters in name before number)
- *              numpost (number of characters in name after number)
+ *              mask_numpre (number of characters in mask name before number)
+ *              numpost (number of characters in names after number)
  *              maxnum (only consider page numbers up to this value)
  *              textscale (scale of text output relative to pixs)
  *              imagescale (scale of image output relative to pixs)
@@ -465,10 +466,11 @@ l_int32      format, retval;
  *      (6) Both the DCT and the G4 encoding are PostScript level 2.
  *      (7) It is assumed that the page number is contained within
  *          the basename (the filename without directory or extension).
- *          @numpre is the number of characters in the basename
- *          preceeding the actual page numer; @numpost is the number
- *          following the page number.  Note: the same numbers must be
- *          applied to both the page and mask image names.
+ *          @page_numpre is the number of characters in the page basename
+ *          preceeding the actual page number; @mask_numpre is likewise for
+ *          the mask basename; @numpost is the number of characters
+ *          following the page number.  For example, for mask name
+ *          mask_006.tif, mask_numpre = 5 ("mask_).
  *      (8) To render a page as is -- that is, with no thresholding
  *          of any pixels -- use a mask in the mask directory that is
  *          full size with all pixels set to 1.  If the page is 1 bpp,
@@ -477,9 +479,10 @@ l_int32      format, retval;
 l_int32
 convertSegmentedPagesToPS(const char  *pagedir,
                           const char  *pagestr,
+                          l_int32      page_numpre,
                           const char  *maskdir,
                           const char  *maskstr,
-                          l_int32      numpre,
+                          l_int32      mask_numpre,
                           l_int32      numpost,
                           l_int32      maxnum,
                           l_float32    textscale,
@@ -506,9 +509,9 @@ SARRAY  *sapage, *samask;
 
         /* Get numbered full pathnames; max size of sarray is maxnum */
     sapage = getNumberedPathnamesInDirectory(pagedir, pagestr,
-                                             numpre, numpost, maxnum);
+                                             page_numpre, numpost, maxnum);
     samask = getNumberedPathnamesInDirectory(maskdir, maskstr,
-                                             numpre, numpost, maxnum);
+                                             mask_numpre, numpost, maxnum);
     sarrayPadToSameSize(sapage, samask, (char *)"");
     if ((npages = sarrayGetCount(sapage)) == 0) {
         sarrayDestroy(&sapage);
@@ -725,8 +728,8 @@ pixWriteMixedToPS(PIX         *pixb,
                   l_int32      pageno,
                   const char  *fileout)
 {
-const char   tnameb[] = "/tmp/junk_pix_write_mixed.tif";
-const char   tnamec[] = "/tmp/junk_pix_write_mixed.jpg";
+const char   tnameb[] = "/tmp/lept/psio_mixed.tif";
+const char   tnamec[] = "/tmp/lept/psio_mixed.jpg";
 const char  *op;
 l_int32      resb, resc, endpage, maskop, ret;
 
@@ -747,6 +750,7 @@ l_int32      resb, resc, endpage, maskop, ret;
     }
 
         /* Write the jpeg image first */
+    lept_mkdir("lept");
     if (pixc) {
         pixWrite(tnamec, pixc, IFF_JFIF_JPEG);
         endpage = (pixb) ? FALSE : TRUE;
@@ -920,9 +924,10 @@ PIXCMAP  *cmap;
     n = pixaGetCount(pixa);
     firstfile = TRUE;
     index = 0;
-    g4_name = genTempFilename("/tmp", "temp_compr.tif", 0, 0);
-    jpeg_name = genTempFilename("/tmp", "temp_compr.jpg", 0, 0);
-    png_name = genTempFilename("/tmp", "temp_compr.png", 0, 0);
+    lept_mkdir("compr");
+    g4_name = genTempFilename("/tmp/compr", "temp.tif", 0, 0);
+    jpeg_name = genTempFilename("/tmp/compr", "temp.jpg", 0, 0);
+    png_name = genTempFilename("/tmp/compr", "temp.png", 0, 0);
     for (i = 0; i < n; i++) {
         writeout = TRUE;
         pix = pixaGetPix(pixa, i, L_CLONE);

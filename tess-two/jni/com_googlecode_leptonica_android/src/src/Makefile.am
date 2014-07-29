@@ -1,9 +1,9 @@
 AM_CFLAGS = $(DEBUG_FLAGS)
 
 lib_LTLIBRARIES = liblept.la
-liblept_la_LIBADD = $(LIBM) $(ZLIB_LIBS) $(LIBPNG_LIBS) $(JPEG_LIBS) $(GIFLIB_LIBS) $(LIBTIFF_LIBS) $(LIBWEBP_LIBS) $(GDI_LIBS)
+liblept_la_LIBADD = $(LIBM) $(ZLIB_LIBS) $(LIBPNG_LIBS) $(JPEG_LIBS) $(GIFLIB_LIBS) $(LIBTIFF_LIBS) $(LIBWEBP_LIBS) $(LIBJP2K_LIBS) $(GDI_LIBS)
 
-liblept_la_LDFLAGS = -no-undefined -version-info 4:0:0
+liblept_la_LDFLAGS = -no-undefined -version-info 4:2:0
 
 liblept_la_SOURCES = adaptmap.c affine.c                        \
  affinecompose.c arrayaccess.c                                  \
@@ -28,13 +28,14 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  fpix1.c fpix2.c gifio.c gifiostub.c                            \
  gplot.c graphics.c graymorph.c graymorphlow.c                  \
  grayquant.c grayquantlow.c heap.c jbclass.c                    \
+ jp2kheader.c jp2kheaderstub.c                                  \
  jp2kio.c jp2kiostub.c jpegio.c jpegiostub.c                    \
  kernel.c leptwin.c libversions.c list.c maze.c                 \
  morph.c morphapp.c morphdwa.c morphseq.c                       \
  numabasic.c numafunc1.c numafunc2.c                            \
  pageseg.c paintcmap.c                                          \
  parseprotos.c partition.c                                      \
- pdfio.c pdfiostub.c                                            \
+ pdfio1.c pdfio1stub.c pdfio2.c pdfio2stub.c                    \
  pix1.c pix2.c pix3.c pix4.c pix5.c                             \
  pixabasic.c pixacc.c pixafunc1.c pixafunc2.c                   \
  pixalloc.c pixarith.c pixcomp.c pixconv.c	                \
@@ -48,7 +49,7 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  recogtrain.c regutils.c                                        \
  rop.c ropiplow.c roplow.c                                      \
  rotate.c rotateam.c rotateamlow.c                              \
- rotateorth.c rotateorthlow.c rotateshear.c                     \
+ rotateorth.c rotateshear.c                                     \
  runlength.c sarray.c                                           \
  scale.c scalelow.c	                                        \
  seedfill.c seedfilllow.c                                       \

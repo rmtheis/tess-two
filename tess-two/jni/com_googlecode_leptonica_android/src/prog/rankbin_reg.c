@@ -68,11 +68,15 @@ L_REGPARAMS  *rp;
     numaDestroy(&naindex);
 
         /* Make the rank bin arrays of median values, with 10 bins */
+    lept_rmfile("/tmp/regout/w_10bin.png");  /* remove existing ones */
+    lept_rmfile("/tmp/regout/h_10bin.png");
+    lept_rmfile("/tmp/regout/w_30bin.png");
+    lept_rmfile("/tmp/regout/h_30bin.png");
     numaGetRankBinValues(naw, 10, NULL, &naw_med);
     numaGetRankBinValues(nah, 10, NULL, &nah_med);
-    gplotSimple1(naw_med, GPLOT_PNG, "/tmp/w_10bin",
+    gplotSimple1(naw_med, GPLOT_PNG, "/tmp/regout/w_10bin",
                  "width vs rank bins (10)");
-    gplotSimple1(nah_med, GPLOT_PNG, "/tmp/h_10bin",
+    gplotSimple1(nah_med, GPLOT_PNG, "/tmp/regout/h_10bin",
                  "height vs rank bins (10)");
     numaDestroy(&naw_med);
     numaDestroy(&nah_med);
@@ -80,9 +84,9 @@ L_REGPARAMS  *rp;
         /* Make the rank bin arrays of median values, with 30 bins */
     numaGetRankBinValues(naw, 30, NULL, &naw_med);
     numaGetRankBinValues(nah, 30, NULL, &nah_med);
-    gplotSimple1(naw_med, GPLOT_PNG, "/tmp/w_30bin",
+    gplotSimple1(naw_med, GPLOT_PNG, "/tmp/regout/w_30bin",
                  "width vs rank bins (30)");
-    gplotSimple1(nah_med, GPLOT_PNG, "/tmp/h_30bin",
+    gplotSimple1(nah_med, GPLOT_PNG, "/tmp/regout/h_30bin",
                  "height vs rank bins (30)");
     numaDestroy(&naw_med);
     numaDestroy(&nah_med);
@@ -95,22 +99,22 @@ L_REGPARAMS  *rp;
 #endif  /* _WIN32 */
 
         /* Save as golden files, or check against them */
-    regTestCheckFile(rp, "/tmp/w_10bin.png");  /* 0 */
-    regTestCheckFile(rp, "/tmp/h_10bin.png");  /* 1 */
-    regTestCheckFile(rp, "/tmp/w_30bin.png");  /* 2 */
-    regTestCheckFile(rp, "/tmp/h_30bin.png");  /* 3 */
+    regTestCheckFile(rp, "/tmp/regout/w_10bin.png");  /* 0 */
+    regTestCheckFile(rp, "/tmp/regout/h_10bin.png");  /* 1 */
+    regTestCheckFile(rp, "/tmp/regout/w_30bin.png");  /* 2 */
+    regTestCheckFile(rp, "/tmp/regout/h_30bin.png");  /* 3 */
 
         /* Display results for debugging */
-    pixt = pixRead("/tmp/w_10bin.png");
+    pixt = pixRead("/tmp/regout/w_10bin.png");
     pixDisplayWithTitle(pixt, 0, 0, NULL, rp->display);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/h_10bin.png");
+    pixt = pixRead("/tmp/regout/h_10bin.png");
     pixDisplayWithTitle(pixt, 650, 0, NULL, rp->display);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/w_30bin.png");
+    pixt = pixRead("/tmp/regout/w_30bin.png");
     pixDisplayWithTitle(pixt, 0, 550, NULL, rp->display);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/h_30bin.png");
+    pixt = pixRead("/tmp/regout/h_30bin.png");
     pixDisplayWithTitle(pixt, 650, 550, NULL, rp->display);
     pixDestroy(&pixt);
 

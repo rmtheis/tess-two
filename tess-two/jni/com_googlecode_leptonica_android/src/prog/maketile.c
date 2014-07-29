@@ -50,7 +50,7 @@ int main(int    argc,
          char **argv)
 {
 char        *dirin, *fileout, *fname, *fullname;
-l_int32      depth, width, background, i, index, nfiles, n;
+l_int32      depth, width, background, i, nfiles;
 l_float32    scale;
 SARRAY      *safiles;
 PIX         *pix, *pixt, *pixd;
@@ -76,7 +76,7 @@ static char  mainName[] = "maketile";
             /* capture images with the requisite depth */
     nfiles = sarrayGetCount(safiles);
     pixa = pixaCreate(nfiles);
-    for (i = 0, index = 0; i < nfiles; i++) {
+    for (i = 0; i < nfiles; i++) {
         fname = sarrayGetString(safiles, i, 0);
         fullname = genPathname(dirin, fname);
         pix = pixRead(fullname);

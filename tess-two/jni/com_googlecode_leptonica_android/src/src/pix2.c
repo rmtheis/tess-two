@@ -1816,7 +1816,7 @@ pixRemoveBorder(PIX     *pixs,
  *  pixRemoveBorderGeneral()
  *
  *      Input:  pixs (all depths; colormap ok)
- *              left, right, top, bot  (number of pixels added)
+ *              left, right, top, bot  (number of pixels removed)
  *      Return: pixd (with pixels removed around border), or null on error
  */
 PIX *

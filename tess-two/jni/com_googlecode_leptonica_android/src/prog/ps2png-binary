@@ -8,7 +8,8 @@
 #     output: png binary files for each page
 #
 #     Restriction: the input PostScript file must be binary
-
+#
+#   N.B. Requires ghostscript
 
 scriptname=${0##*/}
 
@@ -24,9 +25,11 @@ outpngroot=$2
 # need mysterious "primer"
 # choose one of the two options below
 
-# choice: output image size depending on resolution
+# output image size depending on resolution
 echo "0 neg 0 neg" translate | gs -sDEVICE=pngmono -sOutputFile=${outpngroot}%03d.png -r300x300 -q - ${inpsfile}
 
-# choice: output fixed image size
+# output fixed image size
 #echo "0 neg 0 neg" translate | gs -sDEVICE=pngmono -sOutputFile=${outpngroot}%03d.png -g2550x3300 -r300x300 -q - ${inpsfile}
+
+
 

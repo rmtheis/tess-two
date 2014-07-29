@@ -391,7 +391,7 @@ PIXA         *pixac;
     pixGetDimensions(pixs, &w, &h, NULL);
     wd = (w + reduction - 1) / reduction;
     hd = (h + reduction - 1) / reduction;
-    halfwidth = (l_int32)(2 * sstdev + 0.5);
+    halfwidth = (l_int32)(2.0 * sstdev);
     for (index = 0; index < ncomps; index++) {
         pixt = pixCopy(NULL, pixsc);
         datat = pixGetData(pixt);
