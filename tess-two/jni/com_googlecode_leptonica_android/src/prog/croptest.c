@@ -219,15 +219,13 @@ l_int32  nrl, nrt, nit, start, end, sign, pap1, txt1, del;
 
 l_int32
 GetRightCut(NUMA *narl,
-             NUMA *nart,
-             NUMA *nait,
-             l_int32 w,
-             l_int32 *pright) {
-l_int32  nrl, nrt, nit, ntrans, start, end, sign, txt2, pap2, found, trans;
+            NUMA *nart,
+            NUMA *nait,
+            l_int32 w,
+            l_int32 *pright) {
+l_int32  nrt, ntrans, start, end, sign, txt2, pap2, found, trans;
 
-    nrl = numaGetCount(narl);
     nrt = numaGetCount(nart);
-    nit = numaGetCount(nait);
 
         /* Check for small max number of reversals or no edge */
         /* Where is text and page, scanning from the right?  */

@@ -34,7 +34,8 @@
 int main(int    argc,
           char **argv)
 {
-char         *filein, *fileout;
+char         *filein;
+char         *fileout = NULL;
 l_int32       d, same;
 PIX          *pixs, *pixd, *pix1, *pix2, *pix3, *pix4;
 static char   mainName[] = "converttogray";
@@ -44,17 +45,18 @@ static char   mainName[] = "converttogray";
                          mainName, 1);
 
     filein = argv[1];
-    fileout = argv[2];
+    if (argc == 3) fileout = argv[2];
     if ((pixs = pixRead(filein)) == NULL)
         return ERROR_INT("pixs not made", mainName, 1);
 
-#if 0
-    pixd = pixConvertRGBToGray(pixs, 0.33, 0.34, 0.33);
-    pixWrite(fileout, pixd, IFF_PNG);
-    pixDestroy(&pixd);
-#endif
+    if (fileout) {
+        pixd = pixConvertRGBToGray(pixs, 0.33, 0.34, 0.33);
+        pixWrite(fileout, pixd, IFF_PNG);
+        pixDestroy(&pixs);
+        pixDestroy(&pixd);
+        return 0;
+    }
 
-#if 1
     d = pixGetDepth(pixs);
     if (d == 2) {
         pix1 = pixConvert2To8(pixs, 0x00, 0x55, 0xaa, 0xff, TRUE);
@@ -104,8 +106,9 @@ static char   mainName[] = "converttogray";
         pixWrite("/tmp/pix4.png", pix4, IFF_PNG);
         pixDestroy(&pix3);
         pixDestroy(&pix4);
+    } else {
+        L_INFO("only converts 2 and 4 bpp; d = %d\n", mainName, d);
     }
-#endif
 
     pixDestroy(&pixs);
     return 0;

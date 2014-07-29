@@ -618,6 +618,7 @@ l_int32  i, minside;
  *
  *      Input:  fpixa (mean, variance or root variance)
  *              factor (replication factor at lowest level)
+ *              fontdir (directory for text fonts; e.g., ./fonts)
  *      Return: pixd (8 bpp, mosaic of quadtree images), or null on error
  *
  *  Notes:
@@ -627,8 +628,9 @@ l_int32  i, minside;
  *          pixels will mostly be 255 (white).
  */
 PIX *
-fpixaDisplayQuadtree(FPIXA    *fpixa,
-                     l_int32   factor)
+fpixaDisplayQuadtree(FPIXA       *fpixa,
+                     l_int32      factor,
+                     const char  *fontdir)
 {
 char       buf[256];
 l_int32    nlevels, i, mag, w;
@@ -645,7 +647,8 @@ PIXA      *pixat;
     if ((nlevels = fpixaGetCount(fpixa)) == 0)
         return (PIX *)ERROR_PTR("pixas empty", procName, NULL);
 
-    bmf = bmfCreate("./fonts", 6);
+    if ((bmf = bmfCreate(fontdir, 6)) == NULL)
+        L_ERROR("bmf not made; text will not be added", procName);
     pixat = pixaCreate(nlevels);
     for (i = 0; i < nlevels; i++) {
         fpix = fpixaGetFPix(fpixa, i, L_CLONE);

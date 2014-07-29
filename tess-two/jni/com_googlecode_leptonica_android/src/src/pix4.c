@@ -59,6 +59,7 @@
  *           l_int32     pixGetRankColorArray()
  *           l_int32     pixGetBinnedColor()
  *           PIX        *pixDisplayColorArray()
+ *           PIX        *pixRankBinByStrip()
  *
  *    Pixelwise aligned statistics
  *           PIX        *pixaGetAlignedStats()
@@ -2001,7 +2002,7 @@ l_uint32  *data, *line;
  *              &minval (<optional return> minimum value of component)
  *              &maxval (<optional return> maximum value of component)
  *              &carray (<optional return> color array of bins)
- *              debugflag (1 for debug output)
+ *              fontdir (<optional> for debug output)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -2010,14 +2011,14 @@ l_uint32  *data, *line;
  *          where the ranking is done using the specified component.
  */
 l_int32
-pixGetBinnedComponentRange(PIX        *pixs,
-                           l_int32     nbins,
-                           l_int32     factor,
-                           l_int32     color,
-                           l_int32    *pminval,
-                           l_int32    *pmaxval,
-                           l_uint32  **pcarray,
-                           l_int32     debugflag)
+pixGetBinnedComponentRange(PIX         *pixs,
+                           l_int32      nbins,
+                           l_int32      factor,
+                           l_int32      color,
+                           l_int32     *pminval,
+                           l_int32     *pmaxval,
+                           l_uint32   **pcarray,
+                           const char  *fontdir)
 {
 l_int32    i, minval, maxval, rval, gval, bval;
 l_uint32  *carray;
@@ -2038,11 +2039,11 @@ PIX       *pixt;
         color != L_SELECT_BLUE)
         return ERROR_INT("invalid color", procName, 1);
 
-    pixGetRankColorArray(pixs, nbins, color, factor, &carray, 0);
-    if (debugflag) {
+    pixGetRankColorArray(pixs, nbins, color, factor, &carray, 0, NULL);
+    if (fontdir) {
         for (i = 0; i < nbins; i++)
-            fprintf(stderr, "c[%d] = %x\n", i, carray[i]);
-        pixt = pixDisplayColorArray(carray, nbins, 200, 5, 1);
+            L_INFO("c[%d] = %x\n", procName, i, carray[i]);
+        pixt = pixDisplayColorArray(carray, nbins, 200, 5, fontdir);
         pixDisplay(pixt, 100, 100);
         pixDestroy(&pixt);
     }
@@ -2080,11 +2081,12 @@ PIX       *pixt;
  *              &carray (<return> array of colors, ranked by intensity)
  *              debugflag (1 to display color squares and plots of color
  *                         components; 2 to write them as png to file)
+ *              fontdir (<optional> for text fonts; ignored if debugflag == 0)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
  *      (1) The color selection flag is one of: L_SELECT_RED, L_SELECT_GREEN,
- *          L_SELECT_BLUE, L_SELECT_MIN, L_SELECT_MAX.
+ *          L_SELECT_BLUE, L_SELECT_MIN, L_SELECT_MAX, L_SELECT_AVERAGE.
  *      (2) Then it finds the histogram of the selected component in each
  *          RGB pixel.  For each of the @nbins sets of pixels,
  *          ordered by this component value, find the average color,
@@ -2107,7 +2109,8 @@ pixGetRankColorArray(PIX         *pixs,
                      l_int32      type,
                      l_int32      factor,
                      l_uint32   **pcarray,
-                     l_int32      debugflag)
+                     l_int32      debugflag,
+                     const char  *fontdir)
 {
 l_int32    ret;
 l_uint32  *array;
@@ -2131,11 +2134,11 @@ PIXCMAP   *cmap;
         return ERROR_INT("pixs neither 32 bpp nor cmapped", procName, 1);
     if (type != L_SELECT_RED && type != L_SELECT_GREEN &&
         type != L_SELECT_BLUE && type != L_SELECT_MIN &&
-        type != L_SELECT_MAX)
+        type != L_SELECT_MAX && type != L_SELECT_AVERAGE)
         return ERROR_INT("invalid type", procName, 1);
 
         /* Downscale by factor and remove colormap if it exists */
-    pixt = pixScaleByIntSubsampling(pixs, factor);
+    pixt = pixScaleByIntSampling(pixs, factor);
     if (cmap)
         pixc = pixRemoveColormap(pixt, REMOVE_CMAP_TO_FULL_COLOR);
     else
@@ -2151,10 +2154,15 @@ PIXCMAP   *cmap;
         pixg = pixGetRGBComponent(pixc, COLOR_BLUE);
     else if (type == L_SELECT_MIN)
         pixg = pixConvertRGBToGrayMinMax(pixc, L_CHOOSE_MIN);
-    else  /* type == L_SELECT_MAX */
+    else if (type == L_SELECT_MAX)
         pixg = pixConvertRGBToGrayMinMax(pixc, L_CHOOSE_MAX);
-    if ((na = pixGetGrayHistogram(pixg, 1)) == NULL)
+    else  /* L_SELECT_AVERAGE */
+        pixg = pixConvertRGBToGray(pixc, 0.34, 0.33, 0.33);
+    if ((na = pixGetGrayHistogram(pixg, 1)) == NULL) {
+        pixDestroy(&pixc);
+        pixDestroy(&pixg);
         return ERROR_INT("na not made", procName, 1);
+    }
     nan = numaNormalizeHistogram(na, 1.0);
 
         /* Get the following arrays:
@@ -2173,12 +2181,13 @@ PIXCMAP   *cmap;
         NUMA    *nai, *nar, *nabb;
         numaDiscretizeRankAndIntensity(nan, nbins, &narbin, &nai, &nar, &nabb);
         type = (debugflag == 1) ? GPLOT_X11 : GPLOT_PNG;
-        gplotSimple1(nan, type, "/tmp/rtnan", "Normalized Histogram");
-        gplotSimple1(nar, type, "/tmp/rtnar", "Cumulative Histogram");
-        gplotSimple1(nai, type, "/tmp/rtnai", "Intensity vs. rank bin");
-        gplotSimple1(narbin, type, "/tmp/rtnarbin",
+        lept_mkdir("regout");
+        gplotSimple1(nan, type, "/tmp/regout/rtnan", "Normalized Histogram");
+        gplotSimple1(nar, type, "/tmp/regout/rtnar", "Cumulative Histogram");
+        gplotSimple1(nai, type, "/tmp/regout/rtnai", "Intensity vs. rank bin");
+        gplotSimple1(narbin, type, "/tmp/regout/rtnarbin",
                      "LUT: rank bin vs. Intensity");
-        gplotSimple1(nabb, type, "/tmp/rtnabb",
+        gplotSimple1(nabb, type, "/tmp/regout/rtnabb",
                      "Intensity of right edge vs. rank bin");
         numaDestroy(&nai);
         numaDestroy(&nar);
@@ -2201,11 +2210,11 @@ PIXCMAP   *cmap;
         debugflag = 0;  /* make sure to skip the following */
     }
     if (debugflag) {
-        pixd = pixDisplayColorArray(array, nbins, 200, 5, 1);
+        pixd = pixDisplayColorArray(array, nbins, 200, 5, fontdir);
         if (debugflag == 1)
             pixDisplayWithTitle(pixd, 0, 500, "binned colors", 1);
         else  /* debugflag == 2 */
-            pixWriteTempfile("/tmp", "rankhisto.png", pixd, IFF_PNG, NULL);
+            pixWrite("/tmp/regout/rankhisto.png", pixd, IFF_PNG);
         pixDestroy(&pixd);
     }
 
@@ -2329,11 +2338,12 @@ l_float64  *rarray, *garray, *barray, *narray;
             numaAddNumber(nablue, barray[i]);
         }
         type = (debugflag == 1) ? GPLOT_X11 : GPLOT_PNG;
-        gplotSimple1(nared, type, "/tmp/rtnared",
+        lept_mkdir("regout");
+        gplotSimple1(nared, type, "/tmp/regout/rtnared",
                      "Average red val vs. rank bin");
-        gplotSimple1(nagreen, type, "/tmp/rtnagreen",
+        gplotSimple1(nagreen, type, "/tmp/regout/rtnagreen",
                      "Average green val vs. rank bin");
-        gplotSimple1(nablue, type, "/tmp/rtnablue",
+        gplotSimple1(nablue, type, "/tmp/regout/rtnablue",
                      "Average blue val vs. rank bin");
         numaDestroy(&nared);
         numaDestroy(&nagreen);
@@ -2366,15 +2376,15 @@ l_float64  *rarray, *garray, *barray, *narray;
  *              ncolors (size of array)
  *              side (size of each color square; suggest 200)
  *              ncols (number of columns in output color matrix)
- *              textflag (1 to label each square with text; 0 otherwise)
+ *              fontdir (<optional> to label each square with text)
  *      Return: pixd (color array), or null on error
  */
 PIX *
-pixDisplayColorArray(l_uint32  *carray,
-                     l_int32    ncolors,
-                     l_int32    side,
-                     l_int32    ncols,
-                     l_int32    textflag)
+pixDisplayColorArray(l_uint32    *carray,
+                     l_int32      ncolors,
+                     l_int32      side,
+                     l_int32      ncols,
+                     const char  *fontdir)
 {
 char     textstr[256];
 l_int32  i, rval, gval, bval;
@@ -2387,15 +2397,12 @@ PIXA    *pixa;
     if (!carray)
         return (PIX *)ERROR_PTR("carray not defined", procName, NULL);
 
-    bmf6 = NULL;
-    if (textflag)
-        bmf6 = bmfCreate("./fonts", 6);
-
+    bmf6 = (fontdir) ? bmfCreate(fontdir, 6) : NULL;
     pixa = pixaCreate(ncolors);
     for (i = 0; i < ncolors; i++) {
         pixt = pixCreate(side, side, 32);
         pixSetAllArbitrary(pixt, carray[i]);
-        if (textflag) {
+        if (fontdir) {
             extractRGBValues(carray[i], &rval, &gval, &bval);
             snprintf(textstr, sizeof(textstr),
                      "%d: (%d %d %d)", i, rval, gval, bval);
@@ -2412,6 +2419,105 @@ PIXA    *pixa;
     bmfDestroy(&bmf6);
     return pixd;
 }
+
+
+/*!
+ *  pixRankBinByStrip()
+ *
+ *      Input:  pixs (32 bpp or cmapped)
+ *              direction (L_SCAN_HORIZONTAL or L_SCAN_VERTICAL)
+ *              size (of strips in scan direction)
+ *              nbins (number of equal population bins; must be > 1)
+ *              type (color selection flag)
+ *      Return: pixd (result), or null on error
+ *
+ *  Notes:
+ *      (1) This generates a pix where each column represents a strip of
+ *          the input image.  If @direction == L_SCAN_HORIZONTAL, the
+ *          input impage is tiled into vertical strips of width @size,
+ *          where @size is a compromise between getting better spatial
+ *          columnwise resolution (small @size) and getting better
+ *          columnwise statistical information (larger @size).  Likewise
+ *          with rows of the image if @direction == L_SCAN_VERTICAL.
+ *      (2) For L_HORIZONTAL_SCAN, the output pix contains rank binned
+ *          median colors in each column that correspond to a vertical
+ *          strip of width @size in the input image.
+ *      (3) The color selection flag is one of: L_SELECT_RED, L_SELECT_GREEN,
+ *          L_SELECT_BLUE, L_SELECT_MIN, L_SELECT_MAX, L_SELECT_AVERAGE.
+ *          It determines how the rank ordering is done.
+ *      (4) Typical input values might be @size = 5, @nbins = 10.
+ */
+PIX *
+pixRankBinByStrip(PIX     *pixs,
+                  l_int32  direction,
+                  l_int32  size,
+                  l_int32  nbins,
+                  l_int32  type)
+{
+l_int32    i, j, w, h, nstrips;
+l_uint32  *array;
+BOXA      *boxa;
+PIX       *pix1, *pix2, *pixd;
+PIXA      *pixa;
+PIXCMAP   *cmap;
+
+    PROCNAME("pixRankBinByStrip");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+    cmap = pixGetColormap(pixs);
+    if (pixGetDepth(pixs) != 32 && !cmap)
+        return (PIX *)ERROR_PTR("pixs neither 32 bpp nor cmapped",
+                                procName, NULL);
+    if (direction != L_SCAN_HORIZONTAL && direction != L_SCAN_VERTICAL)
+        return (PIX *)ERROR_PTR("invalid direction", procName, NULL);
+    if (size < 1)
+        return (PIX *)ERROR_PTR("size < 1", procName, NULL);
+    if (nbins < 2)
+        return (PIX *)ERROR_PTR("nbins must be at least 2", procName, NULL);
+    if (type != L_SELECT_RED && type != L_SELECT_GREEN &&
+        type != L_SELECT_BLUE && type != L_SELECT_MIN &&
+        type != L_SELECT_MAX && type != L_SELECT_AVERAGE)
+        return (PIX *)ERROR_PTR("invalid type", procName, NULL);
+
+        /* Downscale by factor and remove colormap if it exists */
+    if (cmap)
+        pix1 = pixRemoveColormap(pixs, REMOVE_CMAP_TO_FULL_COLOR);
+    else
+        pix1 = pixClone(pixs);
+    pixGetDimensions(pixs, &w, &h, NULL);
+
+    pixd = NULL;
+    boxa = makeMosaicStrips(w, h, direction, size);
+    pixa = pixClipRectangles(pix1, boxa);
+    nstrips = pixaGetCount(pixa);
+    if (direction == L_SCAN_HORIZONTAL) {
+        pixd = pixCreate(nstrips, nbins, 32);
+        for (i = 0; i < nstrips; i++) {
+            pix2 = pixaGetPix(pixa, i, L_CLONE);
+            pixGetRankColorArray(pix2, nbins, type, 1, &array, 0, NULL);
+            for (j = 0; j < nbins; j++)
+                pixSetPixel(pixd, i, j, array[j]);
+            FREE(array);
+            pixDestroy(&pix2);
+        }
+    } else {  /* L_SCAN_VERTICAL */
+        pixd = pixCreate(nbins, nstrips, 32);
+        for (i = 0; i < nstrips; i++) {
+            pix2 = pixaGetPix(pixa, i, L_CLONE);
+            pixGetRankColorArray(pix2, nbins, type, 1, &array, 0, NULL);
+            for (j = 0; j < nbins; j++)
+                pixSetPixel(pixd, j, i, array[j]);
+            FREE(array);
+            pixDestroy(&pix2);
+        }
+    }
+    pixDestroy(&pix1);
+    boxaDestroy(&boxa);
+    pixaDestroy(&pixa);
+    return pixd;
+}
+
 
 
 /*-------------------------------------------------------------*
@@ -2921,7 +3027,8 @@ PIX       *pixg;
     if (pbgval) *pbgval = (l_int32)(avebg + 0.5);
 
     if (debugflag) {
-        gplot = gplotCreate("/tmp/histplot", GPLOT_PNG, "Histogram",
+        lept_mkdir("redout");
+        gplot = gplotCreate("/tmp/redout/histplot", GPLOT_PNG, "Histogram",
                             "Grayscale value", "Number of pixels");
         gplotAddPlot(gplot, NULL, na, GPLOT_LINES, NULL);
         nax = numaMakeConstant(thresh, 2);

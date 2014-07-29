@@ -32,79 +32,65 @@
 
 #include "allheaders.h"
 
-#define   NFONTS   9
 #define   DIRECTORY    "./fonts"
-
-const l_int32 sizes[] = { 4, 6, 8, 10, 12, 14, 16, 18, 20 };
-
-#define  DEBUG            0
-
 
 int main(int    argc,
          char **argv)
 {
-char        *filein, *fileout, *textstr;
-l_int32      i, d, size, width, wtext, overflow;
-l_uint32     val;
+char        *textstr;
+l_int32      width, wtext, overflow;
 L_BMF       *bmf;
 PIX         *pixs, *pix;
 static char  mainName[] = "renderfonts";
 
-    if (argc != 4)
-        return ERROR_INT("Syntax: renderfonts filein size fileout",
-                         mainName, 1);
+    if (argc != 1)
+        return ERROR_INT("Syntax: renderfonts", mainName, 1);
 
-    filein = argv[1];
-    size = atoi(argv[2]);
-    fileout = argv[3];
-    if ((pixs = pixRead(filein)) == NULL)
-        return ERROR_INT("pixs not made", mainName, 1);
-    d = pixGetDepth(pixs);
-    if (d == 8)
-        val = 128;
-    else if (d == 16)
-        val = 0x8000;
-    else if (d == 32)
-        composeRGBPixel(128, 0, 255, &val);
-    else
-        return ERROR_INT("pixs not 8, 16 or 32 bpp", mainName, 1);
+    lept_mkdir("renderfont");
 
-    bmf = bmfCreate(DIRECTORY, size);
-
-#if 0  /* render a character of text */
-    pix = pixaGetPix(bmf->pixa, 45, L_CLONE);
-    startTimer();
-    for (i = 0; i < 10000; i++)
-        pixSetMaskedGeneral(pixs, pix, val, 150, 150);
-    fprintf(stderr, "time: %7.3f sec\n", stopTimer());
-    pixWrite(fileout, pixs, IFF_JFIF_JPEG);
+        /* Render a character of text */
+    bmf = bmfCreate(DIRECTORY, 20);
+    pixs = pixRead("dreyfus8.png");
+    fprintf(stderr, "n = %d\n", pixaGetCount(bmf->pixa));
+    pix = pixaGetPix(bmf->pixa, 6, L_CLONE);
+    pixSetMaskedGeneral(pixs, pix, 0x45, 140, 165);
+    pixWrite("/tmp/renderfont/char.png", pixs, IFF_PNG);
+    pixDisplay(pixs, 0, 0);
     pixDestroy(&pix);
-#endif
+    pixDestroy(&pixs);
+    bmfDestroy(&bmf);
 
-#if 0  /* render a line of text; use marge.jpg with size 14 */
+        /* Render a line of text */
+    bmf = bmfCreate(DIRECTORY, 8);
+    pixs = pixRead("marge.jpg");
     bmfGetStringWidth(bmf, "This is a funny cat!", &width);
     fprintf(stderr, "String width: %d pixels\n", width);
 
-    pixSetTextline(pixs, bmf, "This is a funny cat!", 0x8000ff00, 50, 250,
+    pixSetTextline(pixs, bmf, "This is a funny cat!", 0x4080ff00, 50, 250,
                    &width, &overflow);
-    pixWrite(fileout, pixs, IFF_JFIF_JPEG);
+    pixWrite("/tmp/renderfont/line.png", pixs, IFF_JFIF_JPEG);
+    pixDisplay(pixs, 450, 0);
     fprintf(stderr, "Text width = %d\n", width);
     if (overflow)
         fprintf(stderr, "Text overflow beyond image boundary\n");
-#endif
+    pixDestroy(&pixs);
+    bmfDestroy(&bmf);
 
-#if 1  /* render a block of text; use marge.jpg with size 14 */
-    textstr = stringNew("This is a cat! This is a funny cat! This is a funny funny cat! This is a funny funny funny cat!");
+        /* Render a block of text */
+    bmf = bmfCreate(DIRECTORY, 10);
+    pixs = pixRead("marge.jpg");
+    textstr = stringNew("This is a cat! This is a funny cat! "
+                        "This is a funny funny cat! This is a "
+                        "funny funny funny cat!");
 
     wtext = pixGetWidth(pixs) - 70;
-    pixSetTextblock(pixs, bmf, textstr, 0x4040ff00, 50, 50, wtext,
+    pixSetTextblock(pixs, bmf, textstr, 0x90804000, 50, 50, wtext,
                     1, &overflow);
-    pixWrite(fileout, pixs, IFF_JFIF_JPEG);
+    pixWrite("/tmp/renderfont/block.png", pixs, IFF_JFIF_JPEG);
+    pixDisplay(pixs, 0, 500);
     if (overflow)
         fprintf(stderr, "Text overflow beyond image boundary\n");
     lept_free(textstr);
-#endif
-
     pixDestroy(&pixs);
     bmfDestroy(&bmf);
     return 0;

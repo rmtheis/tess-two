@@ -85,21 +85,21 @@ PIXA    *pixa;
     pixd = pixRotateOrth(pixs, 1);
     pixRowStats(pixd, NULL, &na2, &na4, &na6, &na8, &na10, &na12);
 
-        /* The png plot files are written to "/tmp/proj.0.png", etc.
+        /* The png plot files are written to "/tmp/regout/proj.0.png", etc.
          * These temp files are overwritten each time this
          * function is called. */
-    gplotSimple1(na1, GPLOT_PNG, "/tmp/proj.0", "Mean value");
-    gplotSimple1(na2, GPLOT_PNG, "/tmp/proj.1", "Mean value");
-    gplotSimple1(na3, GPLOT_PNG, "/tmp/proj.2", "Median value");
-    gplotSimple1(na4, GPLOT_PNG, "/tmp/proj.3", "Median value");
-    gplotSimple1(na5, GPLOT_PNG, "/tmp/proj.4", "Mode value");
-    gplotSimple1(na6, GPLOT_PNG, "/tmp/proj.5", "Mode value");
-    gplotSimple1(na7, GPLOT_PNG, "/tmp/proj.6", "Mode count");
-    gplotSimple1(na8, GPLOT_PNG, "/tmp/proj.7", "Mode count");
-    gplotSimple1(na9, GPLOT_PNG, "/tmp/proj.8", "Variance");
-    gplotSimple1(na10, GPLOT_PNG, "/tmp/proj.9", "Variance");
-    gplotSimple1(na11, GPLOT_PNG, "/tmp/proj.10", "Square Root Variance");
-    gplotSimple1(na12, GPLOT_PNG, "/tmp/proj.11", "Square Root Variance");
+    gplotSimple1(na1, GPLOT_PNG, "/tmp/regout/proj.0", "Mean value");
+    gplotSimple1(na2, GPLOT_PNG, "/tmp/regout/proj.1", "Mean value");
+    gplotSimple1(na3, GPLOT_PNG, "/tmp/regout/proj.2", "Median value");
+    gplotSimple1(na4, GPLOT_PNG, "/tmp/regout/proj.3", "Median value");
+    gplotSimple1(na5, GPLOT_PNG, "/tmp/regout/proj.4", "Mode value");
+    gplotSimple1(na6, GPLOT_PNG, "/tmp/regout/proj.5", "Mode value");
+    gplotSimple1(na7, GPLOT_PNG, "/tmp/regout/proj.6", "Mode count");
+    gplotSimple1(na8, GPLOT_PNG, "/tmp/regout/proj.7", "Mode count");
+    gplotSimple1(na9, GPLOT_PNG, "/tmp/regout/proj.8", "Variance");
+    gplotSimple1(na10, GPLOT_PNG, "/tmp/regout/proj.9", "Variance");
+    gplotSimple1(na11, GPLOT_PNG, "/tmp/regout/proj.10", "Square Root Variance");
+    gplotSimple1(na12, GPLOT_PNG, "/tmp/regout/proj.11", "Square Root Variance");
 #ifndef  _WIN32
     sleep(1);
 #else
@@ -112,51 +112,51 @@ PIXA    *pixa;
          *        to the existing golden file (testing stage)    */
     pixa = pixaCreate(13);
     pixSaveTiledOutline(pixs, pixa, 1.0, 1, 30, outline, 32);
-    pixt = pixRead("/tmp/proj.0.png");
+    pixt = pixRead("/tmp/regout/proj.0.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);   /* 0 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/proj.1.png");
+    pixt = pixRead("/tmp/regout/proj.1.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 1 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/proj.2.png");
+    pixt = pixRead("/tmp/regout/proj.2.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 2 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/proj.3.png");
+    pixt = pixRead("/tmp/regout/proj.3.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 3 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/proj.4.png");
+    pixt = pixRead("/tmp/regout/proj.4.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 4 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/proj.5.png");
+    pixt = pixRead("/tmp/regout/proj.5.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 5 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/proj.6.png");
+    pixt = pixRead("/tmp/regout/proj.6.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 6 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/proj.7.png");
+    pixt = pixRead("/tmp/regout/proj.7.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 7 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/proj.8.png");
+    pixt = pixRead("/tmp/regout/proj.8.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 8 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/proj.9.png");
+    pixt = pixRead("/tmp/regout/proj.9.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 9 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/proj.10.png");
+    pixt = pixRead("/tmp/regout/proj.10.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 10 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 1, 30, outline, 32);
     pixDestroy(&pixt);
-    pixt = pixRead("/tmp/proj.11.png");
+    pixt = pixRead("/tmp/regout/proj.11.png");
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 11 */
     pixSaveTiledOutline(pixt, pixa, 1.0, 0, 30, outline, 32);
     pixDestroy(&pixt);

@@ -29,6 +29,8 @@
  *
  *   Demonstrates some segmentation techniques and display options
  *   To see the results in one image: /tmp/result.png.
+ *
+ *   Requires gthumb to visualize the results.
  */
 
 #include "allheaders.h"
@@ -56,7 +58,7 @@ static const char *seltext = "xxxxxxx"
 int main(int    argc,
          char **argv)
 {
-l_int32      w, h, d, w2, h2, i, ncols, ret;
+l_int32      w, h, d, w2, h2, i, ncols, ignore;
 l_float32    angle, conf;
 BOX         *box;
 BOXA        *boxa, *boxa2;
@@ -74,7 +76,7 @@ static char  mainName[] = "arabic_lines";
     pixDisplayWrite(NULL, -1);  /* init debug output */
 
         /* Binarize input */
-    pixs = pixRead("arabic_lines.png");
+    pixs = pixRead("arabic.png");
     pixGetDimensions(pixs, &w, &h, &d);
     pix = pixConvertTo1(pixs, 128);
 
@@ -124,7 +126,7 @@ static char  mainName[] = "arabic_lines";
     }
 
         /* Visual output */
-    ret = system("gthumb /tmp/display/file* &");
+    ignore = system("gthumb /tmp/display/file* &");
     pixat = pixaReadFiles("/tmp/display", "file");
     pix5 = selDisplayInPix(selsplit, 31, 2);
     pixaAddPix(pixat, pix5, L_INSERT);

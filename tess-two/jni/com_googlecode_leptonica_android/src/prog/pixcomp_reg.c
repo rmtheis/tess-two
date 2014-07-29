@@ -56,7 +56,6 @@ PIX        *pix, *pixs, *pixd, *pixd2;
 PIXA       *pixad, *pixa1, *pixa2, *pixa3;
 PIXC       *pixc;
 PIXAC      *pixac, *pixac1, *pixac2;
-static char     mainName[] = "pixcomp_reg";
 
     pixad = pixaCreate(0);
 

@@ -81,11 +81,11 @@ PIX * pixReadMemPnm(const l_uint8 *cdata, size_t size)
 
 /* ----------------------------------------------------------------------*/
 
-l_int32 sreadHeaderPnm(const l_uint8 *cdata, size_t size, l_int32 *pw,
-                       l_int32 *ph, l_int32 *pd, l_int32 *ptype,
-                       l_int32 *pbps, l_int32 *pspp)
+l_int32 readHeaderMemPnm(const l_uint8 *cdata, size_t size, l_int32 *pw,
+                         l_int32 *ph, l_int32 *pd, l_int32 *ptype,
+                         l_int32 *pbps, l_int32 *pspp)
 {
-    return ERROR_INT("function not present", "sreadHeaderPnm", 1);
+    return ERROR_INT("function not present", "readHeaderMemPnm", 1);
 }
 
 /* ----------------------------------------------------------------------*/

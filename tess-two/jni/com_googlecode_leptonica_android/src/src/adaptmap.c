@@ -326,6 +326,7 @@ PIX     *pixmr, *pixmg, *pixmb, *pixmri, *pixmgi, *pixmbi;
 
     if (!pixd)
         ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyResolution(pixd, pixs);
     return pixd;
 }
 
@@ -521,6 +522,7 @@ PIX     *pixm;
     if (!pixm)
         return ERROR_INT("pixm not made", procName, 1);
     *ppixd = pixGetInvBackgroundMap(pixm, bgval, smoothx, smoothy);
+    pixCopyResolution(*ppixd, pixs);
     pixDestroy(&pixm);
     return 0;
 }
@@ -668,6 +670,7 @@ PIX     *pixm;
     if (!pixm)
         return ERROR_INT("pixm not made", procName, 1);
     *ppixd = pixGetInvBackgroundMap(pixm, bgval, 0, 0);
+    pixCopyResolution(*ppixd, pixs);
     pixDestroy(&pixm);
     return 0;
 }
@@ -919,6 +922,7 @@ PIX       *pixd, *piximi, *pixb, *pixf, *pixims;
     }
 
     *ppixd = pixd;
+    pixCopyResolution(*ppixd, pixs);
     return 0;
 }
 
@@ -1197,6 +1201,7 @@ PIX       *pixm, *pixt1, *pixt2, *pixt3, *pixims;
     }
 
     *ppixm = pixm;
+    pixCopyResolution(*ppixm, pixs);
     return 0;
 }
 

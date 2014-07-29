@@ -39,7 +39,7 @@ int main(int    argc,
 {
 char        *filein, *fileout;
 l_uint8     *array1, *array2, *dataout, *dataout2;
-l_int32      i, blocksize;
+l_int32      i, blocksize, same;
 size_t       nbytes, nout, nout2;
 BBUFFER     *bb, *bb2;
 FILE        *fp;
@@ -53,7 +53,7 @@ static char  mainName[] = "buffertest";
 
     if ((array1 = l_binaryRead(filein, &nbytes)) == NULL)
         return ERROR_INT("array not made", mainName, 1);
-    fprintf(stderr, " Bytes read from file: %lu\n", (unsigned long)nbytes);
+    fprintf(stderr, "Bytes read from file: %lu\n", (unsigned long)nbytes);
 
         /* Application of byte buffer ops: compress/decompress in memory */
 #if 1
@@ -61,7 +61,13 @@ static char  mainName[] = "buffertest";
     l_binaryWrite(fileout, "w", dataout, nout);
 
     dataout2 = zlibUncompress(dataout, nout, &nout2);
-    l_binaryWrite("/tmp/junktest", "w", dataout2, nout2);
+    l_binaryWrite("/tmp/dataout2", "w", dataout2, nout2);
+
+    filesAreIdentical(filein, "/tmp/dataout2", &same);
+    if (same)
+        fprintf(stderr, "Correct: data is the same\n");
+    else
+        fprintf(stderr, "Error: data is different\n");
 
     fprintf(stderr,
             "nbytes in = %lu, nbytes comp = %lu, nbytes uncomp = %lu\n",
@@ -71,7 +77,7 @@ static char  mainName[] = "buffertest";
 #endif
 
         /* Low-level byte buffer read/write test */
-#if 0
+#if 1
     bb = bbufferCreate(array1, nbytes);
     bbufferRead(bb, array1, nbytes);
 
@@ -82,7 +88,8 @@ static char  mainName[] = "buffertest";
     blocksize = (2 * nbytes) / NBLOCKS;
     for (i = 0; i <= NBLOCKS; i++) {
         bbufferWrite(bb, array2, blocksize, &nout);
-        fprintf(stderr, " block %d: wrote %d bytes\n", i + 1, nout);
+        fprintf(stderr, " block %d: wrote %lu bytes\n", i + 1,
+                (unsigned long)nout);
     }
 
     fprintf(stderr, " Bytes left in buffer: %d\n", bb->n);
@@ -91,7 +98,8 @@ static char  mainName[] = "buffertest";
     bbufferRead(bb2, array1, nbytes);
     fp = lept_fopen(fileout, "wb");
     bbufferWriteStream(bb2, fp, nbytes, &nout);
-    fprintf(stderr, " bytes written out to fileout: %d\n", nout);
+    fprintf(stderr, " bytes written out to fileout: %lu\n",
+            (unsigned long)nout);
 
     bbufferDestroy(&bb);
     bbufferDestroy(&bb2);

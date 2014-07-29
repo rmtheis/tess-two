@@ -35,7 +35,7 @@
  *      Operations to read data TO a BBuffer
  *          l_int32         bbufferRead()
  *          l_int32         bbufferReadStream()
- *          static l_int32  bbufferExtendArray()
+ *          l_int32         bbufferExtendArray()
  *
  *      Operations to write data FROM a BBuffer
  *          l_int32         bbufferWrite()
@@ -43,9 +43,6 @@
  *
  *      Accessors
  *          l_int32         bbufferBytesToWrite()
- *
- *      Read from stdin to memory
- *          l_int32         bbufferReadStdin()
  *
  *
  *    The bbuffer is an implementation of a byte queue.
@@ -99,16 +96,13 @@
  *    into memory; e.g., to capture bytes piped from the stdout
  *    of another program.  This is equivalent to repeatedly
  *    calling bbufferReadStream() until the input queue is empty.
+ *    This is implemented in l_binaryReadStream().
  */
 
 #include <string.h>
 #include "allheaders.h"
 
 static const l_int32  INITIAL_BUFFER_ARRAYSIZE = 1024;   /* n'importe quoi */
-
-    /* Static function */
-static l_int32 bbufferExtendArray(BBUFFER *bb, l_int32 nbytes);
-
 
 /*--------------------------------------------------------------------------*
  *                         BBuffer create/destroy                           *
@@ -236,7 +230,6 @@ BBUFFER  *bb;
 }
 
 
-
 /*--------------------------------------------------------------------------*
  *                   Operations to read data INTO a BBuffer                 *
  *--------------------------------------------------------------------------*/
@@ -354,7 +347,7 @@ l_int32  navail, nadd, nread, nwritten;
  *      (1) reallocNew() copies all bb->nalloc bytes, even though
  *          only bb->n are data.
  */
-static l_int32
+l_int32
 bbufferExtendArray(BBUFFER  *bb,
                    l_int32   nbytes)
 {
@@ -371,7 +364,6 @@ bbufferExtendArray(BBUFFER  *bb,
     bb->nalloc += nbytes;
     return 0;
 }
-
 
 
 /*--------------------------------------------------------------------------*
@@ -481,7 +473,6 @@ l_int32  nleft, nout;
 }
 
 
-
 /*--------------------------------------------------------------------------*
  *                                  Accessors                               *
  *--------------------------------------------------------------------------*/
@@ -504,60 +495,6 @@ bbufferBytesToWrite(BBUFFER  *bb,
         return ERROR_INT("&nbytes not defined", procName, 1);
 
     *pnbytes = bb->n - bb->nwritten;
-    return 0;
-}
-
-
-/*--------------------------------------------------------------------------*
- *                           Read from stdin to memory                      *
- *--------------------------------------------------------------------------*/
-/*!
- *  bbufferReadStdin()
- *
- *      Input:  &data (<return> binary data read in)
- *              &nbytes (<return>)
- *      Return: 0 if OK; 1 on error
- *
- *  Notes:
- *      (1) This can be used to capture data piped in from stdin.
- *          For example, you can read an image from stdin into memory
- *          using shell redirection, with one of these:
- *             cat <imagefile> | readprog
- *             readprog < <imagefile>
- *          where readprog is:
- *             bbufferReadStdin(&data, &nbytes);  // l_uint8*, size_t
- *             Pix *pix = pixReadMem(data, nbytes);
- */
-l_int32
-bbufferReadStdin(l_uint8  **pdata,
-                 size_t    *pnbytes)
-{
-l_int32   navail, nadd, nread;
-BBUFFER  *bb;
-
-    PROCNAME("bbufferReadStdin");
-
-    if (!pdata)
-        return ERROR_INT("&data not defined", procName, 1);
-    if (!pnbytes)
-        return ERROR_INT("&nbytes not defined", procName, 1);
-
-    bb = bbufferCreate(NULL, 4096);
-    while (1) {
-        navail = bb->nalloc - bb->n;
-        if (navail < 4096) {
-             nadd = L_MAX(bb->nalloc, 4096);
-             bbufferExtendArray(bb, nadd);
-        }
-        nread = fread((void *)(bb->array + bb->n), 1, 4096, stdin);
-        bb->n += nread;
-        if (nread != 4096) break;
-    }
-
-    *pdata = bb->array;
-    *pnbytes = bb->n;
-    bb->array = NULL;
-    bbufferDestroy(&bb);
     return 0;
 }
 

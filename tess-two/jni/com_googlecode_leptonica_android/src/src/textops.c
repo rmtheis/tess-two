@@ -78,7 +78,8 @@ static l_int32 stringLeadingWhitespace(char *textstr, l_int32 *pval);
  *              location (L_ADD_ABOVE, L_ADD_AT_TOP, L_ADD_AT_BOT, L_ADD_BELOW)
  *              &overflow (<optional return> 1 if text overflows
  *                         allocated region and is clipped; 0 otherwise)
- *      Return: pixd (new pix with rendered text), or null on error
+ *      Return: pixd (new pix with rendered text), or either a copy
+ *                    or null on error
  *
  *  Notes:
  *      (1) This function paints a set of lines of text over an image.
@@ -112,18 +113,20 @@ SARRAY   *salines;
 
     PROCNAME("pixAddSingleTextblock");
 
+    if (poverflow) *poverflow = 0;
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (!bmf)
-        return (PIX *)ERROR_PTR("bmf not defined", procName, NULL);
     if (location != L_ADD_ABOVE && location != L_ADD_AT_TOP &&
         location != L_ADD_AT_BOT && location != L_ADD_BELOW)
         return (PIX *)ERROR_PTR("invalid location", procName, NULL);
-
+    if (!bmf) {
+        L_ERROR("no bitmap fonts; returning a copy\n", procName);
+        return pixCopy(NULL, pixs);
+    }
     if (!textstr)
         textstr = pixGetText(pixs);
     if (!textstr) {
-        L_ERROR("no textstring defined\n", procName);
+        L_ERROR("no textstring defined; returning a copy\n", procName);
         return pixCopy(NULL, pixs);
     }
 
@@ -208,8 +211,7 @@ SARRAY   *salines;
         if (h < htext + 2 * spacer)
             overflow = 1;
     }
-    if (poverflow)
-        *poverflow = overflow;
+    if (poverflow) *poverflow = overflow;
 
     sarrayDestroy(&salines);
     return pixd;
@@ -224,11 +226,13 @@ SARRAY   *salines;
  *              textstr (<optional> text string to be added)
  *              val (color to set the text)
  *              location (L_ADD_ABOVE, L_ADD_BELOW, L_ADD_LEFT, L_ADD_RIGHT)
- *      Return: pixd (new pix with rendered text), or null on error
+ *      Return: pixd (new pix with rendered text), or either a copy
+ *                    or null on error
  *
  *  Notes:
  *      (1) This function expands an image as required to paint a single
- *          line of text adjacent to the image.
+ *          line of text adjacent to the image.  If @bmf == NULL, this
+ *          returns a copy.
  *      (2) @val is the pixel value to be painted through the font mask.
  *          It should be chosen to agree with the depth of pixs.
  *          If it is out of bounds, an intermediate value is chosen.
@@ -256,16 +260,17 @@ PIXCMAP  *cmap, *cmapd;
 
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (!bmf)
-        return (PIX *)ERROR_PTR("bmf not defined", procName, NULL);
     if (location != L_ADD_ABOVE && location != L_ADD_BELOW &&
         location != L_ADD_LEFT && location != L_ADD_RIGHT)
         return (PIX *)ERROR_PTR("invalid location", procName, NULL);
-
+    if (!bmf) {
+        L_ERROR("no bitmap fonts; returning a copy\n", procName);
+        return pixCopy(NULL, pixs);
+    }
     if (!textstr)
         textstr = pixGetText(pixs);
     if (!textstr) {
-        L_ERROR("no textstring defined\n", procName);
+        L_ERROR("no textstring defined; returning a copy\n", procName);
         return pixCopy(NULL, pixs);
     }
 

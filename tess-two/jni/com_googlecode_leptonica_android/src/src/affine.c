@@ -723,7 +723,7 @@ PIX       *pixd;
 
 
 /*---------------------------------------------------------------------------*
- *   Affine transform including alpha (blend) component and gamma transform  *
+ *            Affine transform including alpha (blend) component             *
  *---------------------------------------------------------------------------*/
 /*!
  *  pixAffinePtaWithAlpha()
@@ -765,17 +765,6 @@ PIX       *pixd;
  *              with an image below, and
  *          (b) softens the edges by weakening the aliasing there.
  *          Use l_setAlphaMaskBorder() to change these values.
- *      (8) A subtle use of gamma correction is to remove gamma correction
- *          before scaling and restore it afterwards.  This is done
- *          by sandwiching this function between a gamma/inverse-gamma
- *          photometric transform:
- *              pixt = pixGammaTRCWithAlpha(NULL, pixs, 1.0 / gamma, 0, 255);
- *              pixd = pixAffinePtaWithAlpha(pixg, ptad, ptas, NULL,
- *                                           fract, border);
- *              pixGammaTRCWithAlpha(pixd, pixd, gamma, 0, 255);
- *              pixDestroy(&pixt);
- *          This has the side-effect of producing artifacts in the very
- *          dark regions.
  */
 PIX *
 pixAffinePtaWithAlpha(PIX       *pixs,
@@ -1297,27 +1286,29 @@ l_uint32  *lines;
 /*!
  *  gaussjordan()
  *
- *      Input:   a  (n x n matrix)
- *               b  (rhs column vector)
- *               n  (dimension)
- *      Return:  0 if ok, 1 on error
+ *      Input:  a  (n x n matrix)
+ *              b  (n x 1 right-hand side column vector)
+ *              n  (dimension)
+ *      Return: 0 if ok, 1 on error
  *
- *      Note side effects:
- *            (1) the matrix a is transformed to its inverse
- *            (2) the vector b is transformed to the solution X to the
- *                linear equation AX = B
- *
- *      Adapted from "Numerical Recipes in C, Second Edition", 1992
- *      pp. 36-41 (gauss-jordan elimination)
+ *  Notes:
+ *      (1) There are two side-effects:
+ *          * The matrix a is transformed to its inverse A
+ *          * The rhs vector b is transformed to the solution x
+ *            of the linear equation ax = b
+ *      (2) The inverse A can then be used to solve the same equation with
+ *          different rhs vectors c by multiplication: x = Ac
+ *      (3) Adapted from "Numerical Recipes in C, Second Edition", 1992,
+ *          pp. 36-41 (gauss-jordan elimination)
  */
 l_int32
 gaussjordan(l_float32  **a,
             l_float32   *b,
             l_int32      n)
 {
-l_int32    i, icol, irow, j, k, l, ll;
+l_int32    i, icol, irow, j, k, col, row;
 l_int32   *indexc, *indexr, *ipiv;
-l_float32  big, dum, pivinv, temp;
+l_float32  maxval, val, pivinv, temp;
 
     PROCNAME("gaussjordan");
 
@@ -1334,13 +1325,13 @@ l_float32  big, dum, pivinv, temp;
         return ERROR_INT("ipiv not made", procName, 1);
 
     for (i = 0; i < n; i++) {
-        big = 0.0;
+        maxval = 0.0;
         for (j = 0; j < n; j++) {
-            if (ipiv[j] != 1)
+            if (ipiv[j] != 1) {
                 for (k = 0; k < n; k++) {
                     if (ipiv[k] == 0) {
-                        if (fabs(a[j][k]) >= big) {
-                            big = fabs(a[j][k]);
+                        if (fabs(a[j][k]) >= maxval) {
+                            maxval = fabs(a[j][k]);
                             irow = j;
                             icol = k;
                         }
@@ -1348,12 +1339,13 @@ l_float32  big, dum, pivinv, temp;
                         return ERROR_INT("singular matrix", procName, 1);
                     }
                 }
+            }
         }
         ++(ipiv[icol]);
 
         if (irow != icol) {
-            for (l = 0; l < n; l++)
-                SWAP(a[irow][l], a[icol][l]);
+            for (col = 0; col < n; col++)
+                SWAP(a[irow][col], a[icol][col]);
             SWAP(b[irow], b[icol]);
         }
 
@@ -1363,24 +1355,26 @@ l_float32  big, dum, pivinv, temp;
             return ERROR_INT("singular matrix", procName, 1);
         pivinv = 1.0 / a[icol][icol];
         a[icol][icol] = 1.0;
-        for (l = 0; l < n; l++)
-            a[icol][l] *= pivinv;
+        for (col = 0; col < n; col++)
+            a[icol][col] *= pivinv;
         b[icol] *= pivinv;
 
-        for (ll = 0; ll < n; ll++)
-            if (ll != icol) {
-                dum = a[ll][icol];
-                a[ll][icol] = 0.0;
-                for (l = 0; l < n; l++)
-                    a[ll][l] -= a[icol][l] * dum;
-                b[ll] -= b[icol] * dum;
+        for (row = 0; row < n; row++) {
+            if (row != icol) {
+                val = a[row][icol];
+                a[row][icol] = 0.0;
+                for (col = 0; col < n; col++)
+                    a[row][col] -= a[icol][col] * val;
+                b[row] -= b[icol] * val;
             }
+        }
     }
 
-    for (l = n - 1; l >= 0; l--) {
-        if (indexr[l] != indexc[l])
+    for (col = n - 1; col >= 0; col--) {
+        if (indexr[col] != indexc[col]) {
             for (k = 0; k < n; k++)
-                SWAP(a[k][indexr[l]], a[k][indexc[l]]);
+                SWAP(a[k][indexr[col]], a[k][indexc[col]]);
+        }
     }
 
     FREE(indexr);

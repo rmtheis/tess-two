@@ -25,7 +25,7 @@
  *====================================================================*/
 
 /*
- *  newspaper_reg.c
+ *  newspaper_seg.c
  *
  *  Segmenting newspaper articles using morphology.
  *
@@ -146,8 +146,8 @@ L_REGPARAMS  *rp;
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 12 */
     pixDisplayWithTitle(pixt, 900, 300, "stuff under mask2", rp->display);
     pixaConvertToPdf(pixa1, 75, 1.0, 0, 0, "Segmentation: newspaper_reg",
-                     "/tmp/newspaper.pdf");
-    L_INFO("Output pdf: /tmp/newspaper.pdf\n", rp->testname);
+                     "/tmp/regout/newspaper.pdf");
+    L_INFO("Output pdf: /tmp/regout/newspaper.pdf\n", rp->testname);
 
     pixaDestroy(&pixa1);
     pixDestroy(&pixs);

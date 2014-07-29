@@ -5,8 +5,9 @@
 #
 #     input:  PDF
 #             root name of output files
-#     output: png binary files for each page
-
+#     output: 1 bpp png files for each page
+#
+#   N.B. Requires ghostscript
 
 scriptname=${0##*/}
 

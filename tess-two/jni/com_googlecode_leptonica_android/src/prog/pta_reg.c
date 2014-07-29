@@ -30,145 +30,116 @@
  *  This tests several ptaa functions, including:
  *     -  ptaaGetBoundaryPixels()
  *     -  pixRenderRandomCmapPtaa()
+ *     -  pixDisplayPtaa()
+ *
+ *  Also tests these pta functions:
+ *     -  pixRenderPtaArb()
+ *     -  ptaRotate()
  */
 
 #include "allheaders.h"
 
+static PIX *PtaDisplayRotate(PIX *pixs, l_float32 xc, l_float32 yc);
+
 int main(int    argc,
          char **argv)
 {
-l_int32  i, nbox, npta, fgcount, bgcount, count, same, ok;
-BOXA    *boxa;
-PIX     *pixs, *pixfg, *pixbg, *pixc, *pixb, *pixd;
-PIXA    *pixa;
-PTA     *pta;
-PTAA    *ptaafg, *ptaabg;
+l_int32       i, w, h, nbox, npta, fgcount, bgcount, count;
+BOXA         *boxa;
+PIX          *pixs, *pixfg, *pixbg, *pixc, *pixb, *pixd;
+PIX          *pix1, *pix2, *pix3, *pix4;
+PIXA         *pixa;
+PTA          *pta;
+PTAA         *ptaafg, *ptaabg;
+L_REGPARAMS  *rp;
 
-    ok = TRUE;
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
+
     pixs = pixRead("feyn-fract.tif");
     boxa = pixConnComp(pixs, NULL, 8);
     nbox = boxaGetCount(boxa);
-    if (nbox != 464) ok = FALSE;
-    fprintf(stderr, "Num boxes = %d\n", nbox);
+    regTestCompareValues(rp, nbox, 464, 0);  /* 0 */
 
         /* Get fg and bg boundary pixels */
     pixfg = pixMorphSequence(pixs, "e3.3", 0);
     pixXor(pixfg, pixfg, pixs);
     pixCountPixels(pixfg, &fgcount, NULL);
-    if (fgcount == 58764)
-        fprintf(stderr, "num fg pixels = %d\n", fgcount);
-    else {
-        ok = FALSE;
-        fprintf(stderr, "Error: num fg pixels = %d\n", fgcount);
-    }
+    regTestCompareValues(rp, fgcount, 58764, 0);  /* 1 */
 
     pixbg = pixMorphSequence(pixs, "d3.3", 0);
     pixXor(pixbg, pixbg, pixs);
     pixCountPixels(pixbg, &bgcount, NULL);
-    if (bgcount == 60335)
-        fprintf(stderr, "num bg pixels = %d\n", bgcount);
-    else {
-        ok = FALSE;
-        fprintf(stderr, "Error: num bg pixels = %d\n", bgcount);
-    }
+    regTestCompareValues(rp, bgcount, 60335, 0);  /* 2 */
 
         /* Get ptaa of fg pixels */
     ptaafg = ptaaGetBoundaryPixels(pixs, L_BOUNDARY_FG, 8, NULL, NULL);
-    ptaaWrite("/tmp/fg.ptaa", ptaafg, 1);
     npta = ptaaGetCount(ptaafg);
-    if (npta != nbox) {
-        ok = FALSE;
-        fprintf(stderr, "Error: ptaa count = %d, boxa count = %d\n",
-                npta, nbox);
-    }
+    regTestCompareValues(rp, npta, nbox, 0);  /* 3 */
     count = 0;
     for (i = 0; i < npta; i++) {
         pta = ptaaGetPta(ptaafg, i, L_CLONE);
         count += ptaGetCount(pta);
         ptaDestroy(&pta);
     }
-    fprintf(stderr, "num fg pts = %d\n", count);
-    if (fgcount != count) {
-        ok = FALSE;
-        fprintf(stderr, "Error: npix = %d, num fg pts = %d\n", fgcount, count);
-    }
+    regTestCompareValues(rp, fgcount, count, 0);  /* 4 */
 
         /* Get ptaa of bg pixels.  Note that the number of bg pts
          * is, in general, larger than the number of bg boundary pixels,
          * because bg boundary pixels are shared by two c.c. that
          * are 1 pixel apart. */
     ptaabg = ptaaGetBoundaryPixels(pixs, L_BOUNDARY_BG, 8, NULL, NULL);
-    ptaaWrite("/tmp/bg.ptaa", ptaabg, 1);
     npta = ptaaGetCount(ptaabg);
-    if (npta != nbox) {
-        ok = FALSE;
-        fprintf(stderr, "Error: ptaa count = %d, boxa count = %d\n",
-                npta, nbox);
-    }
+    regTestCompareValues(rp, npta, nbox, 0);  /* 5 */
     count = 0;
     for (i = 0; i < npta; i++) {
         pta = ptaaGetPta(ptaabg, i, L_CLONE);
         count += ptaGetCount(pta);
         ptaDestroy(&pta);
     }
-    fprintf(stderr, "num bg pts = %d\n", count);
-    if (count != 60602) {
-        fprintf(stderr, "Error: npix = %d, num bg pts = %d\n", bgcount, count);
-        ok = FALSE;
-    }
+    regTestCompareValues(rp, count, 60602, 0);  /* 6 */
 
         /* Render the fg boundary pixels on top of pixs. */
     pixa = pixaCreate(4);
     pixc = pixRenderRandomCmapPtaa(pixs, ptaafg, 0, 0, 0);
-    pixSaveTiled(pixc, pixa, 1.0, 1, 30, 32);
+    regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 7 */
+    pixSaveTiledOutline(pixc, pixa, 1.0, 1, 30, 2, 32);
     pixDestroy(&pixc);
 
         /* Render the bg boundary pixels on top of pixs. */
     pixc = pixRenderRandomCmapPtaa(pixs, ptaabg, 0, 0, 0);
-    pixSaveTiled(pixc, pixa, 1.0, 0, 30, 32);
+    regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 8 */
+    pixSaveTiledOutline(pixc, pixa, 1.0, 0, 30, 2, 32);
     pixDestroy(&pixc);
 
     pixClearAll(pixs);
 
         /* Render the fg boundary pixels alone. */
     pixc = pixRenderRandomCmapPtaa(pixs, ptaafg, 0, 0, 0);
-    pixSaveTiled(pixc, pixa, 1.0, 1, 30, 32);
+    regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 9 */
+    pixSaveTiledOutline(pixc, pixa, 1.0, 1, 30, 2, 32);
 
         /* Verify that the fg pixels are the same set as we
          * originally started with. */
     pixb = pixConvertTo1(pixc, 255);
-    pixEqual(pixb, pixfg, &same);
-    if (!same) {
-        fprintf(stderr, "Fg pixel set not correct\n");
-        ok = FALSE;
-    }
+    regTestComparePix(rp, pixb, pixfg);  /* 10 */
     pixDestroy(&pixc);
     pixDestroy(&pixb);
 
-        /* Render the fg boundary pixels alone. */
+        /* Render the bg boundary pixels alone. */
     pixc = pixRenderRandomCmapPtaa(pixs, ptaabg, 0, 0, 0);
-    pixSaveTiled(pixc, pixa, 1.0, 0, 30, 32);
+    regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 11 */
+    pixSaveTiledOutline(pixc, pixa, 1.0, 0, 30, 2, 32);
 
         /* Verify that the bg pixels are the same set as we
          * originally started with. */
     pixb = pixConvertTo1(pixc, 255);
-    pixEqual(pixb, pixbg, &same);
-    if (!same) {
-        fprintf(stderr, "Bg pixel set not correct\n");
-        ok = FALSE;
-    }
+    regTestComparePix(rp, pixb, pixbg);  /* 12 */
     pixDestroy(&pixc);
     pixDestroy(&pixb);
 
-    if (ok)
-        fprintf(stderr, "OK!\n");
-    else
-        fprintf(stderr, "Error!\n");
-
     pixd = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/boundary.png", pixd, IFF_PNG);
-    pixDisplay(pixd, 0, 0);
-
+    pixDisplayWithTitle(pixd, 0, 0, NULL, rp->display);
     ptaaDestroy(&ptaafg);
     ptaaDestroy(&ptaabg);
     pixDestroy(&pixs);
@@ -178,7 +149,61 @@ PTAA    *ptaafg, *ptaabg;
     pixaDestroy(&pixa);
     boxaDestroy(&boxa);
 
-    return 0;
+        /* Test rotation */
+    pix1 = pixRead("feyn-word.tif");
+    pix2 = pixAddBorderGeneral(pix1, 200, 200, 200, 200, 0);
+    pixa = pixaCreate(0);
+    pix3 = PtaDisplayRotate(pix2, 0, 0);
+    pixaAddPix(pixa, pix3, L_INSERT);
+    pix3 = PtaDisplayRotate(pix2, 500, 100);
+    pixaAddPix(pixa, pix3, L_INSERT);
+    pix3 = PtaDisplayRotate(pix2, 100, 410);
+    pixaAddPix(pixa, pix3, L_INSERT);
+    pix3 = PtaDisplayRotate(pix2, 500, 410);
+    pixaAddPix(pixa, pix3, L_INSERT);
+    pix4 = pixaDisplayTiledInRows(pixa, 32, 1500, 1.0, 0, 30, 2);
+    regTestWritePixAndCheck(rp, pix4, IFF_PNG);  /* 13 */
+    pixDisplayWithTitle(pix4, 800, 0, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix4);
+    pixaDestroy(&pixa);
+
+    return regTestCleanup(rp);
 }
 
 
+static PIX *
+PtaDisplayRotate(PIX       *pixs,
+                 l_float32  xc,
+                 l_float32  yc)
+{
+l_int32  i, w, h;
+PIX     *pix1, *pix2;
+PTA     *pta1, *pta2, *pta3, *pta4;
+PTAA    *ptaa;
+
+        /* Save rotated sets of pixels */
+    pta1 = ptaGetPixelsFromPix(pixs, NULL);
+    ptaa = ptaaCreate(0);
+    for (i = 0; i < 9; i++) {
+        pta2 = ptaRotate(pta1, xc, yc, -0.8 + 0.2 * i);
+        ptaaAddPta(ptaa, pta2, L_INSERT);
+    }
+    ptaDestroy(&pta1);
+
+        /* Render them */
+    pixGetDimensions(pixs, &w, &h, NULL);
+    pix1 = pixCreate(w, h, 32);
+    pixSetAll(pix1);
+    pta3 = generatePtaFilledCircle(4);
+    pta4 = ptaTranslate(pta3, xc, yc);
+    pixRenderPtaArb(pix1, pta4, 255, 0, 0);  /* circle at rotation center */
+    pix2 = pixDisplayPtaa(pix1, ptaa);  /* rotated sets */
+
+    pixDestroy(&pix1);
+    ptaDestroy(&pta3);
+    ptaDestroy(&pta4);
+    ptaaDestroy(&ptaa);
+    return pix2;
+}

@@ -15,6 +15,9 @@
 /* Define to 1 if you have giflib. */
 #undef HAVE_LIBGIF
 
+/* Define to 1 if you have libopenjp2. */
+#undef HAVE_LIBJP2K
+
 /* Define to 1 if you have jpeg. */
 #undef HAVE_LIBJPEG
 

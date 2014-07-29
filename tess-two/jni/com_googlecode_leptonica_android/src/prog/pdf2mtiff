@@ -7,7 +7,8 @@
 #     input:  PDF file
 #             output file
 #     output: ccitt-g4 compressed mulitipage tiff file
-
+#
+#   N.B. Requires ghostscript
 
 scriptname=${0##*/}
 

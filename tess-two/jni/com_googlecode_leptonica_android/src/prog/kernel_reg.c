@@ -64,21 +64,21 @@ L_REGPARAMS  *rp;
         /* Test creating from a string */
     kel1 = kernelCreateFromString(5, 5, 2, 2, kdatastr);
     pixd = kernelDisplayInPix(kel1, 41, 2);
-    pixWrite("/tmp/pixkern.png", pixd, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/pixkern.png");  /* 0 */
+    pixWrite("/tmp/regout/pixkern.png", pixd, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/pixkern.png");  /* 0 */
     pixSaveTiled(pixd, pixa, 1.0, 1, 20, 8);
     pixDestroy(&pixd);
     kernelDestroy(&kel1);
 
         /* Test read/write for kernel.  Note that both get
          * compared to the same golden file, which is
-         * overwritten with a copy of /tmp/kern2.kel */
+         * overwritten with a copy of /tmp/regout/kern2.kel */
     kel1 = kernelCreateFromString(5, 5, 2, 2, kdatastr);
-    kernelWrite("/tmp/kern1.kel", kel1);
-    regTestCheckFile(rp, "/tmp/kern1.kel");  /* 1 */
-    kel2 = kernelRead("/tmp/kern1.kel");
-    kernelWrite("/tmp/kern2.kel", kel2);
-    regTestCheckFile(rp, "/tmp/kern2.kel");  /* 2 */
+    kernelWrite("/tmp/regout/kern1.kel", kel1);
+    regTestCheckFile(rp, "/tmp/regout/kern1.kel");  /* 1 */
+    kel2 = kernelRead("/tmp/regout/kern1.kel");
+    kernelWrite("/tmp/regout/kern2.kel", kel2);
+    regTestCheckFile(rp, "/tmp/regout/kern2.kel");  /* 2 */
     regTestCompareFiles(rp, 1, 2);  /* 3 */
     kernelDestroy(&kel1);
     kernelDestroy(&kel2);
@@ -92,12 +92,12 @@ L_REGPARAMS  *rp;
     sarrayAddString(sa, (char *)"82.    120  180   120  80", L_COPY);
     sarrayAddString(sa, (char *)"22.1   50   80    50   20", L_COPY);
     str = sarrayToString(sa, 1);
-    l_binaryWrite("/tmp/kernfile.kel", "w", str, strlen(str));
-    kel2 = kernelCreateFromFile("/tmp/kernfile.kel");
+    l_binaryWrite("/tmp/regout/kernfile.kel", "w", str, strlen(str));
+    kel2 = kernelCreateFromFile("/tmp/regout/kernfile.kel");
     pixd = kernelDisplayInPix(kel2, 41, 2);
     pixSaveTiled(pixd, pixa, 1.0, 1, 20, 0);
-    pixWrite("/tmp/ker1.png", pixd, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/ker1.png");  /* 4 */
+    pixWrite("/tmp/regout/ker1.png", pixd, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/ker1.png");  /* 4 */
     pixDestroy(&pixd);
     sarrayDestroy(&sa);
     lept_free(str);
@@ -123,8 +123,8 @@ L_REGPARAMS  *rp;
     kel3 = kernelCreateFromPix(pixt, 1, 2);
     pixd = kernelDisplayInPix(kel3, 41, 2);
     pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
-    pixWrite("/tmp/ker2.png", pixd, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/ker2.png");  /* 5 */
+    pixWrite("/tmp/regout/ker2.png", pixd, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/ker2.png");  /* 5 */
     pixDestroy(&pixd);
     pixDestroy(&pixt);
     kernelDestroy(&kel3);
@@ -136,8 +136,8 @@ L_REGPARAMS  *rp;
     kel1 = kernelCreateFromString(5, 5, 2, 2, kdatastr);
     pixd = pixConvolve(pixg, kel1, 8, 1);
     pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
-    pixWrite("/tmp/ker3.png", pixd, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/ker3.png");  /* 6 */
+    pixWrite("/tmp/regout/ker3.png", pixd, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/ker3.png");  /* 6 */
     pixDestroy(&pixs);
     pixDestroy(&pixg);
     pixDestroy(&pixd);
@@ -150,19 +150,19 @@ L_REGPARAMS  *rp;
     kel2 = makeFlatKernel(11, 11, 5, 5);
     pixd = pixConvolve(pixg, kel2, 8, 1);
     pixSaveTiled(pixd, pixa, 1.0, 1, 20, 0);
-    pixWrite("/tmp/ker4.png", pixd, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/ker4.png");  /* 7 */
+    pixWrite("/tmp/regout/ker4.png", pixd, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/ker4.png");  /* 7 */
     pixt = pixBlockconv(pixg, 5, 5);
     pixSaveTiled(pixt, pixa, 1.0, 0, 20, 0);
-    pixWrite("/tmp/ker5.png", pixt, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/ker5.png");  /* 8 */
+    pixWrite("/tmp/regout/ker5.png", pixt, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/ker5.png");  /* 8 */
     if (rp->display)
         pixCompareGray(pixd, pixt, L_COMPARE_ABS_DIFF, GPLOT_X11, NULL,
                        NULL, NULL, NULL);
     pixt2 = pixBlockconvTiled(pixg, 5, 5, 3, 6);
     pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 0);
-    pixWrite("/tmp/ker5a.png", pixt2, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/ker5a.png");  /* 9 */
+    pixWrite("/tmp/regout/ker5a.png", pixt2, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/ker5a.png");  /* 9 */
     pixDestroy(&pixt2);
 
     ok = TRUE;
@@ -204,15 +204,15 @@ L_REGPARAMS  *rp;
     pixt = pixConvolve(pixs, kel3, 8, 1);
     fprintf(stderr, "Generic convolution time: %5.3f sec\n", stopTimer());
     pixSaveTiled(pixt, pixa, 1.0, 1, 20, 0);
-    pixWrite("/tmp/conv1.png", pixt, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/conv1.png");  /* 10 */
+    pixWrite("/tmp/regout/conv1.png", pixt, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/conv1.png");  /* 10 */
 
     startTimer();
     pixt2 = pixBlockconv(pixs, 3, 3);
     fprintf(stderr, "Flat block convolution time: %5.3f sec\n", stopTimer());
     pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 0);
-    pixWrite("/tmp/conv2.png", pixt2, IFF_PNG);  /* ditto */
-    regTestCheckFile(rp, "/tmp/conv2.png");  /* 11 */
+    pixWrite("/tmp/regout/conv2.png", pixt2, IFF_PNG);  /* ditto */
+    regTestCheckFile(rp, "/tmp/regout/conv2.png");  /* 11 */
 
     pixCompareGray(pixt, pixt2, L_COMPARE_ABS_DIFF, GPLOT_PNG, NULL,
                    &avediff, &rmsdiff, NULL);
@@ -221,10 +221,10 @@ L_REGPARAMS  *rp;
 #else
     Sleep(1000);
 #endif  /* _WIN32 */
-    pixp = pixRead("/tmp/grayroot.png");
+    pixp = pixRead("/tmp/lept/compare_gray0.png");
     pixSaveTiled(pixp, pixa, 1.0, 0, 20, 0);
-    pixWrite("/tmp/conv3.png", pixp, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/conv3.png");  /* 12 */
+    pixWrite("/tmp/regout/conv3.png", pixp, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/conv3.png");  /* 12 */
     fprintf(stderr, "Ave diff = %6.4f, RMS diff = %6.4f\n", avediff, rmsdiff);
     if (avediff <= 0.01)
         fprintf(stderr, "OK: avediff = %6.4f <= 0.01\n", avediff);
@@ -247,22 +247,22 @@ L_REGPARAMS  *rp;
     startTimer();
     pixt1 = pixConvolveRGB(pixs, kel4);
     fprintf(stderr, "Time 7x7 non-separable: %7.3f sec\n", stopTimer());
-    pixWrite("/tmp/conv4.jpg", pixt1, IFF_JFIF_JPEG);
-    regTestCheckFile(rp, "/tmp/conv4.jpg");  /* 13 */
+    pixWrite("/tmp/regout/conv4.jpg", pixt1, IFF_JFIF_JPEG);
+    regTestCheckFile(rp, "/tmp/regout/conv4.jpg");  /* 13 */
 
     kelx = makeFlatKernel(1, 7, 0, 3);
     kely = makeFlatKernel(7, 1, 3, 0);
     startTimer();
     pixt2 = pixConvolveRGBSep(pixs, kelx, kely);
     fprintf(stderr, "Time 7x1,1x7 separable: %7.3f sec\n", stopTimer());
-    pixWrite("/tmp/conv5.jpg", pixt2, IFF_JFIF_JPEG);
-    regTestCheckFile(rp, "/tmp/conv5.jpg");  /* 14 */
+    pixWrite("/tmp/regout/conv5.jpg", pixt2, IFF_JFIF_JPEG);
+    regTestCheckFile(rp, "/tmp/regout/conv5.jpg");  /* 14 */
 
     startTimer();
     pixt3 = pixBlockconv(pixs, 3, 3);
     fprintf(stderr, "Time 7x7 blockconv: %7.3f sec\n", stopTimer());
-    pixWrite("/tmp/conv6.jpg", pixt3, IFF_JFIF_JPEG);
-    regTestCheckFile(rp, "/tmp/conv6.jpg");  /* 15 */
+    pixWrite("/tmp/regout/conv6.jpg", pixt3, IFF_JFIF_JPEG);
+    regTestCheckFile(rp, "/tmp/regout/conv6.jpg");  /* 15 */
     regTestComparePix(rp, pixt1, pixt2);  /* 16 */
     regTestCompareSimilarPix(rp, pixt2, pixt3, 15, 0.0005, 0);  /* 17 */
 
@@ -280,13 +280,13 @@ L_REGPARAMS  *rp;
     kel1 = makeGaussianKernel(5, 5, 3.0, 5.0);
     kernelGetSum(kel1, &sum);
     fprintf(stderr, "Sum for gaussian kernel = %f\n", sum);
-    kernelWrite("/tmp/gauss.kel", kel1);
+    kernelWrite("/tmp/regout/gauss.kel", kel1);
     pixt = pixConvolve(pixs, kel1, 8, 1);
     pixt2 = pixConvolve(pixs, kel1, 16, 0);
     pixSaveTiled(pixt, pixa, 1.0, 0, 20, 0);
     pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 0);
-    pixWrite("/tmp/ker6.png", pixt, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/ker6.png");  /* 18 */
+    pixWrite("/tmp/regout/ker6.png", pixt, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/ker6.png");  /* 18 */
     pixDestroy(&pixt);
     pixDestroy(&pixt2);
 
@@ -304,15 +304,15 @@ L_REGPARAMS  *rp;
     fprintf(stderr, "Sum for x gaussian kernel = %f\n", sum);
     kernelGetSum(kely, &sum);
     fprintf(stderr, "Sum for y gaussian kernel = %f\n", sum);
-    kernelWrite("/tmp/gauss.kelx", kelx);
-    kernelWrite("/tmp/gauss.kely", kely);
+    kernelWrite("/tmp/regout/gauss.kelx", kelx);
+    kernelWrite("/tmp/regout/gauss.kely", kely);
 
     pixt = pixConvolveSep(pixs, kelx, kely, 8, 1);
     pixt2 = pixConvolveSep(pixs, kelx, kely, 16, 0);
     pixSaveTiled(pixt, pixa, 1.0, 0, 20, 0);
     pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 0);
-    pixWrite("/tmp/ker7.png", pixt, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/ker7.png");  /* 19 */
+    pixWrite("/tmp/regout/ker7.png", pixt, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/ker7.png");  /* 19 */
     pixDestroy(&pixt);
     pixDestroy(&pixt2);
 
@@ -335,12 +335,12 @@ L_REGPARAMS  *rp;
     kel1 = makeDoGKernel(7, 7, 1.5, 2.7);
     kernelGetSum(kel1, &sum);
     fprintf(stderr, "Sum for DoG kernel = %f\n", sum);
-    kernelWrite("/tmp/dog.kel", kel1);
+    kernelWrite("/tmp/regout/dog.kel", kel1);
     pixt = pixConvolve(pixs, kel1, 8, 0);
 /*    pixInvert(pixt, pixt); */
     pixSaveTiled(pixt, pixa, 1.0, 0, 20, 0);
-    pixWrite("/tmp/ker8.png", pixt, IFF_PNG);
-    regTestCheckFile(rp, "/tmp/ker8.png");  /* 20 */
+    pixWrite("/tmp/regout/ker8.png", pixt, IFF_PNG);
+    regTestCheckFile(rp, "/tmp/regout/ker8.png");  /* 20 */
     pixDestroy(&pixt);
 
     pixt = kernelDisplayInPix(kel1, 20, 2);
@@ -351,7 +351,7 @@ L_REGPARAMS  *rp;
 
     pixd = pixaDisplay(pixa, 0, 0);
     pixDisplayWithTitle(pixd, 100, 100, NULL, rp->display);
-    pixWrite("/tmp/kernel.jpg", pixd, IFF_JFIF_JPEG);
+    pixWrite("/tmp/regout/kernel.jpg", pixd, IFF_JFIF_JPEG);
     pixDestroy(&pixd);
     pixaDestroy(&pixa);
 

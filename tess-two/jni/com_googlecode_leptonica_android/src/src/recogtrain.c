@@ -1285,12 +1285,13 @@ L_RECOGA    *recoga;
                               &naave, &pixadb);
 
     if (pixadb) {
+        lept_mkdir("recog");
         numaWriteStream(stderr, naset);
         numaWriteStream(stderr, naindex);
         numaWriteStream(stderr, nascore);
         numaWriteStream(stderr, naave);
         pix1 = pixaDisplayLinearly(pixadb, L_VERT, 1.0, 0, 20, 0, NULL);
-        pixWrite("/tmp/padmatch.png", pix1, IFF_PNG);
+        pixWrite("/tmp/recog/padmatch.png", pix1, IFF_PNG);
         pixDestroy(&pix1);
         pixaDestroy(&pixadb);
     }

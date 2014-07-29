@@ -281,11 +281,22 @@ PTA       *ptad;
  *      Input:  ptas (for initial points)
  *              (xc, yc)  (location of center of rotation)
  *              angle  (rotation in radians; clockwise is positive)
- *              (&ptad)  (<return> new locations)
  *      Return: 0 if OK; 1 on error
  *
  *  Notes;
  *      (1) See createMatrix2dScale() for details of transform.
+ *      (2) This transform can be thought of as composed of the
+ *          sum of two parts:
+ *          (a) an (x,y)-dependent rotation about the origin:
+ *              xr = x * cosa - y * sina
+ *              yr = x * sina + y * cosa
+ *          (b) an (x,y)-independent translation that depends on the
+ *              rotation center and the angle:
+ *              xt = xc - xc * cosa + yc * sina
+ *              yt = yc - xc * sina - yc * cosa
+ *          The translation part (xt,yt) is equal to the difference
+ *          between the center (xc,yc) and the location of the
+ *          center after it is rotated about the origin.
  */
 PTA *
 ptaRotate(PTA       *ptas,

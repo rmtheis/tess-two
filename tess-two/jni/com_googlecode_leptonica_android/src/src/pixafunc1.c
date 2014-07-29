@@ -67,6 +67,8 @@
  *           l_int32   pixaaSizeRange()
  *           l_int32   pixaSizeRange()
  *           PIXA     *pixaClipToPix()
+ *           l_int32   pixaGetRenderingDepth()
+ *           l_int32   pixaHasColor()
  *           l_int32   pixaAnyColormaps()
  *           l_int32   pixaGetDepthInfo()
  *           PIXA     *pixaConvertToSameDepth()
@@ -1848,6 +1850,10 @@ PIXA    *pixa;
 
     PROCNAME("pixaaSizeRange");
 
+    if (pminw) *pminw = 0;
+    if (pminh) *pminh = 0;
+    if (pmaxw) *pmaxw = 0;
+    if (pmaxh) *pmaxh = 0;
     if (!paa)
         return ERROR_INT("paa not defined", procName, 1);
     if (!pminw && !pmaxw && !pminh && !pmaxh)
@@ -1898,6 +1904,10 @@ PIX     *pix;
 
     PROCNAME("pixaSizeRange");
 
+    if (pminw) *pminw = 0;
+    if (pminh) *pminh = 0;
+    if (pmaxw) *pmaxw = 0;
+    if (pmaxh) *pmaxh = 0;
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
     if (!pminw && !pmaxw && !pminh && !pmaxh)
@@ -1985,6 +1995,84 @@ PIXA    *pixad;
 
 
 /*!
+ *  pixaGetRenderingDepth()
+ *
+ *      Input:  pixa
+ *              &depth (<return> depth required to render if all
+ *                      colormaps are removed)
+ *      Return: 0 if OK; 1 on error
+ */
+l_int32
+pixaGetRenderingDepth(PIXA     *pixa,
+                      l_int32  *pdepth)
+{
+l_int32  hascolor, maxdepth;
+
+    PROCNAME("pixaGetRenderingDepth");
+
+    if (!pdepth)
+        return ERROR_INT("&depth not defined", procName, 1);
+    *pdepth = 0;
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+
+    pixaHasColor(pixa, &hascolor);
+    if (hascolor) {
+        *pdepth = 32;
+        return 0;
+    }
+
+    pixaGetDepthInfo(pixa, &maxdepth, NULL);
+    if (maxdepth == 1)
+        *pdepth = 1;
+    else  /* 2, 4, 8 or 16 */
+        *pdepth = 8;
+    return 0;
+}
+
+
+/*!
+ *  pixaHasColor()
+ *
+ *      Input:  pixa
+ *              &hascolor (<return> 1 if any pix is rgb or has
+ *                         a colormap with color; 0 otherwise)
+ *      Return: 0 if OK; 1 on error
+ */
+l_int32
+pixaHasColor(PIXA     *pixa,
+             l_int32  *phascolor)
+{
+l_int32   i, n, hascolor, d;
+PIX      *pix;
+PIXCMAP  *cmap;
+
+    PROCNAME("pixaHasColor");
+
+    if (!phascolor)
+        return ERROR_INT("&hascolor not defined", procName, 1);
+    *phascolor = 0;
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+
+    n = pixaGetCount(pixa);
+    for (i = 0; i < n; i++) {
+        pix = pixaGetPix(pixa, i, L_CLONE);
+        if ((cmap = pixGetColormap(pix)) != NULL)
+            pixcmapHasColor(cmap, &hascolor);
+        d = pixGetDepth(pix);
+        pixDestroy(&pix);
+        if (d == 32 || hascolor == 1) {
+            *phascolor = 1;
+            break;
+        }
+    }
+
+    return 0;
+}
+
+
+/*!
  *  pixaAnyColormaps()
  *
  *      Input:  pixa
@@ -2040,9 +2128,9 @@ l_int32  maxd, same;  /* depth info */
 
     PROCNAME("pixaGetDepthInfo");
 
-    if (!pmaxdepth && !psame) return 0;
     if (pmaxdepth) *pmaxdepth = 0;
     if (psame) *psame = TRUE;
+    if (!pmaxdepth && !psame) return 0;
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
     if ((n = pixaGetCount(pixa)) == 0)
@@ -2165,6 +2253,7 @@ PIX      *pix1, *pix2;
 
     PROCNAME("pixaEqual");
 
+    if (pnaindex) *pnaindex = NULL;
     if (!psame)
         return ERROR_INT("&same not defined", procName, 1);
     *psame = 0;

@@ -25,9 +25,11 @@
  *====================================================================*/
 
 /*
- *  bilateral_reg.c
+ *  bilateral1_reg.c
  *
- *     Regression test for bilateral (nonlinear) filtering
+ *     Regression test for bilateral (nonlinear) filtering, with both:
+ *      (1) Separable results with full res intermediate images
+ *      (2) Exact results
  *     This test takes about 30 seconds, so it is not included
  *     in the alltests_reg set.
  */
@@ -48,15 +50,15 @@ L_REGPARAMS  *rp;
         return 1;
 
     pixs = pixRead("rock.png");
-    DoTestsOnImage(pixs, rp, 2000);  /* 0 - 12 */
+    DoTestsOnImage(pixs, rp, 2000);  /* 0 - 16 */
     pixDestroy(&pixs);
 
     pixs = pixRead("church.png");
-    DoTestsOnImage(pixs, rp, 1500);  /* 13 - 25 */
+    DoTestsOnImage(pixs, rp, 1500);  /* 17 - 33 */
     pixDestroy(&pixs);
 
     pixs = pixRead("color-wheel-hue.jpg");
-    DoTestsOnImage(pixs, rp, 1000);  /* 26 - 38 */
+    DoTestsOnImage(pixs, rp, 1000);  /* 34 - 50 */
     pixDestroy(&pixs);
 
     return regTestCleanup(rp);
@@ -127,3 +129,4 @@ PIXA  *pixa;
     pixaDestroy(&pixa);
     return;
 }
+

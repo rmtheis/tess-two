@@ -39,6 +39,10 @@
  *          Binarization with variable threshold
  *              PIX    *pixVarThresholdToBinary()
  *
+ *          Binarization by adaptive mapping
+ *              PIX    *pixAdaptThresholdToBinary()
+ *              PIX    *pixAdaptThresholdToBinaryGen()
+ *
  *          Slower implementation of Floyd-Steinberg dithering, using LUTs
  *              PIX    *pixDitherToBinaryLUT()
  *
@@ -301,6 +305,7 @@ PIX       *pixd;
         return (PIX *)ERROR_PTR("pixs must be 8 bpp", procName, NULL);
 
     pixd = pixCreate(w, h, 1);
+    pixCopyResolution(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
     datas = pixGetData(pixs);
@@ -319,6 +324,95 @@ PIX       *pixd;
         }
     }
 
+    return pixd;
+}
+
+
+/*------------------------------------------------------------------*
+ *                  Binarization by adaptive mapping                *
+ *------------------------------------------------------------------*/
+/*!
+ *  pixAdaptThresholdToBinary()
+ *
+ *      Input:  pixs (8 bpp)
+ *              pixm (<optional> 1 bpp image mask; can be null)
+ *              gamma (gamma correction; must be > 0.0; typically ~1.0)
+ *      Return: pixd (1 bpp), or null on error
+ *
+ *  Notes:
+ *      (1) This is a simple convenience function for doing adaptive
+ *          thresholding on a grayscale image with variable background.
+ *          It uses default parameters appropriate for typical text images.
+ *      (2) @pixm is a 1 bpp mask over "image" regions, which are not
+ *          expected to have a white background.  The mask inhibits
+ *          background finding under the fg pixels of the mask.  For
+ *          images with both text and image, the image regions would
+ *          be binarized (or quantized) by a different set of operations.
+ *      (3) As @gamma is increased, the foreground pixels are reduced.
+ *      (4) Under the covers:  The default background value for normalization
+ *          is 200, so we choose 170 for 'maxval' in pixGammaTRC.  Likewise,
+ *          the default foreground threshold for normalization is 60,
+ *          so we choose 50 for 'minval' in pixGammaTRC.  Because
+ *          170 was mapped to 255, choosing 200 for the threshold is
+ *          quite safe for avoiding speckle noise from the background.
+ */
+PIX *
+pixAdaptThresholdToBinary(PIX       *pixs,
+                          PIX       *pixm,
+                          l_float32  gamma)
+{
+    PROCNAME("pixAdaptThresholdToBinary");
+
+    if (!pixs || pixGetDepth(pixs) != 8)
+        return (PIX *)ERROR_PTR("pixs undefined or not 8 bpp", procName, NULL);
+
+    return pixAdaptThresholdToBinaryGen(pixs, pixm, gamma, 50, 170, 200);
+}
+
+
+/*!
+ *  pixAdaptThresholdToBinaryGen()
+ *
+ *      Input:  pixs (8 bpp)
+ *              pixm (<optional> 1 bpp image mask; can be null)
+ *              gamma (gamma correction; must be > 0.0; typically ~1.0)
+ *              blackval (dark value to set to black (0))
+ *              whiteval (light value to set to white (255))
+ *              thresh (final threshold for binarization)
+ *      Return: pixd (1 bpp), or null on error
+ *
+ *  Notes:
+ *      (1) This is a convenience function for doing adaptive thresholding
+ *          on a grayscale image with variable background.  Also see notes
+ *          in pixAdaptThresholdToBinary().
+ *      (2) Reducing @gamma increases the foreground (text) pixels.
+ *          Use a low value (e.g., 0.5) for images with light text.
+ *      (3) For normal images, see default args in pixAdaptThresholdToBinary().
+ *          For images with very light text, these values are appropriate:
+ *             gamma     ~0.5
+ *             blackval  ~70
+ *             whiteval  ~190
+ *             thresh    ~200
+ */
+PIX *
+pixAdaptThresholdToBinaryGen(PIX       *pixs,
+                             PIX       *pixm,
+                             l_float32  gamma,
+                             l_int32    blackval,
+                             l_int32    whiteval,
+                             l_int32    thresh)
+{
+PIX  *pix1, *pixd;
+
+    PROCNAME("pixAdaptThresholdToBinaryGen");
+
+    if (!pixs || pixGetDepth(pixs) != 8)
+        return (PIX *)ERROR_PTR("pixs undefined or not 8 bpp", procName, NULL);
+
+    pix1 = pixBackgroundNormSimple(pixs, pixm, NULL);
+    pixGammaTRC(pix1, pix1, gamma, blackval, whiteval);
+    pixd = pixThresholdToBinary(pix1, thresh);
+    pixDestroy(&pix1);
     return pixd;
 }
 
@@ -1388,21 +1482,34 @@ l_uint32  *line, *data;
  *              refval (reference rgb value)
  *              delm (max amount below the ref value for any component)
  *              delp (max amount above the ref value for any component)
+ *              fractm (fractional amount below ref value for all components)
+ *              fractp (fractional amount above ref value for all components)
  *      Return: pixd (1 bpp), or null on error
  *
  *  Notes:
  *      (1) Generates a 1 bpp mask pixd, the same size as pixs, where
- *          the fg pixels in the mask are those where each component
- *          is within -delm to +delp of the reference value.
+ *          the fg pixels in the mask within a band of rgb values
+ *          surrounding @refval.  The band can be chosen in two ways
+ *          for each component:
+ *          (a) Use (@delm, @delp) to specify how many levels down and up
+ *          (b) Use (@fractm, @fractp) to specify the fractional
+ *              distance toward 0 and 255, respectively.
+ *          Note that @delm and @delp must be in [0 ... 255], whereas
+ *          @fractm and @fractp must be in [0.0 - 1.0].
+ *      (2) Either (@delm, @delp) or (@fractm, @fractp) can be used.
+ *          Set each value in the other pair to 0.
  */
 PIX *
-pixGenerateMaskByBand32(PIX    *pixs,
-                        l_uint32  refval,
-                        l_int32   delm,
-                        l_int32   delp)
+pixGenerateMaskByBand32(PIX       *pixs,
+                        l_uint32   refval,
+                        l_int32    delm,
+                        l_int32    delp,
+                        l_float32  fractm,
+                        l_float32  fractp)
 {
 l_int32    i, j, w, h, d, wpls, wpld;
 l_int32    rref, gref, bref, rval, gval, bval;
+l_int32    rmin, gmin, bmin, rmax, gmax, bmax;
 l_uint32   pixel;
 l_uint32  *datas, *datad, *lines, *lined;
 PIX       *pixd;
@@ -1416,8 +1523,30 @@ PIX       *pixd;
         return (PIX *)ERROR_PTR("not 32 bpp", procName, NULL);
     if (delm < 0 || delp < 0)
         return (PIX *)ERROR_PTR("delm and delp must be >= 0", procName, NULL);
+    if (fractm < 0.0 || fractm > 1.0 || fractp < 0.0 || fractp > 1.0)
+        return (PIX *)ERROR_PTR("fractm and/or fractp invalid", procName, NULL);
 
     extractRGBValues(refval, &rref, &gref, &bref);
+    if (fractm == 0.0 && fractp == 0.0) {
+        rmin = rref - delm;
+        gmin = gref - delm;
+        bmin = bref - delm;
+        rmax = rref + delm;
+        gmax = gref + delm;
+        bmax = bref + delm;
+    } else if (delm == 0 && delp == 0) {
+        rmin = (l_int32)((1.0 - fractm) * rref);
+        gmin = (l_int32)((1.0 - fractm) * gref);
+        bmin = (l_int32)((1.0 - fractm) * bref);
+        rmax = rref + (l_int32)(fractp * (255 - rref));
+        gmax = gref + (l_int32)(fractp * (255 - gref));
+        bmax = bref + (l_int32)(fractp * (255 - bref));
+    } else {
+        L_ERROR("bad input: either (delm, delp) or (fractm, fractp) "
+                "must be 0\n", procName);
+        return NULL;
+    }
+
     pixd = pixCreate(w, h, 1);
     pixCopyResolution(pixd, pixs);
     datas = pixGetData(pixs);
@@ -1430,13 +1559,13 @@ PIX       *pixd;
         for (j = 0; j < w; j++) {
             pixel = lines[j];
             rval = (pixel >> L_RED_SHIFT) & 0xff;
-            if (rval < rref - delm || rval > rref + delp)
+            if (rval < rmin || rval > rmax)
                 continue;
             gval = (pixel >> L_GREEN_SHIFT) & 0xff;
-            if (gval < gref - delm || gval > gref + delp)
+            if (gval < gmin || gval > gmax)
                 continue;
             bval = (pixel >> L_BLUE_SHIFT) & 0xff;
-            if (bval < bref - delm || bval > bref + delp)
+            if (bval < bmin || bval > bmax)
                 continue;
             SET_DATA_BIT(lined, j);
         }

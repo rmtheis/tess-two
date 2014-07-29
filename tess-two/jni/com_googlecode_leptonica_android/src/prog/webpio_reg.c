@@ -86,8 +86,7 @@ L_REGPARAMS  *rp;
     DoWebpTest2(rp, "test24.jpg", 100, 0, 57.879, 0.1);
     DoWebpTest2(rp, "test24.jpg", 0, 1, 1000.0, 0.1);
 
-    regTestCleanup(rp);
-    return 0;
+    return regTestCleanup(rp);
 }
 
 

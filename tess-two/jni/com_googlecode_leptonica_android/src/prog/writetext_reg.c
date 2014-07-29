@@ -29,7 +29,7 @@
  *
  *   Regression test for writing a block of text in one of 4 locations
  *   relative to a pix.  This tests writing on 8 different types of images.
- *   Output is written to /tmp/pixd[1,2,3,4].png
+ *   Output is written to /tmp/regout/pixd[1,2,3,4].png
  */
 
 #include "allheaders.h"

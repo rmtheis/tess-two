@@ -91,8 +91,8 @@ L_REGPARAMS  *rp;
     }
 
     pixaConvertToPdf(pixa, 100, 1.0, L_JPEG_ENCODE, 0,
-                     "Blendings: blend4_reg", "/tmp/blend.pdf");
-    L_INFO("Output pdf: /tmp/blend.pdf\n", rp->testname);
+                     "Blendings: blend4_reg", "/tmp/regout/blend.pdf");
+    L_INFO("Output pdf: /tmp/regout/blend.pdf\n", rp->testname);
     pixDestroy(&pix0);
     pixDestroy(&pix1);
     pixaDestroy(&pixa);

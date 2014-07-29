@@ -85,8 +85,8 @@ L_REGPARAMS  *rp;
         /* Generate an alpha layer based on the white background */
     pix3 = pixSetAlphaOverWhite(pix2);
     pixSetSpp(pix3, 3);
-    pixWrite("/tmp/alphaops.2.png", pix3, IFF_PNG);  /* without alpha */
-    regTestCheckFile(rp, "/tmp/alphaops.2.png");   /* 2 */
+    pixWrite("/tmp/regout/alphaops.2.png", pix3, IFF_PNG);  /* without alpha */
+    regTestCheckFile(rp, "/tmp/regout/alphaops.2.png");   /* 2 */
     pixSetSpp(pix3, 4);
     regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 3, with alpha */
     pixDisplayWithTitle(pix3, 100, 300, NULL, rp->display);
@@ -101,8 +101,7 @@ L_REGPARAMS  *rp;
     pixDestroy(&pix4);
 
     /* ------------------------ (2) ----------------------------*/
-    lept_rmdir("alpha");
-    lept_mkdir("alpha");
+    lept_mkdir("lept");
         /* Make the transparency (alpha) layer.
          * pixs is the mask.  We turn it into a transparency (alpha)
          * layer by converting to 8 bpp.  A small convolution fuzzes
@@ -135,9 +134,9 @@ L_REGPARAMS  *rp;
          * transparent part of the alpha layer, and write that result
          * out as well. */
     pixSetRGBComponent(pixcs1, pixg2, L_ALPHA_CHANNEL);
-    pixWrite("/tmp/alpha/pixcs1.png", pixcs1, IFF_PNG);
+    pixWrite("/tmp/lept/alpha_cs1.png", pixcs1, IFF_PNG);
     pixcs2 = pixSetUnderTransparency(pixcs1, 0, 0);
-    pixWrite("/tmp/alpha/pixcs2.png", pixcs2, IFF_PNG);
+    pixWrite("/tmp/lept/alpha_cs2.png", pixcs2, IFF_PNG);
 
         /* What will this look like over a black background?
          * Do the blending explicitly and display.  It should
@@ -152,10 +151,10 @@ L_REGPARAMS  *rp;
          * the alpha layer was fully transparent.  It will
          * look the same when viewed through the alpha layer,
          * but have much better compression. */
-    pix1 = pixRead("/tmp/alpha/pixcs1.png");  /* just pixcs1 */
-    pix2 = pixRead("/tmp/alpha/pixcs2.png");  /* cleaned under transparent */
-    n1 = nbytesInFile("/tmp/alpha/pixcs1.png");
-    n2 = nbytesInFile("/tmp/alpha/pixcs2.png");
+    pix1 = pixRead("/tmp/lept/alpha_cs1.png");  /* just pixcs1 */
+    pix2 = pixRead("/tmp/lept/alpha_cs2.png");  /* cleaned under transparent */
+    n1 = nbytesInFile("/tmp/lept/alpha_cs1.png");
+    n2 = nbytesInFile("/tmp/lept/alpha_cs2.png");
     fprintf(stderr, " Original: %d bytes\n Cleaned: %d bytes\n", n1, n2);
     regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 9 */
     regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 10 */
@@ -173,7 +172,7 @@ L_REGPARAMS  *rp;
     pixd = pixaDisplay(pixa, 0, 0);
     regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 11 */
     pixDisplayWithTitle(pixd, 200, 200, "composite", rp->display);
-    pixWrite("/tmp/alpha/alpha.png", pixd, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/alpha.png", pixd, IFF_JFIF_JPEG);
     pixDestroy(&pixd);
     pixaDestroy(&pixa);
     pixDestroy(&pixs);
@@ -225,9 +224,9 @@ L_REGPARAMS  *rp;
     }
     if (rp->display) {
         pixaConvertToPdf(pixa2, 0, 0.75, L_FLATE_ENCODE, 0, "blend 1 test",
-                         "/tmp/alpha/blending1.pdf");
+                         "/tmp/lept/alpha_blend1.pdf");
         pixaConvertToPdf(pixa3, 0, 0.75, L_FLATE_ENCODE, 0, "blend 2 test",
-                         "/tmp/alpha/blending2.pdf");
+                         "/tmp/lept/alpha_blend2.pdf");
     }
     pixaDestroy(&pixa);
     pixaDestroy(&pixa2);
@@ -264,10 +263,10 @@ L_REGPARAMS  *rp;
     lept_free(data);
 
         /* Test ascii serialization/deserialization of colormap with alpha */
-    fp = fopenWriteStream("/tmp/alpha/cmap.4", "w");
+    fp = fopenWriteStream("/tmp/lept/alpha_cmap.4", "w");
     pixcmapWriteStream(fp, cmap);
     fclose(fp);
-    fp = fopenReadStream("/tmp/alpha/cmap.4");
+    fp = fopenReadStream("/tmp/lept/alpha_cmap.4");
     cmap2 = pixcmapReadStream(fp);
     fclose(fp);
     CmapEqual(cmap, cmap2, &equal);
@@ -277,8 +276,8 @@ L_REGPARAMS  *rp;
         /* Test r/w for cmapped pix with non-opaque alpha */
     pixDisplayWithTitle(pix5, 900, 0, NULL, rp->display);
     regTestWritePixAndCheck(rp, pix5, IFF_PNG);  /* 27 */
-    pixWrite("/tmp/alpha/fourcomp.png", pix5, IFF_PNG);
-    pix6 = pixRead("/tmp/alpha/fourcomp.png");
+    pixWrite("/tmp/lept/alpha_fourcomp.png", pix5, IFF_PNG);
+    pix6 = pixRead("/tmp/lept/alpha_fourcomp.png");
     regTestComparePix(rp, pix5, pix6);  /* 28 */
     pixDestroy(&pix1);
     pixDestroy(&pix2);

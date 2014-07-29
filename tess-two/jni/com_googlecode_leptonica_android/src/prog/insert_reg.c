@@ -48,6 +48,13 @@ L_REGPARAMS  *rp;
     if (regTestSetup(argc, argv, &rp))
         return 1;
 
+    lept_rmfile("/tmp/regout/insert3.ba");
+    lept_rmfile("/tmp/regout/insert4.ba");
+    lept_rmfile("/tmp/regout/insert6.pa");
+    lept_rmfile("/tmp/regout/insert7.pa");
+    lept_rmfile("/tmp/regout/insert9.pa");
+    lept_rmfile("/tmp/regout/insert10.pa");
+
     /* ----------------- Test numa operations -------------------- */
     pi = 3.1415926535;
     na1 = numaCreate(500);
@@ -56,7 +63,7 @@ L_REGPARAMS  *rp;
         val = (l_float32)sin(angle);
         numaAddNumber(na1, val);
     }
-    numaWrite("/tmp/insert0.na", na1);
+    numaWrite("/tmp/regout/insert0.na", na1);
     na2 = numaCopy(na1);
     n = numaGetCount(na2);
     for (i = 0; i < n; i++) {
@@ -64,9 +71,9 @@ L_REGPARAMS  *rp;
         numaRemoveNumber(na2, i);
         numaInsertNumber(na2, i, val);
     }
-    numaWrite("/tmp/insert1.na", na2);
-    regTestCheckFile(rp, "/tmp/insert0.na");  /* 0 */
-    regTestCheckFile(rp, "/tmp/insert1.na");  /* 1 */
+    numaWrite("/tmp/regout/insert1.na", na2);
+    regTestCheckFile(rp, "/tmp/regout/insert0.na");  /* 0 */
+    regTestCheckFile(rp, "/tmp/regout/insert1.na");  /* 1 */
     regTestCompareFiles(rp, 0, 1);  /* 2 */
     numaDestroy(&na1);
     numaDestroy(&na2);
@@ -77,16 +84,16 @@ L_REGPARAMS  *rp;
     pix2 = pixClipRectangle(pix1, box, NULL);
     boxDestroy(&box);
     boxa1 = pixConnComp(pix2, NULL, 8);
-    boxaWrite("/tmp/insert3.ba", boxa1);
+    boxaWrite("/tmp/regout/insert3.ba", boxa1);
     boxa2 = boxaCopy(boxa1, L_COPY);
     n = boxaGetCount(boxa2);
     for (i = 0; i < n; i++) {
         boxaRemoveBoxAndSave(boxa2, i, &box);
         boxaInsertBox(boxa2, i, box);
     }
-    boxaWrite("/tmp/insert4.ba", boxa2);
-    regTestCheckFile(rp, "/tmp/insert3.ba");  /* 3 */
-    regTestCheckFile(rp, "/tmp/insert4.ba");  /* 4 */
+    boxaWrite("/tmp/regout/insert4.ba", boxa2);
+    regTestCheckFile(rp, "/tmp/regout/insert3.ba");  /* 3 */
+    regTestCheckFile(rp, "/tmp/regout/insert4.ba");  /* 4 */
     regTestCompareFiles(rp, 3, 4);  /* 5 */
     pixDestroy(&pix1);
     pixDestroy(&pix2);
@@ -100,8 +107,8 @@ L_REGPARAMS  *rp;
     boxDestroy(&box);
     boxa = pixConnComp(pix2, &pixa1, 8);
     boxaDestroy(&boxa);
-    pixaWrite("/tmp/insert6.pa", pixa1);
-    regTestCheckFile(rp, "/tmp/insert6.pa");  /* 6 */
+    pixaWrite("/tmp/regout/insert6.pa", pixa1);
+    regTestCheckFile(rp, "/tmp/regout/insert6.pa");  /* 6 */
     pixDestroy(&pix1);
     pixDestroy(&pix2);
 
@@ -112,8 +119,8 @@ L_REGPARAMS  *rp;
         pixaRemovePixAndSave(pixa2, i, &pix, &box);
         pixaInsertPix(pixa2, i, pix, box);
     }
-    pixaWrite("/tmp/insert7.pa", pixa2);
-    regTestCheckFile(rp, "/tmp/insert7.pa");  /* 7 */
+    pixaWrite("/tmp/regout/insert7.pa", pixa2);
+    regTestCheckFile(rp, "/tmp/regout/insert7.pa");  /* 7 */
     regTestCompareFiles(rp, 6, 7);  /* 8 */
 
         /* Move the last to the beginning; do it n times */
@@ -124,8 +131,8 @@ L_REGPARAMS  *rp;
         pixaInsertPix(pixa3, 0, pix, box);
         pixaRemovePix(pixa3, n);
     }
-    pixaWrite("/tmp/insert9.pa", pixa3);
-    regTestCheckFile(rp, "/tmp/insert9.pa");  /* 9 */
+    pixaWrite("/tmp/regout/insert9.pa", pixa3);
+    regTestCheckFile(rp, "/tmp/regout/insert9.pa");  /* 9 */
 
         /* Move the first one to the end; do it n times */
     pixa4 = pixaCopy(pixa3, L_COPY);
@@ -135,8 +142,8 @@ L_REGPARAMS  *rp;
         pixaInsertPix(pixa4, n, pix, box);  /* make sure insert works at end */
         pixaRemovePix(pixa4, 0);
     }
-    pixaWrite("/tmp/insert10.pa", pixa4);
-    regTestCheckFile(rp, "/tmp/insert10.pa");  /* 10 */
+    pixaWrite("/tmp/regout/insert10.pa", pixa4);
+    regTestCheckFile(rp, "/tmp/regout/insert10.pa");  /* 10 */
     regTestCompareFiles(rp, 9, 10);  /* 11 */
     pixaDestroy(&pixa1);
     pixaDestroy(&pixa2);

@@ -159,10 +159,10 @@ L_REGPARAMS  *rp;
         }
         pixDestroy(&pixt1);
     }
-    gplot1 = gplotCreate("/tmp/colorspace.10", GPLOT_PNG,
+    gplot1 = gplotCreate("/tmp/regout/colorspace.10", GPLOT_PNG,
                          "Fraction with given color (diff from average)",
                          "white point space for red", "amount of color");
-    gplot2 = gplotCreate("/tmp/colorspace.11", GPLOT_PNG,
+    gplot2 = gplotCreate("/tmp/regout/colorspace.11", GPLOT_PNG,
                          "Fraction with given color (min diff)",
                          "white point space for red", "amount of color");
     for (j = 0; j < 6; j++) {
@@ -195,16 +195,17 @@ L_REGPARAMS  *rp;
 #endif  /* _WIN32 */
 
         /* Save as golden files, or check against them */
-    regTestCheckFile(rp, "/tmp/colorspace.10.png");  /* 10 */
-    regTestCheckFile(rp, "/tmp/colorspace.11.png");  /* 11 */
+    regTestCheckFile(rp, "/tmp/regout/colorspace.10.png");  /* 10 */
+    regTestCheckFile(rp, "/tmp/regout/colorspace.11.png");  /* 11 */
 
     if (rp->display) {
-        pixt = pixRead("/tmp/colorspace.10.png");
+        pixt = pixRead("/tmp/regout/colorspace.10.png");
         pixaAddPix(pixa, pixt, L_INSERT);
-        pixt = pixRead("/tmp/colorspace.11.png");
+        pixt = pixRead("/tmp/regout/colorspace.11.png");
         pixaAddPix(pixa, pixt, L_INSERT);
         pixaConvertToPdf(pixa, 0, 1.0, 0, 0, "colorspace tests",
-                         "/tmp/colorspace.pdf");
+                         "/tmp/regout/colorspace.pdf");
+        L_INFO("Output pdf: /tmp/regout/colorspace.pdf\n", rp->testname);
     }
     pixaDestroy(&pixa);
 

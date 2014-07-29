@@ -68,6 +68,10 @@
 #include "webp/encode.h"
 #endif
 
+#if HAVE_LIBJP2K  /* assuming it's 2.1 */
+#include "openjpeg-2.1/openjpeg.h"
+#endif
+
 #define stringJoinInPlace(s1, s2) \
     { tempStrP = stringJoin((s1),(s2)); FREE(s1); (s1) = tempStrP; }
 
@@ -78,13 +82,14 @@
 /*!
  *  getImagelibVersions()
  *
- *      Return: string of version numbers (e.g.,
+ *      Return: string of version numbers; e.g.,
  *               libgif 5.0.3
  *               libjpeg 8b
  *               libpng 1.4.3
  *               libtiff 3.9.5
  *               zlib 1.2.5
- *               webp 0.3.0
+ *               libwebp 0.3.0
+ *               libopenjp2 2.1.0
  *
  *  Notes:
  *      (1) The caller has responsibility to free the memory.
@@ -163,11 +168,22 @@ l_int32  first = TRUE;
     char buf[32];
     if (!first) stringJoinInPlace(versionStrP, " : ");
     first = FALSE;
-    stringJoinInPlace(versionStrP, "webp ");
+    stringJoinInPlace(versionStrP, "libwebp ");
     val = WebPGetEncoderVersion();
     snprintf(buf, sizeof(buf), "%d.%d.%d", val >> 16, (val >> 8) & 0xff,
              val & 0xff);
     stringJoinInPlace(versionStrP, buf);
+    }
+#endif
+
+#if HAVE_LIBJP2K
+    {
+    const char *version;
+    if (!first) stringJoinInPlace(versionStrP, " : ");
+    first = FALSE;
+    stringJoinInPlace(versionStrP, "libopenjp2 ");
+    version = opj_version();
+    stringJoinInPlace(versionStrP, version);
     }
 #endif
 

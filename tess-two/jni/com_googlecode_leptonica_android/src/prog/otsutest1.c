@@ -85,7 +85,6 @@ l_int32    split;
 l_float32  ave1, ave2, num1, num2, maxnum, maxscore;
 GPLOT     *gplot;
 NUMA      *na1, *na2, *nascore, *nax, *nay;
-PIX       *pixs, *pixd;
 
         /* Generate */
     na1 = MakeGaussian(gaussmean1[i], gaussstdev1[i], gaussfract1[i]);

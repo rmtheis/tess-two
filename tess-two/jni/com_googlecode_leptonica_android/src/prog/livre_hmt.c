@@ -57,7 +57,6 @@ int main(int    argc,
          char **argv)
 {
 l_int32      patno, reduction, width, cols, cx, cy;
-BOX         *box;
 PIX         *pixs, *pixt, *pix, *pixr, *pixp, *pixsel, *pixhmt;
 PIX         *pixd1, *pixd2, *pixd3, *pixd;
 PIXA        *pixa;

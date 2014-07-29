@@ -36,7 +36,7 @@
  *
  *      Read/write to memory
  *          PIX             *pixReadMemPnm()
- *          l_int32          sreadHeaderPnm()
+ *          l_int32          readHeaderMemPnm()
  *          l_int32          pixWriteMemPnm()
  *
  *      Local helpers
@@ -444,7 +444,7 @@ PIX       *pixs;
                     pel[0] = GET_DATA_BYTE(pword, COLOR_RED);
                     pel[1] = GET_DATA_BYTE(pword, COLOR_GREEN);
                     pel[2] = GET_DATA_BYTE(pword, COLOR_BLUE);
-                    if (fwrite(&pel, 1, 3, fp) != 3)
+                    if (fwrite(pel, 1, 3, fp) != 3)
                         writeerror = 1;
                 }
             }
@@ -627,7 +627,7 @@ PIX   *pix;
 
 
 /*!
- *  sreadHeaderPnm()
+ *  readHeaderMemPnm()
  *
  *      Input:  cdata (const; pnm-encoded)
  *              size (of data)
@@ -640,19 +640,19 @@ PIX   *pix;
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-sreadHeaderPnm(const l_uint8  *cdata,
-               size_t          size,
-               l_int32        *pw,
-               l_int32        *ph,
-               l_int32        *pd,
-               l_int32        *ptype,
-               l_int32        *pbps,
-               l_int32        *pspp)
+readHeaderMemPnm(const l_uint8  *cdata,
+                 size_t          size,
+                 l_int32        *pw,
+                 l_int32        *ph,
+                 l_int32        *pd,
+                 l_int32        *ptype,
+                 l_int32        *pbps,
+                 l_int32        *pspp)
 {
 l_int32  ret;
 FILE    *fp;
 
-    PROCNAME("sreadHeaderPnm");
+    PROCNAME("readHeaderMemPnm");
 
     if (!cdata)
         return ERROR_INT("cdata not defined", procName, 1);
@@ -696,6 +696,8 @@ FILE    *fp;
 
     PROCNAME("pixWriteMemPnm");
 
+    if (pdata) *pdata = NULL;
+    if (psize) *psize = 0;
     if (!pdata)
         return ERROR_INT("&data not defined", procName, 1 );
     if (!psize)
@@ -731,18 +733,18 @@ FILE    *fp;
  *      (1) This reads the next sample value in ascii from the the file.
  */
 static l_int32
-pnmReadNextAsciiValue(FILE  *fp,
-                      l_int32 *pval)
+pnmReadNextAsciiValue(FILE     *fp,
+                      l_int32  *pval)
 {
 l_int32   c, ignore;
 
     PROCNAME("pnmReadNextAsciiValue");
 
-    if (!fp)
-        return ERROR_INT("stream not open", procName, 1);
     if (!pval)
         return ERROR_INT("&val not defined", procName, 1);
     *pval = 0;
+    if (!fp)
+        return ERROR_INT("stream not open", procName, 1);
     do {  /* skip whitespace */
         if ((c = fgetc(fp)) == EOF)
             return 1;

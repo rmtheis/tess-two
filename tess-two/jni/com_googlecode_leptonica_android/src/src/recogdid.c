@@ -627,11 +627,16 @@ L_RDID    *did;
         return (PIX *)ERROR_PTR("recog not defined", procName, NULL);
     if ((did = recogGetDid(recog)) == NULL)
         return (PIX *)ERROR_PTR("did not defined", procName, NULL);
+    if (recog->fontdir == NULL) {
+        L_WARNING("no bitmap fonts available\n", procName);
+        bmf = NULL;
+    } else {
+        bmf = bmfCreate(recog->fontdir, 8);
+    }
 
     pixs = pixScale(did->pixs, 4.0, 4.0);
     pix0 = pixAddBorderGeneral(pixs, 0, 0, 0, 40, 0);
     pix1 = pixConvertTo32(pix0);
-    bmf = bmfCreate("./fonts", 8);
     if (select == 0) {  /* Viterbi */
         natempl_s = did->natempl;
         nascore_s = did->nascore;

@@ -58,8 +58,7 @@ L_REGPARAMS  *rp;
 
     if ((pixs = pixRead("feyn-fract.tif")) == NULL) {
         rp->success = FALSE;
-        regTestCleanup(rp);
-        return 1;
+        return regTestCleanup(rp);
     }
     sela = selaAddDwaLinear(NULL);
     nsels = selaGetCount(sela);

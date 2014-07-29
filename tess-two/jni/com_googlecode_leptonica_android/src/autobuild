@@ -2,7 +2,7 @@
 #
 #  autobuild
 
-libtoolize -c
+libtoolize -c -f
 aclocal
 autoheader
 autoconf

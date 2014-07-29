@@ -64,7 +64,6 @@ int main(int    argc,
 PIX         *pixd;
 SEL         *sel1, *sel2, *sel3, *sel4;
 SELA        *sela;
-static char  mainName[] = "livre_orient";
 
     sel1 = selCreateFromString(textsel1, 5, 6, NULL);
     sel2 = selCreateFromString(textsel2, 5, 6, NULL);

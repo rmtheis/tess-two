@@ -36,11 +36,22 @@
  *           l_int32      pixFindHorizontalRuns()
  *           l_int32      pixFindVerticalRuns()
  *
+ *     Find max runs along horizontal and vertical lines
+ *           l_int32      pixFindMaxRuns()
+ *           l_int32      pixFindMaxHorizontalRunOnLine()
+ *           l_int32      pixFindMaxVerticalRunOnLine()
+ *
  *     Compute runlength-to-membership transform on a line
  *           l_int32      runlengthMembershipOnLine()
  *
  *     Make byte position LUT
  *           l_int32      makeMSBitLocTab()
+ *
+ *  Here we're handling runs of either black or white pixels on 1 bpp
+ *  images.  The directions of the runs in the stroke width transform
+ *  are selectable from given sets of angles.  Most of the other runs
+ *  are oriented either horizontally along the raster lines or
+ *  vertically along pixel columns.
  */
 
 #include <string.h>
@@ -475,6 +486,204 @@ l_uint32  *data, *line;
         yend[index++] = h - 1;
 
     *pn = index;
+    return 0;
+}
+
+
+/*-----------------------------------------------------------------------*
+ *            Find max runs along horizontal and vertical lines          *
+ *-----------------------------------------------------------------------*/
+/*!
+ *  pixFindMaxRuns()
+ *
+ *      Input:  pix (1 bpp)
+ *              direction (L_HORIZONTAL_RUNS or L_VERTICAL_RUNS)
+ *              &nastart (<optional return> start locations of longest runs)
+ *      Return: na (of lengths of runs), or null on error
+ *
+ *  Notes:
+ *      (1) This finds the longest foreground runs by row or column
+ *      (2) To find background runs, use pixInvert() before applying
+ *          this function.
+ */
+NUMA *
+pixFindMaxRuns(PIX     *pix,
+               l_int32  direction,
+               NUMA   **pnastart)
+{
+l_int32  w, h, i, start, size;
+NUMA    *nasize;
+
+    PROCNAME("pixFindMaxRuns");
+
+    if (pnastart) *pnastart = NULL;
+    if (direction != L_HORIZONTAL_RUNS && direction != L_VERTICAL_RUNS)
+        return (NUMA *)ERROR_PTR("direction invalid", procName, NULL);
+    if (!pix || pixGetDepth(pix) != 1)
+        return (NUMA *)ERROR_PTR("pix undefined or not 1 bpp", procName, NULL);
+
+    pixGetDimensions(pix, &w, &h, NULL);
+    nasize = numaCreate(w);
+    if (pnastart) *pnastart = numaCreate(w);
+    if (direction == L_HORIZONTAL_RUNS) {
+        for (i = 0; i < h; i++) {
+            pixFindMaxHorizontalRunOnLine(pix, i, &start, &size);
+            numaAddNumber(nasize, size);
+            if (pnastart) numaAddNumber(*pnastart, start);
+        }
+    } else {  /* vertical scans */
+        for (i = 0; i < w; i++) {
+            pixFindMaxVerticalRunOnLine(pix, i, &start, &size);
+            numaAddNumber(nasize, size);
+            if (pnastart) numaAddNumber(*pnastart, start);
+        }
+    }
+
+    return nasize;
+}
+
+
+/*!
+ *  pixFindMaxHorizontalRunOnLine()
+ *
+ *      Input:  pix (1 bpp)
+ *              y (line to traverse)
+ *              &xstart (<optional return> start position)
+ *              &size  (<return> the size of the run)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) This finds the longest foreground horizontal run on a scanline.
+ *      (2) To find background runs, use pixInvert() before applying
+ *          this function.
+ */
+l_int32
+pixFindMaxHorizontalRunOnLine(PIX      *pix,
+                              l_int32   y,
+                              l_int32  *pxstart,
+                              l_int32  *psize)
+{
+l_int32    inrun;  /* boolean */
+l_int32    w, h, j, wpl, val, maxstart, maxsize, length, start;
+l_uint32  *line;
+
+    PROCNAME("pixFindMaxHorizontalRunOnLine");
+
+    if (pxstart) *pxstart = 0;
+    if (!psize)
+        return ERROR_INT("&size not defined", procName, 1);
+    *psize = 0;
+    if (!pix || pixGetDepth(pix) != 1)
+        return ERROR_INT("pix not defined or not 1 bpp", procName, 1);
+    pixGetDimensions(pix, &w, &h, NULL);
+    if (y < 0 || y >= h)
+        return ERROR_INT("y not in [0 ... h - 1]", procName, 1);
+
+    wpl = pixGetWpl(pix);
+    line = pixGetData(pix) + y * wpl;
+    inrun = FALSE;
+    start = 0;
+    maxstart = 0;
+    maxsize = 0;
+    for (j = 0; j < w; j++) {
+        val = GET_DATA_BIT(line, j);
+        if (!inrun) {
+            if (val) {
+                start = j;
+                inrun = TRUE;
+            }
+        } else if (!val) {  /* run just ended */
+            length = j - start;
+            if (length > maxsize) {
+                maxsize = length;
+                maxstart = start;
+            }
+            inrun = FALSE;
+        }
+    }
+
+    if (inrun) {  /* a run has continued to the end of the row */
+        length = j - start;
+        if (length > maxsize) {
+            maxsize = length;
+            maxstart = start;
+        }
+    }
+    if (pxstart) *pxstart = maxstart;
+    *psize = maxsize;
+    return 0;
+}
+
+
+/*!
+ *  pixFindMaxVerticalRunOnLine()
+ *
+ *      Input:  pix (1 bpp)
+ *              x (column to traverse)
+ *              &ystart (<optional return> start position)
+ *              &size  (<return> the size of the run)
+ *      Return: 0 if OK; 1 on error
+ *
+ *  Notes:
+ *      (1) This finds the longest foreground vertical run on a scanline.
+ *      (2) To find background runs, use pixInvert() before applying
+ *          this function.
+ */
+l_int32
+pixFindMaxVerticalRunOnLine(PIX      *pix,
+                            l_int32   x,
+                            l_int32  *pystart,
+                            l_int32  *psize)
+{
+l_int32    inrun;  /* boolean */
+l_int32    w, h, i, wpl, val, maxstart, maxsize, length, start;
+l_uint32  *data, *line;
+
+    PROCNAME("pixFindMaxVerticalRunOnLine");
+
+    if (pystart) *pystart = 0;
+    if (!psize)
+        return ERROR_INT("&size not defined", procName, 1);
+    *psize = 0;
+    if (!pix || pixGetDepth(pix) != 1)
+        return ERROR_INT("pix not defined or not 1 bpp", procName, 1);
+    pixGetDimensions(pix, &w, &h, NULL);
+    if (x < 0 || x >= w)
+        return ERROR_INT("x not in [0 ... w - 1]", procName, 1);
+
+    wpl = pixGetWpl(pix);
+    data = pixGetData(pix);
+    inrun = FALSE;
+    start = 0;
+    maxstart = 0;
+    maxsize = 0;
+    for (i = 0; i < h; i++) {
+        line = data + i * wpl;
+        val = GET_DATA_BIT(line, x);
+        if (!inrun) {
+            if (val) {
+                start = i;
+                inrun = TRUE;
+            }
+        } else if (!val) {  /* run just ended */
+            length = i - start;
+            if (length > maxsize) {
+                maxsize = length;
+                maxstart = start;
+            }
+            inrun = FALSE;
+        }
+    }
+
+    if (inrun) {  /* a run has continued to the end of the column */
+        length = i - start;
+        if (length > maxsize) {
+            maxsize = length;
+            maxstart = start;
+        }
+    }
+    if (pystart) *pystart = maxstart;
+    *psize = maxsize;
     return 0;
 }
 

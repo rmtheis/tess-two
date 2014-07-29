@@ -11,14 +11,14 @@ INSTALL_PROGS = convertfilestopdf convertfilestops \
 	splitimage2pdf xtractprotos
 
 AUTO_REG_PROGS = alphaops_reg alphaxform_reg \
-	binarize_reg blackwhite_reg \
+	bilateral2_reg binarize_reg blackwhite_reg \
 	blend3_reg blend4_reg \
 	colorcontent_reg coloring_reg \
 	colormask_reg colorquant_reg \
 	colorspace_reg compare_reg \
 	convolve_reg dewarp_reg \
 	dna_reg dwamorph1_reg enhance_reg \
-	findcorners_reg findpattern_reg \
+	files_reg findcorners_reg findpattern_reg \
 	fpix1_reg fpix2_reg \
 	graymorph2_reg hardlight_reg \
 	insert_reg ioformats_reg \
@@ -29,7 +29,7 @@ AUTO_REG_PROGS = alphaops_reg alphaxform_reg \
 	pdfseg_reg pixa2_reg \
 	pixserial_reg pngio_reg \
 	projection_reg psio_reg psioseg_reg \
-	rankbin_reg rankhisto_reg \
+	pta_reg rankbin_reg rankhisto_reg \
 	rasteropip_reg \
 	rotate1_reg rotate2_reg rotateorth_reg \
 	scale_reg seedspread_reg \
@@ -39,22 +39,23 @@ AUTO_REG_PROGS = alphaops_reg alphaxform_reg \
 	warper_reg writetext_reg xformbox_reg
 
 MANUAL_REG_PROGS = alltests_reg adaptnorm_reg affine_reg \
-	bilateral_reg bilinear_reg \
+	bilateral1_reg bilinear_reg \
 	binmorph1_reg binmorph2_reg binmorph3_reg \
 	binmorph4_reg binmorph5_reg \
 	blend1_reg blend2_reg boxa1_reg \
 	ccthin1_reg ccthin2_reg cmapquant_reg \
-	colorseg_reg compfilter_reg \
+	colorize_reg colorseg_reg compfilter_reg \
 	conncomp_reg conversion_reg distance_reg \
 	dwamorph2_reg equal_reg expand_reg extrema_reg \
 	fhmtauto_reg flipdetect_reg fmorphauto_reg \
 	gifio_reg grayfill_reg graymorph1_reg \
-	grayquant_reg heap_reg locminmax_reg \
+	grayquant_reg heap_reg \
+	jp2kio_reg locminmax_reg \
 	logicops_reg lowaccess_reg morphseq_reg \
 	numa1_reg numa2_reg pixa1_reg \
 	pixadisp_reg pixalloc_reg pixcomp_reg \
 	pixmem_reg pixtile_reg projective_reg \
-	pta_reg ptra1_reg ptra2_reg \
+	ptra1_reg ptra2_reg \
 	rank_reg rasterop_reg smallpix_reg \
 	smoothedge_reg string_reg \
 	webpio_reg wordboxes_reg
@@ -62,12 +63,11 @@ MANUAL_REG_PROGS = alltests_reg adaptnorm_reg affine_reg \
 OTHER_PROGS = adaptmaptest adaptmap_dark \
 	arabic_lines arithtest \
 	barcodetest baselinetest \
-	binarize_set bincompare \
+	binarizefiles binarize_set bincompare \
 	blendcmaptest buffertest \
 	byteatest ccbordtest cctest1 \
-	colorizetest colormorphtest \
-	colorsegtest colorspacetest \
-	comparepages comparetest \
+	colormorphtest colorsegtest colorspacetest \
+	comparepages comparetest concatpdf \
 	contrasttest converttogray \
 	convolvetest cornertest \
 	croptest croptext \

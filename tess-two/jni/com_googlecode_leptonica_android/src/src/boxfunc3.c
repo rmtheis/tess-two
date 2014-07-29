@@ -43,6 +43,9 @@
  *           BOXA            *pixSplitComponentIntoBoxa()
  *           static l_int32   pixSearchForRectangle()
  *
+ *      Represent horizontal or vertical mosaic strips
+ *           BOXA            *makeMosaicStrips()
+ *
  *      Comparison between boxa
  *           l_int32          boxaCompareRegions()
  *
@@ -1118,6 +1121,71 @@ success:
     boxaAddBox(boxat, boxr, L_INSERT);
     FREE(lines1);
     return 0;
+}
+
+
+/*---------------------------------------------------------------------*
+ *             Represent horizontal or vertical mosaic strips          *
+ *---------------------------------------------------------------------*/
+/*!
+ *  makeMosaicStrips()
+ *
+ *      Input:  w, h
+ *              direction (L_SCAN_HORIZONTAL or L_SCAN_VERTICAL)
+ *              size (of strips in the scan direction)
+ *      Return: boxa, or null on error
+ *
+ *  Notes:
+ *      (1) For example, this can be used to generate a pixa of
+ *          vertical strips of width 10 from an image, using:
+ *             pixGetDimensions(pix, &w, &h, NULL);
+ *             boxa = makeMosaicStrips(w, h, L_SCAN_HORIZONTAL, 10);
+ *             pixa = pixClipRectangles(pix, boxa);
+ *          All strips except the last will be the same width.  The
+ *          last strip will have width w % 10.
+ */
+BOXA *
+makeMosaicStrips(l_int32  w,
+                 l_int32  h,
+                 l_int32  direction,
+                 l_int32  size)
+{
+l_int32  i, nstrips, extra;
+BOX     *box;
+BOXA    *boxa;
+
+    PROCNAME("makeMosaicStrips");
+
+    if (w < 1 || h < 1)
+        return (BOXA *)ERROR_PTR("invalid w or h", procName, NULL);
+    if (direction != L_SCAN_HORIZONTAL && direction != L_SCAN_VERTICAL)
+        return (BOXA *)ERROR_PTR("invalid direction", procName, NULL);
+    if (size < 1)
+        return (BOXA *)ERROR_PTR("size < 1", procName, NULL);
+
+    boxa = boxaCreate(0);
+    if (direction == L_SCAN_HORIZONTAL) {
+        nstrips = w / size;
+        for (i = 0; i < nstrips; i++) {
+            box = boxCreate(i * size, 0, size, h);
+            boxaAddBox(boxa, box, L_INSERT);
+        }
+        if ((extra = w % size) > 0) {
+            box = boxCreate(nstrips * size, 0, extra, h);
+            boxaAddBox(boxa, box, L_INSERT);
+        }
+    } else {
+        nstrips = h / size;
+        for (i = 0; i < nstrips; i++) {
+            box = boxCreate(0, i * size, w, size);
+            boxaAddBox(boxa, box, L_INSERT);
+        }
+        if ((extra = h % size) > 0) {
+            box = boxCreate(0, nstrips * size, w, extra);
+            boxaAddBox(boxa, box, L_INSERT);
+        }
+    }
+    return boxa;
 }
 
 

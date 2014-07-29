@@ -87,10 +87,11 @@ boxContains(BOX     *box1,
     if (!box1 || !box2)
         return ERROR_INT("box1 and box2 not both defined", procName, 1);
 
-    if ((box1->x <= box2->x) &&
-        (box1->y <= box2->y) &&
-        (box1->x + box1->w >= box2->x + box2->w) &&
-        (box1->y + box1->h >= box2->y + box2->h))
+l_int32  x1, y1, w1, h1, x2, y2, w2, h2;
+
+    boxGetGeometry(box1, &x1, &y1, &w1, &h1);
+    boxGetGeometry(box2, &x2, &y2, &w2, &h2);
+    if (x1 <= x2 && y1 <= y2 && (x1 + w1 >= x2 + w2) && (y1 + h1 >= y2 + h2))
         *presult = 1;
     else
         *presult = 0;
@@ -111,26 +112,23 @@ boxIntersects(BOX      *box1,
               BOX      *box2,
               l_int32  *presult)
 {
-l_int32  left1, left2, top1, top2, right1, right2, bot1, bot2;
+l_int32  l1, l2, r1, r2, t1, t2, b1, b2, w1, h1, w2, h2;
 
     PROCNAME("boxIntersects");
 
     if (!box1 || !box2)
         return ERROR_INT("box1 and box2 not both defined", procName, 1);
 
-    left1 = box1->x;
-    left2 = box2->x;
-    top1 = box1->y;
-    top2 = box2->y;
-    right1 = box1->x + box1->w - 1;
-    bot1 = box1->y + box1->h - 1;
-    right2 = box2->x + box2->w - 1;
-    bot2 = box2->y + box2->h - 1;
-    if ((bot2 >= top1) && (bot1 >= top2) &&
-         (right1 >= left2) && (right2 >= left1))
-        *presult = 1;
-    else
+    boxGetGeometry(box1, &l1, &t1, &w1, &h1);
+    boxGetGeometry(box2, &l2, &t2, &w2, &h2);
+    r1 = l1 + w1 - 1;
+    r2 = l2 + w2 - 1;
+    b1 = t1 + h1 - 1;
+    b2 = t2 + h2 - 1;
+    if (b2 < t1 || b1 < t2 || r1 < l2 || r2 < l1)
         *presult = 0;
+    else
+        *presult = 1;
     return 0;
 }
 
@@ -348,12 +346,15 @@ BOXA    *boxat1, *boxat2;
  *      Input:  box1, box2 (two boxes)
  *      Return: box (of overlap region between input boxes),
  *              or null if no overlap or on error
+ *
+ *  Notes:
+ *      (1) This is the geometric intersection of the two rectangles.
  */
 BOX *
 boxOverlapRegion(BOX  *box1,
                  BOX  *box2)
 {
-l_int32  x, y, w, h, left1, left2, top1, top2, right1, right2, bot1, bot2;
+l_int32  l1, l2, r1, r2, t1, t2, b1, b2, w1, h1, w2, h2, ld, td, rd, bd;
 
     PROCNAME("boxOverlapRegion");
 
@@ -362,23 +363,20 @@ l_int32  x, y, w, h, left1, left2, top1, top2, right1, right2, bot1, bot2;
     if (!box2)
         return (BOX *)ERROR_PTR("box2 not defined", procName, NULL);
 
-    left1 = box1->x;
-    left2 = box2->x;
-    top1 = box1->y;
-    top2 = box2->y;
-    right1 = box1->x + box1->w - 1;
-    bot1 = box1->y + box1->h - 1;
-    right2 = box2->x + box2->w - 1;
-    bot2 = box2->y + box2->h - 1;
-    if ((bot2 < top1) || (bot1 < top2) ||
-         (right1 < left2) || (right2 < left1))
+    boxGetGeometry(box1, &l1, &t1, &w1, &h1);
+    boxGetGeometry(box2, &l2, &t2, &w2, &h2);
+    r1 = l1 + w1 - 1;
+    r2 = l2 + w2 - 1;
+    b1 = t1 + h1 - 1;
+    b2 = t2 + h2 - 1;
+    if (b2 < t1 || b1 < t2 || r1 < l2 || r2 < l1)
         return NULL;
 
-    x = (left1 > left2) ? left1 : left2;
-    y = (top1 > top2) ? top1 : top2;
-    w = L_MIN(right1 - x + 1, right2 - x + 1);
-    h = L_MIN(bot1 - y + 1, bot2 - y + 1);
-    return boxCreate(x, y, w, h);
+    ld = L_MAX(l1, l2);
+    td = L_MAX(t1, t2);
+    rd = L_MIN(r1, r2);
+    bd = L_MIN(b1, b2);
+    return boxCreate(ld, td, rd - ld + 1, bd - td + 1);
 }
 
 
@@ -388,12 +386,15 @@ l_int32  x, y, w, h, left1, left2, top1, top2, right1, right2, bot1, bot2;
  *      Input:  box1, box2 (two boxes)
  *      Return: box (of bounding region containing the input boxes),
  *              or null on error
+ *
+ *  Notes:
+ *      (1) This is the geometric union of the two rectangles.
  */
 BOX *
 boxBoundingRegion(BOX  *box1,
                   BOX  *box2)
 {
-l_int32  left, top, right1, right2, right, bot1, bot2, bot;
+l_int32  l1, l2, r1, r2, t1, t2, b1, b2, w1, h1, w2, h2, ld, td, rd, bd;
 
     PROCNAME("boxBoundingRegion");
 
@@ -402,15 +403,17 @@ l_int32  left, top, right1, right2, right, bot1, bot2, bot;
     if (!box2)
         return (BOX *)ERROR_PTR("box2 not defined", procName, NULL);
 
-    left = L_MIN(box1->x, box2->x);
-    top = L_MIN(box1->y, box2->y);
-    right1 = box1->x + box1->w - 1;
-    right2 = box2->x + box2->w - 1;
-    right = L_MAX(right1, right2);
-    bot1 = box1->y + box1->h - 1;
-    bot2 = box2->y + box2->h - 1;
-    bot = L_MAX(bot1, bot2);
-    return boxCreate(left, top, right - left + 1, bot - top + 1);
+    boxGetGeometry(box1, &l1, &t1, &w1, &h1);
+    boxGetGeometry(box2, &l2, &t2, &w2, &h2);
+    r1 = l1 + w1 - 1;
+    r2 = l2 + w2 - 1;
+    b1 = t1 + h1 - 1;
+    b2 = t2 + h2 - 1;
+    ld = L_MIN(l1, l2);
+    td = L_MIN(t1, t2);
+    rd = L_MAX(r1, r2);
+    bd = L_MAX(b1, b2);
+    return boxCreate(ld, td, rd - ld + 1, bd - td + 1);
 }
 
 
@@ -644,7 +647,7 @@ boxSeparationDistance(BOX      *box1,
                       l_int32  *ph_sep,
                       l_int32  *pv_sep)
 {
-l_int32  left1, left2, top1, top2, right1, right2, bot1, bot2;
+l_int32  l1, t1, w1, h1, r1, b1, l2, t2, w2, h2, r2, b2;
 
     PROCNAME("boxSeparationDistance");
 
@@ -656,24 +659,24 @@ l_int32  left1, left2, top1, top2, right1, right2, bot1, bot2;
         return ERROR_INT("box1 and box2 not both defined", procName, 1);
 
     if (ph_sep) {
-        left1 = box1->x;
-        left2 = box2->x;
-        right1 = box1->x + box1->w;  /* 1 pixel to right of the box */
-        right2 = box2->x + box2->w;
-        if (left2 >= left1)
-            *ph_sep = left2 - right1;
+        boxGetGeometry(box1, &l1, NULL, &w1, NULL);
+        boxGetGeometry(box2, &l2, NULL, &w2, NULL);
+        r1 = l1 + w1;  /* 1 pixel to the right of box 1 */
+        r2 = l2 + w2;
+        if (l2 >= l1)
+            *ph_sep = l2 - r1;
         else
-            *ph_sep = left1 - right2;
+            *ph_sep = l1 - r2;
     }
     if (pv_sep) {
-        top1 = box1->y;
-        top2 = box2->y;
-        bot1 = box1->y + box1->h;  /* 1 pixel below the box */
-        bot2 = box2->y + box2->h;
-        if (top2 >= top1)
-            *pv_sep = top2 - bot1;
+        boxGetGeometry(box1, NULL, &t1, NULL, &h1);
+        boxGetGeometry(box2, NULL, &t2, NULL, &h2);
+        b1 = t1 + h1;  /* 1 pixel below box 1 */
+        b2 = t2 + h2;
+        if (t2 >= t1)
+            *pv_sep = t2 - b1;
         else
-            *pv_sep = top1 - bot2;
+            *pv_sep = t1 - b2;
     }
     return 0;
 }
@@ -1499,7 +1502,11 @@ BOX     *box1, *box2;
     if (!boxa1 || !boxa2)
         return ERROR_INT("boxa1 and boxa2 not both defined", procName, 1);
     n = boxaGetCount(boxa1);
-    if (n != boxaGetCount(boxa2)) return 0;
+    if (n != boxaGetCount(boxa2)) {
+        if (debugflag)
+            L_INFO("boxa counts differ\n", procName);
+        return 0;
+    }
 
     mismatch = FALSE;
     for (i = 0; i < n; i++) {
@@ -1512,7 +1519,7 @@ BOX     *box1, *box2;
         if (!match) {
             mismatch = TRUE;
             if (debugflag)
-                fprintf(stderr, "box %d not similar\n", i);
+                L_INFO("boxes %d not similar\n", procName, i);
             else
                 return 0;
         }

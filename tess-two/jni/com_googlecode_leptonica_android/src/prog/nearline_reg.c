@@ -101,30 +101,30 @@ L_REGPARAMS  *rp;
     regTestCompareValues(rp, similar, 1, 0);  /* 0 */
     numaSimilar(na3, na4, 1.0, &similar);  /* should be TRUE */
     regTestCompareValues(rp, similar, 1, 0);  /* 1 */
-    numaWrite("/tmp/na1.na", na1);
-    numaWrite("/tmp/na2.na", na2);
-    numaWrite("/tmp/na3.na", na3);
-    numaWrite("/tmp/na4.na", na4);
-    numaWrite("/tmp/na5.na", na5);
-    regTestCheckFile(rp, "/tmp/na1.na");  /* 2 */
-    regTestCheckFile(rp, "/tmp/na2.na");  /* 3 */
-    regTestCheckFile(rp, "/tmp/na3.na");  /* 4 */
-    regTestCheckFile(rp, "/tmp/na4.na");  /* 5 */
-    regTestCheckFile(rp, "/tmp/na5.na");  /* 6 */
+    numaWrite("/tmp/regout/na1.na", na1);
+    numaWrite("/tmp/regout/na2.na", na2);
+    numaWrite("/tmp/regout/na3.na", na3);
+    numaWrite("/tmp/regout/na4.na", na4);
+    numaWrite("/tmp/regout/na5.na", na5);
+    regTestCheckFile(rp, "/tmp/regout/na1.na");  /* 2 */
+    regTestCheckFile(rp, "/tmp/regout/na2.na");  /* 3 */
+    regTestCheckFile(rp, "/tmp/regout/na3.na");  /* 4 */
+    regTestCheckFile(rp, "/tmp/regout/na4.na");  /* 5 */
+    regTestCheckFile(rp, "/tmp/regout/na5.na");  /* 6 */
 
         /* Plot the average minimums for the 3 cases */
     naa = numaaCreate(3);
     numaaAddNuma(naa, na1, L_INSERT);  /* portrait, double-sided */
     numaaAddNuma(naa, na2, L_INSERT);  /* landscape, double-sided */
     numaaAddNuma(naa, na5, L_INSERT);  /* landscape, single-sided */
-    gplotSimpleN(naa, GPLOT_PNG, "/tmp/nearline",
+    gplotSimpleN(naa, GPLOT_PNG, "/tmp/regout/nearline",
                  "Average minimums along lines");
 #ifndef  _WIN32
     sleep(1);
 #else
     Sleep(1000);
 #endif  /* _WIN32 */
-    pix3 = pixRead("/tmp/nearline.png");
+    pix3 = pixRead("/tmp/regout/nearline.png");
     regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 7 */
     pixDisplayWithTitle(pix3, 100, 100, NULL, rp->display);
 
@@ -153,8 +153,8 @@ L_REGPARAMS  *rp;
                       &na2, NULL, NULL, NULL);
     pixMinMaxNearLine(pix1, 20, 200, 400, 200, 15, L_SCAN_BOTH,
                       &na3, NULL, NULL, NULL);
-    numaWrite("/tmp/na6.na", na1);
-    regTestCheckFile(rp, "/tmp/na6.na");  /* 8 */
+    numaWrite("/tmp/regout/na6.na", na1);
+    regTestCheckFile(rp, "/tmp/regout/na6.na");  /* 8 */
     n = numaGetCount(na1);
     fract = 100.0 / n;
     na4 = numaTransform(na1, 0.0, fract);
@@ -170,13 +170,13 @@ L_REGPARAMS  *rp;
     numaaAddNuma(naa, na1, L_INSERT);
     numaaAddNuma(naa, na2, L_INSERT);
     numaaAddNuma(naa, na3, L_INSERT);
-    gplotSimpleN(naa, GPLOT_PNG, "/tmp/nearline2", "Min along line");
+    gplotSimpleN(naa, GPLOT_PNG, "/tmp/regout/nearline2", "Min along line");
 #ifndef  _WIN32
     sleep(1);
 #else
     Sleep(1000);
 #endif  /* _WIN32 */
-    pix4 = pixRead("/tmp/nearline2.png");
+    pix4 = pixRead("/tmp/regout/nearline2.png");
     regTestWritePixAndCheck(rp, pix4, IFF_PNG);  /* 9 */
     pixDisplayWithTitle(pix4, 800, 100, NULL, rp->display);
     numaaDestroy(&naa);

@@ -1288,8 +1288,9 @@ l_int32  w, h;
 /*!
  *  pixZero()
  *
- *      Input:  pix (all depths; not colormapped)
- *              &empty  (<return> 1 if all bits in image are 0; 0 otherwise)
+ *      Input:  pix (all depths; colormap OK)
+ *              &empty  (<return> 1 if all bits in image data field are 0;
+ *                       0 otherwise)
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
@@ -1297,6 +1298,8 @@ l_int32  w, h;
  *      (2) For a grayscale image, if all pixels are black (0), empty = 1.
  *      (3) For an RGB image, if all 4 components in every pixel is 0,
  *          empty = 1.
+ *      (4) For a colormapped image, pixel values are 0.  The colormap
+ *          is ignored.
  */
 l_int32
 pixZero(PIX      *pix,
@@ -1313,10 +1316,8 @@ l_uint32  *data, *line;
     *pempty = 1;
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
-    if (pixGetColormap(pix) != NULL)
-        return ERROR_INT("pix is colormapped", procName, 1);
 
-    w = pixGetWidth(pix) * pixGetDepth(pix);
+    w = pixGetWidth(pix) * pixGetDepth(pix);  /* in bits */
     h = pixGetHeight(pix);
     wpl = pixGetWpl(pix);
     data = pixGetData(pix);

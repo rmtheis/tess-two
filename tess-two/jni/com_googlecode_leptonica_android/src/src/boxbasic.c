@@ -68,6 +68,7 @@
  *           l_int32   boxaInsertBox()
  *           l_int32   boxaRemoveBox()
  *           l_int32   boxaRemoveBoxAndSave()
+ *           BOXA     *boxaSaveValid()
  *           l_int32   boxaInitFull()
  *           l_int32   boxaClear()
  *
@@ -994,6 +995,42 @@ BOX    **array;
     boxa->n--;
 
     return 0;
+}
+
+
+/*!
+ *  boxaSaveValid()
+ *
+ *      Input:  boxa
+ *              copyflag (L_COPY or L_CLONE)
+ *      Return: boxad if OK, null on error
+ *
+ *  Notes:
+ *      (1) This makes a copy/clone of each valid box.
+ */
+BOXA *
+boxaSaveValid(BOXA    *boxas,
+              l_int32  copyflag)
+{
+l_int32  i, n;
+BOX     *box;
+BOXA    *boxad;
+
+    PROCNAME("boxaSaveValid");
+
+    if (!boxas)
+        return (BOXA *)ERROR_PTR("boxas not defined", procName, NULL);
+    if (copyflag != L_COPY && copyflag != L_CLONE)
+        return (BOXA *)ERROR_PTR("invalid copyflag", procName, NULL);
+
+    n = boxaGetCount(boxas);
+    boxad = boxaCreate(n);
+    for (i = 0; i < n; i++) {
+        if ((box = boxaGetValidBox(boxas, i, copyflag)) != NULL)
+            boxaAddBox(boxad, box, L_INSERT);
+    }
+
+    return boxad;
 }
 
 

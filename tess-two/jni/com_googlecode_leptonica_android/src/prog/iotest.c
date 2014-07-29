@@ -30,7 +30,7 @@
  *   Tests several I/O operations, including the special operations
  *   for handling 16 bpp png input, zlib compression quality in png,
  *   chroma sampling options in jpeg, and read/write of alpha with png.
- *   
+ *
  *   This does not testt multipage/custom tiff and PostScript, which
  *   are separately tested in mtifftest and psiotest, respectively.
  */
@@ -49,7 +49,7 @@ int main(int    argc,
          char **argv)
 {
 char        *text;
-l_int32      w, h, d, level, wpl, count, format, xres, yres;
+l_int32      w, h, d, level, wpl, format, xres, yres;
 l_int32      bps, spp, res, iscmap;
 size_t       size;
 FILE        *fp;

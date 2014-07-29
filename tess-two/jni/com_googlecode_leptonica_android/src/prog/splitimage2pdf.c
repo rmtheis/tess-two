@@ -35,6 +35,9 @@
  *   Generates pdf of image tiles.  Rotates the image before
  *   tiling if the tiles otherwise will have larger width than
  *   height.
+ *
+ *   N.B. This requires ps2pdf.  It should be rewritten to generate pdf
+ *        directly, instead of PostScript
  */
 
 #include "allheaders.h"
@@ -116,7 +119,7 @@ static char  mainName[] = "splitimage2pdf";
     }
 
     sprintf(buffer, "ps2pdf %s %s", psfile, fileout);
-    ignore = system(buffer);
+    ignore = system(buffer);  /* ps2pdf */
 
     pixaDestroy(&pixa);
     pixDestroy(&pixr);

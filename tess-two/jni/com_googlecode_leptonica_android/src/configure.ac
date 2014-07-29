@@ -1,5 +1,5 @@
 AC_PREREQ([2.50])
-AC_INIT([leptonica], [1.70])
+AC_INIT([leptonica], [1.71])
 AC_CONFIG_AUX_DIR([config])
 AM_CONFIG_HEADER([config_auto.h:config/config.h.in])
 AC_CONFIG_SRCDIR([src/adaptmap.c])
@@ -27,6 +27,7 @@ AC_ARG_WITH([jpeg], AS_HELP_STRING([--without-jpeg], [do not include jpeg suppor
 AC_ARG_WITH([giflib], AS_HELP_STRING([--without-giflib], [do not include giflib support]))
 AC_ARG_WITH([libtiff], AS_HELP_STRING([--without-libtiff], [do not include libtiff support]))
 AC_ARG_WITH([libwebp], AS_HELP_STRING([--without-libwebp], [do not include libwebp support]))
+AC_ARG_WITH([libopenjpeg], AS_HELP_STRING([--without-libopenjpeg], [do not include libopenjpeg support]))
 
 AC_ARG_ENABLE([programs], AS_HELP_STRING([--disable-programs], [do not build additional programs]))
 AM_CONDITIONAL([ENABLE_PROGRAMS], [test "x$enable_programs" != xno])
@@ -74,6 +75,13 @@ AS_IF([test "x$with_libwebp" != xno],
   AC_CHECK_LIB([webp], [WebPGetInfo],
     AC_DEFINE([HAVE_LIBWEBP], 1, [Define to 1 if you have libwebp.]) AC_SUBST([LIBWEBP_LIBS], [-lwebp]),
     AS_IF([test "x$with_libwebp" = xyes], AC_MSG_ERROR([libwebp support requested but library not found]))
+  )
+)
+
+AS_IF([test "x$with_libopenjp2" != xno],
+  AC_CHECK_LIB([openjp2], [opj_create_decompress],
+    AC_DEFINE([HAVE_LIBJP2K], 1, [Define to 1 if you have libopenjp2.]) AC_SUBST([LIBJP2K_LIBS], [-lopenjp2]),
+    AS_IF([test "x$with_libopenjp2" = xyes], AC_MSG_ERROR([libopenjp2 support requested but library not found]))
   )
 )
 

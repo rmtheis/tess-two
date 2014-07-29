@@ -25,9 +25,9 @@
  *====================================================================*/
 
 /*
- *  pdfiostub.c
+ *  pdfio1stub.c
  *
- *     Stubs for pdfio.c functions
+ *     Stubs for pdfio1.c functions
  */
 
 #include "allheaders.h"
@@ -35,6 +35,8 @@
 /* --------------------------------------------*/
 #if  !USE_PDFIO   /* defined in environ.h */
 /* --------------------------------------------*/
+
+/* ----------------------------------------------------------------------*/
 
 l_int32 convertFilesToPdf(const char *dirname, const char *substr,
                           l_int32 res, l_float32 scalefactor,
@@ -182,20 +184,17 @@ l_int32 pixConvertToPdf(PIX *pix, l_int32 type, l_int32 quality,
 
 /* ----------------------------------------------------------------------*/
 
-l_int32 pixConvertToPdfData(PIX *pix, l_int32 type, l_int32 quality,
-                            l_uint8 **pdata, size_t *pnbytes,
-                            l_int32 x, l_int32 y, l_int32 res,
-                            const char *title,
-                            L_PDF_DATA **plpd, l_int32 position)
+l_int32 pixWriteStreamPdf(FILE *fp, PIX *pix, l_int32 res, const char *title)
 {
-    return ERROR_INT("function not present", "pixConvertToPdfData", 1);
+    return ERROR_INT("function not present", "pixWriteStreamPdf", 1);
 }
 
 /* ----------------------------------------------------------------------*/
 
-l_int32 pixWriteStreamPdf(FILE *fp, PIX *pix, l_int32 res, const char *title)
+l_int32 pixWriteMemPdf(l_uint8 **pdata, size_t *pnbytes, PIX *pix,
+                       l_int32 res, const char *title)
 {
-    return ERROR_INT("function not present", "pixWriteStreamPdf", 1);
+    return ERROR_INT("function not present", "pixWriteMemPdf", 1);
 }
 
 /* ----------------------------------------------------------------------*/
@@ -298,29 +297,6 @@ l_int32 saConcatenatePdfToData(SARRAY *sa, l_uint8 **pdata, size_t *pnbytes)
 }
 
 /* ----------------------------------------------------------------------*/
-
-l_int32 ptraConcatenatePdfToData(L_PTRA *pa_data, SARRAY *sa,
-                                 l_uint8 **pdata, size_t *pnbytes)
-{
-    return ERROR_INT("function not present", "ptraConcatenatePdfToData", 1);
-}
-
-/* ----------------------------------------------------------------------*/
-
-void l_pdfSetG4ImageMask(l_int32 flag)
-{
-    L_ERROR("function not present", "l_pdfSetG4ImageMask");
-    return;
-}
-
-/* ----------------------------------------------------------------------*/
-
-void l_pdfSetDateAndVersion(l_int32 flag)
-{
-    L_ERROR("function not present", "l_pdfSetDateAndVersion");
-    return;
-}
-
 
 /* --------------------------------------------*/
 #endif  /* !USE_PDFIO */

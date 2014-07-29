@@ -43,8 +43,11 @@
  *          PTA        *generatePtaLineFromPt()
  *          l_int32     locatePtRadially()
  *
- *      Pta generation for plotting functions on images
- *          PTA        *generatePlotPtaFromNuma()
+ *      Rendering function plots directly on images
+ *          l_int32     pixRenderPlotFromNuma()
+ *          l_int32     pixRenderPlotFromNumaGen()
+ *          PTA        *makePlotPtaFromNuma()
+ *          PTA        *makePlotPtaFromNumaGen()
  *
  *      Pta rendering
  *          l_int32     pixRenderPta()
@@ -89,9 +92,17 @@
  *
  *  The line rendering functions are relatively crude, but they
  *  get the job done for most simple situations.  We use the pta
- *  as an intermediate data structure.  A pta is generated
- *  for a line.  One of two rendering functions are used to
- *  render this onto a Pix.
+ *  (array of points) as an intermediate data structure.  For example,
+ *  to render a line we first generate a pta.
+ *
+ *  Some rendering functions come in sets of three.  For example
+ *       pixRenderLine() -- render on 1 bpp pix
+ *       pixRenderLineArb() -- render on 32 bpp pix with arbitrary (r,g,b)
+ *       pixRenderLineBlend() -- render on 32 bpp pix, blending the
+ *               (r,g,b) graphic object with the underlying rgb pixels.
+ *
+ *  There are also procedures for plotting a function, computed
+ *  from the row or column pixels, directly on the image.
  */
 
 #include <string.h>
@@ -125,7 +136,9 @@ PTA       *pta;
     PROCNAME("generatePtaLine");
 
         /* Generate line parameters */
-    if (L_ABS(x2 - x1) >= L_ABS(y2 - y1)) {
+    if (x1 == x2 && y1 == y2) {  /* same point */
+        npts = 1;
+    } else if (L_ABS(x2 - x1) >= L_ABS(y2 - y1)) {
         getyofx = TRUE;
         npts = L_ABS(x2 - x1) + 1;
         diff = x2 - x1;
@@ -841,56 +854,224 @@ locatePtRadially(l_int32     xr,
 
 
 /*------------------------------------------------------------------*
- *          Pta generation for plotting functions on images         *
+ *            Rendering function plots directly on images           *
  *------------------------------------------------------------------*/
 /*!
- *  generatePlotPtaFromNuma()
+ *  pixRenderPlotFromNuma()
+ *
+ *      Input:  &pix (any type; replaced if not 32 bpp rgb)
+ *              numa (to be plotted)
+ *              plotloc (location of plot: L_PLOT_AT_TOP, etc)
+ *              linewidth (width of "line" that is drawn; between 1 and 7)
+ *              max (maximum excursion in pixels from baseline)
+ *              color (plot color: 0xrrggbb00)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) Simplified interface for plotting row or column aligned data
+ *          on a pix.
+ *      (2) This replaces @pix with a 32 bpp rgb version if it is not
+ *          already 32 bpp.  It then draws the plot on the pix.
+ *      (3) See makePlotPtaFromNumaGen() for more details.
+ */
+l_int32
+pixRenderPlotFromNuma(PIX     **ppix,
+                      NUMA     *na,
+                      l_int32   plotloc,
+                      l_int32   linewidth,
+                      l_int32   max,
+                      l_uint32  color)
+{
+l_int32  w, h, size, rval, gval, bval;
+PIX     *pix1;
+PTA     *pta;
+
+    PROCNAME("pixRenderPlotFromNuma");
+
+    if (!ppix)
+        return ERROR_INT("&pix not defined", procName, 1);
+    if (*ppix == NULL)
+        return ERROR_INT("pix not defined", procName, 1);
+
+    pixGetDimensions(*ppix, &w, &h, NULL);
+    size = (plotloc == L_PLOT_AT_TOP || plotloc == L_PLOT_AT_MID_HORIZ ||
+            plotloc == L_PLOT_AT_BOT) ? h : w;
+    pta = makePlotPtaFromNuma(na, size, plotloc, linewidth, max);
+    if (!pta)
+        return ERROR_INT("pta not made", procName, 1);
+
+    if (pixGetDepth(*ppix) != 32) {
+        pix1 = pixConvertTo32(*ppix);
+        pixDestroy(ppix);
+        *ppix = pix1;
+    }
+    extractRGBValues(color, &rval, &gval, &bval);
+    pixRenderPtaArb(*ppix, pta, rval, gval, bval);
+    ptaDestroy(&pta);
+    return 0;
+}
+
+
+/*!
+ *  makePlotPtaFromNuma()
+ *
+ *      Input:  numa
+ *              size (pix height for horizontal plot; width for vertical plot)
+ *              plotloc (location of plot: L_PLOT_AT_TOP, etc)
+ *              linewidth (width of "line" that is drawn; between 1 and 7)
+ *              max (maximum excursion in pixels from baseline)
+ *      Return: ptad, or null on error
+ *
+ *  Notes:
+ *      (1) This generates points from @numa representing y(x) or x(y)
+ *          with respect to a pix.  A horizontal plot y(x) is drawn for
+ *          a function of column position, and a vertical plot is drawn
+ *          for a function x(y) of row position.  The baseline is located
+ *          so that all plot points will fit in the pix.
+ *      (2) See makePlotPtaFromNumaGen() for more details.
+ */
+PTA *
+makePlotPtaFromNuma(NUMA    *na,
+                    l_int32  size,
+                    l_int32  plotloc,
+                    l_int32  linewidth,
+                    l_int32  max)
+{
+l_int32  orient, refpos;
+
+    PROCNAME("makePlotPtaFromNuma");
+
+    if (!na)
+        return (PTA *)ERROR_PTR("na not defined", procName, NULL);
+    if (plotloc == L_PLOT_AT_TOP || plotloc == L_PLOT_AT_MID_HORIZ ||
+        plotloc == L_PLOT_AT_BOT) {
+        orient = L_HORIZONTAL_LINE;
+    } else if (plotloc == L_PLOT_AT_LEFT || plotloc == L_PLOT_AT_MID_VERT ||
+               plotloc == L_PLOT_AT_RIGHT) {
+        orient = L_VERTICAL_LINE;
+    } else {
+        return (PTA *)ERROR_PTR("invalid plotloc", procName, NULL);
+    }
+
+    if (plotloc == L_PLOT_AT_LEFT || plotloc == L_PLOT_AT_TOP)
+        refpos = max;
+    else if (plotloc == L_PLOT_AT_MID_VERT || plotloc == L_PLOT_AT_MID_HORIZ)
+        refpos = size / 2;
+    else  /* L_PLOT_AT_RIGHT || L_PLOT_AT_BOT */
+        refpos = size - max - 1;
+
+    return makePlotPtaFromNumaGen(na, orient, linewidth, refpos, max, 1);
+}
+
+
+/*!
+ *  pixRenderPlotFromNumaGen()
+ *
+ *      Input:  &pix (any type; replaced if not 32 bpp rgb)
+ *              numa (to be plotted)
+ *              orient (L_HORIZONTAL_LINE, L_VERTICAL_LINE)
+ *              linewidth (width of "line" that is drawn; between 1 and 7)
+ *              refpos (reference position: y for horizontal and x for vertical)
+ *              max (maximum excursion in pixels from baseline)
+ *              drawref (1 to draw the reference line and the normal to it)
+ *              color (plot color: 0xrrggbb00)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) General interface for plotting row or column aligned data
+ *          on a pix.
+ *      (2) This replaces @pix with a 32 bpp rgb version if it is not
+ *          already 32 bpp.  It then draws the plot on the pix.
+ *      (3) See makePlotPtaFromNumaGen() for other input parameters.
+ */
+l_int32
+pixRenderPlotFromNumaGen(PIX     **ppix,
+                         NUMA     *na,
+                         l_int32   orient,
+                         l_int32   linewidth,
+                         l_int32   refpos,
+                         l_int32   max,
+                         l_int32   drawref,
+                         l_uint32  color)
+{
+l_int32  rval, gval, bval;
+PIX     *pix1;
+PTA     *pta;
+
+    PROCNAME("pixRenderPlotFromNumaGen");
+
+    if (!ppix)
+        return ERROR_INT("&pix not defined", procName, 1);
+    if (*ppix == NULL)
+        return ERROR_INT("pix not defined", procName, 1);
+
+    pta = makePlotPtaFromNumaGen(na, orient, linewidth, refpos, max, drawref);
+    if (!pta)
+        return ERROR_INT("pta not made", procName, 1);
+
+    if (pixGetDepth(*ppix) != 32) {
+        pix1 = pixConvertTo32(*ppix);
+        pixDestroy(ppix);
+        *ppix = pix1;
+    }
+    extractRGBValues(color, &rval, &gval, &bval);
+    pixRenderPtaArb(*ppix, pta, rval, gval, bval);
+    ptaDestroy(&pta);
+    return 0;
+}
+
+
+/*!
+ *  makePlotPtaFromNumaGen()
  *
  *      Input:  numa
  *              orient (L_HORIZONTAL_LINE, L_VERTICAL_LINE)
- *              width (width of "line" that is drawn; between 1 and 7)
+ *              linewidth (width of "line" that is drawn; between 1 and 7)
  *              refpos (reference position: y for horizontal and x for vertical)
  *              max (maximum excursion in pixels from baseline)
  *              drawref (1 to draw the reference line and the normal to it)
  *      Return: ptad, or null on error
  *
  *  Notes:
- *      (1) This generates points from a numa representing y(x) or x(y)
+ *      (1) This generates points from @numa representing y(x) or x(y)
  *          with respect to a pix.  For y(x), we draw a horizontal line
  *          at the reference position and a vertical line at the edge; then
- *          we draw the values of the numa, scaled so that the maximum
+ *          we draw the values of @numa, scaled so that the maximum
  *          excursion from the reference position is @max pixels.
- *      (2) The width is chosen in the interval [1 ... 7].
- *      (3) @refpos should be chosen so the plot is entirely within the pix
+ *      (2) The start and delx parameters of @numa are used to refer
+ *          its values to the raster lines (L_VERTICAL_LINE) or columns
+ *          (L_HORIZONTAL_LINE).
+ *      (3) The linewidth is chosen in the interval [1 ... 7].
+ *      (4) @refpos should be chosen so the plot is entirely within the pix
  *          that it will be painted onto.
- *      (4) This would typically be used to plot, in place, a function
- *          computed along pixels rows or columns.
+ *      (5) This would typically be used to plot, in place, a function
+ *          computed along pixel rows or columns.
  */
 PTA *
-generatePlotPtaFromNuma(NUMA    *na,
-                        l_int32  orient,
-                        l_int32  width,
-                        l_int32  refpos,
-                        l_int32  max,
-                        l_int32  drawref)
+makePlotPtaFromNumaGen(NUMA    *na,
+                       l_int32  orient,
+                       l_int32  linewidth,
+                       l_int32  refpos,
+                       l_int32  max,
+                       l_int32  drawref)
 {
 l_int32    i, n, maxw, maxh;
 l_float32  minval, maxval, absval, val, scale, start, del;
 PTA       *pta1, *pta2, *ptad;
 
-    PROCNAME("generatePlotPtaFromNuma");
+    PROCNAME("makePlotPtaFromNumaGen");
 
     if (!na)
         return (PTA *)ERROR_PTR("na not defined", procName, NULL);
     if (orient != L_HORIZONTAL_LINE && orient != L_VERTICAL_LINE)
         return (PTA *)ERROR_PTR("invalid orient", procName, NULL);
-    if (width < 1) {
-        L_WARNING("width < 1; setting to 1\n", procName);
-        width = 1;
+    if (linewidth < 1) {
+        L_WARNING("linewidth < 1; setting to 1\n", procName);
+        linewidth = 1;
     }
-    if (width > 7) {
-        L_WARNING("width > 7; setting to 7\n", procName);
-        width = 7;
+    if (linewidth > 7) {
+        L_WARNING("linewidth > 7; setting to 7\n", procName);
+        linewidth = 7;
     }
 
     numaGetMin(na, &minval, NULL);
@@ -906,23 +1087,25 @@ PTA       *pta1, *pta2, *ptad;
         numaGetFValue(na, i, &val);
         if (orient == L_HORIZONTAL_LINE) {
             ptaAddPt(pta1, start + i * del, refpos + scale * val);
-            maxw = start + n * del + width;
-            maxh = refpos + max + width;
+            maxw = (del >= 0) ? start + n * del + linewidth
+                              : start + linewidth;
+            maxh = refpos + max + linewidth;
         } else {  /* vertical line */
             ptaAddPt(pta1, refpos + scale * val, start + i * del);
-            maxw = refpos + max + width;
-            maxh = start + n * del + width;
+            maxw = refpos + max + linewidth;
+            maxh = (del >= 0) ? start + n * del + linewidth
+                              : start + linewidth;
         }
     }
 
         /* Optionally, widen the plot */
-    if (width > 1) {
-        if (width % 2 == 0)  /* even width; use side of a square */
-            pta2 = generatePtaFilledSquare(width);
-        else  /* odd width; use radius of a circle */
-            pta2 = generatePtaFilledCircle(width / 2);
-        ptad = ptaReplicatePattern(pta1, NULL, pta2, width / 2, width / 2,
-                                   maxw, maxh);
+    if (linewidth > 1) {
+        if (linewidth % 2 == 0)  /* even linewidth; use side of a square */
+            pta2 = generatePtaFilledSquare(linewidth);
+        else  /* odd linewidth; use radius of a circle */
+            pta2 = generatePtaFilledCircle(linewidth / 2);
+        ptad = ptaReplicatePattern(pta1, NULL, pta2, linewidth / 2,
+                                   linewidth / 2, maxw, maxh);
         ptaDestroy(&pta2);
     } else {
         ptad = ptaClone(pta1);
@@ -2022,7 +2205,7 @@ PIX      *pixd;
         return (PIX *)ERROR_PTR("pix not defined", procName, NULL);
     if (!ptaa)
         return (PIX *)ERROR_PTR("ptaa not defined", procName, NULL);
-    if (width < 1) {
+    if (polyflag != 0 && width < 1) {
         L_WARNING("width < 1; setting to 1\n", procName);
         width = 1;
     }

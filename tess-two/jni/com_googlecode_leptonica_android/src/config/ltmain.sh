@@ -5800,11 +5800,6 @@ func_mode_link ()
 	arg=$func_stripname_result
 	;;
 
-      -Wl,--as-needed|-Wl,--no-as-needed)
-	deplibs="$deplibs $arg"
-	continue
-	;;
-
       -Wl,*)
 	func_stripname '-Wl,' '' "$arg"
 	args=$func_stripname_result
@@ -6168,15 +6163,6 @@ func_mode_link ()
 	lib=
 	found=no
 	case $deplib in
-	-Wl,--as-needed|-Wl,--no-as-needed)
-	  if test "$linkmode,$pass" = "prog,link"; then
-	    compile_deplibs="$deplib $compile_deplibs"
-	    finalize_deplibs="$deplib $finalize_deplibs"
-	  else
-	    deplibs="$deplib $deplibs"
-	  fi
-	  continue
-	  ;;
 	-mt|-mthreads|-kthread|-Kthread|-pthread|-pthreads|--thread-safe \
         |-threads|-fopenmp|-openmp|-mp|-xopenmp|-omp|-qsmp=*)
 	  if test "$linkmode,$pass" = "prog,link"; then

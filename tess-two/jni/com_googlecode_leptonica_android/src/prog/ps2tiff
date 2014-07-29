@@ -9,6 +9,8 @@
 #     output: ccitt-g4 compressed tiff binary files for each page
 #
 #     Restriction: the input PostScript file must be binary
+#
+#   N.B. Requires ghostscript
 
 scriptname=${0##*/}
 
@@ -28,10 +30,11 @@ then
   exit -1
 fi
 
-# choice: output image size depending on resolution
-echo "0 neg 0 neg" translate | gs -sDEVICE=tiffg4 -sOutputFile=${outtifroot}%03d.tif -r300x300 -q - ${inpsfile}
+# output image size depending on resolution
+#echo "0 neg 0 neg" translate | gs -sDEVICE=tiffg4 -sOutputFile=${outtifroot}%03d.tif -r300x300 -q - ${inpsfile}
+echo "0 neg 0 neg" translate | ~/pckg/gs/ghostscript-8.53/bin/gs -sDEVICE=tiffg4 -sOutputFile=${outtifroot}%03d.tif -r300x300 -q - ${inpsfile}
 
-# choice: output fixed image size
+# output fixed image size
 #echo "0 neg 0 neg" translate | gs -sDEVICE=tiffg4 -sOutputFile=${outtifroot}%03d.tif -g2550x3300 -r300x300 -q - ${inpsfile}
 
 # use this to output to a single multipage tiff file

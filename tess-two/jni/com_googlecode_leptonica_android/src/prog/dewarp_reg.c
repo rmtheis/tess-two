@@ -126,11 +126,11 @@ L_REGPARAMS  *rp;
 
         /* Write and read back minimized dewarp struct */
     dewarpMinimize(dew1);
-    dewarpWrite("/tmp/dewarp.6.dew", dew1);
-    regTestCheckFile(rp, "/tmp/dewarp.6.dew");  /* 6 */
-    dew2 = dewarpRead("/tmp/dewarp.6.dew");
-    dewarpWrite("/tmp/dewarp.7.dew", dew2);
-    regTestCheckFile(rp, "/tmp/dewarp.7.dew");  /* 7 */
+    dewarpWrite("/tmp/regout/dewarp.6.dew", dew1);
+    regTestCheckFile(rp, "/tmp/regout/dewarp.6.dew");  /* 6 */
+    dew2 = dewarpRead("/tmp/regout/dewarp.6.dew");
+    dewarpWrite("/tmp/regout/dewarp.7.dew", dew2);
+    regTestCheckFile(rp, "/tmp/regout/dewarp.7.dew");  /* 7 */
     regTestCompareFiles(rp, 6, 7);  /* 8 */
 
         /* Apply this minimized dew to page 3 in a new dewa */
@@ -155,11 +155,11 @@ L_REGPARAMS  *rp;
 
         /* Test a few of the fpix functions */
     fpix1 = fpixClone(dew2->sampvdispar);
-    fpixWrite("/tmp/dewarp.12.fpix", fpix1);
-    regTestCheckFile(rp, "/tmp/dewarp.12.fpix");  /* 12 */
-    fpix2 = fpixRead("/tmp/dewarp.12.fpix");
-    fpixWrite("/tmp/dewarp.13.fpix", fpix2);
-    regTestCheckFile(rp, "/tmp/dewarp.13.fpix");  /* 13 */
+    fpixWrite("/tmp/regout/dewarp.12.fpix", fpix1);
+    regTestCheckFile(rp, "/tmp/regout/dewarp.12.fpix");  /* 12 */
+    fpix2 = fpixRead("/tmp/regout/dewarp.12.fpix");
+    fpixWrite("/tmp/regout/dewarp.13.fpix", fpix2);
+    regTestCheckFile(rp, "/tmp/regout/dewarp.13.fpix");  /* 13 */
     regTestCompareFiles(rp, 12, 13);  /* 14 */
     fpix3 = fpixScaleByInteger(fpix2, 30);
     pix1 = fpixRenderContours(fpix3, 2.0, 0.2);
@@ -173,11 +173,11 @@ L_REGPARAMS  *rp;
          * 15 with 19, because of a tiny difference due to float roundoff,
          * so we do an approximate comparison on the images. */
     dpix1 = fpixConvertToDPix(dew2->sampvdispar);
-    dpixWrite("/tmp/dewarp.16.dpix", dpix1);
-    regTestCheckFile(rp, "/tmp/dewarp.16.dpix");  /* 16 */
-    dpix2 = dpixRead("/tmp/dewarp.16.dpix");
-    dpixWrite("/tmp/dewarp.17.dpix", dpix2);
-    regTestCheckFile(rp, "/tmp/dewarp.17.dpix");  /* 17 */
+    dpixWrite("/tmp/regout/dewarp.16.dpix", dpix1);
+    regTestCheckFile(rp, "/tmp/regout/dewarp.16.dpix");  /* 16 */
+    dpix2 = dpixRead("/tmp/regout/dewarp.16.dpix");
+    dpixWrite("/tmp/regout/dewarp.17.dpix", dpix2);
+    regTestCheckFile(rp, "/tmp/regout/dewarp.17.dpix");  /* 17 */
     regTestCompareFiles(rp, 16, 17);  /* 18 */
     dpix3 = dpixScaleByInteger(dpix2, 30);
     fpix3 = dpixConvertToFPix(dpix3);

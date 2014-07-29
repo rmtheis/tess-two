@@ -29,6 +29,24 @@
  *
  *    Demonstrates the effect of the fg threshold on adaptive mapping
  *    and cleaning for images with dark and variable background.
+ *
+ *    The example pages are text and image.  For both, because the
+ *    background is both dark and variable, using a lower threshold
+ *    gives much better results.
+ *
+ *    For text, cleaning the background to white after adaptively
+ *    remapping to make the background uniform is preferable.
+ *    The final cleaning step uses pixGammaTRC() where the white value
+ *    (here, 180) is set below the remapped gray value (here, 200).
+ *
+ *    For the image, however, it is best to stop after remapping
+ *    the background.  Going further and moving pixels near the
+ *    background color to white removes the details in the lighter
+ *    regions of the image.  In practice, parts of a scanned page
+ *    that are image (as opposed to text) don't necessarily have
+ *    background pixels that should be white.  These regions can be
+ *    protected by masks from operations, such as pixGammaTRC(),
+ *    where the white value is less than 255.
  */
 
 #include "string.h"
@@ -39,18 +57,16 @@ void GenCleans(const char *fname, l_int32  *pindex, l_int32 thresh, L_BMF *bmf);
 l_int32 main(int    argc,
              char **argv)
 {
-l_int32    index;
-BOX       *box, *box1, *box2;
-PIX       *pix, *pix1, *pix2, *pix3, *pix4, *pix5, *pix6, *pix7, *pix8, *pix9;
-PIXA      *pixa;
-L_BMF     *bmf;
+l_int32  index;
+L_BMF   *bmf;
 
-    PROCNAME("adaptthresh");
+    PROCNAME("adaptmap_dark");
 
     bmf = bmfCreate("fonts", 10);
     index = 0;
-    lept_rmdir("adapt");
-    lept_mkdir("adapt");
+    lept_mkdir("lept");
+
+        /* Using a variety of different thresholds */
     GenCleans("cavalerie.29.jpg", &index, 80, bmf);
     GenCleans("cavalerie.29.jpg", &index, 60, bmf);
     GenCleans("cavalerie.29.jpg", &index, 40, bmf);
@@ -58,13 +74,16 @@ L_BMF     *bmf;
     GenCleans("cavalerie.11.jpg", &index, 60, bmf);
     GenCleans("cavalerie.11.jpg", &index, 40, bmf);
 
-    lept_rmdir("adapt2");
-    lept_mkdir("adapt2");
-    convertToNUpFiles("/tmp/adapt", ".jpg", 2, 1, 1.0, 6, 2, "adapt2");
+        /* Write the nup files in /tmp/adapt2 */
+    convertToNUpFiles("/tmp/lept", "adapt_", 2, 1, 500, 6, 2, NULL, "adapt2");
 
-    convertFilesToPdf("/tmp/adapt2", ".jpg", 100, 1.0, L_JPEG_ENCODE,
-                      75, "Adaptive cleaning", "/tmp/adapt_cleaning.pdf");
+        /* Gather up into a pdf */
+    L_INFO("Writing to /tmp/lept/adapt_cleaning.pdf\n", procName);
+    convertFilesToPdf("/tmp/lept", "adapt_", 100, 1.0, L_JPEG_ENCODE,
+                      75, "Adaptive cleaning", "/tmp/lept/adapt_cleaning.pdf");
+
     bmfDestroy(&bmf);
+    lept_rmdir("adapt2");
     return 0;
 }
 
@@ -82,20 +101,20 @@ PIX     *pix1, *pix2, *pix3, *pix4, *pix5;
     whiteval = 180;
     index = *pindex;
     pix1 = pixRead(fname);
-    snprintf(buf, sizeof(buf), "/tmp/adapt/%03d.jpg", index++);
+    snprintf(buf, sizeof(buf), "/tmp/lept/adapt_%03d.jpg", index++);
     pixWrite(buf, pix1, IFF_JFIF_JPEG);
 
     pix2 = pixBackgroundNorm(pix1, NULL, NULL, 10, 15, thresh, 25, 200, 2, 1);
     snprintf(buf, sizeof(buf), "Norm color: fg thresh = %d", thresh);
     fprintf(stderr, "%s\n", buf);
     pix3 = pixAddSingleTextline(pix2, bmf, buf, 0x00ff0000, L_ADD_BELOW);
-    snprintf(buf, sizeof(buf), "/tmp/adapt/%03d.jpg", index++);
+    snprintf(buf, sizeof(buf), "/tmp/lept/adapt_%03d.jpg", index++);
     pixWrite(buf, pix3, IFF_JFIF_JPEG);
     pixDestroy(&pix3);
     pix3 = pixGammaTRC(NULL, pix2, 1.0, blackval, whiteval);
     snprintf(buf, sizeof(buf), "Clean color: fg thresh = %d", thresh);
     pix4 = pixAddSingleTextblock(pix3, bmf, buf, 0x00ff0000, L_ADD_BELOW, NULL);
-    snprintf(buf, sizeof(buf), "/tmp/adapt/%03d.jpg", index++);
+    snprintf(buf, sizeof(buf), "/tmp/lept/adapt_%03d.jpg", index++);
     pixWrite(buf, pix4, IFF_JFIF_JPEG);
     pixDestroy(&pix2);
     pixDestroy(&pix3);
@@ -106,7 +125,7 @@ PIX     *pix1, *pix2, *pix3, *pix4, *pix5;
     pix4 = pixGammaTRC(NULL, pix3, 1.0, blackval, whiteval);
     snprintf(buf, sizeof(buf), "Clean gray: fg thresh = %d", thresh);
     pix5 = pixAddSingleTextblock(pix4, bmf, buf, 0x00ff0000, L_ADD_BELOW, NULL);
-    snprintf(buf, sizeof(buf), "/tmp/adapt/%03d.jpg", index++);
+    snprintf(buf, sizeof(buf), "/tmp/lept/adapt_%03d.jpg", index++);
     pixWrite(buf, pix5, IFF_JFIF_JPEG);
     pixDestroy(&pix2);
     pixDestroy(&pix3);

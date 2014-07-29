@@ -36,7 +36,6 @@ int main(int    argc,
 l_int32      i;
 PIX         *pixs, *pixt1, *pixt2, *pixt3, *pixd;
 PIXA        *pixa;
-static char  mainName[] = "livre_seedgen";
 
     pixs = pixRead("pageseg2.tif");
 

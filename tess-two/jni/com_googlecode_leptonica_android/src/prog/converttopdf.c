@@ -34,13 +34,13 @@
  *      jpeg     ==>  DCT (not transcoded)
  *      jp2k     ==>  JPX (not transcoded)
  *      tiff-g4  ==>  G4
- *      other    ==> FLATE
+ *      png      ==>  FLATE (not transcoded)
  *    The default resolution is set at 300 ppi if not given in the
  *    individual images, and the images are wrapped at full resolution.
  *    No title is attached.
  *
  *    This is meant for the simplest set of input arguments.  It is
- *    very fast for jpeg and jp2k.
+ *    very fast for jpeg, jp2k and png.
  *    The syntax for using all files in the directory is:
  *         convertopdf <pdf_outfile>
  *    The syntax using some substring to be matched in the file names is:

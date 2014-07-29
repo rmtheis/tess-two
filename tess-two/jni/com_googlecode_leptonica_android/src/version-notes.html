@@ -22,7 +22,38 @@ They are <i>not</i> a complete listing of the modifications.
 
 <pre>
 
-1.70   24 Jan 14   (distribution to debian; ubuntu 14-04; 4.0.0)
+1.71   18 Jun 14
+       This version supports tesseract 3.0.4.  In particular, 3.0.4
+        has automatic conversion of a set of scanned images, either in a
+        directory or coming directly from a scanner, into pdf with injected
+        text.  This is something we've wanted to do for several years!
+       Improved jp2k header reading, including resolution.
+       Removed src files: rotateorthlow.c, pdfio.c, pdfiostub.c
+       Renamed jp2kio.c, jp2kiostub.c ==> jp2kheader.c, jp2kheaderstub.c.
+        These header reading functions parse the jp2k files, and
+        don't require a jpeg2000 library.
+       New jp2kio.c, jp2kiostub.c, that uses openjpeg-2.X to read
+       and write jp2k.  We now support I/O from these formats:
+         png, tiff, jpeg, bmp, pnm, webp, gif and jp2k
+        as well as writing to PostScript and pdf.
+       New pdfio1.c, pdfio1stub.c, pdfio2.c pdfio2stub.c, where we've
+        split functions into high and low level.
+       Fixed memory bug in bilateral.c
+       Improved reading/write of binary data from file.  For example,
+        l_binaryReadStream() can now be used to capture data piped
+        in via stdin.
+       Font directory now arg passed in everywhere (not hardcoded)
+       Don't write temporary files to /tmp; only to a small number of
+       subdirectories, to avoid spamming the /tmp directory.  E.g.,
+       for regression tests, the current output is now to /tmp/regout/.
+       For jpeg reading modify pixReadJpeg() to take as a hint
+        a bit flag that allows extraction of only the luminance channel.
+       Allow wrapping of pdf objects from png images without transcoding
+        (thanks to Jeff Breidenbach)
+       Better support for alpha on read/write with png, including
+       1 bpp with colormap, alpha (supported in png with transparency array)
+
+1.70   3 Feb 14   (distribution to debian; ubuntu 14-04; 4.1.0)
        New bilateral filtering.
        New simple character recognition utility.
        Improved dewarping functionality, in model building and rendering.

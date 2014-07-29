@@ -714,7 +714,7 @@ RGBA_QUAD  *cta;
  *      Return: 0 if OK, 1 if not accessable (caller should check)
  *
  *  Notes:
- *      (1) The returned alpha channel value is 0.
+ *      (1) The returned alpha channel value is 255.
  */
 l_int32
 pixcmapGetColor32(PIXCMAP   *cmap,
@@ -731,7 +731,7 @@ l_int32  rval, gval, bval;
 
     if (pixcmapGetColor(cmap, index, &rval, &gval, &bval) != 0)
         return ERROR_INT("rgb values not found", procName, 1);
-    composeRGBPixel(rval, gval, bval, pval32);
+    composeRGBAPixel(rval, gval, bval, 255, pval32);
     return 0;
 }
 
@@ -871,7 +871,9 @@ RGBA_QUAD  *cta;
 
     cta = (RGBA_QUAD *)cmap->array;
     for (i = 0; i < n; i++) {
-        if (rval == cta[i].red && gval == cta[i].green && bval == cta[i].blue) {
+        if (rval == cta[i].red &&
+            gval == cta[i].green &&
+            bval == cta[i].blue) {
             *pindex = i;
             return 0;
         }

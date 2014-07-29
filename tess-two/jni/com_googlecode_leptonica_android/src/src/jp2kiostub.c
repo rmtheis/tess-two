@@ -32,31 +32,63 @@
 
 #include "allheaders.h"
 
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif  /* HAVE_CONFIG_H */
+
 /* --------------------------------------------*/
-#if  !USE_JP2KIO   /* defined in environ.h */
+#if  !HAVE_LIBJP2K   /* defined in environ.h */
 /* --------------------------------------------*/
 
-l_int32 readHeaderJp2k(const char *filename, l_int32 *pw, l_int32 *ph,
-                       l_int32 *pspp)
+/* ----------------------------------------------------------------------*/
+
+PIX * pixReadJp2k(const char *filename, l_uint32 reduction, BOX *box,
+                  l_int32 hint)
 {
-    return ERROR_INT("function not present", "readHeaderJp2k", 1);
+    return (PIX * )ERROR_PTR("function not present", "pixReadJp2k", NULL);
 }
 
 /* ----------------------------------------------------------------------*/
 
-l_int32 freadHeaderJp2k(FILE *fp, l_int32 *pw, l_int32 *ph, l_int32 *pspp)
+PIX * pixReadStreamJp2k(FILE *fp, l_uint32 reduction, BOX *box, l_int32 hint)
 {
-    return ERROR_INT("function not present", "freadHeaderJp2k", 1);
+    return (PIX * )ERROR_PTR("function not present", "pixReadStreamJp2k", NULL);
 }
 
 /* ----------------------------------------------------------------------*/
 
-l_int32 sreadHeaderJp2k(const l_uint8 *cdata, size_t size, l_int32 *pw,
-                        l_int32 *ph, l_int32 *pspp)
+l_int32 pixWriteJp2k(const char *filename, PIX *pix, l_int32 quality,
+                     l_int32 nlevels, l_int32 hint)
 {
-    return ERROR_INT("function not present", "sreadHeaderJp2k", 1);
+    return ERROR_INT("function not present", "pixWriteJp2k", 1);
 }
 
+/* ----------------------------------------------------------------------*/
+
+l_int32 pixWriteStreamJp2k(FILE *fp, PIX *pix, l_int32 quality,
+                           l_int32 nlevels, l_int32 hint)
+{
+    return ERROR_INT("function not present", "pixWriteStreamJp2k", 1);
+}
+
+/* ----------------------------------------------------------------------*/
+
+PIX * pixReadMemJp2k(const l_uint8 *data, size_t size, l_uint32 reduction,
+                     BOX *box, l_int32 hint)
+{
+    return (PIX * )ERROR_PTR("function not present", "pixReadMemJp2k", NULL);
+}
+
+/* ----------------------------------------------------------------------*/
+
+l_int32 pixWriteMemJp2k(l_uint8 **pdata, size_t *psize, PIX *pix,
+                        l_int32 quality, l_int32 nlevels, l_int32 hint)
+{
+    return ERROR_INT("function not present", "pixWriteMemJp2k", 1);
+}
+
+/* ----------------------------------------------------------------------*/
+
 /* --------------------------------------------*/
-#endif  /* !USE_JP2KIO */
+#endif  /* !HAVE_LIBJP2K */
 /* --------------------------------------------*/

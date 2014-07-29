@@ -115,6 +115,9 @@
  *      Removal of alpha component by blending with white background
  *           PIX        *pixRemoveAlpha()
  *
+ *      Addition of alpha component to 1 bpp
+ *           PIX        *pixAddAlphaTo1bpp()
+ *
  *      Lossless depth conversion (unpacking)
  *           PIX        *pixConvertLossless()
  *
@@ -275,16 +278,20 @@ pixRemoveColormapGeneral(PIX     *pixs,
  *      (4) For grayscale conversion from RGB, use a weighted average
  *          of RGB values, and always return an 8 bpp pix, regardless
  *          of whether the input pixs depth is 2, 4 or 8 bpp.
- *      (5) REMOVE_CMAP_BASED_ON_SRC and REMOVE_CMAP_TO_FULL_COLOR
- *          ignore the alpha components.  For 32-bit pixel output,
- *          the alpha byte is set to 0 and spp = 3.
+ *      (5) REMOVE_CMAP_TO_FULL_COLOR ignores the alpha component and
+ *          returns a 32 bpp pix with spp == 3 and the alpha bytes are 0.
+ *      (6) For REMOVE_CMAP_BASED_ON_SRC, if there is no color, this
+ *          returns either a 1 bpp or 8 bpp grayscale pix.
+ *          If there is color, this returns a 32 bpp pix, with either:
+ *           * 3 spp, if the alpha values are all 255 (opaque), or
+ *           * 4 spp (preserving the alpha), if any alpha values are not 255.
  */
 PIX *
 pixRemoveColormap(PIX     *pixs,
                   l_int32  type)
 {
 l_int32    sval, rval, gval, bval;
-l_int32    i, j, k, w, h, d, wpls, wpld, ncolors, count;
+l_int32    i, j, k, w, h, d, wpls, wpld, opaque, ncolors, count;
 l_int32    colorfound;
 l_int32   *rmap, *gmap, *bmap, *amap, *graymap;
 l_uint32  *datas, *lines, *datad, *lined, *lut;
@@ -322,14 +329,17 @@ PIX       *pixd;
 
     if (type == REMOVE_CMAP_BASED_ON_SRC) {
             /* select output type depending on colormap */
+        pixcmapIsOpaque(cmap, &opaque);
         pixcmapHasColor(cmap, &colorfound);
-        if (!colorfound) {
+        if (!opaque) {  /* save the alpha */
+            type = REMOVE_CMAP_WITH_ALPHA;
+        } else if (colorfound) {
+            type = REMOVE_CMAP_TO_FULL_COLOR;
+        } else {  /* opaque and no color */
             if (d == 1)
                 type = REMOVE_CMAP_TO_BINARY;
             else
                 type = REMOVE_CMAP_TO_GRAYSCALE;
-        } else {
-            type = REMOVE_CMAP_TO_FULL_COLOR;
         }
     }
 
@@ -802,18 +812,18 @@ PIX       *pixd;
  *  pixConvertRGBToGrayMinMax()
  *
  *      Input:  pix (32 bpp RGB)
- *              type (L_CHOOSE_MIN or L_CHOOSE_MAX)
+ *              type (L_CHOOSE_MIN, L_CHOOSE_MAX or L_CHOOSE_MAX_MIN_DIFF)
  *      Return: 8 bpp pix, or null on error
  *
  *  Notes:
- *      (1) This chooses either the min or the max of the three
- *          RGB sample values.
+ *      (1) This chooses the min, the max, or the difference between
+ *          the max and the min, of the three RGB sample values.
  */
 PIX *
 pixConvertRGBToGrayMinMax(PIX     *pixs,
                           l_int32  type)
 {
-l_int32    i, j, w, h, wpls, wpld, rval, gval, bval, val;
+l_int32    i, j, w, h, wpls, wpld, rval, gval, bval, val, minval, maxval;
 l_uint32  *datas, *lines, *datad, *lined;
 PIX       *pixd;
 
@@ -823,7 +833,8 @@ PIX       *pixd;
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
     if (pixGetDepth(pixs) != 32)
         return (PIX *)ERROR_PTR("pixs not 32 bpp", procName, NULL);
-    if (type != L_CHOOSE_MIN && type != L_CHOOSE_MAX)
+    if (type != L_CHOOSE_MIN && type != L_CHOOSE_MAX &&
+        type != L_CHOOSE_MAX_MIN_DIFF)
         return (PIX *)ERROR_PTR("invalid type", procName, NULL);
 
     pixGetDimensions(pixs, &w, &h, NULL);
@@ -843,9 +854,15 @@ PIX       *pixd;
             if (type == L_CHOOSE_MIN) {
                 val = L_MIN(rval, gval);
                 val = L_MIN(val, bval);
-            } else {  /* type == L_CHOOSE_MAX */
+            } else if (type == L_CHOOSE_MAX) {
                 val = L_MAX(rval, gval);
                 val = L_MAX(val, bval);
+            } else {  /* L_CHOOSE_MAX_MIN_DIFF */
+                minval = L_MIN(rval, gval);
+                minval = L_MIN(minval, bval);
+                maxval = L_MAX(rval, gval);
+                maxval = L_MAX(maxval, bval);
+                val = maxval - minval;
             }
             SET_DATA_BYTE(lined, j, val);
         }
@@ -1268,9 +1285,9 @@ PIX     *pixd;
  *          If the image is essentially grayscale, the pixels are
  *          either 4 or 8 bpp, depending on the size of the required
  *          colormap.
- *      (3) @octlevel = 3 works well for most images.  However, for best
- *          quality, at a cost of more colors in the colormap, use
- *          @octlevel = 4.
+ *      (3) @octlevel = 4 generates a larger colormap and larger
+ *          compressed image than @octlevel = 3.  If image quality is
+ *          important, you should use @octlevel = 4.
  *      (4) If the image already has a colormap, it returns a clone.
  */
 l_int32
@@ -2955,6 +2972,48 @@ pixRemoveAlpha(PIX *pixs)
         return pixAlphaBlendUniform(pixs, 0xffffff00);
     else
         return pixClone(pixs);
+}
+
+
+/*---------------------------------------------------------------------------*
+ *                  Addition of alpha component to 1 bpp                     *
+ *---------------------------------------------------------------------------*/
+/*!
+ *  pixAddAlphaTo1bpp()
+ *
+ *      Input:  pixd (<optional> 1 bpp, can be null or equal to pixs
+ *              pixs (1 bpp)
+ *      Return: pixd (1 bpp with colormap and non-opaque alpha),
+ *                    or null on error
+ *
+ *  Notes:
+ *      (1) We don't use 1 bpp colormapped images with alpha in leptonica,
+ *          but we support generating them (here), writing to png, and reading
+ *          the png.  On reading, they are converted to 32 bpp RGBA.
+ *      (2) The background pixels in pixs become fully transparent, and the
+ *          foreground pixels are fully opaque.  Thus, this is a compact
+ *          1 bpp representation of a stencil, to paint over pixels of
+ *          a backing image that are masked by the foreground in pixs.
+ */
+PIX *
+pixAddAlphaTo1bpp(PIX  *pixd,
+                  PIX  *pixs)
+{
+PIXCMAP  *cmap;
+
+    PROCNAME("pixAddAlphaTo1bpp");
+
+    if (!pixs || (pixGetDepth(pixs) != 1))
+        return (PIX *)ERROR_PTR("pixs undefined or not 1 bpp", procName, NULL);
+    if (pixd && (pixd != pixs))
+        return (PIX *)ERROR_PTR("pixd defined but != pixs", procName, NULL);
+
+    pixd = pixInvert(pixd, pixs);
+    cmap = pixcmapCreate(1);
+    pixSetColormap(pixd, cmap);
+    pixcmapAddRGBA(cmap, 0, 0, 0, 255);  /* black, fully opaque */
+    pixcmapAddRGBA(cmap, 255, 255, 255, 0);  /* white, fully transparent */
+    return pixd;
 }
 
 

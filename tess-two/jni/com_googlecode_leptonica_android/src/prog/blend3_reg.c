@@ -82,7 +82,7 @@ L_REGPARAMS  *rp;
     pixDisplayWithTitle(pixt, 0, 1000, NULL, rp->display);
 
     pixd = pixaDisplayTiledInRows(pixa, 32, 1800, 1.0, 0, 20, 2);
-    pixWrite("/tmp/blendall.jpg", pixd, IFF_JFIF_JPEG);
+    pixWrite("/tmp/regout/blendall.jpg", pixd, IFF_JFIF_JPEG);
     pixaDestroy(&pixa);
     pixDestroy(&pixd);
 

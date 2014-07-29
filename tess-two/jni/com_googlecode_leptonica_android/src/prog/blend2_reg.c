@@ -55,7 +55,7 @@ PIXA    *pixa;
     pixGetDimensions(pixs2, &w2, &h2, NULL);
     h = L_MIN(h1, h2);
     w = L_MIN(w1, w2);
-    box1 = boxCreate(0, 0, w1, h1);
+    box1 = boxCreate(0, 0, w, h);
     box2 = boxCreate(0, 300, 660, 500);
     pix1 = pixClipRectangle(pixs1, box1, NULL);
     pix2 = pixClipRectangle(pixs2, box2, NULL);

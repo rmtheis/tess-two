@@ -39,7 +39,7 @@ int main(int    argc,
 {
 char        *text;
 l_int32      w, h, d, wpl, count, npages, color;
-l_int32      format, bps, spp, iscmap;
+l_int32      format, bps, spp, iscmap, xres, yres;
 FILE        *fp;
 PIX         *pix, *pixt;
 PIXCMAP     *cmap;
@@ -65,7 +65,13 @@ static char  mainName[] = "fileinfo";
             w, h, bps, spp, iscmap);
 
     findFileFormat(filein, &format);
-    if (format == IFF_JP2) return 0;
+    if (format == IFF_JP2) {
+        fp = lept_fopen(filein, "rb");
+        fgetJp2kResolution(fp, &xres, &yres);
+        fclose(fp);
+        fprintf(stderr, "  xres = %d, yres = %d\n", xres, yres);
+        return 0;
+    }
 
         /* Read the full image */
     if ((pix = pixRead(filein)) == NULL)

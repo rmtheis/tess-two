@@ -55,7 +55,7 @@ int main(int    argc,
 l_int32    i, j, k, w, h, w2, w4, w8, w16, w32, wpl, nerrors;
 l_int32    count1, count2, count3, ret, val1, val2;
 l_uint32   val32;
-l_uint32  *data, *line, *line2, *data1, *data2;
+l_uint32  *data, *line, *line2, *data2;
 void     **lines1, **linet1, **linet2;
 PIX       *pixs, *pixt1, *pixt2;
 
@@ -107,7 +107,6 @@ PIX       *pixs, *pixt1, *pixt2;
             stopTimer(), count3);
 
     pixt1 = pixCreateTemplate(pixs);
-    data1 = pixGetData(pixt1);
     linet1 = pixGetLinePtrs(pixt1, NULL);
     pixt2 = pixCreateTemplate(pixs);
     data2 = pixGetData(pixt2);
