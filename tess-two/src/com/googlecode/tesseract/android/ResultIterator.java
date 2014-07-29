@@ -61,6 +61,11 @@ public class ResultIterator extends PageIterator {
         return nativeConfidence(mNativeResultIterator, level);
     }
 
+    public boolean next(int level) {
+        return nativeNext(mNativeResultIterator, level);
+    }
+
     private static native String nativeGetUTF8Text(int nativeResultIterator, int level);
     private static native float nativeConfidence(int nativeResultIterator, int level);
+    private static native boolean nativeNext(int nativeIterator, int level);
 }
