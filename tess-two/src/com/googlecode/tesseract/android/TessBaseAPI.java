@@ -437,6 +437,16 @@ public class TessBaseAPI {
     }
 
     /**
+     * Return a copy of the internal thresholded image from Tesseract.
+     * Only available after setImage.
+     * 
+     * @return Pix containing the thresholded image
+     */
+    public Pix getThresholdedImage() {
+        return new Pix(nativeGetThresholdedImage());
+    }
+    
+    /**
      * Returns the result of page layout analysis as a Pixa, in reading order.
      * 
      * @return Pixa contaning page layout bounding boxes
@@ -583,6 +593,8 @@ public class TessBaseAPI {
     private native void nativeSetDebug(boolean debug);
 
     private native void nativeSetPageSegMode(int mode);
+    
+    private native int nativeGetThresholdedImage();
     
     private native int nativeGetRegions();
 
