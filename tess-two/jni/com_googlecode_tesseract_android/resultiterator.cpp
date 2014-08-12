@@ -56,6 +56,14 @@ jboolean Java_com_googlecode_tesseract_android_ResultIterator_nativeNext(JNIEnv 
   return resultIterator->Next(enumLevel) ? JNI_TRUE : JNI_FALSE;
 }
 
+void Java_com_googlecode_tesseract_android_ResultIterator_nativeDelete(JNIEnv *env, jclass clazz,
+    jint nativeResultIterator) {
+  ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
+  if (resultIterator != 0) {
+    delete resultIterator;
+  }
+  return JNI_TRUE;
+}
 
 #ifdef __cplusplus
 }

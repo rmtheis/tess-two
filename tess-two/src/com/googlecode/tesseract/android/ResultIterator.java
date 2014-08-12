@@ -61,11 +61,35 @@ public class ResultIterator extends PageIterator {
         return nativeConfidence(mNativeResultIterator, level);
     }
 
+    /**
+     * Moves to the start of the next object at the given level in the
+     * page hierarchy in the appropriate reading order and returns false if
+     * the end of the page was reached.
+     * NOTE that RIL_SYMBOL will skip non-text blocks, but all other
+     * PageIteratorLevel level values will visit each non-text block once.
+     * Think of non text blocks as containing a single para, with a single line,
+     * with a single imaginary word.
+     * Calls to Next with different levels may be freely intermixed.
+     * This function iterates words in right-to-left scripts correctly, if
+     * the appropriate language has been loaded into Tesseract.
+     *
+     * @param level the page iterator level. See {@link PageIteratorLevel}.
+     * @return
+     */
     public boolean next(int level) {
         return nativeNext(mNativeResultIterator, level);
+    }
+
+    /**
+     * Deletes the iterator after use
+     */
+    public void delete() {
+        nativeDelete( mNativeResultIterator );
+        return;
     }
 
     private static native String nativeGetUTF8Text(int nativeResultIterator, int level);
     private static native float nativeConfidence(int nativeResultIterator, int level);
     private static native boolean nativeNext(int nativeIterator, int level);
+    private static native void nativeDelete(int nativeIterator);
 }
