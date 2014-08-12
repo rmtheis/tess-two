@@ -359,6 +359,16 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetPageSegMode(JNIE
   nat->api.SetPageSegMode((tesseract::PageSegMode) mode);
 }
 
+jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetThresholdedImage(JNIEnv *env,
+                                                                                 jobject thiz) {
+
+  native_data_t *nat = get_native_data(env, thiz);
+
+  PIX *pix = nat->api.GetThresholdedImage();
+
+  return (jint) pix;
+}
+
 jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetRegions(JNIEnv *env,
                                                                         jobject thiz) {
 

@@ -42,6 +42,22 @@ jint Java_com_googlecode_leptonica_android_AdaptiveMap_nativeBackgroundNormMorph
   return (jint) pixd;
 }
 
+jint Java_com_googlecode_leptonica_android_AdaptiveMap_nativePixContrastNorm(JNIEnv *env,
+                                                                             jclass clazz,
+                                                                             jint nativePix,
+                                                                             jint sizeX,
+                                                                             jint sizeY,
+                                                                             jint minDiff,
+                                                                             jint smoothX,
+                                                                             jint smoothY) {
+
+  PIX *pixs = (PIX *) nativePix;
+  PIX *pixd = pixContrastNorm(NULL, pixs, (l_int32) sizeX, (l_int32) sizeY,
+                                     (l_int32) minDiff, (l_int32) smoothX, (l_int32) smoothY);
+
+  return (jint) pixd;
+}
+
 /************
  * Binarize *
  ************/

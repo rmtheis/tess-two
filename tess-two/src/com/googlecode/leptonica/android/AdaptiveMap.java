@@ -97,10 +97,63 @@ public class AdaptiveMap {
         return new Pix(nativePix);
     }
 
+    /**
+     * Adaptively attempts to expand the contrast to the full dynamic range in 
+     * each tile.
+     * <p>
+     * Notes:
+     * <ol>
+     * <li>If the contrast in a tile is smaller than minDiff, it uses the min 
+     * and max pixel values from neighboring tiles.  It also can use
+     * convolution to smooth the min and max values from neighboring tiles.  
+     * After all that processing, it is possible that the actual pixel values 
+     * in the tile are outside the computed [min ... max] range for local 
+     * contrast normalization. Such pixels are taken to be at either 0 (if 
+     * below the min) or 255 (if above the max).
+     * <li>sizeX and sizeY give the tile size; they are typically at least 20.
+     * <li>minDiff is used to eliminate results for tiles where it is likely 
+     * that either fg or bg is missing.  A value around 50 or more is 
+     * reasonable.
+     * <li>The full width and height of the convolution kernel are (2 * smoothx
+     * + 1) and (2 * smoothy + 1).  Some smoothing is typically useful, and we 
+     * limit the smoothing half-widths to the range from 0 to 8. Use 0 for no 
+     * smoothing.
+     * <li>A linear TRC (gamma = 1.0) is applied to increase the contrast in 
+     * each tile. The result can subsequently be globally corrected, by 
+     * applying pixGammaTRC() with arbitrary values of gamma and the 0 and 255 
+     * points of the mapping.
+     * </ol>
+     *
+     * @param pixs A source pix image
+     * @param sizeX Tile width
+     * @param sizeY Tile height
+     * @param minDiff Minimum difference to accept as valid
+     * @param smoothX Half-width of convolution kernel applied to min and max
+     * arrays
+     * @param smoothY Half-height of convolution kernel applied to min and max
+     * arrays
+     */
+    public static Pix pixContrastNorm(
+            Pix pixs, int sizeX, int sizeY, int minDiff, int smoothX, int smoothY) {
+        if (pixs == null)
+            throw new IllegalArgumentException("Source pix must be non-null");
+
+        int nativePix = nativePixContrastNorm(
+                pixs.mNativePix, sizeX, sizeY, minDiff, smoothX, smoothY);
+
+        if (nativePix == 0)
+            throw new RuntimeException("Failed to normalize image contrast");
+
+        return new Pix(nativePix);
+    }    
+    
     // ***************
     // * NATIVE CODE *
     // ***************
 
     private static native int nativeBackgroundNormMorph(
             int nativePix, int reduction, int size, int bgval);
+    
+    private static native int nativePixContrastNorm(
+            int nativePix, int sizeX, int sizeY, int minDiff, int smoothX, int smoothY);
 }
