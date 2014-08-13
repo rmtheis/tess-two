@@ -23,6 +23,6 @@
 #define HAVE_LIBZ 1
 #define HAVE_LIBGIF 0
 #define HAVE_LIBUNGIF 0
-#define HAVE_FMEMOPEN 1
+#define HAVE_FMEMOPEN 0
 
 #endif

@@ -16,34 +16,7 @@
 
 package com.googlecode.leptonica.android.test;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.test.suitebuilder.annotation.SmallTest;
-
-import com.googlecode.leptonica.android.Constants;
-import com.googlecode.leptonica.android.Pix;
-import com.googlecode.leptonica.android.ReadFile;
-import com.googlecode.leptonica.android.WriteFile;
-
 import junit.framework.TestCase;
 
 public class WriteFileTest extends TestCase {
-    @SmallTest
-    public void testWriteMem() {
-        Bitmap bmps = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888);
-        Pix pixs = ReadFile.readBitmap(bmps);
-        byte[] encodedBytes = WriteFile.writeMem(pixs, Constants.IFF_BMP);
-
-        assertNotNull(encodedBytes);
-
-        Bitmap bmpd = BitmapFactory.decodeByteArray(encodedBytes, 0, encodedBytes.length);
-
-        assertEquals(bmps.getWidth(), bmpd.getWidth());
-        assertEquals(bmps.getHeight(), bmpd.getHeight());
-
-        bmps.recycle();
-        pixs.recycle();
-        encodedBytes = null;
-        bmpd.recycle();
-    }
 }

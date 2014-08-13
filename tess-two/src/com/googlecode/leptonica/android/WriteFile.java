@@ -118,7 +118,7 @@ public class WriteFile {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
 
-        return nativeWriteMem(pixs.mNativePix, format);
+        throw new RuntimeException("writeMem() is not currently supported");
     }
 
     /**

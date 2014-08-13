@@ -23,17 +23,6 @@ LOCAL_CFLAGS := \
 LOCAL_LDLIBS := \
   -lz
 
-# missing stdio functions
-
-ifneq ($(TARGET_SIMULATOR),true)
-LOCAL_SRC_FILES += \
-  stdio/open_memstream.c \
-  stdio/fopencookie.c \
-  stdio/fmemopen.c
-LOCAL_C_INCLUDES += \
-  stdio
-endif
-
 # jni
 
 LOCAL_SRC_FILES += \
