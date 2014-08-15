@@ -197,14 +197,14 @@ public class WriteFile {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeWriteBytes8(int nativePix, byte[] data);
+    private static native int nativeWriteBytes8(long nativePix, byte[] data);
 
-    private static native boolean nativeWriteFiles(int nativePix, String rootname, int format);
+    private static native boolean nativeWriteFiles(long nativePix, String rootname, int format);
 
-    private static native byte[] nativeWriteMem(int nativePix, int format);
+    private static native byte[] nativeWriteMem(long nativePix, int format);
 
     private static native boolean nativeWriteImpliedFormat(
-            int nativePix, String fileName, int quality, boolean progressive);
+            long nativePix, String fileName, int quality, boolean progressive);
 
-    private static native boolean nativeWriteBitmap(int nativePix, Bitmap bitmap);
+    private static native boolean nativeWriteBitmap(long nativePix, Bitmap bitmap);
 }

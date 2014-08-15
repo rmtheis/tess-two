@@ -42,7 +42,7 @@ public class Thresholder {
         if (thresh >= 255 || thresh < 0)
             throw new IllegalArgumentException("Threshold must be in the range 0 <= thresh < 255");
 
-        int nativePix = nativeSobelEdgeThreshold(pixs.getNativePix(), thresh);
+        long nativePix = nativeSobelEdgeThreshold(pixs.getNativePix(), thresh);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to run Sobel edge threshold on Pix");
@@ -83,7 +83,7 @@ public class Thresholder {
         if (tileY < 8)
             throw new IllegalArgumentException("Tile height must be at least 8 pixels");
 
-        int nativePix = nativeEdgeAdaptiveThreshold(
+        long nativePix = nativeEdgeAdaptiveThreshold(
                 pixs.getNativePix(), tileX, tileY, threshold, average);
 
         if (nativePix == 0)
@@ -131,7 +131,7 @@ public class Thresholder {
         if (tileY < 8)
             throw new IllegalArgumentException("Tile height must be at least 8 pixels");
 
-        int nativePix = nativeFisherAdaptiveThreshold(
+        long nativePix = nativeFisherAdaptiveThreshold(
                 pixs.getNativePix(), tileX, tileY, scoreFract, thresh);
 
         if (nativePix == 0)
@@ -144,11 +144,11 @@ public class Thresholder {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeFisherAdaptiveThreshold(
-            int nativePix, int tileX, int tileY, float scoreFract, float thresh);
+    private static native long nativeFisherAdaptiveThreshold(
+            long nativePix, int tileX, int tileY, float scoreFract, float thresh);
 
-    private static native int nativeEdgeAdaptiveThreshold(
-            int nativePix, int tileX, int tileY, int threshold, int average);
+    private static native long nativeEdgeAdaptiveThreshold(
+            long nativePix, int tileX, int tileY, int threshold, int average);
 
-    private static native int nativeSobelEdgeThreshold(int nativePix, int threshold);
+    private static native long nativeSobelEdgeThreshold(long nativePix, int threshold);
 }

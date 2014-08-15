@@ -84,5 +84,5 @@ public class JpegIO {
     // ***************
 
     private static native byte[] nativeCompressToJpeg(
-            int nativePix, int quality, boolean progressive);
+            long nativePix, int quality, boolean progressive);
 }

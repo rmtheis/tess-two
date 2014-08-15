@@ -111,7 +111,7 @@ public class Binarize {
         if (pixs.getDepth() != 8)
             throw new IllegalArgumentException("Source pix depth must be 8bpp");
 
-        int nativePix = nativeOtsuAdaptiveThreshold(
+        long nativePix = nativeOtsuAdaptiveThreshold(
                 pixs.mNativePix, sizeX, sizeY, smoothX, smoothY, scoreFraction);
 
         if (nativePix == 0)
@@ -163,7 +163,7 @@ public class Binarize {
         if (pixs.getDepth() != 8)
             throw new IllegalArgumentException("Source pix depth must be 8bpp");
         
-        int nativePix = nativeSauvolaBinarizeTiled(pixs.mNativePix, whsize, factor, nx, ny);
+        long nativePix = nativeSauvolaBinarizeTiled(pixs.mNativePix, whsize, factor, nx, ny);
         
         if (nativePix == 0)
             throw new RuntimeException("Failed to perform Otsu adaptive threshold on image");
@@ -175,9 +175,9 @@ public class Binarize {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeOtsuAdaptiveThreshold(
-            int nativePix, int sizeX, int sizeY, int smoothX, int smoothY, float scoreFract);
+    private static native long nativeOtsuAdaptiveThreshold(
+            long nativePix, int sizeX, int sizeY, int smoothX, int smoothY, float scoreFract);
 
-    private static native int nativeSauvolaBinarizeTiled(
-    		int nativePix, int whsize, float factor, int nx, int ny);
+    private static native long nativeSauvolaBinarizeTiled(
+            long nativePix, int whsize, float factor, int nx, int ny);
 }

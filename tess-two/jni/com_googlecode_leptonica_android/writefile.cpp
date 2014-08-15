@@ -28,7 +28,7 @@ extern "C" {
  *************/
 
 jint Java_com_googlecode_leptonica_android_WriteFile_nativeWriteBytes8(JNIEnv *env, jclass clazz,
-                                                                       jint nativePix,
+                                                                       jlong nativePix,
                                                                        jbyteArray data) {
   l_int32 w, h, d;
   PIX *pix = (PIX *) nativePix;
@@ -50,7 +50,7 @@ jint Java_com_googlecode_leptonica_android_WriteFile_nativeWriteBytes8(JNIEnv *e
 
 jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteFiles(JNIEnv *env,
                                                                           jclass clazz,
-                                                                          jint nativePixa,
+                                                                          jlong nativePixa,
                                                                           jstring rootName,
                                                                           jint format) {
   PIXA *pixas = (PIXA *) nativePixa;
@@ -75,7 +75,7 @@ jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteFiles(JNIEnv
 
 jbyteArray Java_com_googlecode_leptonica_android_WriteFile_nativeWriteMem(JNIEnv *env,
                                                                           jclass clazz,
-                                                                          jint nativePix,
+                                                                          jlong nativePix,
                                                                           jint format) {
   PIX *pixs = (PIX *) nativePix;
 
@@ -96,10 +96,9 @@ jbyteArray Java_com_googlecode_leptonica_android_WriteFile_nativeWriteMem(JNIEnv
   return array;
 }
 
-jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteImpliedFormat(
-                                                                                  JNIEnv *env,
+jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteImpliedFormat(JNIEnv *env,
                                                                                   jclass clazz,
-                                                                                  jint nativePix,
+                                                                                  jlong nativePix,
                                                                                   jstring fileName,
                                                                                   jint quality,
                                                                                   jboolean progressive) {
@@ -125,7 +124,7 @@ jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteImpliedForma
 
 jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteBitmap(JNIEnv *env,
                                                                            jclass clazz,
-                                                                           jint nativePix,
+                                                                           jlong nativePix,
                                                                            jobject bitmap) {
   PIX *pixs = (PIX *) nativePix;
 

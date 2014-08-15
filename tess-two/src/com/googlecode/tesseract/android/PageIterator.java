@@ -25,9 +25,9 @@ public class PageIterator {
     }
 
     /** Pointer to native page iterator. */
-    private final int mNativePageIterator;
+    private final long mNativePageIterator;
 
-    /* package */PageIterator(int nativePageIterator) {
+    /* package */PageIterator(long nativePageIterator) {
         mNativePageIterator = nativePageIterator;
     }
 
@@ -87,7 +87,7 @@ public class PageIterator {
     	return nativeBoundingBox(mNativePageIterator, level);
     }
     
-    private static native void nativeBegin(int nativeIterator);
-    private static native boolean nativeNext(int nativeIterator, int level);
-    private static native int[] nativeBoundingBox(int nativeIterator, int level);
+    private static native void nativeBegin(long nativeIterator);
+    private static native boolean nativeNext(long nativeIterator, int level);
+    private static native int[] nativeBoundingBox(long nativeIterator, int level);
 }

@@ -32,7 +32,7 @@ convenience due to its dependency on Leptonica.
 Build
 =====
 
-This project is set up to build on Android SDK Tools r22.3+ and Android NDK r9c+. The build works on Linux, Mac OS X, and Windows 7/8. See [Issues](https://github.com/rmtheis/tess-two/issues) for reported build issues.
+This project is set up to build on Android SDK Tools r22.3+ and Android NDK r10+. The build works on Linux, Mac OS X, and Windows 7/8. See [Issues](https://github.com/rmtheis/tess-two/issues) for reported build issues.
 
 On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility library.
 

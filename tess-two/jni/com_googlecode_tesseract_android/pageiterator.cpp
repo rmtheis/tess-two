@@ -29,12 +29,12 @@ extern "C" {
 #endif  /* __cplusplus */
 
 void Java_com_googlecode_tesseract_android_PageIterator_nativeBegin(JNIEnv *env, jclass clazz,
-    jint nativePageIterator) {
+    jlong nativePageIterator) {
   ((PageIterator *) nativePageIterator)->Begin();
 }
 
 jboolean Java_com_googlecode_tesseract_android_PageIterator_nativeNext(JNIEnv *env, jclass clazz,
-    jint nativePageIterator, jint level) {
+    jlong nativePageIterator, jint level) {
   PageIterator *pageIterator = (PageIterator *) nativePageIterator;
   PageIteratorLevel enumLevel = (PageIteratorLevel) level;
 
@@ -42,7 +42,7 @@ jboolean Java_com_googlecode_tesseract_android_PageIterator_nativeNext(JNIEnv *e
 }
 
 jintArray Java_com_googlecode_tesseract_android_PageIterator_nativeBoundingBox(JNIEnv *env, jclass clazz,
-    jint nativePageIterator, jint level) {
+    jlong nativePageIterator, jint level) {
   int size = 4;
   jintArray result = env->NewIntArray(size);
 

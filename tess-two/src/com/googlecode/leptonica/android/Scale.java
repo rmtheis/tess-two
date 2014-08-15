@@ -112,7 +112,7 @@ public class Scale {
         if (scaleY <= 0.0f)
             throw new IllegalArgumentException("Y scaling factor must be positive");
 
-        int nativePix = nativeScale(pixs.mNativePix, scaleX, scaleY);
+        long nativePix = nativeScale(pixs.mNativePix, scaleX, scaleY);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to natively scale pix");
@@ -124,5 +124,5 @@ public class Scale {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeScale(int nativePix, float scaleX, float scaleY);
+    private static native long nativeScale(long nativePix, float scaleX, float scaleY);
 }

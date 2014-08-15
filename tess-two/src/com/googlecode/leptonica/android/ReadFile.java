@@ -72,7 +72,7 @@ public class ReadFile {
         if (pixelData.length < width * height)
             throw new IllegalArgumentException("Array length does not match dimensions");
 
-        int nativePix = nativeReadBytes8(pixelData, width, height);
+        long nativePix = nativeReadBytes8(pixelData, width, height);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to read pix from memory");
@@ -168,7 +168,7 @@ public class ReadFile {
         if (bmp.getConfig() != Bitmap.Config.ARGB_8888)
             throw new IllegalArgumentException("Bitmap config must be ARGB_8888");
 
-        int nativePix = nativeReadBitmap(bmp);
+        long nativePix = nativeReadBitmap(bmp);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to read pix from bitmap");
@@ -180,15 +180,15 @@ public class ReadFile {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeReadMem(byte[] data, int size);
+    private static native long nativeReadMem(byte[] data, int size);
 
-    private static native int nativeReadBytes8(byte[] data, int w, int h);
+    private static native long nativeReadBytes8(byte[] data, int w, int h);
 
-    private static native boolean nativeReplaceBytes8(int nativePix, byte[] data, int w, int h);
+    private static native boolean nativeReplaceBytes8(long nativePix, byte[] data, int w, int h);
 
-    private static native int nativeReadFiles(String dirname, String prefix);
+    private static native long nativeReadFiles(String dirname, String prefix);
 
-    private static native int nativeReadFile(String filename);
+    private static native long nativeReadFile(String filename);
 
-    private static native int nativeReadBitmap(Bitmap bitmap);
+    private static native long nativeReadBitmap(Bitmap bitmap);
 }

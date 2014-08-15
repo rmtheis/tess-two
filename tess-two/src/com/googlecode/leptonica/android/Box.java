@@ -42,7 +42,7 @@ public class Box {
      * A pointer to the native Box object. This is used internally by native
      * code.
      */
-    final int mNativeBox;
+    final long mNativeBox;
 
     private boolean mRecycled = false;
 
@@ -51,7 +51,7 @@ public class Box {
      *
      * @param nativeBox A pointer to the native BOX.
      */
-    Box(int nativeBox) {
+    Box(long nativeBox) {
         mNativeBox = nativeBox;
         mRecycled = false;
     }
@@ -70,7 +70,7 @@ public class Box {
             throw new IllegalArgumentException("All box dimensions must be non-negative");
         }
         
-        int nativeBox = nativeCreate(x, y, w, h);
+        long nativeBox = nativeCreate(x, y, w, h);
 
         if (nativeBox == 0) {
             throw new OutOfMemoryError();
@@ -169,11 +169,11 @@ public class Box {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeCreate(int x, int y, int w, int h);
-    private static native int nativeGetX(int nativeBox);
-    private static native int nativeGetY(int nativeBox);
-    private static native int nativeGetWidth(int nativeBox);
-    private static native int nativeGetHeight(int nativeBox);
-    private static native void nativeDestroy(int nativeBox);
-    private static native boolean nativeGetGeometry(int nativeBox, int[] geometry);
+    private static native long nativeCreate(int x, int y, int w, int h);
+    private static native int nativeGetX(long nativeBox);
+    private static native int nativeGetY(long nativeBox);
+    private static native int nativeGetWidth(long nativeBox);
+    private static native int nativeGetHeight(long nativeBox);
+    private static native void nativeDestroy(long nativeBox);
+    private static native boolean nativeGetGeometry(long nativeBox, int[] geometry);
 }

@@ -36,7 +36,7 @@ public class Convert {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
 
-        int nativePix = nativeConvertTo8(pixs.mNativePix);
+        long nativePix = nativeConvertTo8(pixs.mNativePix);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to natively convert pix");
@@ -48,5 +48,5 @@ public class Convert {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeConvertTo8(int nativePix);
+    private static native long nativeConvertTo8(long nativePix);
 }

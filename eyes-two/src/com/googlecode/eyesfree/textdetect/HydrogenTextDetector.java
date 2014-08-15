@@ -25,7 +25,7 @@ import com.googlecode.leptonica.android.Pixa;
  * @author alanv@google.com (Alan Viverette)
  */
 public class HydrogenTextDetector {
-    private final int mNative;
+    private final long mNative;
 
     static {
         System.loadLibrary("lept");
@@ -65,7 +65,7 @@ public class HydrogenTextDetector {
     }
 
     public Pixa getTextAreas() {
-        int nativePixa = nativeGetTextAreas(mNative);
+        long nativePixa = nativeGetTextAreas(mNative);
 
         if (nativePixa == 0) {
             return null;
@@ -86,7 +86,7 @@ public class HydrogenTextDetector {
     }
 
     public Pix getSourceImage() {
-        int nativePix = nativeGetSourceImage(mNative);
+        long nativePix = nativeGetSourceImage(mNative);
 
         if (nativePix == 0) {
             return null;
@@ -234,27 +234,27 @@ public class HydrogenTextDetector {
     // * NATIVE METHODS *
     // ******************
 
-    private static native int nativeConstructor();
+    private static native long nativeConstructor();
 
-    private static native void nativeDestructor(int nativePtr);
+    private static native void nativeDestructor(long nativePtr);
 
-    private static native void nativeSetParameters(int nativePtr, Parameters params);
+    private static native void nativeSetParameters(long nativePtr, Parameters params);
 
-    private static native int nativeGetTextAreas(int nativePtr);
+    private static native long nativeGetTextAreas(long nativePtr);
 
-    private static native float nativeGetSkewAngle(int nativePtr);
+    private static native float nativeGetSkewAngle(long nativePtr);
 
-    private static native int nativeGetSourceWidth(int nativePtr);
+    private static native int nativeGetSourceWidth(long nativePtr);
 
-    private static native int nativeGetSourceHeight(int nativePtr);
+    private static native int nativeGetSourceHeight(long nativePtr);
 
-    private static native float[] nativeGetTextConfs(int nativePtr);
+    private static native float[] nativeGetTextConfs(long nativePtr);
 
-    private static native int nativeGetSourceImage(int nativePtr);
+    private static native long nativeGetSourceImage(long nativePtr);
 
-    private static native int nativeSetSourceImage(int nativePtr, int nativePix);
+    private static native int nativeSetSourceImage(long nativePtr, long nativePix);
 
-    private static native void nativeDetectText(int nativePtr);
+    private static native void nativeDetectText(long nativePtr);
 
-    private static native void nativeClear(int nativePtr);
+    private static native void nativeClear(long nativePtr);
 }

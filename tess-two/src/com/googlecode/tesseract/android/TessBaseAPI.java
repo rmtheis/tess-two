@@ -38,7 +38,7 @@ public class TessBaseAPI {
     /**
      * Used by the native implementation of the class.
      */
-    private int mNativeData;
+    private long mNativeData;
 
     static {
         System.loadLibrary("lept");
@@ -463,7 +463,7 @@ public class TessBaseAPI {
      * @return Pixa containing textlines
      */
     public Pixa getTextlines() {
-	return new Pixa(nativeGetTextlines(), 0, 0);
+        return new Pixa(nativeGetTextlines(), 0, 0);
     }
     
     /**
@@ -474,7 +474,7 @@ public class TessBaseAPI {
      * @return Pixa containing strips
      */
     public Pixa getStrips() {
-	return new Pixa(nativeGetStrips(), 0, 0);
+        return new Pixa(nativeGetStrips(), 0, 0);
     }    
     
     /**
@@ -487,7 +487,7 @@ public class TessBaseAPI {
     }
 
     public ResultIterator getResultIterator() {
-        int nativeResultIterator = nativeGetResultIterator();
+        long nativeResultIterator = nativeGetResultIterator();
 
         if (nativeResultIterator == 0) {
             return null;
@@ -578,7 +578,7 @@ public class TessBaseAPI {
     private native void nativeSetImageBytes(
             byte[] imagedata, int width, int height, int bpp, int bpl);
 
-    private native void nativeSetImagePix(int nativePix);
+    private native void nativeSetImagePix(long nativePix);
 
     private native void nativeSetRectangle(int left, int top, int width, int height);
 
@@ -594,17 +594,17 @@ public class TessBaseAPI {
 
     private native void nativeSetPageSegMode(int mode);
     
-    private native int nativeGetThresholdedImage();
+    private native long nativeGetThresholdedImage();
     
-    private native int nativeGetRegions();
+    private native long nativeGetRegions();
 
-    private native int nativeGetTextlines();
+    private native long nativeGetTextlines();
 
-    private native int nativeGetStrips();
+    private native long nativeGetStrips();
 
-    private native int nativeGetWords();
+    private native long nativeGetWords();
 
-    private native int nativeGetResultIterator();
+    private native long nativeGetResultIterator();
     
     private native String nativeGetBoxText(int page_number);
     

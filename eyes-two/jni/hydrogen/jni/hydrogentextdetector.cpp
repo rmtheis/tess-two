@@ -23,21 +23,21 @@
 extern "C" {
 #endif  /* __cplusplus */
 
-jint Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeConstructor(
+jlong Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeConstructor(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr) {
+    jlong nativePtr) {
   if (DEBUG_MODE) LOGV(__FUNCTION__);
 
   HydrogenTextDetector *ptr = new HydrogenTextDetector();
 
-  return (jint) ptr;
+  return (jlong) ptr;
 }
 
 void Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeDestructor(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr) {
+    jlong nativePtr) {
   if (DEBUG_MODE) LOGV(__FUNCTION__);
 
   HydrogenTextDetector *ptr = (HydrogenTextDetector *) nativePtr;
@@ -82,7 +82,7 @@ void getStringField(JNIEnv *env, jclass &clazz, jobject &obj, const char *field,
 void Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeSetParameters(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr,
+    jlong nativePtr,
     jobject params) {
   if (DEBUG_MODE) LOGV(__FUNCTION__);
 
@@ -129,23 +129,23 @@ void Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeSetParam
   myParams->cluster_min_edge_avg = getIntField(env, paramClass, params, "cluster_min_edge_avg");
 }
 
-jint Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetTextAreas(
+jlong Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetTextAreas(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr) {
+    jlong nativePtr) {
   if (DEBUG_MODE) LOGV(__FUNCTION__);
 
   HydrogenTextDetector *ptr = (HydrogenTextDetector *) nativePtr;
 
   PIXA *textAreas = ptr->GetTextAreas();
 
-  return (jint) textAreas;
+  return (jlong) textAreas;
 }
 
 jfloat Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetSkewAngle(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr) {
+    jlong nativePtr) {
   if (DEBUG_MODE) LOGV(__FUNCTION__);
 
   HydrogenTextDetector *ptr = (HydrogenTextDetector *) nativePtr;
@@ -158,7 +158,7 @@ jfloat Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetSke
 jint Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetSourceWidth(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr) {
+    jlong nativePtr) {
   if (DEBUG_MODE) LOGV(__FUNCTION__);
 
   HydrogenTextDetector *ptr = (HydrogenTextDetector *) nativePtr;
@@ -173,7 +173,7 @@ jint Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetSourc
 jint Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetSourceHeight(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr) {
+    jlong nativePtr) {
   //LOGV(__FUNCTION__);
 
   HydrogenTextDetector *ptr = (HydrogenTextDetector *) nativePtr;
@@ -188,7 +188,7 @@ jint Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetSourc
 jfloatArray Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetTextConfs(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr) {
+    jlong nativePtr) {
   if (DEBUG_MODE) LOGV(__FUNCTION__);
 
   HydrogenTextDetector *ptr = (HydrogenTextDetector *) nativePtr;
@@ -211,22 +211,22 @@ jfloatArray Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeG
   return ret;
 }
 
-jint Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetSourceImage(
+jlong Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeGetSourceImage(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr) {
+    jlong nativePtr) {
   if (DEBUG_MODE) LOGV(__FUNCTION__);
 
   HydrogenTextDetector *ptr = (HydrogenTextDetector *) nativePtr;
 
-  return (jint) ptr->GetSourceImage();
+  return (jlong) ptr->GetSourceImage();
 }
 
 void Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeSetSourceImage(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr,
-    jint nativePix) {
+    jlong nativePtr,
+    jlong nativePix) {
   if (DEBUG_MODE) LOGV(__FUNCTION__);
 
   HydrogenTextDetector *ptr = (HydrogenTextDetector *) nativePtr;
@@ -238,7 +238,7 @@ void Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeSetSourc
 void Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeDetectText(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr) {
+    jlong nativePtr) {
   if (DEBUG_MODE) LOGV(__FUNCTION__);
 
   HydrogenTextDetector *ptr = (HydrogenTextDetector *) nativePtr;
@@ -249,7 +249,7 @@ void Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeDetectTe
 void Java_com_googlecode_eyesfree_textdetect_HydrogenTextDetector_nativeClear(
     JNIEnv *env,
     jclass clazz,
-    jint nativePtr) {
+    jlong nativePtr) {
   if (DEBUG_MODE) LOGV(__FUNCTION__);
 
   HydrogenTextDetector *ptr = (HydrogenTextDetector *) nativePtr;

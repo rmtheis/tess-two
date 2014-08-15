@@ -47,7 +47,7 @@ public class Enhance {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
 
-        int nativePix = nativeUnsharpMasking(pixs.mNativePix, halfwidth, fraction);
+        long nativePix = nativeUnsharpMasking(pixs.mNativePix, halfwidth, fraction);
 
         if (nativePix == 0) {
             throw new OutOfMemoryError();
@@ -60,5 +60,5 @@ public class Enhance {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeUnsharpMasking(int nativePix, int halfwidth, float fract);
+    private static native long nativeUnsharpMasking(long nativePix, int halfwidth, float fract);
 }

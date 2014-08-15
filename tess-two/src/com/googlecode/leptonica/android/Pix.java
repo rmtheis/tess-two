@@ -38,7 +38,7 @@ public class Pix {
     public static final int INDEX_D = 2;
 
     /** Package-accessible pointer to native pix */
-    final int mNativePix;
+    final long mNativePix;
 
     private boolean mRecycled;
 
@@ -49,7 +49,7 @@ public class Pix {
      *
      * @param nativePix A pointer to the native PIX object.
      */
-    public Pix(int nativePix) {
+    public Pix(long nativePix) {
         mNativePix = nativePix;
         mRecycled = false;
     }
@@ -72,7 +72,7 @@ public class Pix {
      *
      * @return a native pointer to the Pix object
      */
-    public int getNativePix() {
+    public long getNativePix() {
         return mNativePix;
     }
 
@@ -129,7 +129,7 @@ public class Pix {
      */
     @Override
     public Pix clone() {
-        int nativePix = nativeClone(mNativePix);
+        long nativePix = nativeClone(mNativePix);
 
         if (nativePix == 0) {
             throw new OutOfMemoryError();
@@ -145,7 +145,7 @@ public class Pix {
      * @return a copy of the Pix
      */
     public Pix copy() {
-        int nativePix = nativeCopy(mNativePix);
+        long nativePix = nativeCopy(mNativePix);
 
         if (nativePix == 0) {
             throw new OutOfMemoryError();
@@ -192,7 +192,7 @@ public class Pix {
      * @return a new Pix or <code>null</code> on error
      */
     public static Pix createFromPix(byte[] pixData, int width, int height, int depth) {
-        int nativePix = nativeCreateFromData(pixData, width, height, depth);
+        long nativePix = nativeCreateFromData(pixData, width, height, depth);
 
         if (nativePix == 0) {
             throw new OutOfMemoryError();
@@ -282,18 +282,18 @@ public class Pix {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeCreatePix(int w, int h, int d);
-    private static native int nativeCreateFromData(byte[] data, int w, int h, int d);
-    private static native boolean nativeGetData(int nativePix, byte[] data);
-    private static native int nativeGetDataSize(int nativePix);
-    private static native int nativeClone(int nativePix);
-    private static native int nativeCopy(int nativePix);
-    private static native boolean nativeInvert(int nativePix);
-    private static native void nativeDestroy(int nativePix);
-    private static native boolean nativeGetDimensions(int nativePix, int[] dimensions);
-    private static native int nativeGetWidth(int nativePix);
-    private static native int nativeGetHeight(int nativePix);
-    private static native int nativeGetDepth(int nativePix);
-    private static native int nativeGetPixel(int nativePix, int x, int y);
-    private static native void nativeSetPixel(int nativePix, int x, int y, int color);
+    private static native long nativeCreatePix(int w, int h, int d);
+    private static native long nativeCreateFromData(byte[] data, int w, int h, int d);
+    private static native boolean nativeGetData(long nativePix, byte[] data);
+    private static native int nativeGetDataSize(long nativePix);
+    private static native long nativeClone(long nativePix);
+    private static native long nativeCopy(long nativePix);
+    private static native boolean nativeInvert(long nativePix);
+    private static native void nativeDestroy(long nativePix);
+    private static native boolean nativeGetDimensions(long nativePix, int[] dimensions);
+    private static native int nativeGetWidth(long nativePix);
+    private static native int nativeGetHeight(long nativePix);
+    private static native int nativeGetDepth(long nativePix);
+    private static native int nativeGetPixel(long nativePix, int x, int y);
+    private static native void nativeSetPixel(long nativePix, int x, int y, int color);
 }

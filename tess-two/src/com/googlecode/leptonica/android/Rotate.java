@@ -82,7 +82,7 @@ public class Rotate {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
 
-        int nativePix = nativeRotate(pixs.mNativePix, degrees, quality, resize);
+        long nativePix = nativeRotate(pixs.mNativePix, degrees, quality, resize);
 
         if (nativePix == 0)
             return null;
@@ -94,6 +94,6 @@ public class Rotate {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeRotate(int nativePix, float degrees, boolean quality,
+    private static native long nativeRotate(long nativePix, float degrees, boolean quality,
     		boolean resize);
 }

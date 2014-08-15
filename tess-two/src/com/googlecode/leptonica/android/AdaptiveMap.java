@@ -88,7 +88,7 @@ public class AdaptiveMap {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
 
-        int nativePix = nativeBackgroundNormMorph(
+        long nativePix = nativeBackgroundNormMorph(
                 pixs.mNativePix, normReduction, normSize, normBgValue);
 
         if (nativePix == 0)
@@ -138,7 +138,7 @@ public class AdaptiveMap {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
 
-        int nativePix = nativePixContrastNorm(
+        long nativePix = nativePixContrastNorm(
                 pixs.mNativePix, sizeX, sizeY, minDiff, smoothX, smoothY);
 
         if (nativePix == 0)
@@ -151,9 +151,9 @@ public class AdaptiveMap {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeBackgroundNormMorph(
-            int nativePix, int reduction, int size, int bgval);
+    private static native long nativeBackgroundNormMorph(
+            long nativePix, int reduction, int size, int bgval);
     
-    private static native int nativePixContrastNorm(
-            int nativePix, int sizeX, int sizeY, int minDiff, int smoothX, int smoothY);
+    private static native long nativePixContrastNorm(
+            long nativePix, int sizeX, int sizeY, int minDiff, int smoothX, int smoothY);
 }

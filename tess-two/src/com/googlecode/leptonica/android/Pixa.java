@@ -34,7 +34,7 @@ public class Pixa implements Iterable<Pix> {
     }
 
     /** A pointer to the native PIXA object. This is used internally by native code. */
-    final int mNativePixa;
+    final long mNativePixa;
 
     /** The specified width of this Pixa. */
     final int mWidth;
@@ -68,7 +68,7 @@ public class Pixa implements Iterable<Pix> {
      * @return a new Pixa or <code>null</code> on error
      */
     public static Pixa createPixa(int size, int width, int height) {
-        int nativePixa = nativeCreate(size);
+        long nativePixa = nativeCreate(size);
 
         if (nativePixa == 0) {
             throw new OutOfMemoryError();
@@ -84,7 +84,7 @@ public class Pixa implements Iterable<Pix> {
      * @param width The width of the PIXA.
      * @param height The height of the PIXA.
      */
-    public Pixa(int nativePixa, int width, int height) {
+    public Pixa(long nativePixa, int width, int height) {
         mNativePixa = nativePixa;
         mWidth = width;
         mHeight = height;
@@ -96,7 +96,7 @@ public class Pixa implements Iterable<Pix> {
      *
      * @return a pointer to the native PIXA object
      */
-    public int getNativePixa() {
+    public long getNativePixa() {
         return mNativePixa;
     }
 
@@ -219,7 +219,7 @@ public class Pixa implements Iterable<Pix> {
      * @return the Box at the specified index, or <code>null</code> on error
      */
     public Box getBox(int index) {
-        int nativeBox = nativeGetBox(mNativePixa, index);
+        long nativeBox = nativeGetBox(mNativePixa, index);
 
         if (nativeBox == 0) {
             return null;
@@ -418,33 +418,33 @@ public class Pixa implements Iterable<Pix> {
 
     private static native int nativeCreate(int size);
 
-    private static native int nativeCopy(int nativePixa);
+    private static native int nativeCopy(long nativePixa);
 
-    private static native int nativeSort(int nativePixa, int field, int order);
+    private static native int nativeSort(long nativePixa, int field, int order);
 
-    private static native boolean nativeJoin(int nativePixa, int otherPixa);
+    private static native boolean nativeJoin(long nativePixa, long otherPixa);
 
-    private static native int nativeGetCount(int nativePixa);
+    private static native int nativeGetCount(long nativePixa);
 
-    private static native void nativeDestroy(int nativePixa);
+    private static native void nativeDestroy(long nativePixa);
 
-    private static native void nativeAddPix(int nativePixa, int nativePix, int mode);
+    private static native void nativeAddPix(long nativePixa, long nativePix, int mode);
 
-    private static native void nativeAddBox(int nativePixa, int nativeBox, int mode);
+    private static native void nativeAddBox(long nativePixa, long nativeBox, int mode);
 
-    private static native void nativeAdd(int nativePixa, int nativePix, int nativeBox, int mode);
+    private static native void nativeAdd(long nativePixa, long nativePix, long nativeBox, int mode);
 
     private static native boolean nativeWriteToFileRandomCmap(
-            int nativePixa, String fileName, int width, int height);
+            long nativePixa, String fileName, int width, int height);
 
     private static native void nativeReplacePix(
-            int nativePixa, int index, int nativePix, int nativeBox);
+            long nativePixa, int index, long nativePix, long nativeBox);
 
-    private static native void nativeMergeAndReplacePix(int nativePixa, int indexA, int indexB);
+    private static native void nativeMergeAndReplacePix(long nativePixa, int indexA, int indexB);
 
-    private static native int nativeGetBox(int nativePix, int index);
+    private static native long nativeGetBox(long nativePix, int index);
 
-    private static native int nativeGetPix(int nativePix, int index);
+    private static native int nativeGetPix(long nativePix, int index);
 
-    private static native boolean nativeGetBoxGeometry(int nativePixa, int index, int[] dimensions);
+    private static native boolean nativeGetBoxGeometry(long nativePixa, int index, int[] dimensions);
 }

@@ -28,7 +28,7 @@ extern "C" {
 #endif  /* __cplusplus */
 
 jstring Java_com_googlecode_tesseract_android_ResultIterator_nativeGetUTF8Text(JNIEnv *env,
-    jclass clazz, jint nativeResultIterator, jint level) {
+    jclass clazz, jlong nativeResultIterator, jint level) {
   ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
   PageIteratorLevel enumLevel = (PageIteratorLevel) level;
 
@@ -41,7 +41,7 @@ jstring Java_com_googlecode_tesseract_android_ResultIterator_nativeGetUTF8Text(J
 }
 
 jfloat Java_com_googlecode_tesseract_android_ResultIterator_nativeConfidence(JNIEnv *env,
-    jclass clazz, jint nativeResultIterator, jint level) {
+    jclass clazz, jlong nativeResultIterator, jint level) {
   ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
   PageIteratorLevel enumLevel = (PageIteratorLevel) level;
 

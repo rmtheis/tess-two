@@ -32,9 +32,9 @@ public class ResultIterator extends PageIterator {
     }
 
     /** Pointer to native result iterator. */
-    private final int mNativeResultIterator;
+    private final long mNativeResultIterator;
 
-    /* package */ResultIterator(int nativeResultIterator) {
+    /* package */ResultIterator(long nativeResultIterator) {
         super(nativeResultIterator);
 
         mNativeResultIterator = nativeResultIterator;
@@ -61,6 +61,6 @@ public class ResultIterator extends PageIterator {
         return nativeConfidence(mNativeResultIterator, level);
     }
 
-    private static native String nativeGetUTF8Text(int nativeResultIterator, int level);
-    private static native float nativeConfidence(int nativeResultIterator, int level);
+    private static native String nativeGetUTF8Text(long nativeResultIterator, int level);
+    private static native float nativeConfidence(long nativeResultIterator, int level);
 }

@@ -92,7 +92,7 @@ public class Skew {
     // * NATIVE CODE *
     // ***************
 
-    private static native float nativeFindSkew(int nativePix, float sweepRange, float sweepDelta,
+    private static native float nativeFindSkew(long nativePix, float sweepRange, float sweepDelta,
             int sweepReduction, int searchReduction, float searchMinDelta);
 
 }
