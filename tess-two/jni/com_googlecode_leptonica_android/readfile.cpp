@@ -100,13 +100,13 @@ jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadFiles(JNIEnv *env,
   const char *c_dirName = env->GetStringUTFChars(dirName, NULL);
   if (c_dirName == NULL) {
     LOGE("could not extract dirName string!");
-    return NULL;
+    return JNI_FALSE;
   }
 
   const char *c_prefix = env->GetStringUTFChars(prefix, NULL);
   if (c_prefix == NULL) {
     LOGE("could not extract prefix string!");
-    return NULL;
+    return JNI_FALSE;
   }
 
   pixad = pixaReadFiles(c_dirName, c_prefix);
@@ -124,7 +124,7 @@ jint Java_com_googlecode_leptonica_android_ReadFile_nativeReadFile(JNIEnv *env, 
   const char *c_fileName = env->GetStringUTFChars(fileName, NULL);
   if (c_fileName == NULL) {
     LOGE("could not extract fileName string!");
-    return NULL;
+    return JNI_FALSE;
   }
 
   pixd = pixRead(c_fileName);
