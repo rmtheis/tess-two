@@ -121,7 +121,7 @@ l_float32 ComputeSingletonConfidence(PIX *pix, BOX *box, PIX *pix8) {
   l_float32 edgemax = ComputeCCEdgeMax(pix8);
 
   /* Compute features for confidence */
-  l_float32 features[7];
+  l_float32 features[6];
   features[0] = 1.0;
   features[1] = aspect_ratio;
   features[2] = aspect_ratio * aspect_ratio;
@@ -129,7 +129,7 @@ l_float32 ComputeSingletonConfidence(PIX *pix, BOX *box, PIX *pix8) {
   features[4] = aspect_ratio / density;
   features[5] = edgemax;
 
-  l_float32 beta[5];
+  l_float32 beta[6];
   beta[0] = -3.099;
   beta[1] = 1.244;
   beta[2] = -0.1142;
