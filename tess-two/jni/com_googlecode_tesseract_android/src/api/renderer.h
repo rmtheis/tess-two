@@ -150,12 +150,16 @@ class TESS_API TessTextRenderer : public TessResultRenderer {
  */
 class TESS_API TessHOcrRenderer : public TessResultRenderer {
  public:
+  explicit TessHOcrRenderer(const char *outputbase, bool font_info);
   explicit TessHOcrRenderer(const char *outputbase);
 
 protected:
   virtual bool BeginDocumentHandler();
   virtual bool AddImageHandler(TessBaseAPI* api);
   virtual bool EndDocumentHandler();
+
+private:
+  bool font_info_;              // whether to print font information
 };
 
 /**
@@ -188,13 +192,9 @@ private:
   void AppendPDFObject(const char *data);
   // Create the /Contents object for an entire page.
   static char* GetPDFTextObjects(TessBaseAPI* api,
-                                 double width, double height,
-                                 int page_number);
-  // Attempt to create PFD object from an image without transcoding.
-  static bool fileToPDFObj(char *filename, long int objnum,
-                           char **pdf_object, long int *pdf_object_size);
-  // Turn a Pix into a the very best PDF object that we can.
-  static bool pixToPDFObj(Pix *pix, long int objnum,
+                                 double width, double height);
+  // Turn an image into a PDF object. Only transcode if we have to.
+  static bool imageToPDFObj(Pix *pix, char *filename, long int objnum,
                           char **pdf_object, long int *pdf_object_size);
 };
 
