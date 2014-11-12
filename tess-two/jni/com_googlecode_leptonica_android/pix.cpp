@@ -120,6 +120,12 @@ jint Java_com_googlecode_leptonica_android_Pix_nativeGetWidth(JNIEnv *env, jclas
   return (jint) pixGetWidth(pix);
 }
 
+jint Java_com_googlecode_leptonica_android_Pix_nativeGetRefCount(JNIEnv *env, jclass clazz,
+                                                              jlong nativePix) {
+  PIX *pix = (PIX *) nativePix;
+
+  return (jint) pixGetRefcount(pix);
+}
 jint Java_com_googlecode_leptonica_android_Pix_nativeGetHeight(JNIEnv *env, jclass clazz,
                                                                jlong nativePix) {
   PIX *pix = (PIX *) nativePix;
