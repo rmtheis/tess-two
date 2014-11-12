@@ -173,13 +173,6 @@ public class Pix {
         }
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        recycle();
-
-        super.finalize();
-    }
-
     /**
      * Creates a new Pix from raw Pix data obtained from getData().
      *
@@ -238,6 +231,9 @@ public class Pix {
         return nativeGetDepth(mNativePix);
     }
     
+    public int getRefCount(){
+    	return nativeGetRefCount(mNativePix);
+    }
     /**
      * Returns the {@link android.graphics.Color} at the specified location.
      *
@@ -280,6 +276,7 @@ public class Pix {
     // * NATIVE CODE *
     // ***************
 
+    private static native int nativeGetRefCount(long nativePix);
     private static native long nativeCreatePix(int w, int h, int d);
     private static native long nativeCreateFromData(byte[] data, int w, int h, int d);
     private static native byte[] nativeGetData(long nativePix);
