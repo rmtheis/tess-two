@@ -1892,6 +1892,10 @@ void TessBaseAPI::ClearPersistentCache() {
 int TessBaseAPI::IsValidWord(const char *word) {
   return tesseract_->getDict().valid_word(word);
 }
+// Returns true if utf8_character is defined in the UniCharset.
+bool TessBaseAPI::IsValidCharacter(const char *utf8_character) {
+    return tesseract_->unicharset.contains_unichar(utf8_character);
+}
 
 
 // TODO(rays) Obsolete this function and replace with a more aptly named
@@ -1940,6 +1944,10 @@ void TessBaseAPI::SetDictFunc(DictFunc f) {
 /**
  * Sets Dict::probability_in_context_ function to point to the given
  * function.
+ *
+ * @param f A single function that returns the probability of the current 
+ * "character" (in general a utf-8 string), given the context of a previous 
+ * utf-8 string.
  */
 void TessBaseAPI::SetProbabilityInContextFunc(ProbabilityInContextFunc f) {
   if (tesseract_ != NULL) {
