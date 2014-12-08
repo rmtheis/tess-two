@@ -1,0 +1,27 @@
+language: android
+android:
+  components:
+    - platform-tools
+    - tools
+    - build-tools-21.0.2
+
+    # SDK version to compile project with
+    - android-21
+
+    # Emulator system image
+    - sys-img-armeabi-v7a-android-21
+
+before_install:
+  # Get Android NDK
+  - if [ `uname -m` = x86_64]; then wget http://dl.google.com/android/ndk/android-ndk32-r10d-linux-x86_64.tar.bz2 -O ndk.tgz; else wget http://dl.google.com/android/ndk/android-ndk32-r10d-linux-x86.tar.bz2 -O ndk.tgz; fi
+  - tar xvf ndk.tgz
+  - export ANDROID_NDK_HOME=`pwd`/android-ndk-r10d
+  - export PATH=${PATH}:${ANDROID_NDK_HOME}
+
+script:
+  # Build tess-two
+  - cd tess-two
+  - ndk-build
+  - android update project --path .
+  - ant release
+  - cd ..
