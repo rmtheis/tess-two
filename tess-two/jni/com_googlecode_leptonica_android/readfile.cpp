@@ -100,13 +100,13 @@ jlong Java_com_googlecode_leptonica_android_ReadFile_nativeReadFiles(JNIEnv *env
   const char *c_dirName = env->GetStringUTFChars(dirName, NULL);
   if (c_dirName == NULL) {
     LOGE("could not extract dirName string!");
-    return JNI_FALSE;
+    return (jlong) NULL;
   }
 
   const char *c_prefix = env->GetStringUTFChars(prefix, NULL);
   if (c_prefix == NULL) {
     LOGE("could not extract prefix string!");
-    return JNI_FALSE;
+    return (jlong) NULL;
   }
 
   pixad = pixaReadFiles(c_dirName, c_prefix);
@@ -124,7 +124,7 @@ jlong Java_com_googlecode_leptonica_android_ReadFile_nativeReadFile(JNIEnv *env,
   const char *c_fileName = env->GetStringUTFChars(fileName, NULL);
   if (c_fileName == NULL) {
     LOGE("could not extract fileName string!");
-    return JNI_FALSE;
+    return (jlong) NULL;
   }
 
   pixd = pixRead(c_fileName);
@@ -143,17 +143,17 @@ jlong Java_com_googlecode_leptonica_android_ReadFile_nativeReadBitmap(JNIEnv *en
 
   if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0) {
     LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
-    return JNI_FALSE;
+    return (jlong) NULL;
   }
 
   if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
     LOGE("Bitmap format is not RGBA_8888 !");
-    return JNI_FALSE;
+    return (jlong) NULL;
   }
 
   if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0) {
     LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
-    return JNI_FALSE;
+    return (jlong) NULL;
   }
 
   PIX *pixd = pixCreate(info.width, info.height, 8);
