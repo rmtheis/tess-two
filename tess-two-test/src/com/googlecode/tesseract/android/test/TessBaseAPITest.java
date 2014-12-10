@@ -163,4 +163,26 @@ public class TessBaseAPITest extends TestCase {
         baseApi.end();
         bmp.recycle();
     }
+
+    @SmallTest
+    public void testSetVariable() {
+        final String inputText = "hello";
+        final Bitmap bmp = getTextImage(inputText, 640, 480);
+
+        // Attempt to initialize the API.
+        final TessBaseAPI baseApi = new TessBaseAPI();
+        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
+
+        // Ensure that setting the blacklist variable works.
+        final String blacklistedCharacter = inputText.substring(1, 2);
+        baseApi.setVariable(TessBaseAPI.VAR_CHAR_BLACKLIST, blacklistedCharacter);
+        baseApi.setImage(bmp);
+        final String outputText = baseApi.getUTF8Text();
+        assertFalse("Found a blacklisted character.", outputText.contains(blacklistedCharacter));
+
+        // Attempt to shut down the API.
+        baseApi.end();
+        bmp.recycle();
+    }
 }
