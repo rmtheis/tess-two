@@ -56,7 +56,7 @@ public class RotateTest extends TestCase {
         bmp.recycle();
         rotated.recycle();
 
-        assertTrue("Bitmaps match", (match > 0.99f));
+        assertTrue("Bitmaps do not match.", (match > 0.99f));
     }
 
     @SmallTest
@@ -77,7 +77,7 @@ public class RotateTest extends TestCase {
         Pix pixd = Rotate.rotate(pixs, 180);
         pixs.recycle();
 
-        assertTrue("Rotated width is 100", (pixd.getWidth() == 100));
+        assertTrue("Rotated width is not 100.", (pixd.getWidth() == 100));
         pixd.recycle();
     }
 }

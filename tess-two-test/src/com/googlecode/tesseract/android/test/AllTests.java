@@ -24,8 +24,6 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 /**
- * A test suite containing all tests for ApiDemos.
- *
  * To run all suites found in this apk:
  * $ adb shell am instrument -w \
  *   com.example.android.apis.tests/android.test.InstrumentationTestRunner

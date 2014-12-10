@@ -130,15 +130,15 @@ public class TessBaseAPITest extends TestCase {
 
         // Ensure that getHOCRText() produced a result.
         final String hOcr = baseApi.getHOCRText(0);
-        assertNotNull("HOCR result found", hOcr);
+        assertNotNull("HOCR result not found.", hOcr);
         
         // Ensure getRegions() works.
         final Pixa regions = baseApi.getRegions();
-        assertEquals("Found one region", regions.size(), 1);
+        assertEquals("Found incorrect number of regions.", regions.size(), 1);
 
         // Ensure getWords() works.
         final Pixa words = baseApi.getWords();
-        assertEquals("Found one word", words.size(), 1);
+        assertEquals("Found incorrect number of words.", words.size(), 1);
 
         // Iterate through the results.
         final ResultIterator iterator = baseApi.getResultIterator();
@@ -154,10 +154,10 @@ public class TessBaseAPITest extends TestCase {
             count++;
         } while (iterator.next(PageIteratorLevel.RIL_WORD));
 
-        assertEquals("Found only one result", count, 1);
-        assertEquals("Found the correct result", lastUTF8Text, outputText);
-        assertTrue("Result was high-confidence", lastConfidence > 80);
-        assertTrue("Result has a bounding box", lastBoundingBox[2] > 0 && lastBoundingBox[3] > 0);
+        assertEquals("Found incorrect number of results.", count, 1);
+        assertEquals("Found an incorrect result.", lastUTF8Text, outputText);
+        assertTrue("Result was not high-confidence.", lastConfidence > 80);
+        assertTrue("Result bounding box not found.", lastBoundingBox[2] > 0 && lastBoundingBox[3] > 0);
 
         // Attempt to shut down the API.
         baseApi.end();
