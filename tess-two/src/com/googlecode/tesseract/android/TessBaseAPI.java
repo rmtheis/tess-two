@@ -293,6 +293,15 @@ public class TessBaseAPI {
     }
 
     /**
+     * Return the current page segmentation mode.
+     *
+     * @return value of the current page segmentation mode
+     */
+    public int getPageSegMode() {
+        return nativeGetPageSegMode();
+    }
+
+    /**
      * Sets the page segmentation mode. This controls how much processing the
      * OCR engine will perform before recognizing text.
      *
@@ -591,6 +600,8 @@ public class TessBaseAPI {
     private native boolean nativeSetVariable(String var, String value);
 
     private native void nativeSetDebug(boolean debug);
+
+    private native int nativeGetPageSegMode();
 
     private native void nativeSetPageSegMode(int mode);
     

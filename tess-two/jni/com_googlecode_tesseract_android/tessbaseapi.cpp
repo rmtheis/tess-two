@@ -350,6 +350,14 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetDebug(JNIEnv *en
   nat->debug = (debug == JNI_TRUE) ? TRUE : FALSE;
 }
 
+jint Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetPageSegMode(JNIEnv *env,
+                                                                            jobject thiz) {
+
+  native_data_t *nat = get_native_data(env, thiz);
+
+  return nat->api.GetPageSegMode();
+}
+
 void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetPageSegMode(JNIEnv *env,
                                                                             jobject thiz,
                                                                             jint mode) {

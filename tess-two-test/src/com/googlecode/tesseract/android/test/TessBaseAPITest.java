@@ -54,6 +54,27 @@ public class TessBaseAPITest extends TestCase {
     }
 
     @SmallTest
+    public void testSetPageSegMode() {
+        // Attempt to initialize the API.
+        final TessBaseAPI baseApi = new TessBaseAPI();
+        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+
+        // Check the default page segmentation mode.
+        final int defaultPageSegMode = TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK;
+        assertEquals("Found unexpected default page segmentation mode.", 
+                baseApi.getPageSegMode(), defaultPageSegMode);
+
+        // Ensure that the page segmentation mode can be changed.
+        final int newPageSegMode = TessBaseAPI.PageSegMode.PSM_SINGLE_CHAR;
+        baseApi.setPageSegMode(newPageSegMode);
+        assertEquals("Found unexpected page segmentation mode.", 
+                baseApi.getPageSegMode(), newPageSegMode);
+
+        // Attempt to shut down the API.
+        baseApi.end();
+    }
+
+    @SmallTest
     public void testSetImage() {
         // First, make sure the eng.traineddata file exists.
         assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
