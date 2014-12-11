@@ -433,6 +433,19 @@ jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetWords(JNIEnv *e
   return reinterpret_cast<jlong>(pixa);
 }
 
+jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetConnectedComponents(JNIEnv *env,
+                                                                                    jobject thiz) {
+
+  native_data_t *nat = get_native_data(env, thiz);
+  PIXA *pixa = NULL;
+  BOXA *boxa;
+
+  boxa = nat->api.GetConnectedComponents(&pixa);
+  boxaDestroy(&boxa);
+
+  return reinterpret_cast<jlong>(pixa);
+}
+
 jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetResultIterator(JNIEnv *env,
                                                                                 jobject thiz) {
   native_data_t *nat = get_native_data(env, thiz);

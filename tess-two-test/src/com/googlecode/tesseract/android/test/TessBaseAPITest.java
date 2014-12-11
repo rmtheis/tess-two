@@ -143,6 +143,10 @@ public class TessBaseAPITest extends TestCase {
         final Pixa words = baseApi.getWords();
         assertEquals("Found incorrect number of words.", words.size(), 1);
 
+        // Ensure getConnectedComponents() works.
+        final Pixa connectedComponents = baseApi.getConnectedComponents();
+        assertTrue("Connected components not found.", connectedComponents.size() > 0);
+
         // Iterate through the results.
         final ResultIterator iterator = baseApi.getResultIterator();
         String lastUTF8Text;

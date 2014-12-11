@@ -505,6 +505,17 @@ public class TessBaseAPI {
     }
 
     /**
+     * Gets the individual connected (text) components (created after pages 
+     * segmentation step, but before recognition) as a Pixa, in reading order.
+     * Can be called before or after Recognize.
+     * 
+     * @return Pixa containing connected components bounding boxes 
+     */
+    public Pixa getConnectedComponents() {
+        return new Pixa(nativeGetConnectedComponents(), 0, 0);
+    }
+
+    /**
      * Returns an iterator allowing you to iterate over the top result for each recognized word or symbol.
      * 
      * @return ResultIterator iterate over the words
@@ -628,6 +639,8 @@ public class TessBaseAPI {
     private native long nativeGetStrips();
 
     private native long nativeGetWords();
+
+    private native long nativeGetConnectedComponents();
 
     private native long nativeGetResultIterator();
     
