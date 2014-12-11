@@ -97,6 +97,15 @@ public class TessBaseAPI {
     /** Blacklist of characters to not recognize. */
     public static final String VAR_CHAR_BLACKLIST = "tessedit_char_blacklist";
     
+    /** Save blob choices allowing us to get alternative results. */
+    public static final String VAR_SAVE_BLOB_CHOICES = "save_blob_choices";
+
+    /** String value used to assign a boolean variable to true. */
+    public static final String VAR_TRUE = "T";
+
+    /** String value used to assign a boolean variable to false. */
+    public static final String VAR_FALSE = "F";
+
     /** Run Tesseract only - fastest */
     public static final int OEM_TESSERACT_ONLY = 0;
     
@@ -495,6 +504,11 @@ public class TessBaseAPI {
         return new Pixa(nativeGetWords(), 0, 0);
     }
 
+    /**
+     * Returns an iterator allowing you to iterate over the top result for each recognized word or symbol.
+     * 
+     * @return ResultIterator iterate over the words
+     */
     public ResultIterator getResultIterator() {
         long nativeResultIterator = nativeGetResultIterator();
 
