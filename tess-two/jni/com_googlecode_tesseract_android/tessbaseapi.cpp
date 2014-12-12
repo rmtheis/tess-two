@@ -380,7 +380,7 @@ jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetThresholdedImag
 jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetRegions(JNIEnv *env,
                                                                          jobject thiz) {
 
-  native_data_t *nat = get_native_data(env, thiz);;
+  native_data_t *nat = get_native_data(env, thiz);
   PIXA *pixa = NULL;
   BOXA *boxa;
 
@@ -394,7 +394,7 @@ jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetRegions(JNIEnv 
 jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetTextlines(JNIEnv *env,
                                                                            jobject thiz) {
 
-  native_data_t *nat = get_native_data(env, thiz);;
+  native_data_t *nat = get_native_data(env, thiz);
   PIXA *pixa = NULL;
   BOXA *boxa;
 
@@ -408,7 +408,7 @@ jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetTextlines(JNIEn
 jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetStrips(JNIEnv *env,
                                                                         jobject thiz) {
 
-  native_data_t *nat = get_native_data(env, thiz);;
+  native_data_t *nat = get_native_data(env, thiz);
   PIXA *pixa = NULL;
   BOXA *boxa;
 
@@ -422,7 +422,7 @@ jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetStrips(JNIEnv *
 jlong Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetWords(JNIEnv *env,
                                                                        jobject thiz) {
 
-  native_data_t *nat = get_native_data(env, thiz);;
+  native_data_t *nat = get_native_data(env, thiz);
   PIXA *pixa = NULL;
   BOXA *boxa;
 

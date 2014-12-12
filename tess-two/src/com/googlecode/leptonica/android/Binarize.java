@@ -126,7 +126,7 @@ public class Binarize {
      * Notes:
      * <ol>
      * <li> The window width and height are 2 * whsize + 1.  The minimum
-     * value for whsize is 2; typically it is >= 7..
+     * value for whsize is 2; typically it is >= 7.
      * <li> For nx == ny == 1, this defaults to pixSauvolaBinarize().
      * <li> Why a tiled version?
      * (a) Because the mean value accumulator is a uint32, overflow
@@ -155,7 +155,7 @@ public class Binarize {
      * @param factor Factor for reducing threshold due to variance; >= 0
      * @param nx Subdivision into tiles; >= 1
      * @param ny Subdivision into tiles; >= 1
-     * @return A 1 bpp thresholded PIX image.r
+     * @return A 1 bpp thresholded PIX image.
      */
     public static Pix sauvolaBinarizeTiled(Pix pixs, int whsize, float factor, int nx, int ny) {
         if (pixs == null)
