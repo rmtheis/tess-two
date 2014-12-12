@@ -113,6 +113,20 @@ jlong Java_com_googlecode_leptonica_android_Convert_nativeConvertTo8(JNIEnv *env
   return (jlong) pixd;
 }
 
+/********
+ * Edge *
+ ********/
+
+jlong Java_com_googlecode_leptonica_android_Edge_nativePixSobelEdgeFilter(JNIEnv *env,
+                                                                          jclass clazz,
+                                                                          jlong nativePix,
+                                                                          jint orientFlag) {
+  PIX *pixs = (PIX *) nativePix;
+  PIX *pixd = pixSobelEdgeFilter(pixs, (l_int32) orientFlag);
+
+  return (jlong) pixd;
+}
+
 /***********
  * Enhance *
  ***********/
