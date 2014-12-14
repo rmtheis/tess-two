@@ -170,6 +170,28 @@ jbyteArray Java_com_googlecode_leptonica_android_JpegIO_nativeCompressToJpeg(JNI
   return array;
 }
 
+/************
+ * MorphApp *
+ ************/
+
+jlong Java_com_googlecode_leptonica_android_MorphApp_nativePixTophat(JNIEnv *env, jclass clazz,
+                                                                     jlong nativePix, jint hsize,
+                                                                     jint vsize, jint type) {
+  PIX *pixs = (PIX *) nativePix;
+  PIX *pixd = pixTophat(pixs, (l_int32) hsize, (l_int32) vsize, (l_int32) type);
+
+  return (jlong) pixd;
+}
+
+jlong Java_com_googlecode_leptonica_android_MorphApp_nativePixFastTophat(JNIEnv *env, jclass clazz,
+                                                                         jlong nativePix, jint xsize,
+                                                                         jint ysize, jint type) {
+  PIX *pixs = (PIX *) nativePix;
+  PIX *pixd = pixFastTophat(pixs, (l_int32) xsize, (l_int32) ysize, (l_int32) type);
+
+  return (jlong) pixd;
+}
+
 /*********
  * Scale *
  *********/
