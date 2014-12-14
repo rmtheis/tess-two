@@ -141,6 +141,18 @@ jlong Java_com_googlecode_leptonica_android_Enhance_nativeUnsharpMasking(JNIEnv 
   return (jlong) pixd;
 }
 
+/*************
+ * GrayQuant *
+ *************/
+
+jlong Java_com_googlecode_leptonica_android_GrayQuant_nativePixThresholdToBinary(JNIEnv *env, jclass clazz,
+                                                                                 jlong nativePix, jint thresh) {
+  PIX *pixs = (PIX *) nativePix;
+  PIX *pixd = pixThresholdToBinary(pixs, (l_int32) thresh);
+
+  return (jlong) pixd;
+}
+
 /**********
  * JpegIO *
  **********/
