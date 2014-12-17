@@ -31,15 +31,34 @@ public class ScaleTest extends TestCase {
         testScale(640, 480, 1.0f, 1.0f);
         testScale(640, 480, 0.5f, 0.25f);
     }
-    
+
+    @SmallTest
+    public void testScaleGeneral() {
+        testScaleGeneral(640, 480, 1.0f);
+        testScaleGeneral(640, 480, 0.5f);
+    }
+
     private void testScale(int inputWidth, int inputHeight, float scaleX, float scaleY) {
         Bitmap bmp = Bitmap.createBitmap(inputWidth, inputHeight, Bitmap.Config.ARGB_8888);
         Pix pixs = ReadFile.readBitmap(bmp);
         Pix pixd = Scale.scale(pixs, scaleX, scaleY);
-        
+
         assertEquals((int) (inputWidth * scaleX), pixd.getWidth());
         assertEquals((int) (inputHeight * scaleY), pixd.getHeight());
-        
+
+        bmp.recycle();
+        pixs.recycle();
+        pixd.recycle();
+    }
+
+    private void testScaleGeneral(int inputWidth, int inputHeight, float scale) {
+        Bitmap bmp = Bitmap.createBitmap(inputWidth, inputHeight, Bitmap.Config.ARGB_8888);
+        Pix pixs = ReadFile.readBitmap(bmp);
+        Pix pixd = Scale.scaleWithoutSharpening(pixs, scale);
+
+        assertEquals((int) (inputWidth * scale), pixd.getWidth());
+        assertEquals((int) (inputHeight * scale), pixd.getHeight());
+
         bmp.recycle();
         pixs.recycle();
         pixd.recycle();

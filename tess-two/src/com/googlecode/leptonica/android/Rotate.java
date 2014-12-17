@@ -90,9 +90,32 @@ public class Rotate {
         return new Pix(nativePix);
     }
 
+    /**
+     * Performs top-level rotation by multiples of 90 degrees.
+     *
+     * @param pixs The source pix (all depths)
+     * @param quads 0-3; number of 90 degree cw rotations
+     * @return the rotated source image
+     */
+    public static Pix rotateOrth(Pix pixs, int quads) {
+        if (pixs == null)
+            throw new IllegalArgumentException("Source pix must be non-null");
+        if (quads < 0 || quads > 3)
+            throw new IllegalArgumentException("quads not in {0,1,2,3}");
+
+        int nativePix = nativeRotateOrth(pixs.mNativePix, quads);
+
+        if (nativePix == 0)
+            return null;
+
+        return new Pix(nativePix);
+    }
+
     // ***************
     // * NATIVE CODE *
     // ***************
+
+    private static native int nativeRotateOrth(long nativePix, int quads);
 
     private static native long nativeRotate(long nativePix, float degrees, boolean quality,
     		boolean resize);
