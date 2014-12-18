@@ -493,7 +493,7 @@ char* TessBaseAPI::TesseractRect(const unsigned char* imagedata,
            bytes_per_pixel, bytes_per_line);
   SetRectangle(left, top, width, height);
 
-  return GetUTF8Text();
+  return GetUTF8Text(NULL);
 }
 
 /**
@@ -1257,9 +1257,9 @@ MutableIterator* TessBaseAPI::GetMutableIterator() {
 }
 
 /** Make a text string from the internal data structures. */
-char* TessBaseAPI::GetUTF8Text() {
+char* TessBaseAPI::GetUTF8Text(struct ETEXT_DESC* monitor) {
   if (tesseract_ == NULL ||
-      (!recognition_done_ && Recognize(NULL) < 0))
+      (!recognition_done_ && Recognize(monitor) < 0))
     return NULL;
   STRING text("");
   ResultIterator *it = GetIterator();
@@ -1358,9 +1358,9 @@ static void AddBoxTohOCR(const PageIterator *it,
  * GetHOCRText
  * STL removed from original patch submission and refactored by rays.
  */
-char* TessBaseAPI::GetHOCRText(int page_number) {
+char* TessBaseAPI::GetHOCRText(int page_number, struct ETEXT_DESC* monitor) {
   if (tesseract_ == NULL ||
-      (page_res_ == NULL && Recognize(NULL) < 0))
+      (page_res_ == NULL && Recognize(monitor) < 0))
     return NULL;
 
   int lcnt = 1, bcnt = 1, pcnt = 1, wcnt = 1;
@@ -1752,7 +1752,7 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char* wordstr) {
   PageSegMode current_psm = GetPageSegMode();
   SetPageSegMode(mode);
   SetVariable("classify_enable_learning", "0");
-  char* text = GetUTF8Text();
+  char* text = GetUTF8Text(NULL);
   if (debug) {
     tprintf("Trying to adapt \"%s\" to \"%s\"\n", text, wordstr);
   }

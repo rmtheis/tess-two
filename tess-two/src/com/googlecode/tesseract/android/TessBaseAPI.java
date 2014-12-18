@@ -117,7 +117,6 @@ public class TessBaseAPI {
     
     /** Default OCR engine mode. */
     public static final int OEM_DEFAULT = 3;
-
     
     /**
      * Elements of the page hierarchy, used in {@link ResultIterator} to provide
@@ -143,11 +142,71 @@ public class TessBaseAPI {
         /** Symbol/character within a word. */
         public static final int RIL_SYMBOL = 4;
     };
-    
+
+    private ProgressNotifier progressNotifier;
+
+    /**
+     * Interface that may be implemented by calling object in order to receive 
+     * progress callbacks during OCR.
+     */
+    public interface ProgressNotifier {
+        void onProgressValues(ProgressValues progressValues);
+    }
+
+    /**
+     * Represents values indicating recognition progress and status.
+     */
+    public class ProgressValues {
+        private int percent;
+        private int boundingBoxLeft;
+        private int boundingBoxRight;
+        private int boundingBoxTop;
+        private int boundingBoxBottom;
+
+        public ProgressValues(int percent, int left, int right, int top, int bottom) {
+            this.percent = percent;
+            this.boundingBoxLeft = left;
+            this.boundingBoxRight = right;
+            this.boundingBoxTop = top;
+            this.boundingBoxBottom = bottom;
+        }
+
+        public int getPercent() {
+            return percent;
+        }
+
+        public int getBoundingBoxLeft() {
+            return boundingBoxLeft;
+        }
+
+        public int getBoundingBoxRight() {
+            return boundingBoxRight;
+        }
+
+        public int getBoundingBoxTop() {
+            return boundingBoxTop;
+        }
+
+        public int getBoundingBoxBottom() {
+            return boundingBoxBottom;
+        }
+    }
+
     /**
      * Constructs an instance of TessBaseAPI.
      */
     public TessBaseAPI() {
+        nativeConstruct();
+    }
+
+    /**
+     * Constructs an instance of TessBaseAPI with a callback method for
+     * receiving progress updates during OCR.
+     *
+     * @param progressNotifier Callback to receive progress notifications
+     */
+    public TessBaseAPI(ProgressNotifier progressNotifier) {
+        this.progressNotifier = progressNotifier;
         nativeConstruct();
     }
 
@@ -580,6 +639,31 @@ public class TessBaseAPI {
         return nativeGetBoxText(page);
     }
 
+    /**
+     * Cancel any recognition in progress.
+     */
+    public void stop() {
+        nativeStop();
+    }
+
+    /**
+     * Called from native code to update progress of ongoing recognition passes.
+     *
+     * @param percent Percent complete
+     * @param left Left bound of word bounding box
+     * @param right Right bound of word bounding box
+     * @param top Top bound of word bounding box
+     * @param bottom Bottom bound of word bounding box
+     */
+    private void onProgressValues(final int percent, final int left,
+            final int right, final int top, final int bottom) {
+
+        if (progressNotifier != null) {
+            ProgressValues pv = new ProgressValues(percent, left, right, top, bottom);
+            progressNotifier.onProgressValues(pv);
+        }
+    }
+
     // ******************
     // * Native methods *
     // ******************
@@ -653,4 +737,6 @@ public class TessBaseAPI {
     private native void nativeSetOutputName(String name);
     
     private native void nativeReadConfigFile(String fileName);
+
+    private native int nativeStop();
 }
