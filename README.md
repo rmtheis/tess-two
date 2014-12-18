@@ -24,7 +24,7 @@ eyes-two
 The `eyes-two` subdirectory contains a second, separate library project with additional image 
 processing code copied from the [eyes-free project](http://code.google.com/p/eyes-free/) without 
 modifications. It includes native functions for text detection, blurriness detection, optical flow 
-detection, and thresholding. Building eyes-two is not necessary for using the Tesseract API.
+detection, and thresholding. Building eyes-two is not necessary for using the Tesseract or Leptonica APIs.
 
 While I haven't tested all the Eyes-two code, I've bundled it in this project alongside tess-two for
 convenience due to its dependency on Leptonica. 
