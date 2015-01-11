@@ -27,6 +27,7 @@ LOCAL_LDLIBS := \
 
 LOCAL_SRC_FILES += \
   box.cpp \
+  boxa.cpp \
   pix.cpp \
   pixa.cpp \
   utilities.cpp \
