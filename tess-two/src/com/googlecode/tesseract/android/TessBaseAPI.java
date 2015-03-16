@@ -483,7 +483,7 @@ public class TessBaseAPI {
         // Trim because the text will have extra line breaks at the end
         String text = nativeGetUTF8Text();
 
-        return text.trim();
+        return text != null ? text.trim() : null;
     }
 
     /**
