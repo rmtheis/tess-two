@@ -6,7 +6,7 @@ additional functions. Tesseract Tools for Android is a set of Android APIs and
 build files for the [Tesseract OCR](https://code.google.com/p/tesseract-ocr/) and [Leptonica](http://www.leptonica.com/) image processing libraries.
 
 This project works with Tesseract pre-release v3.04 and Leptonica v1.71. The required source code for Tesseract and
-Leptonica is included within the `tess-two/jni` folder.
+Leptonica is included within the `tess-two/src/main/jni` folder.
 
 The `tess-two` subdirectory contains tools for compiling the Tesseract and Leptonica
 libraries for use on the Android platform. It contains an Android
@@ -36,25 +36,20 @@ This project is set up to build on Android SDK Tools r22.3+ and Android NDK r10+
 
 On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility library.
 
-To build tess-two, run the following commands in the terminal:
+To build native libs for `tess-two`, run the following commands in the terminal:
 
     git clone git://github.com/rmtheis/tess-two tess
-    cd tess
-    cd tess-two
+    cd tess-two/src/main
     ndk-build
-    android update project --path .
-    ant release
 
-To build eyes-two, additionally run the following:
+To build native libs for `eyes-two`, additionally run the following:
 
-    cd ..
-    cd eyes-two
+    cd eyes-two/src/main
     ndk-build
-    android update project --path .
-    ant release
 
-After building, the tess-two and eyes-two projects can be imported into Eclipse using 
-File->Import->Existing Projects into Workspace.
+To finally build the test project `tess-two-test`, additionally run the following:
+
+    ./gradlew build
 
 Maven
 =====

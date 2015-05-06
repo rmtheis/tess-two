@@ -1,0 +1,18 @@
+apply plugin: 'com.android.application'
+
+dependencies {
+    compile project(':tess-two')
+}
+
+android {
+    compileSdkVersion 20
+    buildToolsVersion "22.0.1"
+
+    defaultConfig {
+        applicationId "com.googlecode.tesseract.android.test"
+        minSdkVersion 8
+        targetSdkVersion 20
+        versionCode 1
+        versionName "1.0"
+    }
+}
