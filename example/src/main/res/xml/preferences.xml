@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ Copyright 2011 Robert Theis
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+	<!-- GENERAL SETTINGS -->
+	<PreferenceCategory android:title="General settings">
+
+		<CheckBoxPreference android:key="preference_capture_continuous"
+			android:title="Continuous preview"
+			android:entries="@array/capturemodes" />
+
+		<ListPreference android:title="Recognize"
+			android:key="sourceLanguageCodeOcrPref"
+			android:entries="@array/languagenames"
+			android:entryValues="@array/iso6393" />
+			
+	</PreferenceCategory>
+
+	<!-- TRANSLATION SETTINGS -->
+	<PreferenceCategory android:title="Translation settings">
+
+		<CheckBoxPreference android:key="preference_translation_toggle_translation"
+			android:title="Translate"/>
+
+		<ListPreference android:key="targetLanguageCodeTranslationPref"  
+			android:title="Translate to"
+			android:dependency="preference_translation_toggle_translation"
+			android:entries="@array/translationtargetlanguagenames_google" 
+			android:entryValues="@array/translationtargetiso6391_google" />
+			
+		<ListPreference android:key="preference_translator" 
+			android:title="Translator"
+		    android:dependency="preference_translation_toggle_translation"
+			android:entries="@array/translators" 
+			android:entryValues="@array/translators" />
+						
+	</PreferenceCategory>
+
+	<!-- ADVANCED SETTINGS -->
+	<PreferenceCategory android:title="Advanced settings">
+
+	    <ListPreference android:key="preference_ocr_engine_mode"
+	        android:title="OCR engine"
+	        android:entries="@array/ocrenginemodes"
+	        android:entryValues="@array/ocrenginemodes"/>
+	    
+	    <CheckBoxPreference
+	        android:key="preferences_auto_focus"
+	        android:title="Autofocus"/>
+	    
+	    <CheckBoxPreference
+	        android:key="preferences_disable_continuous_focus"
+	        android:defaultValue="true"
+	        android:title="Standard focus mode" />
+	    
+	    <CheckBoxPreference
+            android:key="preferences_play_beep"
+            android:title="Beep"/>
+	    	    
+        <EditTextPreference android:key="preference_character_blacklist"
+            android:title="Character blacklist"/>
+                
+        <EditTextPreference android:key="preference_character_whitelist"
+            android:title="Character whitelist"/>
+
+<!-- 
+		<CheckBoxPreference
+		    android:key="preference_toggle_light"
+		    android:title="Light"/>
+-->
+
+	    <ListPreference android:key="preference_page_segmentation_mode"
+			android:title="Page segmentation"
+			android:entries="@array/pagesegmentationmodes"
+			android:entryValues="@array/pagesegmentationmodes" />
+
+	    <CheckBoxPreference
+            android:key="preferences_reverse_image"
+            android:title="Reversed camera image"
+            android:summary="(For devices with only a front camera)"/>
+	    
+	</PreferenceCategory>
+	
+</PreferenceScreen>

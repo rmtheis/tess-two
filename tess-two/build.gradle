@@ -17,4 +17,10 @@ android {
             jniLibs.srcDir 'src/main/libs'
         }
     }
+    
+    android {
+        lintOptions {
+            abortOnError false
+        }
+    }
 }
