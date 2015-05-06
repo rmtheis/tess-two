@@ -1,0 +1,30 @@
+apply plugin: 'com.android.library'
+
+dependencies {
+    compile project(':tess-two')
+}
+
+android {
+    compileSdkVersion 20
+    buildToolsVersion '21.1.2'
+
+    defaultConfig {
+        minSdkVersion 8
+        targetSdkVersion 20
+        versionCode 4
+        versionName '0.6.1'
+    }
+    
+    sourceSets {
+        main {
+            jni.srcDirs = [] // disable NDK auto generation
+            jniLibs.srcDir 'src/main/libs'
+        }
+    }
+    
+    android {
+        lintOptions {
+            abortOnError false
+        }
+    }
+}

@@ -1,0 +1,25 @@
+apply plugin: 'com.android.application'
+
+dependencies {
+    compile project(':tess-two')
+    compile fileTree(dir: 'java-libs', include: '*.jar')
+}
+
+android {
+    compileSdkVersion 20
+    buildToolsVersion "22.0.1"
+
+    defaultConfig {
+        applicationId "edu.sfsu.cs.orange.ocr"
+        minSdkVersion 8
+        targetSdkVersion 20
+        versionCode 33
+        versionName "0.5.14"
+    }
+    
+    android {
+        lintOptions {
+            abortOnError false
+        }
+    }
+}
