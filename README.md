@@ -41,15 +41,17 @@ To build native libs for `tess-two`, run the following commands in the terminal:
     git clone git://github.com/rmtheis/tess-two tess
     cd tess-two/src/main
     ndk-build
-
+    cd ../../..
+    ./gradlew build  # this builds the example project
+    
+Not tested
+==========    
 To build native libs for `eyes-two`, additionally run the following:
 
     cd eyes-two/src/main
     ndk-build
 
-To finally build the test project `tess-two-test`, additionally run the following:
-
-    ./gradlew build
+* `tess-two-test`
 
 Maven
 =====
