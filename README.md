@@ -38,7 +38,7 @@ On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility l
 
 To build native libs for `tess-two`, run the following commands in the terminal:
 
-    git clone https://github.com/dschuermann/tess-two.git tess-two
+    git clone -b gradle https://github.com/dschuermann/tess-two.git tess-two
     cd tess-two/tess-two/src/main
     ndk-build
     cd ../../..
