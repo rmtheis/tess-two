@@ -16,6 +16,8 @@
 
 package com.googlecode.tesseract.android;
 
+import android.graphics.Rect;
+
 import com.googlecode.tesseract.android.TessBaseAPI.PageIteratorLevel;
 
 public class PageIterator {
@@ -62,29 +64,45 @@ public class PageIterator {
 
     /**
      * Get bounding box: x, y, w, h
-     * 
+     * <p>
      * ============= Accessing data ==============.
+     * <p>
      * Coordinate system:
-     * Integer coordinates are at the cracks between the pixels.
-     * The top-left corner of the top-left pixel in the image is at (0,0).
-     * The bottom-right corner of the bottom-right pixel in the image is at
+     * <p><ul>
+     * <li> Integer coordinates are at the cracks between the pixels.
+     * <li> The top-left corner of the top-left pixel in the image is at (0,0).
+     * <li> The bottom-right corner of the bottom-right pixel in the image is at
      * (width, height).
-     * Every bounding box goes from the top-left of the top-left contained
+     * <li> Every bounding box goes from the top-left of the top-left contained
      * pixel to the bottom-right of the bottom-right contained pixel, so
      * the bounding box of the single top-left pixel in the image is:
      * (0,0)->(1,1).
-     * If an image rectangle has been set in the API, then returned coordinates
+     * <li> If an image rectangle has been set in the API, then returned coordinates
      * relate to the original (full) image, rather than the rectangle.
-     *
+     * </ul><p>
      * Returns the bounding rectangle of the current object at the given level.
      * See comment on coordinate system above.
+     * <p>
      * The returned bounding box may clip foreground pixels from a grey image.
      * 
      * @param level the page iterator level. See {@link PageIteratorLevel}.
      * @return the bounding rectangle of the current object at the given level
      */
-    public int[] getBoundingBox(int level){
+    public int[] getBoundingBox(int level) {
     	return nativeBoundingBox(mNativePageIterator, level);
+    }
+    
+    /**
+     * Get a bounding box as an Android Rect.
+     * 
+     * @see #getBoundingBox()
+     * 
+     * @param level the page iterator level. See {@link PageIteratorLevel}.
+     * @return the bounding rectangle of the current object at the given level
+     */
+    public Rect getBoundingRect(int level) {
+        int[] box = getBoundingBox(level);
+        return new Rect(box[0], box[1], box[2], box[3]);
     }
     
     private static native void nativeBegin(long nativeIterator);
