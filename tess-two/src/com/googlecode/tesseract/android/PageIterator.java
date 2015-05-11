@@ -95,7 +95,7 @@ public class PageIterator {
     /**
      * Get a bounding box as an Android Rect.
      * 
-     * @see #getBoundingBox()
+     * @see #getBoundingBox(int)
      * 
      * @param level the page iterator level. See {@link PageIteratorLevel}.
      * @return the bounding rectangle of the current object at the given level

@@ -18,6 +18,9 @@ that provides a Java API for accessing natively-compiled Tesseract and Leptonica
 * Android 2.2 or higher
 * A v3.02 [trained data file](https://code.google.com/p/tesseract-ocr/downloads/list) for a language. Data files must be extracted to a subdirectory named `tessdata`.
 
+## Versions
+Release points are tagged with [version numbers](http://semver.org). Note that when the major version number is changed, it means that there was an API change making the new version incompatible with previous versions.
+
 eyes-two
 ========
 
@@ -32,11 +35,11 @@ convenience due to its dependency on Leptonica.
 Build
 =====
 
-This project is set up to build on Android SDK Tools r22.3+ and Android NDK r10+. The build works on Linux, Mac OS X, and Windows 7/8. See [Issues](https://github.com/rmtheis/tess-two/issues) for reported build issues.
+This project is set up to build on Android SDK Tools r22.3+ and Android NDK r10d+. The build works on Linux, Mac OS X, and Windows 7/8. See [Issues](https://github.com/rmtheis/tess-two/issues) for reported build issues.
 
 On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility library.
 
-To build tess-two, run the following commands in the terminal:
+To build the latest tess-two code, run the following commands in the terminal:
 
     git clone git://github.com/rmtheis/tess-two tess
     cd tess
@@ -61,6 +64,14 @@ Maven
 
 While this project does not require Maven (and this project has not yet been registered in a Maven central repository), it can be [integrated into a local Maven repository for convenience](http://www.jameselsey.co.uk/blogs/techblog/tesseract-ocr-on-android-is-easier-if-you-maven-ise-it-works-on-windows-too/).
 
+Questions
+=========
+If you have a specific, detailed question, consider posting it to [StackOverflow](https://stackoverflow.com/) and tagging it with the `tess-two` tag. For best results, follow their suggestions for [asking a good question](http://stackoverflow.com/help/how-to-ask).
+
+Contributing
+============
+Pull requests are always welcome. Please open a new issue if you find a bug.
+
 License
 =======
 
@@ -81,4 +92,3 @@ This project is licensed under the [Apache License, Version 2.0](http://www.apac
      * See the License for the specific language governing permissions and
      * limitations under the License.
      */
-
