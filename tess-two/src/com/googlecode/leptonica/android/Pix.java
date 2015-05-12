@@ -83,11 +83,9 @@ public class Pix {
      * @return a copy of this PIX object's raw data
      */
     public byte[] getData() {
-        int size = nativeGetDataSize(mNativePix);
+        byte[] buffer = nativeGetData(mNativePix);
 
-        byte[] buffer = new byte[size];
-
-        if (!nativeGetData(mNativePix, buffer)) {
+        if (buffer == null) {
             throw new RuntimeException("native getData failed");
         }
 
@@ -284,8 +282,7 @@ public class Pix {
 
     private static native long nativeCreatePix(int w, int h, int d);
     private static native long nativeCreateFromData(byte[] data, int w, int h, int d);
-    private static native boolean nativeGetData(long nativePix, byte[] data);
-    private static native int nativeGetDataSize(long nativePix);
+    private static native byte[] nativeGetData(long nativePix);
     private static native long nativeClone(long nativePix);
     private static native long nativeCopy(long nativePix);
     private static native boolean nativeInvert(long nativePix);

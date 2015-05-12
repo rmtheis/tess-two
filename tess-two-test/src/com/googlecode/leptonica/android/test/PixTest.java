@@ -16,11 +16,18 @@
 
 package com.googlecode.leptonica.android.test;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import junit.framework.TestCase;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Bitmap.CompressFormat;
 import android.test.suitebuilder.annotation.SmallTest;
 
 import com.googlecode.leptonica.android.Pix;
+import com.googlecode.leptonica.android.ReadFile;
 
 public class PixTest extends TestCase {
     @SmallTest
@@ -77,5 +84,23 @@ public class PixTest extends TestCase {
         // Finally, we should be able to recycle both Pix.
         pix.recycle();
         pixCopy.recycle();
+    }
+    
+    @SmallTest
+    public void testGetData() throws IOException {       
+        File file = File.createTempFile("testGetData", "jpg");
+        FileOutputStream fileStream = new FileOutputStream(file);
+        Bitmap bmp = Bitmap.createBitmap(640, 480, Bitmap.Config.RGB_565);
+        bmp.compress(CompressFormat.JPEG, 85, fileStream);
+        Pix pix = ReadFile.readFile(file);
+
+        byte[] pixData = pix.getData();
+        Pix pixFromBytes = Pix.createFromPix(pixData, 640, 480, 16);
+        
+        assertNotNull(pixFromBytes);
+
+        fileStream.close();
+        bmp.recycle();
+        pix.recycle();
     }
 }
