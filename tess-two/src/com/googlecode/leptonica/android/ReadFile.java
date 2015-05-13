@@ -18,6 +18,7 @@ package com.googlecode.leptonica.android;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 
 import java.io.File;
 
@@ -31,6 +32,8 @@ public class ReadFile {
         System.loadLibrary("lept");
     }
 
+    private static final String LOG_TAG = ReadFile.class.getSimpleName();
+    
     /**
      * Creates a 32bpp Pix object from encoded data. Supported formats are BMP
      * and JPEG.
@@ -39,8 +42,10 @@ public class ReadFile {
      * @return a 32bpp Pix object
      */
     public static Pix readMem(byte[] encodedData) {
-        if (encodedData == null)
-            throw new IllegalArgumentException("Image data byte array must be non-null");
+        if (encodedData == null) {
+            Log.e(LOG_TAG, "Image data byte array must be non-null");
+            return null;
+        }
 
         final BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
@@ -137,17 +142,27 @@ public class ReadFile {
      * @return a Pix object
      */
     public static Pix readFile(File file) {
-        if (file == null)
-            throw new IllegalArgumentException("File must be non-null");
-        if (!file.exists())
-            throw new IllegalArgumentException("File does not exist");
-        if (!file.canRead())
-            throw new IllegalArgumentException("Cannot read file");
+        if (file == null) {
+            Log.e(LOG_TAG, "File must be non-null");
+            return null;
+        }
+        if (!file.exists()) {
+            Log.e(LOG_TAG, "File does not exist");
+            return null;
+        }
+        if (!file.canRead()) {
+            Log.e(LOG_TAG, "Cannot read file");
+            return null;
+        }
 
         final BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
 
         final Bitmap bmp = BitmapFactory.decodeFile(file.getAbsolutePath(), opts);
+        if (bmp == null) {
+            Log.e(LOG_TAG, "Cannot decode bitmap");
+            return null;
+        }
         final Pix pix = readBitmap(bmp);
 
         bmp.recycle();
@@ -163,15 +178,21 @@ public class ReadFile {
      * @return a Pix object
      */
     public static Pix readBitmap(Bitmap bmp) {
-        if (bmp == null)
-            throw new IllegalArgumentException("Bitmap must be non-null");
-        if (bmp.getConfig() != Bitmap.Config.ARGB_8888)
-            throw new IllegalArgumentException("Bitmap config must be ARGB_8888");
+        if (bmp == null) {
+            Log.e(LOG_TAG, "Bitmap must be non-null");
+            return null;
+        }
+        if (bmp.getConfig() != Bitmap.Config.ARGB_8888) {
+            Log.e(LOG_TAG, "Bitmap config must be ARGB_8888");
+            return null;
+        }
 
         long nativePix = nativeReadBitmap(bmp);
 
-        if (nativePix == 0)
-            throw new RuntimeException("Failed to read pix from bitmap");
+        if (nativePix == 0) {
+            Log.e(LOG_TAG, "Failed to read pix from bitmap");
+            return null;
+        }
 
         return new Pix(nativePix);
     }
