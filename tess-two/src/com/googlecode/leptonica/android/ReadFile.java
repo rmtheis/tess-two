@@ -134,7 +134,13 @@ public class ReadFile {
             Log.e(LOG_TAG, "Cannot read file");
             return null;
         }
+        
+        final long nativePix = nativeReadFile(file.getAbsolutePath());
 
+        if (nativePix != 0) {
+            return new Pix(nativePix);
+        }
+        
         final BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
 
