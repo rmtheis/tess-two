@@ -27,8 +27,8 @@
 /*
  * displaypixa.c
  *
- *        displaypixa filein fileout [fontdir]
- *        displaypixa filein scalefact border lossless disp fileout [fontdir]
+ *        displaypixa filein fileout [showtext]
+ *        displaypixa filein scalefact border lossless disp fileout [showtext]
  *
  *   where disp = 1 to display on the screen; 0 to skip
  *         lossless = 1 for tiff or png
@@ -36,8 +36,8 @@
  *   This reads a pixa from file and generates a composite of the
  *   images tiled in rows.  It also optionally displays on the screen.
  *   No scaling is done if @scalefact == 0.0 or @scalefact == 1.0.
- *   If @fontdir is specified, the text field for all pix with text
- *   is written out below the image.
+ *   If showtext = 1, the text field for all pix with text is written
+ *   out below the image.
  */
 
 #include <string.h>
@@ -48,18 +48,18 @@ int main(int    argc,
 {
 char         buf[32];
 char        *filein, *fileout, *fontdir, *textstr;
-l_int32      n, i, maxdepth, ntext, border, lossless, display;
+l_int32      n, i, maxdepth, ntext, border, lossless, display, showtext;
 l_float32    scalefact;
 L_BMF       *bmf;
 PIX         *pix1, *pix2, *pix3, *pix4, *pixd;
-PIXA        *pixa, *pixat;
+PIXA        *pixa, *pixad;
 static char  mainName[] = "displaypixa";
 
     if (argc != 3 && argc != 4 && argc != 7 && argc != 8) {
         fprintf(stderr, "Syntax error in displaypixa:\n"
-           "   displaypixa filein fileout [fontdir]\n"
+           "   displaypixa filein fileout [showtext]\n"
            "   displaypixa filein scalefact border"
-                 " lossless disp fileout [fontdir]\n");
+                 " lossless disp fileout [showtext]\n");
          return 1;
     }
 
@@ -68,9 +68,14 @@ static char  mainName[] = "displaypixa";
         return ERROR_INT("pixa not made", mainName, 1);
     pixaCountText(pixa, &ntext);
 
-        /* Simple specification; no output text */
-    if (argc == 3 || (argc == 4 && ntext == 0)) {  /* no text output */
+    if (argc == 3 || argc == 4)
         fileout = argv[2];
+    if (argc == 4)
+        showtext = atoi(argv[3]);
+
+        /* Simple specification; no output text */
+    if (argc == 3 ||
+        (argc == 4 && (ntext == 0 || showtext == 0))) {  /* no text output */
         pixaVerifyDepth(pixa, &maxdepth);
         pixd = pixaDisplayTiledInRows(pixa, maxdepth, 1400, 1.0, 0, 10, 0);
         pixDisplay(pixd, 100, 100);
@@ -84,36 +89,30 @@ static char  mainName[] = "displaypixa";
     }
 
         /* Simple specification with output text */
-    if (argc == 4) {  /* ntext > 0 */
-        fileout = argv[2];
-        fontdir = argv[3];
+    if (argc == 4) {  /* showtext == 1 && ntext > 0 */
         n = pixaGetCount(pixa);
-        if ((bmf = bmfCreate(fontdir, 6)) == NULL) {
-            L_ERROR("couldn't read fontdir\n", mainName);
-            pixat = pixaCopy(pixa, L_CLONE);
-        } else {
-            pixat = pixaCreate(n);
-            for (i = 0; i < n; i++) {
-                pix1 = pixaGetPix(pixa, i, L_CLONE);
-                pix2 = pixConvertTo32(pix1);
-                pix3 = pixAddBorderGeneral(pix2, 10, 10, 5, 5, 0xffffff00);
-                textstr = pixGetText(pix1);
-                if (textstr && strlen(textstr) > 0) {
-                    snprintf(buf, sizeof(buf), "%s", textstr);
-                    pix4 = pixAddSingleTextblock(pix3, bmf, buf, 0xff000000,
-                                                 L_ADD_BELOW, NULL);
-                } else {
-                    pix4 = pixClone(pix3);
-                }
-                pixaAddPix(pixat, pix4, L_INSERT);
-                pixDestroy(&pix1);
-                pixDestroy(&pix2);
-                pixDestroy(&pix3);
+        bmf = bmfCreate(NULL, 6);
+        pixad = pixaCreate(n);
+        for (i = 0; i < n; i++) {
+            pix1 = pixaGetPix(pixa, i, L_CLONE);
+            pix2 = pixConvertTo32(pix1);
+            pix3 = pixAddBorderGeneral(pix2, 10, 10, 5, 5, 0xffffff00);
+            textstr = pixGetText(pix1);
+            if (textstr && strlen(textstr) > 0) {
+                snprintf(buf, sizeof(buf), "%s", textstr);
+                pix4 = pixAddSingleTextblock(pix3, bmf, buf, 0xff000000,
+                                             L_ADD_BELOW, NULL);
+            } else {
+                pix4 = pixClone(pix3);
             }
-            bmfDestroy(&bmf);
+            pixaAddPix(pixad, pix4, L_INSERT);
+            pixDestroy(&pix1);
+            pixDestroy(&pix2);
+            pixDestroy(&pix3);
         }
-        pixaVerifyDepth(pixat, &maxdepth);
-        pixd = pixaDisplayTiledInRows(pixat, maxdepth, 1400, 1.0, 0, 10, 0);
+        bmfDestroy(&bmf);
+        pixaVerifyDepth(pixad, &maxdepth);
+        pixd = pixaDisplayTiledInRows(pixad, maxdepth, 1400, 1.0, 0, 10, 0);
         pixDisplay(pixd, 100, 100);
         if (pixGetDepth(pixd) == 1)
             pixWrite(fileout, pixd, IFF_PNG);
@@ -121,7 +120,7 @@ static char  mainName[] = "displaypixa";
             pixWrite(fileout, pixd, IFF_JFIF_JPEG);
         pixDestroy(&pixd);
         pixaDestroy(&pixa);
-        pixaDestroy(&pixat);
+        pixaDestroy(&pixad);
         return 0;
     }
 
@@ -131,41 +130,33 @@ static char  mainName[] = "displaypixa";
     lossless = atoi(argv[4]);
     display = atoi(argv[5]);
     fileout = argv[6];
-    fontdir = (argc == 8) ? argv[7] : NULL;
-    if (fontdir && ntext == 0)
-        L_WARNING("No text found in any of the pix\n", mainName);
-    if (fontdir && ntext > 0) {
-        if ((bmf = bmfCreate(fontdir, 6)) == NULL) {
-            L_ERROR("couldn't read fontdir\n", mainName);
-            pixat = pixaCopy(pixa, L_CLONE);
+    showtext = (argc == 8) ? atoi(argv[7]) : 0;
+    if (showtext  && ntext == 0)
+        L_INFO("No text found in any of the pix\n", mainName);
+    bmf = (showtext && ntext > 0) ?  bmfCreate(NULL, 6) : NULL;
+    n = pixaGetCount(pixa);
+    pixad = pixaCreate(n);
+    for (i = 0; i < n; i++) {
+        pix1 = pixaGetPix(pixa, i, L_CLONE);
+        pix2 = pixConvertTo32(pix1);
+        pix3 = pixAddBorderGeneral(pix2, 10, 10, 5, 5, 0xffffff00);
+        textstr = pixGetText(pix1);
+        if (bmf && textstr && strlen(textstr) > 0) {
+            snprintf(buf, sizeof(buf), "%s", textstr);
+            pix4 = pixAddSingleTextblock(pix3, bmf, buf, 0xff000000,
+                                     L_ADD_BELOW, NULL);
         } else {
-            n = pixaGetCount(pixa);
-            pixat = pixaCreate(n);
-            for (i = 0; i < n; i++) {
-                pix1 = pixaGetPix(pixa, i, L_CLONE);
-                pix2 = pixConvertTo32(pix1);
-                pix3 = pixAddBorderGeneral(pix2, 10, 10, 5, 5, 0xffffff00);
-                textstr = pixGetText(pix1);
-                if (textstr && strlen(textstr) > 0) {
-                    snprintf(buf, sizeof(buf), "%s", textstr);
-                    pix4 = pixAddSingleTextblock(pix3, bmf, buf, 0xff000000,
-                                             L_ADD_BELOW, NULL);
-                } else {
-                    pix4 = pixClone(pix3);
-                }
-                pixaAddPix(pixat, pix4, L_INSERT);
-                pixDestroy(&pix1);
-                pixDestroy(&pix2);
-                pixDestroy(&pix3);
-            }
-            bmfDestroy(&bmf);
+            pix4 = pixClone(pix3);
         }
-    } else {
-        pixat = pixaCopy(pixa, L_CLONE);
+        pixaAddPix(pixad, pix4, L_INSERT);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+        pixDestroy(&pix3);
     }
+    bmfDestroy(&bmf);
 
-    pixaVerifyDepth(pixat, &maxdepth);
-    pixd = pixaDisplayTiledInRows(pixat, maxdepth, 1400, scalefact,
+    pixaVerifyDepth(pixad, &maxdepth);
+    pixd = pixaDisplayTiledInRows(pixad, maxdepth, 1400, scalefact,
                                   0, 10, border);
     if (display) pixDisplay(pixd, 20, 20);
     if (pixGetDepth(pixd) == 1 || lossless)
@@ -175,6 +166,6 @@ static char  mainName[] = "displaypixa";
 
     pixDestroy(&pixd);
     pixaDestroy(&pixa);
-    pixaDestroy(&pixat);
+    pixaDestroy(&pixad);
     return 0;
 }

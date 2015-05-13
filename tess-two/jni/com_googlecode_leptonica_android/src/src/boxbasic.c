@@ -1978,7 +1978,8 @@ BOXA  *boxa;
          * We are writing to file first, instead of reading from the memory
          * buffer, because the gnu extension fmemopen() is not available
          * with other runtimes. */
-    fp = tmpfile();
+    if ((fp = tmpfile()) == NULL)
+        return (BOXA *)ERROR_PTR("tmpfile stream not opened", procName, NULL);
     fwrite(data, 1, size, fp);
     rewind(fp);
     boxa = boxaReadStream(fp);
@@ -2072,16 +2073,17 @@ FILE    *fp;
     PROCNAME("boxaWriteMem");
 
     if (!pdata)
-        return ERROR_INT("&data not defined", procName, 1 );
+        return ERROR_INT("&data not defined", procName, 1);
     *pdata = NULL;
     if (!psize)
-        return ERROR_INT("&size not defined", procName, 1 );
+        return ERROR_INT("&size not defined", procName, 1);
     *psize = 0;
     if (!boxa)
-        return ERROR_INT("&boxa not defined", procName, 1 );
+        return ERROR_INT("&boxa not defined", procName, 1);
 
         /* Serialize: write to file and read serialized data back into memory */
-    fp = tmpfile();
+    if ((fp = tmpfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
     ret = boxaWriteStream(fp, boxa);
     rewind(fp);
     *pdata = l_binaryReadStream(fp, psize);

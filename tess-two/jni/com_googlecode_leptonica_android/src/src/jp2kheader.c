@@ -44,6 +44,10 @@
 #include <math.h>
 #include "allheaders.h"
 
+#ifndef  NO_CONSOLE_IO
+#define  DEBUG_IHDR        0
+#endif  /* ~NO_CONSOLE_IO */
+
 /* --------------------------------------------*/
 #if  USE_JP2KHEADER   /* defined in environ.h */
 /* --------------------------------------------*/
@@ -184,8 +188,10 @@ l_uint8  ihdr[4] = {0x69, 0x68, 0x64, 0x72};  /* 'ihdr' */
     arrayFindSequence(data, size, ihdr, 4, &loc, &found);
     if (!found)
         return ERROR_INT("image parameters not found", procName, 1);
+#if  DEBUG_IHDR
     if (loc != 44)
         L_INFO("Beginning of ihdr is at byte %d\n", procName, loc);
+#endif  /* DEBUG_IHDR */
 
     windex = loc / 4 + 1;
     val = *((l_uint32 *)data + windex);
@@ -210,7 +216,7 @@ l_uint8  ihdr[4] = {0x69, 0x68, 0x64, 0x72};  /* 'ihdr' */
  *
  *      Input:  stream (opened for read)
  *              &xres, &yres (<return> resolution in ppi)
- *      Return: 0 if OK; 1 on error
+ *      Return: 0 if found; 1 if not found or on error
  *
  *  Notes:
  *      (1) If the capture resolution field is not set, this is not an error;
@@ -257,7 +263,7 @@ l_float64  xres, yres;
     if (!found) {
         L_WARNING("image resolution not found\n", procName);
         FREE(data);
-        return 0;
+        return 1;
     }
 
         /* Extract the fields and calculate the resolution in pixels/meter.

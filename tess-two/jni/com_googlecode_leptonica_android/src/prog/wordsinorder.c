@@ -58,8 +58,6 @@ l_int32      index, ival, rval, gval, bval;
 BOX         *box;
 BOXA        *boxa;
 BOXAA       *baa;
-JBDATA      *data;
-JBCLASSER   *classer;
 NUMA        *nai;
 NUMAA       *naa;
 SARRAY      *safiles;

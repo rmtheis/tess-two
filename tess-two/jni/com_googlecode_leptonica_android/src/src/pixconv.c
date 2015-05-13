@@ -290,9 +290,9 @@ PIX *
 pixRemoveColormap(PIX     *pixs,
                   l_int32  type)
 {
-l_int32    sval, rval, gval, bval;
-l_int32    i, j, k, w, h, d, wpls, wpld, opaque, ncolors, count;
-l_int32    colorfound;
+l_int32    sval, rval, gval, bval, val0, val1;
+l_int32    i, j, k, w, h, d, wpls, wpld, ncolors, count;
+l_int32    opaque, colorfound, blackwhite;
 l_int32   *rmap, *gmap, *bmap, *amap, *graymap;
 l_uint32  *datas, *lines, *datad, *lined, *lut;
 l_uint32   sword, dword;
@@ -327,16 +327,17 @@ PIX       *pixd;
         type = REMOVE_CMAP_BASED_ON_SRC;
     }
 
+        /* Select output type depending on colormap content */
     if (type == REMOVE_CMAP_BASED_ON_SRC) {
-            /* select output type depending on colormap */
         pixcmapIsOpaque(cmap, &opaque);
         pixcmapHasColor(cmap, &colorfound);
+        pixcmapIsBlackAndWhite(cmap, &blackwhite);
         if (!opaque) {  /* save the alpha */
             type = REMOVE_CMAP_WITH_ALPHA;
         } else if (colorfound) {
             type = REMOVE_CMAP_TO_FULL_COLOR;
         } else {  /* opaque and no color */
-            if (d == 1)
+            if (d == 1 && blackwhite)  /* can binarize without loss */
                 type = REMOVE_CMAP_TO_BINARY;
             else
                 type = REMOVE_CMAP_TO_GRAYSCALE;
@@ -350,7 +351,10 @@ PIX       *pixd;
         if ((pixd = pixCopy(NULL, pixs)) == NULL)
             return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
         pixcmapGetColor(cmap, 0, &rval, &gval, &bval);
-        if (rval == 0)  /* photometrically inverted from standard */
+        val0 = rval + gval + bval;
+        pixcmapGetColor(cmap, 1, &rval, &gval, &bval);
+        val1 = rval + gval + bval;
+        if (val0 < val1)  /* photometrically inverted from standard */
             pixInvert(pixd, pixd);
         pixDestroyColormap(pixd);
     } else if (type == REMOVE_CMAP_TO_GRAYSCALE) {
@@ -1272,7 +1276,7 @@ PIX     *pixd;
  *              mingraycolors (min number of gray levels that a grayscale
  *                             image is quantized to; use 0 for default)
  *              octlevel (for octcube quantization: 3 or 4)
- *              &pixd (2, 4 or 8 bpp quantized; null if too many colors)
+ *              &pixd (<return> 2,4 or 8 bpp quantized; null if too many colors)
  *      Return: 0 if OK, 1 on error or if pixs can't be quantized into
  *              a small number of colors.
  *
@@ -1993,7 +1997,7 @@ l_uint32  *tab, *datas, *datad, *lines, *lined;
  *          non-cmapped 8 bpp pix, and then make a colormap and set 0
  *          and 1 to the desired colors.  Here is an example:
  *             pixd = pixConvert1To8(NULL, pixs, 0, 1);
- *             cmap = pixCreate(8);
+ *             cmap = pixcmapCreate(8);
  *             pixcmapAddColor(cmap, 255, 255, 255);
  *             pixcmapAddColor(cmap, 0, 0, 0);
  *             pixSetColormap(pixd, cmap);
@@ -2403,7 +2407,7 @@ PIXCMAP  *cmap;
  *      Return: pixd (1 bpp), or null on error
  *
  *  Notes:
- *      (1) This is a fast, quick/dirty, top-level converter.
+ *      (1) This is a quick and dirty, top-level converter.
  *      (2) See pixConvertTo1() for default values.
  */
 PIX *
@@ -2990,10 +2994,10 @@ pixRemoveAlpha(PIX *pixs)
  *      (1) We don't use 1 bpp colormapped images with alpha in leptonica,
  *          but we support generating them (here), writing to png, and reading
  *          the png.  On reading, they are converted to 32 bpp RGBA.
- *      (2) The background pixels in pixs become fully transparent, and the
- *          foreground pixels are fully opaque.  Thus, this is a compact
- *          1 bpp representation of a stencil, to paint over pixels of
- *          a backing image that are masked by the foreground in pixs.
+ *      (2) The background (0) pixels in pixs become fully transparent, and the
+ *          foreground (1) pixels are fully opaque.  Thus, pixd is a 1 bpp
+ *          representation of a stencil, that can be used to paint over pixels
+ *          of a backing image that are masked by the foreground in pixs.
  */
 PIX *
 pixAddAlphaTo1bpp(PIX  *pixd,
@@ -3008,11 +3012,11 @@ PIXCMAP  *cmap;
     if (pixd && (pixd != pixs))
         return (PIX *)ERROR_PTR("pixd defined but != pixs", procName, NULL);
 
-    pixd = pixInvert(pixd, pixs);
+    pixd = pixCopy(pixd, pixs);
     cmap = pixcmapCreate(1);
     pixSetColormap(pixd, cmap);
-    pixcmapAddRGBA(cmap, 0, 0, 0, 255);  /* black, fully opaque */
-    pixcmapAddRGBA(cmap, 255, 255, 255, 0);  /* white, fully transparent */
+    pixcmapAddRGBA(cmap, 255, 255, 255, 0);  /* 0 ==> white + transparent */
+    pixcmapAddRGBA(cmap, 0, 0, 0, 255);  /* 1 ==> black + opaque */
     return pixd;
 }
 

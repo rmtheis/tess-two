@@ -62,8 +62,8 @@
  */
 PIX *
 ---     pixHMTDwa_*(PIX   *pixd,
-            PIX   *pixs,
-            char  *selname)
+            PIX         *pixs,
+            const char  *selname)
 {
 PIX  *pixt1, *pixt2, *pixt3;
 
@@ -108,8 +108,8 @@ PIX  *pixt1, *pixt2, *pixt3;
  */
 PIX *
 ---     pixFHMTGen_*(PIX   *pixd,
-             PIX   *pixs,
-             char  *selname)
+             PIX         *pixs,
+             const char  *selname)
 {
 l_int32    i, index, found, w, h, wpls, wpld;
 l_uint32  *datad, *datas, *datat;

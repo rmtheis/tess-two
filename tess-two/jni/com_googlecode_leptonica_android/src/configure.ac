@@ -1,7 +1,7 @@
 AC_PREREQ([2.50])
-AC_INIT([leptonica], [1.71])
+AC_INIT([leptonica], [1.72])
 AC_CONFIG_AUX_DIR([config])
-AM_CONFIG_HEADER([config_auto.h:config/config.h.in])
+AC_CONFIG_HEADERS([config_auto.h:config/config.h.in])
 AC_CONFIG_SRCDIR([src/adaptmap.c])
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -45,7 +45,8 @@ AS_IF([test "x$with_zlib" != xno],
 AS_IF([test "x$with_libpng" != xno],
   AC_CHECK_LIB([png], [png_read_png],
     AC_DEFINE([HAVE_LIBPNG], 1, [Define to 1 if you have libpng.]) AC_SUBST([LIBPNG_LIBS], [-lpng]),
-    AS_IF([test "x$with_libpng" = xyes], AC_MSG_ERROR([libpng support requested but library not found]))
+    AS_IF([test "x$with_libpng" = xyes], AC_MSG_ERROR([libpng support requested but library not found])),
+    ${LIBM} ${ZLIB_LIBS}
   )
 )
 
@@ -63,27 +64,38 @@ AS_IF([test "x$with_giflib" != xno],
   )
 )
 
+AM_CONDITIONAL([HAVE_LIBGIF], [test "x$ac_cv_lib_gif_DGifOpenFileHandle" = xyes])
+
 AS_IF([test "x$with_libtiff" != xno],
   AC_CHECK_LIB([tiff], [TIFFOpen],
     AC_DEFINE([HAVE_LIBTIFF], 1, [Define to 1 if you have libtiff.]) AC_SUBST([LIBTIFF_LIBS], [-ltiff]),
     AS_IF([test "x$with_libtiff" = xyes], AC_MSG_ERROR([libtiff support requested but library not found])),
-    ${ZLIB_LIBS} ${JPEG_LIBS}
+    ${LIBM} ${ZLIB_LIBS} ${JPEG_LIBS}
   )
 )
 
 AS_IF([test "x$with_libwebp" != xno],
   AC_CHECK_LIB([webp], [WebPGetInfo],
     AC_DEFINE([HAVE_LIBWEBP], 1, [Define to 1 if you have libwebp.]) AC_SUBST([LIBWEBP_LIBS], [-lwebp]),
-    AS_IF([test "x$with_libwebp" = xyes], AC_MSG_ERROR([libwebp support requested but library not found]))
+    AS_IF([test "x$with_libwebp" = xyes], AC_MSG_ERROR([libwebp support requested but library not found])),
+    ${LIBM}
   )
 )
 
-AS_IF([test "x$with_libopenjp2" != xno],
+AM_CONDITIONAL([HAVE_LIBWEBP], [test "x$ac_cv_lib_webp_WebPGetInfo" = xyes])
+
+AS_IF([test "x$with_libopenjpeg" != xno],
   AC_CHECK_LIB([openjp2], [opj_create_decompress],
-    AC_DEFINE([HAVE_LIBJP2K], 1, [Define to 1 if you have libopenjp2.]) AC_SUBST([LIBJP2K_LIBS], [-lopenjp2]),
-    AS_IF([test "x$with_libopenjp2" = xyes], AC_MSG_ERROR([libopenjp2 support requested but library not found]))
+    [
+      AC_DEFINE([HAVE_LIBJP2K], 1, [Define to 1 if you have libopenjp2.]) AC_SUBST([LIBJP2K_LIBS], [-lopenjp2])
+      [AC_CHECK_HEADERS([openjpeg-2.2/openjpeg.h openjpeg-2.1/openjpeg.h openjpeg-2.0/openjpeg.h],
+       AC_DEFINE_UNQUOTED([LIBJP2K_HEADER], [<$ac_header>], [Path to <openjpeg.h> header file.]) break)]
+    ],
+    AS_IF([test "x$with_libopenjpeg" = xyes], AC_MSG_ERROR([libopenjp2 support requested but library not found]))
   )
 )
+
+AM_CONDITIONAL([HAVE_LIBJP2K], [test "x$ac_cv_lib_openjp2_opj_create_decompress" = xyes])
 
 case "$host_os" in
   mingw32*) AC_SUBST([GDI_LIBS], [-lgdi32]) ;;

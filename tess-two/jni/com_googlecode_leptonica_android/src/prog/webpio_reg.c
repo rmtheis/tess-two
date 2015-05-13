@@ -80,10 +80,10 @@ L_REGPARAMS  *rp;
     DoWebpTest1(rp, "karen8.jpg");
     DoWebpTest1(rp, "test24.jpg");
 
-    DoWebpTest2(rp, "test24.jpg", 50, 0, 43.217, 0.1);
-    DoWebpTest2(rp, "test24.jpg", 75, 0, 45.759, 0.1);
-    DoWebpTest2(rp, "test24.jpg", 90, 0, 52.066, 0.1);
-    DoWebpTest2(rp, "test24.jpg", 100, 0, 57.879, 0.1);
+    DoWebpTest2(rp, "test24.jpg", 50, 0, 43.50, 0.5);
+    DoWebpTest2(rp, "test24.jpg", 75, 0, 46.07, 0.5);
+    DoWebpTest2(rp, "test24.jpg", 90, 0, 52.39, 0.5);
+    DoWebpTest2(rp, "test24.jpg", 100, 0, 58.112, 0.5);
     DoWebpTest2(rp, "test24.jpg", 0, 1, 1000.0, 0.1);
 
     return regTestCleanup(rp);
@@ -107,7 +107,7 @@ PIX  *pixs, *pix1;
     startTimer();
     pix1 = pixRead(buf);
     fprintf(stderr, "Time to read webp: %7.3f\n", stopTimer());
-    pixDisplayWithTitle(pix1, 100, 100, "pix1", 1);
+    pixDisplayWithTitle(pix1, 100, 100, "pix1", rp->display);
     pixDestroy(&pixs);
     pixDestroy(&pix1);
     return;

@@ -225,20 +225,6 @@ l_int32 getResA4Page(l_int32 w, l_int32 h, l_float32 fillfract)
 
 /* ----------------------------------------------------------------------*/
 
-char * encodeAscii85(l_uint8 *inarray, l_int32 insize, l_int32 *poutsize)
-{
-    return (char *)ERROR_PTR("function not present", "encodeAscii85", NULL);
-}
-
-/* ----------------------------------------------------------------------*/
-
-l_uint8 * decodeAscii85(char *ina, l_int32 insize, l_int32 *poutsize)
-{
-    return (l_uint8 *)ERROR_PTR("function not present", "decodeAscii85", NULL);
-}
-
-/* ----------------------------------------------------------------------*/
-
 void l_psWriteBoundingBox(l_int32 flag)
 {
     L_ERROR("function not present\n", "l_psWriteBoundingBox");

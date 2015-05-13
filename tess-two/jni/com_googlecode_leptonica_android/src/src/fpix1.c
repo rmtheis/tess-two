@@ -68,6 +68,7 @@
  *          l_int32        fpixaChangeRefcount()
  *          FPIX          *fpixaGetFPix()
  *          l_int32        fpixaGetFPixDimensions()
+ *          l_float32     *fpixaGetData()
  *          l_int32        fpixaGetPixel()
  *          l_int32        fpixaSetPixel()
  *
@@ -391,6 +392,10 @@ fpixGetDimensions(FPIX     *fpix,
 {
     PROCNAME("fpixGetDimensions");
 
+    if (!pw && !ph)
+        return ERROR_INT("no return val requested", procName, 1);
+    if (pw) *pw = 0;
+    if (ph) *ph = 0;
     if (!fpix)
         return ERROR_INT("fpix not defined", procName, 1);
     if (pw) *pw = fpix->w;
@@ -912,6 +917,10 @@ FPIX  *fpix;
 
     PROCNAME("fpixaGetFPixDimensions");
 
+    if (!pw && !ph)
+        return ERROR_INT("no return val requested", procName, 1);
+    if (pw) *pw = 0;
+    if (ph) *ph = 0;
     if (!fpixa)
         return ERROR_INT("fpixa not defined", procName, 1);
     if (index < 0 || index >= fpixa->n)
@@ -922,6 +931,36 @@ FPIX  *fpix;
     fpixGetDimensions(fpix, pw, ph);
     fpixDestroy(&fpix);
     return 0;
+}
+
+
+/*!
+ *  fpixaGetData()
+ *
+ *      Input:  fpixa
+ *              index (into fpixa array)
+ *      Return: data (not a copy), or null on error
+ */
+l_float32 *
+fpixaGetData(FPIXA      *fpixa,
+             l_int32     index)
+{
+l_int32     n;
+l_float32  *data;
+FPIX       *fpix;
+
+    PROCNAME("fpixaGetData");
+
+    if (!fpixa)
+        return (l_float32 *)ERROR_PTR("fpixa not defined", procName, NULL);
+    n = fpixaGetCount(fpixa);
+    if (index < 0 || index >= n)
+        return (l_float32 *)ERROR_PTR("invalid index", procName, NULL);
+
+    fpix = fpixaGetFPix(fpixa, index, L_CLONE);
+    data = fpixGetData(fpix);
+    fpixDestroy(&fpix);
+    return data;
 }
 
 
@@ -1259,6 +1298,10 @@ dpixGetDimensions(DPIX     *dpix,
 {
     PROCNAME("dpixGetDimensions");
 
+    if (!pw && !ph)
+        return ERROR_INT("no return val requested", procName, 1);
+    if (pw) *pw = 0;
+    if (ph) *ph = 0;
     if (!dpix)
         return ERROR_INT("dpix not defined", procName, 1);
     if (pw) *pw = dpix->w;

@@ -274,7 +274,7 @@ PIXCMAP   *cmap1, *cmap2;
         linebits = d1 * w1;
         fullwords = linebits / 32;
         endbits = linebits & 31;
-        endmask = 0xffffffff << (32 - endbits);
+        endmask = (endbits == 0) ? 0 : (0xffffffffU << (32 - endbits));
         for (i = 0; i < h1; i++) {
             line1 = data1 + wpl1 * i;
             line2 = data2 + wpl2 * i;
@@ -529,7 +529,8 @@ PIX      *pixn;
     pixCountPixels(pix2, &count2, tab8);
     pixn = pixAnd(NULL, pix1, pix2);
     pixCountPixels(pixn, &countn, tab8);
-    *pval = (l_float32)(countn * countn) / (l_float32)(count1 * count2);
+    *pval = (l_float32)countn * (l_float32)countn /
+              ((l_float32)count1 * (l_float32)count2);
     FREE(tab8);
     return 0;
 }

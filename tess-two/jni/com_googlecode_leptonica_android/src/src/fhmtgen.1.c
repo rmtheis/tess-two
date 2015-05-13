@@ -34,8 +34,8 @@
 #include <string.h>
 #include "allheaders.h"
 
-PIX *pixHMTDwa_1(PIX *pixd, PIX *pixs, char *selname);
-PIX *pixFHMTGen_1(PIX *pixd, PIX *pixs, char *selname);
+PIX *pixHMTDwa_1(PIX *pixd, PIX *pixs, const char *selname);
+PIX *pixFHMTGen_1(PIX *pixd, PIX *pixs, const char *selname);
 l_int32 fhmtgen_low_1(l_uint32 *datad, l_int32 w,
                       l_int32 h, l_int32 wpld,
                       l_uint32 *datas, l_int32 wpls,
@@ -68,9 +68,9 @@ static char  SEL_NAMES[][80] = {
  *          See notes below for that function.
  */
 PIX *
-pixHMTDwa_1(PIX   *pixd,
-            PIX   *pixs,
-            char  *selname)
+pixHMTDwa_1(PIX         *pixd,
+            PIX         *pixs,
+            const char  *selname)
 {
 PIX  *pixt1, *pixt2, *pixt3;
 
@@ -114,9 +114,9 @@ PIX  *pixt1, *pixt2, *pixt3;
  *          before erosion and dilation.
  */
 PIX *
-pixFHMTGen_1(PIX   *pixd,
-             PIX   *pixs,
-             char  *selname)
+pixFHMTGen_1(PIX         *pixd,
+             PIX         *pixs,
+             const char  *selname)
 {
 l_int32    i, index, found, w, h, wpls, wpld;
 l_uint32  *datad, *datas, *datat;

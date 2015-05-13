@@ -86,18 +86,18 @@ liblept_la_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 am_liblept_la_OBJECTS = adaptmap.lo affine.lo affinecompose.lo \
 	arrayaccess.lo bardecode.lo baseline.lo bbuffer.lo \
 	bilateral.lo bilinear.lo binarize.lo binexpand.lo binreduce.lo \
-	blend.lo bmf.lo bmpio.lo bmpiostub.lo boxbasic.lo boxfunc1.lo \
-	boxfunc2.lo boxfunc3.lo boxfunc4.lo bytearray.lo ccbord.lo \
-	ccthin.lo classapp.lo colorcontent.lo coloring.lo colormap.lo \
-	colormorph.lo colorquant1.lo colorquant2.lo colorseg.lo \
-	colorspace.lo compare.lo conncomp.lo convertfiles.lo \
-	convolve.lo convolvelow.lo correlscore.lo dewarp1.lo \
-	dewarp2.lo dewarp3.lo dewarp4.lo dnabasic.lo dwacomb.2.lo \
-	dwacomblow.2.lo edge.lo enhance.lo fhmtauto.lo fhmtgen.1.lo \
-	fhmtgenlow.1.lo finditalic.lo flipdetect.lo fliphmtgen.lo \
-	fmorphauto.lo fmorphgen.1.lo fmorphgenlow.1.lo fpix1.lo \
-	fpix2.lo gifio.lo gifiostub.lo gplot.lo graphics.lo \
-	graymorph.lo graymorphlow.lo grayquant.lo grayquantlow.lo \
+	blend.lo bmf.lo bmpio.lo bmpiostub.lo bootnumgen.lo \
+	boxbasic.lo boxfunc1.lo boxfunc2.lo boxfunc3.lo boxfunc4.lo \
+	bytearray.lo ccbord.lo ccthin.lo classapp.lo colorcontent.lo \
+	coloring.lo colormap.lo colormorph.lo colorquant1.lo \
+	colorquant2.lo colorseg.lo colorspace.lo compare.lo \
+	conncomp.lo convertfiles.lo convolve.lo correlscore.lo \
+	dewarp1.lo dewarp2.lo dewarp3.lo dewarp4.lo dnabasic.lo \
+	dwacomb.2.lo dwacomblow.2.lo edge.lo encoding.lo enhance.lo \
+	fhmtauto.lo fhmtgen.1.lo fhmtgenlow.1.lo finditalic.lo \
+	flipdetect.lo fliphmtgen.lo fmorphauto.lo fmorphgen.1.lo \
+	fmorphgenlow.1.lo fpix1.lo fpix2.lo gifio.lo gifiostub.lo \
+	gplot.lo graphics.lo graymorph.lo grayquant.lo grayquantlow.lo \
 	heap.lo jbclass.lo jp2kheader.lo jp2kheaderstub.lo jp2kio.lo \
 	jp2kiostub.lo jpegio.lo jpegiostub.lo kernel.lo leptwin.lo \
 	libversions.lo list.lo maze.lo morph.lo morphapp.lo \
@@ -114,10 +114,10 @@ am_liblept_la_OBJECTS = adaptmap.lo affine.lo affinecompose.lo \
 	ropiplow.lo roplow.lo rotate.lo rotateam.lo rotateamlow.lo \
 	rotateorth.lo rotateshear.lo runlength.lo sarray.lo scale.lo \
 	scalelow.lo seedfill.lo seedfilllow.lo sel1.lo sel2.lo \
-	selgen.lo shear.lo skew.lo spixio.lo stack.lo sudoku.lo \
-	textops.lo tiffio.lo tiffiostub.lo utils.lo viewfiles.lo \
-	warper.lo watershed.lo webpio.lo webpiostub.lo writefile.lo \
-	zlibmem.lo zlibmemstub.lo
+	selgen.lo shear.lo skew.lo spixio.lo stack.lo stringcode.lo \
+	sudoku.lo textops.lo tiffio.lo tiffiostub.lo utils.lo \
+	viewfiles.lo warper.lo watershed.lo webpio.lo webpiostub.lo \
+	writefile.lo zlibmem.lo zlibmemstub.lo
 liblept_la_OBJECTS = $(am_liblept_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -290,13 +290,13 @@ top_srcdir = @top_srcdir@
 AM_CFLAGS = $(DEBUG_FLAGS)
 lib_LTLIBRARIES = liblept.la
 liblept_la_LIBADD = $(LIBM) $(ZLIB_LIBS) $(LIBPNG_LIBS) $(JPEG_LIBS) $(GIFLIB_LIBS) $(LIBTIFF_LIBS) $(LIBWEBP_LIBS) $(LIBJP2K_LIBS) $(GDI_LIBS)
-liblept_la_LDFLAGS = -no-undefined -version-info 4:2:0
+liblept_la_LDFLAGS = -no-undefined -version-info 4:3:0
 liblept_la_SOURCES = adaptmap.c affine.c                        \
  affinecompose.c arrayaccess.c                                  \
  bardecode.c baseline.c bbuffer.c                               \
  bilateral.c bilinear.c binarize.c                              \
  binexpand.c binreduce.c                                        \
- blend.c bmf.c bmpio.c bmpiostub.c                              \
+ blend.c bmf.c bmpio.c bmpiostub.c bootnumgen.c                 \
  boxbasic.c boxfunc1.c boxfunc2.c boxfunc3.c boxfunc4.c         \
  bytearray.c ccbord.c ccthin.c classapp.c                       \
  colorcontent.c coloring.c                                      \
@@ -304,15 +304,15 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  colorquant1.c colorquant2.c                                    \
  colorseg.c colorspace.c                                        \
  compare.c conncomp.c convertfiles.c                            \
- convolve.c convolvelow.c correlscore.c                         \
+ convolve.c correlscore.c                                       \
  dewarp1.c dewarp2.c dewarp3.c dewarp4.c                        \
  dnabasic.c dwacomb.2.c dwacomblow.2.c                          \
- edge.c enhance.c                                               \
+ edge.c encoding.c enhance.c                                    \
  fhmtauto.c fhmtgen.1.c fhmtgenlow.1.c			        \
  finditalic.c flipdetect.c fliphmtgen.c                         \
  fmorphauto.c fmorphgen.1.c fmorphgenlow.1.c                    \
  fpix1.c fpix2.c gifio.c gifiostub.c                            \
- gplot.c graphics.c graymorph.c graymorphlow.c                  \
+ gplot.c graphics.c graymorph.c                                 \
  grayquant.c grayquantlow.c heap.c jbclass.c                    \
  jp2kheader.c jp2kheaderstub.c                                  \
  jp2kio.c jp2kiostub.c jpegio.c jpegiostub.c                    \
@@ -341,7 +341,7 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  seedfill.c seedfilllow.c                                       \
  sel1.c sel2.c selgen.c                                         \
  shear.c skew.c	spixio.c                                        \
- stack.c sudoku.c textops.c                                     \
+ stack.c stringcode.c sudoku.c textops.c                        \
  tiffio.c tiffiostub.c 		                                \
  utils.c viewfiles.c                                            \
  warper.c watershed.c                                           \
@@ -349,19 +349,22 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  writefile.c zlibmem.c zlibmemstub.c
 
 pkginclude_HEADERS = allheaders.h alltypes.h                    \
- array.h arrayaccess.h bbuffer.h bilateral.h bmf.h bmp.h        \
- ccbord.h dewarp.h endianness.h environ.h		        \
+ array.h arrayaccess.h bbuffer.h bilateral.h                    \
+ bmf.h bmfdata.h bmp.h ccbord.h                                 \
+ dewarp.h endianness.h environ.h		                \
  gplot.h heap.h imageio.h jbclass.h                             \
  leptwin.h list.h	                                        \
  morph.h pix.h ptra.h queue.h readbarcode.h                     \
- recog.h regutils.h stack.h sudoku.h watershed.h
+ recog.h regutils.h stack.h                                     \
+ stringcode.h sudoku.h watershed.h
 
 LDADD = liblept.la
 EXTRA_DIST = arrayaccess.h.vc                                   \
  endiantest.c endianness.h.dist	                                \
  hmttemplate1.txt hmttemplate2.txt                              \
  leptonica-license.txt		                                \
- morphtemplate1.txt morphtemplate2.txt
+ morphtemplate1.txt morphtemplate2.txt                          \
+ stringtemplate1.txt stringtemplate2.txt
 
 all: all-am
 
@@ -467,6 +470,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bmf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bmpio.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bmpiostub.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bootnumgen.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boxbasic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boxfunc1.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boxfunc2.Plo@am__quote@
@@ -488,7 +492,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/conncomp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/convertfiles.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/convolve.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/convolvelow.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/correlscore.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dewarp1.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dewarp2.Plo@am__quote@
@@ -498,6 +501,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dwacomb.2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dwacomblow.2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/edge.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/encoding.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/enhance.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fhmtauto.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fhmtgen.1.Plo@am__quote@
@@ -515,7 +519,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gplot.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/graphics.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/graymorph.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/graymorphlow.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grayquant.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grayquantlow.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heap.Plo@am__quote@
@@ -604,6 +607,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/skew.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spixio.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stringcode.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sudoku.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/textops.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tiffio.Plo@am__quote@

@@ -13,13 +13,13 @@ INSTALL_PROGS = convertfilestopdf convertfilestops \
 AUTO_REG_PROGS = alphaops_reg alphaxform_reg \
 	bilateral2_reg binarize_reg blackwhite_reg \
 	blend3_reg blend4_reg \
-	colorcontent_reg coloring_reg \
+	colorcontent_reg coloring_reg colorize_reg \
 	colormask_reg colorquant_reg \
 	colorspace_reg compare_reg \
 	convolve_reg dewarp_reg \
 	dna_reg dwamorph1_reg enhance_reg \
-	files_reg findcorners_reg findpattern_reg \
-	fpix1_reg fpix2_reg \
+	findcorners_reg findpattern_reg \
+	fpix1_reg fpix2_reg genfonts_reg \
 	graymorph2_reg hardlight_reg \
 	insert_reg ioformats_reg \
 	jpegio_reg kernel_reg label_reg \
@@ -27,7 +27,7 @@ AUTO_REG_PROGS = alphaops_reg alphaxform_reg \
 	nearline_reg newspaper_reg \
 	overlap_reg paint_reg paintmask_reg \
 	pdfseg_reg pixa2_reg \
-	pixserial_reg pngio_reg \
+	pixserial_reg pngio_reg pnmio_reg \
 	projection_reg psio_reg psioseg_reg \
 	pta_reg rankbin_reg rankhisto_reg \
 	rasteropip_reg \
@@ -35,8 +35,20 @@ AUTO_REG_PROGS = alphaops_reg alphaxform_reg \
 	scale_reg seedspread_reg \
 	selio_reg shear1_reg shear2_reg \
 	skew_reg splitcomp_reg subpixel_reg \
-	threshnorm_reg translate_reg \
+	texturefill_reg threshnorm_reg translate_reg \
 	warper_reg writetext_reg xformbox_reg
+
+if HAVE_LIBGIF
+AUTO_REG_PROGS += gifio_reg
+endif
+
+if HAVE_LIBWEBP
+AUTO_REG_PROGS += webpio_reg
+endif
+
+if HAVE_LIBJP2K
+AUTO_REG_PROGS += jp2kio_reg
+endif
 
 MANUAL_REG_PROGS = alltests_reg adaptnorm_reg affine_reg \
 	bilateral1_reg bilinear_reg \
@@ -47,10 +59,10 @@ MANUAL_REG_PROGS = alltests_reg adaptnorm_reg affine_reg \
 	colorize_reg colorseg_reg compfilter_reg \
 	conncomp_reg conversion_reg distance_reg \
 	dwamorph2_reg equal_reg expand_reg extrema_reg \
-	fhmtauto_reg flipdetect_reg fmorphauto_reg \
-	gifio_reg grayfill_reg graymorph1_reg \
+	fhmtauto_reg files_reg flipdetect_reg fmorphauto_reg \
+	grayfill_reg graymorph1_reg \
 	grayquant_reg heap_reg \
-	jp2kio_reg locminmax_reg \
+	locminmax_reg \
 	logicops_reg lowaccess_reg morphseq_reg \
 	numa1_reg numa2_reg pixa1_reg \
 	pixadisp_reg pixalloc_reg pixcomp_reg \
@@ -58,21 +70,22 @@ MANUAL_REG_PROGS = alltests_reg adaptnorm_reg affine_reg \
 	ptra1_reg ptra2_reg \
 	rank_reg rasterop_reg smallpix_reg \
 	smoothedge_reg string_reg \
-	webpio_reg wordboxes_reg
+	wordboxes_reg
 
 OTHER_PROGS = adaptmaptest adaptmap_dark \
 	arabic_lines arithtest \
+	autogentest1 autogentest2 \
 	barcodetest baselinetest \
 	binarizefiles binarize_set bincompare \
 	blendcmaptest buffertest \
-	byteatest ccbordtest cctest1 \
+	byteatest ccbordtest cctest1 cleanpdf \
 	colormorphtest colorsegtest colorspacetest \
 	comparepages comparetest concatpdf \
 	contrasttest converttogray \
 	convolvetest cornertest \
 	croptest croptext \
 	dewarprules dewarptest1 dewarptest2 \
-	dewarptest3 dewarptest4 \
+	dewarptest3 dewarptest4 dewarptest5 \
 	digitprep1 displayboxa \
 	displaypix displaypixa \
 	dithertest dwalineargen \
@@ -80,8 +93,8 @@ OTHER_PROGS = adaptmaptest adaptmap_dark \
 	fcombautogen fhmtautogen \
 	findpattern1 findpattern2 findpattern3 \
 	flipselgen fmorphautogen \
-	fpixcontours gammatest genfonts \
-	graphicstest graymorphtest \
+	fpixcontours gammatest \
+	gifio_leaktest graphicstest graymorphtest \
 	histotest iotest italictest \
 	jbcorrelation jbrankhaus jbwords \
 	lineremoval listtest \
@@ -121,3 +134,5 @@ EXTRA_DIST = reg_wrapper.sh
 
 dwamorph1_reg_SOURCES = dwamorph1_reg.c dwalinear.3.c dwalinearlow.3.c
 dwamorph2_reg_SOURCES = dwamorph2_reg.c dwalinear.3.c dwalinearlow.3.c
+
+autogentest2_SOURCES = autogentest2.c autogen.137.c

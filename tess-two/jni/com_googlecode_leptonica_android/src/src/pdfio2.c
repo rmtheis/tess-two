@@ -446,7 +446,7 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
  *  l_generateCIDataForPdf()
  *
  *      Input:  fname
- *              pix <optional; can be null)
+ *              pix (<optional>; can be null)
  *              quality (for jpeg if transcoded; 75 is standard)
  *              &cid (<return> compressed data)
  *      Return: 0 if OK, 1 on error
@@ -489,14 +489,14 @@ PIX          *pixt;
     } else if (format == IFF_JP2) {
         cid = l_generateJp2kData(fname);
     } else if (format == IFF_PNG) {  /* use Jeff's special function for png */
-        cid = l_generateFlateDataPdf(fname);
+        cid = l_generateFlateDataPdf(fname, pix);
     } else {  /* any other format ... */
         if (!pix)
             pixt = pixRead(fname);
         else
             pixt = pixClone(pix);
         if (!pixt)
-            return ERROR_INT("fname not defined", procName, 1);
+            return ERROR_INT("pixt not made", procName, 1);
         selectDefaultPdfEncoding(pixt, &type);
         pixGenerateCIData(pixt, type, quality, 0, &cid);
         pixDestroy(&pixt);
@@ -514,15 +514,21 @@ PIX          *pixt;
  *  l_generateFlateDataPdf()
  *
  *      Input:  fname (preferably png)
+ *              pix (<optional>; can be null)
  *      Return: cid (containing png data), or null on error
  *
  *  Notes:
  *      (1) If you hand this a png file, you are going to get
  *          png predictors embedded in the flate data. So it has
  *          come to this. http://xkcd.com/1022/
+ *      (2) Exception: if the png is interlaced or if it is RGBA,
+ *          it will be transcoded.
+ *      (3) If transcoding is required, this will not have to read from
+ *          file if you also input a pix.
  */
 L_COMP_DATA *
-l_generateFlateDataPdf(const char  *fname)
+l_generateFlateDataPdf(const char  *fname,
+                       PIX         *pixs)
 {
 l_uint8      *pngcomp = NULL;  /* entire PNG compressed file */
 l_uint8      *datacomp = NULL;  /* gzipped raster data */
@@ -538,7 +544,7 @@ l_int32       xres, yres;
 size_t        nbytescomp = 0, nbytespng = 0;
 FILE         *fp;
 L_COMP_DATA  *cid;
-PIX          *pixs;
+PIX          *pix;
 PIXCMAP      *cmap = NULL;
 
     PROCNAME("l_generateFlateDataPdf");
@@ -547,15 +553,31 @@ PIXCMAP      *cmap = NULL;
         return (L_COMP_DATA *)ERROR_PTR("fname not defined", procName, NULL);
 
     findFileFormat(fname, &format);
-    if (format == IFF_PNG)
+    spp = 0;  /* init to spp != 4 if not png */
+    interlaced = 0;  /* initialize to no interlacing */
+    if (format == IFF_PNG) {
         isPngInterlaced(fname, &interlaced);
+        readHeaderPng(fname, NULL, NULL, NULL, &spp, NULL);
+    }
 
-        /* If either interlaced png or another format, transcode to flate */
-    if (interlaced || format != IFF_PNG) {
-        if ((pixs = pixRead(fname)) == NULL)
-            return (L_COMP_DATA *)ERROR_PTR("pixs not made", procName, NULL);
-        cid = pixGenerateFlateData(pixs, 0);
-        pixDestroy(&pixs);
+        /* PDF is capable of inlining some types of PNG files, but not all
+           of them. We need to transcode anything with interlacing or an
+           alpha channel.
+
+           Be careful with spp. Any PNG image file with an alpha
+           channel is converted on reading to RGBA (spp == 4). This
+           includes the (gray + alpha) format with spp == 2. You
+           will get different results if you look at spp via
+           readHeaderPng() versus pixGetSpp() */
+    if (format != IFF_PNG || interlaced || spp == 4 || spp == 2) {
+        if (!pixs)
+            pix = pixRead(fname);
+        else
+            pix = pixClone(pixs);
+        if (!pix)
+            return (L_COMP_DATA *)ERROR_PTR("pix not made", procName, NULL);
+        cid = pixGenerateFlateData(pix, 0);
+        pixDestroy(&pix);
         return cid;
     }
 
@@ -1007,6 +1029,13 @@ PIX          *pixs;
  *      Input:  pixs
  *              ascii85flag (0 for gzipped; 1 for ascii85-encoded gzipped)
  *      Return: cid (flate compressed image data), or null on error
+ *
+ *      Notes:
+ *          (1) This should not be called with an RGBA pix (spp == 4); it
+ *              will ignore the alpha channel.  Likewise, if called with a
+ *              colormapped pix, the alpha component in the colormap will
+ *              be ignored (as it is for all leptonica operations
+ *              on colormapped pix).
  */
 static L_COMP_DATA *
 pixGenerateFlateData(PIX     *pixs,
@@ -1020,7 +1049,7 @@ char         *cmapdata85 = NULL;  /* ascii85 encoded uncompressed colormap */
 char         *cmapdatahex = NULL;  /* hex ascii uncompressed colormap */
 l_int32       ncolors;  /* in colormap; not used if cmapdata85 is null */
 l_int32       bps;  /* bits/sample: usually 8 */
-l_int32       spp;  /* samples/pixel: 1-grayscale/cmap); 3-rgb; 4-rgba */
+l_int32       spp;  /* samples/pixel: 1-grayscale/cmap); 3-rgb */
 l_int32       w, h, d, cmapflag;
 l_int32       ncmapbytes85 = 0;
 l_int32       nbytes85 = 0;
@@ -1049,7 +1078,7 @@ PIXCMAP      *cmap;
     } else {
         pixt = pixClone(pixs);
     }
-    spp = (d == 32) ? 3 : 1;
+    spp = (d == 32) ? 3 : 1;  /* ignores alpha */
     bps = (d == 32) ? 8 : d;
 
         /* Extract and encode the colormap data as both ascii85 and hexascii  */
@@ -1611,7 +1640,7 @@ SARRAY       *sa;
     sa = lpd->saprex;
     cmindex = 6 + lpd->n;  /* starting value */
     for (i = 0; i < lpd->n; i++) {
-        pstr = NULL;
+        pstr = cstr = NULL;
         if ((cid = pdfdataGetCid(lpd, i)) == NULL)
             return ERROR_INT("cid not found", procName, 1);
 
@@ -1638,7 +1667,7 @@ SARRAY       *sa;
             else if (cid->spp == 3)
                 cstr = stringNew("/ColorSpace /DeviceRGB");
             else
-                L_ERROR("spp!= 1 && spp != 3\n", procName);
+                L_ERROR("in jpeg: spp != 1 && spp != 3\n", procName);
             bstr = stringNew("/BitsPerComponent 8");
             fstr = stringNew("/Filter /DCTDecode");
         } else if (cid->type == L_JP2K_ENCODE) {
@@ -1647,7 +1676,7 @@ SARRAY       *sa;
             else if (cid->spp == 3)
                 cstr = stringNew("/ColorSpace /DeviceRGB");
             else
-                L_ERROR("spp!= 1 && spp != 3\n", procName);
+                L_ERROR("in jp2k: spp != 1 && spp != 3\n", procName);
             bstr = stringNew("/BitsPerComponent 8");
             fstr = stringNew("/Filter /JPXDecode");
         } else {  /* type == L_FLATE_ENCODE */
@@ -1663,7 +1692,8 @@ SARRAY       *sa;
                 else if (cid->spp == 3)
                     cstr = stringNew("/ColorSpace /DeviceRGB");
                 else
-                    L_ERROR("unknown colorspace\n", procName);
+                    L_ERROR("unknown colorspace: spp = %d\n",
+                            procName, cid->spp);
             }
             snprintf(buff, sizeof(buff), "/BitsPerComponent %d", cid->bps);
             bstr = stringNew(buff);
@@ -1674,8 +1704,9 @@ SARRAY       *sa;
                          "<<\n"
                          "  /Columns %d\n"
                          "  /Predictor 14\n"
+                         "  /Colors %d\n"
                          "  /BitsPerComponent %d\n"
-                         ">>\n", cid->w, cid->bps);
+                         ">>\n", cid->w, cid->spp, cid->bps);
                 pstr = stringNew(buff);
             }
         }

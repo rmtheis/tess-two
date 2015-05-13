@@ -100,14 +100,14 @@ PIX     *pix1, *pix2, *pix3;
     pixDestroy(&pix1);
     pixDestroy(&pix2);
 
-    pix1 = pixReadJp2k(buf, 1, box, 0);  /* just read the box region */
+    pix1 = pixReadJp2k(buf, 1, box, 0, 0);  /* just read the box region */
     snprintf(buf, sizeof(buf), "/tmp/lept/jp2kio.%03d.jp2", rp->index + 1);
-    pixWriteJp2k(buf, pix1, 38, 0, 0);
+    pixWriteJp2k(buf, pix1, 38, 0, 0, 0);
     regTestCheckFile(rp, buf);
     pix2 = pixRead(buf);
     regTestWritePixAndCheck(rp, pix2, IFF_JP2);
     pixDisplayWithTitle(pix2, 500, 100, "2", rp->display);
-    pix3 = pixReadJp2k(buf, 2, NULL, 0);  /* read image at 2x reduction */
+    pix3 = pixReadJp2k(buf, 2, NULL, 0, 0);  /* read image at 2x reduction */
     regTestWritePixAndCheck(rp, pix3, IFF_JP2);
     pixDisplayWithTitle(pix3, 1000, 100, "3", rp->display);
     pixDestroy(&pix1);

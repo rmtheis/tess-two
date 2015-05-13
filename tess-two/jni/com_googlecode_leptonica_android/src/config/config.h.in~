@@ -15,7 +15,7 @@
 /* Define to 1 if you have giflib. */
 #undef HAVE_LIBGIF
 
-/* Define to 1 if you have libopenjpeg. */
+/* Define to 1 if you have libopenjp2. */
 #undef HAVE_LIBJP2K
 
 /* Define to 1 if you have jpeg. */
@@ -35,6 +35,15 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <openjpeg-2.0/openjpeg.h> header file. */
+#undef HAVE_OPENJPEG_2_0_OPENJPEG_H
+
+/* Define to 1 if you have the <openjpeg-2.1/openjpeg.h> header file. */
+#undef HAVE_OPENJPEG_2_1_OPENJPEG_H
+
+/* Define to 1 if you have the <openjpeg-2.2/openjpeg.h> header file. */
+#undef HAVE_OPENJPEG_2_2_OPENJPEG_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -56,6 +65,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Path to <openjpeg.h> header file. */
+#undef LIBJP2K_HEADER
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */

@@ -45,8 +45,8 @@
 
 #define  NTIMES             2
 
-int main(int    argc,
-         char **argv)
+l_int32 main(l_int32  argc,
+             char   **argv)
 {
 char        *filein;
 l_int32      i, n, count;
@@ -65,7 +65,7 @@ static char  mainName[] = "cctest1";
     if ((pixs = pixRead(filein)) == NULL)
         return ERROR_INT("pixs not made", mainName, 1);
     if (pixGetDepth(pixs) != 1)
-        exit(ERROR_INT("pixs not 1 bpp", mainName, 1));
+        return ERROR_INT("pixs not 1 bpp", mainName, 1);
 
         /* Test speed of pixCountConnComp() */
     startTimer();

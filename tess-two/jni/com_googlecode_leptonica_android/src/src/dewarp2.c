@@ -37,6 +37,8 @@
  *          static PTA        *dewarpGetMeanVerticals()
  *          PTAA              *dewarpRemoveShortLines()
  *          static l_int32     dewarpGetLineEndpoints()
+ *          static l_int32     dewarpFindLongLines()
+ *          static l_int32     dewarpIsLineCoverageValid()
  *          static l_int32     dewarpQuadraticLSF()
  *
  *      Build the line disparity model
@@ -58,6 +60,8 @@ static l_int32 dewarpGetLineEndpoints(l_int32 h, PTAA *ptaa, PTA **pptal,
                                       PTA **pptar);
 static l_int32 dewarpFindLongLines(PTA *ptal, PTA *ptar, l_float32 minfract,
                                    PTA **pptald, PTA **pptard);
+static l_int32 dewarpIsLineCoverageValid(PTAA *ptaa2, l_int32 h,
+                                         l_int32 *ptopline, l_int32 *pbotline);
 static l_int32 dewarpQuadraticLSF(PTA *ptad, l_float32 *pa, l_float32 *pb,
                                   l_float32 *pc, l_float32 *pmederr);
 static l_int32 pixRenderMidYs(PIX *pixs, NUMA *namidys, l_int32 linew);
@@ -132,7 +136,7 @@ l_int32
 dewarpBuildPageModel(L_DEWARP    *dew,
                      const char  *debugfile)
 {
-l_int32  ret;
+l_int32  linecount, topline, botline, ret;
 PIX     *pixs, *pix1, *pix2, *pix3;
 PTA     *pta;
 PTAA    *ptaa1, *ptaa2;
@@ -187,9 +191,23 @@ PTAA    *ptaa1, *ptaa2;
         ptaDestroy(&pta);
     }
     ptaaDestroy(&ptaa1);
-    if (ptaaGetCount(ptaa2) < dew->minlines) {
+
+        /* Verify that there are sufficient "long" lines */
+    linecount = ptaaGetCount(ptaa2);
+    if (linecount < dew->minlines) {
         ptaaDestroy(&ptaa2);
-        L_WARNING("insufficient lines to build model\n", procName);
+        L_WARNING("linecount %d < min req'd number of lines (%d) for model\n",
+                  procName, linecount, dew->minlines);
+        return 1;
+    }
+
+        /* Verify that the lines have a reasonable coverage of the
+         * vertical extent of the image foreground. */
+    if (dewarpIsLineCoverageValid(ptaa2, pixGetHeight(pixs),
+                                  &topline, &botline) == FALSE) {
+        ptaaDestroy(&ptaa2);
+        L_WARNING("invalid line coverage: [%d ... %d] in height %d\n",
+                  procName, topline, botline, pixGetHeight(pixs));
         return 1;
     }
 
@@ -744,25 +762,39 @@ PTAA     *ptaa;
          * letters.  The large closing (csize2) bridges the gaps between
          * words; using 1/30 of the page width usually suffices. */
     csize1 = L_MAX(15, w / 80);
-    csize2 = L_MAX(30, w / 30);
+    csize2 = L_MAX(40, w / 30);
     snprintf(buf, sizeof(buf), "o1.3 + c%d.1 + o%d.1 + c%d.1",
              csize1, csize1, csize2);
     pix1 = pixMorphSequence(pixs, buf, 0);
-    pixWrite("/tmp/dewmod/0011.tif", pix1, IFF_TIFF_G4);
-    pixDisplayWithTitle(pix1, 0, 800, "pix1", debugflag);
+
+        /* Remove the components (e.g., embedded images) that have
+         * long vertical runs (>= 50 pixels).  You can't use bounding
+         * boxes because connected component b.b. of lines can be quite
+         * tall due to slope and curvature.  */
+    pix2 = pixMorphSequence(pix1, "e1.50", 0);  /* seed */
+    pixSeedfillBinary(pix2, pix2, pix1, 8);  /* tall components */
+    pixXor(pix2, pix2, pix1);  /* remove tall */
+
+    if (debugflag) {
+        pixWrite("/tmp/dewmod/0011.tif", pix1, IFF_TIFF_G4);
+        pixDisplayWithTitle(pix1, 0, 600, "pix1", 1);
+        pixWrite("/tmp/dewmod/0012.tif", pix2, IFF_TIFF_G4);
+        pixDisplayWithTitle(pix2, 0, 800, "pix2", 1);
+    }
+    pixDestroy(&pix1);
 
         /* Get the 8-connected components ... */
-    boxa = pixConnComp(pix1, &pixa1, 8);
-    pixDestroy(&pix1);
+    boxa = pixConnComp(pix2, &pixa1, 8);
+    pixDestroy(&pix2);
     boxaDestroy(&boxa);
     if (pixaGetCount(pixa1) == 0) {
         pixaDestroy(&pixa1);
         return NULL;
     }
 
-        /* ... and remove the short and thin c.c */
+        /* ... and remove the short width and very short height c.c */
     pixa2 = pixaSelectBySize(pixa1, 100, 4, L_SELECT_IF_BOTH,
-                                   L_SELECT_IF_GT, 0);
+                                   L_SELECT_IF_GT, NULL);
     if ((nsegs = pixaGetCount(pixa2)) == 0) {
         pixaDestroy(&pixa1);
         pixaDestroy(&pixa2);
@@ -770,8 +802,8 @@ PTAA     *ptaa;
     }
     if (debugflag) {
         pix2 = pixaDisplay(pixa2, w, h);
-        pixWrite("/tmp/dewmod/0012.tif", pix2, IFF_TIFF_G4);
-        pixDisplayWithTitle(pix2, 800, 800, "pix2", 1);
+        pixWrite("/tmp/dewmod/0013.tif", pix2, IFF_TIFF_G4);
+        pixDisplayWithTitle(pix2, 0, 1000, "pix2", 1);
         pixDestroy(&pix2);
     }
 
@@ -789,8 +821,8 @@ PTAA     *ptaa;
     if (debugflag) {
         pix1 = pixCreateTemplate(pixs);
         pix2 = pixDisplayPtaa(pix1, ptaa);
-        pixWrite("/tmp/dewmod/0013.tif", pix2, IFF_PNG);
-        pixDisplayWithTitle(pix2, 0, 1400, "pix3", 1);
+        pixWrite("/tmp/dewmod/0014.tif", pix2, IFF_PNG);
+        pixDisplayWithTitle(pix2, 0, 1200, "pix3", 1);
         pixDestroy(&pix1);
         pixDestroy(&pix2);
     }
@@ -984,65 +1016,6 @@ PTA       *pta, *ptal, *ptar;
 
 
 /*!
- *  dewarpQuadraticLSF()
- *
- *      Input:  ptad (left or right end points of longest lines)
- *              &a  (<return> coeff a of LSF: y = ax^2 + bx + c)
- *              &b  (<return> coeff b of LSF: y = ax^2 + bx + c)
- *              &c  (<return> coeff c of LSF: y = ax^2 + bx + c)
- *              &mederr (<optional return> median error)
- *      Return: 0 if OK, 1 on error.
- *
- *  Notes:
- *      (1) This is used for finding the left or right sides of
- *          the text block, computed as a quadratic curve.
- *          Only the longest lines are input, so there are
- *          no outliers.
- *      (2) The ptas for the end points all have x and y swapped.
- */
-static l_int32
-dewarpQuadraticLSF(PTA        *ptad,
-                   l_float32  *pa,
-                   l_float32  *pb,
-                   l_float32  *pc,
-                   l_float32  *pmederr)
-{
-l_int32    i, n;
-l_float32  x, y, xp, c0, c1, c2;
-NUMA      *naerr;
-
-    PROCNAME("dewarpQuadraticLSF");
-
-    if (pmederr) *pmederr = 0.0;
-    if (!pa || !pb || !pc)
-        return ERROR_INT("not all ptrs are defined", procName, 1);
-    *pa = *pb = *pc = 0.0;
-    if (!ptad)
-        return ERROR_INT("ptad not defined", procName, 1);
-
-        /* Fit to the longest lines */
-    ptaGetQuadraticLSF(ptad, &c2, &c1, &c0, NULL);
-    *pa = c2;
-    *pb = c1;
-    *pc = c0;
-
-        /* Optionally, find the median error */
-    if (pmederr) {
-        n = ptaGetCount(ptad);
-        naerr = numaCreate(n);
-        for (i = 0; i < n; i++) {
-            ptaGetPt(ptad, i, &y, &xp);
-            applyQuadraticFit(c2, c1, c0, y, &x);
-            numaAddNumber(naerr, L_ABS(x - xp));
-        }
-        numaGetMedian(naerr, pmederr);
-        numaDestroy(&naerr);
-    }
-    return 0;
-}
-
-
-/*!
  *  dewarpFindLongLines()
  *
  *      Input:  ptal (left end points of lines)
@@ -1164,6 +1137,117 @@ PTA       *ptals, *ptars, *ptald, *ptard;
     } else {
         *pptald = ptald;
         *pptard = ptard;
+    }
+    return 0;
+}
+
+
+/*!
+ *  dewarpIsLineCoverageValid()
+ *
+ *      Input:  ptaa (of validated lines)
+ *              h (height of pix)
+ *              &topline (<return> location of top line)
+ *              &botline (<return> location of bottom line)
+ *      Return: 1 if coverage is valid, 0 if not or on error.
+ *
+ *  Notes:
+ *      (1) The criterion for valid coverage is:
+ *          (a) there must be lines in both halves (top and bottom)
+ *              of the image.
+ *          (b) the coverage must be at least 40% of the image height
+ */
+static l_int32
+dewarpIsLineCoverageValid(PTAA     *ptaa,
+                          l_int32   h,
+                          l_int32  *ptopline,
+                          l_int32  *pbotline)
+{
+l_int32    i, n, both_halves;
+l_float32  top, bot, y, fraction;
+
+    PROCNAME("dewarpIsLineCoverageValid");
+
+    if (!ptaa)
+        return ERROR_INT("ptaa not defined", procName, 0);
+    if ((n = ptaaGetCount(ptaa)) == 0)
+        return ERROR_INT("ptaa empty", procName, 0);
+    if (h <= 0)
+        return ERROR_INT("invalid h", procName, 0);
+    if (!ptopline || !pbotline)
+        return ERROR_INT("&topline and &botline not defined", procName, 0);
+
+    top = 100000.0;
+    bot = 0.0;
+    for (i = 0; i < n; i++) {
+        ptaaGetPt(ptaa, i, 0, NULL, &y);
+        if (y < top) top = y;
+        if (y > bot) bot = y;
+    }
+    *ptopline = (l_int32)top;
+    *pbotline = (l_int32)bot;
+    both_halves = top < 0.5 * h && bot > 0.5 * h;
+    fraction = (bot - top) / h;
+    if (both_halves && fraction > 0.40)
+        return 1;
+    return 0;
+}
+
+
+/*!
+ *  dewarpQuadraticLSF()
+ *
+ *      Input:  ptad (left or right end points of longest lines)
+ *              &a  (<return> coeff a of LSF: y = ax^2 + bx + c)
+ *              &b  (<return> coeff b of LSF: y = ax^2 + bx + c)
+ *              &c  (<return> coeff c of LSF: y = ax^2 + bx + c)
+ *              &mederr (<optional return> median error)
+ *      Return: 0 if OK, 1 on error.
+ *
+ *  Notes:
+ *      (1) This is used for finding the left or right sides of
+ *          the text block, computed as a quadratic curve.
+ *          Only the longest lines are input, so there are
+ *          no outliers.
+ *      (2) The ptas for the end points all have x and y swapped.
+ */
+static l_int32
+dewarpQuadraticLSF(PTA        *ptad,
+                   l_float32  *pa,
+                   l_float32  *pb,
+                   l_float32  *pc,
+                   l_float32  *pmederr)
+{
+l_int32    i, n;
+l_float32  x, y, xp, c0, c1, c2;
+NUMA      *naerr;
+
+    PROCNAME("dewarpQuadraticLSF");
+
+    if (pmederr) *pmederr = 0.0;
+    if (!pa || !pb || !pc)
+        return ERROR_INT("not all ptrs are defined", procName, 1);
+    *pa = *pb = *pc = 0.0;
+    if (!ptad)
+        return ERROR_INT("ptad not defined", procName, 1);
+
+        /* Fit to the longest lines */
+    ptaGetQuadraticLSF(ptad, &c2, &c1, &c0, NULL);
+    *pa = c2;
+    *pb = c1;
+    *pc = c0;
+
+        /* Optionally, find the median error */
+    if (pmederr) {
+        n = ptaGetCount(ptad);
+        naerr = numaCreate(n);
+        for (i = 0; i < n; i++) {
+            ptaGetPt(ptad, i, &y, &xp);
+            applyQuadraticFit(c2, c1, c0, y, &x);
+            numaAddNumber(naerr, L_ABS(x - xp));
+        }
+        numaGetMedian(naerr, pmederr);
+        numaDestroy(&naerr);
     }
     return 0;
 }

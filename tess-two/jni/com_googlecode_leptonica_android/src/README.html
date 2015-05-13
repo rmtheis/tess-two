@@ -75,11 +75,11 @@ This work is licensed under a <a rel="license" href="http://creativecommons.org/
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-README  (1.71: 28 June 2014)
+README  (1.72: 5 Apr 2015)
 ---------------------------
 
-gunzip leptonica-1.71.tar.gz
-tar -xvf leptonica-1.71.tar
+gunzip leptonica-1.72.tar.gz
+tar -xvf leptonica-1.72.tar
 
 </pre>
 
@@ -115,7 +115,7 @@ Building leptonica
   Libraries, executables and prototypes are easily made, as described below.
 
   When you extract from the archive, all files are put in a
-  subdirectory 'leptonica-1.71'.  In that directory you will
+  subdirectory 'leptonica-1.72'.  In that directory you will
   find a src directory containing the source files for the library,
   and a prog directory containing source files for various
   testing and example programs.
@@ -179,7 +179,9 @@ Building leptonica
          the shared libraries in your LD_LIBRARY_PATH.
 
        * To make the programs in the prog directory, first make liblept
-         in src, and then do 'make' in the prog directory.
+         in src.  Then in prog you can customize the makefile for linking
+         the external libraries:
+         Finally, do 'make' in the prog directory.
 
        VERY IMPORTANT: the 240+ programs in the prog directory are
        an integral part of this package.  These can be divided into
@@ -191,7 +193,7 @@ Building leptonica
              convertfilestopdf, convertfilestops, convertsegfilestopdf,
              convertsegfilestops, printimage and printsplitimage.
          (2) Programs that are used as regression tests in alltests_reg.
-             These are named *_reg, and 63 of them are invoked together
+             These are named *_reg, and 66 of them are invoked together
              (alltests_reg).  The regression test framework has been
              standardized, and regresstion tests are relatively easy
              to write.  See regutils.h for details.
@@ -211,12 +213,14 @@ Building leptonica
                   all the progs]
           make install  [as root; this puts liblept.a into /usr/local/lib/
                          and 13 of the the progs into /usr/local/bin/ ]
-          make [-j4] check  [runs the alltests_reg set of regression tests.
+          make [-j2] check  [runs the alltests_reg set of regression tests.
                              This works even if you build in a different
-                             place from the distribution.]
+                             place from the distribution. The -j parameter
+                             should not exceed half the number of cores.
+                             If the test fails, just run with 'make check']
 
        Configure also supports building in a separate directory from the
-       source.  Run "/(path-to)/leptonica-1.71/configure" and then "make"
+       source.  Run "/(path-to)/leptonica-1.72/configure" and then "make"
        from the desired build directory.
 
        Configure has a number of useful options; run "configure --help" for
@@ -228,10 +232,10 @@ Building leptonica
 
        By default, the library is built with debugging symbols.  If you do not
        want these, use "CFLAGS=-O2 ./configure" to eliminate symbols for
-       subsequent compilations, or "make CFLAGS=-O2" to override for this
-       compilation only.  Another option is to use the 'install-strip' target
-       (i.e., "make install-strip") to remove the debugging symbols when
-       the library is installed.
+       subsequent compilations, or "make CFLAGS=-O2" to override the default
+       for compilation only.  Another option is to use the 'install-strip'
+       target (i.e., "make install-strip") to remove the debugging symbols
+       when the library is installed.
 
        Finally, if you find that the installed programs are unable to link
        at runtime to the installed library, which is in /usr/local/lib,
@@ -332,8 +336,8 @@ I/O libraries leptonica is dependent on
    Leptonica also allows image I/O with bmp and pnm formats, for which
    we provide the serializers (encoders and decoders).  It also
    gives output drivers for wrapping images in PostScript and PDF, which
-   in turn use tiffg4, jpeg and png encoding.  Wrapping of jpeg2000
-   images in PDF is also implemented.
+   in turn use tiffg4, jpeg and flate (i.e., zlib) encoding.  PDF will
+   also wrap jpeg2000 images.
 
    There is a programmatic interface to gnuplot.  To use it, you
    need only the gnuplot executable (suggest version 3.7.2 or later);
@@ -372,23 +376,26 @@ I/O libraries leptonica is dependent on
       (1) Download libwebp from sourceforge
       (2) #define HAVE_LIBWEBP   1  (in environ.h)
       (3) In prog/makefile, edit ALL_LIBS to include -lwebp
-
-   To read and write gif files:
-      (1) Download version giflib-5.0.X from souceforge
-      (2) #define  HAVE_LIBGIF   1  (in environ.h)
-      (3) In prog/makefile, edit ALL_LIBS to include -lgif
-      (4) If the library is installed into /usr/local/lib, you may need
-          to add that directory to LDFLAGS; or, equivalently, add
-          that path to the LD_LIBRARY_PATH environment variable.
-      (5) Note: do not use giflib-4.1.4: binary comp and decomp
-          don't pack the pixel data and are ridiculously slow.
+      (4) The library will be installed into /usr/local/lib.
+          You may need to add that directory to LDFLAGS; or, equivalently,
+          add that path to the LD_LIBRARY_PATH environment variable.
 
    To read and write jpeg2000 files:
       (1) Download libopenjp2, version 2.X, from their distribution,
           along with cmake.  There is no debian version of openjpeg 2.X
-          as of 6/20/2014.
+          as of 12/26/2014.
       (2) #define HAVE_LIBJP2K   1  (in environ.h)
+      (2a) If you have version 2.X, X != 1, edit LIBJP2K_HEADER  (in environ.h)
       (3) In prog/makefile, edit ALL_LIBS to include -lopenjp2
+      (4) The library will be installed into /usr/local/lib.
+
+   To read and write gif files:
+      (1) Download version giflib-5.X.X from souceforge
+      (2) #define  HAVE_LIBGIF   1  (in environ.h)
+      (3) In prog/makefile, edit ALL_LIBS to include -lgif
+      (4) The library will be installed into /usr/local/lib.
+      (5) Note: do not use giflib-4.1.4: binary comp and decomp
+          don't pack the pixel data and are ridiculously slow.
 </pre>
 
 
@@ -437,11 +444,10 @@ that you are using the static makefiles and customizing environ.h.
    that only work on linux and conveniently allow memory I/O with a file
    stream interface.  This is convenient for compressing and decompressing
    image data to memory rather than to file.  Stubs are provided
-   for all these I/O functions.  Default is not to enable them, in
-   deference to the OSX developers, who don't have these functions
-   available.  To enable, #define HAVE_FMEMOPEN  1  (in environ.h).
-   If it is not enabled, raster to compressed data in memory is
-   accomplished through a temporary file.
+   for all these I/O functions.  Default is to enable them; OSX developers
+   must disable by setting #define HAVE_FMEMOPEN  0  (in environ.h).
+   If these functions are not enabled, raster to compressed data in
+   memory is accomplished safely but through a temporary file.
    See 9 for more details on image I/O formats.
 
    If you're building with the autoconf programs, these two functions are
@@ -799,9 +805,9 @@ What's in leptonica?
 
     - WEBP is a new wavelet encoding method derived from libvpx,
       a video compression library.  It is rapidly growing in acceptance,
-      and is supported natively in several browsers (as of Dec 2013).
-      Leptonica provides an interface through webp into the underlying
-      codec.  You need to download libwebp.
+      and is supported natively in several browsers.  Leptonica provides
+      an interface through webp into the underlying codec.  You need
+      to download libwebp.
 
     - JP2K (jpeg2000) is a wavelet encoding method, that has clear
       advantages over jpeg in compression and quality (especially when
@@ -828,11 +834,13 @@ What's in leptonica?
         PNM and BMP do not.
       - WEBP supports rgb color and rgba.
       - JP2K supports 8 bpp grayscale, rgb color and rgba.
-   Use prog/ioformats_reg for a regression test on all but GIF, WEBP, and JP2K.
-   Use prog/pngio_reg for a thorough testing of PNG.
-   Use prog/gifio_reg for testing GIF.
-   Use prog/webpio_reg for testing WEBP.
-   Use prog/jp2kio_reg for testing JP2K.
+   Use prog/ioformats_reg for a regression test on all formats, including
+   thorough testing on TIFF.
+   For more thorough testing on other formats, use:
+      - prog/pngio_reg for PNG.
+      - prog/gifio_reg for GIF
+      - prog/webpio_reg for WEBP
+      - prog/jp2kio_reg for JP2K
 
    We provide generators for PS output, from all types of input images.
    The output can be either uncompressed or compressed with level 2
@@ -857,6 +865,13 @@ What's in leptonica?
        mask.  Non-image regions are written in G4 (fax) encoding.
      * Concatenate single-page PDF wrapped images into a single PDF file.
      * Build a PDF file of all images in a directory or array of file names.
+   As examples of usage, see:
+     * prog/converttopdf.c: fast pdf generation with one image/page.
+       For speed, this avoids transcoding whenever possible.
+     * prog/convertfilestopdf.c: more flexibility in the output.  You
+       can set the resolution, scaling, encoding type and jpeg quality.
+     * prog/convertsegfilestopdf.c: generates a multipage, mixed raster pdf,
+       with separate controls for compressing text and non-text regions.
 
    Note: any or all of these I/O library calls can be stubbed out at
          compile time, using the environment variables in environ.h.
@@ -869,8 +884,7 @@ What's in leptonica?
    Therefore, except for TIFF, you will not be able to do memory
    supported read/writes on these platforms:
        OSX, Windows, Solaris
-   By default, these non-POSIX functions are disabled.  To enable memory
-   I/O for image formatted read/writes, see environ.h.
+   To enable/disable memory I/O for image read/write, see environ.h.
 
    We also provide fast serialization and deserialization between a pix
    in memory and a file (spixio.c).  This works on all types of pix images.
@@ -892,20 +906,19 @@ What's in leptonica?
 
    For debugging, several pixDisplay* functions in writefile.c are given.
    Two (pixDisplay and pixDisplayWithTitle) can be called to display
-   an image using one of several display programs (xv, xli, xzgv, l_view).
+   an image using one of several display programs (xzgv, xli, xv, l_view).
    If necessary to fit on the screen, the image is reduced in size,
    with 1 bpp images being converted to grayscale for readability.
-   (This is much better than letting xv do the reduction).
+   (This is much better than letting xv do the reduction, for example).
    Another function, pixDisplayWrite(), writes images to disk under
    control of a reduction/disable flag, which then allows
    either viewing with pixDisplayMultiple(), or the generation
    of a composite image using, for example, pixaDisplayTiledAndScaled().
-   These files can also be gathered up into a compressed PostScript file,
-   using prog/convertfilestops, and viewed with evince, or converted
-   to pdf.  Common image display programs are: xv, xli, xzgv, display,
-   gthumb, gqview, evince, gv and acroread.  Finally, a set of
-   images can be saved into a pixa (array of pix), specifying the
-   eventual layout into a single pix, using pixaSaveTiled*().
+   These files can also be gathered up into a compressed PDF or PostScript
+   file and viewed with evince.  Common image display programs are: xzgv,
+   xli, xv, display, gthumb, gqview, evince, gv and acroread.  Finally,
+   a set of images can be saved into a pixa (array of pix), specifying the
+   eventual layout into a single pix, using pixaDisplay*().
 
 12. Document image analysis
 
@@ -919,7 +932,7 @@ What's in leptonica?
 
 13. Data structures
 
-   Simple data structures are provided for safe and efficient handling
+   Several simple data structures are provided for safe and efficient handling
    of arrays of numbers, strings, pointers, and bytes.  The generic
    pointer array is implemented in four ways: as a stack, a queue,
    a heap (used to implement a priority queue), and an array with
@@ -960,7 +973,8 @@ What's in leptonica?
     - a bitmap font facility that allows painting text onto
       images.  We currently support one font in several sizes.
       The font images and postscript programs for generating
-      them are stored in prog/fonts/.
+      them are stored in prog/fonts/, and also as compiled strings
+      in bmfdata.h.
 
     - a binary maze game lets you generate mazes and find shortest
       paths between two arbitrary points, if such a path exists.
@@ -1000,8 +1014,8 @@ What's in leptonica?
 
 16. Versions
 
-   New versions of the Leptonica library are released approximately
-   6 times a year, and version numbers are provided for each release in
+   New versions of the Leptonica library are released several times
+   a year, and version numbers are provided for each release in
    the makefile and in allheaders.h.  All even versions from 1.42 to 1.60
    have been archived at http://code.google.com/p/leptonica, as well as all
    versions after 1.60.  However, code.google.com no longer supports
@@ -1014,7 +1028,7 @@ What's in leptonica?
    and the binary API changed slightly with the new 1.71 release.  Having
    a proper binary release version is required for all debian packages.
    The binary release version for 1.69 is 3.0.0, for 1.70 it is 4.0.0,
-   and for 1.71 it is 4.2.0.
+   for 1.71 it is 4.2.0 and for 1.72 it is 4.3.0.
 
    A brief version chronology is maintained in version-notes.html.
    Starting with gcc 4.3.3, error warnings (-Werror) are given for

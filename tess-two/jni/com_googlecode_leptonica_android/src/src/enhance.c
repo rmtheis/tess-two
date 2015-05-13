@@ -605,7 +605,7 @@ PIX *
 pixEqualizeTRC(PIX       *pixd,
                PIX       *pixs,
                l_float32  fract,
-	       l_int32    factor)
+               l_int32    factor)
 {
 l_int32   d;
 NUMA     *na;
@@ -688,8 +688,8 @@ PIXCMAP  *cmap;
  */
 NUMA *
 numaEqualizeTRC(PIX       *pix,
-		l_float32  fract,
-		l_int32    factor)
+                l_float32  fract,
+                l_int32    factor)
 {
 l_int32    iin, iout, itarg;
 l_float32  val, sum;

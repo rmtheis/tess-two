@@ -389,24 +389,22 @@
 
 static l_int32 dewarpaExtendArraysToSize(L_DEWARPA *dewa, l_int32 size);
 
-
-    /* Special parameter values */
-static const l_int32     MIN_ARRAY_SAMPLING = 8;
-static const l_int32     DEFAULT_ARRAY_SAMPLING = 30;
-static const l_int32     MIN_MIN_LINES = 4;
-static const l_int32     DEFAULT_MIN_LINES = 15;
-static const l_int32     DEFAULT_MAX_REF_DIST = 16;
-static const l_float32   DEFAULT_SLOPE_FACTOR = 2000.;
-
+    /* Parameter values used in dewarpaCreate() */
 static const l_int32     INITIAL_PTR_ARRAYSIZE = 20;   /* n'import quoi */
 static const l_int32     MAX_PTR_ARRAYSIZE = 10000;
+static const l_int32     DEFAULT_ARRAY_SAMPLING = 30;
+static const l_int32     MIN_ARRAY_SAMPLING = 8;
+static const l_int32     DEFAULT_MIN_LINES = 15;
+static const l_int32     MIN_MIN_LINES = 4;
+static const l_int32     DEFAULT_MAX_REF_DIST = 16;
 
+    /* Parameter values used in dewarpaSetCurvatures() */
 static const l_int32     DEFAULT_MAX_LINECURV = 180;
 static const l_int32     DEFAULT_MIN_DIFF_LINECURV = 0;
-static const l_int32     DEFAULT_MAX_DIFF_LINECURV = 150;
+static const l_int32     DEFAULT_MAX_DIFF_LINECURV = 200;
 static const l_int32     DEFAULT_MAX_EDGECURV = 50;
-static const l_int32     DEFAULT_MAX_DIFF_EDGECURV = 30;
-static const l_int32     DEFAULT_MAX_EDGESLOPE = 100;
+static const l_int32     DEFAULT_MAX_DIFF_EDGECURV = 40;
+static const l_int32     DEFAULT_MAX_EDGESLOPE = 80;
 
 
 /*----------------------------------------------------------------------*
@@ -878,8 +876,11 @@ dewarpaGetDewarp(L_DEWARPA  *dewa,
 
     if (!dewa)
         return (L_DEWARP *)ERROR_PTR("dewa not defined", procName, NULL);
-    if (index < 0 || index > dewa->maxpage)
-        return (L_DEWARP *)ERROR_PTR("invalid index", procName, NULL);
+    if (index < 0 || index > dewa->maxpage) {
+        L_ERROR("index = %d is invalid; max index = %d\n",
+                procName, index, dewa->maxpage);
+        return NULL;
+    }
 
     return dewa->dewarp[index];
 }

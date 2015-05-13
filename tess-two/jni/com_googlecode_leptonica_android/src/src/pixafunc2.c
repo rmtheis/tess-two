@@ -1488,7 +1488,8 @@ PIXA    *pixad;
  *              spacing  (between images, and on outside)
  *              border (width of additional black border on each image;
  *                      use 0 for no border)
- *              fontdir (<optional> prints tail of filename with image)
+ *              fontsize (to print tail of filename with image.  Valid set is
+ *                        {4,6,8,10,12,14,16,18,20}.  Use 0 to disable.)
  *              outdir (subdirectory of /tmp to put N-up tiled images)
  *      Return: 0 if OK, 1 on error
  *
@@ -1510,7 +1511,7 @@ convertToNUpFiles(const char  *dir,
                   l_int32      tw,
                   l_int32      spacing,
                   l_int32      border,
-                  const char  *fontdir,
+                  l_int32      fontsize,
                   const char  *outdir)
 {
 l_int32  d, format;
@@ -1523,11 +1524,13 @@ PIXA    *pixa;
         return ERROR_INT("dir not defined", procName, 1);
     if (nx < 1 || ny < 1 || nx > 50 || ny > 50)
         return ERROR_INT("invalid tiling N-factor", procName, 1);
+    if (fontsize < 0 || fontsize > 20 || fontsize & 1 || fontsize == 2)
+        return ERROR_INT("invalid fontsize", procName, 1);
     if (!outdir)
         return ERROR_INT("outdir not defined", procName, 1);
 
     pixa = convertToNUpPixa(dir, substr, nx, ny, tw, spacing, border,
-                            fontdir);
+                            fontsize);
     if (!pixa)
         return ERROR_INT("pixa not made", procName, 1);
 
@@ -1553,7 +1556,8 @@ PIXA    *pixa;
  *              spacing  (between images, and on outside)
  *              border (width of additional black border on each image;
  *                      use 0 for no border)
- *              fontdir (<optional> prints tail of filename with image)
+ *              fontsize (to print tail of filename with image.  Valid set is
+ *                        {4,6,8,10,12,14,16,18,20}.  Use 0 to disable.)
  *      Return: pixad, or null on error
  *
  *  Notes:
@@ -1567,7 +1571,7 @@ convertToNUpPixa(const char  *dir,
                  l_int32      tw,
                  l_int32      spacing,
                  l_int32      border,
-                 const char  *fontdir)
+                 l_int32      fontsize)
 {
 l_int32    i, j, k, nt, n2, nout, d;
 char      *fname, *tail;
@@ -1584,13 +1588,15 @@ SARRAY    *sa;
         return (PIXA *)ERROR_PTR("invalid tiling N-factor", procName, NULL);
     if (tw < 20)
         return (PIXA *)ERROR_PTR("tw must be >= 20", procName, NULL);
+    if (fontsize < 0 || fontsize > 20 || fontsize & 1 || fontsize == 2)
+        return (PIXA *)ERROR_PTR("invalid fontsize", procName, NULL);
 
     sa = getSortedPathnamesInDirectory(dir, substr, 0, 0);
     nt = sarrayGetCount(sa);
     n2 = nx * ny;
     nout = (nt + n2 - 1) / n2;
     pixad = pixaCreate(nout);
-    bmf = (fontdir) ? bmfCreate(fontdir, 6) : NULL;   /* 6 pt font */
+    bmf = (fontsize == 0) ? NULL : bmfCreate(NULL, fontsize);
     for (i = 0, j = 0; i < nout; i++) {
         pixat = pixaCreate(n2);
         for (k = 0; k < n2 && j < nt; j++, k++) {
@@ -1600,7 +1606,7 @@ SARRAY    *sa;
                 continue;
             }
             pix2 = pixScaleToSize(pix1, tw, 0);  /* all images have width tw */
-            if (fontdir) {
+            if (bmf) {
                 splitPathAtDirectory(fname, NULL, &tail);
                 pix3 = pixAddSingleTextline(pix2, bmf, tail, 0xff000000,
                                             L_ADD_BELOW);

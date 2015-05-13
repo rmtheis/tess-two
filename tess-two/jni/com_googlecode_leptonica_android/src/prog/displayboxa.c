@@ -48,7 +48,6 @@ int main(int    argc,
 char        *filein, *fileout, *fontdir;
 l_int32      w, h, width, sep;
 l_float32    scalefact;
-L_BMF       *bmf;
 BOXA        *boxa1, *boxa2;
 PIX         *pixd;
 static char  mainName[] = "displayboxa";

@@ -438,6 +438,7 @@ L_RDID     *did;
 
     PROCNAME("recogRunViterbi");
 
+    if (ppixdb) *ppixdb = NULL;
     if (!recog)
         return ERROR_INT("recog not defined", procName, 1);
     if ((did = recogGetDid(recog)) == NULL)
@@ -560,6 +561,7 @@ L_RDID    *did;
 
     PROCNAME("recogRescoreDidResult");
 
+    if (ppixdb) *ppixdb = NULL;
     if (!recog)
         return ERROR_INT("recog not defined", procName, 1);
     if ((did = recogGetDid(recog)) == NULL)
@@ -627,13 +629,8 @@ L_RDID    *did;
         return (PIX *)ERROR_PTR("recog not defined", procName, NULL);
     if ((did = recogGetDid(recog)) == NULL)
         return (PIX *)ERROR_PTR("did not defined", procName, NULL);
-    if (recog->fontdir == NULL) {
-        L_WARNING("no bitmap fonts available\n", procName);
-        bmf = NULL;
-    } else {
-        bmf = bmfCreate(recog->fontdir, 8);
-    }
 
+    bmf = bmfCreate(NULL, 8);
     pixs = pixScale(did->pixs, 4.0, 4.0);
     pix0 = pixAddBorderGeneral(pixs, 0, 0, 0, 40, 0);
     pix1 = pixConvertTo32(pix0);
@@ -881,12 +878,10 @@ L_RDID  *did;
 
     PROCNAME("recogGetWindowedArea");
 
-    if (!pwsum)
-        return ERROR_INT("&wsum not defined", procName, 1);
-    *pwsum = 0;
-    if (!pdely)
-        return ERROR_INT("&dely not defined", procName, 1);
-    *pdely = 0;
+    if (pdely) *pdely = 0;
+    if (pwsum) *pwsum = 0;
+    if (!pdely || !pwsum)
+        return ERROR_INT("&dely and &wsum not both defined", procName, 1);
     if (!recog)
         return ERROR_INT("recog not defined", procName, 1);
     if ((did = recogGetDid(recog)) == NULL)
@@ -1000,6 +995,4 @@ L_RCH   *rch;
     numaAddNumber(did->nascore_r, rch->score);
     return 0;
 }
-
-
 

@@ -27,7 +27,7 @@
 /*
  *   dewarptest4.c
  *
- *   testing serialization
+ *   Tests serialization functions for dewarpa and dewarp structs.
  */
 
 #include "allheaders.h"
@@ -79,7 +79,7 @@ PIX        *pixd3, *pixc1, *pixc2;
     dewa2 = dewarpaRead("/tmp/dewarpa1.dewa");
     dewarpaWrite("/tmp/dewarpa2.dewa", dewa2);
     dewa3 = dewarpaRead("/tmp/dewarpa2.dewa");
-    dewarpDebug(dewa3->dewarp[35], "dew1", 35);
+    dewarpDebug(dewa3->dewarp[7], "dew1", 7);
     dewarpaWrite("/tmp/dewarpa3.dewa", dewa3);
 
         /* Repopulate and show the vertical disparity arrays */

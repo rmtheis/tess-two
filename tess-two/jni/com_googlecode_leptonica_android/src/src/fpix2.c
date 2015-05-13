@@ -675,7 +675,7 @@ l_float32   minval;
     PROCNAME("fpixGetMin");
 
     if (!pminval && !pxminloc && !pyminloc)
-        return ERROR_INT("nothing to do", procName, 1);
+        return ERROR_INT("no return val requested", procName, 1);
     if (pminval) *pminval = 0.0;
     if (pxminloc) *pxminloc = 0;
     if (pyminloc) *pyminloc = 0;
@@ -728,7 +728,7 @@ l_float32   maxval;
     PROCNAME("fpixGetMax");
 
     if (!pmaxval && !pxmaxloc && !pymaxloc)
-        return ERROR_INT("nothing to do", procName, 1);
+        return ERROR_INT("no return val requested", procName, 1);
     if (pmaxval) *pmaxval = 0.0;
     if (pxmaxloc) *pxmaxloc = 0;
     if (pymaxloc) *pymaxloc = 0;
@@ -781,7 +781,7 @@ l_float64   minval;
     PROCNAME("dpixGetMin");
 
     if (!pminval && !pxminloc && !pyminloc)
-        return ERROR_INT("nothing to do", procName, 1);
+        return ERROR_INT("no return val requested", procName, 1);
     if (pminval) *pminval = 0.0;
     if (pxminloc) *pxminloc = 0;
     if (pyminloc) *pyminloc = 0;
@@ -834,7 +834,7 @@ l_float64   maxval;
     PROCNAME("dpixGetMax");
 
     if (!pmaxval && !pxmaxloc && !pymaxloc)
-        return ERROR_INT("nothing to do", procName, 1);
+        return ERROR_INT("no return val requested", procName, 1);
     if (pmaxval) *pmaxval = 0.0;
     if (pxmaxloc) *pxmaxloc = 0;
     if (pymaxloc) *pymaxloc = 0;

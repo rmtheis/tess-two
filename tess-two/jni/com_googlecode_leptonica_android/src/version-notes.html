@@ -22,6 +22,34 @@ They are <i>not</i> a complete listing of the modifications.
 
 <pre>
 
+1.72   5 Apr 15
+       Better handling of 1 bpp colormap read/write with png so that
+       they are losseless.  The colormap is always removed on read and
+       the conversion is to the simplest non-cmapped pix that can fully
+       represent the input -- both with and without alpha.
+       Fixed overflow bug in pixCorrelationBinary().
+       Fixed orientation flags and handling of 16 bit RGB in tiff.
+       Also new wrappers to TIFFClientOpen(), so we no longer go through
+       the file descriptor for memory operations.
+       Improvements in the dewarp functions.
+       New box sequence smoothings.
+       New antialiased painting through mask; previously it was only
+       implemented for connected components in a mask.
+       Better error handling and debug output with jpeg2000 read/write.
+       Implemented base64 encoding.  This allows binary data to be represented
+       as a C string that can be compiled.  Used this in bmf utility.
+       Implemented automatic code generation for deserialization from
+       compiled strings (stringcode.*)
+       Regression tests write to leptonica subdir of <Temp> in windows; in
+       unix it is optional.  This avoids spamming the <Temp> directory.
+       Added new colorspace conversions (XYZ, LAB).
+       New source files: encoding.c, bmfdata.h, stringcode.c, stringcode.h,
+         bootnumgen.c.
+       Removed source files: convolvelow.c, graymorphlow.c
+       New programs: genfonts_reg, colorize_reg, texturefill_reg,
+         autogentest1, autogentest2.
+       alltests_reg now has 66 tests.
+
 1.71   18 Jun 14
        This version supports tesseract 3.0.4.  In particular, 3.0.4
         has automatic conversion of a set of scanned images, either in a

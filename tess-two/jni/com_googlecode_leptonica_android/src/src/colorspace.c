@@ -55,6 +55,26 @@
  *           l_int32     convertYUVToRGB()
  *           l_int32     pixcmapConvertRGBToYUV()
  *           l_int32     pixcmapConvertYUVToRGB()
+ *
+ *      Colorspace conversion between RGB and XYZ
+ *           FPIXA      *pixConvertRGBToXYZ()
+ *           PIX        *fpixaConvertXYZToRGB()
+ *           l_int32     convertRGBToXYZ()
+ *           l_int32     convertXYZToRGB()
+ *
+ *      Colorspace conversion between XYZ and LAB
+ *           FPIXA      *fpixaConvertXYZToLAB()
+ *           PIX        *fpixaConvertLABToXYZ()
+ *           l_int32     convertXYZToLAB()
+ *           l_int32     convertLABToXYZ()
+ *           static l_float32  lab_forward()
+ *           static l_float32  lab_reverse()
+ *
+ *      Colorspace conversion between RGB and LAB
+ *           FPIXA      *pixConvertRGBToLAB()
+ *           PIX        *fpixaConvertLABToRGB()
+ *           l_int32     convertRGBToLAB()
+ *           l_int32     convertLABToRGB()
  */
 
 #include <string.h>
@@ -62,8 +82,13 @@
 #include "allheaders.h"
 
 #ifndef  NO_CONSOLE_IO
-#define  DEBUG_HISTO       1
+#define  DEBUG_HISTO       0
+#define  SLOW_CUBE_ROOT    0
 #endif  /* ~NO_CONSOLE_IO */
+
+    /* Functions used in xyz <--> lab conversions */
+static l_float32 lab_forward(l_float32 v);
+static l_float32 lab_reverse(l_float32 v);
 
 
 /*---------------------------------------------------------------------------*
@@ -249,6 +274,9 @@ l_float32  h;
 
     PROCNAME("convertRGBToHSV");
 
+    if (phval) *phval = 0;
+    if (psval) *psval = 0;
+    if (pvval) *pvval = 0;
     if (!phval || !psval || !pvval)
         return ERROR_INT("&hval, &sval, &vval not all defined", procName, 1);
 
@@ -306,6 +334,9 @@ l_float32 h, f, s;
 
     PROCNAME("convertHSVToRGB");
 
+    if (prval) *prval = 0;
+    if (pgval) *pgval = 0;
+    if (pbval) *pbval = 0;
     if (!prval || !pgval || !pbval)
         return ERROR_INT("&rval, &gval, &bval not all defined", procName, 1);
 
@@ -940,6 +971,8 @@ PIX       *pixt, *pixd;
 
     PROCNAME("pixMakeHistoHS");
 
+    if (!pnahue && !pnasat)
+        return (PIX *)ERROR_PTR("no return val requested", procName, NULL);
     if (pnahue) *pnahue = NULL;
     if (pnasat) *pnasat = NULL;
     if (!pixs || pixGetDepth(pixs) != 32)
@@ -1029,6 +1062,8 @@ PIX       *pixt, *pixd;
 
     PROCNAME("pixMakeHistoHV");
 
+    if (!pnahue && !pnaval)
+        return (PIX *)ERROR_PTR("no return val requested", procName, NULL);
     if (pnahue) *pnahue = NULL;
     if (pnaval) *pnaval = NULL;
     if (!pixs || pixGetDepth(pixs) != 32)
@@ -1110,6 +1145,8 @@ PIX       *pixt, *pixd;
 
     PROCNAME("pixMakeHistoSV");
 
+    if (!pnasat && !pnaval)
+        return (PIX *)ERROR_PTR("no return val requested", procName, NULL);
     if (pnasat) *pnasat = NULL;
     if (pnaval) *pnaval = NULL;
     if (!pixs || pixGetDepth(pixs) != 32)
@@ -1168,8 +1205,8 @@ PIX       *pixt, *pixd;
  *              height (half height of sliding window)
  *              npeaks (number of peaks to look for)
  *              erasefactor (ratio of erase window size to sliding window size)
- *              &pta (locations of maximum for each integrated peak area)
- *              &natot (integrated peak areas)
+ *              &pta (<return> locations of max for each integrated peak area)
+ *              &natot (<return> integrated peak areas)
  *              &pixa (<optional return> pixa for debugging; NULL to skip)
  *      Return: 0 if OK, 1 on error
  *
@@ -1204,6 +1241,9 @@ PTA      *pta;
 
     PROCNAME("pixFindHistoPeaksHSV");
 
+    if (ppixa) *ppixa = NULL;
+    if (ppta) *ppta = NULL;
+    if (pnatot) *pnatot = NULL;
     if (!pixs || pixGetDepth(pixs) != 32)
         return ERROR_INT("pixs undefined or not 32 bpp", procName, 1);
     if (!ppta || !pnatot)
@@ -1376,7 +1416,7 @@ PIX     *pixt, *pixd;
  *             V: [16, 240]
  *      (5) For the coefficients in the transform matrices, see eq. 4 in
  *          "Frequently Asked Questions about Color" by Charles Poynton,
- *          http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html
+ *          //http://user.engineering.uiowa.edu/~aip/Misc/ColorFAQ.html
  */
 PIX *
 pixConvertRGBToYUV(PIX  *pixd,
@@ -1514,6 +1554,9 @@ l_float32  norm;
 
     PROCNAME("convertRGBToYUV");
 
+    if (pyval) *pyval = 0;
+    if (puval) *puval = 0;
+    if (pvval) *pvval = 0;
     if (!pyval || !puval || !pvval)
         return ERROR_INT("&yval, &uval, &vval not all defined", procName, 1);
 
@@ -1558,6 +1601,9 @@ l_float32  norm, ym, um, vm;
 
     PROCNAME("convertYUVToRGB");
 
+    if (prval) *prval = 0;
+    if (pgval) *pgval = 0;
+    if (pbval) *pbval = 0;
     if (!prval || !pgval || !pbval)
         return ERROR_INT("&rval, &gval, &bval not all defined", procName, 1);
 
@@ -1637,3 +1683,672 @@ l_int32   i, ncolors, rval, gval, bval, yval, uval, vval;
     }
     return 0;
 }
+
+
+/*---------------------------------------------------------------------------*
+ *                Colorspace conversion between RGB and XYZ                  *
+ *---------------------------------------------------------------------------*/
+/*!
+ *  pixConvertRGBToXYZ()
+ *
+ *      Input:  pixs (rgb)
+ *      Return: fpixa (xyz)
+ *
+ *  Notes:
+ *      (1) The [x,y,z] values are stored as float values in three fpix
+ *          that are returned in a fpixa.
+ *      (2) The XYZ color space was defined in 1931 as a reference model that
+ *          simulates human color perception.  When Y is taken as luminance,
+ *          the values of X and Z constitute a color plane representing
+ *          all the hues that can be perceived.  This gamut of colors
+ *          is larger than the gamuts that can be displayed or printed.
+ *          For example, although all rgb values map to XYZ, the converse
+ *          is not true.
+ *      (3) The value of the coefficients depends on the illuminant.  We use
+ *          coefficients for converting sRGB under D65 (the spectrum from
+ *          a 6500 degree K black body; an approximation to daylight color).
+ *          See, e.g.,
+ *             http://www.cs.rit.edu/~ncs/color/t_convert.html
+ *          For more general information on color transforms, see:
+ *             http://www.brucelindbloom.com/
+ *             http://user.engineering.uiowa.edu/~aip/Misc/ColorFAQ.html
+ *             http://en.wikipedia.org/wiki/CIE_1931_color_space
+ */
+FPIXA *
+pixConvertRGBToXYZ(PIX  *pixs)
+{
+l_int32     w, h, wpls, wpld, i, j, rval, gval, bval;
+l_uint32   *lines, *datas;
+l_float32   fxval, fyval, fzval;
+l_float32  *linex, *liney, *linez, *datax, *datay, *dataz;
+FPIX       *fpix;
+FPIXA      *fpixa;
+
+    PROCNAME("pixConvertRGBToXYZ");
+
+    if (!pixs || pixGetDepth(pixs) != 32)
+        return (FPIXA *)ERROR_PTR("pixs undefined or not rgb", procName, NULL);
+
+        /* Convert RGB image */
+    pixGetDimensions(pixs, &w, &h, NULL);
+    fpixa = fpixaCreate(3);
+    for (i = 0; i < 3; i++) {
+        fpix = fpixCreate(w, h);
+        fpixaAddFPix(fpixa, fpix, L_INSERT);
+    }
+    wpls = pixGetWpl(pixs);
+    wpld = fpixGetWpl(fpix);
+    datas = pixGetData(pixs);
+    datax = fpixaGetData(fpixa, 0);
+    datay = fpixaGetData(fpixa, 1);
+    dataz = fpixaGetData(fpixa, 2);
+    for (i = 0; i < h; i++) {
+        lines = datas + i * wpls;
+        linex = datax + i * wpld;
+        liney = datay + i * wpld;
+        linez = dataz + i * wpld;
+        for (j = 0; j < w; j++) {
+            extractRGBValues(lines[j], &rval, &gval, &bval);
+            convertRGBToXYZ(rval, gval, bval, &fxval, &fyval, &fzval);
+            *(linex + j) = fxval;
+            *(liney + j) = fyval;
+            *(linez + j) = fzval;
+        }
+    }
+
+    return fpixa;
+}
+
+
+/*!
+ *  fpixaConvertXYZToRGB()
+ *
+ *      Input:  fpixa (three fpix: x,y,z)
+ *      Return: pixd (rgb)
+ *
+ *  Notes:
+ *      (1) The xyz image is stored in three fpix.
+ *      (2) For values of xyz that are out of gamut for rgb, the rgb
+ *          components are set to the closest valid color.
+ */
+PIX *
+fpixaConvertXYZToRGB(FPIXA  *fpixa)
+{
+l_int32     w, h, wpls, wpld, i, j, rval, gval, bval;
+l_float32   fxval, fyval, fzval;
+l_float32  *linex, *liney, *linez, *datax, *datay, *dataz;
+l_uint32   *lined, *datad;
+PIX        *pixd;
+FPIX       *fpix;
+
+    PROCNAME("fpixaConvertXYZToRGB");
+
+    if (!fpixa || fpixaGetCount(fpixa) != 3)
+        return (PIX *)ERROR_PTR("fpixa undefined or invalid", procName, NULL);
+
+        /* Convert XYZ image */
+    if (fpixaGetFPixDimensions(fpixa, 0, &w, &h))
+        return (PIX *)ERROR_PTR("fpixa dimensions not found", procName, NULL);
+    pixd = pixCreate(w, h, 32);
+    wpld = pixGetWpl(pixd);
+    datad = pixGetData(pixd);
+    datax = fpixaGetData(fpixa, 0);
+    datay = fpixaGetData(fpixa, 1);
+    dataz = fpixaGetData(fpixa, 2);
+    fpix = fpixaGetFPix(fpixa, 0, L_CLONE);
+    wpls = fpixGetWpl(fpix);
+    fpixDestroy(&fpix);
+    for (i = 0; i < h; i++) {
+        linex = datax + i * wpls;
+        liney = datay + i * wpls;
+        linez = dataz + i * wpls;
+        lined = datad + i * wpld;
+        for (j = 0; j < w; j++) {
+            fxval = linex[j];
+            fyval = liney[j];
+            fzval = linez[j];
+            convertXYZToRGB(fxval, fyval, fzval, 0, &rval, &gval, &bval);
+            composeRGBPixel(rval, gval, bval, lined + j);
+        }
+    }
+
+    return pixd;
+}
+
+
+/*!
+ *  convertRGBToXYZ()
+ *
+ *      Input:  rval, gval, bval (rgb input)
+ *              &fxval, &fyval, &fzval (<return> xyz values)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) These conversions are for illuminant D65 acting on linear sRGB
+ *          values.
+ */
+l_int32
+convertRGBToXYZ(l_int32     rval,
+                l_int32     gval,
+                l_int32     bval,
+                l_float32  *pfxval,
+                l_float32  *pfyval,
+                l_float32  *pfzval)
+{
+    PROCNAME("convertRGBToXYZ");
+
+    if (pfxval) *pfxval = 0.0;
+    if (pfyval) *pfyval = 0.0;
+    if (pfzval) *pfzval = 0.0;
+    if (!pfxval || !pfyval || !pfzval)
+        return ERROR_INT("&xval, &yval, &zval not all defined", procName, 1);
+
+    *pfxval = 0.4125 * rval + 0.3576 * gval + 0.1804 * bval;
+    *pfyval = 0.2127 * rval + 0.7152 * gval + 0.0722 * bval;
+    *pfzval = 0.0193 * rval + 0.1192 * gval + 0.9502 * bval;
+    return 0;
+}
+
+
+/*!
+ *  convertXYZToRGB()
+ *
+ *      Input:  fxval, fyval, fzval
+ *              blackout (0 to output nearest color if out of gamut;
+ *                        1 to output black)
+ *              &rval, &gval, &bval (<return> rgb values)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) For values of xyz that are out of gamut for rgb, at least
+ *          one of the r, g or b components will be either less than 0
+ *          or greater than 255.  For that situation:
+ *            * if blackout == 0, the individual component(s) that are out
+ *              of gamut will be set to 0 or 255, respectively.
+ *            * if blackout == 1, the output color will be set to black
+ */
+l_int32
+convertXYZToRGB(l_float32  fxval,
+                l_float32  fyval,
+                l_float32  fzval,
+                l_int32    blackout,
+                l_int32   *prval,
+                l_int32   *pgval,
+                l_int32   *pbval)
+{
+l_int32  rval, gval, bval;
+
+    PROCNAME("convertXYZToRGB");
+
+    if (prval) *prval = 0;
+    if (pgval) *pgval = 0;
+    if (pbval) *pbval = 0;
+    if (!prval || !pgval ||!pbval)
+        return ERROR_INT("&rval, &gval, &bval not all defined", procName, 1);
+    *prval = *pgval = *pbval = 0;
+
+    rval = (l_int32)(3.2405 * fxval - 1.5372 * fyval - 0.4985 * fzval + 0.5);
+    gval = (l_int32)(-0.9693 * fxval + 1.8760 * fyval + 0.0416 * fzval + 0.5);
+    bval = (l_int32)(0.0556 * fxval - 0.2040 * fyval + 1.0573 * fzval + 0.5);
+    if (blackout == 0) {  /* the usual situation; use nearest rgb color */
+        *prval = L_MAX(0, L_MIN(rval, 255));
+        *pgval = L_MAX(0, L_MIN(gval, 255));
+        *pbval = L_MAX(0, L_MIN(bval, 255));
+    } else {  /* use black for out of gamut */
+        if (rval >= 0 && rval < 256 && gval >= 0 && gval < 256 &&
+            bval >= 0 && bval < 256) {  /* in gamut */
+            *prval = rval;
+            *pgval = gval;
+            *pbval = bval;
+        }
+    }
+    return 0;
+}
+
+
+/*---------------------------------------------------------------------------*
+ *               Colorspace conversion between XYZ and LAB                   *
+ *---------------------------------------------------------------------------*/
+/*!
+ *  fpixaConvertXYZToLAB()
+ *
+ *      Input:  fpixa (xyz)
+ *      Return: fpixa (lab)
+ *
+ *  Notes:
+ *      (1) The input [x,y,z] and output [l,a,b] values are stored as
+ *          float values, each set in three fpix.
+ *      (2) The CIE LAB color space was invented in 1976, as an
+ *          absolute reference for specifying colors that we can
+ *          perceive, independently of the rendering device.  It was
+ *          invented to align color display and print images.
+ *          For information, see:
+ *             http://www.brucelindbloom.com/
+ *             http://en.wikipedia.org/wiki/Lab_color_space
+ */
+FPIXA *
+fpixaConvertXYZToLAB(FPIXA  *fpixas)
+{
+l_int32     w, h, wpl, i, j;
+l_float32   fxval, fyval, fzval, flval, faval, fbval;
+l_float32  *linex, *liney, *linez, *datax, *datay, *dataz;
+l_float32  *linel, *linea, *lineb, *datal, *dataa, *datab;
+FPIX       *fpix;
+FPIXA      *fpixad;
+
+    PROCNAME("fpixaConvertXYZToLAB");
+
+    if (!fpixas || fpixaGetCount(fpixas) != 3)
+        return (FPIXA *)ERROR_PTR("fpixas undefined/invalid", procName, NULL);
+
+        /* Convert XYZ image */
+    if (fpixaGetFPixDimensions(fpixas, 0, &w, &h))
+        return (FPIXA *)ERROR_PTR("fpixas sizes not found", procName, NULL);
+    fpixad = fpixaCreate(3);
+    for (i = 0; i < 3; i++) {
+        fpix = fpixCreate(w, h);
+        fpixaAddFPix(fpixad, fpix, L_INSERT);
+    }
+    wpl = fpixGetWpl(fpix);
+    datax = fpixaGetData(fpixas, 0);
+    datay = fpixaGetData(fpixas, 1);
+    dataz = fpixaGetData(fpixas, 2);
+    datal = fpixaGetData(fpixad, 0);
+    dataa = fpixaGetData(fpixad, 1);
+    datab = fpixaGetData(fpixad, 2);
+
+        /* Convert XYZ image */
+    for (i = 0; i < h; i++) {
+        linex = datax + i * wpl;
+        liney = datay + i * wpl;
+        linez = dataz + i * wpl;
+        linel = datal + i * wpl;
+        linea = dataa + i * wpl;
+        lineb = datab + i * wpl;
+        for (j = 0; j < w; j++) {
+            fxval = *(linex + j);
+            fyval = *(liney + j);
+            fzval = *(linez + j);
+            convertXYZToLAB(fxval, fyval, fzval, &flval, &faval, &fbval);
+            *(linel + j) = flval;
+            *(linea + j) = faval;
+            *(lineb + j) = fbval;
+        }
+    }
+
+    return fpixad;
+}
+
+
+/*!
+ *  fpixaConvertLABToXYZ()
+ *
+ *      Input:  fpixa (lab)
+ *      Return: fpixa (xyz)
+ *
+ *  Notes:
+ *      (1) The input [l,a,b] and output [x,y,z] values are stored as
+ *          float values, each set in three fpix.
+ */
+FPIXA *
+fpixaConvertLABToXYZ(FPIXA  *fpixas)
+{
+l_int32     w, h, wpl, i, j;
+l_float32   fxval, fyval, fzval, flval, faval, fbval;
+l_float32  *linel, *linea, *lineb, *datal, *dataa, *datab;
+l_float32  *linex, *liney, *linez, *datax, *datay, *dataz;
+FPIX       *fpix;
+FPIXA      *fpixad;
+
+    PROCNAME("fpixaConvertLABToXYZ");
+
+    if (!fpixas || fpixaGetCount(fpixas) != 3)
+        return (FPIXA *)ERROR_PTR("fpixas undefined/invalid", procName, NULL);
+
+        /* Convert LAB image */
+    if (fpixaGetFPixDimensions(fpixas, 0, &w, &h))
+        return (FPIXA *)ERROR_PTR("fpixas sizes not found", procName, NULL);
+    fpixad = fpixaCreate(3);
+    for (i = 0; i < 3; i++) {
+        fpix = fpixCreate(w, h);
+        fpixaAddFPix(fpixad, fpix, L_INSERT);
+    }
+    wpl = fpixGetWpl(fpix);
+    datal = fpixaGetData(fpixas, 0);
+    dataa = fpixaGetData(fpixas, 1);
+    datab = fpixaGetData(fpixas, 2);
+    datax = fpixaGetData(fpixad, 0);
+    datay = fpixaGetData(fpixad, 1);
+    dataz = fpixaGetData(fpixad, 2);
+
+        /* Convert XYZ image */
+    for (i = 0; i < h; i++) {
+        linel = datal + i * wpl;
+        linea = dataa + i * wpl;
+        lineb = datab + i * wpl;
+        linex = datax + i * wpl;
+        liney = datay + i * wpl;
+        linez = dataz + i * wpl;
+        for (j = 0; j < w; j++) {
+            flval = *(linel + j);
+            faval = *(linea + j);
+            fbval = *(lineb + j);
+            convertLABToXYZ(flval, faval, fbval, &fxval, &fyval, &fzval);
+            *(linex + j) = fxval;
+            *(liney + j) = fyval;
+            *(linez + j) = fzval;
+        }
+    }
+
+    return fpixad;
+}
+
+
+/*!
+ *  convertXYZToLAB()
+ *
+ *      Input:  xval, yval, zval (xyz input)
+ *              &lval, &aval, &bval (<return> lab values)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+convertXYZToLAB(l_float32   xval,
+                l_float32   yval,
+                l_float32   zval,
+                l_float32  *plval,
+                l_float32  *paval,
+                l_float32  *pbval)
+{
+l_float32  xn, yn, zn, fx, fy, fz;
+
+    PROCNAME("convertXYZToLAB");
+
+    if (plval) *plval = 0.0;
+    if (paval) *paval = 0.0;
+    if (pbval) *pbval = 0.0;
+    if (!plval || !paval || !pbval)
+        return ERROR_INT("&lval, &aval, &bval not all defined", procName, 1);
+
+        /* First normalize to the corresponding white values */
+    xn = 0.0041259 * xval;
+    yn = 0.0039216 * yval;
+    zn = 0.0036012 * zval;
+        /* Then apply the lab_forward function */
+    fx = lab_forward(xn);
+    fy = lab_forward(yn);
+    fz = lab_forward(zn);
+    *plval = 116.0 * fy - 16.0;
+    *paval = 500.0 * (fx - fy);
+    *pbval = 200.0 * (fy - fz);
+    return 0;
+}
+
+
+/*!
+ *  convertLABToXYZ()
+ *
+ *      Input:  lval, aval, bval
+ *              &xval, &yval, &zval (<return> xyz values)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+convertLABToXYZ(l_float32   lval,
+                l_float32   aval,
+                l_float32   bval,
+                l_float32  *pxval,
+                l_float32  *pyval,
+                l_float32  *pzval)
+{
+l_float32  fx, fy, fz;
+l_float32  xw = 242.37;  /* x component corresponding to rgb white */
+l_float32  yw = 255.0;  /* y component corresponding to rgb white */
+l_float32  zw = 277.69;  /* z component corresponding to rgb white */
+
+    PROCNAME("convertLABToXYZ");
+
+    if (pxval) *pxval = 0.0;
+    if (pyval) *pyval = 0.0;
+    if (pzval) *pzval = 0.0;
+    if (!pxval || !pyval || !pzval)
+        return ERROR_INT("&xval, &yval, &zval not all defined", procName, 1);
+
+    fy = 0.0086207 * (16.0 + lval);
+    fx = fy + 0.002 * aval;
+    fz = fy - 0.005 * bval;
+    *pxval = xw * lab_reverse(fx);
+    *pyval = yw * lab_reverse(fy);
+    *pzval = zw * lab_reverse(fz);
+    return 0;
+}
+
+
+/*
+ * See http://en.wikipedia.org/wiki/Lab_color_space for formulas.
+ * This is the forward function: from xyz to lab.  It includes a rational
+ * function approximation over [0.008856 ... 1] to the cube root, from
+ * "Fast Color Space Transformations Using Minimax Approximations",
+ * M. Celebi et al, http://arxiv.org/pdf/1009.0854v1.pdf.
+ */
+static l_float32
+lab_forward(l_float32  v)
+{
+const l_float32  f_thresh = 0.008856;  /* (6/29)^3  */
+const l_float32  f_factor = 7.787;  /* (1/3) * (29/6)^2)  */
+const l_float32  f_offset = 0.13793;  /* 4/29 */
+
+    if (v > f_thresh) {
+#if  SLOW_CUBE_ROOT
+        return powf(v, 0.333333);
+#else
+        l_float32  num, den;
+        num = 4.37089e-04 + v * (9.52695e-02 + v * (1.25201 + v * 1.30273));
+        den = 3.91236e-03 + v * (2.95408e-01 + v * (1.71714 + v * 6.34341e-01));
+        return num / den;
+#endif
+    } else {
+        return f_factor * v + f_offset;
+    }
+}
+
+
+/*
+ * See http://en.wikipedia.org/wiki/Lab_color_space for formulas.
+ * This is the reverse (inverse) function: from lab to xyz.
+ */
+static l_float32
+lab_reverse(l_float32  v)
+{
+const l_float32  r_thresh = 0.20690;  /* 6/29  */
+const l_float32  r_factor = 0.12842;  /* 3 * (6/29)^2   */
+const l_float32  r_offset = 0.13793;  /* 4/29 */
+
+    if (v > r_thresh) {
+        return v * v * v;
+    } else {
+        return r_factor * (v - r_offset);
+    }
+}
+
+
+/*---------------------------------------------------------------------------*
+ *               Colorspace conversion between RGB and LAB                   *
+ *---------------------------------------------------------------------------*/
+/*!
+ *  pixConvertRGBToLAB()
+ *
+ *      Input:  pixs (rgb)
+ *      Return: fpixa (lab)
+ *
+ *  Notes:
+ *      (1) The [l,a,b] values are stored as float values in three fpix
+ *          that are returned in a fpixa.
+ */
+FPIXA *
+pixConvertRGBToLAB(PIX  *pixs)
+{
+l_int32     w, h, wpls, wpld, i, j, rval, gval, bval;
+l_uint32   *lines, *datas;
+l_float32   flval, faval, fbval;
+l_float32  *linel, *linea, *lineb, *datal, *dataa, *datab;
+FPIX       *fpix;
+FPIXA      *fpixa;
+
+    PROCNAME("pixConvertRGBToLAB");
+
+    if (!pixs || pixGetDepth(pixs) != 32)
+        return (FPIXA *)ERROR_PTR("pixs undefined or not rgb", procName, NULL);
+
+        /* Convert RGB image */
+    pixGetDimensions(pixs, &w, &h, NULL);
+    fpixa = fpixaCreate(3);
+    for (i = 0; i < 3; i++) {
+        fpix = fpixCreate(w, h);
+        fpixaAddFPix(fpixa, fpix, L_INSERT);
+    }
+    wpls = pixGetWpl(pixs);
+    wpld = fpixGetWpl(fpix);
+    datas = pixGetData(pixs);
+    datal = fpixaGetData(fpixa, 0);
+    dataa = fpixaGetData(fpixa, 1);
+    datab = fpixaGetData(fpixa, 2);
+    for (i = 0; i < h; i++) {
+        lines = datas + i * wpls;
+        linel = datal + i * wpld;
+        linea = dataa + i * wpld;
+        lineb = datab + i * wpld;
+        for (j = 0; j < w; j++) {
+            extractRGBValues(lines[j], &rval, &gval, &bval);
+            convertRGBToLAB(rval, gval, bval, &flval, &faval, &fbval);
+            *(linel + j) = flval;
+            *(linea + j) = faval;
+            *(lineb + j) = fbval;
+        }
+    }
+
+    return fpixa;
+}
+
+
+/*!
+ *  fpixaConvertLABToRGB()
+ *
+ *      Input:  fpixa (three fpix: l,a,b)
+ *      Return: pixd (rgb)
+ *
+ *  Notes:
+ *      (1) The lab image is stored in three fpix.
+ */
+PIX *
+fpixaConvertLABToRGB(FPIXA  *fpixa)
+{
+l_int32     w, h, wpls, wpld, i, j, rval, gval, bval;
+l_float32   flval, faval, fbval;
+l_float32  *linel, *linea, *lineb, *datal, *dataa, *datab;
+l_uint32   *lined, *datad;
+PIX        *pixd;
+FPIX       *fpix;
+
+    PROCNAME("fpixaConvertLABToRGB");
+
+    if (!fpixa || fpixaGetCount(fpixa) != 3)
+        return (PIX *)ERROR_PTR("fpixa undefined or invalid", procName, NULL);
+
+        /* Convert LAB image */
+    if (fpixaGetFPixDimensions(fpixa, 0, &w, &h))
+        return (PIX *)ERROR_PTR("fpixa dimensions not found", procName, NULL);
+    pixd = pixCreate(w, h, 32);
+    wpld = pixGetWpl(pixd);
+    datad = pixGetData(pixd);
+    datal = fpixaGetData(fpixa, 0);
+    dataa = fpixaGetData(fpixa, 1);
+    datab = fpixaGetData(fpixa, 2);
+    fpix = fpixaGetFPix(fpixa, 0, L_CLONE);
+    wpls = fpixGetWpl(fpix);
+    fpixDestroy(&fpix);
+    for (i = 0; i < h; i++) {
+        linel = datal + i * wpls;
+        linea = dataa + i * wpls;
+        lineb = datab + i * wpls;
+        lined = datad + i * wpld;
+        for (j = 0; j < w; j++) {
+            flval = linel[j];
+            faval = linea[j];
+            fbval = lineb[j];
+            convertLABToRGB(flval, faval, fbval, &rval, &gval, &bval);
+            composeRGBPixel(rval, gval, bval, lined + j);
+        }
+    }
+
+    return pixd;
+}
+
+
+/*!
+ *  convertRGBToLAB()
+ *
+ *      Input:  rval, gval, bval (rgb input)
+ *              &flval, &faval, &fbval (<return> lab values)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) These conversions are for illuminant D65 acting on linear sRGB
+ *          values.
+ */
+l_int32
+convertRGBToLAB(l_int32     rval,
+                l_int32     gval,
+                l_int32     bval,
+                l_float32  *pflval,
+                l_float32  *pfaval,
+                l_float32  *pfbval)
+{
+l_float32  fxval, fyval, fzval;
+
+    PROCNAME("convertRGBToLAB");
+
+    if (pflval) *pflval = 0.0;
+    if (pfaval) *pfaval = 0.0;
+    if (pfbval) *pfbval = 0.0;
+    if (!pflval || !pfaval || !pfbval)
+        return ERROR_INT("&flval, &faval, &fbval not all defined", procName, 1);
+
+    convertRGBToXYZ(rval, gval, bval, &fxval, &fyval, &fzval);
+    convertXYZToLAB(fxval, fyval, fzval, pflval, pfaval, pfbval);
+    return 0;
+}
+
+
+/*!
+ *  convertLABToRGB()
+ *
+ *      Input:  flval, faval, fbval
+ *              &rval, &gval, &bval (<return> rgb values)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) For values of lab that are out of gamut for rgb, the rgb
+ *          components are set to the closest valid color.
+ */
+l_int32
+convertLABToRGB(l_float32  flval,
+                l_float32  faval,
+                l_float32  fbval,
+                l_int32   *prval,
+                l_int32   *pgval,
+                l_int32   *pbval)
+{
+l_float32  fxval, fyval, fzval;
+
+    PROCNAME("convertLABToRGB");
+
+    if (prval) *prval = 0;
+    if (pgval) *pgval = 0;
+    if (pbval) *pbval = 0;
+    if (!prval || !pgval || !pbval)
+        return ERROR_INT("&rval, &gval, &bval not all defined", procName, 1);
+
+    convertLABToXYZ(flval, faval, fbval, &fxval, &fyval, &fzval);
+    convertXYZToRGB(fxval, fyval, fzval, 0, prval, pgval, pbval);
+    return 0;
+}
+

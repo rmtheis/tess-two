@@ -2756,11 +2756,10 @@ NUMA    *naindex;
 
     PROCNAME("numaSortPair");
 
-    if (!pnasx)
-        return ERROR_INT("&nasx not defined", procName, 1);
-    if (!pnasy)
-        return ERROR_INT("&nasy not defined", procName, 1);
-    *pnasx = *pnasy = NULL;
+    if (pnasx) *pnasx = NULL;
+    if (pnasy) *pnasy = NULL;
+    if (!pnasx || !pnasy)
+        return ERROR_INT("&nasx and/or &nasy not defined", procName, 1);
     if (!nax)
         return ERROR_INT("nax not defined", procName, 1);
     if (!nay)
@@ -3073,13 +3072,12 @@ NUMA       *nasort;
 
     PROCNAME("numaGetMode");
 
-    if (!na)
-        return ERROR_INT("na not defined", procName, 1);
+    if (pcount) *pcount = 0;
     if (!pval)
         return ERROR_INT("&val not defined", procName, 1);
-
     *pval = 0.0;
-    if (pcount) *pcount = 0;
+    if (!na)
+        return ERROR_INT("na not defined", procName, 1);
     if ((n = numaGetCount(na)) == 0)
         return 1;
 
@@ -3150,15 +3148,15 @@ NUMA      *navar;
 
     PROCNAME("numaGetMedianVar");
 
+    if (pmedval) *pmedval = 0.0;
     if (!pmedvar)
         return ERROR_INT("&medvar not defined", procName, 1);
-    *pmedvar = 0.0;  /* init */
+    *pmedvar = 0.0;
     if (!na)
         return ERROR_INT("na not defined", procName, 1);
 
     numaGetMedian(na, &medval);
     if (pmedval) *pmedval = medval;
-
     n = numaGetCount(na);
     navar = numaCreate(n);
     for (i = 0; i < n; i++) {

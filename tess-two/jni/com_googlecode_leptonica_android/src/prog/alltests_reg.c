@@ -55,6 +55,7 @@ static const char *tests[] = {
                               "blend4_reg",
                               "colorcontent_reg",
                               "coloring_reg",
+                              "colorize_reg",
                               "colormask_reg",
                               "colorquant_reg",
                               "colorspace_reg",
@@ -65,16 +66,22 @@ static const char *tests[] = {
                               "dna_reg",
                               "dwamorph1_reg",
                               "enhance_reg",
-                              "files_reg",
+                         /*   "files_reg",  */
                               "findcorners_reg",
                               "findpattern_reg",
                               "fpix1_reg",
                               "fpix2_reg",
-                         /*   "gifio_reg",  */
+                              "genfonts_reg",
+#if HAVE_LIBGIF
+                              "gifio_reg",
+#endif  /* HAVE_LIBGIF */
                               "graymorph2_reg",
                               "hardlight_reg",
                               "insert_reg",
                               "ioformats_reg",
+#if HAVE_LIBJP2K
+                              "jp2kio_reg",
+#endif  /* HAVE_LIBJP2K */
                               "jpegio_reg",
                               "kernel_reg",
                               "label_reg",
@@ -89,6 +96,7 @@ static const char *tests[] = {
                               "pixa2_reg",
                               "pixserial_reg",
                               "pngio_reg",
+                              "pnmio_reg",
                               "projection_reg",
                               "psio_reg",
                               "psioseg_reg",
@@ -107,9 +115,13 @@ static const char *tests[] = {
                               "skew_reg",
                               "splitcomp_reg",
                               "subpixel_reg",
+                              "texturefill_reg",
                               "threshnorm_reg",
                               "translate_reg",
                               "warper_reg",
+#if HAVE_LIBWEBP
+                              "webpio_reg",
+#endif  /* HAVE_LIBWEBP */
                               "writetext_reg",
                               "xformbox_reg",
                              };

@@ -33,6 +33,8 @@
  *
  *      Top-level single page dewarper
  *          l_int32            dewarpSinglePage()
+ *          l_int32            dewarpSinglePageInit()
+ *          l_int32            dewarpSinglePageRun()
  *
  *      Operations on dewarpa
  *          l_int32            dewarpaListPages()
@@ -56,9 +58,13 @@
 static l_int32 dewarpaTestForValidModel(L_DEWARPA *dewa, L_DEWARP *dew,
                                         l_int32 notests);
 
+#ifndef  NO_CONSOLE_IO
+#define  DEBUG_INVALID_MODELS      0   /* set this to 1 for debuging */
+#endif  /* !NO_CONSOLE_IO */
+
     /* Special parameter values */
 static const l_int32     GRAYIN_VALUE = 200;
-
+ 
 
 /*----------------------------------------------------------------------*
  *                   Top-level single page dewarper                     *
@@ -90,11 +96,8 @@ dewarpSinglePage(PIX         *pixs,
                  L_DEWARPA  **pdewa,
                  l_int32      debug)
 {
-const char  *debugfile;
-l_int32      vsuccess, ret;
-L_DEWARP    *dew;
-L_DEWARPA   *dewa;
-PIX         *pix1, *pixb;
+L_DEWARPA  *dewa;
+PIX        *pixb;
 
     PROCNAME("dewarpSinglePage");
 
@@ -105,20 +108,121 @@ PIX         *pix1, *pixb;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
 
-    dewa = dewarpaCreate(1, 0, 1, 0, -1);
-    dewarpaUseBothArrays(dewa, use_both);
+    dewarpSinglePageInit(pixs, thresh, adaptive, use_both, &pixb, &dewa);
+    if (!pixb) {
+        dewarpaDestroy(&dewa);
+        return ERROR_INT("pixb not made", procName, 1);
+    }
+
+    dewarpSinglePageRun(pixs, pixb, dewa, ppixd, debug);
+
+    if (pdewa)
+        *pdewa = dewa;
+    else
+        dewarpaDestroy(&dewa);
+    pixDestroy(&pixb);
+    return 0;
+}
+
+
+/*!
+ *  dewarpSinglePageInit()
+ *
+ *      Input:  pixs (with text, any depth)
+ *              thresh (for global thresholding to 1 bpp; ignored otherwise)
+ *              adaptive (1 for adaptive thresholding; 0 for global threshold)
+ *              use_both (1 for horizontal and vertical; 0 for vertical only)
+ *              &pixb (<return> 1 bpp image)
+ *              &dewa (<return> initialized dewa)
+ *      Return: 0 if OK, 1 on error (list of page numbers), or null on error
+ *
+ *  Notes:
+ *      (1) This binarizes the input pixs if necessary, returning the
+ *          binarized image.  It also initializes the dewa to default values
+ *          for the model parameters.
+ *      (2) If pixs is 1 bpp, the parameters @adaptive and @thresh are ignored.
+ *      (3) To change the model parameters, call dewarpaSetCurvatures()
+ *          before running dewarpSinglePageRun().  For example:
+ *             dewarpSinglePageInit(pixs, 0, 1, 1, &pixb, &dewa);
+ *             dewarpaSetCurvatures(dewa, 250, -1, -1, 80, 70, 150);
+ *             dewarpSinglePageRun(pixs, pixb, dewa, &pixd, 0);
+ *             dewarpaDestroy(&dewa);
+ *             pixDestroy(&pixb);
+ */
+l_int32
+dewarpSinglePageInit(PIX         *pixs,
+                     l_int32      thresh,
+                     l_int32      adaptive,
+                     l_int32      use_both,
+                     PIX        **ppixb,
+                     L_DEWARPA  **pdewa)
+{
+PIX  *pix1;
+
+    PROCNAME("dewarpSinglePageInit");
+
+    if (ppixb) *ppixb = NULL;
+    if (pdewa) *pdewa = NULL;
+    if (!ppixb || !pdewa)
+        return ERROR_INT("&pixb and &dewa not both defined", procName, 1);
+    if (!pixs)
+        return ERROR_INT("pixs not defined", procName, 1);
+
+    *pdewa = dewarpaCreate(1, 0, 1, 0, -1);
+    dewarpaUseBothArrays(*pdewa, use_both);
 
          /* Generate a binary image, if necessary */
     if (pixGetDepth(pixs) > 1) {
         pix1 = pixConvertTo8(pixs, 0);
         if (adaptive)
-            pixb = pixAdaptThresholdToBinary(pix1, NULL, 1.0);
+            *ppixb = pixAdaptThresholdToBinary(pix1, NULL, 1.0);
         else
-            pixb = pixThresholdToBinary(pix1, thresh);
+            *ppixb = pixThresholdToBinary(pix1, thresh);
         pixDestroy(&pix1);
     } else {
-        pixb = pixClone(pixs);
+        *ppixb = pixClone(pixs);
     }
+    return 0;
+}
+
+
+/*!
+ *  dewarpSinglePageRun()
+ *
+ *      Input:  pixs (any depth)
+ *              pixb (1 bpp)
+ *              dewa (initialized)
+ *              &pixd (<return> dewarped result)
+ *              debug (1 for debugging output, 0 otherwise)
+ *      Return: 0 if OK, 1 on error (list of page numbers), or null on error
+ *
+ *  Notes:
+ *      (1) Dewarps pixs and returns the result in &pixd.
+ *      (2) The model parameters must be set before calling this.
+ *      (3) If a model cannot be built, this returns a copy of pixs in &pixd.
+ */
+l_int32
+dewarpSinglePageRun(PIX        *pixs,
+                    PIX        *pixb,
+                    L_DEWARPA  *dewa,
+                    PIX       **ppixd,
+                    l_int32     debug)
+{
+const char  *debugfile;
+l_int32      vsuccess, ret;
+L_DEWARP    *dew;
+
+    PROCNAME("dewarpSinglePageRun");
+
+    if (!ppixd)
+        return ERROR_INT("&pixd not defined", procName, 1);
+    *ppixd = NULL;
+    if (!pixs)
+        return ERROR_INT("pixs not defined", procName, 1);
+    if (!pixb)
+        return ERROR_INT("pixs not defined", procName, 1);
+    if (!dewa)
+        return ERROR_INT("dewa not defined", procName, 1);
 
         /* Generate the page model */
     lept_mkdir("lept");
@@ -128,9 +232,7 @@ PIX         *pix1, *pixb;
     dewarpBuildPageModel(dew, debugfile);
     dewarpaModelStatus(dewa, 0, &vsuccess, NULL);
     if (vsuccess == 0) {
-        L_ERROR("failure to build model\n", procName);
-        pixDestroy(&pixb);
-        dewarpaDestroy(&dewa);
+        L_ERROR("failure to build model for vertical disparity\n", procName);
         *ppixd = pixCopy(NULL, pixs);
         return 0;
     }
@@ -140,11 +242,6 @@ PIX         *pix1, *pixb;
     ret = dewarpaApplyDisparity(dewa, 0, pixs, 255, 0, 0, ppixd, debugfile);
     if (ret)
         L_ERROR("invalid model; failure to apply disparity\n", procName);
-    if (pdewa)
-        *pdewa = dewa;
-    else
-        dewarpaDestroy(&dewa);
-    pixDestroy(&pixb);
     return 0;
 }
 
@@ -575,6 +672,16 @@ L_DEWARP  *dew;
         fprintf(stderr, "  nlines = %d\n", dew->nlines);
         fprintf(stderr, "  w = %d, h = %d, nx = %d, ny = %d\n",
                 dew->w, dew->h, dew->nx, dew->ny);
+        if (dew->sampvdispar)
+            fprintf(stderr, "  Vertical disparity builds:\n"
+                    "    (min,max,abs-diff) line curvature = (%d,%d,%d)\n",
+                    dew->mincurv, dew->maxcurv, dew->maxcurv - dew->mincurv);
+        if (dew->samphdispar)
+            fprintf(stderr, "  Horizontal disparity builds:\n"
+                    "    left edge slope = %d, right edge slope = %d\n"
+                    "    (left,right,abs-diff) edge curvature = (%d,%d,%d)\n",
+                    dew->leftslope, dew->rightslope, dew->leftcurv,
+                    dew->rightcurv, L_ABS(dew->leftcurv - dew->rightcurv));
     }
     return 0;
 }
@@ -713,7 +820,13 @@ l_int32  maxcurv, diffcurv, diffedge;
         diffcurv <= dewa->max_diff_linecurv) {
         dew->vvalid = 1;
     } else {
-        L_INFO("invalid vert model for page %d\n", procName, dew->pageno);
+        L_INFO("invalid vert model for page %d:\n", procName, dew->pageno);
+#if DEBUG_INVALID_MODELS
+        fprintf(stderr, "  max line curv = %d, max allowed = %d\n",
+                maxcurv, dewa->max_linecurv);
+        fprintf(stderr, "  diff line curv = %d, max allowed = %d\n",
+                diffcurv, dewa->max_diff_linecurv);
+#endif  /* DEBUG_INVALID_MODELS */
     }
 
         /* If a horizontal (edge) model exists, test for validity. */
@@ -726,7 +839,19 @@ l_int32  maxcurv, diffcurv, diffedge;
             diffedge <= dewa->max_diff_edgecurv) {
             dew->hvalid = 1;
         } else {
-            L_INFO("invalid horiz model for page %d\n", procName, dew->pageno);
+            L_INFO("invalid horiz model for page %d:\n", procName, dew->pageno);
+#if DEBUG_INVALID_MODELS
+            fprintf(stderr, "  left edge slope = %d, max allowed = %d\n",
+                    dew->leftslope, dewa->max_edgeslope);
+            fprintf(stderr, "  right edge slope = %d, max allowed = %d\n",
+                    dew->rightslope, dewa->max_edgeslope);
+            fprintf(stderr, "  left edge curv = %d, max allowed = %d\n",
+                    dew->leftcurv, dewa->max_edgecurv);
+            fprintf(stderr, "  right edge curv = %d, max allowed = %d\n",
+                    dew->rightcurv, dewa->max_edgecurv);
+            fprintf(stderr, "  diff edge curv = %d, max allowed = %d\n",
+                    diffedge, dewa->max_diff_edgecurv);
+#endif  /* DEBUG_INVALID_MODELS */
         }
     }
 
@@ -880,6 +1005,8 @@ PIX     *pixv, *pixh;
                     dew->mincurv, dew->maxcurv, dew->maxcurv - dew->mincurv);
         }
         if (shd) {
+            fprintf(stderr, "(left edge slope = %d, right edge slope = %d\n",
+                    dew->leftslope, dew->rightslope);
             fprintf(stderr, "(left,right,abs-diff) edge curvature = "
                     "(%d,%d,%d)\n", dew->leftcurv, dew->rightcurv,
                     L_ABS(dew->leftcurv - dew->rightcurv));

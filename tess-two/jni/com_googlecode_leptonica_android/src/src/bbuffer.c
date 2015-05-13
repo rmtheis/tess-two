@@ -41,10 +41,6 @@
  *          l_int32         bbufferWrite()
  *          l_int32         bbufferWriteStream()
  *
- *      Accessors
- *          l_int32         bbufferBytesToWrite()
- *
- *
  *    The bbuffer is an implementation of a byte queue.
  *    The bbuffer holds a byte array from which bytes are
  *    processed in a first-in/first-out fashion.  As with
@@ -469,32 +465,6 @@ l_int32  nleft, nout;
         bb->nwritten = 0;
     }
 
-    return 0;
-}
-
-
-/*--------------------------------------------------------------------------*
- *                                  Accessors                               *
- *--------------------------------------------------------------------------*/
-/*!
- *  bbufferBytesToWrite()
- *
- *      Input:  bbuffer
- *              &nbytes (<return>)
- *      Return: 0 if OK; 1 on error
- */
-l_int32
-bbufferBytesToWrite(BBUFFER  *bb,
-                    size_t   *pnbytes)
-{
-    PROCNAME("bbufferBytesToWrite");
-
-    if (!bb)
-        return ERROR_INT("bb not defined", procName, 1);
-    if (!pnbytes)
-        return ERROR_INT("&nbytes not defined", procName, 1);
-
-    *pnbytes = bb->n - bb->nwritten;
     return 0;
 }
 

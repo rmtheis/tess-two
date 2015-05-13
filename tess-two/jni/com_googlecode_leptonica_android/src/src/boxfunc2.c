@@ -1022,29 +1022,43 @@ NUMA    *na;
  *  boxaExtractAsNuma()
  *
  *      Input:  boxa
- *              &nax (<optional return> array of x locations)
- *              &nay (<optional return> array of y locations)
- *              &naw (<optional return> array of w locations)
- *              &nah (<optional return> array of h locations)
+ *              &nal (<optional return> array of left locations)
+ *              &nat (<optional return> array of top locations)
+ *              &nar (<optional return> array of right locations)
+ *              &nab (<optional return> array of bottom locations)
+ *              &naw (<optional return> array of widths)
+ *              &nah (<optional return> array of heights)
  *              keepinvalid (1 to keep invalid boxes; 0 to remove them)
  *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) If you are counting or sorting values, such as determining
+ *          rank order, you must remove invalid boxes.
+ *      (2) If you are parametrizing the values, or doing an evaluation
+ *          where the position in the boxa sequence is important, you
+ *          must replace the invalid boxes with valid ones before
+ *          doing the extraction. This is easily done with boxaFillSequence().
  */
 l_int32
 boxaExtractAsNuma(BOXA    *boxa,
-                  NUMA   **pnax,
-                  NUMA   **pnay,
+                  NUMA   **pnal,
+                  NUMA   **pnat,
+                  NUMA   **pnar,
+                  NUMA   **pnab,
                   NUMA   **pnaw,
                   NUMA   **pnah,
                   l_int32  keepinvalid)
 {
-l_int32  i, n, x, y, w, h;
+l_int32  i, n, left, top, right, bot, w, h;
 
     PROCNAME("boxaExtractAsNuma");
 
-    if (!pnax && !pnay && !pnaw && !pnah)
+    if (!pnal && !pnat && !pnar && !pnab && !pnaw && !pnah)
         return ERROR_INT("no output requested", procName, 1);
-    if (pnax) *pnax = NULL;
-    if (pnay) *pnay = NULL;
+    if (pnal) *pnal = NULL;
+    if (pnat) *pnat = NULL;
+    if (pnar) *pnar = NULL;
+    if (pnab) *pnab = NULL;
     if (pnaw) *pnaw = NULL;
     if (pnah) *pnah = NULL;
     if (!boxa)
@@ -1053,16 +1067,22 @@ l_int32  i, n, x, y, w, h;
         return ERROR_INT("no valid boxes", procName, 1);
 
     n = boxaGetCount(boxa);
-    if (pnax) *pnax = numaCreate(n);
-    if (pnay) *pnay = numaCreate(n);
+    if (pnal) *pnal = numaCreate(n);
+    if (pnat) *pnat = numaCreate(n);
+    if (pnar) *pnar = numaCreate(n);
+    if (pnab) *pnab = numaCreate(n);
     if (pnaw) *pnaw = numaCreate(n);
     if (pnah) *pnah = numaCreate(n);
     for (i = 0; i < n; i++) {
-        boxaGetBoxGeometry(boxa, i, &x, &y, &w, &h);
+        boxaGetBoxGeometry(boxa, i, &left, &top, &w, &h);
         if (!keepinvalid && (w <= 0 || h <= 0))
             continue;
-        if (pnax) numaAddNumber(*pnax, x);
-        if (pnay) numaAddNumber(*pnay, y);
+        right = left + w - 1;
+        bot = top + h - 1;
+        if (pnal) numaAddNumber(*pnal, left);
+        if (pnat) numaAddNumber(*pnat, top);
+        if (pnar) numaAddNumber(*pnar, right);
+        if (pnab) numaAddNumber(*pnab, bot);
         if (pnaw) numaAddNumber(*pnaw, w);
         if (pnah) numaAddNumber(*pnah, h);
     }
@@ -1079,14 +1099,20 @@ l_int32  i, n, x, y, w, h;
  *              &ptat (<optional return> array of top locations vs. index)
  *              &ptar (<optional return> array of right locations vs. index)
  *              &ptab (<optional return> array of bottom locations vs. index)
+ *              &ptaw (<optional return> array of widths vs. index)
+ *              &ptah (<optional return> array of heights vs. index)
  *              keepinvalid (1 to keep invalid boxes; 0 to remove them)
  *      Return: 0 if OK, 1 on error
  *
- *      Notes:
- *          (1) For invalid boxes, this stores the values
- *              (left, top, right, bot) = (0, 0, -1, -1)
- *              If you plan to do a least square fit, you must use
- *              @keepinvalid = 0.
+ *  Notes:
+ *      (1) For most applications, such as counting, sorting, fitting
+ *          to some parametrized form, plotting or filtering in general,
+ *          you should remove the invalid boxes.  Each pta saves the
+ *          box index in the x array, so replacing invalid boxes by
+ *          filling with boxaFillSequence(), which is required for
+ *          boxaExtractAsNuma(), is not necessary.
+ *      (2) If invalid boxes are retained, each one will result in
+ *          entries (typically 0) in all selected output pta.
  */
 l_int32
 boxaExtractAsPta(BOXA    *boxa,
@@ -1094,18 +1120,22 @@ boxaExtractAsPta(BOXA    *boxa,
                  PTA    **pptat,
                  PTA    **pptar,
                  PTA    **pptab,
+                 PTA    **pptaw,
+                 PTA    **pptah,
                  l_int32  keepinvalid)
 {
 l_int32  i, n, left, top, right, bot, w, h;
 
     PROCNAME("boxaExtractAsPta");
 
-    if (!pptal && !pptar && !pptat && !pptab)
+    if (!pptal && !pptar && !pptat && !pptab && !pptaw && !pptah)
         return ERROR_INT("no output requested", procName, 1);
     if (pptal) *pptal = NULL;
     if (pptat) *pptat = NULL;
     if (pptar) *pptar = NULL;
     if (pptab) *pptab = NULL;
+    if (pptaw) *pptaw = NULL;
+    if (pptah) *pptah = NULL;
     if (!boxa)
         return ERROR_INT("boxa not defined", procName, 1);
     if (!keepinvalid && boxaGetValidCount(boxa) == 0)
@@ -1116,6 +1146,8 @@ l_int32  i, n, left, top, right, bot, w, h;
     if (pptat) *pptat = ptaCreate(n);
     if (pptar) *pptar = ptaCreate(n);
     if (pptab) *pptab = ptaCreate(n);
+    if (pptaw) *pptaw = ptaCreate(n);
+    if (pptah) *pptah = ptaCreate(n);
     for (i = 0; i < n; i++) {
         boxaGetBoxGeometry(boxa, i, &left, &top, &w, &h);
         if (!keepinvalid && (w <= 0 || h <= 0))
@@ -1126,6 +1158,8 @@ l_int32  i, n, left, top, right, bot, w, h;
         if (pptat) ptaAddPt(*pptat, i, top);
         if (pptar) ptaAddPt(*pptar, i, right);
         if (pptab) ptaAddPt(*pptab, i, bot);
+        if (pptaw) ptaAddPt(*pptaw, i, w);
+        if (pptah) ptaAddPt(*pptah, i, h);
     }
 
     return 0;
@@ -1173,7 +1207,8 @@ BOX       *box;
     if (boxaGetValidCount(boxa) == 0)
         return (BOX *)ERROR_PTR("no valid boxes in boxa", procName, NULL);
 
-    boxaExtractAsNuma(boxa, &nax, &nay, &naw, &nah, 0);  /* valid boxes only */
+        /* Use only the valid boxes */
+    boxaExtractAsNuma(boxa, &nax, &nay, NULL, NULL, &naw, &nah, 0);
 
     numaGetRankValue(nax, 1.0 - fract, NULL, 1, &xval);
     numaGetRankValue(nay, 1.0 - fract, NULL, 1, &yval);

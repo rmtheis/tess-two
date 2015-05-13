@@ -140,8 +140,7 @@ L_REGPARAMS  *rp;
         /* Only open a stream to a temp file for the 'compare' case */
     if (argc == 1 || !strcmp(argv[1], "compare")) {
         rp->mode = L_REG_COMPARE;
-        rp->tempfile = genTempFilename("/tmp/regout",
-                                       "regtest_output.txt", 0, 1);
+        rp->tempfile = genPathname("/tmp/regout", "regtest_output.txt");
         rp->fp = fopenWriteStream(rp->tempfile, "wb");
         if (rp->fp == NULL) {
             rp->success = FALSE;
@@ -504,17 +503,23 @@ PIX     *pix1, *pix2;
 
         /* Generate the golden file name; used in 'generate' and 'compare' */
     splitPathAtExtension(localname, NULL, &ext);
-    snprintf(namebuf, sizeof(namebuf), "/tmp/golden/%s_golden.%d%s",
+    snprintf(namebuf, sizeof(namebuf), "/tmp/golden/%s_golden.%02d%s",
              rp->testname, rp->index, ext);
     FREE(ext);
 
         /* Generate mode.  No testing. */
     if (rp->mode == L_REG_GENERATE) {
             /* Save the file as a golden file */
-/*        fprintf(stderr, "%d: %s\n", rp->index, namebuf);  */
         ret = fileCopy(localname, namebuf);
-        if (!ret)
-            fprintf(stderr, "Copy: %s to %s\n", localname, namebuf);
+#if 0       /* Enable for details on writing of golden files */
+        if (!ret) {
+            char *local = genPathname(localname, NULL);
+            char *golden = genPathname(namebuf, NULL);
+            L_INFO("Copy: %s to %s\n", procName, local, golden);
+            FREE(local);
+            FREE(golden);
+        }
+#endif
         return ret;
     }
 
@@ -596,7 +601,7 @@ SARRAY  *sa;
     if (rp->mode != L_REG_COMPARE) return 0;
 
         /* Generate the golden file names */
-    snprintf(namebuf, sizeof(namebuf), "%s_golden.%d.", rp->testname, index1);
+    snprintf(namebuf, sizeof(namebuf), "%s_golden.%02d.", rp->testname, index1);
     sa = getSortedPathnamesInDirectory("/tmp/golden", namebuf, 0, 0);
     if (sarrayGetCount(sa) != 1) {
         sarrayDestroy(&sa);
@@ -607,7 +612,7 @@ SARRAY  *sa;
     name1 = sarrayGetString(sa, 0, L_COPY);
     sarrayDestroy(&sa);
 
-    snprintf(namebuf, sizeof(namebuf), "%s_golden.%d.", rp->testname, index2);
+    snprintf(namebuf, sizeof(namebuf), "%s_golden.%02d.", rp->testname, index2);
     sa = getSortedPathnamesInDirectory("/tmp/golden", namebuf, 0, 0);
     if (sarrayGetCount(sa) != 1) {
         sarrayDestroy(&sa);
@@ -677,7 +682,7 @@ char   namebuf[256];
     }
 
         /* Generate the local file name */
-    snprintf(namebuf, sizeof(namebuf), "/tmp/regout/%s.%d.%s", rp->testname,
+    snprintf(namebuf, sizeof(namebuf), "/tmp/regout/%s.%02d.%s", rp->testname,
              rp->index + 1, ImageFileFormatExtensions[format]);
 
         /* Write the local file */

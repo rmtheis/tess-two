@@ -65,7 +65,7 @@ l_int32 l_generateCIDataForPdf(const char *fname, PIX *pix, l_int32 quality,
 
 /* ----------------------------------------------------------------------*/
 
-L_COMP_DATA * l_generateFlateDataPdf(const char *fname)
+L_COMP_DATA * l_generateFlateDataPdf(const char *fname, PIX *pix)
 {
     return (L_COMP_DATA *)ERROR_PTR("function not present",
                                     "l_generateFlateDataPdf", NULL);

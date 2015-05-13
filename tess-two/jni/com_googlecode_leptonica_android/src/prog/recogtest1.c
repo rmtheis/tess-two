@@ -45,7 +45,7 @@ static const l_int32 scaledh = 32;
 l_int32 main(int    argc,
              char **argv)
 {
-l_int32    i, j, n, val, index, w, h, ignore;
+l_int32    i, j, n, index, w, h, ignore;
 l_float32  score;
 char      *fname, *strchar;
 char       buf[256];
@@ -56,7 +56,7 @@ PIX       *pixs, *pixd, *pixt, *pixdb;
 PIXA      *pixa, *pixat;
 L_RECOG   *recog, *recog2;
 L_RECOGA  *recoga;
-SARRAY    *sa, *satext, *satextt;
+SARRAY    *sa, *satext;
 
     if (argc != 1) {
         fprintf(stderr, " Syntax: recogtest1\n");
@@ -68,7 +68,7 @@ SARRAY    *sa, *satext, *satextt;
 
 #if 0  /* Generate a simple bootstrap pixa (bootnum1.pa) for
           number images in directory 'recog/bootnums' */
-    recog = recogCreate(scaledw, scaledh, match_method, 100, 1, "fonts");
+    recog = recogCreate(scaledw, scaledh, match_method, 100, 1);
     sa = getSortedPathnamesInDirectory("recog/bootnums", "png", 0, 0);
     n = sarrayGetCount(sa);
     for (i = 0; i < n; i++) {
@@ -91,8 +91,7 @@ SARRAY    *sa, *satext, *satextt;
     sarrayDestroy(&sa);
 #else
     pixa = pixaRead("recog/digits/bootnum1.pa");
-    recog = recogCreateFromPixa(pixa, scaledw, scaledh, match_method,
-                                120, 1, "fonts");
+    recog = recogCreateFromPixa(pixa, scaledw, scaledh, match_method, 120, 1);
     snprintf(buf, sizeof(buf),
         "displaypixa recog/digits/bootnum1.pa 1.0 2 1 0 "
         "/tmp/bootnum1.png fonts");
@@ -101,7 +100,7 @@ SARRAY    *sa, *satext, *satextt;
 #endif
 
 #if 0  /* roman, one per image */
-    recog = recogCreate(20, 32, match_method, 100, 1, "fonts");
+    recog = recogCreate(20, 32, match_method, 100, 1);
     sa = getSortedPathnamesInDirectory("charset", "png", 0, 0);
     n = sarrayGetCount(sa);
     for (i = 0; i < n; i++) {
@@ -200,7 +199,7 @@ SARRAY    *sa, *satext, *satextt;
     recogShowContent(stderr, recog, 1);
     recogWrite("/tmp/rec1.rec", recog);
     recog2 = recogRead("/tmp/rec1.rec");
-    recogMakeBmf(recog2, "fonts", 0);
+    recogResetBmf(recog2, 0);
     recogWrite("/tmp/rec2.rec", recog2);
 
     fprintf(stderr, "Debug averages 2\n");

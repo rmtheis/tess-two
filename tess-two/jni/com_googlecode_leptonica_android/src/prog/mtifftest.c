@@ -47,7 +47,7 @@ int main(int    argc,
 char        *fname, *filename;
 const char  *str;
 char         buffer[512];
-l_int32      i, count, npages, format;
+l_int32      i, npages;
 size_t       length;
 FILE        *fp;
 NUMA        *naflags, *nasizes;
@@ -62,7 +62,7 @@ static char  mainName[] = "mtifftest";
 
     lept_mkdir("tiff");
 
-#if 0   /* ------------------  Test multipage I/O  -------------------*/
+#if 1   /* ------------------  Test multipage I/O  -------------------*/
         /* This puts every image file in the directory with a string
          * match to "weasel" into a multipage tiff file.
          * Images with 1 bpp are coded as g4; the others as zip.
@@ -81,7 +81,7 @@ static char  mainName[] = "mtifftest";
     pixaDestroy(&pixa);
 #endif
 
-#if 0   /* ------------ Test single-to-multipage I/O  -------------------*/
+#if 1   /* ------------ Test single-to-multipage I/O  -------------------*/
         /* Read the files and generate a multipage tiff file of G4 images.
          * Then convert that to a G4 compressed and ascii85 encoded PS file. */
     sa = getSortedPathnamesInDirectory(".", "weasel4.", 0, 4);
@@ -96,9 +96,9 @@ static char  mainName[] = "mtifftest";
         if (!pix1) continue;
         pix2 = pixConvertTo1(pix1, 128);
         if (i == 0)
-            pixWriteTiff("/tmp/tiff/weasel4", pix2, format, "w+");
+            pixWriteTiff("/tmp/tiff/weasel4", pix2, IFF_TIFF_G4, "w+");
         else
-            pixWriteTiff("/tmp/tiff/weasel4", pix2, format, "a");
+            pixWriteTiff("/tmp/tiff/weasel4", pix2, IFF_TIFF_G4, "a");
         pixDestroy(&pix1);
         pixDestroy(&pix2);
         lept_free(filename);
@@ -110,7 +110,7 @@ static char  mainName[] = "mtifftest";
     sarrayDestroy(&sa);
 #endif
 
-#if 0   /* ------------------  Test multipage I/O  -------------------*/
+#if 1   /* ------------------  Test multipage I/O  -------------------*/
         /* Read count of pages in tiff multipage  file */
     writeMultipageTiff(".", "weasel2", weasel_orig);
     fp = lept_fopen(weasel_orig, "rb");
@@ -163,7 +163,7 @@ static char  mainName[] = "mtifftest";
 #endif
 
 
-#if 1    /* -----   test adding custom public tags to a tiff header ----- */
+#if 0    /* -----   test adding custom public tags to a tiff header ----- */
     pix = pixRead("feyn.tif");
     naflags = numaCreate(10);
     savals = sarrayCreate(10);

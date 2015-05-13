@@ -175,9 +175,8 @@ struct callback_data {
  *  pixReadJpeg()
  *
  *      Input:  filename
- *              colormap flag (0 means return RGB image if color;
- *                             1 means create a colormap and return
- *                             an 8 bpp colormapped image if color)
+ *              cmapflag (0 for no colormap in returned pix;
+ *                        1 to return an 8 bpp cmapped pix if spp = 3 or 4)
  *              reduction (scaling factor: 1, 2, 4 or 8)
  *              &nwarn (<optional return> number of warnings about
  *                       corrupted data)
@@ -208,7 +207,7 @@ struct callback_data {
  */
 PIX *
 pixReadJpeg(const char  *filename,
-            l_int32      cmflag,
+            l_int32      cmapflag,
             l_int32      reduction,
             l_int32     *pnwarn,
             l_int32      hint)
@@ -223,14 +222,14 @@ PIX      *pix;
     if (pnwarn) *pnwarn = 0;
     if (!filename)
         return (PIX *)ERROR_PTR("filename not defined", procName, NULL);
-    if (cmflag != 0 && cmflag != 1)
-        cmflag = 0;  /* default */
+    if (cmapflag != 0 && cmapflag != 1)
+        cmapflag = 0;  /* default */
     if (reduction != 1 && reduction != 2 && reduction != 4 && reduction != 8)
         return (PIX *)ERROR_PTR("reduction not in {1,2,4,8}", procName, NULL);
 
     if ((fp = fopenReadStream(filename)) == NULL)
         return (PIX *)ERROR_PTR("image file not found", procName, NULL);
-    pix = pixReadStreamJpeg(fp, cmflag, reduction, pnwarn, hint);
+    pix = pixReadStreamJpeg(fp, cmapflag, reduction, pnwarn, hint);
     if (pix) {
         ret = fgetJpegComment(fp, &comment);
         if (!ret && comment)
@@ -249,9 +248,8 @@ PIX      *pix;
  *  pixReadStreamJpeg()
  *
  *      Input:  stream
- *              colormap flag (0 means return RGB image if color;
- *                             1 means create a colormap and return
- *                             an 8 bpp colormapped image if color)
+ *              cmapflag (0 for no colormap in returned pix;
+ *                        1 to return an 8 bpp cmapped pix if spp = 3 or 4)
  *              reduction (scaling factor: 1, 2, 4 or 8)
  *              &nwarn (<optional return> number of warnings)
  *              hint (a bitwise OR of L_JPEG_* values; 0 for default)
@@ -259,11 +257,11 @@ PIX      *pix;
  *
  *  Usage: see pixReadJpeg()
  *  Notes:
- *      (1) This does not get the jpeg comment.
+ *      (1) The jpeg comment, if it exists, is not stored in the pix.
  */
 PIX *
 pixReadStreamJpeg(FILE     *fp,
-                  l_int32   cmflag,
+                  l_int32   cmapflag,
                   l_int32   reduction,
                   l_int32  *pnwarn,
                   l_int32   hint)
@@ -285,8 +283,8 @@ jmp_buf                        jmpbuf;  /* must be local to the function */
     if (pnwarn) *pnwarn = 0;
     if (!fp)
         return (PIX *)ERROR_PTR("fp not defined", procName, NULL);
-    if (cmflag != 0 && cmflag != 1)
-        cmflag = 0;  /* default */
+    if (cmapflag != 0 && cmapflag != 1)
+        cmapflag = 0;  /* default */
     if (reduction != 1 && reduction != 2 && reduction != 4 && reduction != 8)
         return (PIX *)ERROR_PTR("reduction not in {1,2,4,8}", procName, NULL);
 
@@ -325,13 +323,13 @@ jmp_buf                        jmpbuf;  /* must be local to the function */
         /* Allocate the image and a row buffer */
     w = cinfo.output_width;
     h = cinfo.output_height;
-    ycck = (cinfo.jpeg_color_space == JCS_YCCK && spp == 4 && cmflag == 0);
-    cmyk = (cinfo.jpeg_color_space == JCS_CMYK && spp == 4 && cmflag == 0);
+    ycck = (cinfo.jpeg_color_space == JCS_YCCK && spp == 4 && cmapflag == 0);
+    cmyk = (cinfo.jpeg_color_space == JCS_CMYK && spp == 4 && cmapflag == 0);
     if (spp != 1 && spp != 3 && !ycck && !cmyk) {
         return (PIX *)ERROR_PTR("spp must be 1 or 3, or YCCK or CMYK",
                                 procName, NULL);
     }
-    if ((spp == 3 && cmflag == 0) || ycck || cmyk) {  /* rgb or 4 bpp color */
+    if ((spp == 3 && cmapflag == 0) || ycck || cmyk) {  /* rgb or 4 bpp color */
         rowbuffer = (JSAMPROW)CALLOC(sizeof(JSAMPLE), spp * w);
         pix = pixCreate(w, h, 32);
     } else {  /* 8 bpp gray or colormapped */
@@ -349,7 +347,7 @@ jmp_buf                        jmpbuf;  /* must be local to the function */
     if (spp == 1) {  /* Grayscale or colormapped */
         jpeg_start_decompress(&cinfo);
     } else {        /* Color; spp == 3 or YCCK or CMYK */
-        if (cmflag == 0) {   /* -- 24 bit color in 32 bit pix or YCCK/CMYK -- */
+        if (cmapflag == 0) {   /* 24 bit color in 32 bit pix or YCCK/CMYK */
             cinfo.quantize_colors = FALSE;
             jpeg_start_decompress(&cinfo);
         } else {      /* Color quantize to 8 bits */
@@ -390,7 +388,7 @@ jmp_buf                        jmpbuf;  /* must be local to the function */
         }
 
             /* -- 24 bit color -- */
-        if ((spp == 3 && cmflag == 0) || ycck || cmyk) {
+        if ((spp == 3 && cmapflag == 0) || ycck || cmyk) {
             ppixel = data + i * wpl;
             if (spp == 3) {
                 for (j = k = 0; j < w; j++) {
@@ -988,7 +986,8 @@ PIX      *pix;
         return (PIX *)ERROR_PTR("stream not opened", procName, NULL);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
-    fp = tmpfile();
+    if ((fp = tmpfile()) == NULL)
+        return (PIX *)ERROR_PTR("tmpfile stream not opened", procName, NULL);
     fwrite(data, 1, size, fp);
     rewind(fp);
 #endif  /* HAVE_FMEMOPEN */
@@ -1047,7 +1046,8 @@ FILE    *fp;
         return ERROR_INT("stream not opened", procName, 1);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
-    fp = tmpfile();
+    if ((fp = tmpfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
     fwrite(data, 1, size, fp);
     rewind(fp);
 #endif  /* HAVE_FMEMOPEN */
@@ -1098,7 +1098,8 @@ FILE    *fp;
     ret = pixWriteStreamJpeg(fp, pix, quality, progressive);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
-    fp = tmpfile();
+    if ((fp = tmpfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
     ret = pixWriteStreamJpeg(fp, pix, quality, progressive);
     rewind(fp);
     *pdata = l_binaryReadStream(fp, psize);

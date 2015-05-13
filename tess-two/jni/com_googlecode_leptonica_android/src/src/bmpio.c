@@ -451,7 +451,7 @@ RGBA_QUAD  *pquad;
     fwrite(&bfSize, 1, 2, fp);
     fwrite(&bfFill1, 1, 2, fp);
     fwrite(&bfReserved1, 1, 2, fp);
-    fwrite(&bfReserved1, 1, 2, fp);
+    fwrite(&bfReserved2, 1, 2, fp);
     fwrite(&bfOffBits, 1, 2, fp);
     fwrite(&bfFill2, 1, 2, fp);
 
@@ -585,7 +585,8 @@ PIX   *pix;
         return (PIX *)ERROR_PTR("stream not opened", procName, NULL);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
-    fp = tmpfile();
+    if ((fp = tmpfile()) == NULL)
+        return (PIX *)ERROR_PTR("tmpfile stream not opened", procName, NULL);
     fwrite(cdata, 1, size, fp);
     rewind(fp);
 #endif  /* HAVE_FMEMOPEN */
@@ -631,7 +632,8 @@ FILE    *fp;
     ret = pixWriteStreamBmp(fp, pix);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
-    fp = tmpfile();
+    if ((fp = tmpfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
     ret = pixWriteStreamBmp(fp, pix);
     rewind(fp);
     *pdata = l_binaryReadStream(fp, psize);

@@ -47,11 +47,11 @@
 int main(int    argc,
          char **argv)
 {
-l_int32      i, j, n;
+l_int32      i, j;
 l_int32      w, h, bw, bh, wpls, rval, gval, bval, same;
 l_uint32     pixel;
 l_uint32    *lines, *datas;
-l_float32    sum1, sum2, sum3, ave1, ave2, ave3, ave4, diff1, diff2;
+l_float32    sum1, sum2, ave1, ave2, ave3, ave4, diff1, diff2;
 l_float32    var1, var2, var3;
 BOX         *box1, *box2;
 NUMA        *na, *na1, *na2, *na3, *na4;

@@ -50,7 +50,7 @@ SARRAY    *sa1;
 #if 1
         /* Read the training data */
     pixat = pixaRead("recog/sets/train06.pa");
-    recog = recogCreateFromPixa(pixat, 0, 0, L_USE_ALL, 128, 1, "fonts");
+    recog = recogCreateFromPixa(pixat, 0, 0, L_USE_ALL, 128, 1);
     recoga = recogaCreateFromRecog(recog);
     pixaDestroy(&pixat);
 

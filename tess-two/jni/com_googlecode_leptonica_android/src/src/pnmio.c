@@ -41,6 +41,7 @@
  *
  *      Local helpers
  *          static l_int32   pnmReadNextAsciiValue();
+ *          static l_int32   pnmReadNextNumber();
  *          static l_int32   pnmSkipCommentLines();
  *
  *      These are here by popular demand, with the help of Mattias
@@ -84,6 +85,7 @@
  */
 
 #include <string.h>
+#include <ctype.h>
 #include "allheaders.h"
 
 /* --------------------------------------------*/
@@ -92,6 +94,7 @@
 
 
 static l_int32 pnmReadNextAsciiValue(FILE  *fp, l_int32 *pval);
+static l_int32 pnmReadNextNumber(FILE *fp, l_int32 *pval);
 static l_int32 pnmSkipCommentLines(FILE  *fp);
 
     /* a sanity check on the size read from file */
@@ -279,6 +282,8 @@ freadHeaderPnm(FILE     *fp,
 {
 l_int32  w, h, d, type;
 l_int32  maxval;
+char     whitespace;
+char     buf[64];
 
     PROCNAME("freadHeaderPnm");
 
@@ -301,14 +306,24 @@ l_int32  maxval;
 
     if (fscanf(fp, "%d %d\n", &w, &h) != 2)
         return ERROR_INT("invalid read for w,h", procName, 1);
-    if (w <= 0 || h <= 0 || w > MAX_PNM_WIDTH || h > MAX_PNM_HEIGHT)
-        return ERROR_INT("invalid size", procName, 1);
+    if (w <= 0 || h <= 0 || w > MAX_PNM_WIDTH || h > MAX_PNM_HEIGHT) {
+        L_INFO("invalid size: w = %d, h = %d\n", procName, w, h);
+        return 1;
+    }
 
-        /* Get depth of pix */
+       /* Get depth of pix.  For types 2 and 5, we use the maxval.
+        * Important implementation note:
+        *   - You can't use fscanf(), which throws away whitespace,
+        *     and will discard binary data if it starts with whitespace(s).
+        *   - You can't use fgets(), which stops at newlines, but this
+        *     dumb format doesn't require a newline after the maxval
+        *     number -- it just requires one whitespace character.
+        *   - Which leaves repeated calls to fgetc, including swallowing
+        *     the single whitespace character. */
     if (type == 1 || type == 4) {
         d = 1;
     } else if (type == 2 || type == 5) {
-        if (fscanf(fp, "%d\n", &maxval) != 1)
+        if (pnmReadNextNumber(fp, &maxval))
             return ERROR_INT("invalid read for maxval (2,5)", procName, 1);
         if (maxval == 3) {
             d = 2;
@@ -323,7 +338,7 @@ l_int32  maxval;
             return ERROR_INT("invalid maxval", procName, 1);
         }
     } else {  /* type == 3 || type == 6; this is rgb  */
-        if (fscanf(fp, "%d\n", &maxval) != 1)
+        if (pnmReadNextNumber(fp, &maxval))
             return ERROR_INT("invalid read for maxval (3,6)", procName, 1);
         if (maxval != 255)
             L_WARNING("unexpected maxval = %d\n", procName, maxval);
@@ -512,8 +527,10 @@ PIX       *pixs;
                     fputc('1', fp);
                 fputc(' ', fp);
                 count += 2;
-                if (count >= 70)
+                if (count >= 70) {
                     fputc('\n', fp);
+                    count = 0;
+                }
             }
         }
     } else if (ds == 2 || ds == 4 || ds == 8 || ds == 16) {  /* grayscale */
@@ -615,7 +632,8 @@ PIX   *pix;
         return (PIX *)ERROR_PTR("stream not opened", procName, NULL);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
-    fp = tmpfile();
+    if ((fp = tmpfile()) == NULL)
+        return (PIX *)ERROR_PTR("tmpfile stream not opened", procName, NULL);
     fwrite(cdata, 1, size, fp);
     rewind(fp);
 #endif  /* HAVE_FMEMOPEN */
@@ -662,7 +680,8 @@ FILE    *fp;
         return ERROR_INT("stream not opened", procName, 1);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
-    fp = tmpfile();
+    if ((fp = tmpfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
     fwrite(cdata, 1, size, fp);
     rewind(fp);
 #endif  /* HAVE_FMEMOPEN */
@@ -711,7 +730,8 @@ FILE    *fp;
     ret = pixWriteStreamPnm(fp, pix);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
-    fp = tmpfile();
+    if ((fp = tmpfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
     ret = pixWriteStreamPnm(fp, pix);
     rewind(fp);
     *pdata = l_binaryReadStream(fp, psize);
@@ -752,6 +772,57 @@ l_int32   c, ignore;
 
     fseek(fp, -1L, SEEK_CUR);        /* back up one byte */
     ignore = fscanf(fp, "%d", pval);
+    return 0;
+}
+
+
+/*!
+ *  pnmReadNextNumber()
+ *
+ *      Input:  file stream
+ *              &val (<return> value as an integer)
+ *      Return: 0 if OK, 1 on error or EOF.
+ *
+ *  Notes:
+ *      (1) This reads the next set of numeric chars, returning
+ *          the value and swallowing the trailing whitespace character.
+ *          This is needed to read the maxval in the header, which
+ *          preceeds the binary data.
+ */
+static l_int32
+pnmReadNextNumber(FILE     *fp,
+                  l_int32  *pval)
+{
+char      buf[8];
+l_int32   i, c, foundws, ignore;
+
+    PROCNAME("pnmReadNextNumber");
+
+    if (!pval)
+        return ERROR_INT("&val not defined", procName, 1);
+    *pval = 0;
+    if (!fp)
+        return ERROR_INT("stream not open", procName, 1);
+
+        /* The ascii characters for the number are followed by exactly
+         * one whitespace character. */
+    foundws = FALSE;
+    for (i = 0; i < 8; i++) {
+        if ((c = fgetc(fp)) == EOF)
+            return ERROR_INT("end of file reached", procName, 1);
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+            foundws = TRUE;
+            buf[i] = '\n';
+            break;
+        }
+        if (!isdigit(c))
+            return ERROR_INT("char read is not a digit", procName, 1);
+        buf[i] = c;
+    }
+    if (!foundws)
+        return ERROR_INT("no whitespace found", procName, 1);
+    if (sscanf(buf, "%d", pval) != 1)
+        return ERROR_INT("invalid read", procName, 1);
     return 0;
 }
 

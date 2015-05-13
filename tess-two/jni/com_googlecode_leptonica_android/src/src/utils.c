@@ -43,6 +43,7 @@
  *           l_int32    stringCat()
  *           char      *stringConcatNew()
  *           char      *stringJoin()
+ *           l_int32    stringJoinIP()
  *           char      *stringReverse()
  *           char      *strtokSafe()
  *           l_int32    stringSplitOnToken()
@@ -142,6 +143,8 @@
  *           L_TIMER    startTimerNested()
  *           l_float32  stopTimerNested()
  *           void       l_getCurrentTime()
+ *           L_WALLTIMER  *startWallTimer()
+ *           l_float32  stopWallTimer()
  *           void       l_getFormattedDate()
  *
  *  Notes on cross-platform development
@@ -576,6 +579,51 @@ l_int32  srclen1, srclen2, destlen;
     if (src2)
         strncat(dest, src2, srclen2);
     return dest;
+}
+
+
+/*!
+ *  stringJoinIP()
+ *
+ *      Input:  &src1 string (address of src1; cannot be on the stack)
+ *              src2 string (<optional> can be null)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This is a safe in-place version of strcat.  The contents of
+ *          src1 is replaced by the concatenation of src1 and src2.
+ *      (2) It is not an error if either or both of the strings
+ *          are empty (""), or if the pointers to the strings (*psrc1, src2)
+ *          are null.
+ *      (3) src1 should be initialized to null or an empty string
+ *          before the first call.  Use one of these:
+ *              char *src1 = NULL;
+ *              char *src1 = stringNew("");
+ *          Then call with:
+ *              stringJoinIP(&src1, src2);
+ *      (4) This can also be implemented as a macro:
+ *              #define stringJoinIP(src1, src2) \
+ *                  {tmpstr = stringJoin((src1),(src2)); \
+ *                  FREE(src1); \
+ *                  (src1) = tmpstr;}
+ *      (5) Another function to consider for joining many strings is
+ *          stringConcatNew().
+ */
+l_int32
+stringJoinIP(char       **psrc1,
+             const char  *src2)
+{
+char  *tmpstr;
+
+    PROCNAME("stringJoinIP");
+
+    if (!psrc1)
+        return ERROR_INT("&src1 not defined", procName, 1);
+
+    tmpstr = stringJoin(*psrc1, src2);
+    FREE(*psrc1);
+    *psrc1 = tmpstr;
+    return 0;
 }
 
 
@@ -1706,9 +1754,10 @@ convertOnBigEnd32(l_uint32  wordin)
  *  Notes:
  *      (1) This should be used whenever you want to run fopen() to
  *          read from a stream.  Never call fopen() directory.
- *      (2) This also handles pathname conversions for Windows; in
- *          particular the rewrite:
- *             /tmp --> <Temp>
+ *      (2) This also handles pathname conversions, if necessary:
+ *           ==>   /tmp              (unix)  [default]
+ *           ==>   /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *           ==>   <Temp>/leptonica  (windows)
  */
 FILE *
 fopenReadStream(const char  *filename)
@@ -1748,9 +1797,10 @@ FILE  *fp;
  *  Notes:
  *      (1) This should be used whenever you want to run fopen() to
  *          write or append to a stream.  Never call fopen() directory.
- *      (2) This also handles pathname conversions for Windows; in
- *          particular the rewrite:
- *             /tmp --> <Temp>
+ *      (2) This also handles pathname conversions, if necessary:
+ *           ==>   /tmp              (unix)  [default]
+ *           ==>   /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *           ==>   <Temp>/leptonica  (windows)
  */
 FILE *
 fopenWriteStream(const char  *filename,
@@ -1878,7 +1928,6 @@ lept_free(void *ptr)
  *                Cross-platform file system operations               *
  *         [ These only write to /tmp or its subdirectories ]         *
  *--------------------------------------------------------------------*/
-#if 0   /* TODO: REMOVE_THIS */
 /*!
  *  lept_mkdir()
  *
@@ -1887,66 +1936,18 @@ lept_free(void *ptr)
  *
  *  Notes:
  *      (1) This makes a subdirectory of the root temp directory.
- *          The root temp directory is:
- *            /tmp      (unix)
- *            <Temp>    (windows)
- */
-l_int32
-lept_mkdir(const char  *subdir)
-{
-char    *rootdir, *dir;
-l_int32  ret;
-
-    PROCNAME("lept_mkdir");
-
-    if (!subdir)
-        return ERROR_INT("subdir not defined", procName, 1);
-    if ((strlen(subdir) == 0) || (subdir[0] == '.') || (subdir[0] == '/'))
-        return ERROR_INT("subdir not an actual subdirectory", procName, 1);
-
-    rootdir = genPathname("/tmp", NULL);
-    if ((dir = appendSubdirectory(rootdir, subdir)) == NULL) {
-        FREE(rootdir);
-        return ERROR_INT("directory name not made", procName, 1);
-    }
-
-        /* Make the subdirectory */
-#ifndef _WIN32
-    ret = mkdir(dir, 0777);
-#else
-    l_uint32 attributes = GetFileAttributes(dir);
-    ret = 0;
-    if (attributes == INVALID_FILE_ATTRIBUTES) {
-        ret = (CreateDirectory(dir, NULL) ? 0 : 1);
-    }
-#endif  /* !_WIN32 */
-
-    FREE(rootdir);
-    FREE(dir);
-    return ret;
-}
-#endif
-
-
-/*!
- *  lept_mkdir()
- *
- *      Input:  subdir (of /tmp or its equivalent on Windows)
- *      Return: 0 on success, non-zero on failure
- *
- *  Notes:
- *      (1) This makes a subdirectory of the root temp directory.
- *          The root temp directory is:
- *            /tmp      (unix)
- *            <Temp>    (windows)
+ *      (2) The root temp directory is:
+ *            /tmp              (unix)  [default]
+ *            /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *            <Temp>/leptonica  (windows)
  */
 l_int32
 lept_mkdir(const char  *subdir)
 {
 char     *dir;
 l_int32   ret;
-#ifdef  _WIN32
 char     *newpath;
+#ifdef  _WIN32
 l_uint32  attributes;
 #endif  /* _WIN32 */
 
@@ -1961,9 +1962,12 @@ l_uint32  attributes;
 
         /* Make the subdirectory */
 #ifndef _WIN32
-    ret = mkdir(dir, 0777);
+    if (ADD_LEPTONICA_SUBDIR == 1)
+        mkdir("/tmp/leptonica", 0777);
+    newpath = genPathname(dir, NULL);
+    ret = mkdir(newpath, 0777);
 #else
-        /* Make sure the tmp director exists */
+        /* Make sure the tmp directory exists */
     newpath = genPathname("/tmp", NULL);
     attributes = GetFileAttributes(newpath);
     if (attributes == INVALID_FILE_ATTRIBUTES) {
@@ -1973,9 +1977,9 @@ l_uint32  attributes;
 
     newpath = genPathname(dir, NULL);
     ret = (CreateDirectory(newpath, NULL) ? 0 : 1);
-    FREE(newpath);
 #endif  /*  !_WIN32 */
 
+    FREE(newpath);
     FREE(dir);
     return ret;
 }
@@ -1988,10 +1992,12 @@ l_uint32  attributes;
  *      Return: 0 on success, non-zero on failure
  *
  *  Notes:
- *      (1) This removes all files from the specified subdirectory of:
- *            /tmp      (unix)
- *            <Temp>    (windows)
- *          and then removes the directory.
+ *      (1) This removes all files from the specified subdirectory of
+ *          the root temp directory:
+ *            /tmp               (unix)  [default]
+ *            /tmp/leptonica     (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *            <Temp>/leptonica   (windows)
+ *          and then removes the subdirectory.
  *      (2) The combination
  *            lept_rmdir(subdir);
  *            lept_mkdir(subdir);
@@ -2069,8 +2075,11 @@ char    *newpath;
  *
  *  Notes:
  *      (1) Always use unix pathname separators.
- *      (2) For windows, does automatic translation to <temp> subdirectory
- *          if the pathname begins with '/tmp'.
+ *      (2) By calling genPathname(), this does an automatic translation
+ *          of "/tmp" if the pathname begins with "/tmp":
+ *            ==>  /tmp              (unix)  [default]
+ *            ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *            ==>  <Temp>/leptonica  (windows)
  */
 void
 lept_direxists(const char  *dir,
@@ -2120,9 +2129,11 @@ char  *realdir;
  *          If both @subdir == NULL and @substr == NULL, this removes
  *          all files in /tmp.
  *      (3) Use unix pathname separators.
- *      (4) On Windows, the file is in either <Temp>, or in a
- *          subdirectory, where <Temp> is the Windows temp dir.
- *          The name translation is: /tmp --> <Temp>.
+ *      (4) By calling genPathname(), this does an automatic translation
+ *          of "/tmp" if the pathname begins with "/tmp":
+ *            ==>  /tmp              (unix)  [default]
+ *            ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *            ==>  <Temp>/leptonica  (windows)
  *      (5) Error conditions:
  *            * returns -1 if the directory is not found
  *            * returns the number of files (> 0) that it was unable to remove.
@@ -2165,17 +2176,15 @@ SARRAY  *sa;
 /*!
  *  lept_rm()
  *
- *      Input:  subdir (<optional>  If NULL, the removed file is in /tmp)
+ *      Input:  subdir (<optional> of '/tmp'; can be NULL)
  *              tail (filename without the directory)
  *      Return: 0 on success, non-zero on failure
  *
  *  Notes:
- *      (1) This removes the named file in /tmp or a subdirectory of /tmp.
- *          Use NULL for @subdir if the file is in /tmp.
- *      (2) Use unix pathname separators.
- *      (3) On Windows, the file is in either <Temp>, or in a
- *          subdirectory, where <Temp> is the Windows temp dir.
- *          The name translation is: /tmp --> <Temp>.
+ *      (1) This uses genPathname() to do a name translation from /tmp:
+ *            ==>  /tmp              (unix)  [default]
+ *            ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *            ==>  <Temp>/leptonica  (windows)
  */
 l_int32
 lept_rm(const char  *subdir,
@@ -2208,8 +2217,9 @@ l_int32  ret;
  *      (1) This removes the named file.
  *      (2) Use unix pathname separators.
  *      (3) Unlike the other lept_* functions in this section, this can remove
- *          any file. It is not restricted to files that are in /tmp or a
- *          subdirectory of it.
+ *          any file -- it is not restricted to files that are in /tmp or a
+ *          subdirectory of it.  No path translation is applied for files
+ *          in /tmp or a subdirectory of /tmp.
  */
 l_int32
 lept_rmfile(const char  *filepath)
@@ -2254,10 +2264,12 @@ l_int32  ret;
  *      (5) For debugging, the computed newpath can be returned.  It must
  *          be freed by the caller.
  *      (6) Reminders:
- *            (a) use unix pathname separators
- *            (b) on windows, there is a name translation from
- *                /tmp  -->  <Temp>
- *      (7) Examples:
+ *          (a) use unix pathname separators
+ *          (b) Uses directory translation for files in /tmp:
+ *              ==>  /tmp              (unix)  [default]
+ *              ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *              ==>  <Temp>/leptonica  (windows)
+ *      (7) Examples before directory translation:
  *          * newdir = NULL, newtail = NULL   ==> /tmp/src-tail
  *          * newdir = NULL, newtail = abc    ==> /tmp/abc
  *          * newdir = def, newtail = NULL    ==> /tmp/def/src-tail
@@ -2278,13 +2290,16 @@ l_int32  ret;
     if (!srcfile)
         return ERROR_INT("srcfile not defined", procName, 1);
 
-       /* Get canonical src pathname */
+        /* Require output pathname to be in /tmp/ or a subdirectory */
+    if (makeTempDirname(newtemp, 256, newdir) == 1)
+        return ERROR_INT("newdir not NULL or a subdir of /tmp", procName, 1);
+
+        /* Get canonical src pathname */
     splitPathAtDirectory(srcfile, &dir, &srctail);
     srcpath = genPathname(dir, srctail);
     FREE(dir);
 
-        /* Require output pathname to be in /tmp/ or a subdirectory */
-    makeTempDirname(newtemp, 256, newdir);
+        /* Generate output pathname */
     if (!newtail || newtail[0] == '\0')
         newpath = genPathname(newtemp, srctail);
     else
@@ -2331,9 +2346,11 @@ l_int32  ret;
  *      (5) For debugging, the computed newpath can be returned.  It must
  *          be freed by the caller.
  *      (6) Reminders:
- *            (a) use unix pathname separators
- *            (b) on windows, there is an additional name translation from
- *                /tmp  -->  <Temp>
+ *          (a) use unix pathname separators
+ *          (b) Uses directory translation for files in /tmp:
+ *              ==>  /tmp              (unix)  [default]
+ *              ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *              ==>  <Temp>/leptonica  (windows)
  *      (7) Examples:
  *          * newdir = NULL, newtail = NULL   ==> /tmp/src-tail
  *          * newdir = NULL, newtail = abc    ==> /tmp/abc
@@ -2356,13 +2373,16 @@ l_int32  ret;
     if (!srcfile)
         return ERROR_INT("srcfile not defined", procName, 1);
 
+        /* Require output pathname to be in /tmp or a subdirectory */
+    if (makeTempDirname(newtemp, 256, newdir) == 1)
+        return ERROR_INT("newdir not NULL or a subdir of /tmp", procName, 1);
+
        /* Get canonical src pathname */
     splitPathAtDirectory(srcfile, &dir, &srctail);
     srcpath = genPathname(dir, srctail);
     FREE(dir);
 
-        /* Require output pathname to be in /tmp or a subdirectory */
-    makeTempDirname(newtemp, 256, newdir);
+        /* Generate output pathname */
     if (!newtail || newtail[0] == '\0')
         newpath = genPathname(newtemp, srctail);
     else
@@ -2730,8 +2750,11 @@ size_t   len;
  *              @fname, with @dir == NULL.
  *            * if in a "/tmp" directory and on windows, the windows
  *              temp directory is used.
- *      (2) The name translation for "/tmp" on windows is:
- *               /tmp  -->   <Temp>   (windows)
+ *      (2) If the root of @dir is '/tmp', this does name translation:
+ *            ==>  /tmp              (unix)  [default]
+ *            ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *            ==>  <Temp>/leptonica  (windows)
+ *          where <Temp> is the windows temp directory.
  *      (3) There are four cases for the input:
  *          (a) @dir is a directory and @fname is defined: result is a full path
  *          (b) @dir is a directory and @fname is null: result is a directory
@@ -2775,25 +2798,43 @@ l_int32  dirlen, namelen, size;
     if ((pathout = (char *)CALLOC(size, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("pathout not made", procName, NULL);
 
-        /* First handle the @dir (which may be a full pathname) */
-#ifdef _WIN32
+        /* First handle @dir (which may be a full pathname) */
     if (strncmp(cdir, "/tmp", 4) != 0) {  /* not in /tmp; OK as is */
         stringCopy(pathout, cdir, dirlen);
     } else {  /* in /tmp */
+#ifdef _WIN32
             /* Start with the temp dir */
         char  dirt[MAX_PATH];
         GetTempPath(sizeof(dirt), dirt);  /* get the windows temp directory */
         stringCopy(pathout, dirt, strlen(dirt) - 1);
 
+            /* Add a special subdirectory if it's not already there.  This is
+             * advantageous for WIN32 because it puts all temporary files in
+             * a single subdirectory of <Temp>, facilitating cleanup.  */
+        if (dirlen <= 5 ||
+            (dirlen > 5 && strncmp(cdir + 5, "leptonica", 9) != 0))
+            stringCat(pathout, size, "/leptonica");
+
             /* Add the rest of cdir */
         if (dirlen > 4)
             stringCat(pathout, size, cdir + 4);
-    }
 #else  /* unix */
-    stringCopy(pathout, cdir, dirlen);
+            /* Add subdirectory if requested and it is not already in cdir.
+             * For the latter, add if either cdir is just /tmp or /tmp/, or
+             * if there is a subdirectory of /tmp but it's not "leptonica". */
+        if (ADD_LEPTONICA_SUBDIR &&
+            (dirlen <= 5 ||
+             (dirlen > 5 && strncmp(cdir + 5, "leptonica", 9) != 0))) {
+            stringCopy(pathout, "/tmp/leptonica", 14);
+            if (dirlen > 4)
+                stringCat(pathout, size, cdir + 4);
+        } else {  /* OK as is */
+            stringCopy(pathout, cdir, dirlen);
+        }
 #endif  /* _WIN32 */
+    }
 
-       /* Now handle fname */
+       /* Now handle @fname */
     if (fname && strlen(fname) > 0) {
         dirlen = strlen(pathout);
         pathout[dirlen] = '/';
@@ -2815,11 +2856,13 @@ l_int32  dirlen, namelen, size;
  *
  *  Notes:
  *      (1) This generates the directory path for output temp files,
- *          written into @result, with unix separators.
- *      (2) Caller allocates @result, large enough to hold
- *          <temp>/<subdir>, where <temp> is "/tmp" on unix
- *          and some other path on windows, determined by the windows
- *          function GenTempPath().
+ *          written into @result with unix separators.
+ *      (2) Caller allocates @result, large enough to hold the path,
+ *          which is:
+ *            /tmp/@subdir              (unix)  [default]
+ *            /tmp/leptonica/@subdir    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *            <Temp>/leptonica/@subdir  (windows)
+ *          where <Temp> is a path on windows determined by GenTempPath().
  *      (3) Usage example:
  *           char  result[256];
  *           makeTempDirname(result, 256, "golden");
@@ -2829,7 +2872,9 @@ makeTempDirname(char        *result,
                 size_t       nbytes,
                 const char  *subdir)
 {
-size_t  len;
+char    *dir, *path;
+l_int32  ret = 0;
+size_t   pathlen;
 
     PROCNAME("makeTempDirname");
 
@@ -2838,23 +2883,20 @@ size_t  len;
     if (subdir && ((subdir[0] == '.') || (subdir[0] == '/')))
         return ERROR_INT("subdir not an actual subdirectory", procName, 1);
 
-        /* Start with <temp> directory */
-#ifdef _WIN32
-    char  dirt[MAX_PATH];
-    GetTempPath(sizeof(dirt), dirt);
-    snprintf(result, nbytes, "%s", dirt);
-#else
-    snprintf(result, nbytes, "%s", "/tmp");
-#endif  /* _WIN32 */
-
-        /* Optionally add input subdirectory */
-    if (subdir) {
-        len = strlen(result);
-        strncat(result, "/", nbytes - len);
-        strncat(result, subdir, nbytes - len - 1);
+    memset(result, 0, nbytes);
+    dir = pathJoin("/tmp", subdir);
+    path = genPathname(dir, NULL);
+    pathlen = strlen(path);
+    if (pathlen < nbytes - 1) {
+        strncpy(result, path, pathlen);
+    } else {
+        L_ERROR("result array too small for path\n", procName);
+        ret = 1;
     }
 
-    return 0;
+    FREE(dir);
+    FREE(path);
+    return ret;
 }
 
 
@@ -2928,10 +2970,12 @@ size_t  len;
  *      (6) N.B. The caller is responsible for freeing the returned filename.
  *          For windows, to avoid C-runtime boundary crossing problems
  *          when using DLLs, you must use lept_free() to free the name.
- *      (7) For windows, if the caller requests the directory '/tmp',
- *          this uses GetTempPath() to select the actual directory,
- *          avoiding platform-conditional code in use.  We represent
- *          the Windows temp directory by <Temp>.
+ *      (7) When @dir is /tmp or a subdirectory of /tmp, genPathname()
+ *          does a name translation for '/tmp':
+ *            ==> /tmp              (unix)  [default]
+ *            ==> /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
+ *            ==> <Temp>/leptonica  (windows)
+ *          where <Temp> is a path on windows determined by GenTempPath().
  *      (8) Set @usetime = @usepid = 1 when
  *          (a) more than one process is writing and reading temp files, or
  *          (b) multiple threads from a single process call this function, or
@@ -3311,11 +3355,11 @@ static struct rusage rusage_after;
 /*!
  *  startTimer(), stopTimer()
  *
- *  Example of usage:
- *
- *      startTimer();
- *      ....
- *      fprintf(stderr, "Elapsed time = %7.3f sec\n", stopTimer());
+ *  Notes:
+ *      (1) These measure the cpu time elapsed between the two calls:
+ *            startTimer();
+ *            ....
+ *            fprintf(stderr, "Elapsed time = %7.3f sec\n", stopTimer());
  */
 void
 startTimer(void)
@@ -3496,6 +3540,55 @@ LONGLONG        usecs;
 }
 
 #endif
+
+
+/*!
+ *  startWallTimer()
+ *      Input:  void
+ *      Return: walltimer-ptr
+ *
+ *  stopWallTimer()
+ *      Input:  &walltimer-ptr
+ *      Return: time (wall time elapsed in seconds)
+ *
+ *  Notes:
+ *      (1) These measure the wall clock time  elapsed between the two calls:
+ *            L_WALLTIMER *timer = startWallTimer();
+ *            ....
+ *            fprintf(stderr, "Elapsed time = %f sec\n", stopWallTimer(&timer);
+ *      (2) Note that the timer object is destroyed by stopWallTimer().
+ */
+L_WALLTIMER *
+startWallTimer(void)
+{
+L_WALLTIMER  *timer;
+
+    timer = (L_WALLTIMER *)CALLOC(1, sizeof(L_WALLTIMER));
+    l_getCurrentTime(&timer->start_sec, &timer->start_usec);
+    return timer;
+}
+
+l_float32
+stopWallTimer(L_WALLTIMER  **ptimer)
+{
+l_int32       tsec, tusec;
+L_WALLTIMER  *timer;
+
+    PROCNAME("stopWallTimer");
+
+    if (!ptimer)
+        return (l_float32)ERROR_FLOAT("&timer not defined", procName, 0.0);
+    timer = *ptimer;
+    if (!timer)
+        return (l_float32)ERROR_FLOAT("timer not defined", procName, 0.0);
+
+    l_getCurrentTime(&timer->stop_sec, &timer->stop_usec);
+    tsec = timer->stop_sec - timer->start_sec;
+    tusec = timer->stop_usec - timer->start_usec;
+    FREE(timer);
+    *ptimer = NULL;
+    return (tsec + ((l_float32)tusec) / 1000000.0);
+}
 
 
 /*!

@@ -184,7 +184,7 @@ l_uint32  *line, *data;
     PROCNAME("pixGetPixel");
 
     if (!pval)
-        return ERROR_INT("pval not defined", procName, 1);
+        return ERROR_INT("&val not defined", procName, 1);
     *pval = 0;
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
@@ -256,7 +256,6 @@ l_uint32  *line, *data;
 
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
-
     pixGetDimensions(pix, &w, &h, &d);
     if (x < 0 || x >= w)
         return ERROR_INT("x out of bounds", procName, 1);
@@ -320,6 +319,11 @@ l_uint32  *data, *ppixel;
 
     PROCNAME("pixGetRGBPixel");
 
+    if (prval) *prval = 0;
+    if (pgval) *pgval = 0;
+    if (pbval) *pbval = 0;
+    if (!prval && !pgval && !pbval)
+        return ERROR_INT("no output requested", procName, 1);
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
     pixGetDimensions(pix, &w, &h, &d);
@@ -407,8 +411,13 @@ PIXCMAP  *cmap;
 
     PROCNAME("pixGetRandomPixel");
 
+    if (pval) *pval = 0;
+    if (px) *px = 0;
+    if (py) *py = 0;
+    if (!pval && !px && !py)
+        return ERROR_INT("no output requested", procName, 1);
     if (!pval)
-        return ERROR_INT("pval not defined", procName, 1);
+        return ERROR_INT("&val not defined", procName, 1);
     *pval = 0;
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
@@ -449,7 +458,6 @@ l_uint32  *line, *data;
 
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
-
     pixGetDimensions(pix, &w, &h, &d);
     if (x < 0 || x >= w)
         return ERROR_INT("x out of bounds", procName, 1);
@@ -507,7 +515,6 @@ l_uint32  *line, *data;
 
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
-
     pixGetDimensions(pix, &w, &h, &d);
     if (x < 0 || x >= w)
         return ERROR_INT("x out of bounds", procName, 1);
@@ -3029,10 +3036,10 @@ l_uint32  *rline, *rdata;  /* data in pix raster */
 
     PROCNAME("pixGetRasterData");
 
+    if (pdata) *pdata = NULL;
+    if (pnbytes) *pnbytes = 0;
     if (!pdata || !pnbytes)
         return ERROR_INT("&data and &nbytes not both defined", procName, 1);
-    *pdata = NULL;
-    *pnbytes = 0;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     pixGetDimensions(pixs, &w, &h, &d);
@@ -3168,12 +3175,12 @@ l_int32  w, h;
     if (!pix || pixGetDepth(pix) != 8)
         return (l_uint8 **)ERROR_PTR("pix not defined or not 8 bpp",
                                      procName, NULL);
-    if (pixGetColormap(pix))
-        return (l_uint8 **)ERROR_PTR("pix has colormap", procName, NULL);
-
     pixGetDimensions(pix, &w, &h, NULL);
     if (pw) *pw = w;
     if (ph) *ph = h;
+    if (pixGetColormap(pix))
+        return (l_uint8 **)ERROR_PTR("pix has colormap", procName, NULL);
+
     pixEndianByteSwap(pix);
     return (l_uint8 **)pixGetLinePtrs(pix, NULL);
 }

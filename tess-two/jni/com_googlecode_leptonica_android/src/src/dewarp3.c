@@ -29,10 +29,15 @@
  *
  *    Applying and stripping the page disparity model
  *
- *      Apply disparity array
+ *      Apply disparity array to pix
  *          l_int32            dewarpaApplyDisparity()
- *          static l_int32     pixApplyVertDisparity()
- *          static l_int32     pixApplyHorizDisparity()
+ *          static l_int32     dewarpaApplyInit()
+ *          static PIX        *pixApplyVertDisparity()
+ *          static PIX        *pixApplyHorizDisparity()
+ *
+ *      Apply disparity array to boxa
+ *          l_int32            dewarpaApplyDisparityBoxa()
+ *          static BOXA       *boxaApplyDisparity()
  *
  *      Stripping out data and populating full res disparity
  *          l_int32            dewarpMinimize()
@@ -47,12 +52,18 @@
 #include <math.h>
 #include "allheaders.h"
 
+static l_int32 dewarpaApplyInit(L_DEWARPA *dewa, l_int32 pageno, PIX *pixs,
+                                l_int32 x, l_int32 y, L_DEWARP **pdew,
+                                const char *debugfile);
 static PIX *pixApplyVertDisparity(L_DEWARP *dew, PIX *pixs, l_int32 grayin);
 static PIX * pixApplyHorizDisparity(L_DEWARP *dew, PIX *pixs, l_int32 grayin);
+static BOXA *boxaApplyDisparity(L_DEWARP *dew, BOXA *boxa, l_int32 direction,
+                                l_int32 mapdir);
+
 
 
 /*----------------------------------------------------------------------*
- *                     Apply warping disparity array                    *
+ *                 Apply warping disparity array to pixa                *
  *----------------------------------------------------------------------*/
 /*!
  *  dewarpaApplyDisparity()
@@ -105,8 +116,7 @@ dewarpaApplyDisparity(L_DEWARPA   *dewa,
                       PIX        **ppixd,
                       const char  *debugfile)
 {
-l_int32    debug;
-L_DEWARP  *dew1, *dew2;
+L_DEWARP  *dew1, *dew;
 PIX       *pixv, *pixh;
 
     PROCNAME("dewarpaApplyDisparity");
@@ -116,49 +126,18 @@ PIX       *pixv, *pixh;
     if (!ppixd)
         return ERROR_INT("&pixd not defined", procName, 1);
     *ppixd = pixClone(pixs);
-
-    if (!dewa)
-        return ERROR_INT("dewa not defined", procName, 1);
-    if (pageno < 0 || pageno > dewa->maxpage)
-        return ERROR_INT("invalid pageno", procName, 1);
-    if (!pixs)
-        return ERROR_INT("pixs not defined", procName, 1);
-    if (grayin > 255)
-        return ERROR_INT("invalid grayin", procName, 1);
-    if (x < 0) x = 0;
-    if (y < 0) y = 0;
-
-        /* Make sure all models are valid and all refmodels have
-         * been added to dewa */
-    debug = (debugfile) ? 1 : 0;
-    if (dewa->modelsready == FALSE)
-        dewarpaInsertRefModels(dewa, 0, debug);
-
-        /* Check for the existence of a valid model; we don't expect
-         * all pages to have them. */
-    if ((dew1 = dewarpaGetDewarp(dewa, pageno)) == NULL) {
-        L_INFO("dew1 not defined; no valid model for page %d\n",
-                   procName, pageno);
-        return 1;
+    if (grayin > 255) {
+        L_WARNING("invalid grayin = %d; clipping at 255\n", procName, grayin);
+        grayin = 255;
     }
 
-        /* Get the page model that we will use and sanity-check that
-         * it is valid.  The ultimate result will be put in dew1->pixd. */
-    if (dew1->hasref)  /* point to another page with a model */
-        dew2 = dewarpaGetDewarp(dewa, dew1->refpage);
-    else
-        dew2 = dew1;
-    if (dew2->vvalid == FALSE)
-        return ERROR_INT("no model; shouldn't happen", procName, 1);
-
-        /* Generate the full res disparity arrays if they don't exist
-         * (e.g., if they've been minimized or read from file), or if
-         * they are too small for the current image.  */
-    dewarpPopulateFullRes(dew2, pixs, x, y);
+        /* Find the appropriate dew to use and fully populate its array(s) */
+    if (dewarpaApplyInit(dewa, pageno, pixs, x, y, &dew, debugfile))
+        return ERROR_INT("no model available", procName, 1);
 
         /* Correct for vertical disparity and save the result */
-    if ((pixv = pixApplyVertDisparity(dew2, pixs, grayin)) == NULL) {
-        dewarpMinimize(dew2);
+    if ((pixv = pixApplyVertDisparity(dew, pixs, grayin)) == NULL) {
+        dewarpMinimize(dew);
         return ERROR_INT("pixv not made", procName, 1);
     }
     pixDestroy(ppixd);
@@ -172,11 +151,11 @@ PIX       *pixv, *pixh;
     }
 
         /* Optionally, correct for horizontal disparity */
-    if (dewa->useboth && dew2->hsuccess) {
-        if (dew2->hvalid == FALSE) {
+    if (dewa->useboth && dew->hsuccess) {
+        if (dew->hvalid == FALSE) {
             L_INFO("invalid horiz model for page %d\n", procName, pageno);
         } else {
-            if ((pixh = pixApplyHorizDisparity(dew2, pixv, grayin)) != NULL) {
+            if ((pixh = pixApplyHorizDisparity(dew, pixv, grayin)) != NULL) {
                 pixDestroy(ppixd);
                 *ppixd = pixh;
                 if (debugfile) {
@@ -191,6 +170,7 @@ PIX       *pixv, *pixh;
     }
 
     if (debugfile) {
+        dew1 = dewarpaGetDewarp(dewa, pageno);
         dewarpDebug(dew1, "dewapply", 0);
         convertFilesToPdf("/tmp/dewapply", NULL, 135, 1.0, 0, 0,
                          "Dewarp Apply Disparity", debugfile);
@@ -198,8 +178,84 @@ PIX       *pixv, *pixh;
     }
 
         /* Get rid of the large full res disparity arrays */
-    dewarpMinimize(dew2);
+    dewarpMinimize(dew);
 
+    return 0;
+}
+
+
+/*!
+ *  dewarpaApplyInit()
+ *
+ *      Input:  dewa
+ *              pageno (of page model to be used; may be a ref model)
+ *              pixs (image to be modified; can be 1, 8 or 32 bpp)
+ *              x, y (origin for generation of disparity arrays)
+ *              &pdew (<return> dewarp to be used for this page
+ *              debugfile (use null to skip writing this)
+ *      Return: 0 if OK, 1 on error (no models or ref models available)
+ *
+ *  Notes:
+ *      (1) This prepares pixs for being dewarped.  It returns 1 if
+ *          no dewarping model exists.
+ *      (2) The returned @dew contains the model to be used for this page
+ *          image.  The @dew is owned by dewa; do not destroy.
+ *      (3) See dewarpApplyDisparity() for other details on inputs.
+ */
+static l_int32
+dewarpaApplyInit(L_DEWARPA   *dewa,
+                 l_int32      pageno,
+                 PIX         *pixs,
+                 l_int32      x,
+                 l_int32      y,
+                 L_DEWARP   **pdew,
+                 const char  *debugfile)
+{
+l_int32    debug;
+L_DEWARP  *dew1, *dew2;
+
+    PROCNAME("dewarpaApplyInit");
+
+    if (!pdew)
+        return ERROR_INT("&dew not defined", procName, 1);
+    *pdew = NULL;
+
+    if (!dewa)
+        return ERROR_INT("dewa not defined", procName, 1);
+    if (pageno < 0 || pageno > dewa->maxpage)
+        return ERROR_INT("invalid pageno", procName, 1);
+    if (!pixs)
+        return ERROR_INT("pixs not defined", procName, 1);
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    debug = (debugfile) ? 1 : 0;
+
+        /* Make sure all models are valid and all refmodels have
+         * been added to dewa */
+    if (dewa->modelsready == FALSE)
+        dewarpaInsertRefModels(dewa, 0, debug);
+
+        /* Check for the existence of a valid model; we don't expect
+         * all pages to have them. */
+    if ((dew1 = dewarpaGetDewarp(dewa, pageno)) == NULL) {
+        L_INFO("no valid dew model for page %d\n", procName, pageno);
+        return 1;
+    }
+
+        /* Get the page model that we will use and sanity-check that
+         * it is valid.  The ultimate result will be put in dew1->pixd. */
+    if (dew1->hasref)  /* point to another page with a model */
+        dew2 = dewarpaGetDewarp(dewa, dew1->refpage);
+    else
+        dew2 = dew1;
+    if (dew2->vvalid == FALSE)
+        return ERROR_INT("no model; shouldn't happen", procName, 1);
+    *pdew = dew2;
+
+        /* Generate the full res disparity arrays if they don't exist
+         * (e.g., if they've been minimized or read from file), or if
+         * they are too small for the current image.  */
+    dewarpPopulateFullRes(dew2, pixs, x, y);
     return 0;
 }
 
@@ -414,6 +470,211 @@ PIX        *pixd;
     }
 
     return pixd;
+}
+
+
+/*----------------------------------------------------------------------*
+ *                 Apply warping disparity array to boxa                *
+ *----------------------------------------------------------------------*/
+/*!
+ *  dewarpaApplyDisparityBoxa()
+ *
+ *      Input:  dewa
+ *              pageno (of page model to be used; may be a ref model)
+ *              pixs (initial pix reference; for alignment and debugging)
+ *              boxas (boxa to be mapped)
+ *              mapdir (1 if mapping forward from original to dewarped;
+ *                      0 if backward)
+ *              x, y (origin for generation of disparity arrays with
+ *                    respect to the source region)
+ *              &boxad (<return> disparity corrected boxa)
+ *              debugfile (use null to skip writing this)
+ *      Return: 0 if OK, 1 on error (no models or ref models available)
+ *
+ *  Notes:
+ *      (1) This applies the disparity arrays in one of two mapping directions
+ *          to the specified boxa.  It can be used in the backward direction
+ *          to locate a box in the original coordinates that would have
+ *          been dewarped to to the specified image.
+ *      (2) If there is no model for @pageno, this will use the model for
+ *          'refpage' and put the result in the dew for @pageno.
+ *      (3) This works with both stripped and full resolution page models.
+ *          If the full res disparity array(s) are missing, they are remade.
+ *      (4) If an error occurs, a copy of the input boxa is returned.
+ */
+l_int32
+dewarpaApplyDisparityBoxa(L_DEWARPA   *dewa,
+                          l_int32      pageno,
+                          PIX         *pixs,
+                          BOXA        *boxas,
+                          l_int32      mapdir,
+                          l_int32      x,
+                          l_int32      y,
+                          BOXA       **pboxad,
+                          const char  *debugfile)
+{
+l_int32    debug_out;
+L_DEWARP  *dew1, *dew;
+BOXA      *boxav, *boxah;
+PIX       *pixv, *pixh;
+
+    PROCNAME("dewarpaApplyDisparityBoxa");
+
+        /* Initialize the output with the input, so we'll have that
+         * in case we can't apply the page model. */
+    if (!pboxad)
+        return ERROR_INT("&boxad not defined", procName, 1);
+    *pboxad = boxaCopy(boxas, L_CLONE);
+
+        /* Find the appropriate dew to use and fully populate its array(s) */
+    if (dewarpaApplyInit(dewa, pageno, pixs, x, y, &dew, debugfile))
+        return ERROR_INT("no model available", procName, 1);
+
+        /* Correct for vertical disparity and save the result */
+    if ((boxav = boxaApplyDisparity(dew, boxas, L_VERT, mapdir)) == NULL) {
+        dewarpMinimize(dew);
+        return ERROR_INT("boxa1 not made", procName, 1);
+    }
+    boxaDestroy(pboxad);
+    *pboxad = boxav;
+    pixv = NULL;
+    pixh = NULL;
+    if (debugfile && mapdir != 1)
+        L_INFO("Reverse map direction; no debug output\n", procName);
+    debug_out = debugfile && (mapdir == 1);
+    if (debug_out) {
+        PIX  *pix1;
+        lept_rmdir("dewboxa");  /* remove previous images */
+        lept_mkdir("dewboxa");
+        pix1 = pixConvertTo32(pixs);
+        pixRenderBoxaArb(pix1, boxas, 2, 255, 0, 0);
+        pixWrite("/tmp/dewboxa/01.png", pix1, IFF_PNG);
+        pixDestroy(&pix1);
+        pixv = pixApplyVertDisparity(dew, pixs, 255);
+        pix1 = pixConvertTo32(pixv);
+        pixRenderBoxaArb(pix1, boxav, 2, 0, 255, 0);
+        pixWrite("/tmp/dewboxa/02.png", pix1, IFF_PNG);
+        pixDestroy(&pix1);
+    }
+
+        /* Optionally, correct for horizontal disparity */
+    if (dewa->useboth && dew->hsuccess) {
+        if (dew->hvalid == FALSE) {
+            L_INFO("invalid horiz model for page %d\n", procName, pageno);
+        } else {
+            boxah = boxaApplyDisparity(dew, boxav, L_HORIZ, mapdir);
+            if (!boxah) {
+                L_ERROR("horiz disparity fails on page %d\n", procName, pageno);
+            } else {
+                boxaDestroy(pboxad);
+                *pboxad = boxah;
+                if (debug_out) {
+                    PIX  *pix1;
+                    pixh = pixApplyHorizDisparity(dew, pixv, 255);
+                    pix1 = pixConvertTo32(pixh);
+                    pixRenderBoxaArb(pix1, boxah, 2, 0, 0, 255);
+                    pixWrite("/tmp/dewboxa/03.png", pix1, IFF_PNG);
+                    pixDestroy(&pixh);
+                    pixDestroy(&pix1);
+                }
+            }
+        }
+    }
+
+    if (debug_out) {
+        pixDestroy(&pixv);
+        dew1 = dewarpaGetDewarp(dewa, pageno);
+        dewarpDebug(dew1, "dewapply", 0);
+        convertFilesToPdf("/tmp/dewboxa", NULL, 135, 1.0, 0, 0,
+                         "Dewarp Apply Disparity Boxa", debugfile);
+        fprintf(stderr, "Dewarp Apply Disparity Boxa pdf file made: %s\n",
+                debugfile);
+    }
+
+        /* Get rid of the large full res disparity arrays */
+    dewarpMinimize(dew);
+
+    return 0;
+}
+
+
+/*!
+ *  boxaApplyDisparity()
+ *
+ *      Input:  dew
+ *              boxa
+ *              direction (L_HORIZ or L_VERT)
+ *              mapdir (1 if mapping forward from original to dewarped;
+ *                      0 if backward)
+ *      Return: boxad (modified by the disparity), or null on error
+ */
+static BOXA *
+boxaApplyDisparity(L_DEWARP  *dew,
+                   BOXA      *boxa,
+                   l_int32    direction,
+                   l_int32    mapdir)
+{
+l_int32     x, y, w, h, ib, ip, nbox, wpl;
+l_float32   xn, yn;
+l_float32  *data, *line;
+BOX        *boxs, *boxd;
+BOXA       *boxad;
+FPIX       *fpix;
+PTA        *ptas, *ptad;
+
+    PROCNAME("boxaApplyDisparity");
+
+    if (!dew)
+        return (BOXA *)ERROR_PTR("dew not defined", procName, NULL);
+    if (!boxa)
+        return (BOXA *)ERROR_PTR("boxa not defined", procName, NULL);
+    if (direction == L_VERT)
+        fpix = dew->fullvdispar;
+    else if (direction == L_HORIZ)
+        fpix = dew->fullhdispar;
+    else
+        return (BOXA *)ERROR_PTR("invalid direction", procName, NULL);
+    if (!fpix)
+        return (BOXA *)ERROR_PTR("full disparity not defined", procName, NULL);
+    fpixGetDimensions(fpix, &w, &h);
+
+        /* Clip the output to the positive quadrant because all box
+         * coordinates must be non-negative. */
+    data = fpixGetData(fpix);
+    wpl = fpixGetWpl(fpix);
+    nbox = boxaGetCount(boxa);
+    boxad = boxaCreate(nbox);
+    for (ib = 0; ib < nbox; ib++) {
+        boxs = boxaGetBox(boxa, ib, L_COPY);
+        ptas = boxConvertToPta(boxs, 4);
+        ptad = ptaCreate(4);
+        for (ip = 0; ip < 4; ip++) {
+            ptaGetIPt(ptas, ip, &x, &y);
+            line = data + y * wpl;
+            if (direction == L_VERT) {
+                if (mapdir == 0)
+                    yn = y - line[x];
+                else
+                    yn = y + line[x];
+                yn = L_MAX(0, yn);
+                ptaAddPt(ptad, x, yn);
+            } else {  /* direction == L_HORIZ */
+                if (mapdir == 0)
+                    xn = x - line[x];
+                else
+                    xn = x + line[x];
+                xn = L_MAX(0, xn);
+                ptaAddPt(ptad, xn, y);
+            }
+        }
+        boxd = ptaConvertToBox(ptad);
+        boxaAddBox(boxad, boxd, L_INSERT);
+        boxDestroy(&boxs);
+        ptaDestroy(&ptas);
+        ptaDestroy(&ptad);
+    }
+
+    return boxad;
 }
 
 

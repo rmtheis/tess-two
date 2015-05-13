@@ -46,7 +46,7 @@
  *           l_int32   pixaChangeRefcount()
  *           PIX      *pixaGetPix()
  *           l_int32   pixaGetPixDimensions()
- *           PIX      *pixaGetBoxa()
+ *           BOXA     *pixaGetBoxa()
  *           l_int32   pixaGetBoxaCount()
  *           BOX      *pixaGetBox()
  *           l_int32   pixaGetBoxGeometry()

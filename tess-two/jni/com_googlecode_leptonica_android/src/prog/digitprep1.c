@@ -42,7 +42,7 @@ char         buf[8];
 l_int32      i, n, h;
 l_float32    scalefact;
 BOXA        *boxa;
-PIX         *pixs, *pix, *pixt1, *pixt2;
+PIX         *pixs, *pixt1, *pixt2;
 PIXA        *pixa, *pixas, *pixad;
 PIXAA       *pixaa;
 static char  mainName[] = "digitprep1";

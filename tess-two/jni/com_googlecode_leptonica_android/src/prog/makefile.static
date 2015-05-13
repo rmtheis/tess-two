@@ -172,7 +172,8 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		fhmtauto_reg.c files_reg.c \
 		findcorners_reg.c findpattern_reg.c \
 		flipdetect_reg.c fmorphauto_reg.c \
-		fpix1_reg.c fpix2_reg.c gifio_reg.c \
+		fpix1_reg.c fpix2_reg.c \
+		genfonts_reg.c gifio_reg.c \
 		grayfill_reg.c graymorph1_reg.c \
 		graymorph2_reg.c  grayquant_reg.c \
 		hardlight_reg.c heap_reg.c \
@@ -188,7 +189,8 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		pixadisp_reg.c pixalloc_reg.c \
 		pixcomp_reg.c pixmem_reg.c \
 		pixserial_reg.c pixtile_reg.c \
-		pngio_reg.c projection_reg.c projective_reg.c \
+		pngio_reg.c pnmio_reg.c \
+		projection_reg.c projective_reg.c \
 		psio_reg.c psioseg_reg.c \
 		pta_reg.c ptra1_reg.c ptra2_reg.c \
 		rank_reg.c rankbin_reg.c rankhisto_reg.c \
@@ -197,16 +199,18 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		scale_reg.c seedspread_reg.c selio_reg.c \
 		shear1_reg.c shear2_reg.c skew_reg.c \
 		smallpix_reg.c smoothedge_reg.c splitcomp_reg.c \
-		string_reg.c subpixel_reg.c threshnorm_reg.c \
+		string_reg.c subpixel_reg.c \
+		texturefill_reg.c threshnorm_reg.c \
 		translate_reg.c warper_reg.c webpio_reg.c \
 		wordboxes_reg.c writetext_reg.c xformbox_reg.c \
 		adaptmaptest.c adaptmap_dark.c \
 		arabic_lines.c arithtest.c \
+		autogentest1.c autogentest2.c \
 		barcodetest.c baselinetest.c \
 		binarizefiles.c binarize_set.c bincompare.c \
 		blendcmaptest.c buffertest.c \
 		byteatest.c ccbordtest.c cctest1.c \
-		colormorphtest.c \
+		cleanpdf.c colormorphtest.c \
 		colorsegtest.c colorspacetest.c \
 		comparepages.c comparetest.c \
 		concatpdf.c contrasttest.c \
@@ -217,7 +221,7 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		convolvetest.c cornertest.c \
 		croptest.c croptext.c \
 		dewarprules.c dewarptest1.c dewarptest2.c \
-		dewarptest3.c dewarptest4.c \
+		dewarptest3.c dewarptest4.c dewarptest5.c \
 		digitprep1.c displayboxa.c \
 		displaypix.c displaypixa.c \
 		dithertest.c dwalineargen.c \
@@ -226,8 +230,8 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		fileinfo.c \
 		findpattern1.c findpattern2.c findpattern3.c \
 		flipselgen.c fmorphautogen.c \
-		fpixcontours.c gammatest.c genfonts.c \
-		graphicstest.c graymorphtest.c \
+		fpixcontours.c gammatest.c \
+		gifio_leaktest.c graphicstest.c graymorphtest.c \
 		histotest.c iotest.c italictest.c \
 		jbcorrelation.c jbrankhaus.c jbwords.c \
 		lineremoval.c listtest.c \
@@ -258,7 +262,7 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		writemtiff.c xtractprotos.c yuvtest.c
 
 #  Remove the .o files from these on clean
-SRC2 =		dwalinear.3.c dwalinearlow.3.c
+SRC2 =		autogen.137.c dwalinear.3.c dwalinearlow.3.c
 
 ######################################################################
 
@@ -464,6 +468,9 @@ fpix1_reg:	fpix1_reg.o $(LEPTLIB)
 fpix2_reg:	fpix2_reg.o $(LEPTLIB)
 	$(CC) -o fpix2_reg fpix2_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
+genfonts_reg:	genfonts_reg.o $(LEPTLIB)
+	$(CC) -o genfonts_reg genfonts_reg.o $(ALL_LIBS) $(EXTRALIBS)
+
 gifio_reg:	gifio_reg.o $(LEPTLIB)
 	$(CC) -o gifio_reg gifio_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -572,6 +579,9 @@ pixtile_reg:	pixtile_reg.o $(LEPTLIB)
 pngio_reg:	pngio_reg.o $(LEPTLIB)
 	$(CC) -o pngio_reg pngio_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
+pnmio_reg:	pnmio_reg.o $(LEPTLIB)
+	$(CC) -o pnmio_reg pnmio_reg.o $(ALL_LIBS) $(EXTRALIBS)
+
 projection_reg:	projection_reg.o $(LEPTLIB)
 	$(CC) -o projection_reg projection_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -650,6 +660,9 @@ string_reg:	string_reg.o $(LEPTLIB)
 subpixel_reg:	subpixel_reg.o $(LEPTLIB)
 	$(CC) -o subpixel_reg subpixel_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
+texturefill_reg:	texturefill_reg.o $(LEPTLIB)
+	$(CC) -o texturefill_reg texturefill_reg.o $(ALL_LIBS) $(EXTRALIBS)
+
 threshnorm_reg:	threshnorm_reg.o $(LEPTLIB)
 	$(CC) -o threshnorm_reg threshnorm_reg.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -683,6 +696,12 @@ arabic_lines:	arabic_lines.o $(LEPTLIB)
 arithtest:	arithtest.o $(LEPTLIB)
 	$(CC) -o arithtest arithtest.o $(ALL_LIBS) $(EXTRALIBS)
 
+autogentest1:	autogentest1.o $(LEPTLIB)
+	$(CC) -o autogentest1 autogentest1.o $(ALL_LIBS) $(EXTRALIBS)
+
+autogentest2:	autogentest2.o autogen.137.o $(LEPTLIB)
+	$(CC) -o autogentest2 autogentest2.o autogen.137.o $(ALL_LIBS) $(EXTRALIBS)
+
 barcodetest:	barcodetest.o $(LEPTLIB)
 	$(CC) -o barcodetest barcodetest.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -713,8 +732,8 @@ ccbordtest:	ccbordtest.o $(LEPTLIB)
 cctest1:	cctest1.o $(LEPTLIB)
 	$(CC) -o cctest1 cctest1.o $(ALL_LIBS) $(EXTRALIBS)
 
-colormasktest:	colormasktest.o $(LEPTLIB)
-	$(CC) -o colormasktest colormasktest.o $(ALL_LIBS) $(EXTRALIBS)
+cleanpdf:	cleanpdf.o $(LEPTLIB)
+	$(CC) -o cleanpdf cleanpdf.o $(ALL_LIBS) $(EXTRALIBS)
 
 colormorphtest:	colormorphtest.o $(LEPTLIB)
 	$(CC) -o colormorphtest colormorphtest.o $(ALL_LIBS) $(EXTRALIBS)
@@ -788,6 +807,9 @@ dewarptest3:	dewarptest3.o $(LEPTLIB)
 dewarptest4:	dewarptest4.o $(LEPTLIB)
 	$(CC) -o dewarptest4 dewarptest4.o $(ALL_LIBS) $(EXTRALIBS)
 
+dewarptest5:	dewarptest5.o $(LEPTLIB)
+	$(CC) -o dewarptest5 dewarptest5.o $(ALL_LIBS) $(EXTRALIBS)
+
 digitprep1:	digitprep1.o $(LEPTLIB)
 	$(CC) -o digitprep1 digitprep1.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -842,8 +864,8 @@ fpixcontours:	fpixcontours.o $(LEPTLIB)
 gammatest:	gammatest.o $(LEPTLIB)
 	$(CC) -o gammatest gammatest.o $(ALL_LIBS) $(EXTRALIBS)
 
-genfonts:	genfonts.o $(LEPTLIB)
-	$(CC) -o genfonts genfonts.o $(ALL_LIBS) $(EXTRALIBS)
+gifio_leaktest:	gifio_leaktest.o $(LEPTLIB)
+	$(CC) -o gifio_leaktest gifio_leaktest.o $(ALL_LIBS) $(EXTRALIBS)
 
 graphicstest:	graphicstest.o $(LEPTLIB)
 	$(CC) -o graphicstest graphicstest.o $(ALL_LIBS) $(EXTRALIBS)

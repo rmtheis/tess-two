@@ -75,7 +75,7 @@ L_BMF   *bmf;
     GenCleans("cavalerie.11.jpg", &index, 40, bmf);
 
         /* Write the nup files in /tmp/adapt2 */
-    convertToNUpFiles("/tmp/lept", "adapt_", 2, 1, 500, 6, 2, NULL, "adapt2");
+    convertToNUpFiles("/tmp/lept", "adapt_", 2, 1, 500, 6, 2, 0, "adapt2");
 
         /* Gather up into a pdf */
     L_INFO("Writing to /tmp/lept/adapt_cleaning.pdf\n", procName);

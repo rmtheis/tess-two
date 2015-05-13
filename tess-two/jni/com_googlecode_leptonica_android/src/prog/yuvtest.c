@@ -43,7 +43,7 @@ void AddTransformsYUV(PIXA *pixa, L_BMF *bmf, l_int32 yval);
 l_int32 main(int    argc,
              char **argv)
 {
-l_int32     size, i, rval, gval, bval, yval, uval, vval;
+l_int32     i, rval, gval, bval, yval, uval, vval;
 l_float32  *a[3], b[3];
 L_BMF      *bmf;
 PIX        *pixd;

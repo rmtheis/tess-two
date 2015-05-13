@@ -143,24 +143,23 @@ static l_int32 recogaTransferRch(L_RECOGA *recoga, L_RECOG *recog,
  *              &pixa (<optional return> images of identified components)
  *              &pixdb (<optional return> debug pix: inputs and best fits)
  *              debugsplit (1 returns pix split debugging images)
- *      Return: 0 if OK; 1 if more or less than nitems were found (a warning);
- *              2 on error.
+ *      Return: 0 if OK; 1 if nothing is found; 2 for other errors.
+ *              (Get a warning if nitems and the number found are both > 0,
+ *              but not equal to each other.)
  *
  *  Notes:
  *      (1) This filters the input pixa, looking for @nitems if requested.
  *          Set @nitems == 0 if you don't know how many chars to expect.
  *      (2) This bundles the filtered components into a pixa and calls
  *          recogIdentifyPixa().  If @nitems > 0, use @minw = -1 and
- *          @minh = -1 to remove all noise components.  If @nitems > 0
- *          and it doesn't agree with the number of filtered components
- *          in pixs, a warning is issued and a 1 is returned.
+ *          @minh = -1 to remove all noise components.
  *      (3) Set @minw = 0 and @minh = 0 to get all noise components.
  *          Set @minw > 0 and/or @minh > 0 to retain selected noise components.
  *          All noise components are recognized as an empty string with
  *          a score of 0.0.
- *      (4) An attempt is made to return 2-dimensional sorted arrays
- *          of (optional) images and boxes, which can then be used to
- *          aggregate identified characters into numbers or words.
+ *      (4) An attempt is made to order the (optionally) returned images
+ *          and boxes in 2-dimensional sorted order.  These can then
+ *          be used to aggregate identified characters into numbers or words.
  *          One typically wants the pixa, which contains a boxa of the
  *          extracted subimages.
  */
@@ -175,7 +174,7 @@ recogaIdentifyMultiple(L_RECOGA  *recoga,
                        PIX      **ppixdb,
                        l_int32    debugsplit)
 {
-l_int32   n, done, ret;
+l_int32   n, done;
 BOXA     *boxa;
 PIX      *pixb;
 PIXA     *pixa;
@@ -203,8 +202,8 @@ L_RECOG  *recog;
         pixb = pixClone(pixs);
 
         /* Noise removal and splitting of touching characters */
-    recogSplitIntoCharacters(recog, pixb, minw, minh, &boxa, &pixa, &naid,
-                             debugsplit);
+    recogSplitIntoCharacters(recog, pixb, minw, minh, &boxa, &pixa,
+                             &naid, debugsplit);
     pixDestroy(&pixb);
     if (!pixa || (n = pixaGetCount(pixa)) == 0) {
         pixaDestroy(&pixa);
@@ -214,11 +213,8 @@ L_RECOG  *recog;
         return 1;
     }
 
-    ret = 0;
-    if (nitems > 0 && n != nitems) {
+    if (nitems > 0 && n != nitems)
         L_WARNING("Expected %d items; found %d\n", procName, nitems, n);
-        ret = 1;
-    }
 
     recogaIdentifyPixa(recoga, pixa, naid, ppixdb);
     if (pboxa)
@@ -231,7 +227,7 @@ L_RECOG  *recog;
         pixaDestroy(&pixa);
 
     numaDestroy(&naid);
-    return ret;
+    return 0;
 }
 
 
@@ -248,8 +244,7 @@ L_RECOG  *recog;
  *              &pixa (<return> character images)
  *              &naid (<return> indices of components to identify)
  *              debug (1 for results written to pixadb_split)
- *
- *      Return: 0 if OK, 1 on error
+ *      Return: 0 if OK, 1 on error or if no components are returned
  *
  *  Notes:
  *      (1) This can be given an image that has an arbitrary number
@@ -295,11 +290,11 @@ PIX     *pix, *pix1, *pix2;
 
     PROCNAME("recogSplitIntoCharacters");
 
+    if (pboxa) *pboxa = NULL;
+    if (ppixa) *ppixa = NULL;
+    if (pnaid) *pnaid = NULL;
     if (!pboxa || !ppixa || !pnaid)
         return ERROR_INT("&boxa, &pixa and &naid not defined", procName, 1);
-    *pboxa = NULL;
-    *ppixa = NULL;
-    *pnaid = NULL;
     if (!recog)
         return ERROR_INT("recog not defined", procName, 1);
     if (!recog->train_done)
@@ -307,7 +302,7 @@ PIX     *pix, *pix1, *pix2;
     if (!pixs || pixGetDepth(pixs) != 1)
         return ERROR_INT("pixs not defined or not 1 bpp", procName, 1);
     pixZero(pixs, &empty);
-    if (empty) return 0;
+    if (empty) return 1;
 
         /* Small vertical close for consolidation.  Don't do a horizontal
          * closing, because it might join separate characters. */
@@ -341,7 +336,7 @@ PIX     *pix, *pix1, *pix2;
         boxaDestroy(&boxa1);
         boxaDestroy(&boxa3);
         L_WARNING("all components removed\n", procName);
-        return 0;
+        return 1;
     }
 
         /* Save everything and split the large non-noise components */
@@ -357,12 +352,16 @@ PIX     *pix, *pix1, *pix2;
             pix = pixClipRectangle(pixs, box, NULL);
             recogCorrelationBestRow(recog, pix, &boxat1, NULL, NULL,
                                     NULL, debug);
-            boxat2 = boxaTransform(boxat1, xoff, yoff, 1.0, 1.0);
-            boxaJoin(boxa2, boxat2, 0, -1);
-            boxaDestroy(&boxat1);
-            boxaDestroy(&boxat2);
             pixDestroy(&pix);
             boxDestroy(&box);
+            if (!boxat1) {
+              L_ERROR("boxat1 not found for component %d\n", procName, i);
+            } else {
+              boxat2 = boxaTransform(boxat1, xoff, yoff, 1.0, 1.0);
+              boxaJoin(boxa2, boxat2, 0, -1);
+              boxaDestroy(&boxat1);
+              boxaDestroy(&boxat2);
+            }
         }
     }
     boxaDestroy(&boxa1);
@@ -467,15 +466,15 @@ l_int32    iter;
     if (pnascore) *pnascore = NULL;
     if (pnaindex) *pnaindex = NULL;
     if (psachar) *psachar = NULL;
+    if (!pboxa)
+        return ERROR_INT("&boxa not defined", procName, 1);
+    *pboxa = NULL;
     if (!recog)
         return ERROR_INT("recog not defined", procName, 1);
     if (!pixs || pixGetDepth(pixs) != 1)
         return ERROR_INT("pixs not defined or not 1 bpp", procName, 1);
     if (pixGetWidth(pixs) < recog->minwidth_u - 4)
         return ERROR_INT("pixs too narrow", procName, 1);
-    if (!pboxa)
-        return ERROR_INT("&boxa not defined", procName, 1);
-    *pboxa = NULL;
     if (!recog->train_done)
         return ERROR_INT("training not finished", procName, 1);
 
@@ -641,15 +640,13 @@ PIX       *pix1, *pix2;
 
     PROCNAME("recogCorrelationBestChar");
 
-    if (ppixdb) *ppixdb = NULL;
     if (pindex) *pindex = 0;
     if (pcharstr) *pcharstr = NULL;
-    if (!pbox)
-        return ERROR_INT("&box not defined", procName, 1);
-    *pbox = NULL;
-    if (!pscore)
-        return ERROR_INT("&score not defined", procName, 1);
-    *pscore = 0.0;
+    if (ppixdb) *ppixdb = NULL;
+    if (pbox) *pbox = NULL;
+    if (pscore) *pscore = 0.0;
+    if (!pbox || !pscore)
+        return ERROR_INT("&box and &score not both defined", procName, 1);
     if (!recog)
         return ERROR_INT("recog not defined", procName, 1);
     if (!pixs || pixGetDepth(pixs) != 1)
@@ -987,7 +984,7 @@ recogIdentifyPixa(L_RECOG  *recog,
                   PIX     **ppixdb)
 {
 char      *text;
-l_int32    i, n, doit, index, depth;
+l_int32    i, n, doit, fail, index, depth;
 l_float32  score;
 NUMA      *naidt;
 PIX       *pix1, *pix2, *pix3;
@@ -1020,15 +1017,21 @@ L_RCH     *rch;
     depth = 1;
     for (i = 0; i < n; i++) {
         pix1 = pixaGetPix(pixa, i, L_CLONE);
+        pix2 = NULL;
+        fail = FALSE;
         numaGetIValue(naidt, i, &doit);
         if (!doit)
             recogSkipIdentify(recog);
         else if (!ppixdb)
-            recogIdentifyPix(recog, pix1, NULL);
+            fail = recogIdentifyPix(recog, pix1, NULL);
         else
-            recogIdentifyPix(recog, pix1, &pix2);
+            fail = recogIdentifyPix(recog, pix1, &pix2);
+        if (fail)
+            recogSkipIdentify(recog);
         if ((rch = recog->rch) == NULL) {
             L_ERROR("rch not found for char %d\n", procName, i);
+            pixDestroy(&pix1);
+            pixDestroy(&pix2);
             continue;
         }
         rchExtract(rch, NULL, NULL, &text, NULL, NULL, NULL, NULL);
@@ -1104,7 +1107,8 @@ PTA       *pta;
         recogAverageSamples(recog, 0);
 
         /* Binarize and crop to foreground if necessary */
-    pix0 = recogProcessToIdentify(recog, pixs, 0);
+    if ((pix0 = recogProcessToIdentify(recog, pixs, 0)) == NULL)
+        return ERROR_INT("no fg pixels in pix0", procName, 1);
 
         /* Do correlation at all positions within +-maxyshift of
          * the nominal centroid alignment. */
@@ -1624,7 +1628,8 @@ L_RCHA    *rchas, *rchad;
  *      Input:  recog (with LUT's pre-computed)
  *              pixs (typ. single character, possibly d > 1 and uncropped)
  *              pad (extra pixels added to left and right sides)
- *      Return: pixd (1 bpp, clipped to foreground), or null on error.
+ *      Return: pixd (1 bpp, clipped to foreground), or null if there
+ *                    are no fg pixels or on error.
  *
  *  Notes:
  *      (1) This is a lightweight operation to insure that the input
@@ -1646,7 +1651,7 @@ PIX     *pix1, *pix2, *pixd;
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
 
-    if (pixGetDepth(pixs) > 1)
+    if (pixGetDepth(pixs) != 1)
         pix1 = pixThresholdToBinary(pixs, recog->threshold);
     else
         pix1 = pixClone(pixs);
@@ -1655,8 +1660,11 @@ PIX     *pix1, *pix2, *pixd;
         pixClipToForeground(pix1, &pix2, NULL);
     else
         pix2 = pixClone(pix1);
-    pixd = pixAddBorderGeneral(pix2, pad, pad, 0, 0, 0);
     pixDestroy(&pix1);
+    if (!pix2)
+        return (PIX *)ERROR_PTR("no foreground pixels", procName, NULL);
+
+    pixd = pixAddBorderGeneral(pix2, pad, pad, 0, 0, 0);
     pixDestroy(&pix2);
     return pixd;
 }
@@ -1832,7 +1840,7 @@ l_float32  aspratio, fract;
 /*!
  *  recogaExtractNumbers()
  *
- *      Input:  recog
+ *      Input:  recoga
  *              boxas (location of components)
  *              scorethresh (min score for which we accept a component)
  *              spacethresh (max horizontal distance allowed between digits,
@@ -1842,21 +1850,24 @@ l_float32  aspratio, fract;
  *      Return: sa (of identified numbers), or null on error
  *
  *  Notes:
- *      (1) Each string in the returned sa contains a sequence of ascii
+ *      (1) This extracts digit data after recogaIdentifyMultiple() or
+ *          lower-level identification has taken place.
+ *      (2) Each string in the returned sa contains a sequence of ascii
  *          digits in a number.
- *      (2) The horizontal distance between boxes (limited by @spacethresh)
+ *      (3) The horizontal distance between boxes (limited by @spacethresh)
  *          is the negative of the horizontal overlap.
- *      (3) We allow two digits to be combined if these conditions apply:
+ *      (4) Components with a score less than @scorethresh, which may
+ *          be hyphens or other small characters, will signal the
+ *          end of the current sequence of digits in the number.  A typical
+ *          value for @scorethresh is 0.60.
+ *      (5) We allow two digits to be combined if these conditions apply:
  *            (a) the first is to the left of the second
  *            (b) the second has a horizontal separation less than @spacethresh
  *            (c) the vertical overlap >= 0 (vertical separation < 0)
  *            (d) both have a score that exceeds @scorethresh
- *      (4) Each numa in the optionally returned naa contains the digit
+ *      (6) Each numa in the optionally returned naa contains the digit
  *          scores of a number.  Each boxa in the optionally returned baa
  *          contains the bounding boxes of the digits in the number.
- *      (5) Components with a score less than @scorethresh, which may
- *          be hyphens or other small characters, will signal the
- *          end of the current sequence of digits in the number.
  */
 SARRAY *
 recogaExtractNumbers(L_RECOGA  *recoga,
@@ -1894,6 +1905,8 @@ SARRAY    *satext, *sa, *saout;
     }
     rchaExtract(recoga->rcha, NULL, &nascore, &satext, NULL, NULL, NULL, NULL);
     if (!nascore || !satext) {
+        numaDestroy(&nascore);
+        sarrayDestroy(&satext);
         return (SARRAY *)ERROR_PTR("nascore and satext not both returned",
                                    procName, NULL);
     }
@@ -1956,6 +1969,13 @@ SARRAY    *satext, *sa, *saout;
 
     numaDestroy(&nascore);
     sarrayDestroy(&satext);
+    if (sarrayGetCount(saout) == 0) {
+        sarrayDestroy(&saout);
+        boxaaDestroy(&baa);
+        numaaDestroy(&naa);
+        return (SARRAY *)ERROR_PTR("saout has no strings", procName, NULL);
+    }
+
     if (pbaa)
         *pbaa = baa;
     else

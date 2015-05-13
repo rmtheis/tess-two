@@ -874,6 +874,10 @@ numaGetParameters(NUMA       *na,
 {
     PROCNAME("numaGetParameters");
 
+    if (!pdelx && !pstartx)
+        return ERROR_INT("no return val requested", procName, 1);
+    if (pstartx) *pstartx = 0.0;
+    if (pdelx) *pdelx = 1.0;
     if (!na)
         return ERROR_INT("na not defined", procName, 1);
 

@@ -96,7 +96,7 @@
  *  For training numeric input, an example set of calls that scales
  *  each training input to (w, h) and will use the averaged
  *  templates for identifying unknown characters is:
- *         L_Recog  *rec = recogCreate(w, h, L_USE_AVERAGE, 128, 1, "fonts");
+ *         L_Recog  *rec = recogCreate(w, h, L_USE_AVERAGE, 128, 1);
  *         for (i = 0; i < n; i++) {  // read in n training digits
  *             Pix *pix = ...
  *             recogTrainLabelled(rec, pix, NULL, text[i], 0, 0);
@@ -118,7 +118,7 @@
  *
  *  If using all examples for identification, all scaled to (w, h),
  *  and with outliers removed, do something like this:
- *         L_Recog  *rec = recogCreate(w, h, L_USE_ALL, 128, 1, "fonts");
+ *         L_Recog  *rec = recogCreate(w, h, L_USE_ALL, 128, 1);
  *         for (i = 0; i < n; i++) {  // read in n training characters
  *             Pix *pix = ...
  *             recogTrainLabelled(rec, pix, NULL, text[i], 0, 0);
@@ -131,7 +131,7 @@
  *  pix is the character string:
  *
  *         L_Recog  *recboot = recogCreateFromPixa(pixa, w, h, L_USE_AVERAGE,
- *                                                 128, 1, "fonts");
+ *                                                 128, 1);
  *
  *  This is useful as a "bootstrap" recognizer for training a new
  *  recognizer (rec) on an unlabelled data set that has a different
@@ -141,7 +141,7 @@
  *  from a single source, like a book), call recogSetScaling() to
  *  regenerate all the scaled samples and averages:
  *
- *         L_Recog  *rec = recogCreate(w, h, L_USE_ALL, 128, 1, "fonts");
+ *         L_Recog  *rec = recogCreate(w, h, L_USE_ALL, 128, 1);
  *         for (i = 0; i < n; i++) {  // read in n training characters
  *             Pix *pix = ...
  *             recogTrainUnlabelled(rec, recboot, pix, NULL, 1, 0.75, 0);
@@ -206,7 +206,6 @@ L_RECOGA  *recoga;
  *              templ_type (L_USE_AVERAGE or L_USE_ALL)
  *              threshold (for binarization; typically ~128)
  *              maxyshift (from nominal centroid alignment; typically 0 or 1)
- *              fontdir  (<optional> directory for bitmap fonts for debugging)
  *      Return: recoga, or null on error
  *
  *  Notes:
@@ -225,8 +224,7 @@ recogaCreateFromPixaa(PIXAA       *paa,
                       l_int32      scaleh,
                       l_int32      templ_type,
                       l_int32      threshold,
-                      l_int32      maxyshift,
-                      const char  *fontdir)
+                      l_int32      maxyshift)
 {
 l_int32    n, i, full;
 L_RECOG   *recog;
@@ -248,7 +246,7 @@ PIXA      *pixa;
     for (i = 0; i < n; i++) {
         pixa = pixaaGetPixa(paa, i, L_CLONE);
         recog = recogCreateFromPixa(pixa, scalew, scaleh, templ_type,
-                                    threshold, maxyshift, fontdir);
+                                    threshold, maxyshift);
         recogaAddRecog(recoga, recog);
         pixaDestroy(&pixa);
     }
@@ -575,7 +573,6 @@ recogSetBootflag(L_RECOG  *recog)
  *              templ_type (L_USE_AVERAGE or L_USE_ALL)
  *              threshold (for binarization; typically ~128)
  *              maxyshift (from nominal centroid alignment; typically 0 or 1)
- *              fontdir  (<optional> directory for bitmap fonts for debugging)
  *      Return: recd, or null on error
  *
  *  Notes:
@@ -588,8 +585,7 @@ recogCreateFromRecog(L_RECOG     *recs,
                      l_int32      scaleh,
                      l_int32      templ_type,
                      l_int32      threshold,
-                     l_int32      maxyshift,
-                     const char  *fontdir)
+                     l_int32      maxyshift)
 {
 L_RECOG  *recd;
 PIXA     *pixa;
@@ -601,7 +597,7 @@ PIXA     *pixa;
 
     pixa = pixaaFlattenToPixa(recs->pixaa_u, NULL, L_CLONE);
     recd = recogCreateFromPixa(pixa, scalew, scaleh, templ_type, threshold,
-                               maxyshift, fontdir);
+                               maxyshift);
     pixaDestroy(&pixa);
     return recd;
 }
@@ -616,7 +612,6 @@ PIXA     *pixa;
  *              templ_type (L_USE_AVERAGE or L_USE_ALL)
  *              threshold (for binarization; typically ~128)
  *              maxyshift (from nominal centroid alignment; typically 0 or 1)
- *              fontdir  (<optional> directory for bitmap fonts for debugging)
  *      Return: recog, or null on error
  *
  *  Notes:
@@ -634,8 +629,7 @@ recogCreateFromPixa(PIXA        *pixa,
                     l_int32      scaleh,
                     l_int32      templ_type,
                     l_int32      threshold,
-                    l_int32      maxyshift,
-                    const char  *fontdir)
+                    l_int32      maxyshift)
 {
 char     *text;
 l_int32   full, n, i, ntext;
@@ -661,7 +655,7 @@ PIX      *pix;
         L_ERROR("%d text strings < %d pix\n", procName, ntext, n);
 
     recog = recogCreate(scalew, scaleh, templ_type, threshold,
-                        maxyshift, fontdir);
+                        maxyshift);
     if (!recog)
         return (L_RECOG *)ERROR_PTR("recog not made", procName, NULL);
     for (i = 0; i < n; i++) {
@@ -689,7 +683,6 @@ PIX      *pix;
  *              templ_type (L_USE_AVERAGE or L_USE_ALL)
  *              threshold (for binarization; typically ~128)
  *              maxyshift (from nominal centroid alignment; typically 0 or 1)
- *              fontdir  (<optional> directory for bitmap fonts for debugging)
  *      Return: recog, or null on error
  *
  *  Notes:
@@ -705,8 +698,7 @@ recogCreate(l_int32      scalew,
             l_int32      scaleh,
             l_int32      templ_type,
             l_int32      threshold,
-            l_int32      maxyshift,
-            const char  *fontdir)
+            l_int32      maxyshift)
 {
 L_RECOG  *recog;
 PIXA     *pixa;
@@ -730,11 +722,8 @@ PIXAA    *paa;
     recog->maxyshift = maxyshift;
     recog->asperity_fr = DEFAULT_ASPERITY_FRACT;
     recogSetPadParams(recog, NULL, NULL, NULL, -1, -1, -1);
-    if (fontdir) {
-        recog->fontdir = stringNew(fontdir);
-        recog->bmf = bmfCreate(fontdir, 6);
-        recog->bmf_size = 6;
-    }
+    recog->bmf = bmfCreate(NULL, 6);
+    recog->bmf_size = 6;
     recog->maxarraysize = MAX_EXAMPLES_IN_CLASS;
     recog->index = -1;
 
@@ -819,7 +808,6 @@ L_RECOG  *recog;
     pixDestroy(&recog->pixdb_range);
     pixaDestroy(&recog->pixadb_boot);
     pixaDestroy(&recog->pixadb_split);
-    FREE(recog->fontdir);
     bmfDestroy(&recog->bmf);
     rchDestroy(&recog->rch);
     rchaDestroy(&recog->rcha);
@@ -1127,7 +1115,7 @@ L_RECOGA  *recoga;
     if (!fp)
         return (L_RECOGA *)ERROR_PTR("stream not defined", procName, NULL);
 
-    if (fscanf(fp, "\nRecog Version %d\n", &version) != 1)
+    if (fscanf(fp, "\nRecoga Version %d\n", &version) != 1)
         return (L_RECOGA *)ERROR_PTR("not a recog file", procName, NULL);
     if (version != RECOG_VERSION_NUMBER)
         return (L_RECOGA *)ERROR_PTR("invalid recog version", procName, NULL);
@@ -1203,7 +1191,7 @@ L_RECOG  *recog;
     if (!recoga)
         return ERROR_INT("recoga not defined", procName, 1);
 
-    fprintf(fp, "\nRecog Version %d\n", RECOG_VERSION_NUMBER);
+    fprintf(fp, "\nRecoga Version %d\n", RECOG_VERSION_NUMBER);
     fprintf(fp, "Number of recognizers = %d\n\n", recoga->n);
 
     for (i = 0; i < recoga->n; i++) {
@@ -1339,7 +1327,7 @@ SARRAY   *sa_text;
     if (fscanf(fp, "Scale to height = %d\n", &scaleh) != 1)
         return (L_RECOG *)ERROR_PTR("height not read", procName, NULL);
     if ((recog = recogCreate(scalew, scaleh, templ_type, threshold,
-                             maxyshift, NULL)) == NULL)
+                             maxyshift)) == NULL)
         return (L_RECOG *)ERROR_PTR("recog not made", procName, NULL);
 
     if (fscanf(fp, "Serialized filename: %s\n", fname) != 1)

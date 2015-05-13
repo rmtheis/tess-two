@@ -99,9 +99,9 @@
 #define   TEMPLATE1       "morphtemplate1.txt"
 #define   TEMPLATE2       "morphtemplate2.txt"
 
-#define   BUFFER_SIZE     512
-
 #define   PROTOARGS   "(l_uint32 *, l_int32, l_int32, l_int32, l_uint32 *, l_int32);"
+
+static const l_int32  L_BUF_SIZE = 512;
 
 static char * makeBarrelshiftString(l_int32 delx, l_int32 dely);
 static SARRAY * sarrayMakeInnerLoopDWACode(SEL *sel, l_int32 index);
@@ -284,7 +284,7 @@ char    *str_doc1, *str_doc2, *str_doc3, *str_doc4;
 char    *str_def1, *str_def2, *str_proc1, *str_proc2;
 char    *str_dwa1, *str_low_dt, *str_low_ds, *str_low_ts;
 char    *str_low_tsp1, *str_low_dtp1;
-char     bigbuf[BUFFER_SIZE];
+char     bigbuf[L_BUF_SIZE];
 l_int32  i, nsels, nbytes, actstart, end, newstart;
 size_t   size;
 SARRAY  *sa1, *sa2, *sa3;
@@ -339,7 +339,7 @@ SARRAY  *sa1, *sa2, *sa3;
     str_proc2 = stringNew(bigbuf);
     sprintf(bigbuf,
             "    pixt2 = pixFMorphopGen_%d(NULL, pixt1, operation, selname);",
-	    fileindex);
+            fileindex);
     str_dwa1 = stringNew(bigbuf);
     sprintf(bigbuf,
       "            fmorphopgen_low_%d(datad, w, h, wpld, datat, wpls, index);",
@@ -489,7 +489,7 @@ fmorphautogen2(SELA        *sela,
 {
 char    *filestr, *linestr, *fname;
 char    *str_doc1, *str_doc2, *str_doc3, *str_doc4, *str_def1;
-char     bigbuf[BUFFER_SIZE];
+char     bigbuf[L_BUF_SIZE];
 char     breakstring[] = "        break;";
 char     staticstring[] = "static void";
 l_int32  i, nsels, nbytes, actstart, end, newstart;
@@ -605,7 +605,7 @@ SEL     *sel;
 
         /* Do all the static functions */
     for (i = 0; i < 2 * nsels; i++) {
-	    /* Generate the function header and add the common args */
+            /* Generate the function header and add the common args */
         sarrayAddString(sa4, staticstring, L_COPY);
         fname = sarrayGetString(sa2, i, L_NOCOPY);
         sprintf(bigbuf, "%s(l_uint32  *datad,", fname);
@@ -620,7 +620,7 @@ SEL     *sel;
         sarrayConcatenate(sa4, sa5);
         sarrayDestroy(&sa5);
 
-	    /* Add the function loop code */
+            /* Add the function loop code */
         sarrayAppendRange(sa4, sa1, loopstart, loopend);
 
             /* Insert barrel-op code for *dptr */
@@ -629,7 +629,7 @@ SEL     *sel;
         sarrayConcatenate(sa4, sa6);
         sarrayDestroy(&sa6);
 
-	    /* Finish the function code */
+            /* Finish the function code */
         sarrayAppendRange(sa4, sa1, finalstart, finalend);
     }
 
@@ -694,7 +694,7 @@ SARRAY  *sa;
     for (i = 0; i < ymax; i++) {
         if (vshift[i] == 0) {
             allvshifts = FALSE;
-	    break;
+            break;
         }
     }
 
@@ -748,7 +748,7 @@ sarrayMakeInnerLoopDWACode(SEL     *sel,
 char    *tstr, *string;
 char     logicalor[] = "|";
 char     logicaland[] = "&";
-char     bigbuf[BUFFER_SIZE];
+char     bigbuf[L_BUF_SIZE];
 l_int32  i, j, optype, count, nfound, delx, dely;
 SARRAY  *sa;
 
@@ -822,7 +822,7 @@ makeBarrelshiftString(l_int32  delx,    /* j - cx */
                       l_int32  dely)    /* i - cy */
 {
 l_int32  absx, absy;
-char     bigbuf[BUFFER_SIZE];
+char     bigbuf[L_BUF_SIZE];
 
     PROCNAME("makeBarrelshiftString");
 

@@ -879,6 +879,10 @@ l_dnaGetParameters(L_DNA     *da,
 {
     PROCNAME("l_dnaGetParameters");
 
+    if (pstartx) *pstartx = 0.0;
+    if (pdelx) *pdelx = 1.0;
+    if (!pstartx && !pdelx)
+        return ERROR_INT("neither &startx nor &delx are defined", procName, 1);
     if (!da)
         return ERROR_INT("da not defined", procName, 1);
 

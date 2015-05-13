@@ -30,6 +30,8 @@
  *  This regresstion test demonstrates the detection of red highlight
  *  color in an image, and the generation of a colormapped version
  *  with clean background and colorized highlighting.
+ *
+ *  The input image is rgb.  Other examples are breviar.32 and amoris.2.
  */
 
 #include "allheaders.h"
@@ -55,8 +57,7 @@ L_REGPARAMS  *rp;
               return 1;
 
     pixa = pixaCreate(0);
-    pixs = pixRead("breviar38.150.jpg");
-/*    pixs = pixRead("breviar32.150.jpg"); */
+    pixs = pixRead("breviar.38.150.jpg");
     pixaAddPix(pixa, pixs, L_CLONE);
     regTestWritePixAndCheck(rp, pixs, IFF_JFIF_JPEG);  /* 0 */
     pixDisplayWithTitle(pixs, 0, 0, "Input image", rp->display);
@@ -124,33 +125,23 @@ L_REGPARAMS  *rp;
     pixDisplayWithTitle(pix7, 400, 600, "Red component mask filled",
                         rp->display);
 
-        /* Remove long horizontal and vertical lines from the filled result */
-    pix9 = pixMorphSequence(pix7, "o40.1", 0);
-    pixSubtract(pix7, pix7, pix9);  /* remove long horizontal lines */
-    pixDestroy(&pix9);
-    pix9 = pixMorphSequence(pix7, "o1.40", 0);
-    pixSubtract(pix7, pix7, pix9);  /* remove long vertical lines */
-
-        /* Close the regions to be colored  */
-    pix10 = pixMorphSequence(pix7, "c5.1", 0);
-    pixaAddPix(pixa, pix10, L_CLONE);
-    regTestWritePixAndCheck(rp, pix10, IFF_PNG);  /* 8 */
-    pixDisplayWithTitle(pix10, 600, 600,
+        /* Small closing on regions to be colored  */
+    pix9 = pixMorphSequence(pix7, "c5.1", 0);
+    pixaAddPix(pixa, pix9, L_CLONE);
+    regTestWritePixAndCheck(rp, pix9, IFF_PNG);  /* 8 */
+    pixDisplayWithTitle(pix9, 600, 600,
                         "Components defining regions allowing coloring",
                         rp->display);
 
         /* Sanity check on amount to be colored.  Only accept images
          * with less than 10% of all the pixels with highlight color */
-    pixForegroundFraction(pix10, &fgfract);
+    pixForegroundFraction(pix9, &fgfract);
     if (fgfract >= 0.10) {
         L_INFO("too much highlighting: fract = %6.3f; removing it\n",
                rp->testname, fgfract);
-        pixClearAll(pix10);
-        pixSetPixel(pix10, 0, 0, 1);
+        pixClearAll(pix9);
+        pixSetPixel(pix9, 0, 0, 1);
     }
-
-        /* Get the bounding boxes of the regions to be colored */
-    boxa = pixConnCompBB(pix10, 8);
 
         /* Get a color to paint that is representative of the
          * actual highlight color in the image.  Scale each
@@ -165,37 +156,46 @@ L_REGPARAMS  *rp;
     ibval = lept_roundftoi(fract * bval / 2.0);
     fprintf(stderr, "(r,g,b) = (%d,%d,%d)\n", irval, igval, ibval);
 
-        /* Color the quantized gray version in the selected regions */
-    pix11 = pixColorGrayRegions(pix3, boxa, L_PAINT_DARK, 220, irval,
-                                igval, ibval);
-    pixaAddPix(pixa, pix11, L_CLONE);
-    regTestWritePixAndCheck(rp, pix11, IFF_PNG);  /* 9 */
-    pixDisplayWithTitle(pix11, 800, 600, "Final colored result", rp->display);
+        /* Test mask-based colorization on gray and cmapped gray */
+    pix10 = pixColorGrayMasked(pix2, pix9, L_PAINT_DARK, 225,
+                                irval, igval, ibval);
+    pixaAddPix(pixa, pix10, L_CLONE);
+    regTestWritePixAndCheck(rp, pix10, IFF_PNG);  /* 9 */
+    pixDisplayWithTitle(pix10, 800, 600, "Colorize mask gray", rp->display);
     pixaAddPix(pixa, pixs, L_CLONE);
 
-        /* Test colorization on gray and cmapped gray */
+    pix11 = pixColorGrayMasked(pix3, pix9, L_PAINT_DARK, 225,
+                               irval, igval, ibval);
+    pixaAddPix(pixa, pix11, L_CLONE);
+    regTestWritePixAndCheck(rp, pix11, IFF_PNG);  /* 10 */
+    pixDisplayWithTitle(pix11, 900, 600, "Colorize mask cmapped", rp->display);
+
+        /* Get the bounding boxes of the mask components to be colored */
+    boxa = pixConnCompBB(pix9, 8);
+
+        /* Test region colorization on gray and cmapped gray */
     pix12 = pixColorGrayRegions(pix2, boxa, L_PAINT_DARK, 220, 0, 255, 0);
     pixaAddPix(pixa, pix12, L_CLONE);
-    regTestWritePixAndCheck(rp, pix12, IFF_PNG);  /* 10 */
-    pixDisplayWithTitle(pix12, 900, 600, "Colorizing boxa gray", rp->display);
+    regTestWritePixAndCheck(rp, pix12, IFF_PNG);  /* 11 */
+    pixDisplayWithTitle(pix12, 900, 600, "Colorize boxa gray", rp->display);
 
     box = boxCreate(200, 200, 250, 350);
     pix13 = pixCopy(NULL, pix2);
     pixColorGray(pix13, box, L_PAINT_DARK, 220, 0, 0, 255);
     pixaAddPix(pixa, pix13, L_CLONE);
-    regTestWritePixAndCheck(rp, pix13, IFF_PNG);  /* 11 */
-    pixDisplayWithTitle(pix13, 1000, 600, "Colorizing box gray", rp->display);
+    regTestWritePixAndCheck(rp, pix13, IFF_PNG);  /* 12 */
+    pixDisplayWithTitle(pix13, 1000, 600, "Colorize box gray", rp->display);
 
     pix14 = pixThresholdTo4bpp(pix2, 6, 1);
     pix15 = pixColorGrayRegions(pix14, boxa, L_PAINT_DARK, 220, 0, 0, 255);
     pixaAddPix(pixa, pix15, L_CLONE);
-    regTestWritePixAndCheck(rp, pix15, IFF_PNG);  /* 12 */
-    pixDisplayWithTitle(pix15, 1100, 600, "Colorizing boxa cmap", rp->display);
+    regTestWritePixAndCheck(rp, pix15, IFF_PNG);  /* 13 */
+    pixDisplayWithTitle(pix15, 1100, 600, "Colorize boxa cmap", rp->display);
 
     pixColorGrayCmap(pix14, box, L_PAINT_DARK, 0, 255, 255);
     pixaAddPix(pixa, pix14, L_CLONE);
-    regTestWritePixAndCheck(rp, pix14, IFF_PNG);  /* 13 */
-    pixDisplayWithTitle(pix14, 1200, 600, "Colorizing box cmap", rp->display);
+    regTestWritePixAndCheck(rp, pix14, IFF_PNG);  /* 14 */
+    pixDisplayWithTitle(pix14, 1200, 600, "Colorize box cmap", rp->display);
     boxDestroy(&box);
 
         /* Generate a pdf of the intermediate results */
@@ -229,19 +229,19 @@ L_REGPARAMS  *rp;
         /* Test the color detector */
     pixa = pixaCreate(7);
     bmf = bmfCreate("./fonts", 4);
-    pix1 = TestForRedColor(rp, "brev06.75.jpg", 1, bmf);  /* 14 */
+    pix1 = TestForRedColor(rp, "brev.06.75.jpg", 1, bmf);  /* 14 */
     pixaAddPix(pixa, pix1, L_INSERT);
-    pix1 = TestForRedColor(rp, "brev10.75.jpg", 0, bmf);  /* 15 */
+    pix1 = TestForRedColor(rp, "brev.10.75.jpg", 0, bmf);  /* 15 */
     pixaAddPix(pixa, pix1, L_INSERT);
-    pix1 = TestForRedColor(rp, "brev14.75.jpg", 1, bmf);  /* 16 */
+    pix1 = TestForRedColor(rp, "brev.14.75.jpg", 1, bmf);  /* 16 */
     pixaAddPix(pixa, pix1, L_INSERT);
-    pix1 = TestForRedColor(rp, "brev20.75.jpg", 1, bmf);  /* 17 */
+    pix1 = TestForRedColor(rp, "brev.20.75.jpg", 1, bmf);  /* 17 */
     pixaAddPix(pixa, pix1, L_INSERT);
-    pix1 = TestForRedColor(rp, "brev36.75.jpg", 0, bmf);  /* 18 */
+    pix1 = TestForRedColor(rp, "brev.36.75.jpg", 0, bmf);  /* 18 */
     pixaAddPix(pixa, pix1, L_INSERT);
-    pix1 = TestForRedColor(rp, "brev53.75.jpg", 1, bmf);  /* 19 */
+    pix1 = TestForRedColor(rp, "brev.53.75.jpg", 1, bmf);  /* 19 */
     pixaAddPix(pixa, pix1, L_INSERT);
-    pix1 = TestForRedColor(rp, "brev56.75.jpg", 1, bmf);  /* 20 */
+    pix1 = TestForRedColor(rp, "brev.56.75.jpg", 1, bmf);  /* 20 */
     pixaAddPix(pixa, pix1, L_INSERT);
 
         /* Generate a pdf of the color detector results */

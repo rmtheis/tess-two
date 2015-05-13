@@ -79,11 +79,6 @@
  *          l_int32              getResLetterPage()
  *          l_int32              getResA4Page()
  *
- *     Utility for encoding and decoding data with ascii85
- *          char                *encodeAscii85()
- *          static l_int32      *convertChunkToAscii85()
- *          l_uint8             *decodeAscii85()
- *
  *     Setting flag for writing bounding box hint
  *          void                 l_psWriteBoundingBox()
  *
@@ -104,7 +99,6 @@ static const l_int32  L_BUF_SIZE = 512;
 static const l_int32  DEFAULT_INPUT_RES   = 300;  /* typical scan res, ppi */
 static const l_int32  MIN_RES             = 5;
 static const l_int32  MAX_RES             = 3000;
-static const l_int32  MAX_85_LINE_COUNT   = 64;  /* max line length ascii85 */
 
     /* For computing resolution that fills page to desired amount */
 static const l_int32  LETTER_WIDTH            = 612;   /* points */
@@ -112,16 +106,6 @@ static const l_int32  LETTER_HEIGHT           = 792;   /* points */
 static const l_int32  A4_WIDTH                = 595;   /* points */
 static const l_int32  A4_HEIGHT               = 842;   /* points */
 static const l_float32  DEFAULT_FILL_FRACTION = 0.95;
-
-static const l_uint32  power85[5] = {1,
-                                     85,
-                                     85 * 85,
-                                     85 * 85 * 85,
-                                     85 * 85 * 85 * 85};
-
-static l_int32  convertChunkToAscii85(l_uint8 *inarray, l_int32 insize,
-                                      l_int32 *pindex, char *outbuf,
-                                      l_int32 *pnbout);
 
 #ifndef  NO_CONSOLE_IO
 #define  DEBUG_JPEG       0
@@ -1964,237 +1948,6 @@ l_int32  resw, resh, res;
     resh = (l_int32)((h * 72.) / (A4_HEIGHT * fillfract));
     res = L_MAX(resw, resh);
     return res;
-}
-
-
-
-/*-------------------------------------------------------------*
- *      Utility for encoding and decoding data with ascii85    *
- *-------------------------------------------------------------*/
-/*!
- *  encodeAscii85()
- *
- *      Input:  inarray (input data)
- *              insize (number of bytes in input array)
- *              &outsize (<return> number of bytes in output char array)
- *      Return: chara (with 64 characters + \n in each line)
- *
- *  Notes:
- *      (1) Ghostscript has a stack break if the last line of
- *          data only has a '>', so we avoid the problem by
- *          always putting '~>' on the last line.
- */
-char *
-encodeAscii85(l_uint8  *inarray,
-              l_int32   insize,
-              l_int32  *poutsize)
-{
-char    *chara;
-char    *outbuf;
-l_int32  maxsize, i, index, outindex, linecount, nbout, eof;
-
-    PROCNAME("encodeAscii85");
-
-    if (!inarray)
-        return (char *)ERROR_PTR("inarray not defined", procName, NULL);
-
-        /* Accumulate results in char array */
-    maxsize = (l_int32)(80. + (insize * 5. / 4.) *
-                        (1. + 2. / MAX_85_LINE_COUNT));
-    if ((chara = (char *)CALLOC(maxsize, sizeof(char))) == NULL)
-        return (char *)ERROR_PTR("chara not made", procName, NULL);
-
-    if ((outbuf = (char *)CALLOC(8, sizeof(char))) == NULL)
-        return (char *)ERROR_PTR("outbuf not made", procName, NULL);
-
-    linecount = 0;
-    index = 0;
-    outindex = 0;
-    while (1) {
-        eof = convertChunkToAscii85(inarray, insize, &index, outbuf, &nbout);
-        for (i = 0; i < nbout; i++) {
-            chara[outindex++] = outbuf[i];
-            linecount++;
-            if (linecount >= MAX_85_LINE_COUNT) {
-                chara[outindex++] = '\n';
-                linecount = 0;
-            }
-        }
-        if (eof == TRUE) {
-            if (linecount != 0)
-                chara[outindex++] = '\n';
-            chara[outindex++] = '~';
-            chara[outindex++] = '>';
-            chara[outindex++] = '\n';
-            break;
-        }
-    }
-
-    FREE(outbuf);
-    *poutsize = outindex;
-    return chara;
-}
-
-
-/*!
- *  convertChunkToAscii85()
- *
- *      Input:  inarray (input data)
- *              insize  (number of bytes in input array)
- *              &index (use and <return> -- ptr)
- *              outbuf (holds 8 ascii chars; we use no more than 7)
- *              &nbsout (<return> number of bytes written to outbuf)
- *      Return: boolean for eof (0 if more data, 1 if end of file)
- *
- *  Notes:
- *      (1) Attempts to read 4 bytes and write 5.
- *      (2) Writes 1 byte if the value is 0.
- */
-static l_int32
-convertChunkToAscii85(l_uint8  *inarray,
-                      l_int32   insize,
-                      l_int32  *pindex,
-                      char     *outbuf,
-                      l_int32  *pnbout)
-{
-l_uint8   inbyte;
-l_uint32  inword, val;
-l_int32   eof, index, nread, nbout, i;
-
-    eof = FALSE;
-    index = *pindex;
-    nread = L_MIN(4, (insize - index));
-    if (insize == index + nread)
-        eof = TRUE;
-    *pindex += nread;  /* save new index */
-
-        /* Read input data and save in l_uint32 */
-    inword = 0;
-    for (i = 0; i < nread; i++) {
-        inbyte = inarray[index + i];
-        inword += inbyte << (8 * (3 - i));
-    }
-
-#if 0
-    fprintf(stderr, "index = %d, nread = %d\n", index, nread);
-    fprintf(stderr, "inword = %x\n", inword);
-    fprintf(stderr, "eof = %d\n", eof);
-#endif
-
-        /* Special case: output 1 byte only */
-    if (inword == 0) {
-        outbuf[0] = 'z';
-        nbout = 1;
-    } else { /* output nread + 1 bytes */
-        for (i = 4; i >= 4 - nread; i--) {
-            val = inword / power85[i];
-            outbuf[4 - i] = (l_uint8)(val + '!');
-            inword -= val * power85[i];
-        }
-        nbout = nread + 1;
-    }
-    *pnbout = nbout;
-
-    return eof;
-}
-
-
-/*!
- *  decodeAscii85()
- *
- *      Input:  inarray (ascii85 input data)
- *              insize (number of bytes in input array)
- *              &outsize (<return> number of bytes in output l_uint8 array)
- *      Return: outarray (binary)
- *
- *  Notes:
- *      (1) We assume the data is properly encoded, so we do not check
- *          for invalid characters or the final '>' character.
- *      (2) We permit whitespace to be added to the encoding in an
- *          arbitrary way.
- */
-l_uint8 *
-decodeAscii85(char     *ina,
-              l_int32   insize,
-              l_int32  *poutsize)
-{
-char      inc;
-char     *pin;
-l_uint8   val;
-l_uint8  *outa;
-l_int32   maxsize, ocount, bytecount, index;
-l_uint32  oword;
-
-    PROCNAME("decodeAscii85");
-
-    if (!ina)
-        return (l_uint8 *)ERROR_PTR("ina not defined", procName, NULL);
-
-        /* Accumulate results in outa */
-    maxsize = (l_int32)(80. + (insize * 4. / 5.));  /* plenty big */
-    if ((outa = (l_uint8 *)CALLOC(maxsize, sizeof(l_uint8))) == NULL)
-        return (l_uint8 *)ERROR_PTR("outa not made", procName, NULL);
-
-    pin = ina;
-    ocount = 0;  /* byte index into outa */
-    oword = 0;
-    for (index = 0, bytecount = 0; index < insize; index++, pin++) {
-        inc = *pin;
-
-        if (inc == ' ' || inc == '\t' || inc == '\n' ||
-            inc == '\f' || inc == '\r' || inc == '\v')  /* ignore white space */
-            continue;
-
-        val = inc - '!';
-        if (val < 85) {
-            oword = oword * 85 + val;
-            if (bytecount < 4) {
-                bytecount++;
-            } else {  /* we have all 5 input chars for the oword */
-                outa[ocount] = (oword >> 24) & 0xff;
-                outa[ocount + 1] = (oword >> 16) & 0xff;
-                outa[ocount + 2] = (oword >> 8) & 0xff;
-                outa[ocount + 3] = oword & 0xff;
-                ocount += 4;
-                bytecount = 0;
-                oword = 0;
-            }
-        } else if (inc == 'z' && bytecount == 0) {
-            outa[ocount] = 0;
-            outa[ocount + 1] = 0;
-            outa[ocount + 2] = 0;
-            outa[ocount + 3] = 0;
-            ocount += 4;
-        } else if (inc == '~') {  /* end of data */
-            fprintf(stderr, " %d extra bytes output\n", bytecount - 1);
-            switch (bytecount) {
-            case 0:   /* normal eof */
-            case 1:   /* error */
-                break;
-            case 2:   /* 1 extra byte */
-                oword = oword * (85 * 85 * 85) + 0xffffff;
-                outa[ocount] = (oword >> 24) & 0xff;
-                break;
-            case 3:   /* 2 extra bytes */
-                oword = oword * (85 * 85) + 0xffff;
-                outa[ocount] = (oword >> 24) & 0xff;
-                outa[ocount + 1] = (oword >> 16) & 0xff;
-                break;
-            case 4:   /* 3 extra bytes */
-                oword = oword * 85 + 0xff;
-                outa[ocount] = (oword >> 24) & 0xff;
-                outa[ocount + 1] = (oword >> 16) & 0xff;
-                outa[ocount + 2] = (oword >> 8) & 0xff;
-                break;
-            }
-            if (bytecount > 1)
-                ocount += (bytecount - 1);
-            break;
-        }
-    }
-    *poutsize = ocount;
-
-    return outa;
 }
 
 

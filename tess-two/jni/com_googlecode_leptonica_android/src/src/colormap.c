@@ -52,9 +52,11 @@
  *           l_int32     pixcmapGetRGBA()
  *           l_int32     pixcmapGetRGBA32()
  *           l_int32     pixcmapResetColor()
+ *           l_int32     pixcmapSetAlpha()
  *           l_int32     pixcmapGetIndex()
  *           l_int32     pixcmapHasColor()
  *           l_int32     pixcmapIsOpaque()
+ *           l_int32     pixcmapIsBlackAndWhite()
  *           l_int32     pixcmapCountGrayColors()
  *           l_int32     pixcmapGetRankIntensity()
  *           l_int32     pixcmapGetNearestIndex()
@@ -67,7 +69,9 @@
  *           PIXCMAP    *pixcmapColorToGray()
  *
  *      Colormap I/O
+ *           l_int32     pixcmapRead()
  *           l_int32     pixcmapReadStream()
+ *           l_int32     pixcmapWrite()
  *           l_int32     pixcmapWriteStream()
  *
  *      Extract colormap arrays and serialization
@@ -842,6 +846,40 @@ RGBA_QUAD  *cta;
 
 
 /*!
+ *  pixcmapSetAlpha()
+ *
+ *      Input:  cmap
+ *              index
+ *              aval (in range [0, ... 255])
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This modifies the transparency of one entry in a colormap.
+ *          The alpha component by default is 255 (opaque).
+ *          This is used when extracting the colormap from a PNG file
+ *          without decoding the image.
+ */
+l_int32
+pixcmapSetAlpha(PIXCMAP  *cmap,
+                l_int32   index,
+                l_int32   aval)
+{
+RGBA_QUAD  *cta;
+
+    PROCNAME("pixcmapSetAlpha");
+
+    if (!cmap)
+        return ERROR_INT("cmap not defined", procName, 1);
+    if (index < 0 || index >= cmap->n)
+        return ERROR_INT("index out of bounds", procName, 1);
+
+    cta = (RGBA_QUAD *)cmap->array;
+    cta[index].alpha = aval;
+    return 0;
+}
+
+
+/*!
  *  pixcmapGetIndex()
  *
  *      Input:  cmap
@@ -951,6 +989,43 @@ RGBA_QUAD  *cta;
             break;
         }
     }
+    return 0;
+}
+
+
+/*!
+ *  pixcmapIsBlackAndWhite()
+ *
+ *      Input:  cmap
+ *              &blackwhite (<return> TRUE if the cmap has only two colors:
+ *                           black (0,0,0) and white (255,255,255))
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+pixcmapIsBlackAndWhite(PIXCMAP  *cmap,
+                       l_int32  *pblackwhite)
+{
+l_int32     val0, val1, hascolor;
+RGBA_QUAD  *cta;
+
+    PROCNAME("pixcmapIsBlackAndWhite");
+
+    if (!pblackwhite)
+        return ERROR_INT("&blackwhite not defined", procName, 1);
+    *pblackwhite = FALSE;
+    if (!cmap)
+        return ERROR_INT("cmap not defined", procName, 1);
+    if (pixcmapGetCount(cmap) != 2)
+        return 0;
+
+    pixcmapHasColor(cmap, &hascolor);
+    if (hascolor) return 0;
+
+    cta = (RGBA_QUAD *)cmap->array;
+    val0 = cta[0].red;
+    val1 = cta[1].red;
+    if ((val0 == 0 && val1 == 255) || (val0 == 255 && val1 == 0))
+        *pblackwhite = TRUE;
     return 0;
 }
 
@@ -1353,6 +1428,35 @@ PIXCMAP   *cmapd;
  *                         Colormap I/O                        *
  *-------------------------------------------------------------*/
 /*!
+ *  pixcmapRead()
+ *
+ *      Input:  filename
+ *      Return: cmap, or null on error
+ */
+PIXCMAP *
+pixcmapRead(const char  *filename)
+{
+FILE     *fp;
+PIXCMAP  *cmap;
+
+    PROCNAME("pixcmapRead");
+
+    if (!filename)
+        return (PIXCMAP *)ERROR_PTR("filename not defined", procName, NULL);
+    if ((fp = fopenReadStream(filename)) == NULL)
+        return (PIXCMAP *)ERROR_PTR("stream not opened", procName, NULL);
+
+    if ((cmap = pixcmapReadStream(fp)) == NULL) {
+        fclose(fp);
+        return (PIXCMAP *)ERROR_PTR("cmap not read", procName, NULL);
+    }
+
+    fclose(fp);
+    return cmap;
+}
+
+
+/*!
  *  pixcmapReadStream()
  *
  *      Input:  stream
@@ -1390,6 +1494,37 @@ PIXCMAP  *cmap;
 
     return cmap;
 }
+
+
+/*!
+ *  pixcmapWrite()
+ *
+ *      Input:  filename
+ *              cmap
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+pixcmapWrite(const char  *filename,
+             PIXCMAP     *cmap)
+{
+FILE  *fp;
+
+    PROCNAME("pixcmapWrite");
+
+    if (!filename)
+        return ERROR_INT("filename not defined", procName, 1);
+    if (!cmap)
+        return ERROR_INT("cmap not defined", procName, 1);
+
+    if ((fp = fopenWriteStream(filename, "w")) == NULL)
+        return ERROR_INT("stream not opened", procName, 1);
+    if (pixcmapWriteStream(fp, cmap))
+        return ERROR_INT("cmap not written to stream", procName, 1);
+    fclose(fp);
+
+    return 0;
+}
+
 
 
 /*!

@@ -58,10 +58,10 @@ PIX        *pixs2, *pixn2, *pixg2, *pixb2, *pixd2;
         /* Run the basic functions */
     dewa = dewarpaCreate(2, 30, 1, 10, 30);
     dewarpaUseBothArrays(dewa, 1);
-    dew1 = dewarpCreate(pixb, 10);
+    dew1 = dewarpCreate(pixb, 35);
     dewarpaInsertDewarp(dewa, dew1);
     dewarpBuildPageModel(dew1, "/tmp/lept/dewarp_model1.pdf");
-    dewarpaApplyDisparity(dewa, 10, pixg, 200, 0, 0, &pixd,
+    dewarpaApplyDisparity(dewa, 35, pixg, 200, 0, 0, &pixd,
                           "/tmp/lept/dewarp_apply1.pdf");
 
          /* Write out some of the files to be imaged */
@@ -117,11 +117,11 @@ PIX        *pixs2, *pixn2, *pixg2, *pixb2, *pixd2;
     pixb2 = pixThresholdToBinary(pixg2, 130);
 
         /* Apply the previous disparity model to this image */
-    dew2 = dewarpCreate(pixb2, 14);
+    dew2 = dewarpCreate(pixb2, 7);
     dewarpaInsertDewarp(dewa, dew2);
     dewarpaInsertRefModels(dewa, 0, 1);
     dewarpaInfo(stderr, dewa);
-    dewarpaApplyDisparity(dewa, 14, pixg2, 200, 0, 0, &pixd2,
+    dewarpaApplyDisparity(dewa, 7, pixg2, 200, 0, 0, &pixd2,
                           "/tmp/lept/dewarp_apply2.pdf");
     dewarpaDestroy(&dewa);
 

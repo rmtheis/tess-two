@@ -35,6 +35,9 @@
  *     binarize.c:    special binarization methods, locally adaptive.
  *  ===================================================================
  *
+ *      Clean background to white using background normalization
+ *          PIX       *pixCleanBackgroundToWhite()
+ *
  *      Adaptive background normalization (top-level functions)
  *          PIX       *pixBackgroundNormSimple()     8 and 32 bpp
  *          PIX       *pixBackgroundNorm()           8 and 32 bpp
@@ -150,6 +153,54 @@ static l_int32 *iaaGetLinearTRC(l_int32 **iaa, l_int32 diff);
 #ifndef  NO_CONSOLE_IO
 #define  DEBUG_GLOBAL    0
 #endif  /* ~NO_CONSOLE_IO */
+
+
+/*------------------------------------------------------------------*
+ *      Clean background to white using background normalization    *
+ *------------------------------------------------------------------*/
+/*!
+ *  pixCleanBackgroundToWhite()
+ *
+ *      Input:  pixs (8 bpp grayscale or 32 bpp rgb)
+ *              pixim (<optional> 1 bpp 'image' mask; can be null)
+ *              pixg (<optional> 8 bpp grayscale version; can be null)
+ *              gamma (gamma correction; must be > 0.0; typically ~1.0)
+ *              blackval (dark value to set to black (0))
+ *              whiteval (light value to set to white (255))
+ *      Return: pixd (8 bpp or 32 bpp rgb), or null on error
+ *
+ *  Notes:
+ *    (1) This is a simplified interface for cleaning an image.
+ *        For comparison, see pixAdaptThresholdToBinaryGen().
+ *    (2) The suggested default values for the input parameters are:
+ *          gamma:    1.0  (reduce this to increase the contrast; e.g.,
+ *                          for light text)
+ *          blackval   70  (a bit more than 60)
+ *          whiteval  190  (a bit less than 200)
+ */
+PIX *
+pixCleanBackgroundToWhite(PIX       *pixs,
+                          PIX       *pixim,
+                          PIX       *pixg,
+                          l_float32  gamma,
+                          l_int32    blackval,
+                          l_int32    whiteval)
+{
+l_int32  d;
+PIX     *pixd;
+
+    PROCNAME("pixCleanBackgroundToWhite");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+    d = pixGetDepth(pixs);
+    if (d != 8 && d != 32)
+        return (PIX *)ERROR_PTR("depth not 8 or 32", procName, NULL);
+
+    pixd = pixBackgroundNormSimple(pixs, pixim, pixg);
+    pixGammaTRC(pixd, pixd, gamma, blackval, whiteval);
+    return pixd;
+}
 
 
 /*------------------------------------------------------------------*

@@ -66,7 +66,7 @@ PIX         *pix, *pixs, *pixd;
 static char  mainName[] = "skewtest";
 
     if (argc != 3)
-	return ERROR_INT(" Syntax:  skewtest filein fileout", mainName, 1);
+        return ERROR_INT(" Syntax:  skewtest filein fileout", mainName, 1);
 
     filein = argv[1];
     fileout = argv[2];
@@ -75,7 +75,7 @@ static char  mainName[] = "skewtest";
     deg2rad = 3.1415926535 / 180.;
 
     if ((pixs = pixRead(filein)) == NULL)
-	return ERROR_INT("pixs not made", mainName, 1);
+        return ERROR_INT("pixs not made", mainName, 1);
 
         /* Find the skew angle various ways */
     pix = pixConvertTo1(pixs, 130);
@@ -117,7 +117,7 @@ static char  mainName[] = "skewtest";
         ret = pixFindSkewSweepAndSearch(pix, &angle, &conf, SWEEP_REDUCTION2,
                                         SEARCH_REDUCTION, SWEEP_RANGE2,
                                         SWEEP_DELTA2, SEARCH_MIN_DELTA);
-	if (ret)
+        if (ret)
             L_WARNING("skew angle not valid\n", mainName);
         else {
             fprintf(stderr, "conf = %5.3f, angle = %7.3f degrees\n",

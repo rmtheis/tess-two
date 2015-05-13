@@ -24,7 +24,6 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-
 /*
  *  readfile.c:  reads image on file into memory
  *
@@ -63,24 +62,14 @@
  *          tiff  (including most varieties of compression)
  *          gif
  *          webp
- *  (3) This file format is recognized by the library but reading
- *      is not supported:
- *          jp2 (jpeg2000)
- *  (4) All other file types will get an "unknown format" error.
+ *          jp2 (jpeg 2000)
+ *  (3) Other file types will get an "unknown format" error.
  */
 
 #include <string.h>
 #include "allheaders.h"
 
-    /*  choose type of PIX to be generated  */
-enum {
-    READ_24_BIT_COLOR = 0,     /* read in as 24 (really 32) bit pix */
-    CONVERT_TO_PALETTE = 1,    /* convert to 8 bit colormapped pix */
-    READ_GRAY = 2              /* read gray only */
-};
-
-    /* Output files for ioFormatTest().
-     * Note that the test for jpeg is not yet implemented */
+    /* Output files for ioFormatTest(). */
 static const char *FILE_BMP  =  "/tmp/lept/format.bmp";
 static const char *FILE_PNG  =  "/tmp/lept/format.png";
 static const char *FILE_PNM  =  "/tmp/lept/format.pnm";
@@ -92,13 +81,15 @@ static const char *FILE_LZW  =  "/tmp/lept/format_lzw.tif";
 static const char *FILE_ZIP  =  "/tmp/lept/format_zip.tif";
 static const char *FILE_TIFF =  "/tmp/lept/format.tif";
 static const char *FILE_JPG  =  "/tmp/lept/format.jpg";
+static const char *FILE_GIF  =  "/tmp/lept/format.gif";
+static const char *FILE_WEBP =  "/tmp/lept/format.webp";
+static const char *FILE_JP2K =  "/tmp/lept/format.jp2";
 
-    /* I found these from the source code to the unix file */
-    /* command. man 1 file */
 static const unsigned char JP2K_CODESTREAM[4] = { 0xff, 0x4f, 0xff, 0x51 };
 static const unsigned char JP2K_IMAGE_DATA[12] = { 0x00, 0x00, 0x00, 0x0C,
                                                    0x6A, 0x50, 0x20, 0x20,
                                                    0x0D, 0x0A, 0x87, 0x0A };
+
 
 /*---------------------------------------------------------------------*
  *          Top-level functions for reading images from file           *
@@ -200,15 +191,7 @@ PIX   *pix;
         fclose(fp);
         return (PIX *)ERROR_PTR("pix not read", procName, NULL);
     }
-
-        /* Close the stream except if GIF under windows, because
-         * DGifCloseFile() closes the windows file stream! */
-    if (pixGetInputFormat(pix) != IFF_GIF)
-        fclose(fp);
-#ifndef _WIN32
-    else  /* gif file */
-        fclose(fp);
-#endif  /* ! _WIN32 */
+    fclose(fp);
 
     return pix;
 }
@@ -336,8 +319,7 @@ PIX      *pix;
         break;
 
     case IFF_JFIF_JPEG:
-        if ((pix = pixReadStreamJpeg(fp, READ_24_BIT_COLOR, 1, NULL, hint))
-                == NULL)
+        if ((pix = pixReadStreamJpeg(fp, 0, 1, NULL, hint)) == NULL)
             return (PIX *)ERROR_PTR( "jpeg: no pix returned", procName, NULL);
         ret = fgetJpegComment(fp, &comment);
         if (!ret && comment)
@@ -372,7 +354,7 @@ PIX      *pix;
         break;
 
     case IFF_JP2:
-        if ((pix = pixReadStreamJp2k(fp, 1, NULL, 0)) == NULL)
+        if ((pix = pixReadStreamJp2k(fp, 1, NULL, 0, 0)) == NULL)
             return (PIX *)ERROR_PTR("jp2: no pix returned", procName, NULL);
         break;
 
@@ -775,7 +757,7 @@ l_int32  format;
  *      (2) On windows, this only reads tiff formatted files directly from
  *          memory.  For other formats, it write to a temp file and
  *          decompress from file.
- *      (3) findFileFormatBuffer() requires up to 8 bytes to decide on
+ *      (3) findFileFormatBuffer() requires up to 12 bytes to decide on
  *          the format.  That determines the constraint here.  But in
  *          fact the data must contain the entire compressed string for
  *          the image.
@@ -791,8 +773,8 @@ PIX     *pix;
 
     if (!data)
         return (PIX *)ERROR_PTR("data not defined", procName, NULL);
-    if (size < 8)
-        return (PIX *)ERROR_PTR("size < 8", procName, NULL);
+    if (size < 12)
+        return (PIX *)ERROR_PTR("size < 12", procName, NULL);
     pix = NULL;
 
     findFileFormatBuffer(data, &format);
@@ -804,8 +786,7 @@ PIX     *pix;
         break;
 
     case IFF_JFIF_JPEG:
-        if ((pix = pixReadMemJpeg(data, size, READ_24_BIT_COLOR, 1, NULL, 0))
-                == NULL)
+        if ((pix = pixReadMemJpeg(data, size, 0, 1, NULL, 0)) == NULL)
             return (PIX *)ERROR_PTR( "jpeg: no pix returned", procName, NULL);
         break;
 
@@ -837,7 +818,7 @@ PIX     *pix;
         break;
 
     case IFF_JP2:
-        if ((pix = pixReadMemJp2k(data, size, 1, NULL, 0)) == NULL)
+        if ((pix = pixReadMemJp2k(data, size, 1, NULL, 0, 0)) == NULL)
             return (PIX *)ERROR_PTR("jp2k: no pix returned", procName, NULL);
         break;
 
@@ -1037,17 +1018,29 @@ PIX     *pix;
 l_int32
 ioFormatTest(const char  *filename)
 {
-l_int32   d, equal, problems;
-PIX      *pixs, *pixc, *pix1, *pix2;
-PIXCMAP  *cmap;
+l_int32    w, h, d, depth, equal, problems;
+l_float32  diff;
+BOX       *box;
+PIX       *pixs, *pixc, *pix1, *pix2;
+PIXCMAP   *cmap;
 
     PROCNAME("ioFormatTest");
 
     if (!filename)
         return ERROR_INT("filename not defined", procName, 1);
 
-    if ((pixs = pixRead(filename)) == NULL)
-        return ERROR_INT("pixs not made", procName, 1);
+        /* Read the input file and limit the size */
+    if ((pix1 = pixRead(filename)) == NULL)
+        return ERROR_INT("pix1 not made", procName, 1);
+    pixGetDimensions(pix1, &w, &h, NULL);
+    if (w > 250 && h > 250) {  /* take the central 250 x 250 region */
+        box = boxCreate(w / 2 - 125, h / 2 - 125, 250, 250);
+        pixs = pixClipRectangle(pix1, box, NULL);
+        boxDestroy(&box);
+    } else {
+        pixs = pixClone(pix1);
+    }
+    pixDestroy(&pix1);
 
     lept_mkdir("lept");
 
@@ -1233,6 +1226,101 @@ PIXCMAP  *cmap;
     pixDestroy(&pix1);
     pixDestroy(&pix2);
 
+        /* ----------------------- GIF -------------------------- */
+#if HAVE_LIBGIF
+        /* GIF works for only 1 and 8 bpp, colormapped */
+    if (d != 8 || !cmap)
+        pix1 = pixConvertTo8(pixc, 1);
+    else
+        pix1 = pixClone(pixc);
+    L_INFO("write/read gif\n", procName);
+    pixWrite(FILE_GIF, pix1, IFF_GIF);
+    pix2 = pixRead(FILE_GIF);
+    pixEqual(pix1, pix2, &equal);
+    if (!equal) {
+        L_INFO("   **** bad gif image: d = %d ****\n", procName, d);
+        problems = TRUE;
+    }
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+#endif  /* HAVE_LIBGIF */
+
+        /* ----------------------- JPEG ------------------------- */
+#if HAVE_LIBJPEG
+        /* JPEG works for only 8 bpp gray and rgb */
+    if (cmap || d > 8)
+        pix1 = pixConvertTo32(pixc);
+    else
+        pix1 = pixConvertTo8(pixc, 0);
+    depth = pixGetDepth(pix1);
+    L_INFO("write/read jpeg\n", procName);
+    pixWrite(FILE_JPG, pix1, IFF_JFIF_JPEG);
+    pix2 = pixRead(FILE_JPG);
+    if (depth == 8) {
+        pixCompareGray(pix1, pix2, L_COMPARE_ABS_DIFF, 0, NULL, &diff,
+                       NULL, NULL);
+    } else {
+        pixCompareRGB(pix1, pix2, L_COMPARE_ABS_DIFF, 0, NULL, &diff,
+                      NULL, NULL);
+    }
+    if (diff > 8.0) {
+        L_INFO("   **** bad jpeg image: d = %d, diff = %5.2f ****\n",
+               procName, depth, diff);
+        problems = TRUE;
+    }
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+#endif  /* HAVE_LIBJPEG */
+
+        /* ----------------------- WEBP ------------------------- */
+#if HAVE_LIBWEBP
+        /* WEBP works for rgb and rgba */
+    if (cmap || d <= 16)
+        pix1 = pixConvertTo32(pixc);
+    else
+        pix1 = pixClone(pixc);
+    depth = pixGetDepth(pix1);
+    L_INFO("write/read webp\n", procName);
+    pixWrite(FILE_WEBP, pix1, IFF_WEBP);
+    pix2 = pixRead(FILE_WEBP);
+    pixCompareRGB(pix1, pix2, L_COMPARE_ABS_DIFF, 0, NULL, &diff, NULL, NULL);
+    if (diff > 5.0) {
+        L_INFO("   **** bad webp image: d = %d, diff = %5.2f ****\n",
+               procName, depth, diff);
+        problems = TRUE;
+    }
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+#endif  /* HAVE_LIBWEBP */
+
+        /* ----------------------- JP2K ------------------------- */
+#if HAVE_LIBJP2K
+        /* JP2K works for only 8 bpp gray, rgb and rgba */
+    if (cmap || d > 8)
+        pix1 = pixConvertTo32(pixc);
+    else
+        pix1 = pixConvertTo8(pixc, 0);
+    depth = pixGetDepth(pix1);
+    L_INFO("write/read jp2k\n", procName);
+    pixWrite(FILE_JP2K, pix1, IFF_JP2);
+    pix2 = pixRead(FILE_JP2K);
+    if (depth == 8) {
+        pixCompareGray(pix1, pix2, L_COMPARE_ABS_DIFF, 0, NULL, &diff,
+                       NULL, NULL);
+    } else {
+        pixCompareRGB(pix1, pix2, L_COMPARE_ABS_DIFF, 0, NULL, &diff,
+                      NULL, NULL);
+    }
+    fprintf(stderr, "diff = %7.3f\n", diff);
+    if (diff > 7.0) {
+        L_INFO("   **** bad jp2k image: d = %d, diff = %5.2f ****\n",
+               procName, depth, diff);
+        problems = TRUE;
+    }
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+#endif  /* HAVE_LIBJP2K */
+
     if (problems == FALSE)
         L_INFO("All formats read and written OK!\n", procName);
 
@@ -1240,3 +1328,4 @@ PIXCMAP  *cmap;
     pixDestroy(&pixs);
     return problems;
 }
+

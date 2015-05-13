@@ -39,7 +39,7 @@ int main(int    argc,
 {
 char        *text;
 l_int32      w, h, d, wpl, count, npages, color;
-l_int32      format, bps, spp, iscmap, xres, yres;
+l_int32      format, bps, spp, iscmap, xres, yres, transparency;
 FILE        *fp;
 PIX         *pix, *pixt;
 PIXCMAP     *cmap;
@@ -57,8 +57,8 @@ static char  mainName[] = "fileinfo";
         fprintf(stderr, "Failure to read header!\n");
         return 1;
     }
-    fprintf(stderr, "Reading the header:\n");
-    fprintf(stderr, "  Input image format type: %s\n",
+    fprintf(stderr, "==========================\nReading the header:\n");
+    fprintf(stderr, "  input image format type: %s\n",
             ImageFileFormatExtensions[format]);
     fprintf(stderr,
             "  w = %d, h = %d, bps = %d, spp = %d, iscmap = %d\n",
@@ -70,10 +70,32 @@ static char  mainName[] = "fileinfo";
         fgetJp2kResolution(fp, &xres, &yres);
         fclose(fp);
         fprintf(stderr, "  xres = %d, yres = %d\n", xres, yres);
-        return 0;
+    } else if (format == IFF_PNG) {
+        fp = lept_fopen(filein, "rb");
+        fgetPngResolution(fp, &xres, &yres);
+        fclose(fp);
+        fprintf(stderr, "  xres = %d, yres = %d\n", xres, yres);
+        if (iscmap) {
+            fp = lept_fopen(filein, "rb");
+            fgetPngColormapInfo(fp, &cmap, &transparency);
+            fclose(fp);
+            if (transparency)
+                fprintf(stderr, "  colormap has transparency\n");
+            else
+                fprintf(stderr, "  colormap does not have transparency\n");
+            pixcmapWriteStream(stderr, cmap);
+            pixcmapDestroy(&cmap);
+        }
+    } else if (format == IFF_JFIF_JPEG) {
+        fp = lept_fopen(filein, "rb");
+        fgetJpegResolution(fp, &xres, &yres);
+        fclose(fp);
+        fprintf(stderr, "  xres = %d, yres = %d\n", xres, yres);
     }
 
-        /* Read the full image */
+        /* Read the full image.  Note that when we read an image that
+         * has transparency in a colormap, we convert it to RGBA. */
+    fprintf(stderr, "==========================\nReading the full image:\n");
     if ((pix = pixRead(filein)) == NULL)
         return ERROR_INT("image not returned from file", mainName, 1);
 
@@ -81,8 +103,7 @@ static char  mainName[] = "fileinfo";
     pixGetDimensions(pix, &w, &h, &d);
     wpl = pixGetWpl(pix);
     spp = pixGetSpp(pix);
-    fprintf(stderr, "Reading the full image:\n");
-    fprintf(stderr, "  Input image format type: %s\n",
+    fprintf(stderr, "  input image format type: %s\n",
             ImageFileFormatExtensions[format]);
     fprintf(stderr, "  w = %d, h = %d, d = %d, spp = %d, wpl = %d\n",
             w, h, d, spp, wpl);
@@ -91,19 +112,19 @@ static char  mainName[] = "fileinfo";
 
     text = pixGetText(pix);
     if (text)  /*  not null */
-        fprintf(stderr, "  Text: %s\n", text);
+        fprintf(stderr, "  text: %s\n", text);
 
     cmap = pixGetColormap(pix);
     if (cmap) {
         pixcmapHasColor(cmap, &color);
         if (color)
-            fprintf(stderr, "  Colormap exists and has color values:");
+            fprintf(stderr, "  colormap exists and has color values:");
         else
-            fprintf(stderr, "  Colormap exists and has only gray values:");
+            fprintf(stderr, "  colormap exists and has only gray values:");
         pixcmapWriteStream(stderr, pixGetColormap(pix));
     }
     else
-        fprintf(stderr, "  Colormap does not exist.\n");
+        fprintf(stderr, "  colormap does not exist\n");
 
     if (format == IFF_TIFF || format == IFF_TIFF_G4 ||
         format == IFF_TIFF_G3 || format == IFF_TIFF_PACKBITS) {

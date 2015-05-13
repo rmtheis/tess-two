@@ -60,6 +60,9 @@
  *           PIX        *pixCropToSize()
  *           PIX        *pixResizeToMatch()
  *
+ *    Make a frame mask
+ *           PIX        *pixMakeFrameMask()
+ *
  *    Clip to foreground
  *           PIX        *pixClipToForeground()
  *           l_int32     pixTestClipToForeground()
@@ -125,10 +128,12 @@ PIX     *pixt;
 
     PROCNAME("pixaFindDimensions");
 
+    if (pnaw) *pnaw = NULL;
+    if (pnah) *pnah = NULL;
+    if (!pnaw && !pnah)
+        return ERROR_INT("no output requested", procName, 1);
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
-    if (!pnaw && !pnah)
-        return 0;
 
     n = pixaGetCount(pixa);
     if (pnaw) *pnaw = numaCreate(n);
@@ -710,6 +715,7 @@ PIX      *pixt;
 
     PROCNAME("pixFindOverlapFraction");
 
+    if (pnoverlap) *pnoverlap = 0;
     if (!pratio)
         return ERROR_INT("&ratio not defined", procName, 1);
     *pratio = 0.0;
@@ -977,8 +983,7 @@ PIX     *pixd;
 
     PROCNAME("pixClipRectangle");
 
-    if (pboxc)
-        *pboxc = NULL;
+    if (pboxc) *pboxc = NULL;
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
     if (!box)
@@ -1235,6 +1240,74 @@ PIX     *pixd;
 
 
 /*---------------------------------------------------------------------*
+ *                          Make a frame mask                          *
+ *---------------------------------------------------------------------*/
+/*!
+ *  pixMakeFrameMask()
+ *
+ *      Input:  w, h (dimensions of output 1 bpp pix)
+ *              hf1 (horizontal fraction of half-width at outer frame bdry)
+ *              hf2 (horizontal fraction of half-width at inner frame bdry)
+ *              vf1 (vertical fraction of half-width at outer frame bdry)
+ *              vf2 (vertical fraction of half-width at inner frame bdry)
+ *      Return: pixd (1 bpp), or null on error.
+ *
+ *  Notes:
+ *      (1) This makes an arbitrary 1-component mask with a centered frame.
+ *          Input fractions are in [0.0 ... 1.0]; hf1 <= hf2 and vf1 <= vf2.
+ *          Horizontal and vertical frame widths are independently specified.
+ *      (2) A full fg mask would have all input values 0.0.
+ *          An empty fg mask has hf1 = vf1 = 1.0.
+ *          A fg rectangle with no hole has hf2 == 1.0 or hv2 == 1.0.
+ *      (3) The width of the horizontal mask parts is 2 * (vf2 - vf1) * h.
+ *          The width of the vertical mask parts is 2 * (hf2 - hf1) * w.
+ */
+PIX *
+pixMakeFrameMask(l_int32    w,
+                 l_int32    h,
+                 l_float32  hf1,
+                 l_float32  hf2,
+                 l_float32  vf1,
+                 l_float32  vf2)
+{
+l_int32  h1, h2, v1, v2;
+PIX     *pixd;
+
+    PROCNAME("pixMakeFrameMask");
+
+    if (w <= 0 || h <= 0)
+        return (PIX *)ERROR_PTR("mask size 0", procName, NULL);
+    if (hf1 < 0.0 || hf1 > 1.0 || hf2 < 0.0 || hf2 > 1.0)
+        return (PIX *)ERROR_PTR("invalid horiz fractions", procName, NULL);
+    if (vf1 < 0.0 || vf1 > 1.0 || vf2 < 0.0 || vf2 > 1.0)
+        return (PIX *)ERROR_PTR("invalid vert fractions", procName, NULL);
+    if (hf1 > hf2 || vf1 > vf2)
+        return (PIX *)ERROR_PTR("invalid relative sizes", procName, NULL);
+
+    pixd = pixCreate(w, h, 1);
+
+        /* Special cases */
+    if (hf1 == 0.0 && hf2 == 0.0 && vf1 == 0.0 && vf2 == 0.0) {  /* full */
+        pixSetAll(pixd);
+        return pixd;
+    }
+    if (hf1 == 1.0 && vf1 == 1.0) {  /* empty */
+        return pixd;
+    }
+
+        /* General case */
+    h1 = 0.5 * hf1 * w;
+    h2 = 0.5 * hf2 * w;
+    v1 = 0.5 * vf1 * h;
+    v2 = 0.5 * vf2 * h;
+    pixRasterop(pixd, h1, v1, w - 2 * h1, h - 2 * v1, PIX_SET, NULL, 0, 0);
+    if (hf2 < 1.0 && vf2 < 1.0)
+        pixRasterop(pixd, h2, v2, w - 2 * h2, h - 2 * v2, PIX_CLR, NULL, 0, 0);
+    return pixd;
+}
+
+
+/*---------------------------------------------------------------------*
  *                           Clip to Foreground                        *
  *---------------------------------------------------------------------*/
 /*!
@@ -1262,12 +1335,10 @@ BOX       *box;
 
     PROCNAME("pixClipToForeground");
 
+    if (ppixd) *ppixd = NULL;
+    if (pbox) *pbox = NULL;
     if (!ppixd && !pbox)
-        return ERROR_INT("neither &pixd nor &box defined", procName, 1);
-    if (ppixd)
-        *ppixd = NULL;
-    if (pbox)
-        *pbox = NULL;
+        return ERROR_INT("no output requested", procName, 1);
     if (!pixs || (pixGetDepth(pixs) != 1))
         return ERROR_INT("pixs not defined or not 1 bpp", procName, 1);
 
@@ -1345,6 +1416,9 @@ maxx_found:
  *      (1) This is a lightweight test to determine if a 1 bpp image
  *          can be further cropped without loss of fg pixels.
  *          If it cannot, canclip is set to 0.
+ *      (2) It does not test for the existence of any fg pixels.
+ *          If there are no fg pixels, it will return @canclip = 1.
+ *          Check the output of the subsequent call to pixClipToForeground().
  */
 l_int32
 pixTestClipToForeground(PIX      *pixs,
@@ -1427,10 +1501,10 @@ BOX     *boxt, *boxd;
 
     PROCNAME("pixClipBoxToForeground");
 
-    if (!ppixd && !pboxd)
-        return ERROR_INT("neither &pixd nor &boxd defined", procName, 1);
     if (ppixd) *ppixd = NULL;
     if (pboxd) *pboxd = NULL;
+    if (!ppixd && !pboxd)
+        return ERROR_INT("no output requested", procName, 1);
     if (!pixs || (pixGetDepth(pixs) != 1))
         return ERROR_INT("pixs not defined or not 1 bpp", procName, 1);
 
@@ -1610,10 +1684,10 @@ BOX     *boxt, *boxd;
 
     PROCNAME("pixClipBoxToEdges");
 
-    if (!ppixd && !pboxd)
-        return ERROR_INT("neither &pixd nor &boxd defined", procName, 1);
     if (ppixd) *ppixd = NULL;
     if (pboxd) *pboxd = NULL;
+    if (!ppixd && !pboxd)
+        return ERROR_INT("no output requested", procName, 1);
     if (!pixs || (pixGetDepth(pixs) != 1))
         return ERROR_INT("pixs not defined or not 1 bpp", procName, 1);
     if (lowthresh < 1 || highthresh < 1 ||
@@ -1705,7 +1779,7 @@ BOX     *boxt, *boxd;
  *              maxwidth (max allowed width between low and high thresh locs)
  *              factor (sampling factor along pixel counting direction)
  *              scanflag (direction of scan; e.g., L_FROM_LEFT)
- *              &loc (location in scan direction of first black pixel)
+ *              &loc (<return> location in scan direction of first black pixel)
  *      Return: 0 if OK; 1 on error or if the edge is not found
  *
  *  Notes:

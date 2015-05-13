@@ -108,20 +108,20 @@ static char  mainName[] = "byteatest";
 
         /* Test appending with binary data */
     slice = 1000;
-    total = nbytesInFile("breviar-a38.jp2");
+    total = nbytesInFile("breviar.38.150.jpg");
     lba1 = l_byteaCreate(100);
     n = 1 + total / slice;
     fprintf(stderr, "******************************************************\n");
     fprintf(stderr, "* Testing error checking: ignore two reported errors *\n");
     for (i = 0, start = 0; i <= n; i++, start += slice) {
-         data1 = l_binaryReadSelect("breviar-a38.jp2", start, slice, &size1);
+         data1 = l_binaryReadSelect("breviar.38.150.jpg", start, slice, &size1);
          l_byteaAppendData(lba1, data1, size1);
          lept_free(data1);
     }
     fprintf(stderr, "******************************************************\n");
     data2 = l_byteaGetData(lba1, &size2);
     l_binaryWrite("/tmp/bytea/junk6.dat", "w", data2, size2);
-    filesAreIdentical("breviar-a38.jp2", "/tmp/bytea/junk6.dat", &same1);
+    filesAreIdentical("breviar.38.150.jpg", "/tmp/bytea/junk6.dat", &same1);
     if (same1)
         fprintf(stderr, "OK for appended binary data\n");
     else

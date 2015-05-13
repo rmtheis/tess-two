@@ -45,6 +45,8 @@
  *           PIX        *pixPaintSelfThroughMask()
  *           PIX        *pixMakeMaskFromLUT()
  *           PIX        *pixSetUnderTransparency()
+ *           PIX        *pixMakeAlphaFromMask()
+ *           l_int32     pixGetColorNearMaskBoundary()
  *
  *    One and two-image boolean operations on arbitrary depth images
  *           PIX        *pixInvert()
@@ -90,17 +92,20 @@
  *    Mirrored tiling
  *           PIX        *pixMirroredTiling()
  *
+ *    Representative tile near but outside region
+ *           l_int32     pixFindRepCloseTile()
+ *
  *    Static helper function
- *           static l_int32  findTilePatchCenter()
+ *           static BOXA    *findTileRegionsForSearch()
  */
 
 #include <string.h>
 #include <math.h>
 #include "allheaders.h"
 
-static l_int32 findTilePatchCenter(PIX *pixs, BOX *box, l_int32 dir,
-                                   l_uint32 targdist, l_uint32 *pdist,
-                                   l_int32 *pxc, l_int32 *pyc);
+static BOXA *findTileRegionsForSearch(BOX *box, l_int32 w, l_int32 h,
+                                      l_int32 searchdir, l_int32 mindist,
+                                      l_int32 tsize, l_int32 ntiles);
 
 #ifndef  NO_CONSOLE_IO
 #define   EQUAL_SIZE_WARNING      0
@@ -604,10 +609,10 @@ l_uint32  *data, *datam, *line, *linem;
 
     PROCNAME("pixPaintThroughMask");
 
-    if (!pixd)
-        return ERROR_INT("pixd not defined", procName, 1);
     if (!pixm)  /* nothing to do */
         return 0;
+    if (!pixd)
+        return ERROR_INT("pixd not defined", procName, 1);
     if (pixGetColormap(pixd)) {
         extractRGBValues(val, &rval, &gval, &bval);
         return pixSetMaskedCmap(pixd, pixm, x, y, rval, gval, bval);
@@ -705,8 +710,11 @@ l_uint32  *data, *datam, *line, *linem;
  *      Input:  pixd (8 bpp gray or 32 bpp rgb; not colormapped)
  *              pixm (1 bpp mask)
  *              x, y (origin of pixm relative to pixd; must not be negative)
- *              tilesize (requested size for tiling)
- *              searchdir (L_HORIZ, L_VERT)
+ *              searchdir (L_HORIZ, L_VERT or L_BOTH_DIRECTIONS)
+ *              mindist (min distance of nearest tile edge to box; >= 0)
+ *              tilesize (requested size for tiling; may be reduced)
+ *              ntiles (number of tiles tested in each row/column)
+ *              distblend (distance outside the fg used for blending with pixs)
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
@@ -715,31 +723,62 @@ l_uint32  *data, *datam, *line, *linem;
  *      (3) The mask origin is placed at (x,y) on pixd, and the
  *          operation is clipped to the intersection of pixd and the
  *          fg of the mask.
- *      (4) The tilesize is the the requested size for tiling.  The
+ *      (4) @tsize is the the requested size for tiling.  The actual
  *          actual size for each c.c. will be bounded by the minimum
- *          dimension of the c.c. and the distance at which the tile
- *          center is located.
- *      (5) searchdir is the direction with respect to the b.b. of each
- *          mask component, from which the square patch is chosen and
- *          tiled onto the image, clipped by the mask component.
- *      (6) Specifically, a mirrored tiling, generated from pixd,
- *          is used to construct the pixels that are painted onto
- *          pixd through pixm.
+ *          dimension of the c.c.
+ *      (5) For @mindist, @searchdir and @ntiles, see pixFindRepCloseTile().
+ *          They determine the set of possible tiles that can be used
+ *          to build a larger mirrored tile to paint onto pixd through
+ *          the c.c. of pixm.
+ *      (6) @distblend is used for alpha blending.  It is only applied
+ *          if there is exactly one c.c. in the mask.  Use distblend == 0
+ *          to skip blending and just paint through the 1 bpp mask.
+ *      (7) To apply blending to more than 1 component, call this function
+ *          repeatedly with @pixm, @x and @y representing one component of
+ *          the mask each time.  This would be done as follows, for an
+ *          underlying image pixs and mask pixm of components to fill:
+ *              Boxa *boxa = pixConnComp(pixm, &pixa, 8);
+ *              n = boxaGetCount(boxa);
+ *              for (i = 0; i < n; i++) {
+ *                  Pix *pix = pixaGetPix(pixa, i, L_CLONE);
+ *                  Box *box = pixaGetBox(pixa, i, L_CLONE);
+ *                  boxGetGeometry(box, &bx, &by, &bw, &bh);
+ *                  pixPaintSelfThroughMask(pixs, pix, bx, by, searchdir,
+ *                                     mindist, tilesize, ntiles, distblend);
+ *                  pixDestroy(&pix);
+ *                  boxDestroy(&box);
+ *              }
+ *              pixaDestroy(&pixa);
+ *              boxaDestroy(&boxa);
+ *      (8) If no tiles can be found, this falls back to estimating the
+ *          color near the boundary of the region to be textured.
+ *      (9) This can be used to replace the pixels in some regions of
+ *          an image by selected neighboring pixels.  The mask represents
+ *          the pixels to be replaced.  For each connected component in
+ *          the mask, this function selects up to two tiles of neighboring
+ *          pixels to be used for replacement of pixels represented by
+ *          the component (i.e., under the FG of that component in the mask).
+ *          After selection, mirror replication is used to generate an
+ *          image that is large enough to cover the component.  Alpha
+ *          blending can also be used outside of the component, but near the
+ *          edge, to blur the transition between painted and original pixels.
  */
 l_int32
 pixPaintSelfThroughMask(PIX      *pixd,
                         PIX      *pixm,
                         l_int32   x,
                         l_int32   y,
+                        l_int32   searchdir,
+                        l_int32   mindist,
                         l_int32   tilesize,
-                        l_int32   searchdir)
+                        l_int32   ntiles,
+                        l_int32   distblend)
 {
-l_int32   w, h, d, wm, hm, dm, i, n, xc, yc, bx, by, bw, bh;
-l_int32   depth, cctilesize;
-l_uint32  dist, minside, retval;
-BOX      *box, *boxt;
+l_int32   w, h, d, wm, hm, dm, i, n, bx, by, bw, bh, edgeblend, retval, minside;
+l_uint32  pixval;
+BOX      *box, *boxv, *boxh;
 BOXA     *boxa;
-PIX      *pix, *pixf, *pixdf, *pixt, *pixc;
+PIX      *pixf, *pixv, *pixh, *pix1, *pix2, *pix3, *pix4, *pix5;
 PIXA     *pixa;
 
     PROCNAME("pixPaintSelfThroughMask");
@@ -758,10 +797,13 @@ PIXA     *pixa;
         return ERROR_INT("pixm not 1 bpp", procName, 1);
     if (x < 0 || y < 0)
         return ERROR_INT("x and y must be non-negative", procName, 1);
-    if (tilesize < 1)
-        return ERROR_INT("tilesize must be >= 1", procName, 1);
-    if (searchdir != L_HORIZ && searchdir != L_VERT)
-        return ERROR_INT("searchdir not in {L_HORIZ, L_VERT}", procName, 1);
+    if (searchdir != L_HORIZ && searchdir != L_VERT &&
+        searchdir != L_BOTH_DIRECTIONS)
+        return ERROR_INT("invalid searchdir", procName, 1);
+    if (tilesize < 2)
+        return ERROR_INT("tilesize must be >= 2", procName, 1);
+    if (distblend < 0)
+        return ERROR_INT("distblend must be >= 0", procName, 1);
 
         /* Embed mask in full sized mask */
     if (wm < w || hm < h) {
@@ -780,53 +822,86 @@ PIXA     *pixa;
         boxaDestroy(&boxa);
         return 1;
     }
+    boxaDestroy(&boxa);
 
-        /* Get distance function for the mask */
-    pixInvert(pixf, pixf);
-    depth = (tilesize < 256) ? 8 : 16;
-    pixdf = pixDistanceFunction(pixf, 4, depth, L_BOUNDARY_BG);
-    pixDestroy(&pixf);
-
-        /* For each c.c., generate a representative tile for texturizing
-         * and apply it through the mask.  The input 'tilesize' is the
-         * requested value.  findTilePatchCenter() returns the distance
-         * at which this patch can safely be found. */
+        /* For each c.c., generate one or two representative tiles for
+         * texturizing and apply through the mask.  The input 'tilesize'
+         * is the requested value.  Note that if there is exactly one
+         * component, and blending at the edge is requested, an alpha mask
+         * is generated, which is larger than the bounding box of the c.c. */
+    edgeblend = (n == 1 && distblend > 0) ? 1 : 0;
+    if (distblend > 0 && n > 1)
+        L_WARNING("%d components; can not blend at edges\n", procName, n);
     retval = 0;
     for (i = 0; i < n; i++) {
-        pix = pixaGetPix(pixa, i, L_CLONE);
-        box = pixaGetBox(pixa, i, L_CLONE);
+        if (edgeblend) {
+            pix1 = pixMakeAlphaFromMask(pixf, distblend, &box);
+        } else {
+            pix1 = pixaGetPix(pixa, i, L_CLONE);
+            box = pixaGetBox(pixa, i, L_CLONE);
+        }
         boxGetGeometry(box, &bx, &by, &bw, &bh);
         minside = L_MIN(bw, bh);
 
-        findTilePatchCenter(pixdf, box, searchdir, L_MIN(minside, tilesize),
-                            &dist, &xc, &yc);
-        cctilesize = L_MIN(tilesize, dist);  /* for this c.c. */
-        if (cctilesize < 1) {
-            L_WARNING("region not found!\n", procName);
-            pixDestroy(&pix);
+        boxh = boxv = NULL;
+        if (searchdir == L_HORIZ || searchdir == L_BOTH_DIRECTIONS) {
+            pixFindRepCloseTile(pixd, box, L_HORIZ, mindist,
+                                L_MIN(minside, tilesize), ntiles, &boxh, 0);
+        }
+        if (searchdir == L_VERT || searchdir == L_BOTH_DIRECTIONS) {
+            pixFindRepCloseTile(pixd, box, L_VERT, mindist,
+                                L_MIN(minside, tilesize), ntiles, &boxv, 0);
+        }
+        if (!boxh && !boxv) {
+            L_WARNING("tile region not selected; paint color near boundary\n",
+                      procName);
+            pixDestroy(&pix1);
+            pix1 = pixaGetPix(pixa, i, L_CLONE);
+            pixaGetBoxGeometry(pixa, i, &bx, &by, NULL, NULL);
+            retval = pixGetColorNearMaskBoundary(pixd, pixm, box, distblend,
+                                                 &pixval, 0);
+            pixSetMaskedGeneral(pixd, pix1, pixval, bx, by);
+            pixDestroy(&pix1);
             boxDestroy(&box);
-            retval = 1;
             continue;
         }
 
-            /* Extract the selected square from pixd, and generate
-             * an image the size of the b.b. of the c.c., which
-             * is then painted through the c.c. mask.  */
-        boxt = boxCreate(L_MAX(0, xc - dist / 2), L_MAX(0, yc - dist / 2),
-                         cctilesize, cctilesize);
-        pixt = pixClipRectangle(pixd, boxt, NULL);
-        pixc = pixMirroredTiling(pixt, bw, bh);
-        pixCombineMaskedGeneral(pixd, pixc, pix, bx, by);
-        pixDestroy(&pix);
-        pixDestroy(&pixt);
-        pixDestroy(&pixc);
+            /* Extract the selected squares from pixd */
+        pixh = (boxh) ? pixClipRectangle(pixd, boxh, NULL) : NULL;
+        pixv = (boxv) ? pixClipRectangle(pixd, boxv, NULL) : NULL;
+        if (pixh && pixv)
+            pix2 = pixBlend(pixh, pixv, 0, 0, 0.5);
+        else if (pixh)
+            pix2 = pixClone(pixh);
+        else  /* pixv */
+            pix2 = pixClone(pixv);
+        pixDestroy(&pixh);
+        pixDestroy(&pixv);
+        boxDestroy(&boxh);
+        boxDestroy(&boxv);
+
+            /* Generate an image the size of the b.b. of the c.c.,
+             * possibly extended by the blending distance, which
+             * is then either painted through the c.c. mask or
+             * blended using the alpha mask for that c.c.  */
+        pix3 = pixMirroredTiling(pix2, bw, bh);
+        if (edgeblend) {
+            pix4 = pixClipRectangle(pixd, box, NULL);
+            pix5 = pixBlendWithGrayMask(pix4, pix3, pix1, 0, 0);
+            pixRasterop(pixd, bx, by, bw, bh, PIX_SRC, pix5, 0, 0);
+            pixDestroy(&pix4);
+            pixDestroy(&pix5);
+        } else {
+            pixCombineMaskedGeneral(pixd, pix3, pix1, bx, by);
+        }
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+        pixDestroy(&pix3);
         boxDestroy(&box);
-        boxDestroy(&boxt);
     }
 
-    pixDestroy(&pixdf);
     pixaDestroy(&pixa);
-    boxaDestroy(&boxa);
+    pixDestroy(&pixf);
     return retval;
 }
 
@@ -979,6 +1054,182 @@ PIX  *pixg, *pixm, *pixt, *pixd;
     pixDestroy(&pixg);
     pixDestroy(&pixm);
     return pixd;
+}
+
+
+/*!
+ *  pixMakeAlphaFromMask()
+ *
+ *      Input:  pixs (1 bpp)
+ *              dist (blending distance; typically 10 - 30)
+ *              &box (<optional return>, use null to get the full size
+ *      Return: pixd (8 bpp gray), or null on error
+ *
+ *  Notes:
+ *      (1) This generates a 8 bpp alpha layer that is opaque (256)
+ *          over the FG of pixs, and goes transparent linearly away
+ *          from the FG pixels, decaying to 0 (transparent) is an
+ *          8-connected distance given by @dist.  If @dist == 0,
+ *          this does a simple conversion from 1 to 8 bpp.
+ *      (2) If &box == NULL, this returns an alpha mask that is the
+ *          full size of pixs.  Otherwise, the returned mask pixd covers
+ *          just the FG pixels of pixs, expanded by @dist in each
+ *          direction (if possible), and the returned box gives the
+ *          location of the returned mask relative to pixs.
+ *      (3) This is useful for painting through a mask and allowing
+ *          blending of the painted image with an underlying image
+ *          in the mask background for pixels near foreground mask pixels.
+ *          For example, with an underlying rgb image pix1, an overlaying
+ *          image rgb pix2, binary mask pixm, and dist > 0, this
+ *          blending is achieved with:
+ *              pix3 = pixMakeAlphaFromMask(pixm, dist, &box);
+ *              boxGetGeometry(box, &x, &y, NULL, NULL);
+ *              pix4 = pixBlendWithGrayMask(pix1, pix2, pix3, x, y);
+ */
+PIX *
+pixMakeAlphaFromMask(PIX     *pixs,
+                     l_int32  dist,
+                     BOX    **pbox)
+{
+l_int32  w, h;
+BOX     *box1, *box2;
+PIX     *pix1, *pixd;
+
+    PROCNAME("pixMakeAlphaFromMask");
+
+    if (pbox) *pbox = NULL;
+    if (!pixs || pixGetDepth(pixs) != 1)
+        return (PIX *)ERROR_PTR("pixs undefined or not 1 bpp", procName, NULL);
+    if (dist < 0)
+        return (PIX *)ERROR_PTR("dist must be >= 0", procName, NULL);
+
+        /* If requested, extract just the region to be affected by the mask */
+    if (pbox) {
+        pixClipToForeground(pixs, NULL, &box1);
+        if (!box1) {
+            L_WARNING("no ON pixels in mask\n", procName);
+            return pixCreateTemplate(pixs);  /* all background (0) */
+        }
+
+        boxAdjustSides(box1, box1, -dist, dist, -dist, dist);
+        pixGetDimensions(pixs, &w, &h, NULL);
+        box2 = boxClipToRectangle(box1, w, h);
+        *pbox = box2;
+        pix1 = pixClipRectangle(pixs, box2, NULL);
+        boxDestroy(&box1);
+    } else {
+        pix1 = pixCopy(NULL, pixs);
+    }
+
+    if (dist == 0) {
+        pixd = pixConvert1To8(NULL, pix1, 0, 255);
+        pixDestroy(&pix1);
+        return pixd;
+    }
+
+        /* Blur the boundary of the input mask */
+    pixInvert(pix1, pix1);
+    pixd = pixDistanceFunction(pix1, 8, 8, L_BOUNDARY_FG);
+    pixMultConstantGray(pixd, 256.0 / dist);
+    pixInvert(pixd, pixd);
+    pixDestroy(&pix1);
+    return pixd;
+}
+
+
+/*!
+ *  pixGetColorNearMaskBoundary()
+ *
+ *      Input:  pixs (32 bpp rgb)
+ *              pixm (1 bpp mask, full image)
+ *              box (region of mask; typically b.b. of a component)
+ *              dist (distance into BG from mask boundary to use)
+ *              &pval (<return> average pixel value)
+ *              debug (1 to output mask images)
+ *      Return: 0 if OK, 1 on error.
+ *
+ *  Notes:
+ *      (1) This finds the average color in a set of pixels that are
+ *          roughly a distance @dist from the c.c. boundary and in the
+ *          background of the mask image.
+ */
+l_int32
+pixGetColorNearMaskBoundary(PIX       *pixs,
+                            PIX       *pixm,
+                            BOX       *box,
+                            l_int32    dist,
+                            l_uint32  *pval,
+                            l_int32    debug)
+{
+char       op[64];
+l_int32    empty, bx, by;
+l_float32  rval, gval, bval;
+BOX       *box1, *box2;
+PIX       *pix1, *pix2, *pix3;
+
+    PROCNAME("pixGetColorNearMaskBoundary");
+
+    if (!pval)
+        return ERROR_INT("&pval not defined", procName, 1);
+    *pval = 0xffffff00;  /* white */
+    if (!pixs || pixGetDepth(pixs) != 32)
+        return ERROR_INT("pixs undefined or not 32 bpp", procName, 1);
+    if (!pixm || pixGetDepth(pixm) != 1)
+        return ERROR_INT("pixm undefined or not 1 bpp", procName, 1);
+    if (!box)
+        return ERROR_INT("box not defined", procName, 1);
+    if (dist < 0)
+        return ERROR_INT("dist must be >= 0", procName, 1);
+
+        /* Clip mask piece, expanded beyond @box by (@dist + 5) on each side.
+         * box1 is the region requested; box2 is the actual region retrieved,
+         * which is clipped to @pixm */
+    box1 = boxAdjustSides(NULL, box, -dist - 5, dist + 5, -dist - 5, dist + 5);
+    pix1 = pixClipRectangle(pixm, box1, &box2);
+
+        /* Expand FG by @dist into the BG */
+    if (dist == 0) {
+        pix2 = pixCopy(NULL, pix1);
+    } else {
+        snprintf(op, sizeof(op), "d%d.%d", 2 * dist, 2 * dist);
+        pix2 = pixMorphSequence(pix1, op, 0);
+    }
+
+        /* Expand again by 5 pixels on all sides (dilate 11x11) and XOR,
+         * getting the annulus of FG pixels between @dist and @dist + 5 */
+    pix3 = pixCopy(NULL, pix2);
+    pixDilateBrick(pix3, pix3, 11, 11);
+    pixXor(pix3, pix3, pix2);
+    pixZero(pix3, &empty);
+    if (!empty) {
+            /* Scan the same region in @pixs, to get average under FG in pix3 */
+        boxGetGeometry(box2, &bx, &by, NULL, NULL);
+        pixGetAverageMaskedRGB(pixs, pix3, bx, by, 1, L_MEAN_ABSVAL,
+                               &rval, &gval, &bval);
+        composeRGBPixel((l_int32)(rval + 0.5), (l_int32)(gval + 0.5),
+                        (l_int32)(bval + 0.5), pval);
+    } else {
+        L_WARNING("no pixels found\n", procName);
+    }
+
+    if (debug) {
+        lept_rmdir("masknear");  /* erase previous images */
+        lept_mkdir("masknear");
+        pixWrite("/tmp/masknear/input.png", pix1, IFF_PNG);
+        pixWrite("/tmp/masknear/adjusted.png", pix2, IFF_PNG);
+        pixWrite("/tmp/masknear/outerfive.png", pix3, IFF_PNG);
+        fprintf(stderr, "Input box; with adjusted sides; clipped\n");
+        boxPrintStreamInfo(stderr, box);
+        boxPrintStreamInfo(stderr, box1);
+        boxPrintStreamInfo(stderr, box2);
+    }
+
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    boxDestroy(&box1);
+    boxDestroy(&box2);
+    return 0;
 }
 
 
@@ -1312,7 +1563,7 @@ l_uint32  *data, *line;
     PROCNAME("pixZero");
 
     if (!pempty)
-        return ERROR_INT("pempty not defined", procName, 1);
+        return ERROR_INT("&empty not defined", procName, 1);
     *pempty = 1;
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
@@ -1323,7 +1574,7 @@ l_uint32  *data, *line;
     data = pixGetData(pix);
     fullwords = w / 32;
     endbits = w & 31;
-    endmask = 0xffffffff << (32 - endbits);
+    endmask = (endbits == 0) ? 0 : (0xffffffffU << (32 - endbits));
 
     for (i = 0; i < h; i++) {
         line = data + wpl * i;
@@ -1360,7 +1611,7 @@ l_int32  w, h, count;
     PROCNAME("pixForegroundFraction");
 
     if (!pfract)
-        return ERROR_INT("pfract not defined", procName, 1);
+        return ERROR_INT("&fract not defined", procName, 1);
     *pfract = 0.0;
     if (!pix || pixGetDepth(pix) != 1)
         return ERROR_INT("pix not defined or not 1 bpp", procName, 1);
@@ -1437,7 +1688,7 @@ l_uint32  *data;
     PROCNAME("pixCountPixels");
 
     if (!pcount)
-        return ERROR_INT("pcount not defined", procName, 1);
+        return ERROR_INT("&count not defined", procName, 1);
     *pcount = 0;
     if (!pix || pixGetDepth(pix) != 1)
         return ERROR_INT("pix not defined or not 1 bpp", procName, 1);
@@ -1452,7 +1703,7 @@ l_uint32  *data;
     data = pixGetData(pix);
     fullwords = w >> 5;
     endbits = w & 31;
-    endmask = 0xffffffff << (32 - endbits);
+    endmask = (endbits == 0) ? 0 : (0xffffffffU << (32 - endbits));
 
     sum = 0;
     for (i = 0; i < h; i++, data += wpl) {
@@ -1683,7 +1934,7 @@ l_uint32  *line;
     PROCNAME("pixCountPixelsInRow");
 
     if (!pcount)
-        return ERROR_INT("pcount not defined", procName, 1);
+        return ERROR_INT("&count not defined", procName, 1);
     *pcount = 0;
     if (!pix || pixGetDepth(pix) != 1)
         return ERROR_INT("pix not defined or not 1 bpp", procName, 1);
@@ -1695,7 +1946,7 @@ l_uint32  *line;
     line = pixGetData(pix) + row * wpl;
     fullwords = w >> 5;
     endbits = w & 31;
-    endmask = 0xffffffff << (32 - endbits);
+    endmask = (endbits == 0) ? 0 : (0xffffffffU << (32 - endbits));
 
     if (!tab8)
         tab = makePixelSumTab8();
@@ -1807,7 +2058,7 @@ l_uint32  *line, *data;
     PROCNAME("pixThresholdPixelSum");
 
     if (!pabove)
-        return ERROR_INT("pabove not defined", procName, 1);
+        return ERROR_INT("&above not defined", procName, 1);
     *pabove = 0;
     if (!pix || pixGetDepth(pix) != 1)
         return ERROR_INT("pix not defined or not 1 bpp", procName, 1);
@@ -2113,7 +2364,7 @@ l_float64  ave;
     PROCNAME("pixAverageInRect");
 
     if (!pave)
-        return ERROR_INT("pave not defined", procName, 1);
+        return ERROR_INT("&ave not defined", procName, 1);
     *pave = 0;
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
@@ -2298,8 +2549,8 @@ l_float64  sum1, sum2, norm, ave, var;
     PROCNAME("pixVarianceInRect");
 
     if (!prootvar)
-        return ERROR_INT("prootvar not defined", procName, 1);
-    *prootvar = 0;
+        return ERROR_INT("&rootvar not defined", procName, 1);
+    *prootvar = 0.0;
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
     pixGetDimensions(pix, &w, &h, &d);
@@ -2494,8 +2745,8 @@ l_float64  norm, sum;
     PROCNAME("pixAbsDiffInRect");
 
     if (!pabsdiff)
-        return ERROR_INT("pave not defined", procName, 1);
-    *pabsdiff = 0;
+        return ERROR_INT("&absdiff not defined", procName, 1);
+    *pabsdiff = 0.0;
     if (!pix || pixGetDepth(pix) != 8)
         return ERROR_INT("pix undefined or not 8 bpp", procName, 1);
     if (dir != L_HORIZONTAL_LINE && dir != L_VERTICAL_LINE)
@@ -2570,8 +2821,8 @@ l_uint32   val0, val1;
     PROCNAME("pixAbsDiffOnLine");
 
     if (!pabsdiff)
-        return ERROR_INT("pave not defined", procName, 1);
-    *pabsdiff = 0;
+        return ERROR_INT("&absdiff not defined", procName, 1);
+    *pabsdiff = 0.0;
     if (!pix || pixGetDepth(pix) != 8)
         return ERROR_INT("pix undefined or not 8 bpp", procName, 1);
     if (y1 == y2) {
@@ -2760,131 +3011,255 @@ PIX      *pixd, *pixsfx, *pixsfy, *pixsfxy, *pix;
 
 
 /*!
- *  findTilePatchCenter()
+ *  pixFindRepCloseTile()
  *
- *      Input:  pixs (8 or 16 bpp; distance function of a binary mask)
+ *      Input:  pixs (32 bpp rgb)
  *              box (region of pixs to search around)
  *              searchdir (L_HORIZ or L_VERT; direction to search)
- *              targdist (desired distance of selected patch center from fg)
- *              &dist (<return> actual distance of selected location)
- *              &xc, &yc (<return> location of selected patch center)
+ *              mindist (min distance of selected tile edge from box; >= 0)
+ *              tsize (tile size; > 1; even; typically ~50)
+ *              ntiles (number of tiles tested in each row/column)
+ *              &boxtile (<return> region of best tile)
+ *              debug (1 for debug output)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) This looks for a patch of non-masked image, that is outside
- *          but near the input box.  The input pixs is a distance
- *          function giving the distance from the fg in a binary mask.
- *      (2) The target distance implicitly specifies a desired size
- *          for the patch.  The location of the center of the patch,
- *          and the actual distance from fg are returned.
- *      (3) If the target distance is larger than 255, a 16-bit distance
- *          transform is input.
- *      (4) It is assured that a square centered at (xc, yc) and of
- *          size 'dist' will not intersect with the fg of the binary
- *          mask that was used to generate pixs.
- *      (5) We search away from the component, in approximately
- *          the center 1/3 of its dimension.  This gives a better chance
- *          of finding patches that are close to the component.
+ *      (1) This looks for one or two square tiles with conforming median
+ *          intensity and low variance, that is outside but near the input box.
+ *      (2) @mindist specifies the gap between the box and the
+ *          potential tiles.  The tiles are given an overlap of 50%.
+ *          @ntiles specifies the number of tiles that are tested
+ *          beyond @mindist for each row or column.
+ *      (3) For example, if @mindist = 20, @tilesize = 50 and @ntiles = 3,
+ *          a horizontal search to the right will have 3 tiles in each row,
+ *          with left edges at 20, 45 and 70 from the right edge of the
+ *          input @box.  The number of rows of tiles is determined by
+ *          the height of @box and @tsize, with the 50% overlap..
  */
-static l_int32
-findTilePatchCenter(PIX       *pixs,
-                    BOX       *box,
-                    l_int32    searchdir,
-                    l_uint32   targdist,
-                    l_uint32  *pdist,
-                    l_int32   *pxc,
-                    l_int32   *pyc)
+l_int32
+pixFindRepCloseTile(PIX     *pixs,
+                    BOX     *box,
+                    l_int32  searchdir,
+                    l_int32  mindist,
+                    l_int32  tsize,
+                    l_int32  ntiles,
+                    BOX    **pboxtile,
+                    l_int32  debug)
 {
-l_int32   w, h, bx, by, bw, bh, left, right, top, bot, i, j;
-l_int32   xstart, xend, ystart, yend;
-l_uint32  val, maxval;
+l_int32    w, h, i, n, bestindex;
+l_float32  var_of_mean, median_of_mean, median_of_stdev, mean_val, stdev_val;
+l_float32  mindels, bestdelm, delm, dels, mean, stdev;
+BOXA      *boxa;
+NUMA      *namean, *nastdev;
+PIX       *pix, *pixg;
+PIXA      *pixa;
 
-    PROCNAME("findTilePatchCenter");
+    PROCNAME("pixFindRepCloseTile");
 
-    if (!pdist || !pxc || !pyc)
-        return ERROR_INT("&pdist, &pxc, &pyc not all defined", procName, 1);
-    *pdist = *pxc = *pyc = 0;
+    if (!pboxtile)
+        return ERROR_INT("&boxtile not defined", procName, 1);
+    *pboxtile = NULL;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     if (!box)
         return ERROR_INT("box not defined", procName, 1);
+    if (searchdir != L_HORIZ && searchdir != L_VERT)
+        return ERROR_INT("invalid searchdir", procName, 1);
+    if (mindist < 0)
+        return ERROR_INT("mindist must be >= 0", procName, 1);
+    if (tsize < 2)
+        return ERROR_INT("tsize must be > 1", procName, 1);
+    if (ntiles > 7) {
+        L_WARNING("ntiles = %d; larger than suggested max of 7\n",
+                  procName, ntiles);
+    }
 
+        /* Locate tile regions */
     pixGetDimensions(pixs, &w, &h, NULL);
-    boxGetGeometry(box, &bx, &by, &bw, &bh);
+    boxa = findTileRegionsForSearch(box, w, h, searchdir, mindist,
+                                    tsize, ntiles);
+    if (!boxa)
+        return ERROR_INT("no tiles found", procName, 1);
 
-    if (searchdir == L_HORIZ) {
-        left = bx;   /* distance to left of box */
-        right = w - bx - bw + 1;   /* distance to right of box */
-        ystart = by + bh / 3;
-        yend = by + 2 * bh / 3;
-        maxval = 0;
-        if (left > right) {  /* search to left */
-            for (j = bx - 1; j >= 0; j--) {
-                for (i = ystart; i <= yend; i++) {
-                    pixGetPixel(pixs, j, i, &val);
-                    if (val > maxval) {
-                        maxval = val;
-                        *pxc = j;
-                        *pyc = i;
-                        *pdist = val;
-                        if (val >= targdist)
-                            return 0;
-                    }
-                }
-            }
-        } else {  /* search to right */
-            for (j = bx + bw; j < w; j++) {
-                for (i = ystart; i <= yend; i++) {
-                    pixGetPixel(pixs, j, i, &val);
-                    if (val > maxval) {
-                        maxval = val;
-                        *pxc = j;
-                        *pyc = i;
-                        *pdist = val;
-                        if (val >= targdist)
-                            return 0;
-                    }
-                }
-            }
+        /* Generate the tiles and the mean and stdev of intensity */
+    pixa = pixClipRectangles(pixs, boxa);
+    n = pixaGetCount(pixa);
+    namean = numaCreate(n);
+    nastdev = numaCreate(n);
+    for (i = 0; i < n; i++) {
+        pix = pixaGetPix(pixa, i, L_CLONE);
+        pixg = pixConvertRGBToGray(pix, 0.33, 0.34, 0.33);
+        pixGetAverageMasked(pixg, NULL, 0, 0, 1, L_MEAN_ABSVAL, &mean);
+        pixGetAverageMasked(pixg, NULL, 0, 0, 1, L_STANDARD_DEVIATION, &stdev);
+        numaAddNumber(namean, mean);
+        numaAddNumber(nastdev, stdev);
+        pixDestroy(&pix);
+        pixDestroy(&pixg);
+    }
+
+        /* Find the median and variance of the averages.  We require
+         * the best tile to have a mean pixel intensity within a standard
+         * deviation of the median of mean intensities, and choose the
+         * tile in that set with the smallest stdev of pixel intensities
+         * (as a proxy for the tile with least visible structure).
+         * The median of the stdev is used, for debugging, as a normalizing
+         * factor for the stdev of intensities within a tile. */
+    numaGetStatsUsingHistogram(namean, 256, NULL, NULL, NULL, &var_of_mean,
+                               &median_of_mean, 0.0, NULL, NULL);
+    numaGetStatsUsingHistogram(nastdev, 256, NULL, NULL, NULL, NULL,
+                               &median_of_stdev, 0.0, NULL, NULL);
+    mindels = 1000.0;
+    bestdelm = 1000.0;
+    bestindex = 0;
+    for (i = 0; i < n; i++) {
+        numaGetFValue(namean, i, &mean_val);
+        numaGetFValue(nastdev, i, &stdev_val);
+        if (var_of_mean == 0.0) {  /* uniform color; any box will do */
+            delm = 0.0;  /* any value < 1.01 */
+            dels = 1.0;  /* n'importe quoi */
+        } else {
+            delm = L_ABS(mean_val - median_of_mean) / sqrt(var_of_mean);
+            dels = stdev_val / median_of_stdev;
         }
-    } else {  /* searchdir == L_VERT */
-        top = by;    /* distance above box */
-        bot = h - by - bh + 1;   /* distance below box */
-        xstart = bx + bw / 3;
-        xend = bx + 2 * bw / 3;
-        maxval = 0;
-        if (top > bot) {  /* search above */
-            for (i = by - 1; i >= 0; i--) {
-                for (j = xstart; j <=xend; j++) {
-                    pixGetPixel(pixs, j, i, &val);
-                    if (val > maxval) {
-                        maxval = val;
-                        *pxc = j;
-                        *pyc = i;
-                        *pdist = val;
-                        if (val >= targdist)
-                            return 0;
-                    }
+        if (delm < 1.01) {
+            if (dels < mindels) {
+                if (debug) {
+                    fprintf(stderr, "i = %d, mean = %7.3f, delm = %7.3f,"
+                            " stdev = %7.3f, dels = %7.3f\n",
+                            i, mean_val, delm, stdev_val, dels);
                 }
-            }
-        } else {  /* search below */
-            for (i = by + bh; i < h; i++) {
-                for (j = xstart; j <=xend; j++) {
-                    pixGetPixel(pixs, j, i, &val);
-                    if (val > maxval) {
-                        maxval = val;
-                        *pxc = j;
-                        *pyc = i;
-                        *pdist = val;
-                        if (val >= targdist)
-                            return 0;
-                    }
-                }
+                mindels = dels;
+                bestdelm = delm;
+                bestindex = i;
             }
         }
     }
+    *pboxtile = boxaGetBox(boxa, bestindex, L_COPY);
 
+    if (debug) {
+        L_INFO("median of mean = %7.3f\n", procName, median_of_mean);
+        L_INFO("standard dev of mean = %7.3f\n", procName, sqrt(var_of_mean));
+        L_INFO("median of stdev = %7.3f\n", procName, median_of_stdev);
+        L_INFO("best tile: index = %d\n", procName, bestindex);
+        L_INFO("delta from median in units of stdev = %5.3f\n",
+               procName, bestdelm);
+        L_INFO("stdev as fraction of median stdev = %5.3f\n",
+               procName, mindels);
+    }
 
-    pixGetPixel(pixs, *pxc, *pyc, pdist);
+    numaDestroy(&namean);
+    numaDestroy(&nastdev);
+    pixaDestroy(&pixa);
+    boxaDestroy(&boxa);
     return 0;
 }
+
+
+/*!
+ *  findTileRegionsForSearch()
+ *
+ *      Input:  box (region of Pix to search around)
+ *              w, h (dimensions of Pix)
+ *              searchdir (L_HORIZ or L_VERT; direction to search)
+ *              mindist (min distance of selected tile edge from box; >= 0)
+ *              tsize (tile size; > 1; even; typically ~50)
+ *              ntiles (number of tiles tested in each row/column)
+ *      Return: boxa if OK, or null on error
+ *
+ *  Notes:
+ *      (1) See calling function pixfindRepCloseTile().
+ */
+static BOXA *
+findTileRegionsForSearch(BOX     *box,
+                         l_int32  w,
+                         l_int32  h,
+                         l_int32  searchdir,
+                         l_int32  mindist,
+                         l_int32  tsize,
+                         l_int32  ntiles)
+{
+l_int32  bx, by, bw, bh, left, right, top, bot, i, j, nrows, ncols;
+l_int32  x0, y0, x, y, w_avail, w_needed, h_avail, h_needed, t_avail;
+BOX     *box1;
+BOXA    *boxa;
+
+    PROCNAME("findTileRegionsForSearch");
+
+    if (!box)
+        return (BOXA *)ERROR_PTR("box not defined", procName, NULL);
+    if (ntiles == 0)
+        return (BOXA *)ERROR_PTR("no tiles requested", procName, NULL);
+
+    boxGetGeometry(box, &bx, &by, &bw, &bh);
+    if (searchdir == L_HORIZ) {
+            /* Find the tile parameters for the search.  Note that the
+             * tiles are overlapping by 50% in each direction. */
+        left = bx;   /* distance to left of box */
+        right = w - bx - bw + 1;   /* distance to right of box */
+        w_avail = L_MAX(left, right) - mindist;
+        if (tsize & 1) tsize++;  /* be sure it's even */
+        if (w_avail < tsize) {
+            L_ERROR("tsize = %d, w_avail = %d\n", procName, tsize, w_avail);
+            return NULL;
+        }
+        w_needed = tsize + (ntiles - 1) * (tsize / 2);
+        if (w_needed > w_avail) {
+            t_avail = 1 + 2 * (w_avail - tsize) / tsize;
+            L_WARNING("ntiles = %d; room for only %d\n", procName,
+                      ntiles, t_avail);
+            ntiles = t_avail;
+            w_needed = tsize + (ntiles - 1) * (tsize / 2);
+        }
+        nrows = L_MAX(1, 1 + 2 * (bh - tsize) / tsize);
+
+            /* Generate the tile regions to search */
+        boxa = boxaCreate(0);
+        if (left > right)  /* search to left */
+            x0 = bx - w_needed;
+        else  /* search to right */
+            x0 = bx + bw + mindist;
+        for (i = 0; i < nrows; i++) {
+            y = by + i * tsize / 2;
+            for (j = 0; j < ntiles; j++) {
+                x = x0 + j * tsize / 2;
+                box1 = boxCreate(x, y, tsize, tsize);
+                boxaAddBox(boxa, box1, L_INSERT);
+            }
+        }
+    } else {  /* L_VERT */
+            /* Find the tile parameters for the search */
+        top = by;   /* distance above box */
+        bot = h - by - bh + 1;   /* distance below box */
+        h_avail = L_MAX(top, bot) - mindist;
+        if (h_avail < tsize) {
+            L_ERROR("tsize = %d, h_avail = %d\n", procName, tsize, h_avail);
+            return NULL;
+        }
+        h_needed = tsize + (ntiles - 1) * (tsize / 2);
+        if (h_needed > h_avail) {
+            t_avail = 1 + 2 * (h_avail - tsize) / tsize;
+            L_WARNING("ntiles = %d; room for only %d\n", procName,
+                      ntiles, t_avail);
+            ntiles = t_avail;
+            h_needed = tsize + (ntiles - 1) * (tsize / 2);
+        }
+        ncols = L_MAX(1, 1 + 2 * (bw - tsize) / tsize);
+
+            /* Generate the tile regions to search */
+        boxa = boxaCreate(0);
+        if (top > bot)  /* search above */
+            y0 = by - h_needed;
+        else  /* search below */
+            y0 = by + bh + mindist;
+        for (j = 0; j < ncols; j++) {
+            x = bx + j * tsize / 2;
+            for (i = 0; i < ntiles; i++) {
+                y = y0 + i * tsize / 2;
+                box1 = boxCreate(x, y, tsize, tsize);
+                boxaAddBox(boxa, box1, L_INSERT);
+            }
+        }
+    }
+    return boxa;
+}
+

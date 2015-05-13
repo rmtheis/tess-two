@@ -215,7 +215,6 @@ PIX        *pixg;
 
     if (!pixm)
         return pixGetGrayHistogram(pixs, factor);
-
     if (!pixs)
         return (NUMA *)ERROR_PTR("pixs not defined", procName, NULL);
     if (pixGetDepth(pixs) != 8 && !pixGetColormap(pixs))
@@ -292,7 +291,6 @@ PIX        *pixg;
 
     if (!box)
         return pixGetGrayHistogram(pixs, factor);
-
     if (!pixs)
         return (NUMA *)ERROR_PTR("pixs not defined", procName, NULL);
     if (pixGetDepth(pixs) != 8 && !pixGetColormap(pixs))
@@ -714,7 +712,6 @@ NUMA       *na;
 
     if (!box)
         return pixGetCmapHistogram(pixs, factor);
-
     if (!pixs)
         return (NUMA *)ERROR_PTR("pixs not defined", procName, NULL);
     if (pixGetColormap(pixs) == NULL)
@@ -822,9 +819,9 @@ PIXCMAP   *cmap;
  *                    can be < 0; these values are ignored if pixm is null)
  *              factor (subsampling factor; integer >= 1)
  *              rank (between 0.0 and 1.0; 1.0 is brightest, 0.0 is darkest)
- *              &rval (<optional return> red component val for to input rank)
- *              &gval (<optional return> green component val for to input rank)
- *              &bval (<optional return> blue component val for to input rank)
+ *              &rval (<optional return> red component val for input rank)
+ *              &gval (<optional return> green component val for input rank)
+ *              &bval (<optional return> blue component val for input rank)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -856,6 +853,8 @@ PIX       *pixmt, *pixt;
     if (prval) *prval = 0.0;
     if (pgval) *pgval = 0.0;
     if (pbval) *pbval = 0.0;
+    if (!prval && !pgval && !pbval)
+        return ERROR_INT("no results requested", procName, 1);
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     if (pixGetDepth(pixs) != 32)
@@ -866,8 +865,6 @@ PIX       *pixmt, *pixt;
         return ERROR_INT("sampling factor < 1", procName, 1);
     if (rank < 0.0 || rank > 1.0)
         return ERROR_INT("rank not in [0.0 ... 1.0]", procName, 1);
-    if (!prval && !pgval && !pbval)
-        return ERROR_INT("no results requested", procName, 1);
 
     pixmt = NULL;
     if (pixm) {
@@ -975,7 +972,7 @@ NUMA  *na;
  *              factor (subsampling factor; integer >= 1)
  *              type (L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE,
  *                    L_STANDARD_DEVIATION, L_VARIANCE)
- *              &value (<return> pixel value corresponding to input rank)
+ *              &value (<return> pixel value corresponding to input type)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -1064,6 +1061,8 @@ PIXCMAP  *cmap;
     if (prval) *prval = 0.0;
     if (pgval) *pgval = 0.0;
     if (pbval) *pbval = 0.0;
+    if (!prval && !pgval && !pbval)
+        return ERROR_INT("no values requested", procName, 1);
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     cmap = pixGetColormap(pixs);
@@ -1076,8 +1075,6 @@ PIXCMAP  *cmap;
     if (type != L_MEAN_ABSVAL && type != L_ROOT_MEAN_SQUARE &&
         type != L_STANDARD_DEVIATION && type != L_VARIANCE)
         return ERROR_INT("invalid measure type", procName, 1);
-    if (!prval && !pgval && !pbval)
-        return ERROR_INT("no values requested", procName, 1);
 
     if (prval) {
         if (cmap)
@@ -1272,6 +1269,8 @@ PIXCMAP  *cmap;
     if (ppixr) *ppixr = NULL;
     if (ppixg) *ppixg = NULL;
     if (ppixb) *ppixb = NULL;
+    if (!ppixr && !ppixg && !ppixb)
+        return ERROR_INT("no data requested", procName, 1);
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     cmap = pixGetColormap(pixs);
@@ -1282,8 +1281,6 @@ PIXCMAP  *cmap;
     if (type != L_MEAN_ABSVAL && type != L_ROOT_MEAN_SQUARE &&
         type != L_STANDARD_DEVIATION)
         return ERROR_INT("invalid measure type", procName, 1);
-    if (!ppixr && !ppixg && !ppixb)
-        return ERROR_INT("no returned data requested", procName, 1);
 
     if (ppixr) {
         if (cmap)
@@ -1944,7 +1941,7 @@ l_uint32  *data, *line;
     if (pxmax) *pxmax = 0;
     if (pymax) *pymax = 0;
     if (!pmaxval && !pxmax && !pymax)
-        return ERROR_INT("nothing to do", procName, 1);
+        return ERROR_INT("no data requested", procName, 1);
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
     if (pixGetColormap(pixs) != NULL)
@@ -2603,7 +2600,7 @@ PIX       *pixt;
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
     if (!pixd || pixGetDepth(pixd) != 8)
-        return ERROR_INT("pixa not defined or not 8 bpp", procName, 1);
+        return ERROR_INT("pixd not defined or not 8 bpp", procName, 1);
     n = pixaGetCount(pixa);
     pixGetDimensions(pixd, &w, &h, NULL);
     if (n != w)
@@ -2943,6 +2940,8 @@ PIX       *pixg, *pixm;
 
     if (pfgval) *pfgval = 0;
     if (pbgval) *pbgval = 0;
+    if (!pfgval && !pbgval)
+        return ERROR_INT("no data requested", procName, 1);
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
 
@@ -3005,6 +3004,8 @@ PIX       *pixg;
     if (pthresh) *pthresh = 0;
     if (pfgval) *pfgval = 0;
     if (pbgval) *pbgval = 0;
+    if (!pthresh && !pfgval && !pbgval)
+        return ERROR_INT("no data requested", procName, 1);
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
 

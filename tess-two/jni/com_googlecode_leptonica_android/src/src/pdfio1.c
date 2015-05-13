@@ -1252,8 +1252,7 @@ pixWriteStreamPdf(FILE        *fp,
                   const char  *title)
 {
 l_uint8  *data;
-l_int32   ret;
-size_t    nbytes;
+size_t    nbytes, nbytes_written;
 
     PROCNAME("pixWriteStreamPdf");
 
@@ -1265,10 +1264,10 @@ size_t    nbytes;
     if (pixWriteMemPdf(&data, &nbytes, pix, res, title) != 0)
         return ERROR_INT("pdf data not made", procName, 1);
 
-    ret = fwrite(data, 1, nbytes, fp);
+    nbytes_written = fwrite(data, 1, nbytes, fp);
     FREE(data);
-    if (ret)
-        return ERROR_INT("pdf data not written to stream", procName, 1);
+    if (nbytes != nbytes_written)
+        return ERROR_INT("failure writing pdf data to stream", procName, 1);
     return 0;
 }
 

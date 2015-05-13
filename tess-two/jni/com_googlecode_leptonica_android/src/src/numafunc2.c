@@ -39,6 +39,7 @@
  *          NUMA        *numaWindowedMean()
  *          NUMA        *numaWindowedMeanSquare()
  *          l_int32      numaWindowedVariance()
+ *          NUMA        *numaWindowedMedian()
  *          NUMA        *numaConvertToInt()
  *
  *      Histogram generation and statistics
@@ -606,12 +607,14 @@ NUMA       *nav, *narv;  /* variance and square root of variance */
 
     PROCNAME("numaWindowedVariance");
 
+    if (pnav) *pnav = NULL;
+    if (pnarv) *pnarv = NULL;
+    if (!pnav && !pnarv)
+        return ERROR_INT("neither &nav nor &narv are defined", procName, 1);
     if (!nam)
         return ERROR_INT("nam not defined", procName, 1);
     if (!nams)
         return ERROR_INT("nams not defined", procName, 1);
-    if (!pnav && !pnarv)
-        return ERROR_INT("neither &nav nor &narv are defined", procName, 1);
     nm = numaGetCount(nam);
     nms = numaGetCount(nams);
     if (nm != nms)
@@ -639,6 +642,58 @@ NUMA       *nav, *narv;  /* variance and square root of variance */
     }
 
     return 0;
+}
+
+
+/*!
+ *  numaWindowedMedian()
+ *
+ *      Input:  nas
+ *              halfwin (half width of window over which the median is found)
+ *      Return: nad (after windowed median filtering), or null on error
+ *
+ *  Notes:
+ *      (1) The requested window has width = 2 * @halfwin + 1.
+ *      (2) If the input nas has less then 3 elements, just return a copy.
+ *      (3) If the requested filter is too large, it is reduced in size.
+ *      (4) We add a mirrored border of size @halfwin to each end of
+ *          the array to simplify the calculation by avoiding end-effects.
+ */
+NUMA *
+numaWindowedMedian(NUMA    *nas,
+                   l_int32  halfwin)
+{
+l_int32    i, n;
+l_float32  medval;
+NUMA      *na1, *na2, *nad;
+
+    PROCNAME("numaWindowedMedian");
+
+    if (!nas)
+        return (NUMA *)ERROR_PTR("nas not defined", procName, NULL);
+    if ((n = numaGetCount(nas)) < 3)
+        return numaCopy(nas);
+
+    if (halfwin > (n - 1) / 2) {
+        halfwin = (n - 1) / 2;
+        L_INFO("reducing filter to halfwin = %d\n", procName, halfwin);
+    }
+
+        /* Add a border to both ends */
+    na1 = numaAddSpecifiedBorder(nas, halfwin, halfwin, L_MIRRORED_BORDER);
+
+        /* Get the median value at the center of each window, corresponding
+         * to locations in the input nas. */
+    nad = numaCreate(n);
+    for (i = 0; i < n; i++) {
+        na2 = numaClipToInterval(na1, i, i + 2 * halfwin);
+        numaGetMedian(na2, &medval);
+        numaAddNumber(nad, medval);
+        numaDestroy(&na2);
+    }
+
+    numaDestroy(&na1);
+    return nad;
 }
 
 
@@ -1027,7 +1082,8 @@ NUMA      *nad;
  *      Input:  na (an arbitrary set of numbers; not ordered and not
  *                  a histogram)
  *              maxbins (the maximum number of bins to be allowed in
- *                       the histogram; use 0 for consecutive integer bins)
+ *                       the histogram; use an integer larger than the
+ *                       largest number in @na for consecutive integer bins)
  *              &min (<optional return> min value of set)
  *              &max (<optional return> max value of set)
  *              &mean (<optional return> mean value of set)
@@ -1087,8 +1143,10 @@ NUMA      *nah;
     if (pmin) *pmin = 0.0;
     if (pmax) *pmax = 0.0;
     if (pmean) *pmean = 0.0;
-    if (pmedian) *pmedian = 0.0;
     if (pvariance) *pvariance = 0.0;
+    if (pmedian) *pmedian = 0.0;
+    if (prval) *prval = 0.0;
+    if (phisto) *phisto = NULL;
     if (!na)
         return ERROR_INT("na not defined", procName, 1);
     if ((n = numaGetCount(na)) == 0)
@@ -1304,8 +1362,6 @@ NUMA      *nan, *nar;
     *pnay = NULL;
     if (!nasy)
         return ERROR_INT("nasy not defined", procName, 1);
-    if (!pnay)
-        return ERROR_INT("&nay not defined", procName, 1);
     if ((n = numaGetCount(nasy)) == 0)
         return ERROR_INT("no bins in nas", procName, 1);
 
@@ -1516,12 +1572,16 @@ l_float32  sum, midrank, endrank, val;
 
     PROCNAME("numaDiscretizeRankAndIntensity");
 
+    if (pnarbin) *pnarbin = NULL;
+    if (pnam) *pnam = NULL;
+    if (pnar) *pnar = NULL;
+    if (pnabb) *pnabb = NULL;
+    if (!pnarbin && !pnam && !pnar && !pnabb)
+        return ERROR_INT("no output requested", procName, 1);
     if (!na)
         return ERROR_INT("na not defined", procName, 1);
     if (nbins < 2)
         return ERROR_INT("nbins must be > 1", procName, 1);
-    if (!pnarbin && !pnam && !pnar && !pnabb)
-        return ERROR_INT("no output requested", procName, 1);
 
         /* Get cumulative normalized histogram (rank vs intensity value).
          * For a normalized histogram from an 8 bpp grayscale image
@@ -1748,6 +1808,12 @@ NUMA      *nascore, *naave1, *naave2, *nanum1, *nanum2;
 
     PROCNAME("numaSplitDistribution");
 
+    if (psplitindex) *psplitindex = 0;
+    if (pave1) *pave1 = 0.0;
+    if (pave2) *pave2 = 0.0;
+    if (pnum1) *pnum1 = 0.0;
+    if (pnum2) *pnum2 = 0.0;
+    if (pnascore) *pnascore = NULL;
     if (!na)
         return ERROR_INT("na not defined", procName, 1);
 
@@ -2153,10 +2219,10 @@ NUMA      *nat;
 
     PROCNAME("numaCountReversals");
 
-    if (!pnr && !pnrpl)
-        return ERROR_INT("neither &nr nor &nrpl are defined", procName, 1);
     if (pnr) *pnr = 0;
     if (pnrpl) *pnrpl = 0.0;
+    if (!pnr && !pnrpl)
+        return ERROR_INT("neither &nr nor &nrpl are defined", procName, 1);
     if (!nas)
         return ERROR_INT("nas not defined", procName, 1);
 
@@ -2214,6 +2280,9 @@ NUMA      *nat, *nac;
 
     PROCNAME("numaSelectCrossingThreshold");
 
+    if (!pbestthresh)
+        return ERROR_INT("&bestthresh not defined", procName, 1);
+    *pbestthresh = 0.0;
     if (!nay)
         return ERROR_INT("nay not defined", procName, 1);
 
@@ -2252,7 +2321,7 @@ NUMA      *nat, *nac;
                 istart = i;
                 inrun = TRUE;
             }
-	    continue;
+            continue;
         }
         if (inrun && (val != maxval)) {
             iend = i - 1;
@@ -2298,8 +2367,8 @@ NUMA      *nat, *nac;
 #if  DEBUG_CROSSINGS
     fprintf(stderr, "\nCrossings attain a maximum at %d thresholds, between:\n"
                     "  thresh[%d] = %5.1f and thresh[%d] = %5.1f\n",
-		    nmax, maxstart, estthresh - 80.0 + 4.0 * maxstart,
-		    maxend, estthresh - 80.0 + 4.0 * maxend);
+                    nmax, maxstart, estthresh - 80.0 + 4.0 * maxstart,
+                    maxend, estthresh - 80.0 + 4.0 * maxend);
     fprintf(stderr, "The best choice: %5.1f\n", *pbestthresh);
     fprintf(stderr, "Number of crossings at the 41 thresholds:");
     numaWriteStream(stderr, nat);
@@ -2514,10 +2583,13 @@ l_float32  bestwidth, bestshift, bestscore;
 
     PROCNAME("numaEvalBestHaarParameters");
 
-    if (!nas)
-        return ERROR_INT("nas not defined", procName, 1);
+    if (pbestscore) *pbestscore = 0.0;
+    if (pbestwidth) *pbestwidth = 0.0;
+    if (pbestshift) *pbestshift = 0.0;
     if (!pbestwidth || !pbestshift)
         return ERROR_INT("&bestwidth and &bestshift not defined", procName, 1);
+    if (!nas)
+        return ERROR_INT("nas not defined", procName, 1);
 
     bestscore = 0.0;
     delwidth = (maxwidth - minwidth) / (nwidth - 1.0);

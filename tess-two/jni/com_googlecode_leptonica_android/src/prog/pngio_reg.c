@@ -63,6 +63,12 @@
 
 static l_int32 test_mem_png(const char *fname);
 static l_int32 get_header_data(const char *filename);
+static l_int32 test_1bpp_trans(L_REGPARAMS *rp);
+static l_int32 test_1bpp_color(L_REGPARAMS *rp);
+static l_int32 test_1bpp_gray(L_REGPARAMS *rp);
+static l_int32 test_1bpp_bw1(L_REGPARAMS *rp);
+static l_int32 test_1bpp_bw2(L_REGPARAMS *rp);
+static l_int32 test_8bpp_trans(L_REGPARAMS  *rp);
 
 LEPT_DLL extern const char *ImageFileFormatExtensions[];
 
@@ -114,10 +120,10 @@ L_REGPARAMS  *rp;
     if (ioFormatTest(FILE_GRAY_ALPHA)) success = FALSE;
     if (success) {
         fprintf(stderr,
-            "\n  ********** Success on lossless r/w to file *********\n");
+            "\n  ********** Success on lossless r/w to file *********\n\n");
     } else {
         fprintf(stderr,
-            "\n  ******* Failure on at least one r/w to file ******\n");
+            "\n  ******* Failure on at least one r/w to file ******\n\n");
     }
     if (!success) failure = TRUE;
 
@@ -147,7 +153,26 @@ L_REGPARAMS  *rp;
     }
     if (!success) failure = TRUE;
 
-    /* -------------- Part 3: Read header information -------------- */
+    /* ------------ Part 3: Test lossless 1 and 8 bpp r/w ------------ */
+    fprintf(stderr, "\nTest lossless 1 and 8 bpp r/w\n");
+    success = TRUE;
+    if (test_1bpp_trans(rp) == 0) success = FALSE;
+    if (test_1bpp_color(rp) == 0) success = FALSE;
+    if (test_1bpp_gray(rp) == 0) success = FALSE;
+    if (test_1bpp_bw1(rp) == 0) success = FALSE;
+    if (test_1bpp_bw2(rp) == 0) success = FALSE;
+    if (test_8bpp_trans(rp) == 0) success = FALSE;
+
+    if (success) {
+        fprintf(stderr,
+            "\n  ******* Success on 1 and 8 bpp lossless *******\n\n");
+    } else {
+        fprintf(stderr,
+            "\n  ******* Failure on 1 and 8 bpp lossless *******\n\n");
+    }
+    if (!success) failure = TRUE;
+
+    /* -------------- Part 4: Read header information -------------- */
     success = TRUE;
     if (get_header_data(FILE_1BPP)) success = FALSE;
     if (get_header_data(FILE_2BPP)) success = FALSE;
@@ -271,3 +296,184 @@ size_t    nbytes1, nbytes2;
 
     return ret1 || ret2;
 }
+
+static l_int32
+test_1bpp_trans(L_REGPARAMS  *rp)
+{
+l_int32   same, transp;
+FILE     *fp;
+PIX      *pix1, *pix2;
+PIXCMAP  *cmap;
+
+    pix1 = pixRead("feyn-fract2.tif");
+    cmap = pixcmapCreate(1);
+    pixSetColormap(pix1, cmap);
+    pixcmapAddRGBA(cmap, 180, 130, 220, 0);  /* transparent */
+    pixcmapAddRGBA(cmap, 20, 120, 0, 255);  /* opaque */
+    pixWrite("/tmp/regout/1bpp-trans.png", pix1, IFF_PNG);
+    pix2 = pixRead("/tmp/regout/1bpp-trans.png");
+    pixEqual(pix1, pix2, &same);
+    if (same)
+        fprintf(stderr, "1bpp_trans: success\n");
+    else
+        fprintf(stderr, "1bpp_trans: bad output\n");
+    pixDisplayWithTitle(pix2, 700, 0, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    fp = fopenReadStream("/tmp/regout/1bpp-trans.png");
+    fgetPngColormapInfo(fp, &cmap, &transp);
+    fclose(fp);
+    if (transp)
+        fprintf(stderr, "1bpp_trans: correct -- transparency found\n");
+    else
+        fprintf(stderr, "1bpp_trans: error -- no transparency found!\n");
+    if (rp->display) pixcmapWriteStream(stderr, cmap);
+    pixcmapDestroy(&cmap);
+    return same;
+}
+
+static l_int32
+test_1bpp_color(L_REGPARAMS  *rp)
+{
+l_int32   same, transp;
+FILE     *fp;
+PIX      *pix1, *pix2;
+PIXCMAP  *cmap;
+
+    pix1 = pixRead("feyn-fract2.tif");
+    cmap = pixcmapCreate(1);
+    pixSetColormap(pix1, cmap);
+    pixcmapAddRGBA(cmap, 180, 130, 220, 255);  /* color, opaque */
+    pixcmapAddRGBA(cmap, 20, 120, 0, 255);  /* color, opaque */
+    pixWrite("/tmp/regout/1bpp-color.png", pix1, IFF_PNG);
+    pix2 = pixRead("/tmp/regout/1bpp-color.png");
+    pixEqual(pix1, pix2, &same);
+    if (same)
+        fprintf(stderr, "1bpp_color: success\n");
+    else
+        fprintf(stderr, "1bpp_color: bad output\n");
+    pixDisplayWithTitle(pix2, 700, 100, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    fp = fopenReadStream("/tmp/regout/1bpp-color.png");
+    fgetPngColormapInfo(fp, &cmap, &transp);
+    fclose(fp);
+    if (transp)
+        fprintf(stderr, "1bpp_color: error -- transparency found!\n");
+    else
+        fprintf(stderr, "1bpp_color: correct -- no transparency found\n");
+    if (rp->display) pixcmapWriteStream(stderr, cmap);
+    pixcmapDestroy(&cmap);
+    return same;
+}
+
+static l_int32
+test_1bpp_gray(L_REGPARAMS  *rp)
+{
+l_int32   same;
+PIX      *pix1, *pix2;
+PIXCMAP  *cmap;
+
+    pix1 = pixRead("feyn-fract2.tif");
+    cmap = pixcmapCreate(1);
+    pixSetColormap(pix1, cmap);
+    pixcmapAddRGBA(cmap, 180, 180, 180, 255);  /* light, opaque */
+    pixcmapAddRGBA(cmap, 60, 60, 60, 255);  /* dark, opaque */
+    pixWrite("/tmp/regout/1bpp-gray.png", pix1, IFF_PNG);
+    pix2 = pixRead("/tmp/regout/1bpp-gray.png");
+    pixEqual(pix1, pix2, &same);
+    if (same)
+        fprintf(stderr, "1bpp_gray: success\n");
+    else
+        fprintf(stderr, "1bpp_gray: bad output\n");
+    pixDisplayWithTitle(pix2, 700, 200, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    return same;
+}
+
+static l_int32
+test_1bpp_bw1(L_REGPARAMS  *rp)
+{
+l_int32   same;
+PIX      *pix1, *pix2;
+PIXCMAP  *cmap;
+
+    pix1 = pixRead("feyn-fract2.tif");
+    cmap = pixcmapCreate(1);
+    pixSetColormap(pix1, cmap);
+    pixcmapAddRGBA(cmap, 0, 0, 0, 255);  /* black, opaque */
+    pixcmapAddRGBA(cmap, 255, 255, 255, 255);  /* white, opaque */
+    pixWrite("/tmp/regout/1bpp-bw1.png", pix1, IFF_PNG);
+    pix2 = pixRead("/tmp/regout/1bpp-bw1.png");
+    pixEqual(pix1, pix2, &same);
+    if (same)
+        fprintf(stderr, "1bpp_bw1: success\n");
+    else
+        fprintf(stderr, "1bpp_bw1: bad output\n");
+    pixDisplayWithTitle(pix2, 700, 300, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    return same;
+}
+
+static l_int32
+test_1bpp_bw2(L_REGPARAMS  *rp)
+{
+l_int32   same;
+PIX      *pix1, *pix2;
+PIXCMAP  *cmap;
+
+    pix1 = pixRead("feyn-fract2.tif");
+    cmap = pixcmapCreate(1);
+    pixSetColormap(pix1, cmap);
+    pixcmapAddRGBA(cmap, 255, 255, 255, 255);  /* white, opaque */
+    pixcmapAddRGBA(cmap, 0, 0, 0, 255);  /* black, opaque */
+    pixWrite("/tmp/regout/1bpp-bw2.png", pix1, IFF_PNG);
+    pix2 = pixRead("/tmp/regout/1bpp-bw2.png");
+    pixEqual(pix1, pix2, &same);
+    if (same)
+        fprintf(stderr, "1bpp_bw2: success\n");
+    else
+        fprintf(stderr, "1bpp_bw2: bad output\n");
+    pixDisplayWithTitle(pix2, 700, 400, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    return same;
+}
+
+static l_int32
+test_8bpp_trans(L_REGPARAMS  *rp)
+{
+l_int32   same, transp;
+FILE     *fp;
+PIX      *pix1, *pix2, *pix3;
+PIXCMAP  *cmap;
+
+    pix1 = pixRead("wyom.jpg");
+    pix2 = pixColorSegment(pix1, 75, 10, 8, 7);
+    cmap = pixGetColormap(pix2);
+    pixcmapSetAlpha(cmap, 0, 0);  /* set blueish sky color to transparent */
+    pixWrite("/tmp/regout/8bpp-trans.png", pix2, IFF_PNG);
+    pix3 = pixRead("/tmp/regout/8bpp-trans.png");
+    pixEqual(pix2, pix3, &same);
+    if (same)
+        fprintf(stderr, "8bpp_trans: success\n");
+    else
+        fprintf(stderr, "8bpp_trans: bad output\n");
+    pixDisplayWithTitle(pix3, 700, 0, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    fp = fopenReadStream("/tmp/regout/8bpp-trans.png");
+    fgetPngColormapInfo(fp, &cmap, &transp);
+    fclose(fp);
+    if (transp)
+        fprintf(stderr, "8bpp_trans: correct -- transparency found\n");
+    else
+        fprintf(stderr, "8bpp_trans: error -- no transparency found!\n");
+    if (rp->display) pixcmapWriteStream(stderr, cmap);
+    pixcmapDestroy(&cmap);
+    return same;
+}
+

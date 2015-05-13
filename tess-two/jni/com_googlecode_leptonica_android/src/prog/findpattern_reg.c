@@ -93,7 +93,7 @@ SEL     *selhm;
 
     if ((pixs = pixRead(patname[patno])) == NULL) {
         rp->success = FALSE;
-	return ERROR_INT("pixs not made", procName, 1);
+        return ERROR_INT("pixs not made", procName, 1);
     }
 
         /* Make a hit-miss sel at specified reduction factor */

@@ -62,7 +62,7 @@
  *         l_int32             recogShowAverageTemplates()
  *         PIX                *recogShowMatchesInRange()
  *         PIX                *recogShowMatch()
- *         l_int32             recogMakeBmf()
+ *         l_int32             recogResetBmf()
  *
  *      Static helpers
  *         static char        *l_charToString()
@@ -283,7 +283,7 @@ PIX       *pixc, *pixb, *pixt, *pix1, *pix2;
  *              pixs (if depth > 1, will be thresholded to 1 bpp)
  *              box (<optional> cropping box)
  *              text (<optional> if null, use text field in pix)
- *              &pixa (one pix, 1 bpp, labelled)
+ *              &pixa (<return> one pix, 1 bpp, labelled)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -454,7 +454,7 @@ l_int32  w, h;
     PROCNAME("recogScaleCharacter");
 
     if (!recog)
-        return (PIX *)ERROR_PTR("pix not defined", procName, NULL);
+        return (PIX *)ERROR_PTR("recog not defined", procName, NULL);
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
 
@@ -629,11 +629,11 @@ PTA       *ptac;
 
     PROCNAME("pixaAccumulateSamples");
 
+    if (px) *px = 0;
+    if (py) *py = 0;
     if (!ppixd)
         return ERROR_INT("&pixd not defined", procName, 1);
     *ppixd = NULL;
-    if (px) *px = 0;
-    if (py) *py = 0;
     if (!pixa)
         return ERROR_INT("pixa not defined", procName, 1);
 
@@ -971,7 +971,7 @@ PTA       *pta, *pta_u;
  *  recogaTrainingDone()
  *
  *      Input:  recoga
- *             &done  (1 if training finished on all recog; 0 otherwise)
+ *              &done (<return> 1 if training finished on all recog; else 0)
  *      Return: 0 if OK, 1 on error
  */
 l_int32
@@ -1180,7 +1180,7 @@ recogPadTrainingSet(L_RECOG  **precog,
                     l_int32    debug)
 {
 const char  *bootdir, *bootpattern, *bootpath;
-char        *boottext, *fontdir;
+char        *boottext;
 l_int32      i, k, min_nopad, npix, nclass, nboot, nsamp, nextra, ntoadd;
 l_int32      ave_height, targeth, setid, index, allclasses;
 l_int32     *lut;
@@ -1224,19 +1224,16 @@ L_RECOGA    *recoga;
      * input recog and return a generic boot recognizer that will
      * be run using scaling both width and height.
      * ----------------------------------------------------------*/
-    fontdir = (recog->fontdir) ? stringNew(recog->fontdir) : NULL;
     if (recog->samplenum < MIN_TOTAL_SAMPLES) {
         L_WARNING("too few samples in recog; using bootrecog only\n", procName);
         bootpath = recog->bootpath;
         L_INFO("boot path = %s\n", procName, bootpath);
         if ((pixaboot = pixaRead(bootpath)) == NULL)
             return ERROR_INT("pixaboot not read", procName, 1);
-        rec1 = recogCreateFromPixa(pixaboot, 20, 32, L_USE_AVERAGE, 100,
-                                    1, fontdir);
+        rec1 = recogCreateFromPixa(pixaboot, 20, 32, L_USE_AVERAGE, 100, 1);
         recogReplaceInRecoga(&recog, rec1);  /* destroys recog */
         *precog = rec1;
         pixaDestroy(&pixaboot);
-        FREE(fontdir);
         return 0;
     }
 
@@ -1262,8 +1259,7 @@ L_RECOGA    *recoga;
          * averages from a copy of the input recog, also scaled to h = 32. */
     if ((paa1 = pixaaReadFromFiles(bootdir, bootpattern, 0, 0)) == NULL)
         return ERROR_INT("boot recog files not found", procName, 1);
-    recoga = recogaCreateFromPixaa(paa1, 0, 32, L_USE_AVERAGE, 100, 1,
-                                   fontdir);
+    recoga = recogaCreateFromPixaa(paa1, 0, 32, L_USE_AVERAGE, 100, 1);
     pixaaDestroy(&paa1);
     if (!recoga)
         return ERROR_INT("recoga not made", procName, 1);
@@ -1271,12 +1267,10 @@ L_RECOGA    *recoga;
         /* The parameters of the input recog must match those of the
          * boot array.  Replace the input recog with a new one, that
          * uses the average templates for matching, scaled to h = 32. */
-    rec1 = recogCreateFromRecog(recog, 0, 32, L_USE_AVERAGE, 100, 1,
-                                fontdir);
+    rec1 = recogCreateFromRecog(recog, 0, 32, L_USE_AVERAGE, 100, 1);
     recogReplaceInRecoga(&recog, rec1);  /* destroys recog */
     *precog = rec1;
     recog = rec1;
-    FREE(fontdir);
 
         /* Now for each class in the recog, decide which recog in recoga
          * should be used to select samples for padding the recog. */
@@ -1475,10 +1469,10 @@ PIXA    *pixa;
 
     PROCNAME("recogAverageClassGeom");
 
-    if (!pnaw && !pnah)
-        return ERROR_INT("nothing to do", procName, 1);
     if (pnaw) *pnaw = NULL;
     if (pnah) *pnah = NULL;
+    if (!pnaw && !pnah)
+        return ERROR_INT("no output requested", procName, 1);
     if (!recog)
         return ERROR_INT("recog not defined", procName, 1);
 
@@ -1561,18 +1555,14 @@ L_RECOG   *rec;
 
     PROCNAME("recogBestCorrelForPadding");
 
-    if (!pnaset)
-        return ERROR_INT("&naset not defined", procName, 1);
-    *pnaset = NULL;
-    if (!pnaindex)
-        return ERROR_INT("&naindex not defined", procName, 1);
-    *pnaindex = NULL;
-    if (!pnascore)
-        return ERROR_INT("&nascore not defined", procName, 1);
-    *pnascore = NULL;
-    if (!pnasum)
-        return ERROR_INT("&nasum not defined", procName, 1);
-    *pnasum = NULL;
+    if (ppixadb) *ppixadb = NULL;
+    if (pnaset) *pnaset = NULL;
+    if (pnaindex) *pnaindex = NULL;
+    if (pnascore) *pnascore = NULL;
+    if (pnasum) *pnasum = NULL;
+    if (!pnaset || !pnaindex || !pnascore || !pnasum)
+        return ERROR_INT("&naset, &naindex, &nasore, &nasum not all defined",
+                         procName, 1);
     if (!recog)
         return ERROR_INT("recog is not defined", procName, 1);
     if (!recoga)
@@ -1671,12 +1661,11 @@ PIXA      *pixa1;
 
     PROCNAME("recogCorrelAverages");
 
-    if (!pnaindex)
-        return ERROR_INT("&naindex not defined", procName, 1);
-    *pnaindex = NULL;
-    if (!pnascore)
-        return ERROR_INT("&nascore not defined", procName, 1);
-    *pnascore = NULL;
+    if (ppixadb) *ppixadb = NULL;
+    if (pnaindex) *pnaindex = NULL;
+    if (pnascore) *pnascore = NULL;
+    if (!pnaindex || !pnascore)
+        return ERROR_INT("&naindex and &nascore not defined", procName, 1);
     if (!recog1 || !recog2)
         return ERROR_INT("recog1 and recog2 not both defined", procName, 1);
     if (!recog1->train_done || !recog2->train_done)
@@ -2275,31 +2264,28 @@ PIXA   *pixa;
 
 
 /*!
- *  recogMakeBmf()
+ *  recogResetBmf()
  *
  *      Input:  recog
- *              fontdir (for bitmap fonts; typically "fonts")
  *              size  (of font; even integer between 4 and 20; default is 6)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) This can be used to (re)set the size of the font used for
- *          debug labelling.
+ *      (1) Use this to reset the size of the font used for debug labelling.
  */
 l_int32
-recogMakeBmf(L_RECOG     *recog,
-             const char  *fontdir,
+recogResetBmf(L_RECOG     *recog,
              l_int32      size)
 {
-   PROCNAME("recogMakeBmf");
+   PROCNAME("recogResetBmf");
 
-   if (!recog || !fontdir)
-        return ERROR_INT("recog and fontdir not both defined", procName, 1);
+   if (!recog)
+        return ERROR_INT("recog not defined", procName, 1);
    if (size < 4 || size > 20 || (size % 2)) size = 6;
    if (size == recog->bmf_size) return 0;  /* no change */
 
    bmfDestroy(&recog->bmf);
-   recog->bmf = bmfCreate(fontdir, size);
+   recog->bmf = bmfCreate(NULL, size);
    recog->bmf_size = size;
    return 0;
 }
@@ -2363,19 +2349,23 @@ PIXA  *pixa2;
 /*
  *  debugAddImage2()
  *
- *      Input:  &pixadb (<optional; possible return>
+ *      Input:  &pixadb (ptr required to allow pixadb to be returned;
+ *                       input pixadb can be null)
  *              pixa1 (<optional> accumulated pairs of images)
  *              bmf
  *              index (of recog in recoga)
  *      Return: void
  *
  *  Notes:
- *      (1) If pixa1 is NULL, do nothing.
- *      (2) If this is the first time this function is called, then
- *          *ppixadb == NULL, so we create pixadb (storing the ptr at ppixadb).
- *      (3) Display pixa1 into a pix and add to pixadb.
- *      (4) Subsequent calls, for different recognizers that could be used
- *          for augmenting the instances, add to pixadb.
+ *      (1) This displays pixa1 into a pix and adds it to pixadb.
+ *      (2) If pixa1 is NULL, do nothing.
+ *      (3) The first time this function is called, first initialize:
+ *            Pixa  *pixadb = NULL;
+ *          Then:
+ *            debugAddImage2(&pixadb, pixa1, ...);
+ *          This will create pixadb from data in pixa1, storing the ptr
+ *          at ppixadb.  Subsequent calls (e.g., for different recognizers
+ *          that could be used to augment the instances) will add to pixadb.
  */
 static void
 debugAddImage2(PIXA   **ppixadb,

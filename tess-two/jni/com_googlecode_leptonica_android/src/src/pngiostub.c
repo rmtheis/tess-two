@@ -86,6 +86,13 @@ l_int32 isPngInterlaced(const char *filename, l_int32 *pinterlaced)
 
 /* ----------------------------------------------------------------------*/
 
+l_int32 fgetPngColormapInfo(FILE *fp, PIXCMAP **pcmap, l_int32 *ptransparency)
+{
+    return ERROR_INT("function not present", "fgetPngColormapInfo", 1);
+}
+
+/* ----------------------------------------------------------------------*/
+
 l_int32 pixWritePng(const char *filename, PIX *pix, l_float32 gamma)
 {
     return ERROR_INT("function not present", "pixWritePng", 1);

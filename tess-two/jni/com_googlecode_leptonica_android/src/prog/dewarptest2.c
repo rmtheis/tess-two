@@ -72,7 +72,7 @@ static char  mainName[] = "dewarptest2";
     if (method == 1) {  /* Use single page dewarp function */
         dewarpSinglePage(pixs, 1, 100, 1, &pixd, NULL, 1);
         pixDisplay(pixd, 100, 100);
-    } else {  /* Break down into multiple steps */
+    } else {  /* Break down into multiple steps; require min of only 6 lines */
         dewa = dewarpaCreate(40, 30, 1, 6, 50);
         dewarpaUseBothArrays(dewa, 1);
 
@@ -96,6 +96,7 @@ static char  mainName[] = "dewarptest2";
         dewarpaApplyDisparity(dewa, pageno, pixg, -1, 0, 0, &pixd,
                               "/tmp/lept/test2_apply.pdf");
 
+        dewarpaInfo(stderr, dewa);
         dewarpaDestroy(&dewa);
         pixDestroy(&pixg);
         pixDestroy(&pixb);

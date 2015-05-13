@@ -43,18 +43,15 @@ static void writeResult(char *sequence, l_int32 same);
 int main(int    argc,
          char **argv)
 {
-char        *str;
 char         buffer1[256];
 char         buffer2[256];
 l_int32      i, same, same2, factor1, factor2, diff, success;
 PIX         *pixs, *pixsd, *pixt1, *pixt2, *pixt3;
-SEL         *sel1, *sel2;
 static char  mainName[] = "binmorph2_reg";
 
     if (argc != 1)
         return ERROR_INT(" Syntax:  binmorph2_reg", mainName, 1);
 
-#if 1
     pixs = pixRead("rabi.png");
     pixsd = pixMorphCompSequence(pixs, "d5.5", 0);
     success = TRUE;
@@ -165,7 +162,18 @@ static char  mainName[] = "binmorph2_reg";
         fprintf(stderr, "\n---------- Success: no errors ----------\n");
     else
         fprintf(stderr, "\n---------- Failure: error(s) found -----------\n");
-#endif
+    return 0;
+}
+
+
+static void writeResult(char *sequence,
+                        l_int32 same)
+{
+    if (same)
+        fprintf(stderr, "Sequence %s: SUCCESS\n", sequence);
+    else
+        fprintf(stderr, "Sequence %s: FAILURE\n", sequence);
+}
 
 
 #if 0
@@ -212,17 +220,3 @@ static char  mainName[] = "binmorph2_reg";
     selaDestroy(&sela);
     }
 #endif
-
-    return 0;
-}
-
-
-static void writeResult(char *sequence,
-                        l_int32 same)
-{
-    if (same)
-        fprintf(stderr, "Sequence %s: SUCCESS\n", sequence);
-    else
-        fprintf(stderr, "Sequence %s: FAILURE\n", sequence);
-}
-

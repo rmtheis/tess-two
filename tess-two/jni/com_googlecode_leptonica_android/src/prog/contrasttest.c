@@ -44,57 +44,39 @@ l_float32    factor;    /* scaled width of atan curve */
 l_float32    fact[NPLOTS] = {.2, 0.4, 0.6, 0.8, 1.0};
 GPLOT       *gplot;
 NUMA        *na, *nax;
-PIX         *pixs, *pixd;
+PIX         *pixs;
 static char  mainName[] = "contrasttest";
 
     if (argc != 4)
-	return ERROR_INT(" Syntax:  contrasttest filein factor fileout",
-	       mainName, 1);
+        return ERROR_INT(" Syntax:  contrasttest filein factor fileout",
+               mainName, 1);
 
     filein = argv[1];
     factor = atof(argv[2]);
     fileout = argv[3];
 
     if ((pixs = pixRead(filein)) == NULL)
-	return ERROR_INT("pixs not made", mainName, 1);
-
-#if 0
-    startTimer();
-    pixContrastTRC(pixs, pixs, factor);
-    fprintf(stderr, "Time for contrast: %7.3f sec\n", stopTimer());
-    pixWrite(fileout, pixs, IFF_JFIF_JPEG);
-    pixDestroy(&pixs);
-#endif
-
-#if 0
-    startTimer();
-    pixd = pixContrastTRC(NULL, pixs, factor);
-    fprintf(stderr, "Time for contrast: %7.3f sec\n", stopTimer());
-    pixWrite(fileout, pixd, IFF_JFIF_JPEG);
-    pixDestroy(&pixs);
-    pixDestroy(&pixd);
-#endif
+        return ERROR_INT("pixs not made", mainName, 1);
 
     na = numaContrastTRC(factor);
     gplotSimple1(na, GPLOT_X11, "junkroot", "contrast trc");
     numaDestroy(&na);
 
-#if 1     /* plot contrast TRC maps */
+         /* Plot contrast TRC maps */
     nax = numaMakeSequence(0.0, 1.0, 256);
     gplot = gplotCreate("junkmap", GPLOT_X11,
         "Atan mapping function for contrast enhancement",
         "value in", "value out");
     for (iplot = 0; iplot < NPLOTS; iplot++) {
-	na = numaContrastTRC(fact[iplot]);
-	sprintf(bigbuf, "factor = %3.1f", fact[iplot]);
+        na = numaContrastTRC(fact[iplot]);
+        sprintf(bigbuf, "factor = %3.1f", fact[iplot]);
         gplotAddPlot(gplot, nax, na, GPLOT_LINES, bigbuf);
-	numaDestroy(&na);
+        numaDestroy(&na);
     }
     gplotMakeOutput(gplot);
+
     gplotDestroy(&gplot);
     numaDestroy(&nax);
-#endif
-
     return 0;
 }
 

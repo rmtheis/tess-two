@@ -521,7 +521,6 @@ PIX  *pix;
 
     if ((pix = *ppix) == NULL)
         return;
-
     pixFree(pix);
     *ppix = NULL;
     return;
@@ -845,7 +844,7 @@ PIX     *pixs;
 /*!
  *  pixSwapAndDestroy()
  *
- *      Input:  &pixd (<optional, return> input pixd can be null,
+ *      Input:  &pixd (<optional return> input pixd can be null,
  *                     and it must be different from pixs)
  *              &pixs (will be nulled after the swap)
  *      Return: 0 if OK, 1 on error
@@ -1246,6 +1245,10 @@ pixGetResolution(PIX      *pix,
 {
     PROCNAME("pixGetResolution");
 
+    if (pxres) *pxres = 0;
+    if (pyres) *pyres = 0;
+    if (!pxres && !pyres)
+        return ERROR_INT("no output requested", procName, 1);
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
     if (pxres) *pxres = pix->xres;
@@ -1698,6 +1701,7 @@ void     **lines;
 
     PROCNAME("pixGetLinePtrs");
 
+    if (psize) *psize = 0;
     if (!pix)
         return (void **)ERROR_PTR("pix not defined", procName, NULL);
 

@@ -30,6 +30,7 @@
  *     High-level procedures for writing images to file:
  *        l_int32     pixaWriteFiles()
  *        l_int32     pixWrite()    [behavior depends on WRITE_AS_NAMED]
+ *        l_int32     pixWriteAutoFormat()
  *        l_int32     pixWriteStream()
  *        l_int32     pixWriteImpliedFormat()
  *        l_int32     pixWriteTempfile()
@@ -37,6 +38,7 @@
  *     Selection of output format if default is requested
  *        l_int32     pixChooseOutputFormat()
  *        l_int32     getImpliedFileFormat()
+ *        l_int32     pixGetAutoFormat()
  *        const char *getFormatExtension()
  *
  *     Write to memory
@@ -64,6 +66,7 @@
  *          tiff  (including most varieties of compression)
  *          gif
  *          webp
+ *          jp2 (jpeg2000)
  *  (3) Writing is supported through special interfaces:
  *          ps (PostScript, in psio1.c, psio2.c):
  *              level 1 (uncompressed)
@@ -72,7 +75,6 @@
  *          pdf (PDF, in pdfio.c):
  *              level 1 (g4 and dct encoding: requires tiff, jpg)
  *              level 2 (g4, dct and flate encoding: requires tiff, jpg, zlib)
- *  (4) No other output formats are supported, such as jp2 (jpeg2000)
  */
 
 #include <string.h>
@@ -291,17 +293,35 @@ FILE  *fp;
         fclose(fp);
         return ERROR_INT("pix not written to stream", procName, 1);
     }
-
-        /* Close the stream except if GIF under windows, because
-         * EGifCloseFile() closes the windows file stream! */
-    if (format != IFF_GIF)
-        fclose(fp);
-#ifndef _WIN32
-    else  /* gif file */
-        fclose(fp);
-#endif  /* ! _WIN32 */
+    fclose(fp);
 
     return 0;
+}
+
+
+/*!
+ *  pixWriteAutoFormat()
+ *
+ *      Input:  filename
+ *              pix
+ *      Return: 0 if OK; 1 on error
+ */
+l_int32
+pixWriteAutoFormat(const char  *filename,
+                   PIX         *pix)
+{
+l_int32  format;
+
+    PROCNAME("pixWriteAutoFormat");
+
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+    if (!filename)
+        return ERROR_INT("filename not defined", procName, 1);
+
+    if (pixGetAutoFormat(pix, &format))
+        return ERROR_INT("auto format not returned", procName, 1);
+    return pixWrite(filename, pix, format);
 }
 
 
@@ -365,7 +385,7 @@ pixWriteStream(FILE    *fp,
         break;
 
     case IFF_JP2:
-        return pixWriteStreamJp2k(fp, pix, 34, 0, 0);
+        return pixWriteStreamJp2k(fp, pix, 34, 0, 0, 0);
         break;
 
     case IFF_WEBP:
@@ -572,6 +592,51 @@ l_int32  format = IFF_UNKNOWN;
 
 
 /*!
+ *  pixGetAutoFormat()
+ *
+ *      Input:  pix
+ *              &format
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) The output formats are restricted to tiff, jpeg and png
+ *          because these are the most commonly used image formats and
+ *          the ones that are typically installed with leptonica.
+ *      (2) This decides what compression to use based on the pix.
+ *          It chooses tiff-g4 if 1 bpp without a colormap, jpeg with
+ *          quality 75 if grayscale, rgb or rgba (where it loses
+ *          the alpha layer), and lossless png for all other situations.
+ */
+l_int32
+pixGetAutoFormat(PIX      *pix,
+                 l_int32  *pformat)
+{
+l_int32   d;
+PIXCMAP  *cmap;
+
+    PROCNAME("pixGetAutoFormat");
+
+    if (!pformat)
+        return ERROR_INT("&format not defined", procName, 0);
+    *pformat = IFF_UNKNOWN;
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 0);
+
+    d = pixGetDepth(pix);
+    cmap = pixGetColormap(pix);
+    if (d == 1 && !cmap) {
+        *pformat = IFF_TIFF_G4;
+    } else if ((d == 8 && !cmap) || d == 24 || d == 32) {
+        *pformat = IFF_JFIF_JPEG;
+    } else {
+        *pformat = IFF_PNG;
+    }
+
+    return 0;
+}
+
+
+/*!
  *  getFormatExtension()
  *
  *      Input:  format (integer)
@@ -669,7 +734,7 @@ l_int32  ret;
         break;
 
     case IFF_JP2:
-        ret = pixWriteMemJp2k(pdata, psize, pix, 34, 0, 0);
+        ret = pixWriteMemJp2k(pdata, psize, pix, 34, 0, 0, 0);
         break;
 
     case IFF_WEBP:

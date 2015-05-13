@@ -65,23 +65,25 @@
  *    strings.
  *
  *    N.B.
- *    * This is based on openjpeg-2.0 or 2.1.
+ *    * This is based on the most recent openjpeg release: 2.1.
  *    * The openjpeg interface was massively changed from 1.X.  The debian
  *      distribution is way back at 1.3.  We have inquired but are unable
- *      to determine if or when a debian distribution will be built for 2.X.
- *    * For version 2.X, the openjpeg.h file is installed in an
- *      openjpeg-2.X subdirectory, which is hard to support.
+ *      to determine if or when a debian distribution will be built for 2.1.
+ *    * For version 2.1, the openjpeg.h file is installed in an
+ *      openjpeg-2.1 subdirectory, which is hard to support.
  *    * In openjpeg-2.1, reading is slow compared to jpeg or webp,
  *      and writing is very slow compared to jpeg or webp.  This is expected
  *      to improve significantly in future versions.
- *    * Reading and writing jp2k are supported here for both 2.0 and 2.1.
- *      The high-level interface to openjpeg continues to change.  In 2.1, the
- *      ability to interface to a C file stream has been removed permanently.
- *      Leptonica requires either a file stream or memory buffer interface
- *      to each compression library.  openjpeg-2.1 provides neither, so we
- *      have brought several static functions over from openjpeg-2.0
- *      in order to retain the file stream interface.  See our static
- *      function opjCreateStream().
+ *    * Reading and writing jp2k are supported here for 2.1.
+ *      The high-level interface to openjpeg continues to change.
+ *      From 2.0 to 2.1, the ability to interface to a C file stream
+ *      was removed permanently.  Leptonica supports both file stream
+ *      and memory buffer interfaces for every image I/O library, and
+ *      it requires the libraries to support at least one of these.
+ *      However, openjpeg-2.1 provides neither, so we have brought
+ *      several static functions over from openjpeg-2.0 in order to
+ *      retain the file stream interface.  See our static function
+ *      opjCreateStream().
  *    * Specifying a quality factor for jpeg2000 requires caution.  Unlike
  *      jpeg and webp, which have a sensible scale that goes from 0 (very poor)
  *      to 100 (nearly lossless), kakadu and openjpeg use idiosyncratic and
@@ -106,17 +108,13 @@
 #if  HAVE_LIBJP2K   /* defined in environ.h */
 /* --------------------------------------------*/
 
-    /* Leptonica supports both 2.0 and 2.1.  If you have 2.0,
-     * change MINOR to 0.  */
-#define  MINOR   1
+    /* Leptonica supports both 2.0 and 2.1. */
+#include LIBJP2K_HEADER
 
-#if MINOR == 0
-  static const l_int32  OpjMinor = 0;
-  #include "openjpeg-2.0/openjpeg.h"
-#else
-  static const l_int32  OpjMinor = 1;
-  #include "openjpeg-2.1/openjpeg.h"
-#endif  /* MINOR == 0 */
+    /* 2.0 didn't define OPJ_VERSION_MINOR. */
+#ifndef OPJ_VERSION_MINOR
+#define OPJ_VERSION_MINOR 0
+#endif
 
     /* Static generator of opj_stream from file stream.
      * In 2.0.1, this functionality is provided by
@@ -127,12 +125,27 @@
 static opj_stream_t *opjCreateStream(FILE *fp, l_int32 is_read);
 
     /* Static converter pix --> opj_image.  Used for compressing pix,
-     * because the codec works on raster data stored in their imaage. */
+     * because the codec works on data stored in their raster format. */
 static opj_image_t *pixConvertToOpjImage(PIX *pix);
 
-#ifndef  NO_CONSOLE_IO
-#define  DEBUG_INFO      0
-#endif  /* ~NO_CONSOLE_IO */
+/*---------------------------------------------------------------------*
+ *                        Callback event handlers                      *
+ *---------------------------------------------------------------------*/
+static void error_callback(const char *msg, void *client_data) {
+  (void)client_data;
+  fprintf(stdout, "[ERROR] %s", msg);
+}
+
+static void warning_callback(const char *msg, void *client_data) {
+  (void)client_data;
+  fprintf(stdout, "[WARNING] %s", msg);
+}
+
+static void info_callback(const char *msg, void *client_data) {
+  (void)client_data;
+  fprintf(stdout, "[INFO] %s", msg);
+}
+
 
 /*---------------------------------------------------------------------*
  *                 Read jp2k from file (special function)              *
@@ -144,6 +157,7 @@ static opj_image_t *pixConvertToOpjImage(PIX *pix);
  *              reduction (scaling factor: 1, 2, 4, 8, 16)
  *              box  (<optional> for extracting a subregion), can be null
  *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
+ *              debug (output callback messages, etc)
  *      Return: pix (8 or 32 bpp), or null on error
  *
  *  Notes:
@@ -163,22 +177,23 @@ static opj_image_t *pixConvertToOpjImage(PIX *pix);
  *      (3) Use @box to decode only a part of the image.  The box is defined
  *          at full resolution.  It is reduced internally by @reduction,
  *          and clipping to the right and bottom of the image is automatic.
- *      (4) We presently only handle images with 8 bits/sample (bps).  If
- *          the image has 16 bps, the read will fail.
- *      (5) There are 4 possible values of samples/pixel (spp):
- *           1  ==>  grayscale         [8 bpp pix]
- *           2  ==>  grascale + alpha  [32 bpp pix]
- *           3  ==>  rgb               [32 bpp pix]
- *           4  ==>  rgba              [32 bpp pix]
- *      (6) The @hint parameter is not yet in use.
+ *      (4) We presently only handle images with 8 bits/sample (bps).
+ *          If the image has 16 bps, the read will fail.
+ *      (5) There are 4 possible values of samples/pixel (spp).
+ *          The values in brackets give the pixel values in the Pix:
+ *           spp = 1  ==>  grayscale           [8 bpp grayscale]
+ *           spp = 2  ==>  grayscale + alpha   [32 bpp rgba]
+ *           spp = 3  ==>  rgb                 [32 bpp rgb]
+ *           spp = 4  ==>  rgba                [32 bpp rgba]
+ *      (6) The @hint parameter is reserved for future use.
  */
 PIX *
 pixReadJp2k(const char  *filename,
             l_uint32     reduction,
             BOX         *box,
-            l_int32      hint)
+            l_int32      hint,
+            l_int32      debug)
 {
-l_int32   ret;
 FILE     *fp;
 PIX      *pix;
 
@@ -189,7 +204,7 @@ PIX      *pix;
 
     if ((fp = fopenReadStream(filename)) == NULL)
         return (PIX *)ERROR_PTR("image file not found", procName, NULL);
-    pix = pixReadStreamJp2k(fp, reduction, box, hint);
+    pix = pixReadStreamJp2k(fp, reduction, box, hint, debug);
     fclose(fp);
 
     if (!pix)
@@ -205,6 +220,7 @@ PIX      *pix;
  *              reduction (scaling factor: 1, 2, 4, 8)
  *              box  (<optional> for extracting a subregion), can be null
  *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
+ *              debug (output callback messages, etc)
  *      Return: pix (8 or 32 bpp), or null on error
  *
  *  Notes:
@@ -214,11 +230,12 @@ PIX *
 pixReadStreamJp2k(FILE     *fp,
                   l_uint32  reduction,
                   BOX      *box,
-                  l_int32   hint)
+                  l_int32   hint,
+                  l_int32   debug)
 {
 const char        *opjVersion;
 l_int32            i, j, index, bx, by, bw, bh, val, rval, gval, bval, aval;
-l_int32            w, h, wpl, bps, spp, xres, yres, reduce, colorspace, prec;
+l_int32            w, h, wpl, bps, spp, xres, yres, reduce, prec, colorspace;
 l_uint32           pixel;
 l_uint32          *data, *line;
 opj_dparameters_t  parameters;   /* decompression parameters */
@@ -237,11 +254,11 @@ PIX               *pix = NULL;
         L_ERROR("version is %s; must be 2.0 or higher\n", procName, opjVersion);
         return NULL;
     }
-    if ((opjVersion[2] - 0x30) != OpjMinor) {
+    if ((opjVersion[2] - 0x30) != OPJ_VERSION_MINOR) {
         L_ERROR("version %s: differs from minor = %d\n",
-                procName, opjVersion, OpjMinor);
-        return NULL;
-    }
+                procName, opjVersion, OPJ_VERSION_MINOR);
+         return NULL;
+     }
 
         /* Get the resolution and the bits/sample */
     rewind(fp);
@@ -283,6 +300,13 @@ PIX               *pix = NULL;
         return NULL;
     }
 
+        /* Catch and report events using callbacks */
+    if (debug) {
+        opj_set_info_handler(l_codec, info_callback, NULL);
+        opj_set_warning_handler(l_codec, warning_callback, NULL);
+        opj_set_error_handler(l_codec, error_callback, NULL);
+    }
+
         /* Setup the decoding parameters using user parameters */
     if (!opj_setup_decoder(l_codec, &parameters)){
         L_ERROR("failed to set up decoder\n", procName);
@@ -292,7 +316,7 @@ PIX               *pix = NULL;
     }
 
         /* Read the main header of the codestream and, if necessary,
-         * the JP2 boxes*/
+         * the JP2 boxes */
     if(!opj_read_header(l_stream, l_codec, &image)){
         L_ERROR("failed to read the header\n", procName);
         opj_stream_destroy(l_stream);
@@ -334,16 +358,17 @@ PIX               *pix = NULL;
     prec = image->comps[0].prec;
     if (prec != bps)
         L_WARNING("precision %d != bps %d!\n", procName, prec, bps);
-#if 1
-    L_INFO("w = %d, h = %d, bps = %d, spp = %d\n", procName, w, h, bps, spp);
-    colorspace = image->color_space;
-    if (colorspace == OPJ_CLRSPC_SRGB)
-        L_INFO("colorspace is sRGB\n", procName);
-    else if (colorspace == OPJ_CLRSPC_GRAY)
-        L_INFO("colorspace is grayscale\n", procName);
-    else if (colorspace == OPJ_CLRSPC_SYCC)
-        L_INFO("colorspace is YUV\n", procName);
-#endif
+    if (debug) {
+        L_INFO("w = %d, h = %d, bps = %d, spp = %d\n",
+               procName, w, h, bps, spp);
+        colorspace = image->color_space;
+        if (colorspace == OPJ_CLRSPC_SRGB)
+            L_INFO("colorspace is sRGB\n", procName);
+        else if (colorspace == OPJ_CLRSPC_GRAY)
+            L_INFO("colorspace is grayscale\n", procName);
+        else if (colorspace == OPJ_CLRSPC_SYCC)
+            L_INFO("colorspace is YUV\n", procName);
+    }
 
         /* Free the codec structure */
     if (l_codec)
@@ -415,6 +440,7 @@ PIX               *pix = NULL;
  *              quality (SNR > 0; default ~34; 0 for lossless encoding)
  *              nlevels (resolution levels; <= 10; default = 5)
  *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
+ *              debug (output callback messages, etc)
  *      Return: 0 if OK; 1 on error
  *
  *  Notes:
@@ -437,7 +463,8 @@ pixWriteJp2k(const char  *filename,
              PIX         *pix,
              l_int32      quality,
              l_int32      nlevels,
-             l_int32      hint)
+             l_int32      hint,
+             l_int32      debug)
 {
 FILE  *fp;
 
@@ -451,7 +478,7 @@ FILE  *fp;
     if ((fp = fopenWriteStream(filename, "wb+")) == NULL)
         return ERROR_INT("stream not opened", procName, 1);
 
-    if (pixWriteStreamJp2k(fp, pix, quality, nlevels, hint)) {
+    if (pixWriteStreamJp2k(fp, pix, quality, nlevels, hint, debug)) {
         fclose(fp);
         return ERROR_INT("pix not written to stream", procName, 1);
     }
@@ -469,16 +496,20 @@ FILE  *fp;
  *              quality (SNR > 0; default ~34; 0 for lossless encoding)
  *              nlevels (<= 10)
  *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
+ *              debug (output callback messages, etc)
  *      Return: 0 if OK, 1 on error
  *  Notes:
  *      (1) See pixWriteJp2k() for usage.
+ *      (2) For an encoder with more encoding options, see, e.g.,
+ *    https://github.com/OpenJPEG/openjpeg/blob/master/tests/test_tile_encoder.c
  */
 l_int32
 pixWriteStreamJp2k(FILE    *fp,
                    PIX     *pix,
                    l_int32  quality,
                    l_int32  nlevels,
-                   l_int32  hint)
+                   l_int32  hint,
+                   l_int32  debug)
 {
 l_int32            w, h, d, success, snr;
 const char        *opjVersion;
@@ -513,11 +544,11 @@ opj_image_t       *image = NULL;
         L_ERROR("version is %s; must be 2.0 or higher\n", procName, opjVersion);
         return 1;
     }
-    if ((opjVersion[2] - 0x30) != OpjMinor) {
+    if ((opjVersion[2] - 0x30) != OPJ_VERSION_MINOR) {
         L_ERROR("version %s: differs from minor = %d\n",
-                procName, opjVersion, OpjMinor);
-        return 1;
-    }
+                procName, opjVersion, OPJ_VERSION_MINOR);
+         return 1;
+     }
 
         /* Remove colormap if it exists; result is 8 or 32 bpp */
     pixGetDimensions(pix, &w, &h, &d);
@@ -563,19 +594,35 @@ opj_image_t       *image = NULL;
     }
 
         /* Get the encoder handle */
-    l_codec = opj_create_compress(OPJ_CODEC_JP2);
+    if ((l_codec = opj_create_compress(OPJ_CODEC_JP2)) == NULL) {
+        opj_image_destroy(image);
+        FREE(parameters.cp_comment);
+        return ERROR_INT("failed to get the encoder handle\n", procName, 1);
+    }
+
+        /* Catch and report events using callbacks */
+    if (debug) {
+        opj_set_info_handler(l_codec, info_callback, NULL);
+        opj_set_warning_handler(l_codec, warning_callback, NULL);
+        opj_set_error_handler(l_codec, error_callback, NULL);
+    }
 
         /* Set up the encoder */
-    opj_setup_encoder(l_codec, &parameters, image);
+    if (!opj_setup_encoder(l_codec, &parameters, image)) {
+        opj_destroy_codec(l_codec);
+        opj_image_destroy(image);
+        FREE(parameters.cp_comment);
+        return ERROR_INT("failed to set up the encoder\n", procName, 1);
+    }
 
         /* Open a compression stream for writing.  In 2.0 we could use this:
          *     opj_stream_create_default_file_stream(fp, 0)
          * but the file stream interface was removed in 2.1.  */
     rewind(fp);
     if ((l_stream = opjCreateStream(fp, 0)) == NULL) {
-        opj_stream_destroy(l_stream);
         opj_destroy_codec(l_codec);
         opj_image_destroy(image);
+        FREE(parameters.cp_comment);
         return ERROR_INT("failed to open l_stream\n", procName, 1);
     }
 
@@ -584,12 +631,14 @@ opj_image_t       *image = NULL;
         opj_stream_destroy(l_stream);
         opj_destroy_codec(l_codec);
         opj_image_destroy(image);
+        FREE(parameters.cp_comment);
         return ERROR_INT("opj_start_compress failed\n", procName, 1);
     }
     if (!opj_encode(l_codec, l_stream)) {
         opj_stream_destroy(l_stream);
         opj_destroy_codec(l_codec);
         opj_image_destroy(image);
+        FREE(parameters.cp_comment);
         return ERROR_INT("opj_encode failed\n", procName, 1);
     }
     success = opj_end_compress(l_codec, l_stream);
@@ -706,20 +755,24 @@ extern FILE *fmemopen(void *data, size_t size, const char *mode);
  *              reduction (scaling factor: 1, 2, 4, 8)
  *              box  (<optional> for extracting a subregion), can be null
  *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
+ *              debug (output callback messages, etc)
  *      Return: pix, or null on error
  *
  *  Notes:
- *      (1) See pixReadJp2k() for usage.
+ *      (1) This crashes when reading through the fmemopen cookie.
+ *          Until we can fix this, we use the file-based work-around.
+ *          And fixing this may take some time, because the basic
+ *          stream interface is no longer supported in openjpeg.
+ *      (2) See pixReadJp2k() for usage.
  */
 PIX *
 pixReadMemJp2k(const l_uint8  *data,
                size_t          size,
                l_uint32        reduction,
                BOX            *box,
-               l_int32         hint)
+               l_int32         hint,
+               l_int32         debug)
 {
-l_int32   ret;
-l_uint8  *comment;
 FILE     *fp;
 PIX      *pix;
 
@@ -728,16 +781,17 @@ PIX      *pix;
     if (!data)
         return (PIX *)ERROR_PTR("data not defined", procName, NULL);
 
-#if HAVE_FMEMOPEN
-    if ((fp = fmemopen((l_uint8 *)data, size, "r")) == NULL)
+#if 0  /* Avoid the crash for now */
+    if ((fp = fmemopen((void *)data, size, "r")) == NULL)
         return (PIX *)ERROR_PTR("stream not opened", procName, NULL);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
-    fp = tmpfile();
+    if ((fp = tmpfile()) == NULL)
+        return (PIX *)ERROR_PTR("tmpfile stream not opened", procName, NULL);
     fwrite(data, 1, size, fp);
     rewind(fp);
 #endif  /* HAVE_FMEMOPEN */
-    pix = pixReadStreamJp2k(fp, reduction, box, hint);
+    pix = pixReadStreamJp2k(fp, reduction, box, hint, debug);
     fclose(fp);
     if (!pix) L_ERROR("pix not read\n", procName);
     return pix;
@@ -753,6 +807,7 @@ PIX      *pix;
  *              quality (SNR > 0; default ~34; 0 for lossless encoding)
  *              nlevels (0 for default)
  *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
+ *              debug (output callback messages, etc)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -765,7 +820,8 @@ pixWriteMemJp2k(l_uint8  **pdata,
                 PIX       *pix,
                 l_int32    quality,
                 l_int32    nlevels,
-                l_int32    hint)
+                l_int32    hint,
+                l_int32    debug)
 {
 l_int32  ret;
 FILE    *fp;
@@ -784,11 +840,12 @@ FILE    *fp;
 #if HAVE_FMEMOPEN
     if ((fp = open_memstream((char **)pdata, psize)) == NULL)
         return ERROR_INT("stream not opened", procName, 1);
-    ret = pixWriteStreamJp2k(fp, pix, quality, nlevels, hint);
+    ret = pixWriteStreamJp2k(fp, pix, quality, nlevels, hint, debug);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
-    fp = tmpfile();
-    ret = pixWriteStreamJp2k(fp, pix, quality, nlevels, hint);
+    if ((fp = tmpfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
+    ret = pixWriteStreamJp2k(fp, pix, quality, nlevels, hint, debug);
     rewind(fp);
     *pdata = l_binaryReadStream(fp, psize);
 #endif  /* HAVE_FMEMOPEN */
@@ -853,12 +910,12 @@ opj_stream_t  *l_stream;
     if (!l_stream)
         return (opj_stream_t *)ERROR_PTR("stream not made", procName, NULL);
 
-#if MINOR == 0
-        opj_stream_set_user_data(l_stream, fp);
+#if OPJ_VERSION_MINOR == 0
+    opj_stream_set_user_data(l_stream, fp);
 #else
-        opj_stream_set_user_data(l_stream, fp,
-                                 (opj_stream_free_user_data_fn)NULL);
-#endif  /* MINOR */
+    opj_stream_set_user_data(l_stream, fp,
+                             (opj_stream_free_user_data_fn)NULL);
+#endif
     opj_stream_set_user_data_length(l_stream, opj_get_user_data_length(fp));
     opj_stream_set_read_function(l_stream,
                                  (opj_stream_read_fn)opj_read_from_file);
@@ -871,7 +928,6 @@ opj_stream_t  *l_stream;
 
     return l_stream;
 }
-
 
 /* --------------------------------------------*/
 #endif  /* HAVE_LIBJPEG */

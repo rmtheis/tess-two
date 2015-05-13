@@ -116,12 +116,18 @@ PIX             *pixd, *pixdi;
 PIXCMAP         *cmap;
 ColorMapObject  *gif_cmap;
 SavedImage       si;
+#if GIFLIB_MAJOR == 5 && GIFLIB_MINOR > 0
 int              giferr;
+#endif
 
     PROCNAME("pixReadStreamGif");
 
     if ((fd = fileno(fp)) < 0)
         return (PIX *)ERROR_PTR("invalid file descriptor", procName, NULL);
+#ifdef _WIN32
+    fd = _dup(fd);
+#endif /* _WIN32 */
+
 #ifndef _MSC_VER
     lseek(fd, 0, SEEK_SET);
 #else
@@ -177,8 +183,10 @@ int              giferr;
         d = 4;
     else
         d = 8;
-    if ((cmap = pixcmapCreate(d)) == NULL)
+    if ((cmap = pixcmapCreate(d)) == NULL) {
+        DGifCloseFile(gif, &giferr);
         return (PIX *)ERROR_PTR("cmap creation failed", procName, NULL);
+    }
 
     for (cindex = 0; cindex < ncolors; cindex++) {
         rval = gif_cmap->Colors[cindex].Red;
@@ -287,7 +295,9 @@ PIXCMAP         *cmap;
 GifFileType     *gif;
 ColorMapObject  *gif_cmap;
 GifByteType     *gif_line;
+#if GIFLIB_MAJOR == 5 && GIFLIB_MINOR > 0
 int              giferr;
+#endif
 
     PROCNAME("pixWriteStreamGif");
 
@@ -299,6 +309,9 @@ int              giferr;
 
     if ((fd = fileno(fp)) < 0)
         return ERROR_INT("invalid file descriptor", procName, 1);
+#ifdef _WIN32
+    fd = _dup(fd);
+#endif /* _WIN32 */
 
     d = pixGetDepth(pix);
     if (d == 32) {
