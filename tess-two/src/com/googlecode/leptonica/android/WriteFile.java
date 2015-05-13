@@ -81,47 +81,6 @@ public class WriteFile {
     }
 
     /**
-     * Writes all the images in a Pixa array to individual files using the
-     * specified format. The output file extension will be determined by the
-     * format.
-     * <p>
-     * Output file names will take the format <path>/<prefix><index>.<extension>
-     *
-     * @param pixas The source Pixa image array.
-     * @param path The output directory.
-     * @param prefix The prefix to give output files.
-     * @param format The format to use for output files.
-     * @return <code>true</code> on success
-     */
-    public static boolean writeFiles(Pixa pixas, File path, String prefix, int format) {
-        if (pixas == null)
-            throw new IllegalArgumentException("Source pixa must be non-null");
-        if (path == null)
-            throw new IllegalArgumentException("Destination path non-null");
-        if (prefix == null)
-            throw new IllegalArgumentException("Filename prefix must be non-null");
-
-        //String rootname = new File(path, prefix).getAbsolutePath();
-
-        throw new RuntimeException("writeFiles() is not currently supported");
-    }
-
-    /**
-     * Write a Pix to a byte array using the specified encoding from
-     * Constants.IFF_*.
-     *
-     * @param pixs The source image.
-     * @param format A format from Constants.IFF_*.
-     * @return a byte array containing encoded bytes
-     */
-    public static byte[] writeMem(Pix pixs, int format) {
-        if (pixs == null)
-            throw new IllegalArgumentException("Source pix must be non-null");
-
-        throw new RuntimeException("writeMem() is not currently supported");
-    }
-
-    /**
      * Writes a Pix to file using the file extension as the output format;
      * supported formats are .jpg or .jpeg for JPEG and .bmp for bitmap.
      * <p>
@@ -198,10 +157,6 @@ public class WriteFile {
     // ***************
 
     private static native int nativeWriteBytes8(long nativePix, byte[] data);
-
-    private static native boolean nativeWriteFiles(long nativePix, String rootname, int format);
-
-    private static native byte[] nativeWriteMem(long nativePix, int format);
 
     private static native boolean nativeWriteImpliedFormat(
             long nativePix, String fileName, int quality, boolean progressive);

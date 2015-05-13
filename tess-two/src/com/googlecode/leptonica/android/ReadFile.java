@@ -115,26 +115,6 @@ public class ReadFile {
     }
 
     /**
-     * Creates a Pixa object from encoded files in a directory. Supported
-     * formats are BMP and JPEG.
-     *
-     * @param dir The directory containing the files.
-     * @param prefix The prefix of the files to load into a Pixa.
-     * @return a Pixa object containing one Pix for each file
-     */
-    public static Pixa readFiles(File dir, String prefix) {
-        if (dir == null)
-            throw new IllegalArgumentException("Directory must be non-null");
-        if (!dir.exists())
-            throw new IllegalArgumentException("Directory does not exist");
-        if (!dir.canRead())
-            throw new IllegalArgumentException("Cannot read directory");
-
-        // TODO: Remove or fix this.
-        throw new RuntimeException("readFiles() is not current supported");
-    }
-
-    /**
      * Creates a Pix object from encoded file data. Supported formats are BMP
      * and JPEG.
      *
@@ -206,8 +186,6 @@ public class ReadFile {
     private static native long nativeReadBytes8(byte[] data, int w, int h);
 
     private static native boolean nativeReplaceBytes8(long nativePix, byte[] data, int w, int h);
-
-    private static native long nativeReadFiles(String dirname, String prefix);
 
     private static native long nativeReadFile(String filename);
 

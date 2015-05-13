@@ -93,30 +93,6 @@ jboolean Java_com_googlecode_leptonica_android_ReadFile_nativeReplaceBytes8(JNIE
   return JNI_TRUE;
 }
 
-jlong Java_com_googlecode_leptonica_android_ReadFile_nativeReadFiles(JNIEnv *env, jclass clazz,
-                                                                     jstring dirName, jstring prefix) {
-  PIXA *pixad = NULL;
-
-  const char *c_dirName = env->GetStringUTFChars(dirName, NULL);
-  if (c_dirName == NULL) {
-    LOGE("could not extract dirName string!");
-    return (jlong) NULL;
-  }
-
-  const char *c_prefix = env->GetStringUTFChars(prefix, NULL);
-  if (c_prefix == NULL) {
-    LOGE("could not extract prefix string!");
-    return (jlong) NULL;
-  }
-
-  pixad = pixaReadFiles(c_dirName, c_prefix);
-
-  env->ReleaseStringUTFChars(dirName, c_dirName);
-  env->ReleaseStringUTFChars(prefix, c_prefix);
-
-  return (jlong) pixad;
-}
-
 jlong Java_com_googlecode_leptonica_android_ReadFile_nativeReadFile(JNIEnv *env, jclass clazz,
                                                                     jstring fileName) {
   PIX *pixd = NULL;
