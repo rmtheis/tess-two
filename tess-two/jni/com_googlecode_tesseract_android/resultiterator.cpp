@@ -49,7 +49,7 @@ jfloat Java_com_googlecode_tesseract_android_ResultIterator_nativeConfidence(JNI
 }
 
 jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetChoices(JNIEnv *env,
-    jobject thiz, jint nativeResultIterator, jint level) {
+    jobject thiz, jlong nativeResultIterator, jint level) {
 
   // Get the actual result iterator and level (as C objects)
   PageIteratorLevel enumLevel = (PageIteratorLevel) level;
