@@ -1,3 +1,6 @@
 /obj
 /gen
 /libs
+/jni/com_googlecode_tesseract_android/src/tessdata/**
+/jni/com_googlecode_tesseract_android/src/config/**
+/jni/com_googlecode_tesseract_android/src/m4/**
