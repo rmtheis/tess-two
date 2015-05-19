@@ -261,9 +261,6 @@ class OpticalFlow {
   // Size of the internally allocated images (after original is downsampled).
   const Size working_size_;
 
-  float32 avg_g_x_;
-  float32 avg_g_y_;
-
   int32 first_frame_index_;
   int32 num_frames_;
 

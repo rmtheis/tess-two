@@ -5,6 +5,7 @@
 #define JAVA_COM_GOOGLE_ANDROID_APPS_UNVEIL_JNI_OPTICALFLOW_OPTICAL_FLOW_UTILS_H_
 
 #include "utils.h"
+#include <cmath>
 
 namespace flow {
 
@@ -65,7 +66,7 @@ inline float findDeterminant2x2(const float32* const a) {
 // Returns true upon success, false if the matrix is not invertible.
 inline bool invert2x2(const float32* const a, float32* const a_inv) {
   const float det = findDeterminant2x2(a);
-  if (abs(det) < EPSILON) {
+  if (std::fabs(det) < EPSILON) {
     return false;
   }
   const float32 inv_det = 1.0f / static_cast<float32>(det);
