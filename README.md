@@ -24,7 +24,7 @@ The `tess-two-test` subdirectory contains Android JUnit tests.
 
 ## Versions
 
-Release points are tagged with [version numbers][semver]. A change to the major version number
+Release points are tagged with [version numbers][semantic-versioning]. A change to the major version number
 indicates an API change making that version incompatible with previous versions.
 
 ## Building
@@ -86,14 +86,13 @@ Pull requests are always welcome. Please open a new issue if you find a bug.
 
 
 [tesseract-android-tools]: https://code.google.com/p/tesseract-android-tools/
-[tesseract-ocr]: https://code.google.com/p/tesseract-ocr/
+[tesseract-ocr]: https://github.com/tesseract-ocr/tesseract
 [leptonica]: http://www.leptonica.com/
 [library-project]: https://developer.android.com/tools/projects/projects-eclipse.html#ReferencingLibraryProject
 [eyes-free]: https://code.google.com/p/eyes-free/
-[tessdata]: https://code.google.com/p/tesseract-ocr/downloads/list
-[semver]: http://semver.org
+[tessdata]: https://github.com/tesseract-ocr/tessdata
+[semantic-versioning]: http://semver.org
 [issues]: https://github.com/rmtheis/tess-two/issues
 [maven]: http://www.jameselsey.co.uk/blogs/techblog/tesseract-ocr-on-android-is-easier-if-you-maven-ise-it-works-on-windows-too/
 [stackoverflow]: https://stackoverflow.com/
 [how-to-ask]: https://stackoverflow.com/help/how-to-ask
-[license]: https://www.apache.org/licenses/LICENSE-2.0.html
