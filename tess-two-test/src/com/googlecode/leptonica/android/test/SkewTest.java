@@ -17,7 +17,50 @@
 package com.googlecode.leptonica.android.test;
 
 import junit.framework.TestCase;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Paint.Align;
+import android.graphics.Paint.Style;
+import android.test.suitebuilder.annotation.SmallTest;
+
+import com.googlecode.leptonica.android.GrayQuant;
+import com.googlecode.leptonica.android.Pix;
+import com.googlecode.leptonica.android.ReadFile;
+import com.googlecode.leptonica.android.Skew;
 
 public class SkewTest extends TestCase {
 
+    private static final String SENTENCE = "The quick brown fox jumps over the lazy dog.";
+
+    @SmallTest
+    public void testFindSkew() {
+        testFindSkew(SENTENCE, 640, 480, -15.0f);
+        testFindSkew(SENTENCE, 640, 480, 0.0f);
+        testFindSkew(SENTENCE, 640, 480, 15.0f);
+    }
+
+    private void testFindSkew(String text, int width, int height, float requestedSkew) {
+        Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Paint paint = new Paint();
+        Canvas canvas = new Canvas(bmp);
+
+        paint.setColor(Color.BLACK);
+        paint.setStyle(Style.FILL);
+        paint.setAntiAlias(true);
+        paint.setTextAlign(Align.CENTER);
+        paint.setTextSize(32.0f);
+
+        canvas.drawColor(Color.WHITE);
+        canvas.rotate(requestedSkew, width / 2, height / 2);
+        canvas.drawText(SENTENCE, width / 2, height / 2 , paint);
+
+        Pix pixs = ReadFile.readBitmap(bmp);
+        Pix pixd = GrayQuant.pixThresholdToBinary(pixs, 1);
+        float measuredSkew = -Skew.findSkew(pixd);
+
+        boolean isInRange = requestedSkew - 1 < measuredSkew && measuredSkew < requestedSkew + 1;
+        assertTrue("Skew has incorrect value.", isInRange);
+    }
 }
