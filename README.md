@@ -59,6 +59,14 @@ File->Import->Existing Projects into Workspace.
 While this project does not require Maven (and this project has not yet been registered in a 
 Maven central repository), it can be [integrated into a local Maven repository for convenience][maven].
 
+## Proguard
+If you're using Proguard for code shrinking and obfuscation, be sure to add the following:
+```proguard
+-keep class com.googlecode.tesseract.android.TessBaseAPI {
+    private long mNativeData;
+}
+```
+
 ## Questions
 
 If you have a question, consider posting it to [StackOverflow][stackoverflow] and tagging it with the 
