@@ -249,8 +249,6 @@ jfloat Java_com_googlecode_leptonica_android_Skew_nativeFindSkew(JNIEnv *env, jc
                                                                  jint sweepReduction,
                                                                  jint searchReduction,
                                                                  jfloat searchMinDelta) {
-  // Corrects the rotation of each element in pixa to 0 degrees.
-
   PIX *pixs = (PIX *) nativePix;
 
   l_float32 angle, conf;

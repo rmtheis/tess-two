@@ -104,8 +104,7 @@ public class Constants {
      * file format that the pix was read from. If the pix was not read from
      * file, the input format field will be IFF_UNKNOWN and the output file
      * format will be chosen to be compressed and lossless; namely, IFF_TIFF_G4
-     * for d = 1 and IFF_PNG for everything else. IFF_JP2 is for jpeg2000, which
-     * is not supported in leptonica.
+     * for d = 1 and IFF_PNG for everything else. IFF_JP2 is for jpeg2000.
      */
 
     public static final int IFF_UNKNOWN = 0;
