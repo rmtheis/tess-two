@@ -273,16 +273,7 @@ public class TessBaseAPI {
      * @return <code>true</code> on success
      */
     public boolean init(String datapath, String language) {
-        if (datapath == null)
-            throw new IllegalArgumentException("Data path must not be null!");
-        if (!datapath.endsWith(File.separator))
-            datapath += File.separator;
-
-        File tessdata = new File(datapath + "tessdata");
-        if (!tessdata.exists() || !tessdata.isDirectory())
-            throw new IllegalArgumentException("Data path must contain subfolder tessdata!");
-
-        return nativeInit(datapath, language);
+        return init(datapath, language, OEM_DEFAULT);
     }
 
     /**
@@ -301,6 +292,10 @@ public class TessBaseAPI {
         if (!datapath.endsWith(File.separator))
             datapath += File.separator;
 
+        File datapathFile = new File(datapath);
+        if (!datapathFile.exists())
+            throw new IllegalArgumentException("Data path does not exist!");
+        
         File tessdata = new File(datapath + "tessdata");
         if (!tessdata.exists() || !tessdata.isDirectory())
             throw new IllegalArgumentException("Data path must contain subfolder tessdata!");
