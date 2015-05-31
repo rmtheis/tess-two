@@ -41,7 +41,7 @@ public class SkewTest extends TestCase {
         testFindSkew(SENTENCE, 640, 480, 15.0f);
     }
 
-    private void testFindSkew(String text, int width, int height, float requestedSkew) {
+    private void testFindSkew(String text, int width, int height, float skew) {
         Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Paint paint = new Paint();
         Canvas canvas = new Canvas(bmp);
@@ -53,14 +53,16 @@ public class SkewTest extends TestCase {
         paint.setTextSize(32.0f);
 
         canvas.drawColor(Color.WHITE);
-        canvas.rotate(requestedSkew, width / 2, height / 2);
+        canvas.rotate(skew, width / 2, height / 2);
         canvas.drawText(SENTENCE, width / 2, height / 2 , paint);
 
         Pix pixs = ReadFile.readBitmap(bmp);
         Pix pixd = GrayQuant.pixThresholdToBinary(pixs, 1);
+        pixs.recycle();
         float measuredSkew = -Skew.findSkew(pixd);
+        pixd.recycle();
 
-        boolean isInRange = requestedSkew - 1 < measuredSkew && measuredSkew < requestedSkew + 1;
+        boolean isInRange = skew - 1 < measuredSkew && measuredSkew < skew + 1;
         assertTrue("Skew has incorrect value.", isInRange);
     }
 }

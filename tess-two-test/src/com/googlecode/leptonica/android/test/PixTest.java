@@ -22,8 +22,8 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.Bitmap.CompressFormat;
+import android.graphics.Color;
 import android.test.suitebuilder.annotation.SmallTest;
 
 import com.googlecode.leptonica.android.Pix;
@@ -31,27 +31,75 @@ import com.googlecode.leptonica.android.ReadFile;
 
 public class PixTest extends TestCase {
     @SmallTest
+    public void testGetData() throws IOException {
+        File file = File.createTempFile("testGetData", ".jpg");
+        FileOutputStream fileStream = new FileOutputStream(file);
+        Bitmap bmp = Bitmap.createBitmap(640, 480, Bitmap.Config.RGB_565);
+        bmp.compress(CompressFormat.JPEG, 85, fileStream);
+        Pix pix = ReadFile.readFile(file);
+
+        byte[] pixData = pix.getData();
+        assertNotNull(pixData);
+
+        bmp.recycle();
+        pix.recycle();
+    }
+
+    @SmallTest
+    public void testGetDimensions() {
+        int width = 640;
+        int height = 480;
+        int depth = 32;
+        Pix pix = new Pix(width, height, depth);
+
+        int[] dimens = pix.getDimensions();
+
+        assertEquals("Incorrect width value found.", width, dimens[Pix.INDEX_W]);
+        assertEquals("Incorrect height value found.", height,
+                dimens[Pix.INDEX_H]);
+        assertEquals("Incorrect bit-depth value found.", depth,
+                dimens[Pix.INDEX_D]);
+    }
+
+    @SmallTest
+    public void testPixClone() {
+        Pix pix = new Pix(640, 480, 32);
+        Pix pixCopy = pix.clone();
+
+        // The clone should not have the same native pointer.
+        assertNotSame(pix.getNativePix(), pixCopy.getNativePix());
+
+        // The clone should share the same backing data.
+        pix.setPixel(0, 0, Color.RED);
+        assertEquals(Color.RED, pixCopy.getPixel(0, 0));
+
+        // Finally, we should be able to recycle both Pix.
+        pix.recycle();
+        pixCopy.recycle();
+    }
+
+    @SmallTest
     public void testPixCreate() {
         testPixCreate(1, 1, 1);
         testPixCreate(640, 480, 32);
     }
-    
+
     private void testPixCreate(int w, int h, int d) {
         Pix pix = new Pix(w, h, d);
-        
+
         // Make sure the dimensions were set correctly.
         assertEquals(w, pix.getWidth());
         assertEquals(h, pix.getHeight());
         assertEquals(d, pix.getDepth());
-        
+
         // Make sure we can recycle the Pix.
         pix.recycle();
     }
-    
+
     @SmallTest
     public void testPixPixelOps() {
         Pix pix = new Pix(640, 480, 32);
-        
+
         // Set various pixel colors.
         pix.setPixel(0, 0, Color.RED);
         pix.setPixel(1, 0, Color.BLUE);
@@ -65,42 +113,7 @@ public class PixTest extends TestCase {
         assertEquals(Color.GREEN, pix.getPixel(2, 0));
         assertEquals(Color.BLACK, pix.getPixel(3, 0));
         assertEquals(Color.WHITE, pix.getPixel(4, 0));
-        
-        pix.recycle();
-    }
-    
-    @SmallTest
-    public void testPixClone() {
-        Pix pix = new Pix(640, 480, 32);
-        Pix pixCopy = pix.clone();
-        
-        // The clone should not have the same native pointer.
-        assertNotSame(pix.getNativePix(), pixCopy.getNativePix());
-        
-        // The clone should share the same backing data.
-        pix.setPixel(0, 0, Color.RED);
-        assertEquals(Color.RED, pixCopy.getPixel(0, 0));
-        
-        // Finally, we should be able to recycle both Pix.
-        pix.recycle();
-        pixCopy.recycle();
-    }
-    
-    @SmallTest
-    public void testGetData() throws IOException {       
-        File file = File.createTempFile("testGetData", "jpg");
-        FileOutputStream fileStream = new FileOutputStream(file);
-        Bitmap bmp = Bitmap.createBitmap(640, 480, Bitmap.Config.RGB_565);
-        bmp.compress(CompressFormat.JPEG, 85, fileStream);
-        Pix pix = ReadFile.readFile(file);
 
-        byte[] pixData = pix.getData();
-        Pix pixFromBytes = Pix.createFromPix(pixData, 640, 480, 16);
-        
-        assertNotNull(pixFromBytes);
-
-        fileStream.close();
-        bmp.recycle();
         pix.recycle();
     }
 }
