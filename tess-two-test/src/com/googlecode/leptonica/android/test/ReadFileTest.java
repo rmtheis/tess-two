@@ -91,7 +91,7 @@ public class ReadFileTest extends TestCase {
 
         float match = TestUtils.compareImages(pix, bmp);
         Log.d(TAG, "match=" + match);
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match.", (match >= 0.99f));
 
         fileStream.close();
         bmp.recycle();
@@ -111,7 +111,7 @@ public class ReadFileTest extends TestCase {
 
         float match = TestUtils.compareImages(pix, bmp);
         Log.d(TAG, "match=" + match);
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match.", (match >= 0.99f));
 
         byteStream.close();
         bmp.recycle();
