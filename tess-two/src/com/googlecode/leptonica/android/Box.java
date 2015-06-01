@@ -120,7 +120,7 @@ public class Box {
      * Returns an array containing the coordinates of this box. See INDEX_*
      * constants for indices.
      *
-     * @return an array of box oordinates
+     * @return an array of box coordinates
      */
     public int[] getGeometry() {
         int[] geometry = new int[4];

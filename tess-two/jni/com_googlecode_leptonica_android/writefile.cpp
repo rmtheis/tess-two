@@ -114,7 +114,7 @@ jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteBitmap(JNIEn
   l_int32 dstBpl = info.stride;
   l_int32 srcBpl = 4 * pixGetWpl(pixs);
 
-  LOGE("Writing 32bpp RGBA bitmap (w=%d, h=%d, stride=%d) from %dbpp Pix (wpl=%d)", info.width,
+  LOGI("Writing 32bpp RGBA bitmap (w=%d, h=%d, stride=%d) from %dbpp Pix (wpl=%d)", info.width,
        info.height, info.stride, d, pixGetWpl(pixs));
 
   for (int dy = 0; dy < info.height; dy++) {

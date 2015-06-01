@@ -58,7 +58,7 @@ jlong Java_com_googlecode_leptonica_android_ReadFile_nativeReadBytes8(JNIEnv *en
 
   pixGetDimensions(pix, &w, &h, &d);
 
-  LOGE("Created image width w=%d, h=%d, d=%d", w, h, d);
+  LOGI("Created image with w=%d, h=%d, d=%d", w, h, d);
 
   return (jlong) pix;
 }
@@ -118,17 +118,17 @@ jlong Java_com_googlecode_leptonica_android_ReadFile_nativeReadBitmap(JNIEnv *en
   int ret;
 
   if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0) {
-    LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
+    LOGE("AndroidBitmap_getInfo() failed! error=%d", ret);
     return (jlong) NULL;
   }
 
   if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
-    LOGE("Bitmap format is not RGBA_8888 !");
+    LOGE("Bitmap format is not RGBA_8888!");
     return (jlong) NULL;
   }
 
   if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0) {
-    LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
+    LOGE("AndroidBitmap_lockPixels() failed! error=%d", ret);
     return (jlong) NULL;
   }
 
