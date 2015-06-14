@@ -117,4 +117,3 @@ submitting a pull request through GitHub.
 [issues]: https://github.com/rmtheis/tess-two/issues
 [maven]: http://www.jameselsey.co.uk/blogs/techblog/tesseract-ocr-on-android-is-easier-if-you-maven-ise-it-works-on-windows-too/
 [stackoverflow]: https://stackoverflow.com/
-[how-to-ask]: https://stackoverflow.com/help/how-to-ask

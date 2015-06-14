@@ -26,22 +26,22 @@ import junit.framework.TestSuite;
 /**
  * To run all suites found in this apk:
  * $ adb shell am instrument -w \
- *   com.example.android.apis.tests/android.test.InstrumentationTestRunner
+ *   com.googlecode.tesseract.android.test/android.test.InstrumentationTestRunner
  *
  * To run just this suite from the command line:
  * $ adb shell am instrument -w \
- *   -e class com.example.android.apis.AllTests \
- *   com.example.android.apis.tests/android.test.InstrumentationTestRunner
+ *   -e class com.googlecode.tesseract.android.test.AllTests \
+ *   com.googlecode.tesseract.android.test/android.test.InstrumentationTestRunner
  *
  * To run an individual test case, e.g. {@link ReadFileTest}:
  * $ adb shell am instrument -w \
- *   -e class com.example.android.apis.os.MorseCodeConverterTest \
- *   com.example.android.apis.tests/android.test.InstrumentationTestRunner
+ *   -e class com.googlecode.leptonica.android.test.ReadFileTest \
+ *   com.googlecode.tesseract.android.test/android.test.InstrumentationTestRunner
  *
  * To run an individual test, e.g. {@link ReadFileTest#testReadBitmap()}:
  * $ adb shell am instrument -w \
- *   -e class com.example.android.apis.os.MorseCodeConverterTest#testCharacterS \
- *   com.example.android.apis.tests/android.test.InstrumentationTestRunner
+ *   -e class com.googlecode.leptonica.android.test.ReadFileTest#testReadBitmap \
+ *   com.googlecode.tesseract.android.test/android.test.InstrumentationTestRunner
  */
 public class AllTests extends TestSuite {
     public static Test suite() {
