@@ -47,6 +47,7 @@ public class TessBaseAPI {
         nativeClassInit();
     }
 
+    /** Page segmentation mode. */
     public static final class PageSegMode {
         /** Orientation and script detection only. */
         public static final int PSM_OSD_ONLY = 0;
@@ -197,10 +198,8 @@ public class TessBaseAPI {
     /**
      * Constructs an instance of TessBaseAPI.
      * <p>
-     * When the instance of TessBaseAPI is no longer needed, its end() method
-     * must be invoked to dispose of it.
-     * 
-     * @see #end()
+     * When the instance of TessBaseAPI is no longer needed, its {@link #end}
+     * method must be invoked to dispose of it.
      */
     public TessBaseAPI() {
         nativeConstruct();
@@ -211,10 +210,9 @@ public class TessBaseAPI {
      * Constructs an instance of TessBaseAPI with a callback method for
      * receiving progress updates during OCR.
      * <p>
-     * When the instance of TessBaseAPI is no longer needed, its end() method
-     * must be invoked to dispose of it.
+     * When the instance of TessBaseAPI is no longer needed, its {@link #end}
+     * method must be invoked to dispose of it.
      * 
-     * @see #end()
      * @param progressNotifier Callback to receive progress notifications
      */
     public TessBaseAPI(ProgressNotifier progressNotifier) {
@@ -305,8 +303,7 @@ public class TessBaseAPI {
      * Returns the languages string used in the last valid initialization.
      * If the last initialization specified "deu+hin" then that will be
      * returned. If hin loaded eng automatically as well, then that will
-     * not be included in this list. To find the languages actually
-     * loaded use GetLoadedLanguagesAsVector.
+     * not be included in this list.
      * 
      * @return the last-used language code
      */
@@ -346,15 +343,24 @@ public class TessBaseAPI {
     }
 
     /**
-     * Set the value of an internal "variable" (of either old or new types).
-     * Supply the name of the variable and the value as a string, just as you
-     * would in a config file.
+     * Set the value of an internal "parameter."
      * <p>
-     * Example: <code>setVariable(VAR_TESSEDIT_CHAR_BLACKLIST, "xyz"); to ignore x, y and z. * setVariable(VAR_BLN_NUMERICMODE, "1"); to set numeric-only mode. * </code>
+     * Supply the name of the parameter and the value as a string, just as
+     * you would in a config file.
      * <p>
-     * setVariable() may be used before open(), but settings will revert to
-     * defaults on close().
-     *
+     * Returns false if the name lookup failed.
+     * <p>
+     * Eg <code>setVariable("tessedit_char_blacklist", "xyz");</code> to 
+     * ignore x, y and z.
+     * 
+     * Or <code>setVariable("classify_bln_numeric_mode", "1");</code> to set
+     * numeric-only mode.
+     * <p>
+     * setVariable may be used before init, but settings will revert to
+     * defaults on end().
+     * <p>
+     * Note: Must be called after init(). Only works for non-init variables.
+     * 
      * @param var name of the variable
      * @param value value to set
      * @return false if the name lookup failed
@@ -379,10 +385,14 @@ public class TessBaseAPI {
     }
 
     /**
-     * Sets the page segmentation mode. This controls how much processing the
-     * OCR engine will perform before recognizing text.
+     * Sets the page segmentation mode. Defaults to 
+     * {@link PageSegMode#PSM_SINGLE_BLOCK}. This controls how much processing
+     * the OCR engine will perform before recognizing text.
+     * <p>
+     * The mode can also be modified by readConfigFile or 
+     * setVariable("tessedit_pageseg_mode", mode as string).
      *
-     * @param mode the page segmentation mode to set
+     * @param mode the {@link PageSegMode} to set
      */
     public void setPageSegMode(int mode) {
         if (mRecycled)
@@ -406,7 +416,7 @@ public class TessBaseAPI {
 
     /**
      * Restricts recognition to a sub-rectangle of the image. Call after
-     * SetImage. Each SetRectangle clears the recogntion results so multiple
+     * SetImage. Each SetRectangle clears the recognition results so multiple
      * rectangles can be recognized with the same image.
      *
      * @param rect the bounding rectangle
@@ -420,7 +430,7 @@ public class TessBaseAPI {
 
     /**
      * Restricts recognition to a sub-rectangle of the image. Call after
-     * SetImage. Each SetRectangle clears the recogntion results so multiple
+     * SetImage. Each SetRectangle clears the recognition results so multiple
      * rectangles can be recognized with the same image.
      *
      * @param left the left bound
@@ -436,7 +446,11 @@ public class TessBaseAPI {
     }
 
     /**
-     * Provides an image for Tesseract to recognize.
+     * Provides an image for Tesseract to recognize. Copies the image buffer.
+     * The source image may be destroyed immediately after SetImage is called.
+     * SetImage clears all recognition results, and sets the rectangle to the
+     * full image, so it may be followed immediately by a GetUTF8Text, and it
+     * will automatically perform recognition.
      *
      * @param file absolute path to the image file
      */
@@ -454,9 +468,11 @@ public class TessBaseAPI {
     }
 
     /**
-     * Provides an image for Tesseract to recognize. Does not copy the image
-     * buffer. The source image must persist until after Recognize or
-     * GetUTF8Chars is called.
+     * Provides an image for Tesseract to recognize. Copies the image buffer.
+     * The source image may be destroyed immediately after SetImage is called.
+     * SetImage clears all recognition results, and sets the rectangle to the
+     * full image, so it may be followed immediately by a GetUTF8Text, and it
+     * will automatically perform recognition.
      *
      * @param bmp bitmap representation of the image
      */
@@ -523,9 +539,9 @@ public class TessBaseAPI {
     }
 
     /**
-     * Returns the mean confidence of text recognition.
+     * Returns the (average) confidence value between 0 and 100.
      *
-     * @return the mean confidence
+     * @return confidence value
      */
     public int meanConfidence() {
         if (mRecycled)
@@ -535,12 +551,12 @@ public class TessBaseAPI {
     }
 
     /**
-     * Returns all word confidences (between 0 and 100) in an array. The number
-     * of confidences should correspond to the number of space-delimited words
-     * in GetUTF8Text().
+     * Returns all word confidences (between 0 and 100) in an array.
+     * <p>
+     * The number of confidences should correspond to the number of 
+     * space-delimited words in GetUTF8Text().
      *
-     * @return an array of word confidences (between 0 and 100) for each
-     *         space-delimited word returned by GetUTF8Text()
+     * @return an array of word confidences
      */
     public int[] wordConfidences() {
         if (mRecycled)
@@ -556,8 +572,10 @@ public class TessBaseAPI {
     }
 
     /**
-     * Return a copy of the internal thresholded image from Tesseract.
-     * Only available after setImage.
+     * Get a copy of the internal thresholded image from Tesseract.
+     * <p>
+     * Caller takes ownership of the Pix and must recycle() it.
+     * May be called any time after setImage.
      * 
      * @return Pix containing the thresholded image
      */
@@ -570,6 +588,8 @@ public class TessBaseAPI {
 
     /**
      * Returns the result of page layout analysis as a Pixa, in reading order.
+     * <p>
+     * Can be called before or after Recognize.
      * 
      * @return Pixa contaning page layout bounding boxes
      */
@@ -581,9 +601,11 @@ public class TessBaseAPI {
     }
 
     /**
-     * Returns the textlines as a Pixa.
-     * 
-     * Block IDs are not returned.
+     * Returns the textlines as a Pixa. Textlines are extracted from the 
+     * thresholded image.
+     * <p>
+     * Can be called before or after Recognize. Block IDs are not returned.
+     * Paragraph IDs are not returned.
      * 
      * @return Pixa containing textlines
      */
@@ -595,9 +617,10 @@ public class TessBaseAPI {
     }
 
     /**
-     * Returns the strips as a Pixa.
-     * 
-     * Block IDs are not returned.
+     * Get textlines and strips of image regions as a Pixa, in reading order.
+     * <p>
+     * Enables downstream handling of non-rectangular regions. Can be called
+     * before or after Recognize. Block IDs are not returned.
      * 
      * @return Pixa containing strips
      */
@@ -609,7 +632,9 @@ public class TessBaseAPI {
     }    
 
     /**
-     * Returns the word bounding boxes as a Pixa, in reading order.
+     * Get the words as a Pixa, in reading order.
+     * <p>
+     * Can be called before or after Recognize.
      * 
      * @return Pixa containing word bounding boxes 
      */
@@ -623,7 +648,9 @@ public class TessBaseAPI {
     /**
      * Gets the individual connected (text) components (created after pages 
      * segmentation step, but before recognition) as a Pixa, in reading order.
-     * Can be called before or after Recognize.
+     * <p>
+     * Can be called before or after Recognize. Note: the caller is 
+     * responsible for calling recycle() on the returned Pixa.
      * 
      * @return Pixa containing connected components bounding boxes 
      */
@@ -635,9 +662,10 @@ public class TessBaseAPI {
     }
 
     /**
-     * Returns an iterator allowing you to iterate over the top result for each recognized word or symbol.
+     * Get a reading-order iterator to the results of LayoutAnalysis and/or
+     * Recognize. The returned iterator must be deleted after use.
      * 
-     * @return ResultIterator iterate over the words
+     * @return iterator to the results of LayoutAnalysis and/or Recognize
      */
     public ResultIterator getResultIterator() {
         if (mRecycled)
@@ -667,8 +695,8 @@ public class TessBaseAPI {
     }
 
     /**
-     * Set the name of the input file. Needed only for training and
-     * reading a UNLV zone file.
+     * Set the name of the input file. Needed for training and reading a UNLV
+     * zone file.
      * 
      * @param name input file name
      */
@@ -680,8 +708,8 @@ public class TessBaseAPI {
     } 
 
     /**
-     * Set the name of the output files. 
-     * Needed only for debugging. 
+     * Set the name of the bonus output files. Needed only for debugging.
+     * 
      * @param name output file name
      */
     public void setOutputName(String name){
@@ -693,9 +721,11 @@ public class TessBaseAPI {
 
     /**
      * Read a "config" file containing a set of variable, value pairs.
+     * <p>
      * Searches the standard places: <i>tessdata/configs, tessdata/tessconfigs</i>.
+     * Note: only non-init params will be set.
      * 
-     * @param filename the configuration filename, without path
+     * @param filename the configuration filename, without the path
      */
     public void ReadConfigFile(String filename){
         if (mRecycled)
@@ -707,8 +737,10 @@ public class TessBaseAPI {
     /**
      * The recognized text is returned as coded in the same format as a UTF8 
      * box file used in training.
+     * <p>
+     * Constructs coordinates in the original image - not just the rectangle.
      * 
-     * @param page is a 0-based page index that will appear in the box file.
+     * @param page a 0-based page index that will appear in the box file.
      */
     public String getBoxText(int page){
         if (mRecycled)
@@ -763,7 +795,8 @@ public class TessBaseAPI {
     private native void nativeConstruct();
 
     /**
-     * Finalizes native data. Must be called on object destruction.
+     * Calls End() and finalizes native data. Must be called on object 
+     * destruction.
      */
     private native void nativeEnd();
 
