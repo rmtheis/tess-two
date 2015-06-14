@@ -74,6 +74,7 @@ public class WriteFileTest extends TestCase {
         Pix pixs = TestUtils.createTestPix(100, 100);
         File file = File.createTempFile("testWriteImpliedFormat", ".bmp");
         testWriteImpliedFormat(pixs, file);
+        pixs.recycle();
     }
 
     private void testWriteImpliedFormat(Pix pixs, File file) {
@@ -88,7 +89,6 @@ public class WriteFileTest extends TestCase {
         assertNotNull("Pix is null", pixd);
 
         float match = TestUtils.comparePix(pixs, pixd);
-        pixs.recycle();
         pixd.recycle();
 
         assertTrue("Images do not match.", (match >= 0.99f));

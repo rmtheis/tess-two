@@ -104,6 +104,7 @@ public class RotateTest extends TestCase {
         Pix pixs = ReadFile.readBitmap(bmp);
         Pix pixd = Rotate.rotate(pixs, 180);
         pixs.recycle();
+        bmp.recycle();
 
         assertTrue("Rotated width is not 100.", (pixd.getWidth() == 100));
         pixd.recycle();

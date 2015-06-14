@@ -77,6 +77,7 @@ public class TessBaseAPITest extends TestCase {
                 assertTrue("Found an incorrect confidence value.", conf >= 0 && conf <= 100);
             }
         } while (iterator.next(PageIteratorLevel.RIL_SYMBOL));
+        iterator.delete();
 
         assertNotNull("No ChoiceIterator values found.", choicesAndConfidences);
 
@@ -126,6 +127,33 @@ public class TessBaseAPITest extends TestCase {
         // Attempt to shut down the API.
         baseApi.end();
         bmp.recycle();
+    }
+
+    @SmallTest
+    public void testEnd() {
+        // First, make sure the eng.traineddata file exists.
+        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
+                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
+
+        final String inputText = "hello";
+        final Bitmap bmp = getTextImage(inputText, 640, 480);
+
+        // Attempt to initialize the API.
+        final TessBaseAPI baseApi = new TessBaseAPI();
+        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
+        baseApi.setImage(bmp);
+
+        // Ensure that getUTF8Text() fails after end() is called.
+        baseApi.end();
+        try {
+            baseApi.getUTF8Text();
+            fail("IllegalStateException not thrown");
+        } catch (IllegalStateException e) {
+            // Continue
+        } finally {
+            bmp.recycle();
+        }
     }
 
     @SmallTest
@@ -198,22 +226,27 @@ public class TessBaseAPITest extends TestCase {
         // Ensure getRegions() works.
         final Pixa regions = baseApi.getRegions();
         assertEquals("Found incorrect number of regions.", regions.size(), 1);
+        regions.recycle();
 
         // Ensure getTextlines() works.
         final Pixa textlines = baseApi.getTextlines();
         assertEquals("Found incorrect number of textlines.", textlines.size(), 1);
+        textlines.recycle();
 
         // Ensure getStrips() works.
         final Pixa strips = baseApi.getStrips();
         assertEquals("Found incorrect number of strips.", strips.size(), 1);
+        strips.recycle();
 
         // Ensure getWords() works.
         final Pixa words = baseApi.getWords();
         assertEquals("Found incorrect number of words.", words.size(), 1);
+        words.recycle();
 
         // Ensure getConnectedComponents() works.
         final Pixa connectedComponents = baseApi.getConnectedComponents();
         assertTrue("Connected components not found.", connectedComponents.size() > 0);
+        connectedComponents.recycle();
 
         // Iterate through the results.
         final ResultIterator iterator = baseApi.getResultIterator();
@@ -230,6 +263,7 @@ public class TessBaseAPITest extends TestCase {
             lastBoundingRect = iterator.getBoundingRect(PageIteratorLevel.RIL_WORD);
             count++;
         } while (iterator.next(PageIteratorLevel.RIL_WORD));
+        iterator.delete();
 
         assertEquals("Found incorrect number of results.", count, 1);
         assertEquals("Found an incorrect result.", lastUTF8Text, outputText);

@@ -136,25 +136,6 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeConstruct(JNIEnv* e
   env->SetLongField(object, field_mNativeData, (jlong) nat);
 }
 
-void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeFinalize(JNIEnv* env,
-                                                                      jobject object) {
-
-  native_data_t *nat = get_native_data(env, object);
-
-  // Since Tesseract doesn't take ownership of the memory, we keep a pointer in the native
-  // code struct. We need to free that pointer when we release our instance of Tesseract or
-  // attempt to set a new image using one of the nativeSet* methods.
-  if (nat->data != NULL)
-    free(nat->data);
-  else if (nat->pix != NULL)
-    pixDestroy(&nat->pix);
-  nat->data = NULL;
-  nat->pix = NULL;
-
-  if (nat != NULL)
-    delete nat;
-}
-
 jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeInit(JNIEnv *env,
                                                                       jobject thiz,
                                                                       jstring dir,

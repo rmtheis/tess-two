@@ -31,6 +31,7 @@ public class ClipTest extends TestCase {
         Pix pix = new Pix(640, 480, 8);
         Box clippingBox = new Box(50, 50, newWidth, newHeight);
         Pix clippedPix = Clip.clipRectangle(pix, clippingBox);
+        clippingBox.recycle();
 
         // The clipped pix should not have the same native pointer.
         assertNotSame(pix.getNativePix(), clippedPix.getNativePix());

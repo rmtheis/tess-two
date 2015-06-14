@@ -17,6 +17,7 @@
 package com.googlecode.leptonica.android;
 
 import android.graphics.Rect;
+import android.util.Log;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -32,6 +33,8 @@ public class Pixa implements Iterable<Pix> {
     static {
         System.loadLibrary("lept");
     }
+
+    private static final String TAG = Pixa.class.getSimpleName();
 
     /** A pointer to the native PIXA object. This is used internally by native code. */
     final long mNativePixa;
@@ -97,6 +100,9 @@ public class Pixa implements Iterable<Pix> {
      * @return a pointer to the native PIXA object
      */
     public long getNativePixa() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         return mNativePixa;
     }
 
@@ -107,6 +113,9 @@ public class Pixa implements Iterable<Pix> {
      * @return a shallow copy of this Pixa
      */
     public Pixa copy() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         int nativePixa = nativeCopy(mNativePixa);
 
         if (nativePixa == 0) {
@@ -127,6 +136,9 @@ public class Pixa implements Iterable<Pix> {
      * @return a sorted copy of this Pixa
      */
     public Pixa sort(int field, int order) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         int nativePixa = nativeSort(mNativePixa, field, order);
 
         if (nativePixa == 0) {
@@ -142,6 +154,9 @@ public class Pixa implements Iterable<Pix> {
      * @return the number of elements in this Pixa
      */
     public int size() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         return nativeGetCount(mNativePixa);
     }
 
@@ -163,9 +178,14 @@ public class Pixa implements Iterable<Pix> {
 
     @Override
     protected void finalize() throws Throwable {
-        recycle();
-
-        super.finalize();
+        try {
+            if (!mRecycled) {
+                Log.w(TAG, "Pixa was not terminated using recycle()");
+                recycle();
+            }
+        } finally {
+            super.finalize();
+        }
     }
 
     /**
@@ -175,6 +195,9 @@ public class Pixa implements Iterable<Pix> {
      * @return <code>true</code> on success
      */
     public boolean join(Pixa otherPixa) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         return nativeJoin(mNativePixa, otherPixa.mNativePixa);
     }
 
@@ -186,6 +209,9 @@ public class Pixa implements Iterable<Pix> {
      *            Constants.L_CLONE.
      */
     public void addPix(Pix pix, int mode) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         nativeAddPix(mNativePixa, pix.mNativePix, mode);
     }
 
@@ -197,6 +223,9 @@ public class Pixa implements Iterable<Pix> {
      *            Constants.L_CLONE.
      */
     public void addBox(Box box, int mode) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         nativeAddBox(mNativePixa, box.mNativeBox, mode);
     }
 
@@ -209,6 +238,9 @@ public class Pixa implements Iterable<Pix> {
      *            Constants.L_CLONE.
      */
     public void add(Pix pix, Box box, int mode) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         nativeAdd(mNativePixa, pix.mNativePix, box.mNativeBox, mode);
     }
 
@@ -219,6 +251,9 @@ public class Pixa implements Iterable<Pix> {
      * @return the Box at the specified index, or <code>null</code> on error
      */
     public Box getBox(int index) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         long nativeBox = nativeGetBox(mNativePixa, index);
 
         if (nativeBox == 0) {
@@ -235,6 +270,9 @@ public class Pixa implements Iterable<Pix> {
      * @return the Pix at the specified index, or <code>null</code> on error
      */
     public Pix getPix(int index) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         int nativePix = nativeGetPix(mNativePixa, index);
 
         if (nativePix == 0) {
@@ -252,6 +290,9 @@ public class Pixa implements Iterable<Pix> {
      *         created
      */
     public int getWidth() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         return mWidth;
     }
 
@@ -263,6 +304,9 @@ public class Pixa implements Iterable<Pix> {
      *         created
      */
     public int getHeight() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         return mHeight;
     }
 
@@ -273,6 +317,9 @@ public class Pixa implements Iterable<Pix> {
      * @return a bounding Rect for this Pixa
      */
     public Rect getRect() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         return new Rect(0, 0, mWidth, mHeight);
     }
 
@@ -282,7 +329,7 @@ public class Pixa implements Iterable<Pix> {
      * @param index The index of the Box to get the bounding Rect of.
      * @return a bounding Rect for the Box at the specified index
      */
-    public Rect getBoxRect(int index) {
+    public Rect getBoxRect(int index) {        
         int[] dimensions = getBoxGeometry(index);
 
         if (dimensions == null) {
@@ -307,6 +354,9 @@ public class Pixa implements Iterable<Pix> {
      * @return a bounding Rect for the Box at the specified index
      */
     public int[] getBoxGeometry(int index) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         int[] dimensions = new int[4];
 
         if (getBoxGeometry(index, dimensions)) {
@@ -326,6 +376,9 @@ public class Pixa implements Iterable<Pix> {
      * @return <code>true</code> on success
      */
     public boolean getBoxGeometry(int index, int[] dimensions) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         return nativeGetBoxGeometry(mNativePixa, index, dimensions);
     }
 
@@ -335,6 +388,9 @@ public class Pixa implements Iterable<Pix> {
      * @return an ArrayList of Box bounding Rects
      */
     public ArrayList<Rect> getBoxRects() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         final int pixaCount = nativeGetCount(mNativePixa);
         final int[] buffer = new int[4];
         final ArrayList<Rect> rects = new ArrayList<Rect>(pixaCount);
@@ -361,6 +417,9 @@ public class Pixa implements Iterable<Pix> {
      * @param box The Box to replace the existing Box.
      */
     public void replacePix(int index, Pix pix, Box box) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         nativeReplacePix(mNativePixa, index, pix.mNativePix, box.mNativeBox);
     }
 
@@ -373,6 +432,9 @@ public class Pixa implements Iterable<Pix> {
      *            merging.
      */
     public void mergeAndReplacePix(int indexA, int indexB) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         nativeMergeAndReplacePix(mNativePixa, indexA, indexB);
     }
 
@@ -384,6 +446,9 @@ public class Pixa implements Iterable<Pix> {
      * @return <code>true</code> on success
      */
     public boolean writeToFileRandomCmap(File file) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         return nativeWriteToFileRandomCmap(mNativePixa, file.getAbsolutePath(), mWidth, mHeight);
     }
 

@@ -61,6 +61,7 @@ public class SkewTest extends TestCase {
         pixs.recycle();
         float measuredSkew = -Skew.findSkew(pixd);
         pixd.recycle();
+        bmp.recycle();
 
         boolean isInRange = skew - 1 < measuredSkew && measuredSkew < skew + 1;
         assertTrue("Skew has incorrect value.", isInRange);
