@@ -44,7 +44,7 @@ public class ReadFileTest extends TestCase {
     }
 
     private void testReadBitmap(int width, int height, Bitmap.Config format) {
-        Bitmap bmp = TestUtils.createTestBitmap(640, 480, format);
+        Bitmap bmp = TestUtils.createTestBitmap(width, height, format);
         Pix pix = ReadFile.readBitmap(bmp);
 
         assertEquals(bmp.getWidth(), pix.getWidth());
@@ -62,7 +62,7 @@ public class ReadFileTest extends TestCase {
     public void testReadFile_bmp() throws IOException {
         File file = File.createTempFile("testReadFile", ".bmp");
         FileOutputStream fileStream = new FileOutputStream(file);
-        Bitmap bmp = TestUtils.createTestBitmap(640, 480, Bitmap.Config.ARGB_8888);
+        Bitmap bmp = TestUtils.createTestBitmap(100, 100, Bitmap.Config.RGB_565);
         bmp.compress(CompressFormat.PNG, 100, fileStream);
         Pix pix = ReadFile.readFile(file);
 
@@ -79,10 +79,10 @@ public class ReadFileTest extends TestCase {
     }
 
     @SmallTest
-    public void testReadFile_jpg() throws IOException {
+    public void testReadFile_jpg() throws IOException {        
         File file = File.createTempFile("testReadFile", ".jpg");
         FileOutputStream fileStream = new FileOutputStream(file);
-        Bitmap bmp = TestUtils.createTestBitmap(640, 480, Bitmap.Config.ARGB_8888);
+        Bitmap bmp = TestUtils.createTestBitmap(100, 100, Bitmap.Config.RGB_565);
         bmp.compress(CompressFormat.JPEG, 85, fileStream);
         Pix pix = ReadFile.readFile(file);
 
@@ -101,7 +101,7 @@ public class ReadFileTest extends TestCase {
     @SmallTest
     public void testReadMem_jpg() throws IOException {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        Bitmap bmp = TestUtils.createTestBitmap(640, 480, Bitmap.Config.ARGB_8888);
+        Bitmap bmp = TestUtils.createTestBitmap(100, 100, Bitmap.Config.RGB_565);
         bmp.compress(CompressFormat.JPEG, 85, byteStream);
         byte[] encodedData = byteStream.toByteArray();
         Pix pix = ReadFile.readMem(encodedData);
