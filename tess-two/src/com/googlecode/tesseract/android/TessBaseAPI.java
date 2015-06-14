@@ -736,7 +736,7 @@ public class TessBaseAPI {
      * @param top Top bound of word bounding box
      * @param bottom Bottom bound of word bounding box
      */
-    private void onProgressValues(final int percent, final int left,
+    protected void onProgressValues(final int percent, final int left,
             final int right, final int top, final int bottom) {
 
         if (mRecycled)
