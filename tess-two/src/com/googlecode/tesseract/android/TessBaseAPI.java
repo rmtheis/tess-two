@@ -19,7 +19,6 @@ package com.googlecode.tesseract.android;
 
 import android.graphics.Bitmap;
 import android.graphics.Rect;
-import android.util.Log;
 
 import com.googlecode.leptonica.android.Pixa;
 import com.googlecode.leptonica.android.Pix;
@@ -727,11 +726,16 @@ public class TessBaseAPI {
      * 
      * @param filename the configuration filename, without the path
      */
-    public void ReadConfigFile(String filename){
+    public void readConfigFile(String filename) {
         if (mRecycled)
             throw new IllegalStateException();
 
         nativeReadConfigFile(filename);
+    }
+
+    /** @deprecated use {@link #readConfigFile(String)} instead. */
+    @Deprecated public void ReadConfigFile(String filename) {
+        readConfigFile(filename);
     }
 
     /**
