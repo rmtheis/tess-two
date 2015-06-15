@@ -40,15 +40,15 @@ public class WriteFile {
 
         int size = pixs.getWidth() * pixs.getHeight();
 
-        if (pixs.getDepth() != 8) {
-            Pix pix8 = Convert.convertTo8(pixs);
-            pixs.recycle();
-            pixs = pix8;
-        }
-
         byte[] data = new byte[size];
 
-        writeBytes8(pixs, data);
+        if (pixs.getDepth() != 8) {
+            Pix pix8 = Convert.convertTo8(pixs);
+            writeBytes8(pix8, data);
+            pix8.recycle();
+        } else {
+            writeBytes8(pixs, data);
+        }
 
         return data;
     }
