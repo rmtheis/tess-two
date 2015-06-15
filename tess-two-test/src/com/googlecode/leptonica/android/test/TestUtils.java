@@ -83,12 +83,12 @@ public class TestUtils {
             // Paint the left half white
             paint.setColor(Color.WHITE);
             paint.setStyle(Style.FILL);
-            canvas.drawRect(new Rect(0, 0, width / 2 , height - 1), paint);
+            canvas.drawRect(new Rect(0, 0, width / 2, height), paint);
 
             // Paint the right half black
             paint.setColor(Color.BLACK);
             paint.setStyle(Style.FILL);
-            canvas.drawRect(new Rect(width / 2, 0, width - 1, height - 1), paint);
+            canvas.drawRect(new Rect(width / 2, 0, width, height), paint);
         }
         return bmp;
     }
