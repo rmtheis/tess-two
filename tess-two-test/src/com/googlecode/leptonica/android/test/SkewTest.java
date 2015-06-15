@@ -25,6 +25,7 @@ import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
 import android.test.suitebuilder.annotation.SmallTest;
 
+import com.googlecode.leptonica.android.Convert;
 import com.googlecode.leptonica.android.GrayQuant;
 import com.googlecode.leptonica.android.Pix;
 import com.googlecode.leptonica.android.ReadFile;
@@ -57,13 +58,23 @@ public class SkewTest extends TestCase {
         canvas.drawText(SENTENCE, width / 2, height / 2 , paint);
 
         Pix pixs = ReadFile.readBitmap(bmp);
-        Pix pixd = GrayQuant.pixThresholdToBinary(pixs, 1);
-        pixs.recycle();
+
+        Pix pixd;
+        if (pixs.getDepth() != 4 || pixs.getDepth() != 8) {
+            Pix pix8 = Convert.convertTo8(pixs);
+            pixd = GrayQuant.pixThresholdToBinary(pix8, 1);
+            pix8.recycle();
+        } else {
+            pixd = GrayQuant.pixThresholdToBinary(pixs, 1);
+        }
+
         float measuredSkew = -Skew.findSkew(pixd);
+        float tol = 1;
+        boolean isInRange = skew - tol < measuredSkew && measuredSkew < skew + tol;
+        assertTrue("Skew has incorrect value.", isInRange);
+
+        pixs.recycle();
         pixd.recycle();
         bmp.recycle();
-
-        boolean isInRange = skew - 1 < measuredSkew && measuredSkew < skew + 1;
-        assertTrue("Skew has incorrect value.", isInRange);
     }
 }
