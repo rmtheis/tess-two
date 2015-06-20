@@ -45,9 +45,18 @@ import com.googlecode.tesseract.android.TessBaseAPI.ProgressValues;
 public class TessBaseAPITest extends TestCase {
     private static final String TESSBASE_PATH = "/mnt/sdcard/tesseract/";
     private static final String DEFAULT_LANGUAGE = "eng";
-    private static final String EXPECTED_FILE = TESSBASE_PATH + "tessdata/" + DEFAULT_LANGUAGE
-            + ".traineddata";
-    private static final int DEFAULT_PAGE_SEG_MODE = TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK;
+    private static final String EXPECTED_FILE = TESSBASE_PATH + "tessdata/" +
+            DEFAULT_LANGUAGE + ".traineddata";
+    private static final int DEFAULT_PAGE_SEG_MODE = 
+            TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK;
+
+    protected void setUp() throws Exception {
+        super.setUp();
+
+        // Make sure the eng.traineddata file exists.
+        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
+                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
+    }
 
     @SmallTest
     public void testChoiceIterator() {
@@ -108,10 +117,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testClear() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         final String inputText = "hello";
         final Bitmap bmp = getTextImage(inputText, 640, 480);
 
@@ -134,10 +139,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testEnd() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         final String inputText = "hello";
         final Bitmap bmp = getTextImage(inputText, 640, 480);
 
@@ -173,10 +174,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testGetInitLanguagesAsString() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
         baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
@@ -191,10 +188,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testGetThresholdedImage() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
         baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
@@ -217,10 +210,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testGetUTF8Text() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         final String inputText = "hello";
         final Bitmap bmp = getTextImage(inputText, 640, 480);
 
@@ -292,10 +281,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testHOCRText() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         final String inputText = "hello";
         final Bitmap bmp = getTextImage(inputText, 640, 480);
 
@@ -320,10 +305,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testInit() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
         baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
@@ -334,10 +315,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testInit_ocrEngineMode() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
         boolean result = baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE, 
@@ -351,10 +328,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testProgressValues() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         final String inputText = "hello";
         final Bitmap bmp = getTextImage(inputText, 640, 480);
         final Rect imageBounds = new Rect(0, 0, bmp.getWidth(), bmp.getHeight());
@@ -388,10 +361,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testProgressValues_setRectangle() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         class Notifier implements ProgressNotifier {
             public boolean receivedProgress = false;
             private Rect bounds;
@@ -490,10 +459,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testSetImage_bitmap() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
         baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
@@ -509,10 +474,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testSetImage_file() throws IOException {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
         baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
@@ -534,10 +495,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testSetImage_pix() throws IOException {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
         baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
@@ -573,10 +530,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testSetRectangle() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
         baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
@@ -646,10 +599,6 @@ public class TessBaseAPITest extends TestCase {
 
     @SmallTest
     public void testWordConfidences() {
-        // First, make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
-
         final String inputText = "one two three";
         final Bitmap bmp = getTextImage(inputText, 640, 480);
 

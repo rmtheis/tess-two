@@ -21,7 +21,6 @@ import java.io.File;
 
 import android.graphics.Bitmap;
 import android.graphics.Rect;
-import android.util.Log;
 
 import com.googlecode.leptonica.android.Pix;
 import com.googlecode.leptonica.android.Pixa;
@@ -338,6 +337,12 @@ public class TessBaseAPI {
         File tessdata = new File(datapath + "tessdata");
         if (!tessdata.exists() || !tessdata.isDirectory())
             throw new IllegalArgumentException("Data path must contain subfolder tessdata!");
+
+        if (ocrEngineMode != OEM_CUBE_ONLY) {
+            File datafile = new File(tessdata + File.separator + language + ".traineddata");
+            if (!datafile.exists())
+                throw new IllegalArgumentException("Data file not found at " + datafile);
+        }
 
         boolean success = nativeInitOem(datapath, language, ocrEngineMode);
 
