@@ -157,6 +157,18 @@ public class TessBaseAPITest extends TestCase {
         } finally {
             bmp.recycle();
         }
+
+        // Ensure that reinitializing the API is successful.
+        boolean success = baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        assertTrue("API failed to initialize after end()", success);
+
+        // Ensure setImage() does not throw an exception.
+        final Bitmap bmp2 = getTextImage(inputText, 640, 480);
+        baseApi.setImage(bmp2);
+
+        // Attempt to shut down the API.
+        baseApi.end();
+        bmp2.recycle();
     }
 
     @SmallTest
@@ -222,10 +234,6 @@ public class TessBaseAPITest extends TestCase {
         final String outputText = baseApi.getUTF8Text();
         assertEquals("\"" + outputText + "\" != \"" + inputText + "\"", inputText, outputText);
 
-        // Ensure that getHOCRText() produced a result.
-        final String hOcr = baseApi.getHOCRText(0);
-        assertNotNull("HOCR result not found.", hOcr);
-
         // Ensure getRegions() works.
         final Pixa regions = baseApi.getRegions();
         assertEquals("Found incorrect number of regions.", regions.size(), 1);
@@ -276,6 +284,34 @@ public class TessBaseAPITest extends TestCase {
         boolean validBoundingRect =  lastBoundingRect.left < lastBoundingRect.right 
                 && lastBoundingRect.top < lastBoundingRect.bottom;
         assertTrue("Result bounding box Rect is incorrect.", validBoundingRect);
+
+        // Attempt to shut down the API.
+        baseApi.end();
+        bmp.recycle();
+    }
+
+    @SmallTest
+    public void testHOCRText() {
+        // First, make sure the eng.traineddata file exists.
+        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
+                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
+
+        final String inputText = "hello";
+        final Bitmap bmp = getTextImage(inputText, 640, 480);
+
+        // Attempt to initialize the API.
+        final TessBaseAPI baseApi = new TessBaseAPI();
+        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
+        baseApi.setImage(bmp);
+
+        // Ensure that getHOCRText() produces a result.
+        final String hOcr = baseApi.getHOCRText(0);
+        assertNotNull("HOCR result not found.", hOcr);
+        assertTrue(hOcr.length() > 0);
+
+        final String outputText = Html.fromHtml(hOcr).toString().trim();
+        assertEquals(inputText, outputText);
 
         // Attempt to shut down the API.
         baseApi.end();
