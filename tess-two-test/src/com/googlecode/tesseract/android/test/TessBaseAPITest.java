@@ -31,6 +31,7 @@ import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
 import android.graphics.Rect;
 import android.test.suitebuilder.annotation.SmallTest;
+import android.text.Html;
 import android.util.Pair;
 
 import com.googlecode.leptonica.android.Pix;
@@ -38,6 +39,8 @@ import com.googlecode.leptonica.android.Pixa;
 import com.googlecode.tesseract.android.ResultIterator;
 import com.googlecode.tesseract.android.TessBaseAPI;
 import com.googlecode.tesseract.android.TessBaseAPI.PageIteratorLevel;
+import com.googlecode.tesseract.android.TessBaseAPI.ProgressNotifier;
+import com.googlecode.tesseract.android.TessBaseAPI.ProgressValues;
 
 public class TessBaseAPITest extends TestCase {
     private static final String TESSBASE_PATH = "/mnt/sdcard/tesseract/";
@@ -308,6 +311,145 @@ public class TessBaseAPITest extends TestCase {
 
         // Attempt to shut down the API.
         baseApi.end();
+    }
+
+    @SmallTest
+    public void testProgressValues() {
+        // First, make sure the eng.traineddata file exists.
+        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
+                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
+
+        final String inputText = "hello";
+        final Bitmap bmp = getTextImage(inputText, 640, 480);
+        final Rect imageBounds = new Rect(0, 0, bmp.getWidth(), bmp.getHeight());
+
+        class Notifier implements ProgressNotifier {
+            public boolean receivedProgress = false;
+
+            @Override
+            public void onProgressValues(ProgressValues progressValues) {
+                receivedProgress = true;
+                testProgressValues(progressValues, imageBounds);
+            }
+        }
+
+        final Notifier notifier = new Notifier();
+
+        // Attempt to initialize the API.
+        final TessBaseAPI baseApi = new TessBaseAPI(notifier);
+        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
+        baseApi.setImage(bmp);
+
+        // Ensure that we receive a progress callback.
+        baseApi.getHOCRText(0);
+        assertTrue(notifier.receivedProgress);
+
+        // Attempt to shut down the API.
+        baseApi.end();
+        bmp.recycle();
+    }
+
+    @SmallTest
+    public void testProgressValues_setRectangle() {
+        // First, make sure the eng.traineddata file exists.
+        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
+                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
+
+        class Notifier implements ProgressNotifier {
+            public boolean receivedProgress = false;
+            private Rect bounds;
+
+            public void reset(Rect bounds) {
+                this.bounds = bounds;
+                receivedProgress = false;
+            }
+
+            @Override
+            public void onProgressValues(ProgressValues progressValues) {
+                receivedProgress = true;
+                testProgressValues(progressValues, bounds);
+            }
+        }
+
+        final Notifier notifier = new Notifier();
+
+        final int width = 640;
+        final int height = 480;
+        final Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+
+        final Paint paint = new Paint();
+        paint.setColor(Color.BLACK);
+        paint.setStyle(Style.FILL);
+        paint.setAntiAlias(true);
+        paint.setTextAlign(Align.CENTER);
+        paint.setTextSize(32.0f);
+
+        // Draw separate text on the left and right halves of the image.
+        final Canvas canvas = new Canvas(bmp);
+        canvas.drawColor(Color.WHITE);
+        final String leftInput = "A";
+        final String rightInput  = "B";
+        canvas.drawText(leftInput, width / 4, height / 2, paint);
+        canvas.drawText(rightInput, width * 3 / 4, height / 2, paint);
+
+        // Attempt to initialize the API.
+        final TessBaseAPI baseApi = new TessBaseAPI(notifier);
+        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
+        baseApi.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, 
+                leftInput + rightInput);
+        baseApi.setImage(bmp);
+
+        // Attempt to restrict recognition to a sub-rectangle of the image.
+        final Rect left = new Rect(0, 0, width / 2, height);
+        baseApi.setRectangle(left);
+        notifier.reset(left);
+
+        // Ensure a progress callback is received.
+        baseApi.getHOCRText(0);
+        assertTrue(notifier.receivedProgress);
+
+        // Attempt to restrict recognition to a sub-rectangle of the image.
+        final Rect right = new Rect(width / 2 + 5, 7, width - 5, height - 7);
+        baseApi.setRectangle(right);
+        notifier.reset(right);
+
+        // Ensure a progress callback is received.
+        baseApi.getHOCRText(0);
+        assertTrue(notifier.receivedProgress);
+
+        // Attempt to shut down the API.
+        baseApi.end();
+        bmp.recycle();
+    }
+
+    private static void testProgressValues(ProgressValues progress, Rect bounds) {
+        // Ensure that the percent progress is valid.
+        assertTrue(progress.getPercent() >= 0);
+        assertTrue(progress.getPercent() <= 100);
+
+        // Ensure that the text rect is valid.
+        final Rect textRect = progress.getCurrentRect();
+        assertTrue(textRect.left <= textRect.right);
+        assertTrue(textRect.top <= textRect.bottom);
+
+        // Text rect must match the bounds of the image or sub-rectangle used.
+        assertEquals(textRect.height(), bounds.height());
+        assertEquals(textRect.width(), bounds.width());
+
+        // Ensure that the word rect is valid.
+        final Rect wordRect = progress.getCurrentWordRect();
+        assertTrue(textRect.left <= textRect.right);
+        assertTrue(textRect.top <= textRect.bottom);
+
+        // Ensure the word rect falls within the text rect.
+        final Rect absoluteWordRect = new Rect(
+                textRect.left + wordRect.left,
+                textRect.top + wordRect.top,
+                textRect.left + wordRect.right,
+                textRect.top + wordRect.bottom);
+        assertTrue(textRect.contains(absoluteWordRect));
     }
 
     @SmallTest

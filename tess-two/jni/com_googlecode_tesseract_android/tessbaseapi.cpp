@@ -32,6 +32,7 @@ struct native_data_t {
   void *data;
   bool debug;
 
+  Box* currentTextBox = NULL;
   l_int32 lastProgress;
   bool cancel_ocr;
 
@@ -47,6 +48,10 @@ struct native_data_t {
     }
   }
 
+  void setTextBoundaries(l_uint32 x, l_uint32 y, l_uint32 width, l_uint32 height) {
+    boxSetGeometry(currentTextBox, x, y, width, height);
+  }
+
   void initStateVariables(JNIEnv* env, jobject *object) {
     cancel_ocr = false;
     cachedEnv = env;
@@ -59,9 +64,11 @@ struct native_data_t {
     cachedEnv = NULL;
     cachedObject = NULL;
     lastProgress = 0;
+    boxSetGeometry(currentTextBox, 0, 0, 0, 0);
   }
 
   native_data_t() {
+    currentTextBox = boxCreate(0, 0, 0, 0);
     lastProgress = 0;
     pix = NULL;
     data = NULL;
@@ -69,6 +76,10 @@ struct native_data_t {
     cachedEnv = NULL;
     cachedObject = NULL;
     cancel_ocr = false;
+  }
+
+  ~native_data_t() {
+	  boxDestroy(&currentTextBox);
   }
 };
 
@@ -86,11 +97,13 @@ bool cancelFunc(void* cancel_this, int words) {
 bool progressJavaCallback(void* progress_this, int progress, int left, int right,
 		int top, int bottom) {
   native_data_t *nat = (native_data_t*)progress_this;
-
-  if (nat->isStateValid()) {
+  if (nat->isStateValid() && nat->currentTextBox != NULL) {
     if (progress > nat->lastProgress || left != 0 || right != 0 || top != 0 || bottom != 0) {
+      int x, y, width, height;
+      boxGetGeometry(nat->currentTextBox, &x, &y, &width, &height);
       nat->cachedEnv->CallVoidMethod(*(nat->cachedObject), method_onProgressValues, progress,
-              (jint) left, (jint) right, (jint) top, (jint) bottom);
+              (jint) left, (jint) right, (jint) top, (jint) bottom,
+              (jint) x, (jint) (x + width), (jint) (y + height), (jint) y);
       nat->lastProgress = progress;
     }
   }
@@ -120,7 +133,7 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeClassInit(JNIEnv* e
                                                                        jclass clazz) {
 
   field_mNativeData = env->GetFieldID(clazz, "mNativeData", "J");
-  method_onProgressValues = env->GetMethodID(clazz, "onProgressValues", "(IIIII)V");
+  method_onProgressValues = env->GetMethodID(clazz, "onProgressValues", "(IIIIIIIII)V");
 }
 
 void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeConstruct(JNIEnv* env,
@@ -242,6 +255,11 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetImagePix(JNIEnv 
   PIX *pixd = pixClone(pixs);
 
   native_data_t *nat = get_native_data(env, thiz);
+  if (pixd) {
+    l_int32 width = pixGetWidth(pixd);
+    l_int32 height = pixGetHeight(pixd);
+    nat->setTextBoundaries(0, 0, width, height);
+  }
   nat->api.SetImage(pixd);
 
   // Since Tesseract doesn't take ownership of the memory, we keep a pointer in the native
@@ -263,6 +281,8 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetRectangle(JNIEnv
                                                                           jint height) {
 
   native_data_t *nat = get_native_data(env, thiz);
+
+  nat->setTextBoundaries(left, top, width, height);
 
   nat->api.SetRectangle(left, top, width, height);
 }

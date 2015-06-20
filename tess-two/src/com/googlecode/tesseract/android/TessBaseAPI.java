@@ -17,14 +17,15 @@
 
 package com.googlecode.tesseract.android;
 
+import java.io.File;
+
 import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.util.Log;
 
-import com.googlecode.leptonica.android.Pixa;
 import com.googlecode.leptonica.android.Pix;
+import com.googlecode.leptonica.android.Pixa;
 import com.googlecode.leptonica.android.ReadFile;
-
-import java.io.File;
 
 /**
  * Java interface for the Tesseract OCR engine. Does not implement all available
@@ -160,37 +161,86 @@ public class TessBaseAPI {
      */
     public class ProgressValues {
         private int percent;
-        private int boundingBoxLeft;
-        private int boundingBoxRight;
-        private int boundingBoxTop;
-        private int boundingBoxBottom;
+        private Rect wordRect;
+        private Rect textRect;
 
-        public ProgressValues(int percent, int left, int right, int top, int bottom) {
-            this.percent = percent;
-            this.boundingBoxLeft = left;
-            this.boundingBoxRight = right;
-            this.boundingBoxTop = top;
-            this.boundingBoxBottom = bottom;
+        public ProgressValues(int percent, Rect wordRect, Rect textRect) {
+            this.wordRect = wordRect;
+            this.textRect = textRect;
         }
 
+        /**
+         * Return word recognition progress.
+         * 
+         * @return a value between 0 and 100
+         */
         public int getPercent() {
             return percent;
         }
 
+        /**
+         * Return the bounds of the word currently being recognized.
+         * 
+         * The returned bounding box is in the Android coordinate system,
+         * which has the origin in the top left.
+         * 
+         * @return an {@link android.graphics.Rect} bounding box
+         */
+        public Rect getCurrentWordRect() {
+            return wordRect;
+        }
+
+        /**
+         * Return the left bound of the word currently being recognized.
+         * Uses Tesseract coordinate system, with origin in the bottom left. 
+         * @deprecated Use {@link #getCurrentWordRect()} instead.
+         */
+        @Deprecated
         public int getBoundingBoxLeft() {
-            return boundingBoxLeft;
+            return wordRect.left;
         }
 
-        public int getBoundingBoxRight() {
-            return boundingBoxRight;
+        /**
+         * Return the right bound of the word currently being recognized.
+         * Uses Tesseract coordinate system, with origin in the bottom left. 
+         * @deprecated Use {@link #getCurrentWordRect()} instead.
+         */
+        @Deprecated
+        public int getBoundingBoxRight() { 
+            return wordRect.right;
         }
 
+        /**
+         * Return the top bound of the word currently being recognized.
+         * Uses Tesseract coordinate system, with origin in the bottom left. 
+         * @deprecated Use {@link #getCurrentWordRect()} instead.
+         */
+        @Deprecated
         public int getBoundingBoxTop() {
-            return boundingBoxTop;
+            return textRect.bottom - wordRect.top;
         }
 
+        /**
+         * Return the bottom bound of the word currently being recognized.
+         * Uses Tesseract coordinate system, with origin in the bottom left. 
+         * @deprecated Use {@link #getCurrentWordRect()} instead.
+         */
+        @Deprecated
         public int getBoundingBoxBottom() {
-            return boundingBoxBottom;
+            return textRect.bottom - wordRect.bottom;
+        }
+
+        /**
+         * Return the bounds of the current recognition region. May match the 
+         * bounds of the entire image or a sub-rectangle of the entire image.
+         * 
+         * The returned bounding box is in the Android coordinate system,
+         * which has the origin in the top left.
+         * 
+         * @return an {@link android.graphics.Rect} bounding box
+         */
+        public Rect getCurrentRect() {
+            return textRect;
         }
     }
 
@@ -771,15 +821,23 @@ public class TessBaseAPI {
      * @param right Right bound of word bounding box
      * @param top Top bound of word bounding box
      * @param bottom Bottom bound of word bounding box
+     * @param textLeft Left bound of text bounding box
+     * @param textRight Right bound of text bounding box
+     * @param textTop Top bound of text bounding box
+     * @param textBottom Bottom bound of text bounding box
      */
     protected void onProgressValues(final int percent, final int left,
-            final int right, final int top, final int bottom) {
+            final int right, final int top, final int bottom,
+            final int textLeft, final int textRight, final int textTop, final int textBottom) {
 
         if (mRecycled)
             return;
 
         if (progressNotifier != null) {
-            ProgressValues pv = new ProgressValues(percent, left, right, top, bottom);
+            Rect wordRect = new Rect(left, textTop - top, right, textTop - bottom);
+            Rect textRect = new Rect(textLeft, textBottom, textRight, textTop);
+
+            ProgressValues pv = new ProgressValues(percent, wordRect, textRect);
             progressNotifier.onProgressValues(pv);
         }
     }
