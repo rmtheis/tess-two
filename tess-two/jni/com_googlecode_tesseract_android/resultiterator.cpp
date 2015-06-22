@@ -86,7 +86,7 @@ jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetChoic
 }
 
 void Java_com_googlecode_tesseract_android_ResultIterator_nativeDelete(JNIEnv *env, jclass clazz,
-    jint nativeResultIterator) {
+    jlong nativeResultIterator) {
   ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
   if (resultIterator != 0) {
     delete resultIterator;
