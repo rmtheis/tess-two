@@ -16,6 +16,9 @@
 
 package com.googlecode.leptonica.android;
 
+import android.graphics.Rect;
+import android.util.Log;
+
 /**
  * Wrapper for Leptonica's native BOXA.
  *
@@ -26,8 +29,10 @@ public class Boxa {
         System.loadLibrary("lept");
     }
 
+    private static final String TAG = Boxa.class.getSimpleName();
+
     /**
-     * A pointer to the native Box object. This is used internally by native
+     * A pointer to the native Boxa object. This is used internally by native
      * code.
      */
     final long mNativeBoxa;
@@ -44,17 +49,38 @@ public class Boxa {
         mRecycled = false;
     }
 
-    public int getCount(){
+    public int getCount() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         return nativeGetCount(mNativeBoxa);
+    }
+
+    /**
+     * Returns an {@link android.graphics.Rect} containing the coordinates
+     * of this box.
+     *
+     * @return a rect representing the box
+     */
+    public Rect getRect(int index) {
+        int[] geometry = getGeometry(index);
+        int left = geometry[Box.INDEX_X];
+        int top = geometry[Box.INDEX_Y];
+        int right = left + geometry[Box.INDEX_W];
+        int bottom = top + geometry[Box.INDEX_H];
+        return new Rect(left, top, right, bottom);
     }
 
     /**
      * Returns an array containing the coordinates of this box. See INDEX_*
      * constants for indices.
      *
-     * @return an array of box oordinates
+     * @return an array of box coordinates
      */
     public int[] getGeometry(int index) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         int[] geometry = new int[4];
 
         if (getGeometry(index, geometry)) {
@@ -64,7 +90,6 @@ public class Boxa {
         return null;
     }
 
-
     /**
      * Fills an array containing the coordinates of this box. See INDEX_*
      * constants for indices.
@@ -73,6 +98,9 @@ public class Boxa {
      * @return <code>true</code> on success
      */
     public boolean getGeometry(int index, int[] geometry) {
+        if (mRecycled)
+            throw new IllegalStateException();
+
         if (geometry.length < 4) {
             throw new IllegalArgumentException("Geometry array must be at least 4 elements long");
         }
@@ -83,7 +111,7 @@ public class Boxa {
     /**
      * Releases resources and frees any memory associated with this Box.
      */
-    public void recycle() {
+    public synchronized void recycle() {
         if (!mRecycled) {
             nativeDestroy(mNativeBoxa);
 
@@ -91,6 +119,17 @@ public class Boxa {
         }
     }
 
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            if (!mRecycled) {
+                Log.w(TAG, "Boxa was not terminated using recycle()");
+                recycle();
+            }
+        } finally {
+            super.finalize();
+        }
+    }
 
     // ***************
     // * NATIVE CODE *

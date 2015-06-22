@@ -16,6 +16,7 @@
 
 package com.googlecode.leptonica.android;
 
+import android.graphics.Rect;
 import android.util.Log;
 
 /**
@@ -130,6 +131,21 @@ public class Box {
             throw new IllegalStateException();
 
         return nativeGetHeight(mNativeBox);
+    }
+
+    /**
+     * Returns an {@link android.graphics.Rect} containing the coordinates
+     * of this box.
+     *
+     * @return a rect representing the box
+     */
+    public Rect getRect() {
+        int[] geometry = getGeometry();
+        int left = geometry[Box.INDEX_X];
+        int top = geometry[Box.INDEX_Y];
+        int right = left + geometry[Box.INDEX_W];
+        int bottom = top + geometry[Box.INDEX_H];
+        return new Rect(left, top, right, bottom);
     }
 
     /**
