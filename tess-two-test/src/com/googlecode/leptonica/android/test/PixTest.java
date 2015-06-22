@@ -54,7 +54,8 @@ public class PixTest extends TestCase {
 
         int[] dimens = pix.getDimensions();
 
-        assertEquals("Incorrect width value found.", width, dimens[Pix.INDEX_W]);
+        assertEquals("Incorrect width value found.", width,
+                dimens[Pix.INDEX_W]);
         assertEquals("Incorrect height value found.", height,
                 dimens[Pix.INDEX_H]);
         assertEquals("Incorrect bit-depth value found.", depth,

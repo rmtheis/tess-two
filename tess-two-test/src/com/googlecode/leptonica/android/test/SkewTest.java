@@ -69,7 +69,7 @@ public class SkewTest extends TestCase {
         }
 
         float measuredSkew = -Skew.findSkew(pixd);
-        float tol = 1;
+        float tol = 1f;
         boolean isInRange = skew - tol < measuredSkew && measuredSkew < skew + tol;
         assertTrue("Skew has incorrect value.", isInRange);
 

@@ -173,6 +173,30 @@ public class TessBaseAPITest extends TestCase {
     }
 
     @SmallTest
+    public void testGetHOCRText() {
+        final String inputText = "hello";
+        final Bitmap bmp = getTextImage(inputText, 640, 480);
+
+        // Attempt to initialize the API.
+        final TessBaseAPI baseApi = new TessBaseAPI();
+        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
+        baseApi.setImage(bmp);
+
+        // Ensure that getHOCRText() produces a result.
+        final String hOcr = baseApi.getHOCRText(0);
+        assertNotNull("HOCR result not found.", hOcr);
+        assertTrue(hOcr.length() > 0);
+
+        final String outputText = Html.fromHtml(hOcr).toString().trim();
+        assertEquals(inputText, outputText);
+
+        // Attempt to shut down the API.
+        baseApi.end();
+        bmp.recycle();
+    }
+
+    @SmallTest
     public void testGetInitLanguagesAsString() {
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
@@ -273,30 +297,6 @@ public class TessBaseAPITest extends TestCase {
         boolean validBoundingRect =  lastBoundingRect.left < lastBoundingRect.right 
                 && lastBoundingRect.top < lastBoundingRect.bottom;
         assertTrue("Result bounding box Rect is incorrect.", validBoundingRect);
-
-        // Attempt to shut down the API.
-        baseApi.end();
-        bmp.recycle();
-    }
-
-    @SmallTest
-    public void testHOCRText() {
-        final String inputText = "hello";
-        final Bitmap bmp = getTextImage(inputText, 640, 480);
-
-        // Attempt to initialize the API.
-        final TessBaseAPI baseApi = new TessBaseAPI();
-        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
-        baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
-        baseApi.setImage(bmp);
-
-        // Ensure that getHOCRText() produces a result.
-        final String hOcr = baseApi.getHOCRText(0);
-        assertNotNull("HOCR result not found.", hOcr);
-        assertTrue(hOcr.length() > 0);
-
-        final String outputText = Html.fromHtml(hOcr).toString().trim();
-        assertEquals(inputText, outputText);
 
         // Attempt to shut down the API.
         baseApi.end();

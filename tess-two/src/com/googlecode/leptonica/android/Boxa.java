@@ -49,6 +49,8 @@ public class Boxa {
         mRecycled = false;
     }
 
+    // TODO Add constructors.
+    
     public int getCount() {
         if (mRecycled)
             throw new IllegalStateException();

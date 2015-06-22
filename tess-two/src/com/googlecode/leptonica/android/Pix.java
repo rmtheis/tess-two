@@ -108,7 +108,7 @@ public class Pix {
         if (mRecycled)
             throw new IllegalStateException();
 
-        int[] dimensions = new int[4];
+        int[] dimensions = new int[3];
 
         if (getDimensions(dimensions)) {
             return dimensions;
