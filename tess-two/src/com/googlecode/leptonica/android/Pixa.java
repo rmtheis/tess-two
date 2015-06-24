@@ -324,29 +324,6 @@ public class Pixa implements Iterable<Pix> {
     }
 
     /**
-     * Returns a bounding Rect for the Box at the specified index.
-     *
-     * @param index The index of the Box to get the bounding Rect of.
-     * @return a bounding Rect for the Box at the specified index
-     */
-    public Rect getBoxRect(int index) {        
-        int[] dimensions = getBoxGeometry(index);
-
-        if (dimensions == null) {
-            return null;
-        }
-
-        int x = dimensions[Box.INDEX_X];
-        int y = dimensions[Box.INDEX_Y];
-        int w = dimensions[Box.INDEX_W];
-        int h = dimensions[Box.INDEX_H];
-
-        Rect bound = new Rect(x, y, x + w, y + h);
-
-        return bound;
-    }
-
-    /**
      * Returns a geometry array for the Box at the specified index. See
      * Box.INDEX_* for indices.
      *
@@ -380,6 +357,29 @@ public class Pixa implements Iterable<Pix> {
             throw new IllegalStateException();
 
         return nativeGetBoxGeometry(mNativePixa, index, dimensions);
+    }
+
+    /**
+     * Returns a bounding Rect for the Box at the specified index.
+     *
+     * @param index The index of the Box to get the bounding Rect of.
+     * @return a bounding Rect for the Box at the specified index
+     */
+    public Rect getBoxRect(int index) {        
+        int[] dimensions = getBoxGeometry(index);
+
+        if (dimensions == null) {
+            return null;
+        }
+
+        int x = dimensions[Box.INDEX_X];
+        int y = dimensions[Box.INDEX_Y];
+        int w = dimensions[Box.INDEX_W];
+        int h = dimensions[Box.INDEX_H];
+
+        Rect bound = new Rect(x, y, x + w, y + h);
+
+        return bound;
     }
 
     /**
