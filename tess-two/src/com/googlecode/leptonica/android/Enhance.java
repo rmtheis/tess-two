@@ -26,6 +26,25 @@ public class Enhance {
         System.loadLibrary("lept");
     }
 
+    // Unsharp masking constants
+    
+    public final static int DEFAULT_UNSHARP_HALFWIDTH = 1;
+    
+    public final static float DEFAULT_UNSHARP_FRACTION = 0.3f;
+    
+    /**
+     * Performs unsharp masking (edge enhancement) using default values.
+     * 
+     * @see #unsharpMasking(Pix, int, float)
+     * 
+     * @param pixs Source image
+     * @return an edge-enhanced Pix image or copy if no enhancement requested
+     */
+    public static Pix unsharpMasking(Pix pixs) {
+        return unsharpMasking(pixs, DEFAULT_UNSHARP_HALFWIDTH, 
+                DEFAULT_UNSHARP_FRACTION);
+    }
+    
     /**
      * Performs unsharp masking (edge enhancement).
      * <p>

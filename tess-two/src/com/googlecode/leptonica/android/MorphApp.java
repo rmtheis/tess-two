@@ -29,6 +29,10 @@ public class MorphApp {
     public static final int L_TOPHAT_WHITE = 0;
     public static final int L_TOPHAT_BLACK = 1;
 
+    public static final int DEFAULT_WIDTH = 7;
+
+    public static final int DEFAULT_HEIGHT = 7;
+
     /**
      * Performs a tophat transform.
      * <p>
@@ -64,6 +68,32 @@ public class MorphApp {
             throw new RuntimeException("Failed to perform Tophat on image");
 
         return new Pix(nativePix); 
+    }
+
+    /**
+     * Performs a tophat-like operation emphasizing small dark regions using
+     * default values.
+     * 
+     * @see #pixFastTophat(Pix, int, int, int)
+     * 
+     * @param pixs Source pix (8bpp)
+     * @return a new Pix image
+     */
+    public static Pix pixFastTophatBlack(Pix pixs) {
+        return pixFastTophat(pixs, DEFAULT_WIDTH, DEFAULT_HEIGHT, L_TOPHAT_BLACK);
+    }
+
+    /**
+     * Performs a tophat-like operation emphasizing small bright regions using
+     * default values.
+     * 
+     * @see #pixFastTophat(Pix, int, int, int)
+     * 
+     * @param pixs Source pix (8bpp)
+     * @return a new Pix image
+     */
+    public static Pix pixFastTophatWhite(Pix pixs) {
+        return pixFastTophat(pixs, DEFAULT_WIDTH, DEFAULT_HEIGHT, L_TOPHAT_WHITE);
     }
 
     /**
