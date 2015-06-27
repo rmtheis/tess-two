@@ -835,9 +835,6 @@ public class TessBaseAPI {
             final int right, final int top, final int bottom,
             final int textLeft, final int textRight, final int textTop, final int textBottom) {
 
-        if (mRecycled)
-            return;
-
         if (progressNotifier != null) {
             Rect wordRect = new Rect(left, textTop - top, right, textTop - bottom);
             Rect textRect = new Rect(textLeft, textBottom, textRight, textTop);
