@@ -281,7 +281,7 @@ public class Pix {
         if (x < 0 || x >= getWidth()) {
             throw new IllegalArgumentException("Supplied x coordinate exceeds image bounds");
         } else if (y < 0 || y >= getHeight()) {
-            throw new IllegalArgumentException("Supplied x coordinate exceeds image bounds");
+            throw new IllegalArgumentException("Supplied y coordinate exceeds image bounds");
         }
 
         return nativeGetPixel(mNativePix, x, y);
@@ -303,7 +303,7 @@ public class Pix {
         if (x < 0 || x >= getWidth()) {
             throw new IllegalArgumentException("Supplied x coordinate exceeds image bounds");
         } else if (y < 0 || y >= getHeight()) {
-            throw new IllegalArgumentException("Supplied x coordinate exceeds image bounds");
+            throw new IllegalArgumentException("Supplied y coordinate exceeds image bounds");
         }
 
         nativeSetPixel(mNativePix, x, y, color);

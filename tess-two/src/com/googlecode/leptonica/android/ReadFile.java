@@ -109,7 +109,7 @@ public class ReadFile {
         if (pixs.getWidth() != width)
             throw new IllegalArgumentException("Source pix width does not match image width");
         if (pixs.getHeight() != height)
-            throw new IllegalArgumentException("Source pix width does not match image width");
+            throw new IllegalArgumentException("Source pix height does not match image width");
 
         return nativeReplaceBytes8(pixs.mNativePix, pixelData, width, height);
     }

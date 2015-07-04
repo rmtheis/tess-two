@@ -191,7 +191,7 @@ public class Binarize {
         long nativePix = nativeSauvolaBinarizeTiled(pixs.mNativePix, whsize, factor, nx, ny);
 
         if (nativePix == 0)
-            throw new RuntimeException("Failed to perform Otsu adaptive threshold on image");
+            throw new RuntimeException("Failed to perform Sauvola binarization on image");
 
         return new Pix(nativePix);        
     }
