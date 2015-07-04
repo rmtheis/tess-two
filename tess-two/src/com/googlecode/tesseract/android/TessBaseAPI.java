@@ -110,9 +110,11 @@ public class TessBaseAPI {
     public static final int OEM_TESSERACT_ONLY = 0;
 
     /** Run Cube only - better accuracy, but slower */
+    @Deprecated
     public static final int OEM_CUBE_ONLY = 1;
 
     /** Run both and combine results - best accuracy */
+    @Deprecated
     public static final int OEM_TESSERACT_CUBE_COMBINED = 2;
 
     /** Default OCR engine mode. */
