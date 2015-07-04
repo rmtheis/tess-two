@@ -45,8 +45,20 @@ import com.googlecode.tesseract.android.TessBaseAPI.ProgressValues;
 public class TessBaseAPITest extends TestCase {
     private static final String TESSBASE_PATH = "/mnt/sdcard/tesseract/";
     private static final String DEFAULT_LANGUAGE = "eng";
-    private static final String EXPECTED_FILE = TESSBASE_PATH + "tessdata/" +
-            DEFAULT_LANGUAGE + ".traineddata";
+    private static final String TESSDATA_PATH = TESSBASE_PATH + "tessdata/";
+    private static final String EXPECTED_FILE = 
+            TESSDATA_PATH + DEFAULT_LANGUAGE + ".traineddata";
+    private static final String[] EXPECTED_CUBE_DATA_FILES_ENG = {
+        "eng.cube.bigrams",
+        "eng.cube.fold",
+        "eng.cube.lm",
+        "eng.cube.nn",
+        "eng.cube.params",
+        "eng.cube.size",
+        "eng.cube.word-freq",
+        "eng.tesseract_cube.nn"
+    };
+
     private static final int DEFAULT_PAGE_SEG_MODE = 
             TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK;
 
@@ -56,6 +68,17 @@ public class TessBaseAPITest extends TestCase {
         // Make sure the eng.traineddata file exists.
         assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
                 + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
+    }
+
+    private void checkCubeData() {
+        // Make sure the cube data files exist.
+        for (int i = 0; i < EXPECTED_CUBE_DATA_FILES_ENG.length; i++) {
+            String expectedFilename = EXPECTED_CUBE_DATA_FILES_ENG[i];
+            String expectedFilePath = TESSDATA_PATH + expectedFilename;
+            File expectedFile = new File(expectedFilePath);
+            assertTrue("Make sure that you've copied " + expectedFilename + 
+                    " to " + expectedFilePath, expectedFile.exists());
+        }
     }
 
     @SmallTest
@@ -172,8 +195,26 @@ public class TessBaseAPITest extends TestCase {
         bmp2.recycle();
     }
 
+    //    @SmallTest
+    //    public void testGetHOCRText_combined() {
+    //        checkCubeData();
+    //
+    //        testGetHOCRText("eng", TessBaseAPI.OEM_TESSERACT_CUBE_COMBINED);
+    //    }
+    //
+    //    @SmallTest
+    //    public void testGetHOCRText_cube() {
+    //        checkCubeData();
+    //
+    //        testGetHOCRText("eng", TessBaseAPI.OEM_CUBE_ONLY);
+    //    }
+
     @SmallTest
-    public void testGetHOCRText() {
+    public void testGetHOCRText_tesseract() {
+        testGetHOCRText(DEFAULT_LANGUAGE, TessBaseAPI.OEM_TESSERACT_ONLY);
+    }
+
+    private void testGetHOCRText(String language, int ocrEngineMode) {
         final String inputText = "hello";
         final Bitmap bmp = getTextImage(inputText, 640, 480);
 
@@ -232,14 +273,32 @@ public class TessBaseAPITest extends TestCase {
         pixd.recycle();
     }
 
+    //    @SmallTest
+    //    public void testGetUTF8Text_combined() {
+    //        checkCubeData();
+    //
+    //        testGetUTF8Text("eng", TessBaseAPI.OEM_TESSERACT_CUBE_COMBINED);
+    //    }
+    //
+    //    @SmallTest
+    //    public void testGetUTF8Text_cube() {
+    //        checkCubeData();
+    //
+    //        testGetUTF8Text("eng", TessBaseAPI.OEM_CUBE_ONLY);
+    //    }
+
     @SmallTest
-    public void testGetUTF8Text() {
+    public void testGetUTF8Text_tesseract() {
+        testGetUTF8Text(DEFAULT_LANGUAGE, TessBaseAPI.OEM_TESSERACT_ONLY);
+    }
+
+    private void testGetUTF8Text(String language, int ocrEngineMode) {
         final String inputText = "hello";
         final Bitmap bmp = getTextImage(inputText, 640, 480);
 
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
-        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        baseApi.init(TESSBASE_PATH, language, ocrEngineMode);
         baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
         baseApi.setImage(bmp);
 
@@ -596,6 +655,35 @@ public class TessBaseAPITest extends TestCase {
         baseApi.end();
         bmp.recycle();
     }
+
+    //    @SmallTest
+    //    public void testStop() throws InterruptedException {
+    //        final TessBaseAPI baseApi = new TessBaseAPI();
+    //        final String inputText = "The quick brown fox jumps over the lazy dog.";
+    //        final Bitmap bmp = getTextImage(inputText, 640, 480);
+    //
+    //        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+    //        baseApi.setImage(bmp);
+    //
+    //        class LoopingRecognitionTask extends AsyncTask<Void, Void, Void> {
+    //
+    //            @Override
+    //            protected Void doInBackground(Void... params) {
+    //                while (true)
+    //                    baseApi.getUTF8Text();
+    //            }
+    //        }
+    //
+    //        LoopingRecognitionTask task = new LoopingRecognitionTask();
+    //        task.execute();
+    //
+    //        Thread.sleep(200);
+    //
+    //        baseApi.stop();
+    //
+    //        baseApi.end();
+    //        bmp.recycle();
+    //    }
 
     @SmallTest
     public void testWordConfidences() {

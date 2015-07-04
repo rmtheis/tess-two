@@ -31,6 +31,7 @@ public class WriteFileTest extends TestCase {
     @SmallTest
     public void testWriteBitmap() {
         testWriteBitmap(1, 1);
+        testWriteBitmap(100, 100);
         testWriteBitmap(640, 480);
     }
 
@@ -51,6 +52,7 @@ public class WriteFileTest extends TestCase {
     @SmallTest
     public void testWriteBytes8() {
         testWriteBytes8(1, 1);
+        testWriteBytes8(100, 100);
         testWriteBytes8(640, 480);
     }
 
