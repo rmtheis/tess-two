@@ -65,9 +65,15 @@ public class TessBaseAPITest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
-        // Make sure the eng.traineddata file exists.
-        assertTrue("Make sure that you've copied " + DEFAULT_LANGUAGE + ".traineddata to "
-                + EXPECTED_FILE, new File(EXPECTED_FILE).exists());
+        // Check that the data file(s) exist.
+        for (String languageCode : DEFAULT_LANGUAGE.split("\\+")) {
+            if (!languageCode.startsWith("~")) {
+                File expectedFile = new File(TESSDATA_PATH + File.separator + 
+                        languageCode + ".traineddata");
+                assertTrue("Make sure that you've copied " + languageCode + 
+                        ".traineddata to " + TESSDATA_PATH, expectedFile.exists());
+            }
+        }
     }
 
     private void checkCubeData() {

@@ -309,7 +309,7 @@ public class TessBaseAPI {
      *
      * @param datapath the parent directory of tessdata ending in a forward
      *            slash
-     * @param language (optional) an ISO 639-3 string representing the language(s)
+     * @param language an ISO 639-3 string representing the language(s)
      * @return <code>true</code> on success
      */
     public boolean init(String datapath, String language) {
@@ -320,9 +320,11 @@ public class TessBaseAPI {
      * Initializes the Tesseract engine with the specified language model(s). Returns
      * <code>true</code> on success.
      *
+     * @see #init(String, String)
+     *
      * @param datapath the parent directory of tessdata ending in a forward
      *            slash
-     * @param language (optional) an ISO 639-3 string representing the language(s)
+     * @param language an ISO 639-3 string representing the language(s)
      * @param ocrEngineMode the OCR engine mode to be set
      * @return <code>true</code> on success
      */
@@ -341,9 +343,14 @@ public class TessBaseAPI {
             throw new IllegalArgumentException("Data path must contain subfolder tessdata!");
 
         if (ocrEngineMode != OEM_CUBE_ONLY) {
-            File datafile = new File(tessdata + File.separator + language + ".traineddata");
-            if (!datafile.exists())
-                throw new IllegalArgumentException("Data file not found at " + datafile);
+            for (String languageCode : language.split("\\+")) {
+                if (!languageCode.startsWith("~")) {
+                    File datafile = new File(tessdata + File.separator + 
+                            languageCode + ".traineddata");
+                    if (!datafile.exists())
+                        throw new IllegalArgumentException("Data file not found at " + datafile);
+                }
+            }
         }
 
         boolean success = nativeInitOem(datapath, language, ocrEngineMode);
