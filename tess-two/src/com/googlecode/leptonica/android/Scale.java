@@ -108,7 +108,8 @@ public class Scale {
         if (scale <= 0.0f)
             throw new IllegalArgumentException("Scaling factor must be positive");
 
-        return new Pix(nativeScaleGeneral(pixs.mNativePix, scale, scale, 0f, 0));
+        return new Pix(nativeScaleGeneral(pixs.getNativePix(), scale, scale,
+                0f, 0));
     }
 
     /**
@@ -128,7 +129,7 @@ public class Scale {
         if (scaleY <= 0.0f)
             throw new IllegalArgumentException("Y scaling factor must be positive");
 
-        long nativePix = nativeScale(pixs.mNativePix, scaleX, scaleY);
+        long nativePix = nativeScale(pixs.getNativePix(), scaleX, scaleY);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to natively scale pix");

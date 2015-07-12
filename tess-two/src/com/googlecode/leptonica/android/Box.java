@@ -47,7 +47,7 @@ public class Box {
      * A pointer to the native Box object. This is used internally by native
      * code.
      */
-    final long mNativeBox;
+    private final long mNativeBox;
 
     private boolean mRecycled = false;
 
@@ -83,6 +83,18 @@ public class Box {
 
         mNativeBox = nativeBox;
         mRecycled = false;
+    }
+
+    /**
+     * Returns a pointer to the native Box object.
+     *
+     * @return a pointer to the native Box object
+     */
+    public long getNativeBox() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
+        return mNativeBox;
     }
 
     /**

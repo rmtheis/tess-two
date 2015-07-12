@@ -101,7 +101,7 @@ public class AdaptiveMap {
             throw new IllegalArgumentException("Source pix must be non-null");
 
         long nativePix = nativeBackgroundNormMorph(
-                pixs.mNativePix, normReduction, normSize, normBgValue);
+                pixs.getNativePix(), normReduction, normSize, normBgValue);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to normalize image background");
@@ -165,7 +165,7 @@ public class AdaptiveMap {
             throw new IllegalArgumentException("Source pix must be non-null");
 
         long nativePix = nativePixContrastNorm(
-                pixs.mNativePix, sizeX, sizeY, minDiff, smoothX, smoothY);
+                pixs.getNativePix(), sizeX, sizeY, minDiff, smoothX, smoothY);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to normalize image contrast");

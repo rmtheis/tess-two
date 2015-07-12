@@ -45,7 +45,8 @@ public class GrayQuant {
         if (depth == 8 && thresh > 256)
             throw new IllegalArgumentException("8 bpp thresh not in {0-256}");
 
-        long nativePix = nativePixThresholdToBinary(pixs.mNativePix, thresh);
+        long nativePix = nativePixThresholdToBinary(pixs.getNativePix(), 
+                thresh);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to perform binarization");

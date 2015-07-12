@@ -62,7 +62,8 @@ public class MorphApp {
         if (type < 0 || type > 1)
             throw new IllegalArgumentException("Type must be L_TOPHAT_BLACK or L_TOPHAT_WHITE");
 
-        long nativePix = nativePixTophat(pixs.mNativePix, hsize, vsize, type);
+        long nativePix = nativePixTophat(pixs.getNativePix(), hsize, vsize, 
+                type);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to perform Tophat on image");
@@ -133,7 +134,8 @@ public class MorphApp {
         if (type < 0 || type > 1)
             throw new IllegalArgumentException("Type must be L_TOPHAT_BLACK or L_TOPHAT_WHITE");
 
-        long nativePix = nativePixFastTophat(pixs.mNativePix, xsize, ysize, type);
+        long nativePix = nativePixFastTophat(pixs.getNativePix(), xsize, ysize, 
+                type);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to perform pixFastTophat on image");

@@ -70,13 +70,39 @@ While this project does not require Maven (and this project has not yet been
 registered in a Maven central repository), it can be 
 [integrated into a local Maven repository for convenience][maven].
 
-## Proguard
-If you're using Proguard for code shrinking and obfuscation, add the following
-to your app's Proguard config to retain a field used for sharing image data with 
-native code:
+## ProGuard
+If you're using ProGuard for code shrinking and obfuscation, add the following
+to your app's ProGuard config to retain fields used for sharing data with native
+code:
 ```proguard
+# tess-two
+-keep class com.googlecode.leptonica.android.Box {
+    private long mNativeBox;
+}
+-keep class com.googlecode.leptonica.android.Boxa {
+    private long mNativeBoxa;
+}
+-keep class com.googlecode.leptonica.android.Pix {
+    private long mNativePix;
+}
+-keep class com.googlecode.leptonica.android.Pixa {
+    private long mNativePixa;
+}
 -keep class com.googlecode.tesseract.android.TessBaseAPI {
     private long mNativeData;
+}
+-keep class com.googlecode.tesseract.android.PageIterator {
+    private long mNativePageIterator;
+}
+-keep class com.googlecode.tesseract.android.ResultIterator {
+    private long mNativeResultIterator;
+}
+```
+
+```proguard
+# eyes-two
+-keep class com.googlecode.eyesfree.textdetect.HydrogenTextDetector {
+    private long mNative;
 }
 ```
 

@@ -35,7 +35,7 @@ public class Boxa {
      * A pointer to the native Boxa object. This is used internally by native
      * code.
      */
-    final long mNativeBoxa;
+    private final long mNativeBoxa;
 
     private boolean mRecycled = false;
 
@@ -50,7 +50,19 @@ public class Boxa {
     }
 
     // TODO Add constructors.
-    
+
+    /**
+     * Returns a pointer to the native Boxa object.
+     *
+     * @return a pointer to the native Boxa object
+     */
+    public long getNativeBoxa() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
+        return mNativeBoxa;
+    }
+
     public int getCount() {
         if (mRecycled)
             throw new IllegalStateException();

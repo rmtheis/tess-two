@@ -27,7 +27,7 @@ public class Skew {
     }
 
     // Text alignment defaults
-    
+
     /** Default range for sweep, will detect rotation of + or - 30 degrees. */
     public final static float SWEEP_RANGE = 30.0f;
 
@@ -84,8 +84,8 @@ public class Skew {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
 
-        return nativeFindSkew(pixs.mNativePix, sweepRange, sweepDelta, sweepReduction,
-                searchReduction, searchMinDelta);
+        return nativeFindSkew(pixs.getNativePix(), sweepRange, sweepDelta,
+                sweepReduction, searchReduction, searchMinDelta);
     }
 
     // ***************

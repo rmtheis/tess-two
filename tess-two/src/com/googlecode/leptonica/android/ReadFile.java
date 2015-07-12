@@ -33,7 +33,7 @@ public class ReadFile {
     }
 
     private static final String LOG_TAG = ReadFile.class.getSimpleName();
-    
+
     /**
      * Creates a 32bpp Pix object from encoded data. Supported formats are BMP
      * and JPEG.
@@ -111,7 +111,8 @@ public class ReadFile {
         if (pixs.getHeight() != height)
             throw new IllegalArgumentException("Source pix height does not match image height");
 
-        return nativeReplaceBytes8(pixs.mNativePix, pixelData, width, height);
+        return nativeReplaceBytes8(pixs.getNativePix(), pixelData, width, 
+                height);
     }
 
     /**
@@ -134,13 +135,13 @@ public class ReadFile {
             Log.e(LOG_TAG, "Cannot read file");
             return null;
         }
-        
+
         final long nativePix = nativeReadFile(file.getAbsolutePath());
 
         if (nativePix != 0) {
             return new Pix(nativePix);
         }
-        
+
         final BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
 

@@ -37,7 +37,7 @@ public class Pixa implements Iterable<Pix> {
     private static final String TAG = Pixa.class.getSimpleName();
 
     /** A pointer to the native PIXA object. This is used internally by native code. */
-    final long mNativePixa;
+    private final long mNativePixa;
 
     /** The specified width of this Pixa. */
     final int mWidth;
@@ -212,7 +212,7 @@ public class Pixa implements Iterable<Pix> {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeAddPix(mNativePixa, pix.mNativePix, mode);
+        nativeAddPix(mNativePixa, pix.getNativePix(), mode);
     }
 
     /**
@@ -226,7 +226,7 @@ public class Pixa implements Iterable<Pix> {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeAddBox(mNativePixa, box.mNativeBox, mode);
+        nativeAddBox(mNativePixa, box.getNativeBox(), mode);
     }
 
     /**
@@ -241,7 +241,7 @@ public class Pixa implements Iterable<Pix> {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeAdd(mNativePixa, pix.mNativePix, box.mNativeBox, mode);
+        nativeAdd(mNativePixa, pix.getNativePix(), box.getNativeBox(), mode);
     }
 
     /**
@@ -420,7 +420,8 @@ public class Pixa implements Iterable<Pix> {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeReplacePix(mNativePixa, index, pix.mNativePix, box.mNativeBox);
+        nativeReplacePix(mNativePixa, index, pix.getNativePix(), 
+                box.getNativeBox());
     }
 
     /**

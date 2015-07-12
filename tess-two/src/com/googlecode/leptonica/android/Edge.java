@@ -71,7 +71,8 @@ public class Edge {
         if (orientFlag < 0 || orientFlag > 2)
             throw new IllegalArgumentException("Invalid orientation flag");
 
-        long nativePix = nativePixSobelEdgeFilter(pixs.mNativePix, orientFlag);
+        long nativePix = nativePixSobelEdgeFilter(pixs.getNativePix(), 
+                orientFlag);
 
         if (nativePix == 0)
             throw new RuntimeException("Failed to perform Sobel edge filter on image");

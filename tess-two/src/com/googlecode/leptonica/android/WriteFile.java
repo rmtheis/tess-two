@@ -69,7 +69,7 @@ public class WriteFile {
         if (data.length < size)
             throw new IllegalArgumentException("Data array must be large enough to hold image bytes");
 
-        int bytesWritten = nativeWriteBytes8(pixs.mNativePix, data);
+        int bytesWritten = nativeWriteBytes8(pixs.getNativePix(), data);
 
         return bytesWritten;
     }
@@ -93,7 +93,8 @@ public class WriteFile {
         if (file == null)
             throw new IllegalArgumentException("File must be non-null");
 
-        return nativeWriteImpliedFormat(pixs.mNativePix, file.getAbsolutePath());
+        return nativeWriteImpliedFormat(pixs.getNativePix(),
+                file.getAbsolutePath());
     }
 
     /**
@@ -115,7 +116,7 @@ public class WriteFile {
         final Bitmap.Config config = Bitmap.Config.ARGB_8888;
         final Bitmap bitmap = Bitmap.createBitmap(width, height, config);
 
-        if (nativeWriteBitmap(pixs.mNativePix, bitmap)) {
+        if (nativeWriteBitmap(pixs.getNativePix(), bitmap)) {
             return bitmap;
         }
 
