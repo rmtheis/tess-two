@@ -1,0 +1,12 @@
+Notes for updating libpng in the android tree:
+
+Remove everything, except:
+    pngusr.h
+    Android.mk
+    CleanSpec.mk
+    MODULE_LICENSE_BSD_LIKE
+
+Additionally:
+
+copy the LICENSE file to NOTICE
+copy scripts/pnglibconf.h.prebuilt to pnglibconf.h
