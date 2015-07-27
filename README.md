@@ -72,8 +72,8 @@ registered in a Maven central repository), it can be
 
 ## ProGuard
 If you're using ProGuard for code shrinking and obfuscation, add the following
-to your app's ProGuard config to retain fields used for sharing data with native
-code:
+rules to your app's ProGuard config to retain fields used for sharing data with 
+native code:
 ```proguard
 # tess-two
 -keep class com.googlecode.leptonica.android.Box {

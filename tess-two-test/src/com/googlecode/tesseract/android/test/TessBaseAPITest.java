@@ -46,8 +46,6 @@ public class TessBaseAPITest extends TestCase {
     private static final String TESSBASE_PATH = "/mnt/sdcard/tesseract/";
     private static final String DEFAULT_LANGUAGE = "eng";
     private static final String TESSDATA_PATH = TESSBASE_PATH + "tessdata/";
-    private static final String EXPECTED_FILE = 
-            TESSDATA_PATH + DEFAULT_LANGUAGE + ".traineddata";
     private static final String[] EXPECTED_CUBE_DATA_FILES_ENG = {
         "eng.cube.bigrams",
         "eng.cube.fold",

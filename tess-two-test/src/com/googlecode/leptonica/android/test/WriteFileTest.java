@@ -29,9 +29,17 @@ import com.googlecode.leptonica.android.WriteFile;
 
 public class WriteFileTest extends TestCase {
     @SmallTest
-    public void testWriteBitmap() {
+    public void testWriteBitmap_1x1() {
         testWriteBitmap(1, 1);
+    }
+
+    @SmallTest
+    public void testWriteBitmap_100x100() {
         testWriteBitmap(100, 100);
+    }
+
+    @SmallTest
+    public void testWriteBitmap_640x480() {
         testWriteBitmap(640, 480);
     }
 
@@ -50,9 +58,17 @@ public class WriteFileTest extends TestCase {
     }
 
     @SmallTest
-    public void testWriteBytes8() {
+    public void testWriteBytes8_1x1() {
         testWriteBytes8(1, 1);
+    }
+
+    @SmallTest
+    public void testWriteBytes8_100x100() {
         testWriteBytes8(100, 100);
+    }
+
+    @SmallTest
+    public void testWriteBytes8_640x480() {
         testWriteBytes8(640, 480);
     }
 
