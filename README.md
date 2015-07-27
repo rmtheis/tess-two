@@ -123,7 +123,7 @@ To install the build into a remote repository the following configuration items 
 To install into a maven repository, run one of the following commands:
 
 Debug/Release | Snapshots/Releases | Command
-------------------------------------------------------
+--------------|--------------------|-------------------------------------------------------------------
 Debug         | Snapshot           | ./gradlew publishDebugPublicationToTess-two-snapshotsRepository
 Debug         | Releases           | ./gradlew publishDebugPublicationToTess-two-releasesRepository
 Release       | Snapshot           | ./gradlew publishReleasePublicationToTess-two-snapshotsRepository
@@ -134,12 +134,14 @@ Release       | Releases           | ./gradlew publishReleasePublicationToTess-t
 To use tess-two as a dependency in your Android Gradle project make sure the following lines are in your gradle build files:
 
 app/build.gradle:
+
     dependencies { 
         compile 'com.googlecode.tesseract.android:tess-two:5.2.0-SNAPSHOT'  
         // other dependencies
     }
 
 build.gradle:
+
     allprojects {
         repositories {
             mavenLocal()
