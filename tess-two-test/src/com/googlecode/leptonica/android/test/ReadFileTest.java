@@ -99,10 +99,51 @@ public class ReadFileTest extends TestCase {
     }
 
     @SmallTest
+    public void testReadFile_png() throws IOException {
+        File file = File.createTempFile("testReadFile", ".png");
+        FileOutputStream fileStream = new FileOutputStream(file);
+        Bitmap bmp = TestUtils.createTestBitmap(100, 100, Bitmap.Config.RGB_565);
+        bmp.compress(CompressFormat.PNG, 100, fileStream);
+        Pix pix = ReadFile.readFile(file);
+
+        assertEquals(bmp.getWidth(), pix.getWidth());
+        assertEquals(bmp.getHeight(), pix.getHeight());
+
+        float match = TestUtils.compareImages(pix, bmp);
+        Log.d(TAG, "match=" + match);
+        assertTrue("Images do not match.", (match >= 0.99f));
+
+        fileStream.close();
+        bmp.recycle();
+        pix.recycle();
+    }
+
+    @SmallTest
     public void testReadMem_jpg() throws IOException {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         Bitmap bmp = TestUtils.createTestBitmap(100, 100, Bitmap.Config.RGB_565);
         bmp.compress(CompressFormat.JPEG, 85, byteStream);
+        byte[] encodedData = byteStream.toByteArray();
+        Pix pix = ReadFile.readMem(encodedData);
+
+        assertEquals(bmp.getWidth(), pix.getWidth());
+        assertEquals(bmp.getHeight(), pix.getHeight());
+
+        float match = TestUtils.compareImages(pix, bmp);
+        Log.d(TAG, "match=" + match);
+        assertTrue("Images do not match.", (match >= 0.99f));
+
+        byteStream.close();
+        bmp.recycle();
+        encodedData = null;
+        pix.recycle();
+    }
+
+    @SmallTest
+    public void testReadMem_png() throws IOException {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        Bitmap bmp = TestUtils.createTestBitmap(100, 100, Bitmap.Config.RGB_565);
+        bmp.compress(CompressFormat.PNG, 100, byteStream);
         byte[] encodedData = byteStream.toByteArray();
         Pix pix = ReadFile.readMem(encodedData);
 

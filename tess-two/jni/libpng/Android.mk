@@ -1,8 +1,5 @@
 LOCAL_PATH:= $(call my-dir)
 
-# We need to build this for both the device (as a shared library)
-# and the host (as a static library for tools to use).
-
 common_SRC_FILES := \
 	png.c \
 	pngerror.c \
@@ -34,40 +31,6 @@ my_src_files_arm := \
 
 common_CFLAGS := -std=gnu89 #-fvisibility=hidden ## -fomit-frame-pointer
 
-# For the host
-# =====================================================
-
-include $(CLEAR_VARS)
-LOCAL_SRC_FILES := $(common_SRC_FILES)
-LOCAL_CFLAGS += $(common_CFLAGS)
-LOCAL_ASFLAGS += $(common_ASFLAGS)
-LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
-LOCAL_STATIC_LIBRARIES := libz
-LOCAL_MODULE:= libpng
-include $(BUILD_HOST_STATIC_LIBRARY)
-
-
-# For the device (static)
-# =====================================================
-
-include $(CLEAR_VARS)
-LOCAL_CLANG := true
-LOCAL_SRC_FILES := $(common_SRC_FILES)
-LOCAL_CFLAGS += $(common_CFLAGS) -ftrapv
-LOCAL_CFLAGS_arm := $(my_cflags_arm)
-LOCAL_ASFLAGS += $(common_ASFLAGS)
-LOCAL_SRC_FILES_arm := $(my_src_files_arm)
-LOCAL_CFLAGS_arm64 := $(my_cflags_arm64)
-LOCAL_SRC_FILES_arm64 := $(my_src_files_arm)
-LOCAL_SANITIZE := never
-LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
-LOCAL_SHARED_LIBRARIES := libz
-LOCAL_MODULE:= libpng
-include $(BUILD_STATIC_LIBRARY)
-
-# For the device (shared)
-# =====================================================
-
 include $(CLEAR_VARS)
 LOCAL_CLANG := true
 LOCAL_SRC_FILES := $(common_SRC_FILES)
@@ -79,16 +42,6 @@ LOCAL_CFLAGS_arm64 := $(my_cflags_arm64)
 LOCAL_SRC_FILES_arm64 := $(my_src_files_arm)
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
 LOCAL_SHARED_LIBRARIES := libz
+LOCAL_LDLIBS := -lz
 LOCAL_MODULE:= libpng
 include $(BUILD_SHARED_LIBRARY)
-
-# For testing
-# =====================================================
-
-include $(CLEAR_VARS)
-LOCAL_CLANG := true
-LOCAL_SRC_FILES:= pngtest.c
-LOCAL_MODULE := pngtest
-LOCAL_SHARED_LIBRARIES:= libpng libz
-LOCAL_MODULE_TAGS := debug
-include $(BUILD_EXECUTABLE)

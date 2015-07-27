@@ -76,7 +76,7 @@ public class WriteFile {
 
     /**
      * Writes a Pix to file using the file extension as the output format;
-     * the only supported format is .bmp for bitmap.
+     * supported formats are .bmp and .png.
      * <p>
      * Notes:
      * <ol>

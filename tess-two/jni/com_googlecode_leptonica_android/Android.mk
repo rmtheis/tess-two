@@ -37,13 +37,15 @@ LOCAL_SRC_FILES += \
   
 LOCAL_C_INCLUDES += \
   $(LOCAL_PATH) \
-  $(LEPTONICA_PATH)/src
+  $(LEPTONICA_PATH)/src \
+  $(LIBPNG_PATH)
 
 LOCAL_LDLIBS += \
   -ljnigraphics \
   -llog
 
 # common
+LOCAL_SHARED_LIBRARIES:= libpng
 
 LOCAL_PRELINK_MODULE:= false
 

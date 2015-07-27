@@ -35,10 +35,10 @@ public class ReadFile {
     private static final String LOG_TAG = ReadFile.class.getSimpleName();
 
     /**
-     * Creates a 32bpp Pix object from encoded data. Supported formats are BMP
-     * and JPEG.
+     * Creates a 32bpp Pix object from encoded data. Supported formats are BMP,
+     * JPEG, and PNG.
      *
-     * @param encodedData JPEG or BMP encoded byte data.
+     * @param encodedData BMP, JPEG, or PNG encoded byte data.
      * @return a 32bpp Pix object
      */
     public static Pix readMem(byte[] encodedData) {
@@ -116,10 +116,10 @@ public class ReadFile {
     }
 
     /**
-     * Creates a Pix object from encoded file data. Supported formats are BMP
-     * and JPEG.
+     * Creates a Pix object from encoded file data. Supported formats are BMP,
+     * JPEG, and PNG.
      *
-     * @param file The JPEG or BMP-encoded file to read in as a Pix.
+     * @param file The BMP, JPEG, or PNG-encoded file to read in as a Pix.
      * @return a Pix object
      */
     public static Pix readFile(File file) {

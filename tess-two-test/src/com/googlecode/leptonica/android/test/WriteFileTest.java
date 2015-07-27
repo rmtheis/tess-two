@@ -79,6 +79,14 @@ public class WriteFileTest extends TestCase {
         pixs.recycle();
     }
 
+    @SmallTest
+    public void testWriteImpliedFormat_png() throws IOException {
+        Pix pixs = TestUtils.createTestPix(100, 100);
+        File file = File.createTempFile("testWriteImpliedFormat", ".png");
+        testWriteImpliedFormat(pixs, file);
+        pixs.recycle();
+    }
+
     private void testWriteImpliedFormat(Pix pixs, File file) {
         boolean success = WriteFile.writeImpliedFormat(pixs, file);
 
