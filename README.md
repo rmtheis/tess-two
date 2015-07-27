@@ -70,7 +70,7 @@ This project can also be built using Gradle, tested and installed into a (local)
 
 ### Prerequisites 
 
-Building the project through Gradle required the NDK to be installed through the Android SDK manager. The build system will look for the NDK in $ANDROID_HOME/ndk-bundle/ 
+Building the project through Gradle requires the NDK to be installed through the Android SDK manager. The build system will look for the NDK in $ANDROID_HOME/ndk-bundle/ 
 
 A file local.properties needs to be created with the location of your android SDK, the contents of this file should be:
 
