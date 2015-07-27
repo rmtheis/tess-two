@@ -28,3 +28,5 @@ configure
 libtool
 tesseract.pc
 stamp-h1
+build/
+.gradle/
