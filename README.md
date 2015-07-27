@@ -64,6 +64,87 @@ To build eyes-two, additionally run the following:
 After building, the tess-two and eyes-two projects can be imported into Eclipse 
 using File->Import->Existing Projects into Workspace.
 
+## Gradle build
+
+This project can also be built using Gradle, tested and installed into a (local) Maven repository.
+
+### Prerequisites 
+
+Building the project through Gradle required the NDK to be installed through the Android SDK manager. The build system will look for the NDK in $ANDROID_HOME/ndk-bundle/ 
+
+### Building
+
+The project can be built using the following command: 
+
+    ./gradlew build
+
+This produces a release and debug  AAR file in tess-two/build/outputs/aar/
+
+### Installing in Maven
+
+The group and artifact ID's are:
+
+Release version:
+groupId: com.googlecode.tesseract.android
+artifactId: tess-two
+version: 5.2.0-SNAPSHOT
+packaging: aar
+
+Debug version
+groupId: com.googlecode.tesseract.android
+artifactId: tess-two-debug
+version: 5.2.0-SNAPSHOT
+packaging: aar
+
+
+Both the debug and release builds can be installed as artifacts in a Maven repository of your choosing.
+
+To install the debug build into your local repository run the following command:
+
+    ./gradlew publishDebugPublicationToMavenLocal 
+
+To install the release build into your local repository run the following command:
+
+    ./gradlew publishReleasePublicationToMavenLocal
+
+To install the build into a remote repository the following configuration items need to be added to your ~/.gradle/gradle.properties file
+
+mavenSnapshots=<url>
+mavenSnapshotsUsername=<username>
+mavenSnapshotsPassword=<password>
+mavenReleases=<url>
+mavenReleasesUsername=<username>
+mavenReleasesPassword=<password>
+
+To install into a maven repository, run one of the following commands:
+
+ Debug/Release | Snapshots/Releases | Command
+------------------------------------------------------
+    Debug      |    Snapshot        | ./gradlew publishDebugPublicationToTess-two-snapshotsRepository
+    Debug      |    Releases        | ./gradlew publishDebugPublicationToTess-two-releasesRepository
+    Release    |    Snapshot        | ./gradlew publishReleasePublicationToTess-two-snapshotsRepository
+    Release    |    Releases        | ./gradlew publishReleasePublicationToTess-two-releasesRepository
+
+## Depending on tess-two from Gradle
+
+To use tess-two as a dependency in your Android Gradle project make sure the following lines are in your gradle build files:
+
+app/build.gradle:
+    dependencies { 
+        compile 'com.googlecode.tesseract.android:tess-two:5.2.0-SNAPSHOT'  
+        // other dependencies
+    }
+
+build.gradle:
+    allprojects {
+        repositories {
+            mavenLocal()
+            // other repo's
+        }
+    }
+
+
+
 ## Maven
 
 While this project does not require Maven (and this project has not yet been 
