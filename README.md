@@ -113,21 +113,21 @@ To install the release build into your local repository run the following comman
 
 To install the build into a remote repository the following configuration items need to be added to your ~/.gradle/gradle.properties file
 
-mavenSnapshots=<url>
-mavenSnapshotsUsername=<username>
-mavenSnapshotsPassword=<password>
-mavenReleases=<url>
-mavenReleasesUsername=<username>
-mavenReleasesPassword=<password>
+    mavenSnapshots=<url>
+    mavenSnapshotsUsername=<username>
+    mavenSnapshotsPassword=<password>
+    mavenReleases=<url>
+    mavenReleasesUsername=<username>
+    mavenReleasesPassword=<password>
 
 To install into a maven repository, run one of the following commands:
 
- Debug/Release | Snapshots/Releases | Command
+Debug/Release | Snapshots/Releases | Command
 ------------------------------------------------------
-    Debug      |    Snapshot        | ./gradlew publishDebugPublicationToTess-two-snapshotsRepository
-    Debug      |    Releases        | ./gradlew publishDebugPublicationToTess-two-releasesRepository
-    Release    |    Snapshot        | ./gradlew publishReleasePublicationToTess-two-snapshotsRepository
-    Release    |    Releases        | ./gradlew publishReleasePublicationToTess-two-releasesRepository
+Debug         | Snapshot           | ./gradlew publishDebugPublicationToTess-two-snapshotsRepository
+Debug         | Releases           | ./gradlew publishDebugPublicationToTess-two-releasesRepository
+Release       | Snapshot           | ./gradlew publishReleasePublicationToTess-two-snapshotsRepository
+Release       | Releases           | ./gradlew publishReleasePublicationToTess-two-releasesRepository
 
 ## Depending on tess-two from Gradle
 
