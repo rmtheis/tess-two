@@ -44,7 +44,7 @@ for reported build issues.
 On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility 
 library.
 
-In windows, you may need to add the argument ```--target android-22``` to
+In windows, you may need to append the argument ```--target android-22``` after
 ```android update project --path .```
 Use ```android list targets```
 to see which are available.
