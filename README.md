@@ -44,6 +44,10 @@ for reported build issues.
 On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility 
 library.
 
+In windows, you may need to add the argument '--target android-22' to 'android update project --path .'.
+Use 'android list targets' to see which are available.
+Add android as an alias with 'doskey android=C:\Users\{username}\AppData\Local\Android\sdk\tools\android.bat $*'.
+
 To build the latest tess-two code, run the following commands in the terminal:
 
     git clone git://github.com/rmtheis/tess-two tess
@@ -52,6 +56,7 @@ To build the latest tess-two code, run the following commands in the terminal:
     ndk-build
     android update project --path .
     ant release
+
 
 To build eyes-two, additionally run the following:
 
