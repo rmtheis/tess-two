@@ -22,6 +22,7 @@
 #include "baseapi.h"
 #include "ocrclass.h"
 #include "allheaders.h"
+#include "renderer.h"
 
 static jfieldID field_mNativeData;
 static jmethodID method_onProgressValues;
@@ -587,6 +588,63 @@ void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeReadConfigFile(JNIE
   nat->api.ReadConfigFile(c_file_name);
   env->ReleaseStringUTFChars(fileName, c_file_name);
 }
+
+jlong Java_com_googlecode_tesseract_android_TessPdfRenderer_nativeCreate(JNIEnv *env,
+                                                                         jobject thiz,
+                                                                         jobject jTessBaseApi,
+                                                                         jstring outputPath) {
+  native_data_t *nat = get_native_data(env, jTessBaseApi);
+  const char *c_output_path = env->GetStringUTFChars(outputPath, NULL);
+
+  tesseract::TessPDFRenderer* result = new tesseract::TessPDFRenderer(c_output_path, nat->api.GetDatapath());
+
+  env->ReleaseStringUTFChars(outputPath, c_output_path);
+
+  return (jlong) result;
+}
+
+void Java_com_googlecode_tesseract_android_TessPdfRenderer_nativeRecycle(JNIEnv *env,
+                                                                         jobject thiz,
+                                                                         jlong jPointer) {
+  tesseract::TessPDFRenderer* renderer = (tesseract::TessPDFRenderer*) jPointer;
+  delete renderer;
+}
+
+jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeBeginDocument(JNIEnv *env,
+                                                                               jobject thiz,
+                                                                               jlong jRenderer) {
+
+  tesseract::TessPDFRenderer* pdfRenderer = (tesseract::TessPDFRenderer*) jRenderer;
+  return pdfRenderer->BeginDocument("");
+}
+
+jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeEndDocument(JNIEnv *env,
+                                                                             jobject thiz,
+                                                                             jlong jRenderer) {
+
+  tesseract::TessPDFRenderer* pdfRenderer = (tesseract::TessPDFRenderer*) jRenderer;
+  return pdfRenderer->EndDocument();
+}
+
+jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeAddPageToDocument(JNIEnv *env,
+                                                                                   jobject thiz,
+                                                                                   jlong jPix,
+                                                                                   jstring jPath,
+                                                                                   jlong jRenderer) {
+
+  tesseract::TessPDFRenderer* pdfRenderer = (tesseract::TessPDFRenderer*) jRenderer;
+
+  native_data_t *nat = get_native_data(env, thiz);
+  PIX* pix = (PIX*) jPix;
+  const char *inputImage = env->GetStringUTFChars(jPath, NULL);
+
+  nat->api.ProcessPage(pix, 0, inputImage, NULL, 0, pdfRenderer);
+
+  env->ReleaseStringUTFChars(jPath, inputImage);
+
+  return true;
+}
+
 #ifdef __cplusplus
 }
 #endif

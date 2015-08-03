@@ -43,10 +43,10 @@ import com.googlecode.tesseract.android.TessBaseAPI.ProgressNotifier;
 import com.googlecode.tesseract.android.TessBaseAPI.ProgressValues;
 
 public class TessBaseAPITest extends TestCase {
-    private static final String TESSBASE_PATH = "/mnt/sdcard/tesseract/";
-    private static final String DEFAULT_LANGUAGE = "eng";
-    private static final String TESSDATA_PATH = TESSBASE_PATH + "tessdata/";
-    private static final String[] EXPECTED_CUBE_DATA_FILES_ENG = {
+    static final String TESSBASE_PATH = "/mnt/sdcard/tesseract/";
+    static final String DEFAULT_LANGUAGE = "eng";
+    static final String TESSDATA_PATH = TESSBASE_PATH + "tessdata/";
+    static final String[] EXPECTED_CUBE_DATA_FILES_ENG = {
         "eng.cube.bigrams",
         "eng.cube.fold",
         "eng.cube.lm",

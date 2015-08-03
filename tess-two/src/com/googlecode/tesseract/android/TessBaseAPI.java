@@ -853,6 +853,40 @@ public class TessBaseAPI {
         }
     }
 
+    /**
+     * Starts a new document. This clears the contents of the output data.
+     *
+     * @return {@code true} on success. {@code false} on failure
+     */
+    public boolean beginDocument(TessPdfRenderer tessPdfRenderer) {
+        return nativeBeginDocument(tessPdfRenderer.getNativePdfRenderer());
+    }
+
+    /**
+     * Finishes the document and finalizes the output data.
+     * Invalid if beginDocument not yet called.
+     *
+     * @return {@code true} on success. {@code false} on failure
+     */
+    public boolean endDocument(TessPdfRenderer tessPdfRenderer) {
+        return nativeEndDocument(tessPdfRenderer.getNativePdfRenderer());
+    }
+
+    /**
+     * Adds the given data to the opened document (if any).
+     * 
+     * @param imageToProcess image to be used for OCR
+     * @param imageToWrite path to image to be written into resulting document
+     *
+     * @return {@code true} on success. {@code false} on failure
+     */
+    public boolean addPageToDocument(Pix imageToProcess, String imageToWrite,
+            TessPdfRenderer tessPdfRenderer) {
+        return nativeAddPageToDocument(imageToProcess.getNativePix(), 
+                imageToWrite, tessPdfRenderer.getNativePdfRenderer());
+    }
+
+
     // ******************
     // * Native methods *
     // ******************
@@ -927,4 +961,10 @@ public class TessBaseAPI {
     private native void nativeReadConfigFile(String fileName);
 
     private native int nativeStop();
+
+    private native boolean nativeBeginDocument(long rendererPointer);
+
+    private native boolean nativeEndDocument(long rendererPointer);
+
+    private native boolean nativeAddPageToDocument(long nativePix, String imagePath, long rendererPointer);
 }

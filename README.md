@@ -94,6 +94,9 @@ native code:
 -keep class com.googlecode.tesseract.android.PageIterator {
     private long mNativePageIterator;
 }
+-keep class com.googlecode.tesseract.android.PdfRenderer {
+    private long mNativePdfRenderer;
+}
 -keep class com.googlecode.tesseract.android.ResultIterator {
     private long mNativeResultIterator;
 }

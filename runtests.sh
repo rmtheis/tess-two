@@ -13,5 +13,6 @@ adb push -p tesseract-ocr/tessdata/eng.cube.params /mnt/sdcard/tesseract/tessdat
 adb push -p tesseract-ocr/tessdata/eng.cube.size /mnt/sdcard/tesseract/tessdata
 adb push -p tesseract-ocr/tessdata/eng.cube.word-freq /mnt/sdcard/tesseract/tessdata
 adb push -p tesseract-ocr/tessdata/eng.tesseract_cube.nn /mnt/sdcard/tesseract/tessdata
+adb push -p tess-two/jni/com_googlecode_tesseract_android/src/tessdata/pdf.ttf /mnt/sdcard/tesseract/tessdata
 
 adb shell am instrument -w com.googlecode.tesseract.android.test/android.test.InstrumentationTestRunner
