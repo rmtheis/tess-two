@@ -26,6 +26,7 @@ import android.util.Log;
  */
 public class Box {
     static {
+        System.loadLibrary("png");
         System.loadLibrary("lept");
     }
 

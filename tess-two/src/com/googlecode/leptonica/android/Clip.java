@@ -20,6 +20,7 @@ package com.googlecode.leptonica.android;
  */
 public class Clip {
     static {
+        System.loadLibrary("png");
         System.loadLibrary("lept");
     }
 

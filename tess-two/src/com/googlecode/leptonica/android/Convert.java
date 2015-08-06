@@ -23,6 +23,7 @@ package com.googlecode.leptonica.android;
  */
 public class Convert {
     static {
+        System.loadLibrary("png");
         System.loadLibrary("lept");
     }
     
