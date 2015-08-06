@@ -44,9 +44,7 @@ public class Pix {
     private boolean mRecycled;
 
     /**
-     * Creates a new Pix wrapper for the specified native PIX object. Never call
-     * this twice on the same native pointer, because finalize() will attempt to
-     * free native memory twice.
+     * Creates a new Pix wrapper for the specified native PIX object.
      *
      * @param nativePix A pointer to the native PIX object.
      */
