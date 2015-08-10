@@ -89,6 +89,7 @@ native code:
 }
 -keep class com.googlecode.tesseract.android.TessBaseAPI {
     private long mNativeData;
+    protected void onProgressValues(int, int, int, int, int, int, int, int, int);
 }
 -keep class com.googlecode.tesseract.android.PageIterator {
     private long mNativePageIterator;
