@@ -612,10 +612,21 @@ void Java_com_googlecode_tesseract_android_TessPdfRenderer_nativeRecycle(JNIEnv 
 
 jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeBeginDocument(JNIEnv *env,
                                                                                jobject thiz,
-                                                                               jlong jRenderer) {
+                                                                               jlong jRenderer,
+                                                                               jstring title) {
 
+  const char *c_title = env->GetStringUTFChars(title, NULL);
   tesseract::TessPDFRenderer* pdfRenderer = (tesseract::TessPDFRenderer*) jRenderer;
-  return pdfRenderer->BeginDocument("");
+
+  jboolean res = JNI_TRUE;
+
+  if (pdfRenderer->BeginDocument(c_title)) {
+    res = JNI_FALSE;
+  }
+
+  env->ReleaseStringUTFChars(title, c_title);
+
+  return res;
 }
 
 jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeEndDocument(JNIEnv *env,

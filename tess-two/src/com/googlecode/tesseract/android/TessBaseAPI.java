@@ -856,11 +856,25 @@ public class TessBaseAPI {
 
     /**
      * Starts a new document. This clears the contents of the output data.
+     * 
+     * Caller is responsible for escaping the provided title.
      *
+     * @param title a title to be used in the document metadata
      * @return {@code true} on success. {@code false} on failure
      */
+    public boolean beginDocument(TessPdfRenderer tessPdfRenderer, String title) {
+        return nativeBeginDocument(tessPdfRenderer.getNativePdfRenderer(), 
+                title);
+    }
+
+    /**
+     * Starts a new document with no title.
+     * 
+     * @return {@code true} on success. {@code false} on failure
+     * @see #beginDocument(TessPdfRenderer, String)
+     */
     public boolean beginDocument(TessPdfRenderer tessPdfRenderer) {
-        return nativeBeginDocument(tessPdfRenderer.getNativePdfRenderer());
+        return nativeBeginDocument(tessPdfRenderer.getNativePdfRenderer(), "");
     }
 
     /**
@@ -963,7 +977,7 @@ public class TessBaseAPI {
 
     private native int nativeStop();
 
-    private native boolean nativeBeginDocument(long rendererPointer);
+    private native boolean nativeBeginDocument(long rendererPointer, String title);
 
     private native boolean nativeEndDocument(long rendererPointer);
 

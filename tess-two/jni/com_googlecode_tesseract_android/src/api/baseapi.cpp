@@ -987,8 +987,7 @@ bool TessBaseAPI::ProcessPagesFileList(FILE *flist,
   }
 
   // Begin producing output
-  const char* kUnknownTitle = "";
-  if (renderer && !renderer->BeginDocument(kUnknownTitle)) {
+  if (renderer && !renderer->BeginDocument(unknown_title_)) {
     return false;
   }
 
@@ -1162,8 +1161,7 @@ bool TessBaseAPI::ProcessPagesInternal(const char* filename,
   }
 
   // Begin the output
-  const char* kUnknownTitle = "";
-  if (renderer && !renderer->BeginDocument(kUnknownTitle)) {
+  if (renderer && !renderer->BeginDocument(unknown_title_)) {
     pixDestroy(&pix);
     return false;
   }
