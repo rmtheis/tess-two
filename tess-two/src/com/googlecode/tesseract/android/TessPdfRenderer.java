@@ -27,7 +27,7 @@ public class TessPdfRenderer {
     private final long mNativePdfRenderer;
 
     static {
-        System.loadLibrary("png");
+        System.loadLibrary("pngt");
         System.loadLibrary("lept");
         System.loadLibrary("tess");
     }

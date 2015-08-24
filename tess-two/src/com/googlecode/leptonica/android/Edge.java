@@ -21,7 +21,7 @@ package com.googlecode.leptonica.android;
  */
 public class Edge {
     static {
-        System.loadLibrary("png");
+        System.loadLibrary("pngt");
         System.loadLibrary("lept");
     }
 

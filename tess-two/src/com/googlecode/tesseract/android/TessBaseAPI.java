@@ -40,7 +40,7 @@ public class TessBaseAPI {
     private long mNativeData;
 
     static {
-        System.loadLibrary("png");
+        System.loadLibrary("pngt");
         System.loadLibrary("lept");
         System.loadLibrary("tess");
 

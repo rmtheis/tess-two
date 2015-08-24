@@ -25,7 +25,7 @@ import java.io.File;
  */
 public class WriteFile {
     static {
-        System.loadLibrary("png");
+        System.loadLibrary("pngt");
         System.loadLibrary("lept");
     }
 
