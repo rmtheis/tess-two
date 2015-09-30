@@ -167,6 +167,7 @@ public class TessBaseAPI {
         private Rect textRect;
 
         public ProgressValues(int percent, Rect wordRect, Rect textRect) {
+            this.percent = percent;
             this.wordRect = wordRect;
             this.textRect = textRect;
         }
