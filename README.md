@@ -26,7 +26,7 @@ The `tess-two-test` subdirectory contains Android JUnit tests.
 ## Pre-requisites
 
 * Android 2.2 or higher
-* A v3.02 [trained data file][tessdata] for a language. Data files must be 
+* A v3.02+ [trained data file][tessdata] for a language. Data files must be 
 extracted to the Android device in a subdirectory named `tessdata`.
 
 ## Versions
@@ -38,7 +38,7 @@ incompatible with previous versions.
 ## Building
 
 This project is set up to build on Android SDK Tools r22.3+ and Android NDK 
-r10d+. The build works on Linux, Mac OS X, and Windows 7/8.
+r10d+. The build works on Linux, Mac OS X, and Windows 7/8/10.
 
 On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility 
 library.
