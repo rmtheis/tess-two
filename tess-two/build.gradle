@@ -1,0 +1,113 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+apply plugin: 'com.android.library'
+apply plugin: 'maven-publish'
+
+android {
+    compileSdkVersion 22
+        buildToolsVersion "23.0.0 rc3"
+
+        defaultConfig {
+            minSdkVersion 8
+                targetSdkVersion 22
+                versionCode 1
+                versionName "1.0"
+        }
+    buildTypes {
+        release {
+            minifyEnabled false
+                proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+                java.srcDirs = ['src']
+                res.srcDirs = ['res']
+                jniLibs.srcDirs = ['libs']
+        }
+    }
+
+    // call regular ndk-build(.cmd) script from app directory
+    task ndkBuild(type: Exec) {
+        workingDir = file("${android.sdkDirectory}/ndk-bundle")
+            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                commandLine 'ndk-build.cmd', '-C', file('.').absolutePath
+            } else {
+                commandLine './ndk-build', '-C', file('.').absolutePath
+            }
+    }
+
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn ndkBuild
+    }
+
+    // cleanup task
+    task ndkClean(type: Exec) {
+        workingDir = file("${android.sdkDirectory}/ndk-bundle")
+            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                commandLine 'ndk-build.cmd', '-C', file('.').absolutePath, 'clean'
+            } else {
+                commandLine './ndk-build', '-C', file('.').absolutePath, 'clean'
+            }
+    }
+
+    tasks.withType(Delete) {
+        cleanTask -> cleanTask.dependsOn ndkClean
+    } 
+}
+
+tasks.whenTaskAdded { task ->
+    if( task instanceof org.gradle.api.publish.maven.tasks.GenerateMavenPom ) {
+        task.dependsOn assemble
+    }
+}
+
+
+publishing {
+    publications { 
+        release(MavenPublication) {
+            artifactId "tess-two"
+            groupId "com.googlecode.tesseract.android"
+            artifact "build/outputs/aar/tess-two-release.aar"
+            version "5.2.0-SNAPSHOT"
+            pom {
+                packaging "aar"
+            }
+        }
+        debug(MavenPublication) {
+            artifactId "tess-two-debug"
+            groupId "com.googlecode.tesseract.android"
+            artifact "build/outputs/aar/tess-two-debug.aar"
+            version "5.2.0-SNAPSHOT"
+            pom {
+                packaging "aar"
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name "tess-two-releases"
+            url "${mavenReleases}"
+            credentials(PasswordCredentials) {
+                username mavenReleasesUsername
+                password mavenReleasesPassword
+            }
+        }
+        maven {
+            name "tess-two-snapshots"
+            url "${mavenSnapshots}"
+            credentials(PasswordCredentials) {
+                username mavenSnapshotsUsername
+                password mavenSnapshotsPassword
+            }
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:appcompat-v7:22.2.1'
+}
