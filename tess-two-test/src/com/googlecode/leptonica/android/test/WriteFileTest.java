@@ -47,6 +47,7 @@ public class WriteFileTest extends TestCase {
         Pix pix = TestUtils.createTestPix(width, height);
         Bitmap bmp = WriteFile.writeBitmap(pix);
 
+        assertNotNull(bmp);
         assertEquals(pix.getWidth(), bmp.getWidth());
         assertEquals(pix.getHeight(), bmp.getHeight());
 

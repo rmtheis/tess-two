@@ -76,8 +76,7 @@ public class TessBaseAPITest extends TestCase {
 
     private void checkCubeData() {
         // Make sure the cube data files exist.
-        for (int i = 0; i < EXPECTED_CUBE_DATA_FILES_ENG.length; i++) {
-            String expectedFilename = EXPECTED_CUBE_DATA_FILES_ENG[i];
+        for (String expectedFilename : EXPECTED_CUBE_DATA_FILES_ENG) {
             String expectedFilePath = TESSDATA_PATH + expectedFilename;
             File expectedFile = new File(expectedFilePath);
             assertTrue("Make sure that you've copied " + expectedFilename + 
@@ -224,7 +223,7 @@ public class TessBaseAPITest extends TestCase {
 
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
-        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        baseApi.init(TESSBASE_PATH, language, ocrEngineMode);
         baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
         baseApi.setImage(bmp);
 
@@ -713,8 +712,8 @@ public class TessBaseAPITest extends TestCase {
         int numWords = text.split("\\s+").length;
         int[] wordConf = baseApi.wordConfidences();
         assertEquals("Found the wrong number of word confidence values.", numWords, wordConf.length);
-        for (int i = 0; i < wordConf.length; i++) {
-            boolean valid = 0 <= wordConf[i] && wordConf[i] <= 100;
+        for (int confidence : wordConf) {
+            boolean valid = 0 <= confidence && confidence <= 100;
             assertTrue("Found an invalid word confidence value.", valid);
         }
 

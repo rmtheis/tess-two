@@ -51,10 +51,10 @@ public class Scale {
      * type (fill, stretch, etc.). Returns a scaled image or a clone of the Pix
      * if no scaling is required.
      *
-     * @param pixs
-     * @param width
-     * @param height
-     * @param type
+     * @param pixs Source pix image
+     * @param width The desired width to scale to
+     * @param height The desired height to scale to
+     * @param type The desired scaling type
      * @return a scaled image or a clone of the Pix if no scaling is required
      */
     public static Pix scaleToSize(Pix pixs, int width, int height, ScaleType type) {

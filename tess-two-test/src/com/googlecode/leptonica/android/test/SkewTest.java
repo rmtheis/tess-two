@@ -55,11 +55,14 @@ public class SkewTest extends TestCase {
 
         canvas.drawColor(Color.WHITE);
         canvas.rotate(skew, width / 2, height / 2);
-        canvas.drawText(SENTENCE, width / 2, height / 2 , paint);
+        canvas.drawText(text, width / 2, height / 2 , paint);
 
         Pix pixs = ReadFile.readBitmap(bmp);
 
+        assertNotNull(pixs);
+
         Pix pixd;
+        //noinspection ConstantConditions
         if (pixs.getDepth() != 4 || pixs.getDepth() != 8) {
             Pix pix8 = Convert.convertTo8(pixs);
             pixd = GrayQuant.pixThresholdToBinary(pix8, 1);

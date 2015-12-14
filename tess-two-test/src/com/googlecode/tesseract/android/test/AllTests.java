@@ -38,7 +38,7 @@ import junit.framework.TestSuite;
  *   -e class com.googlecode.leptonica.android.test.ReadFileTest \
  *   com.googlecode.tesseract.android.test/android.test.InstrumentationTestRunner
  *
- * To run an individual test, e.g. {@link ReadFileTest#testReadBitmap()}:
+ * To run an individual test, e.g. {@link ReadFileTest#testReadBitmap_640x480()}:
  * $ adb shell am instrument -w \
  *   -e class com.googlecode.leptonica.android.test.ReadFileTest#testReadBitmap \
  *   com.googlecode.tesseract.android.test/android.test.InstrumentationTestRunner

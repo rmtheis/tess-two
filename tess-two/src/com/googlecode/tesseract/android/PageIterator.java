@@ -50,7 +50,7 @@ public class PageIterator {
      * non-text block once. Think of non text blocks as containing a single
      * para, with a single line, with a single imaginary word.
      * <p>
-     * Calls to {@link #next} with different levels may be freely intermixed.
+     * Calls to this method with different levels may be freely intermixed.
      * <p>
      * This function iterates words in right-to-left scripts correctly, if the
      * appropriate language has been loaded into Tesseract.

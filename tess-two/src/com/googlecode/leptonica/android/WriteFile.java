@@ -70,9 +70,7 @@ public class WriteFile {
         if (data.length < size)
             throw new IllegalArgumentException("Data array must be large enough to hold image bytes");
 
-        int bytesWritten = nativeWriteBytes8(pixs.getNativePix(), data);
-
-        return bytesWritten;
+        return nativeWriteBytes8(pixs.getNativePix(), data);
     }
 
     /**

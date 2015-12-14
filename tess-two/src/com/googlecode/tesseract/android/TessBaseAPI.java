@@ -33,6 +33,7 @@ import com.googlecode.leptonica.android.ReadFile;
  * 
  * @author alanv@google.com (Alan Viverette)
  */
+@SuppressWarnings("unused")
 public class TessBaseAPI {
     /**
      * Used by the native implementation of the class.
@@ -144,7 +145,7 @@ public class TessBaseAPI {
 
         /** Symbol/character within a word. */
         public static final int RIL_SYMBOL = 4;
-    };
+    }
 
     private ProgressNotifier progressNotifier;
 
@@ -162,9 +163,9 @@ public class TessBaseAPI {
      * Represents values indicating recognition progress and status.
      */
     public class ProgressValues {
-        private int percent;
-        private Rect wordRect;
-        private Rect textRect;
+        private final int percent;
+        private final Rect wordRect;
+        private final Rect textRect;
 
         public ProgressValues(int percent, Rect wordRect, Rect textRect) {
             this.percent = percent;
@@ -976,7 +977,7 @@ public class TessBaseAPI {
 
     private native void nativeReadConfigFile(String fileName);
 
-    private native int nativeStop();
+    private native void nativeStop();
 
     private native boolean nativeBeginDocument(long rendererPointer, String title);
 

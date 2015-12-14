@@ -192,7 +192,7 @@ public class Pixa implements Iterable<Pix> {
     /**
      * Merges the contents of another Pixa into this one.
      *
-     * @param otherPixa
+     * @param otherPixa The Pix to merge.
      * @return <code>true</code> on success
      */
     public boolean join(Pixa otherPixa) {
@@ -378,9 +378,7 @@ public class Pixa implements Iterable<Pix> {
         int w = dimensions[Box.INDEX_W];
         int h = dimensions[Box.INDEX_H];
 
-        Rect bound = new Rect(x, y, x + w, y + h);
-
-        return bound;
+        return new Rect(x, y, x + w, y + h);
     }
 
     /**

@@ -52,6 +52,8 @@ public class RotateTest extends TestCase {
         Bitmap rotated = WriteFile.writeBitmap(pixd);
         pixd.recycle();
 
+        assertNotNull(rotated);
+
         float match = TestUtils.compareBitmaps(bmp, rotated);
         bmp.recycle();
         rotated.recycle();
@@ -79,6 +81,8 @@ public class RotateTest extends TestCase {
 
         Bitmap rotated = WriteFile.writeBitmap(pixd);
         pixd.recycle();
+
+        assertNotNull(rotated);
 
         float match = TestUtils.compareBitmaps(bmp, rotated);
         bmp.recycle();

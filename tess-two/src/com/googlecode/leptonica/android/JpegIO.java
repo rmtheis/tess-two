@@ -43,7 +43,7 @@ public class JpegIO {
      * Returns a compressed JPEG byte representation of this Pix using default
      * parameters.
      *
-     * @param pixs
+     * @param pixs A source Pix image.
      * @return a compressed JPEG byte array representation of the Pix
      */
     public static byte[] compressToJpeg(Pix pixs) {

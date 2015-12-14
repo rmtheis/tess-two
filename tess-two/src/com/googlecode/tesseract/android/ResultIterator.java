@@ -85,25 +85,25 @@ public class ResultIterator extends PageIterator {
         // Create the output list
         ArrayList<Pair<String, Double>> pairedResults = new ArrayList<Pair<String, Double>>();
 
-        for (int i = 0; i < nativeChoices.length; i++ ) {
+        for (String nativeChoice : nativeChoices) {
             // The string and the confidence level are separated by a '|'
-            int separatorPosition = nativeChoices[i].lastIndexOf('|');
+            int separatorPosition = nativeChoice.lastIndexOf('|');
 
             // Create a pair with the choices
             String utfString = "";
-            Double confidenceLevel = Double.valueOf(0);
+            Double confidenceLevel = (double) 0;
             if (separatorPosition > 0) {
 
                 // If the string contains a '|' separate the UTF string and the confidence level
-                utfString = nativeChoices[i].substring(0, separatorPosition);
+                utfString = nativeChoice.substring(0, separatorPosition);
                 try {
-                    confidenceLevel = Double.parseDouble(nativeChoices[i].substring(separatorPosition + 1));
+                    confidenceLevel = Double.parseDouble(nativeChoice.substring(separatorPosition + 1));
                 } catch (NumberFormatException e) {
-                    Log.e("ResultIterator","Invalid confidence level for " + nativeChoices[i]);
+                    Log.e("ResultIterator","Invalid confidence level for " + nativeChoice);
                 }
             } else {
                 // If the string contains no '|' then save the full native result as the utfString
-                utfString = nativeChoices[i];
+                utfString = nativeChoice;
             }
 
             // Add the UTF string to the results
@@ -118,7 +118,6 @@ public class ResultIterator extends PageIterator {
      */
     public void delete() {
         nativeDelete(mNativeResultIterator);
-        return;
     }
     
     private static native String[] nativeGetChoices(long nativeResultIterator, int level);

@@ -37,7 +37,7 @@ public class PixTest extends TestCase {
         Bitmap bmp = Bitmap.createBitmap(640, 480, Bitmap.Config.RGB_565);
         bmp.compress(CompressFormat.JPEG, 85, fileStream);
         Pix pix = ReadFile.readFile(file);
-
+        assertNotNull(pix);
         byte[] pixData = pix.getData();
         assertNotNull(pixData);
 

@@ -43,7 +43,7 @@ public class Boxa {
     /**
      * Creates a new Box wrapper for the specified native BOX.
      *
-     * @param nativeBox A pointer to the native BOX.
+     * @param nativeBoxa A pointer to the native Boxa object.
      */
     public Boxa(long nativeBoxa) {
         mNativeBoxa = nativeBoxa;

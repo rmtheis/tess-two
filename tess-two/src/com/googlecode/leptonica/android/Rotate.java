@@ -74,7 +74,7 @@ public class Rotate {
      * @param pixs The source pix.
      * @param degrees The number of degrees to rotate; clockwise is positive.
      * @param quality Whether to use high-quality rotation.
-     * @param Whether to expand the output so that no pixels are lost.
+     * @param resize Whether to expand the output so that no pixels are lost.
      *         <strong>Note:</strong> 1bpp images are always resized when
      *         quality is {@code true}.
      * @return the rotated source image

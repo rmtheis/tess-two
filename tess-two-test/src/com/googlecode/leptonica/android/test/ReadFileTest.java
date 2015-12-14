@@ -55,7 +55,7 @@ public class ReadFileTest extends TestCase {
     private void testReadBitmap(int width, int height, Bitmap.Config format) {
         Bitmap bmp = TestUtils.createTestBitmap(width, height, format);
         Pix pix = ReadFile.readBitmap(bmp);
-
+        assertNotNull(pix);
         assertEquals(bmp.getWidth(), pix.getWidth());
         assertEquals(bmp.getHeight(), pix.getHeight());
 
@@ -77,7 +77,7 @@ public class ReadFileTest extends TestCase {
         assertTrue(compressed);
 
         Pix pix = ReadFile.readFile(file);
-
+        assertNotNull(pix);
         assertEquals(bmp.getWidth(), pix.getWidth());
         assertEquals(bmp.getHeight(), pix.getHeight());
 
@@ -100,7 +100,7 @@ public class ReadFileTest extends TestCase {
         assertTrue(compressed);
 
         Pix pix = ReadFile.readFile(file);
-
+        assertNotNull(pix);
         assertEquals(bmp.getWidth(), pix.getWidth());
         assertEquals(bmp.getHeight(), pix.getHeight());
 
@@ -123,7 +123,7 @@ public class ReadFileTest extends TestCase {
         assertTrue(compressed);
 
         Pix pix = ReadFile.readFile(file);
-
+        assertNotNull(pix);
         assertEquals(bmp.getWidth(), pix.getWidth());
         assertEquals(bmp.getHeight(), pix.getHeight());
 
@@ -146,7 +146,7 @@ public class ReadFileTest extends TestCase {
 
         byte[] encodedData = byteStream.toByteArray();
         Pix pix = ReadFile.readMem(encodedData);
-
+        assertNotNull(pix);
         assertEquals(bmp.getWidth(), pix.getWidth());
         assertEquals(bmp.getHeight(), pix.getHeight());
 
@@ -170,7 +170,7 @@ public class ReadFileTest extends TestCase {
 
         byte[] encodedData = byteStream.toByteArray();
         Pix pix = ReadFile.readMem(encodedData);
-
+        assertNotNull(pix);
         assertEquals(bmp.getWidth(), pix.getWidth());
         assertEquals(bmp.getHeight(), pix.getHeight());
 
