@@ -1,6 +1,9 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
 apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+
+group = 'com.github.rmtheis'
 
 android {
     compileSdkVersion 23
@@ -23,9 +26,10 @@ android {
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
-                java.srcDirs = ['src']
-                res.srcDirs = ['res']
-                jniLibs.srcDirs = ['libs']
+            java.srcDirs = ['src']
+            res.srcDirs = ['res']
+            jni.srcDirs = []
+            jniLibs.srcDirs = ['libs']
         }
     }
 
