@@ -33,30 +33,21 @@ android {
         }
     }
 
-    // call regular ndk-build(.cmd) script from app directory
+    // Call external ndk-build(.cmd) script to build the native code
     task ndkBuild(type: Exec) {
-        workingDir = file("${android.sdkDirectory}/ndk-bundle")
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                commandLine 'ndk-build.cmd', '-C', file('.').absolutePath,
+        def ndkBuildExt = Os.isFamily(Os.FAMILY_WINDOWS) ? ".cmd" : ""
+        commandLine "ndk-build${ndkBuildExt}", '-C', file('.').absolutePath,
 				'-j', Runtime.runtime.availableProcessors()
-            } else {
-                commandLine './ndk-build', '-C', file('.').absolutePath,
-				'-j', Runtime.runtime.availableProcessors()
-            }
     }
 
     tasks.withType(JavaCompile) {
         compileTask -> compileTask.dependsOn ndkBuild
     }
 
-    // cleanup task
+    // Cleanup task to remove previously generated binaries
     task ndkClean(type: Exec) {
-        workingDir = file("${android.sdkDirectory}/ndk-bundle")
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                commandLine 'ndk-build.cmd', '-C', file('.').absolutePath, 'clean'
-            } else {
-                commandLine './ndk-build', '-C', file('.').absolutePath, 'clean'
-            }
+        def ndkBuildExt = Os.isFamily(Os.FAMILY_WINDOWS) ? ".cmd" : ""
+        commandLine "ndk-build${ndkBuildExt}", '-C', file('.').absolutePath, 'clean'
     }
 
     tasks.withType(Delete) {
