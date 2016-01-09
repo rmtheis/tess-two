@@ -2,8 +2,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
-
-group = 'com.github.rmtheis'
+apply plugin: 'com.jfrog.bintray'
 
 android {
     compileSdkVersion 23
@@ -57,4 +56,64 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+
+// Settings for uploading module AAR to Bintray for library distribution
+
+group = 'com.rmtheis'
+version = '5.4.0'
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+install {
+    repositories.mavenInstaller {
+        pom.project {
+            name = 'tess-two'
+
+            packaging = 'aar'
+            groupId = 'com.rmtheis'
+            artifactId = 'tess-two'
+
+            developers {
+                developer {
+                    id = 'rmtheis'
+                    name = 'Robert Theis'
+                    email = 'robert.m.theis@gmail.com'
+                }
+            }
+            licenses {
+                license {
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution 'repo'
+                }
+            }
+            scm {
+                url 'https://github.com/rmtheis/tess-two'
+            }
+        }
+    }
+}
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+    configurations = ['archives']
+    pkg {
+        repo = 'maven'
+        name = 'tess-two'
+        userOrg = user
+        publish = true
+    }
 }

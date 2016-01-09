@@ -10,16 +10,14 @@ This project works with Tesseract v3.04.00 and Leptonica v1.72. The
 required source code for Tesseract and Leptonica is included within the 
 `tess-two/jni` folder.
 
-The `tess-two` subdirectory contains tools for compiling the Tesseract and 
-Leptonica libraries for use on the Android platform. It contains an Android 
-[library project][library-project] that provides a Java API for accessing 
+The `tess-two` module contains tools for compiling the Tesseract and Leptonica
+libraries for use on the Android platform. It provides a Java API for accessing 
 natively-compiled Tesseract and Leptonica APIs.
 
-The `eyes-two` subdirectory contains a second, separate library project with 
-additional image processing code copied from the [eyes-free project][eyes-free].
-It includes native functions for text detection, blur detection, optical flow 
-detection, and thresholding. Building eyes-two is not necessary for using the 
-Tesseract or Leptonica APIs.
+The `eyes-two` module contains additional image processing code copied from the
+[eyes-free project][eyes-free]. It includes native functions for text detection,
+blur detection, optical flow detection, and thresholding. Eyes-two is not needed
+for using the Tesseract or Leptonica APIs.
 
 The `tess-two-test` subdirectory contains Android JUnit tests.
 
@@ -29,24 +27,58 @@ The `tess-two-test` subdirectory contains Android JUnit tests.
 * A v3.02+ [trained data file][tessdata] for a language. Data files must be 
 extracted to the Android device in a subdirectory named `tessdata`.
 
-## Versions
+## Usage
 
-Release points are tagged with [version numbers][semantic-versioning]. A change 
-to the major version number indicates an API change making that version 
-incompatible with previous versions.
+To use tess-two from your app, edit your app's `build.gradle` file to add 
+tess-two as an external dependency:
+
+	dependencies {
+	    compile 'com.rmtheis:tess-two:5.4.0'
+	}
 
 ## Building
 
-This project is set up to build on Android SDK Tools r22.3+ and Android NDK 
-r10d+. The build works on Linux, Mac OS X, and Windows 7/8/10.
+If you want to modify the tess-two code, or you want to use the eyes-two module,
+you may build the project yourself and include it in your app.
+
+**_Android Studio and Gradle_**
+
+The Gradle build uses the gradle-stable plugin and the "bundled" Android NDK
+through a call to `ndk-build` in `build.gradle`. After building, the AAR file
+that's generated may be [imported][aar-import] into your app project as a
+dependency on a local binary package.
+
+Type the following commands in the terminal to build the project from the 
+command line:
+
+_On Mac/Linux:_
+	
+		export ANDROID_HOME=/path/to/your/android-sdk
+		git clone git://github.com/rmtheis/tess-two tess
+		cd tess
+		./gradlew assemble
+		
+_On Windows:_
+		
+		set ANDROID_HOME=C:\\path\\to\\your\\android-sdk
+		git clone git://github.com/rmtheis/tess-two tess
+		cd tess
+		gradlew assemble
+
+**_Eclipse and Ant_**
+
+Versions up to 5.4.0 may be built as a library project using the standalone
+Android NDK and imported into Eclipse using File->Import->Existing Projects into
+Workspace.
 
 On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility 
 library.
 
-To build the latest tess-two code, run the following commands in the terminal:
+To build tess-two, run the following commands in the terminal:
 
     git clone git://github.com/rmtheis/tess-two tess
     cd tess
+    git checkout tags/5.4.0
     cd tess-two
     ndk-build
     android update project --path .
@@ -60,54 +92,15 @@ To build eyes-two, additionally run the following:
     android update project --path .
     ant release
 
-After building, the tess-two and eyes-two projects can be imported into Eclipse 
-using File->Import->Existing Projects into Workspace.
+If you're using ProGuard for code shrinking and obfuscation, manually add the 
+ProGuard keep options from the `proguard-rules.pro` file to your app's ProGuard
+config in order to retain fields and methods used by native code.
 
-## Maven
+## Versions
 
-While this project does not require Maven (and this project has not yet been 
-registered in a Maven central repository), it can be 
-[integrated into a local Maven repository for convenience][maven].
-
-## ProGuard
-If you're using ProGuard for code shrinking and obfuscation, add the following
-rules to your app's ProGuard config to retain fields used for sharing data with 
-native code:
-```proguard
-# tess-two
--keep class com.googlecode.leptonica.android.Box {
-    private long mNativeBox;
-}
--keep class com.googlecode.leptonica.android.Boxa {
-    private long mNativeBoxa;
-}
--keep class com.googlecode.leptonica.android.Pix {
-    private long mNativePix;
-}
--keep class com.googlecode.leptonica.android.Pixa {
-    private long mNativePixa;
-}
--keep class com.googlecode.tesseract.android.TessBaseAPI {
-    private long mNativeData;
-    protected void onProgressValues(int, int, int, int, int, int, int, int, int);
-}
--keep class com.googlecode.tesseract.android.PageIterator {
-    private long mNativePageIterator;
-}
--keep class com.googlecode.tesseract.android.TessPdfRenderer {
-    private long mNativePdfRenderer;
-}
--keep class com.googlecode.tesseract.android.ResultIterator {
-    private long mNativeResultIterator;
-}
-```
-
-```proguard
-# eyes-two
--keep class com.googlecode.eyesfree.textdetect.HydrogenTextDetector {
-    private long mNative;
-}
-```
+Release points are tagged with [version numbers][semantic-versioning]. A change 
+to the major version number indicates an API change making that version 
+incompatible with previous versions.
 
 ## Support
 
@@ -139,9 +132,8 @@ submitting a pull request through GitHub.
 [tesseract-android-tools]: https://github.com/alanv/tesseract-android-tools
 [tesseract-ocr]: https://github.com/tesseract-ocr/tesseract
 [leptonica]: http://www.leptonica.com/
-[library-project]: https://developer.android.com/tools/projects/projects-eclipse.html#ReferencingLibraryProject
 [eyes-free]: https://code.google.com/p/eyes-free/
 [tessdata]: https://github.com/tesseract-ocr/tessdata
+[aar-import]:http://stackoverflow.com/a/28816265/667810
 [semantic-versioning]: http://semver.org
-[maven]: http://www.jameselsey.co.uk/blogs/techblog/tesseract-ocr-on-android-is-easier-if-you-maven-ise-it-works-on-windows-too/
 [stackoverflow]: https://stackoverflow.com/
