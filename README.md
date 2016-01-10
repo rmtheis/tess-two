@@ -53,17 +53,21 @@ command line:
 
 _On Mac/Linux:_
 	
-		export ANDROID_HOME=/path/to/your/android-sdk
-		git clone git://github.com/rmtheis/tess-two tess
-		cd tess
-		./gradlew assemble
+    export ANDROID_HOME=/path/to/your/android-sdk
+    git clone git://github.com/rmtheis/tess-two tess
+    cd tess
+    android update project --path tess-two
+    cp tess-two/local.properties .
+    ./gradlew assemble
 		
 _On Windows:_
 		
-		set ANDROID_HOME=C:\\path\\to\\your\\android-sdk
-		git clone git://github.com/rmtheis/tess-two tess
-		cd tess
-		gradlew assemble
+    set ANDROID_HOME=C:\\path\\to\\your\\android-sdk
+    git clone git://github.com/rmtheis/tess-two tess
+    cd tess
+    android update project --path tess-two
+    copy tess-two\local.properties .
+    gradlew assemble
 
 **_Eclipse and Ant_**
 
