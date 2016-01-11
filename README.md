@@ -19,7 +19,7 @@ The `eyes-two` module contains additional image processing code copied from the
 blur detection, optical flow detection, and thresholding. Eyes-two is not needed
 for using the Tesseract or Leptonica APIs.
 
-The `tess-two-test` subdirectory contains Android JUnit tests.
+The `tess-two-test` subdirectory contains instrumented unit tests for tess-two.
 
 ## Pre-requisites
 
@@ -39,66 +39,9 @@ tess-two as an external dependency:
 ## Building
 
 If you want to modify the tess-two code, or you want to use the eyes-two module,
-you may build the project yourself and include it in your app.
+you may build the project yourself and include it in your app. See
+[BUILDING.md](BUILDING.md).
 
-**_Android Studio and Gradle_**
-
-The Gradle build uses the gradle-stable plugin and the "bundled" Android NDK
-through a call to `ndk-build` in `build.gradle`. After building, the AAR file
-that's generated may be [imported][aar-import] into your app project as a
-dependency on a local binary package.
-
-Type the following commands in the terminal to build the project from the 
-command line:
-
-_On Mac/Linux:_
-	
-    export ANDROID_HOME=/path/to/your/android-sdk
-    git clone git://github.com/rmtheis/tess-two tess
-    cd tess
-    android update project --path tess-two
-    cp tess-two/local.properties .
-    ./gradlew assemble
-		
-_On Windows:_
-		
-    set ANDROID_HOME=C:\\path\\to\\your\\android-sdk
-    git clone git://github.com/rmtheis/tess-two tess
-    cd tess
-    android update project --path tess-two
-    copy tess-two\local.properties .
-    gradlew assemble
-
-**_Eclipse and Ant_**
-
-Versions up to 5.4.0 may be built as a library project using the standalone
-Android NDK and imported into Eclipse using File->Import->Existing Projects into
-Workspace.
-
-On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility 
-library.
-
-To build tess-two, run the following commands in the terminal:
-
-    git clone git://github.com/rmtheis/tess-two tess
-    cd tess
-    git checkout tags/5.4.0
-    cd tess-two
-    ndk-build
-    android update project --path .
-    ant release
-
-To build eyes-two, additionally run the following:
-
-    cd ..
-    cd eyes-two
-    ndk-build
-    android update project --path .
-    ant release
-
-If you're using ProGuard for code shrinking and obfuscation, manually add the 
-ProGuard keep options from the `proguard-rules.pro` file to your app's ProGuard
-config in order to retain fields and methods used by native code.
 
 ## Versions
 
