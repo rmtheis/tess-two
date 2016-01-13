@@ -81,6 +81,5 @@ submitting a pull request through GitHub.
 [leptonica]: http://www.leptonica.com/
 [eyes-free]: https://code.google.com/p/eyes-free/
 [tessdata]: https://github.com/tesseract-ocr/tessdata
-[aar-import]:http://stackoverflow.com/a/28816265/667810
 [semantic-versioning]: http://semver.org
 [stackoverflow]: https://stackoverflow.com/

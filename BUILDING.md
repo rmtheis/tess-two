@@ -64,3 +64,5 @@ To build eyes-two, additionally run the following:
 If you're using ProGuard for code shrinking and obfuscation, manually add the 
 ProGuard keep options from the `proguard-rules.pro` file to your app's ProGuard
 config in order to retain fields and methods used by native code.
+
+[aar-import]:http://stackoverflow.com/a/28816265/667810
