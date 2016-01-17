@@ -34,6 +34,20 @@ _On Windows:_
     copy tess-two\local.properties .
     gradlew assemble
 
+### Testing
+
+_On Mac/Linux:_
+
+    ./preparetests.sh
+    ./gradlew connectedAndroidTest
+
+_On Windows:_
+
+    preparetests.cmd
+    gradlew connectedAndroidTest
+
+Some tests will fail due to existing issues.
+
 ## _Eclipse and Ant_
 
 Versions up to 5.4.0 may be built as a library project using the standalone

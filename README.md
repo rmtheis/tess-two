@@ -19,7 +19,7 @@ The `eyes-two` module contains additional image processing code copied from the
 blur detection, optical flow detection, and thresholding. Eyes-two is not needed
 for using the Tesseract or Leptonica APIs.
 
-The `tess-two-test` subdirectory contains instrumented unit tests for tess-two.
+The `tess-two-test` module contains instrumented unit tests for tess-two.
 
 ## Pre-requisites
 
@@ -29,7 +29,7 @@ extracted to the Android device in a subdirectory named `tessdata`.
 
 ## Usage
 
-To use tess-two from your app, edit your app's `build.gradle` file to add 
+To use tess-two from your app, edit your app module's `build.gradle` file to add 
 tess-two as an external dependency:
 
 	dependencies {
@@ -39,8 +39,7 @@ tess-two as an external dependency:
 ## Building
 
 If you want to modify the tess-two code, or you want to use the eyes-two module,
-you may build the project yourself and include it in your app. See
-[BUILDING.md](BUILDING.md).
+you may build the project yourself locally. See [BUILDING.md](BUILDING.md).
 
 
 ## Versions
