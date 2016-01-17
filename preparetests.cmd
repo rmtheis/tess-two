@@ -1,6 +1,8 @@
 adb shell rm /mnt/sdcard/testAddPageToDocument.pdf
 adb shell rm /mnt/sdcard/testCreate.pdf
 
+adb uninstall com.googlecode.tesseract.android.test
+
 powershell -Command "Invoke-WebRequest https://tesseract-ocr.googlecode.com/files/tesseract-ocr-3.02.eng.tar.gz -OutFile tesseract-ocr-3.02.eng.tar.gz"
 
 "C:\Program Files\7-Zip\7z.exe" e tesseract-ocr-3.02.eng.tar.gz -o"."

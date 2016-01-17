@@ -61,9 +61,6 @@ dependencies {
 
 // Settings for uploading module AAR to Bintray for library distribution
 
-group = 'com.rmtheis'
-version = '5.4.0'
-
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
     classifier = 'sources'

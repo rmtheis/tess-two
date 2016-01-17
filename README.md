@@ -33,7 +33,7 @@ To use tess-two from your app, edit your app's `build.gradle` file to add
 tess-two as an external dependency:
 
 	dependencies {
-	    compile 'com.rmtheis:tess-two:5.4.0'
+	    compile 'com.rmtheis:tess-two:5.4.1'
 	}
 
 ## Building

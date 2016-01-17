@@ -3,6 +3,8 @@
 adb shell rm /mnt/sdcard/testAddPageToDocument.pdf
 adb shell rm /mnt/sdcard/testCreate.pdf
 
+adb uninstall com.googlecode.tesseract.android.test
+
 if [ ! -f tesseract-ocr-3.02.eng.tar.gz ]; then
     wget https://tesseract-ocr.googlecode.com/files/tesseract-ocr-3.02.eng.tar.gz
 fi

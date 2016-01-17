@@ -12,6 +12,10 @@ buildscript {
 }
 
 allprojects {
+
+    group = 'com.rmtheis'
+    version = '5.4.1'
+
     repositories {
         jcenter()
     }
