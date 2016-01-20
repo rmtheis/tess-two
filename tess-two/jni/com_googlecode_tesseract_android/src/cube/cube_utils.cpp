@@ -277,7 +277,7 @@ void CubeUtils::UTF8ToUTF32(const char *utf8_str, string_32 *str32) {
 }
 
 /**
- * UTF-8 to UTF-32 conversion functions
+ * UTF-32 to UTF-8 conversion functions
  */
 void CubeUtils::UTF32ToUTF8(const char_32 *utf32_str, string *str) {
   str->clear();
@@ -310,7 +310,7 @@ bool CubeUtils::IsCaseInvariant(const char_32 *str32, CharSet *char_set) {
     if (first_upper)
       capitalized = true;
     prev_upper = first_upper;
-    prev_lower = islower(str32[0]);
+    prev_lower = first_lower;
     for (int c = 1; str32[c] != 0; ++c) {
       cur_upper = isupper(str32[c]);
       cur_lower = islower(str32[c]);
@@ -329,7 +329,7 @@ bool CubeUtils::IsCaseInvariant(const char_32 *str32, CharSet *char_set) {
     if (first_upper)
       capitalized = true;
     prev_upper = first_upper;
-    prev_lower = unicharset->get_islower(char_set->ClassID(str32[0]));
+    prev_lower = first_lower;
 
     for (int c = 1; c < StrLen(str32); ++c) {
       cur_upper = unicharset->get_isupper(char_set->ClassID(str32[c]));

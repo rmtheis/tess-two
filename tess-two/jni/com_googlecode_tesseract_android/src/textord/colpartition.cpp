@@ -41,9 +41,6 @@ CLISTIZE(ColPartition)
 
 //////////////// ColPartition Implementation ////////////////
 
-// If multiple partners survive the partner depth test beyond this level,
-// then arbitrarily pick one.
-const int kMaxPartnerDepth = 4;
 // Maximum change in spacing (in inches) to ignore.
 const double kMaxSpacingDrift = 1.0 / 72;  // 1/72 is one point.
 // Maximum fraction of line height used as an additional allowance
@@ -60,8 +57,6 @@ const double kMaxLeaderGapFractionOfMax = 0.25;
 const double kMaxLeaderGapFractionOfMin = 0.5;
 // Minimum number of blobs to be considered a leader.
 const int kMinLeaderCount = 5;
-// Cost of a cut through a leader.
-const int kLeaderCutCost = 8;
 // Minimum score for a STRONG_CHAIN textline.
 const int kMinStrongTextValue = 6;
 // Minimum score for a CHAIN textline.
@@ -981,7 +976,7 @@ int ColPartition::CountOverlappingBoxes(const TBOX& box) {
   return overlap_count;
 }
 
-// Computes and sets the type_ and first_colum_, last_column_ and column_set_.
+// Computes and sets the type_ and first_column_, last_column_ and column_set_.
 // resolution refers to the ppi resolution of the image.
 void ColPartition::SetPartitionType(int resolution, ColPartitionSet* columns) {
   int first_spanned_col = -1;
@@ -2194,7 +2189,7 @@ bool ColPartition::IsInSameColumnAs(const ColPartition& part) const {
 void ColPartition::SmoothSpacings(int resolution, int page_height,
                                   ColPartition_LIST* parts) {
   // The task would be trivial if we didn't have to allow for blips -
-  // occasional offsets in spacing caused by anomolous text, such as all
+  // occasional offsets in spacing caused by anomalous text, such as all
   // caps, groups of descenders, joined words, Arabic etc.
   // The neighbourhood stores a consecutive group of partitions so that
   // blips can be detected correctly, yet conservatively enough to not

@@ -77,7 +77,7 @@ class TESS_API TessResultRenderer {
     bool EndDocument();
 
     const char* file_extension() const { return file_extension_; }
-    const char* title() const { return title_.c_str(); }
+    const char* title() const { return title_; }
 
     /**
      * Returns the index of the last image given to AddImage
@@ -126,7 +126,7 @@ class TESS_API TessResultRenderer {
 
   private:
     const char* file_extension_;  // standard extension for generated output
-    STRING title_;                // title of document being renderered
+    const char* title_;           // title of document being renderered
     int imagenum_;                // index of last image added
 
     FILE* fout_;                  // output file pointer
@@ -216,6 +216,17 @@ class TESS_API TessUnlvRenderer : public TessResultRenderer {
 class TESS_API TessBoxTextRenderer : public TessResultRenderer {
  public:
   explicit TessBoxTextRenderer(const char *outputbase);
+
+ protected:
+  virtual bool AddImageHandler(TessBaseAPI* api);
+};
+
+/**
+ * Renders tesseract output into an osd text string
+ */
+class TESS_API TessOsdRenderer : public TessResultRenderer {
+ public:
+  explicit TessOsdRenderer(const char* outputbase);
 
  protected:
   virtual bool AddImageHandler(TessBaseAPI* api);

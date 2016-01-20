@@ -1,7 +1,10 @@
-Note that this is a text-only and possibly out-of-date version of the 
-wiki ReadMe, which is located at:
+[![Build Status](https://travis-ci.org/tesseract-ocr/tesseract.svg?branch=master)](https://travis-ci.org/tesseract-ocr/tesseract)
+[![Build status](https://ci.appveyor.com/api/projects/status/miah0ikfsf0j3819?svg=true)](https://ci.appveyor.com/project/zdenop/tesseract/)
 
-  https://github.com/tesseract-ocr/tesseract/blob/master/README
+Note that this is possibly out-of-date version of the wiki ReadMe,
+which is located at:
+
+  https://github.com/tesseract-ocr/tesseract/blob/master/README.md
 
 Introduction
 ============
@@ -71,7 +74,7 @@ Please use the installer (for 3.00 and above). Tesseract is a library with a
 command line interface. If you need a GUI, please check the [3rdParty wiki page](https://github.com/tesseract-ocr/tesseract/wiki/3rdParty#gui).
 
 If you are building from the sources, the recommended build platform is 
-VC++ Express 2008 (optionally 2010).
+VC++ Express 2010.
 
 The executables are built with static linking, so they stand more chance
 of working out of the box on more Windows systems.
@@ -97,7 +100,7 @@ find its data directory. You must either:
     ./autogen.sh
     ./configure
     make
-    make install
+    sudo make install
     sudo ldconfig
 
 to move the data files to the standard place, or:
@@ -127,8 +130,8 @@ at Hewlett-Packard Co, Greeley Colorado between 1985 and 1994, with some
 more changes made in 1996 to port to Windows, and some C++izing in 1998.
 A lot of the code was written in C, and then some more was written in C++.
 Since then all the code has been converted to at least compile with a C++
-compiler. Currently it builds under Linux with gcc4.4.3 and under Windows
-with VC++2008. The C++ code makes heavy use of a list system using macros.
+compiler. Currently it builds under Linux with gcc 4.4.3 and under Windows
+with VC++2010. The C++ code makes heavy use of a list system using macros.
 This predates stl, was portable before stl, and is more efficient than stl
 lists, but has the big negative that if you do get a segmentation violation,
 it is hard to debug.

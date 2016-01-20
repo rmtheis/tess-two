@@ -7,7 +7,7 @@
 #include "renderer.h"
 #include "math.h"
 #include "strngs.h"
-#include "cube_utils.h"
+#include "tprintf.h"
 #include "allheaders.h"
 
 #ifdef _MSC_VER
@@ -178,7 +178,7 @@ void TessPDFRenderer::AppendPDFObject(const char *data) {
   AppendString((const char *)data);
 }
 
-// Helper function to prevent us from accidentaly writing
+// Helper function to prevent us from accidentally writing
 // scientific notation to an HOCR or PDF file. Besides, three
 // decimal points are all you really need.
 double prec(double x) {
@@ -311,6 +311,11 @@ char* TessPDFRenderer::GetPDFTextObjects(TessBaseAPI* api,
   pdf_str.add_str_double("", prec(height));
   pdf_str += " 0 0 cm /Im1 Do Q\n";
 
+  int line_x1 = 0;
+  int line_y1 = 0;
+  int line_x2 = 0;
+  int line_y2 = 0;
+
   ResultIterator *res_it = api->GetIterator();
   while (!res_it->Empty(RIL_BLOCK)) {
     if (res_it->IsAtBeginningOf(RIL_BLOCK)) {
@@ -319,7 +324,6 @@ char* TessPDFRenderer::GetPDFTextObjects(TessBaseAPI* api,
       new_block = true;          // Every block will declare its affine matrix
     }
 
-    int line_x1, line_y1, line_x2, line_y2;
     if (res_it->IsAtBeginningOf(RIL_TEXTLINE)) {
       int x1, y1, x2, y2;
       res_it->Baseline(RIL_TEXTLINE, &x1, &y1, &x2, &y2);
@@ -413,13 +417,25 @@ char* TessPDFRenderer::GetPDFTextObjects(TessBaseAPI* api,
     do {
       const char *grapheme = res_it->GetUTF8Text(RIL_SYMBOL);
       if (grapheme && grapheme[0] != '\0') {
-        // TODO(jbreiden) Do a real UTF-16BE conversion
-        // http://en.wikipedia.org/wiki/UTF-16#Example_UTF-16_encoding_procedure
-        string_32 utf32;
-        CubeUtils::UTF8ToUTF32(grapheme, &utf32);
+        GenericVector<int> unicodes;
+        UNICHAR::UTF8ToUnicode(grapheme, &unicodes);
         char utf16[20];
-        for (int i = 0; i < static_cast<int>(utf32.length()); i++) {
-          snprintf(utf16, sizeof(utf16), "<%04X>", utf32[i]);
+        for (int i = 0; i < unicodes.length(); i++) {
+          int code = unicodes[i];
+          // Convert to UTF-16BE https://en.wikipedia.org/wiki/UTF-16
+          if ((code > 0xD7FF && code < 0xE000) || code > 0x10FFFF) {
+                tprintf("Dropping invalid codepoint %d\n", code);
+                continue;
+          }
+          if (code < 0x10000) {
+            snprintf(utf16, sizeof(utf16), "<%04X>", code);
+          } else {
+            int a = code - 0x010000;
+            int high_surrogate = (0x03FF & (a >> 10)) + 0xD800;
+            int low_surrogate = (0x03FF & a) + 0xDC00;
+            snprintf(utf16, sizeof(utf16), "<%04X%04X>",
+                     high_surrogate, low_surrogate);
+          }
           pdf_word += utf16;
           pdf_word_len++;
         }
@@ -532,9 +548,9 @@ bool TessPDFRenderer::BeginDocumentHandler() {
   n = snprintf(buf, sizeof(buf),
                "5 0 obj\n"
                "<<\n"
-               "  /Length %ld /Filter /FlateDecode\n"
+               "  /Length %lu /Filter /FlateDecode\n"
                ">>\n"
-               "stream\n", len);
+               "stream\n", (unsigned long)len);
   if (n >= sizeof(buf)) {
     lept_free(comp);
     return false;

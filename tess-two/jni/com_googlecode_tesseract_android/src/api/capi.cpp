@@ -424,7 +424,7 @@ TESS_API int TESS_CALL TessBaseAPIRecognizeForChopTest(TessBaseAPI* handle, ETEX
 TESS_API BOOL TESS_CALL TessBaseAPIProcessPages(TessBaseAPI* handle, const char* filename, const char* retry_config,
                                                 int timeout_millisec, TessResultRenderer* renderer)
 {
-    if (handle->ProcessPages(filename, retry_config, timeout_millisec, renderer))    
+    if (handle->ProcessPages(filename, retry_config, timeout_millisec, renderer))
         return TRUE;
     else
         return FALSE;
@@ -581,10 +581,12 @@ TESS_API void TESS_CALL TessBaseAPIInitTruthCallback(TessBaseAPI* handle, TessTr
     handle->InitTruthCallback(cb);
 }
 
+#ifndef NO_CUBE_BUILD
 TESS_API TessCubeRecoContext* TESS_CALL TessBaseAPIGetCubeRecoContext(const TessBaseAPI* handle)
 {
     return handle->GetCubeRecoContext();
 }
+#endif  // NO_CUBE_BUILD
 
 TESS_API void TESS_CALL TessBaseAPISetMinOrientationMargin(TessBaseAPI* handle, double margin)
 {

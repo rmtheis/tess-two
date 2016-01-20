@@ -18,6 +18,11 @@
  *
  **********************************************************************/
 
+// Include automatically generated configuration file if running autoconf.
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif
+
 #include <string.h>
 #include <math.h>
 #ifdef __UNIX__
@@ -41,11 +46,6 @@
 #include "globals.h"
 #include "sorthelper.h"
 #include "tesseractclass.h"
-
-// Include automatically generated configuration file if running autoconf.
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
-#endif
 
 #define MIN_FONT_ROW_COUNT  8
 #define MAX_XHEIGHT_DIFF  3
@@ -398,7 +398,7 @@ bool Tesseract::recog_all_words(PAGE_RES* page_res,
     // ****************** Pass 5,6 *******************
     rejection_passes(page_res, monitor, target_word_box, word_config);
 
-#ifndef ANDROID_BUILD
+#ifndef NO_CUBE_BUILD
     // ****************** Pass 7 *******************
     // Cube combiner.
     // If cube is loaded and its combiner is present, run it.
@@ -1353,7 +1353,7 @@ void Tesseract::classify_word_pass1(const WordData& word_data,
   BLOCK* block = word_data.block;
   prev_word_best_choice_ = word_data.prev_word != NULL
       ? word_data.prev_word->word->best_choice : NULL;
-#ifndef ANDROID_BUILD
+#ifndef NO_CUBE_BUILD
   // If we only intend to run cube - run it and return.
   if (tessedit_ocr_engine_mode == OEM_CUBE_ONLY) {
     cube_word_pass1(block, row, *in_word);
@@ -1405,7 +1405,6 @@ void Tesseract::ReportXhtFixResult(bool accept_new_word, float new_x_ht,
 // Returns true if the word was changed.
 // See the comment in fixxht.cpp for a description of the overall process.
 bool Tesseract::TrainedXheightFix(WERD_RES *word, BLOCK* block, ROW *row) {
-  bool accept_new_x_ht = false;
   int original_misfits = CountMisfitTops(word);
   if (original_misfits == 0)
     return false;
@@ -1561,7 +1560,7 @@ void Tesseract::match_word_pass_n(int pass_n, WERD_RES *word,
        word->fix_quotes();
       if (tessedit_fix_hyphens)
         word->fix_hyphens();
-      /* Dont trust fix_quotes! - though I think I've fixed the bug */
+      /* Don't trust fix_quotes! - though I think I've fixed the bug */
       if (word->best_choice->length() != word->box_word->length()) {
         tprintf("POST FIX_QUOTES FAIL String:\"%s\"; Strlen=%d;"
                 " #Blobs=%d\n",
@@ -1699,7 +1698,7 @@ ACCEPTABLE_WERD_TYPE Tesseract::acceptable_word_string(
       goto not_a_word;
     /*
     Allow a single hyphen in a lower case word
-    - dont trust upper case - I've seen several cases of "H" -> "I-I"
+    - don't trust upper case - I've seen several cases of "H" -> "I-I"
     */
     if (lengths[i] == 1 && s[offset] == '-') {
       hyphen_pos = i;
