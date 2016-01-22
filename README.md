@@ -35,6 +35,8 @@ tess-two as an external dependency:
 	dependencies {
 	    compile 'com.rmtheis:tess-two:5.4.1'
 	}
+	
+[Javadoc][javadoc] is available.
 
 ## Building
 
@@ -80,5 +82,6 @@ submitting a pull request through GitHub.
 [leptonica]: http://www.leptonica.com/
 [eyes-free]: https://code.google.com/p/eyes-free/
 [tessdata]: https://github.com/tesseract-ocr/tessdata
+[javadoc]: https://rmtheis.github.io/tess-two/javadoc/index.html
 [semantic-versioning]: http://semver.org
 [stackoverflow]: https://stackoverflow.com/
