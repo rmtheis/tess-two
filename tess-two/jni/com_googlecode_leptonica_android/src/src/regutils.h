@@ -40,21 +40,22 @@
  *   Regression tests can be called in three ways.
  *   For example, for distance_reg:
  *
- *       Case 1: distance_reg [generate]
- *           This generates golden files in /tmp for the reg test.
- *
- *       Case 2: distance_reg compare
+ *       Case 1: distance_reg [compare]
  *           This runs the test against the set of golden files.  It
  *           appends to 'outfile.txt' either "SUCCESS" or "FAILURE",
  *           as well as the details of any parts of the test that failed.
- *           It writes to a temporary file stream (fp)
+ *           It writes to a temporary file stream (fp).
+ *           Using 'compare' on the command line is optional.
+ *
+ *       Case 2: distance_reg generate
+ *           This generates golden files in /tmp for the reg test.
  *
  *       Case 3: distance_reg display
  *           This runs the test but makes no comparison of the output
  *           against the set of golden files.  In addition, this displays
  *           images and plots that are specified in the test under
  *           control of the display variable.  Display is enabled only
- *           for this case.  Using 'display' on the command line is optional.
+ *           for this case.
  *
  *   Regression tests follow the pattern given below.  Tests are
  *   automatically numbered sequentially, and it is convenient to

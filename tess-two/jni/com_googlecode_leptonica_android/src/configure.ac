@@ -1,5 +1,5 @@
 AC_PREREQ([2.50])
-AC_INIT([leptonica], [1.72])
+AC_INIT([leptonica], [1.73])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_HEADERS([config_auto.h:config/config.h.in])
 AC_CONFIG_SRCDIR([src/adaptmap.c])
@@ -98,7 +98,9 @@ AS_IF([test "x$with_libopenjpeg" != xno],
 AM_CONDITIONAL([HAVE_LIBJP2K], [test "x$ac_cv_lib_openjp2_opj_create_decompress" = xyes])
 
 case "$host_os" in
-  mingw32*) AC_SUBST([GDI_LIBS], [-lgdi32]) ;;
+  mingw32*)
+  AC_SUBST([GDI_LIBS], [-lgdi32])
+  CPPFLAGS="${CPPFLAGS} -D__USE_MINGW_ANSI_STDIO" ;;
 esac
 
 # Enable less verbose output when building.
@@ -111,7 +113,7 @@ AC_C_BIGENDIAN
 AC_SUBST([APPLE_UNIVERSAL_BUILD], [0])
 AC_SUBST([ENDIANNESS], [L_LITTLE_ENDIAN])
 
-case "$ac_cv_c_bigendian" in 
+case "$ac_cv_c_bigendian" in
   yes) AC_SUBST([ENDIANNESS], [L_BIG_ENDIAN]) ;;
   universal) AC_SUBST([APPLE_UNIVERSAL_BUILD], [1]) ;;
 esac

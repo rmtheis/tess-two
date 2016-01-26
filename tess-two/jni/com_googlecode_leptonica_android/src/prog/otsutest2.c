@@ -62,7 +62,7 @@ L_BMF     *bmf;
 PIX       *pixs, *pixb, *pixb2, *pixb3, *pixg, *pixp, *pixt1, *pixt2;
 PIXA      *pixa;
 
-    pixs = pixRead("1555-7.jpg");
+    pixs = pixRead("1555.007.jpg");
     pixg = pixConvertTo8(pixs, 0);
     bmf = bmfCreate("fonts", 8);
     for (i = 0; i < 3; i++) {

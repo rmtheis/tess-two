@@ -69,19 +69,24 @@ L_REGPARAMS  *rp;
     pix3 = pixConnCompTransform(pix1, 8, 16);
     pix4 = pixConvert16To8(pix3, L_LS_BYTE);
     regTestCompareSimilarPix(rp, pix2, pix4, 3, 0.001, 0);  /* 2 */
+    pix5 = pixConnCompTransform(pix1, 8, 32);
+    pix6 = pixConvert32To8(pix5, L_LS_TWO_BYTES, L_LS_BYTE);
+    regTestCompareSimilarPix(rp, pix2, pix6, 3, 0.001, 0);  /* 3 */
     pixDestroy(&pix2);
     pixDestroy(&pix3);
     pixDestroy(&pix4);
+    pixDestroy(&pix5);
+    pixDestroy(&pix6);
 
         /* Test connected component area labelling */
     fprintf(stderr, "Test c.c. area labelling\n");
     pix2 = pixConnCompAreaTransform(pix1, 8);
-    pix3 = pixConvert16To8(pix2, L_CLIP_TO_255);
-    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 3 */
+    pix3 = pixConvert32To8(pix2, L_LS_TWO_BYTES, L_CLIP_TO_FF);
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 4 */
     pixDisplayWithTitle(pix3, 0, 350, NULL, rp->display);
     pixMultConstantGray(pix2, 0.3);
-    pix4 = pixConvert16To8(pix2, L_LS_BYTE);
-    regTestWritePixAndCheck(rp, pix4, IFF_PNG);  /* 4 */
+    pix4 = pixConvert32To8(pix2, L_LS_TWO_BYTES, L_CLIP_TO_FF);
+    regTestWritePixAndCheck(rp, pix4, IFF_PNG);  /* 5 */
     pixDisplayWithTitle(pix4, 0, 700, NULL, rp->display);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
@@ -95,31 +100,31 @@ L_REGPARAMS  *rp;
     pix3 = pixRotateOrth(pix1, 2);
     pix4 = pixRotateOrth(pix1, 3);
     pix5 = pixLocToColorTransform(pix1);
-    regTestWritePixAndCheck(rp, pix5, IFF_PNG);  /* 5 */
+    regTestWritePixAndCheck(rp, pix5, IFF_PNG);  /* 6 */
     pix6 = pixLocToColorTransform(pix2);
-    regTestWritePixAndCheck(rp, pix6, IFF_PNG);  /* 6 */
+    regTestWritePixAndCheck(rp, pix6, IFF_PNG);  /* 7 */
     FindEMD(pix5, pix6, &distr, &distg, &distb);
-    regTestCompareValues(rp, 0.12, distr, 0.01);  /* 7 */
-    regTestCompareValues(rp, 0.00, distg, 0.01);  /* 8 */
-    regTestCompareValues(rp, 0.00, distb, 0.01);  /* 9 */
+    regTestCompareValues(rp, 0.12, distr, 0.01);  /* 8 */
+    regTestCompareValues(rp, 0.00, distg, 0.01);  /* 9 */
+    regTestCompareValues(rp, 0.00, distb, 0.01);  /* 10 */
     fprintf(stderr, "90 deg rotation: dist (r,g,b) = (%5.2f, %5.2f, %5.2f)\n",
             distr, distg, distb);
     pixDestroy(&pix6);
     pix6 = pixLocToColorTransform(pix3);
-    regTestWritePixAndCheck(rp, pix6, IFF_PNG);  /* 10 */
+    regTestWritePixAndCheck(rp, pix6, IFF_PNG);  /* 11 */
     FindEMD(pix5, pix6, &distr, &distg, &distb);
-    regTestCompareValues(rp, 0.12, distr, 0.01);  /* 11 */
-    regTestCompareValues(rp, 0.09, distg, 0.01);  /* 12 */
-    regTestCompareValues(rp, 0.00, distb, 0.01);  /* 13 */
+    regTestCompareValues(rp, 0.12, distr, 0.01);  /* 12 */
+    regTestCompareValues(rp, 0.09, distg, 0.01);  /* 13 */
+    regTestCompareValues(rp, 0.00, distb, 0.01);  /* 14 */
     fprintf(stderr, "180 deg rotation: dist (r,g,b) = (%5.2f, %5.2f, %5.2f)\n",
             distr, distg, distb);
     pixDestroy(&pix6);
     pix6 = pixLocToColorTransform(pix4);
-    regTestWritePixAndCheck(rp, pix6, IFF_PNG);  /* 14 */
+    regTestWritePixAndCheck(rp, pix6, IFF_PNG);  /* 15 */
     FindEMD(pix5, pix6, &distr, &distg, &distb);
-    regTestCompareValues(rp, 0.00, distr, 0.01);  /* 15 */
-    regTestCompareValues(rp, 0.09, distg, 0.01);  /* 16 */
-    regTestCompareValues(rp, 0.00, distb, 0.01);  /* 17 */
+    regTestCompareValues(rp, 0.00, distr, 0.01);  /* 16 */
+    regTestCompareValues(rp, 0.09, distg, 0.01);  /* 17 */
+    regTestCompareValues(rp, 0.00, distb, 0.01);  /* 18 */
     fprintf(stderr, "270 deg rotation: dist (r,g,b) = (%5.2f, %5.2f, %5.2f)\n",
             distr, distg, distb);
     pixDestroy(&pix1);
@@ -136,12 +141,12 @@ L_REGPARAMS  *rp;
     pixDisplayWithTitle(pix2, 0, 0, NULL, rp->display);
     pixTranslate(pix1, pix1, 10, 10, L_BRING_IN_WHITE);
     pix3 = pixLocToColorTransform(pix1);
-    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 18 */
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 19 */
     pixDisplayWithTitle(pix3, 470, 0, NULL, rp->display);
     FindEMD(pix2, pix3, &distr, &distg, &distb);
-    regTestCompareValues(rp, 1.76, distr, 0.01);  /* 19 */
-    regTestCompareValues(rp, 2.65, distg, 0.01);  /* 20 */
-    regTestCompareValues(rp, 2.03, distb, 0.01);  /* 21 */
+    regTestCompareValues(rp, 1.76, distr, 0.01);  /* 20 */
+    regTestCompareValues(rp, 2.65, distg, 0.01);  /* 21 */
+    regTestCompareValues(rp, 2.03, distb, 0.01);  /* 22 */
     fprintf(stderr, "Translation dist (r,g,b) = (%5.2f, %5.2f, %5.2f)\n",
             distr, distg, distb);
     pixDestroy(&pix1);
@@ -154,12 +159,12 @@ L_REGPARAMS  *rp;
     pix2 = pixLocToColorTransform(pix1);
     pixRotateShearCenterIP(pix1, 0.1, L_BRING_IN_WHITE);
     pix3 = pixLocToColorTransform(pix1);
-    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 22 */
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 23 */
     pixDisplayWithTitle(pix3, 880, 0, NULL, rp->display);
     FindEMD(pix2, pix3, &distr, &distg, &distb);
-    regTestCompareValues(rp, 1.50, distr, 0.01);  /* 23 */
-    regTestCompareValues(rp, 1.71, distg, 0.01);  /* 24 */
-    regTestCompareValues(rp, 1.42, distb, 0.01);  /* 25 */
+    regTestCompareValues(rp, 1.50, distr, 0.01);  /* 24 */
+    regTestCompareValues(rp, 1.71, distg, 0.01);  /* 25 */
+    regTestCompareValues(rp, 1.42, distb, 0.01);  /* 26 */
     fprintf(stderr, "Rotation dist (r,g,b) = (%5.2f, %5.2f, %5.2f)\n",
             distr, distg, distb);
     pixDestroy(&pix1);
@@ -173,12 +178,12 @@ L_REGPARAMS  *rp;
     pixDisplayWithTitle(pix2, 0, 600, NULL, rp->display);
     pix3 = pixRead("form2.tif");
     pix4 = pixLocToColorTransform(pix3);
-    regTestWritePixAndCheck(rp, pix4, IFF_PNG);  /* 25 */
+    regTestWritePixAndCheck(rp, pix4, IFF_PNG);  /* 27 */
     pixDisplayWithTitle(pix4, 470, 600, NULL, rp->display);
     FindEMD(pix2, pix4, &distr, &distg, &distb);
-    regTestCompareValues(rp, 6.10, distr, 0.02);  /* 27 */
-    regTestCompareValues(rp, 11.13, distg, 0.01);  /* 28 */
-    regTestCompareValues(rp, 10.53, distb, 0.01);  /* 29 */
+    regTestCompareValues(rp, 6.10, distr, 0.02);  /* 28 */
+    regTestCompareValues(rp, 11.13, distg, 0.01);  /* 29 */
+    regTestCompareValues(rp, 10.53, distb, 0.01);  /* 30 */
     fprintf(stderr, "Different forms: dist (r,g,b) = (%5.2f, %5.2f, %5.2f)\n",
             distr, distg, distb);
     pixDestroy(&pix1);

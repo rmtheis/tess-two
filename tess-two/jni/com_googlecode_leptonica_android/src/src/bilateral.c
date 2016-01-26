@@ -289,7 +289,7 @@ PIXA         *pixac;
     PROCNAME("bilateralCreate");
 
     sstdev = spatial_stdev / (l_float32)reduction;  /* reduced spat. stdev */
-    if ((bil = (L_BILATERAL *)CALLOC(1, sizeof(L_BILATERAL))) == NULL)
+    if ((bil = (L_BILATERAL *)LEPT_CALLOC(1, sizeof(L_BILATERAL))) == NULL)
         return (L_BILATERAL *)ERROR_PTR("bil not made", procName, NULL);
     bil->spatial_stdev = sstdev;
     bil->range_stdev = range_stdev;
@@ -325,13 +325,13 @@ PIXA         *pixac;
      * and x is an index into the 2D image array.
      * -------------------------------------------------------------------- */
         /* nc is the set of k values to be used in J(k,x) */
-    nc = (l_int32 *)CALLOC(ncomps, sizeof(l_int32));
+    nc = (l_int32 *)LEPT_CALLOC(ncomps, sizeof(l_int32));
     for (i = 0; i < ncomps; i++)
         nc[i] = minval + i * (maxval - minval) / (ncomps - 1);
     bil->nc = nc;
 
         /* kindex maps from intensity I(x) to the lower k index for J(k,x) */
-    kindex = (l_int32 *)CALLOC(256, sizeof(l_int32));
+    kindex = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     for (i = minval, k = 0; i <= maxval && k < ncomps - 1; k++) {
         fval2 = nc[k + 1];
         while (i < fval2) {
@@ -343,7 +343,7 @@ PIXA         *pixac;
     bil->kindex = kindex;
 
         /* kfract maps from intensity I(x) to the fraction of J(k+1,x) used */
-    kfract = (l_float32 *)CALLOC(256, sizeof(l_float32));  /* from lower */
+    kfract = (l_float32 *)LEPT_CALLOC(256, sizeof(l_float32));  /* from lower */
     for (i = minval, k = 0; i <= maxval && k < ncomps - 1; k++) {
         fval1 = nc[k];
         fval2 = nc[k + 1];
@@ -368,13 +368,13 @@ PIXA         *pixac;
      *             Generate 1-D kernel arrays (spatial and range)           *
      * -------------------------------------------------------------------- */
     spatial_size = 2 * sstdev + 1;
-    spatial = (l_float32 *)CALLOC(spatial_size, sizeof(l_float32));
+    spatial = (l_float32 *)LEPT_CALLOC(spatial_size, sizeof(l_float32));
     denom = 2. * sstdev * sstdev;
     for (i = 0; i < spatial_size; i++)
         spatial[i] = expf(-(l_float32)(i * i) / denom);
     bil->spatial = spatial;
 
-    range = (l_float32 *)CALLOC(256, sizeof(l_float32));
+    range = (l_float32 *)LEPT_CALLOC(256, sizeof(l_float32));
     denom = 2. * range_stdev * range_stdev;
     for (i = 0; i < 256; i++)
         range[i] = expf(-(l_float32)(i * i) / denom);
@@ -529,15 +529,15 @@ L_BILATERAL  *bil;
     pixDestroy(&bil->pixs);
     pixDestroy(&bil->pixsc);
     pixaDestroy(&bil->pixac);
-    FREE(bil->spatial);
-    FREE(bil->range);
-    FREE(bil->nc);
-    FREE(bil->kindex);
-    FREE(bil->kfract);
+    LEPT_FREE(bil->spatial);
+    LEPT_FREE(bil->range);
+    LEPT_FREE(bil->nc);
+    LEPT_FREE(bil->kindex);
+    LEPT_FREE(bil->kfract);
     for (i = 0; i < bil->ncomps; i++)
-        FREE(bil->lineset[i]);
-    FREE(bil->lineset);
-    FREE(bil);
+        LEPT_FREE(bil->lineset[i]);
+    LEPT_FREE(bil->lineset);
+    LEPT_FREE(bil);
     *pbil = NULL;
     return;
 }

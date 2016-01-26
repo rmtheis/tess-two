@@ -51,7 +51,7 @@ L_REGPARAMS  *rp;
     sa2 = getSortedPathnamesInDirectory(".", ".tif", 0, 0);
     sa3 = sarraySelectByRange(sa1, 0, 9);
     sa4 = sarraySelectByRange(sa2, 0, 9);
-    sarrayConcatenate(sa3, sa4);
+    sarrayJoin(sa3, sa4);
     n =sarrayGetCount(sa3);
     sarrayDestroy(&sa1);
     sarrayDestroy(&sa2);
@@ -67,7 +67,7 @@ L_REGPARAMS  *rp;
     pixaInitFull(pixa, pix1, NULL);  /* fill it up */
     pixd = pixaDisplayTiledInRows(pixa, 32, 1000, 1.0, 0, 25, 2);
     pixDisplayWithTitle(pixd, 100, 100, NULL, rp->display);
-    pixWrite("/tmp/regout/pix1.jpg", pixd, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/regout/pix1.jpg", pixd, IFF_JFIF_JPEG);
     pixDestroy(&pix1);
     pixDestroy(&pixd);
 
@@ -82,7 +82,7 @@ L_REGPARAMS  *rp;
     }
     pixd = pixaDisplayTiledInRows(pixa, 32, 1000, 1.0, 0, 25, 2);
     pixDisplayWithTitle(pixd, 400, 100, NULL, rp->display);
-    pixWrite("/tmp/regout/pix2.jpg", pixd, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/regout/pix2.jpg", pixd, IFF_JFIF_JPEG);
     pixDestroy(&pixd);
 
     /* ---------------- And again, reversing the order ------------------*/
@@ -99,7 +99,7 @@ L_REGPARAMS  *rp;
     }
     pixd = pixaDisplayTiledInRows(pixa, 32, 1000, 1.0, 0, 25, 2);
     pixDisplayWithTitle(pixd, 700, 100, NULL, rp->display);
-    pixWrite("/tmp/regout/pix3.jpg", pixd, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/regout/pix3.jpg", pixd, IFF_JFIF_JPEG);
     pixDestroy(&pixd);
     sarrayDestroy(&sa3);
 

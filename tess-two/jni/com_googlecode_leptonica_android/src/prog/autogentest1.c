@@ -27,7 +27,7 @@
 /*
  *  autogentest1.c
  *
- *  This generates /tmp/autogen.137.c and /tmp/autogen.137.h.
+ *  This generates /tmp/auto/autogen.137.c and /tmp/auto/autogen.137.h.
  *  It shows how to use the stringcode facility.
  *
  *  In general use, you compile and run the code generator before
@@ -38,7 +38,7 @@
  *  in this directory.  Running autogentest1 will simply regenerate
  *  this code.
  *
- *  This also generates /tmp/autogen.138.c and /tmp/autogen.138.h,
+ *  This also generates /tmp/auto/autogen.138.c and /tmp/auto/autogen.138.h,
  *  which contain the same data, using the function strcodeCreateFromFile().
  *  With this method, you don't need to specify the file type (e.g., "PIXA")
  */
@@ -65,9 +65,9 @@ L_STRCODE  *strc;
     strcodeFinalize(&strc, NULL);
 
         /* Method 2: generate autogen.138.c and autogen.138.c  */
-    l_binaryWrite("/tmp/fontnames.txt", "w", (char *)filetext,
+    l_binaryWrite("/tmp/lept/auto/fontnames.txt", "w", (char *)filetext,
                   strlen(filetext));
-    strcodeCreateFromFile("/tmp/fontnames.txt", 138, NULL);
+    strcodeCreateFromFile("/tmp/lept/auto/fontnames.txt", 138, NULL);
     return 0;
 }
 

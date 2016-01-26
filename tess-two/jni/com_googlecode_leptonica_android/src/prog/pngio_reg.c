@@ -310,8 +310,8 @@ PIXCMAP  *cmap;
     pixSetColormap(pix1, cmap);
     pixcmapAddRGBA(cmap, 180, 130, 220, 0);  /* transparent */
     pixcmapAddRGBA(cmap, 20, 120, 0, 255);  /* opaque */
-    pixWrite("/tmp/regout/1bpp-trans.png", pix1, IFF_PNG);
-    pix2 = pixRead("/tmp/regout/1bpp-trans.png");
+    pixWrite("/tmp/lept/regout/1bpp-trans.png", pix1, IFF_PNG);
+    pix2 = pixRead("/tmp/lept/regout/1bpp-trans.png");
     pixEqual(pix1, pix2, &same);
     if (same)
         fprintf(stderr, "1bpp_trans: success\n");
@@ -320,7 +320,7 @@ PIXCMAP  *cmap;
     pixDisplayWithTitle(pix2, 700, 0, NULL, rp->display);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
-    fp = fopenReadStream("/tmp/regout/1bpp-trans.png");
+    fp = fopenReadStream("/tmp/lept/regout/1bpp-trans.png");
     fgetPngColormapInfo(fp, &cmap, &transp);
     fclose(fp);
     if (transp)
@@ -345,8 +345,8 @@ PIXCMAP  *cmap;
     pixSetColormap(pix1, cmap);
     pixcmapAddRGBA(cmap, 180, 130, 220, 255);  /* color, opaque */
     pixcmapAddRGBA(cmap, 20, 120, 0, 255);  /* color, opaque */
-    pixWrite("/tmp/regout/1bpp-color.png", pix1, IFF_PNG);
-    pix2 = pixRead("/tmp/regout/1bpp-color.png");
+    pixWrite("/tmp/lept/regout/1bpp-color.png", pix1, IFF_PNG);
+    pix2 = pixRead("/tmp/lept/regout/1bpp-color.png");
     pixEqual(pix1, pix2, &same);
     if (same)
         fprintf(stderr, "1bpp_color: success\n");
@@ -355,7 +355,7 @@ PIXCMAP  *cmap;
     pixDisplayWithTitle(pix2, 700, 100, NULL, rp->display);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
-    fp = fopenReadStream("/tmp/regout/1bpp-color.png");
+    fp = fopenReadStream("/tmp/lept/regout/1bpp-color.png");
     fgetPngColormapInfo(fp, &cmap, &transp);
     fclose(fp);
     if (transp)
@@ -379,8 +379,8 @@ PIXCMAP  *cmap;
     pixSetColormap(pix1, cmap);
     pixcmapAddRGBA(cmap, 180, 180, 180, 255);  /* light, opaque */
     pixcmapAddRGBA(cmap, 60, 60, 60, 255);  /* dark, opaque */
-    pixWrite("/tmp/regout/1bpp-gray.png", pix1, IFF_PNG);
-    pix2 = pixRead("/tmp/regout/1bpp-gray.png");
+    pixWrite("/tmp/lept/regout/1bpp-gray.png", pix1, IFF_PNG);
+    pix2 = pixRead("/tmp/lept/regout/1bpp-gray.png");
     pixEqual(pix1, pix2, &same);
     if (same)
         fprintf(stderr, "1bpp_gray: success\n");
@@ -404,8 +404,8 @@ PIXCMAP  *cmap;
     pixSetColormap(pix1, cmap);
     pixcmapAddRGBA(cmap, 0, 0, 0, 255);  /* black, opaque */
     pixcmapAddRGBA(cmap, 255, 255, 255, 255);  /* white, opaque */
-    pixWrite("/tmp/regout/1bpp-bw1.png", pix1, IFF_PNG);
-    pix2 = pixRead("/tmp/regout/1bpp-bw1.png");
+    pixWrite("/tmp/lept/regout/1bpp-bw1.png", pix1, IFF_PNG);
+    pix2 = pixRead("/tmp/lept/regout/1bpp-bw1.png");
     pixEqual(pix1, pix2, &same);
     if (same)
         fprintf(stderr, "1bpp_bw1: success\n");
@@ -429,8 +429,8 @@ PIXCMAP  *cmap;
     pixSetColormap(pix1, cmap);
     pixcmapAddRGBA(cmap, 255, 255, 255, 255);  /* white, opaque */
     pixcmapAddRGBA(cmap, 0, 0, 0, 255);  /* black, opaque */
-    pixWrite("/tmp/regout/1bpp-bw2.png", pix1, IFF_PNG);
-    pix2 = pixRead("/tmp/regout/1bpp-bw2.png");
+    pixWrite("/tmp/lept/regout/1bpp-bw2.png", pix1, IFF_PNG);
+    pix2 = pixRead("/tmp/lept/regout/1bpp-bw2.png");
     pixEqual(pix1, pix2, &same);
     if (same)
         fprintf(stderr, "1bpp_bw2: success\n");
@@ -454,8 +454,8 @@ PIXCMAP  *cmap;
     pix2 = pixColorSegment(pix1, 75, 10, 8, 7);
     cmap = pixGetColormap(pix2);
     pixcmapSetAlpha(cmap, 0, 0);  /* set blueish sky color to transparent */
-    pixWrite("/tmp/regout/8bpp-trans.png", pix2, IFF_PNG);
-    pix3 = pixRead("/tmp/regout/8bpp-trans.png");
+    pixWrite("/tmp/lept/regout/8bpp-trans.png", pix2, IFF_PNG);
+    pix3 = pixRead("/tmp/lept/regout/8bpp-trans.png");
     pixEqual(pix2, pix3, &same);
     if (same)
         fprintf(stderr, "8bpp_trans: success\n");
@@ -465,7 +465,7 @@ PIXCMAP  *cmap;
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixDestroy(&pix3);
-    fp = fopenReadStream("/tmp/regout/8bpp-trans.png");
+    fp = fopenReadStream("/tmp/lept/regout/8bpp-trans.png");
     fgetPngColormapInfo(fp, &cmap, &transp);
     fclose(fp);
     if (transp)

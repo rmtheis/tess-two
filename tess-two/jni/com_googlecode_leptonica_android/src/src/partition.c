@@ -195,7 +195,7 @@ L_HEAP  *lh;
         return (BOXA *)ERROR_PTR("boxas not defined", procName, NULL);
     if (sortflag != L_SORT_BY_WIDTH && sortflag != L_SORT_BY_HEIGHT &&
         sortflag != L_SORT_BY_MIN_DIMENSION &&
-       	sortflag != L_SORT_BY_MAX_DIMENSION &&
+        sortflag != L_SORT_BY_MAX_DIMENSION &&
         sortflag != L_SORT_BY_PERIMETER && sortflag != L_SORT_BY_AREA)
         return (BOXA *)ERROR_PTR("invalid sort flag", procName, NULL);
     if (maxboxes < 1) {
@@ -230,12 +230,12 @@ L_HEAP  *lh;
         if (npop > maxpops)
             break;
 
-	    /* Extract the contents */
+            /* Extract the contents */
         boxa = boxaCopy(partel->boxa, L_CLONE);
         box = boxClone(partel->box);
-	partelDestroy(&partel);
+        partelDestroy(&partel);
 
-	    /* Can we output this one? */
+            /* Can we output this one? */
         n = boxaGetCount(boxa);
         if (n == 0) {
             if (boxCheckIfOverlapIsBig(box, boxad, maxoverlap) == 0)
@@ -249,22 +249,22 @@ L_HEAP  *lh;
         }
 
 
-	    /* Generate up to 4 subboxes and put them on the heap */
+            /* Generate up to 4 subboxes and put them on the heap */
         boxa4 = boxaGenerateSubboxes(box, boxa, maxperim, fract);
-	boxDestroy(&box);
+        boxDestroy(&box);
         nsub = boxaGetCount(boxa4);
         for (i = 0; i < nsub; i++) {
             boxsub = boxaGetBox(boxa4, i, L_CLONE);
-	    boxasub = boxaIntersectsBox(boxa, boxsub);
+            boxasub = boxaIntersectsBox(boxa, boxsub);
             partel = partelCreate(boxsub);
             partel->boxa = boxasub;
             partelSetSize(partel, sortflag);
             lheapAdd(lh, partel);
-	    boxDestroy(&boxsub);
+            boxDestroy(&boxsub);
         }
         npush += nsub;  /* How many boxes have we put on the queue? */
 
-/*	boxaWriteStream(stderr, boxa4); */
+/*        boxaWriteStream(stderr, boxa4); */
 
         boxaDestroy(&boxa4);
         boxaDestroy(&boxa);
@@ -301,7 +301,7 @@ PARTEL  *partel;
 
     PROCNAME("partelCreate");
 
-    if ((partel = (PARTEL *)CALLOC(1, sizeof(PARTEL))) == NULL)
+    if ((partel = (PARTEL *)LEPT_CALLOC(1, sizeof(PARTEL))) == NULL)
         return (PARTEL *)ERROR_PTR("partel not made", procName, NULL);
 
     partel->box = boxCopy(box);
@@ -332,7 +332,7 @@ PARTEL  *partel;
 
     boxDestroy(&partel->box);
     boxaDestroy(&partel->boxa);
-    FREE(partel);
+    LEPT_FREE(partel);
     *ppartel = NULL;
     return;
 }
@@ -516,7 +516,7 @@ BOX       *boxt;
     }
 
         /* If there are small boxes but none are within 'fract' of the
-	 * centroid, return the nearest one. */
+         * centroid, return the nearest one. */
     if (smallfound == TRUE)
         return boxaGetBox(boxa, minindex, L_COPY);
 
@@ -525,7 +525,7 @@ BOX       *boxt;
     minindex = 0;
     for (i = 0; i < n; i++) {
         boxaGetBoxGeometry(boxa, i, NULL, NULL, &bw, &bh);
-	perim = bw + bh;
+        perim = bw + bh;
         if (perim < minsize) {
             minsize = perim;
             minindex = i;

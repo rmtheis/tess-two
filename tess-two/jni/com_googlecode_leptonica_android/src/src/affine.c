@@ -299,7 +299,7 @@ PIX        *pixd;
         /* Get backwards transform from dest to src, and apply it */
     getAffineXformCoeffs(ptad, ptas, &vc);
     pixd = pixAffineSampled(pixs, vc, incolor);
-    FREE(vc);
+    LEPT_FREE(vc);
 
     return pixd;
 }
@@ -562,7 +562,7 @@ PIX        *pixd;
         /* Get backwards transform from dest to src, and apply it */
     getAffineXformCoeffs(ptad, ptas, &vc);
     pixd = pixAffineColor(pixs, vc, colorval);
-    FREE(vc);
+    LEPT_FREE(vc);
 
     return pixd;
 }
@@ -665,7 +665,7 @@ PIX        *pixd;
         /* Get backwards transform from dest to src, and apply it */
     getAffineXformCoeffs(ptad, ptas, &vc);
     pixd = pixAffineGray(pixs, vc, grayval);
-    FREE(vc);
+    LEPT_FREE(vc);
 
     return pixd;
 }
@@ -931,7 +931,7 @@ l_float32  *a[6];  /* 6x6 matrix A  */
     if (!pvc)
         return ERROR_INT("&vc not defined", procName, 1);
 
-    if ((b = (l_float32 *)CALLOC(6, sizeof(l_float32))) == NULL)
+    if ((b = (l_float32 *)LEPT_CALLOC(6, sizeof(l_float32))) == NULL)
         return ERROR_INT("b not made", procName, 1);
     *pvc = b;
 
@@ -943,7 +943,7 @@ l_float32  *a[6];  /* 6x6 matrix A  */
     ptaGetPt(ptad, 2, &b[4], &b[5]);
 
     for (i = 0; i < 6; i++)
-        if ((a[i] = (l_float32 *)CALLOC(6, sizeof(l_float32))) == NULL)
+        if ((a[i] = (l_float32 *)LEPT_CALLOC(6, sizeof(l_float32))) == NULL)
             return ERROR_INT("a[i] not made", procName, 1);
 
     a[0][0] = x1;
@@ -968,7 +968,7 @@ l_float32  *a[6];  /* 6x6 matrix A  */
     gaussjordan(a, b, 6);
 
     for (i = 0; i < 6; i++)
-        FREE(a[i]);
+        LEPT_FREE(a[i]);
 
     return 0;
 }
@@ -1021,7 +1021,7 @@ l_float32   b[3] = {1.0, 1.0, 1.0};   /* anything; results ignored */
         return ERROR_INT("vc not defined", procName, 1);
 
     for (i = 0; i < 3; i++)
-        a[i] = (l_float32 *)CALLOC(3, sizeof(l_float32));
+        a[i] = (l_float32 *)LEPT_CALLOC(3, sizeof(l_float32));
     a[0][0] = vc[0];
     a[0][1] = vc[1];
     a[0][2] = vc[2];
@@ -1030,7 +1030,7 @@ l_float32   b[3] = {1.0, 1.0, 1.0};   /* anything; results ignored */
     a[1][2] = vc[5];
     a[2][2] = 1.0;
     gaussjordan(a, b, 3);  /* now matrix a contains the inverse */
-    vci = (l_float32 *)CALLOC(6, sizeof(l_float32));
+    vci = (l_float32 *)LEPT_CALLOC(6, sizeof(l_float32));
     *pvci = vci;
     vci[0] = a[0][0];
     vci[1] = a[0][1];
@@ -1042,7 +1042,7 @@ l_float32   b[3] = {1.0, 1.0, 1.0};   /* anything; results ignored */
 #if 0
         /* Alternative version, inverting a 2x2 matrix */
     for (i = 0; i < 2; i++)
-        a[i] = (l_float32 *)CALLOC(2, sizeof(l_float32));
+        a[i] = (l_float32 *)LEPT_CALLOC(2, sizeof(l_float32));
     a[0][0] = vc[0];
     a[0][1] = vc[1];
     a[1][0] = vc[3];
@@ -1050,7 +1050,7 @@ l_float32   b[3] = {1.0, 1.0, 1.0};   /* anything; results ignored */
     b[0] = vc[2];
     b[1] = vc[5];
     gaussjordan(a, b, 2);  /* now matrix a contains the inverse */
-    vci = (l_float32 *)CALLOC(6, sizeof(l_float32));
+    vci = (l_float32 *)LEPT_CALLOC(6, sizeof(l_float32));
     *pvci = vci;
     vci[0] = a[0][0];
     vci[1] = a[0][1];
@@ -1317,11 +1317,11 @@ l_float32  maxval, val, pivinv, temp;
     if (!b)
         return ERROR_INT("b not defined", procName, 1);
 
-    if ((indexc = (l_int32 *)CALLOC(n, sizeof(l_int32))) == NULL)
+    if ((indexc = (l_int32 *)LEPT_CALLOC(n, sizeof(l_int32))) == NULL)
         return ERROR_INT("indexc not made", procName, 1);
-    if ((indexr = (l_int32 *)CALLOC(n, sizeof(l_int32))) == NULL)
+    if ((indexr = (l_int32 *)LEPT_CALLOC(n, sizeof(l_int32))) == NULL)
         return ERROR_INT("indexr not made", procName, 1);
-    if ((ipiv = (l_int32 *)CALLOC(n, sizeof(l_int32))) == NULL)
+    if ((ipiv = (l_int32 *)LEPT_CALLOC(n, sizeof(l_int32))) == NULL)
         return ERROR_INT("ipiv not made", procName, 1);
 
     for (i = 0; i < n; i++) {
@@ -1377,9 +1377,9 @@ l_float32  maxval, val, pivinv, temp;
         }
     }
 
-    FREE(indexr);
-    FREE(indexc);
-    FREE(ipiv);
+    LEPT_FREE(indexr);
+    LEPT_FREE(indexc);
+    LEPT_FREE(ipiv);
     return 0;
 }
 

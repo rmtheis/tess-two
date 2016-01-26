@@ -110,7 +110,7 @@
  *           l_int32    splitPathAtDirectory()
  *           l_int32    splitPathAtExtension()
  *           char      *pathJoin()
- *           char      *appendSubdirectory()
+ *           char      *appendSubdirs()
  *
  *       Special file name operations
   *          l_int32    convertSepCharsInPath()
@@ -130,6 +130,15 @@
  *       Simple math function
  *           l_int32    lept_roundftoi()
  *
+ *       64-bit hash functions
+ *           l_int32    l_hashStringToUint64()
+ *           l_int32    l_hashPtToUint64()
+ *           l_int32    l_hashPtToUint64Fast()
+ *
+ *       Prime finders
+ *           l_int32    findNextLargerPrime()
+ *           l_int32    lept_isPrime()
+  *
  *       Gray code conversion
  *           l_uint32   convertBinaryToGrayCode()
  *           l_uint32   convertGrayToBinaryCode()
@@ -186,7 +195,7 @@
 #include <sys/types.h>
 #endif
 
-
+#include <math.h>
 #include <stddef.h>
 
 
@@ -326,7 +335,7 @@ char    *dest;
     }
 
     len = strlen(src);
-    if ((dest = (char *)CALLOC(len + 1, sizeof(char))) == NULL)
+    if ((dest = (char *)LEPT_CALLOC(len + 1, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("dest not made", procName, NULL);
 
     stringCopy(dest, src, len);
@@ -398,11 +407,11 @@ l_int32  len;
         return ERROR_INT("pdest not defined", procName, 1);
 
     if (*pdest)
-        FREE(*pdest);
+        LEPT_FREE(*pdest);
 
     if (src) {
         len = strlen(src);
-        if ((scopy = (char *)CALLOC(len + 1, sizeof(char))) == NULL)
+        if ((scopy = (char *)LEPT_CALLOC(len + 1, sizeof(char))) == NULL)
             return ERROR_INT("scopy not made", procName, 1);
         stringCopy(scopy, src, len);
         *pdest = scopy;
@@ -529,7 +538,7 @@ va_list      args;
     while ((arg = va_arg(args, const char *)) != NULL)
         len += strlen(arg);
     va_end(args);
-    result = (char *)CALLOC(len + 1, sizeof(char));
+    result = (char *)LEPT_CALLOC(len + 1, sizeof(char));
 
         /* Concatenate the args */
     va_start(args, first);
@@ -571,7 +580,7 @@ l_int32  srclen1, srclen2, destlen;
     srclen2 = (src2) ? strlen(src2) : 0;
     destlen = srclen1 + srclen2 + 3;
 
-    if ((dest = (char *)CALLOC(destlen, sizeof(char))) == NULL)
+    if ((dest = (char *)LEPT_CALLOC(destlen, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("calloc fail for dest", procName, NULL);
 
     if (src1)
@@ -604,7 +613,7 @@ l_int32  srclen1, srclen2, destlen;
  *      (4) This can also be implemented as a macro:
  *              #define stringJoinIP(src1, src2) \
  *                  {tmpstr = stringJoin((src1),(src2)); \
- *                  FREE(src1); \
+ *                  LEPT_FREE(src1); \
  *                  (src1) = tmpstr;}
  *      (5) Another function to consider for joining many strings is
  *          stringConcatNew().
@@ -621,7 +630,7 @@ char  *tmpstr;
         return ERROR_INT("&src1 not defined", procName, 1);
 
     tmpstr = stringJoin(*psrc1, src2);
-    FREE(*psrc1);
+    LEPT_FREE(*psrc1);
     *psrc1 = tmpstr;
     return 0;
 }
@@ -644,7 +653,7 @@ l_int32  i, len;
     if (!src)
         return (char *)ERROR_PTR("src not defined", procName, NULL);
     len = strlen(src);
-    if ((dest = (char *)CALLOC(len + 1, sizeof(char))) == NULL)
+    if ((dest = (char *)LEPT_CALLOC(len + 1, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("calloc fail for dest", procName, NULL);
     for (i = 0; i < len; i++)
         dest[i] = src[len - 1 - i];
@@ -730,7 +739,7 @@ l_int32  istart, i, j, nchars;
 
         /* Save the substring */
     nchars = i - istart;
-    substr = (char *)CALLOC(nchars + 1, sizeof(char));
+    substr = (char *)LEPT_CALLOC(nchars + 1, sizeof(char));
     stringCopy(substr, start + istart, nchars);
 
         /* Look for the next non-sep character.
@@ -825,7 +834,7 @@ l_int32  nsrc, i, k;
     if (!remchars)
         return stringNew(src);
 
-    if ((dest = (char *)CALLOC(strlen(src) + 1, sizeof(char))) == NULL)
+    if ((dest = (char *)LEPT_CALLOC(strlen(src) + 1, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("dest not made", procName, NULL);
     nsrc = strlen(src);
     for (i = 0, k = 0; i < nsrc; i++) {
@@ -938,7 +947,7 @@ l_int32  nsrc, nsub1, nsub2, len, npre, loc;
     nsub1 = strlen(sub1);
     nsub2 = strlen(sub2);
     len = nsrc + nsub2 - nsub1;
-    if ((dest = (char *)CALLOC(len + 1, sizeof(char))) == NULL)
+    if ((dest = (char *)LEPT_CALLOC(len + 1, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("dest not made", procName, NULL);
     npre = ptr - src;
     memcpy(dest, src, npre);
@@ -997,7 +1006,7 @@ l_int32  loc;
         newstr = stringReplaceSubstr(currstr, sub1, sub2, NULL, &loc);
         if (!newstr)
             return currstr;
-        FREE(currstr);
+        LEPT_FREE(currstr);
         if (pcount)
             (*pcount)++;
     }
@@ -1162,25 +1171,25 @@ void    *newdata;
 
     if (newsize <= 0) {   /* nonstandard usage */
         if (indata) {
-            FREE(indata);
+            LEPT_FREE(indata);
             *pindata = NULL;
         }
         return NULL;
     }
 
     if (!indata) {  /* nonstandard usage */
-        if ((newdata = (void *)CALLOC(1, newsize)) == NULL)
+        if ((newdata = (void *)LEPT_CALLOC(1, newsize)) == NULL)
             return ERROR_PTR("newdata not made", procName, NULL);
         return newdata;
     }
 
         /* Standard usage */
-    if ((newdata = (void *)CALLOC(1, newsize)) == NULL)
+    if ((newdata = (void *)LEPT_CALLOC(1, newsize)) == NULL)
         return ERROR_PTR("newdata not made", procName, NULL);
     minsize = L_MIN(oldsize, newsize);
     memcpy((char *)newdata, (char *)indata, minsize);
 
-    FREE(indata);
+    LEPT_FREE(indata);
     *pindata = NULL;
 
     return newdata;
@@ -1245,9 +1254,9 @@ l_uint8 *
 l_binaryReadStream(FILE    *fp,
                    size_t  *pnbytes)
 {
-l_uint8  *data;
-l_int32   seekable, navail, nadd, nread;
-BBUFFER  *bb;
+l_uint8    *data;
+l_int32     seekable, navail, nadd, nread;
+L_BBUFFER  *bb;
 
     PROCNAME("l_binaryReadStream");
 
@@ -1281,7 +1290,7 @@ BBUFFER  *bb;
 
         /* Copy the data to a new array sized for the data, because
          * the bbuffer array can be nearly twice the size we need. */
-    if ((data = (l_uint8 *)CALLOC(bb->n + 1, sizeof(l_uint8))) != NULL) {
+    if ((data = (l_uint8 *)LEPT_CALLOC(bb->n + 1, sizeof(l_uint8))) != NULL) {
         memcpy(data, bb->array, bb->n);
         *pnbytes = bb->n;
     } else {
@@ -1376,13 +1385,13 @@ size_t    bytesleft, bytestoread, nread, filebytes;
         return NULL;
     }
     if (filebytes == 0)  /* start == 0; nothing to read; return null byte */
-        return (l_uint8 *)CALLOC(1, 1);
+        return (l_uint8 *)LEPT_CALLOC(1, 1);
     bytesleft = filebytes - start;  /* greater than 0 */
     if (nbytes == 0) nbytes = bytesleft;
     bytestoread = (bytesleft >= nbytes) ? nbytes : bytesleft;
 
         /* Read the data */
-    if ((data = (l_uint8 *)CALLOC(1, bytestoread + 1)) == NULL)
+    if ((data = (l_uint8 *)LEPT_CALLOC(1, bytestoread + 1)) == NULL)
         return (l_uint8 *)ERROR_PTR("calloc fail for data", procName, NULL);
     fseek(fp, start, SEEK_SET);
     nread = fread(data, 1, bytestoread, fp);
@@ -1515,7 +1524,7 @@ l_uint8  *datad;
     if (!datas)
         return (l_uint8 *)ERROR_PTR("datas not defined", procName, NULL);
 
-    if ((datad = (l_uint8 *)CALLOC(size + 4, sizeof(l_uint8))) == NULL)
+    if ((datad = (l_uint8 *)LEPT_CALLOC(size + 4, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("datad not made", procName, NULL);
     memcpy(datad, datas, size);
     return datad;
@@ -1550,7 +1559,7 @@ l_uint8  *data;
     if ((data = l_binaryRead(srcfile, &nbytes)) == NULL)
         return ERROR_INT("data not returned", procName, 1);
     ret = l_binaryWrite(newfile, "w", data, nbytes);
-    FREE(data);
+    LEPT_FREE(data);
     return ret;
 }
 
@@ -1578,7 +1587,7 @@ l_uint8  *data;
 
     data = l_binaryRead(srcfile, &nbytes);
     l_binaryWrite(destfile, "a", data, nbytes);
-    FREE(data);
+    LEPT_FREE(data);
     return 0;
 }
 
@@ -1655,8 +1664,8 @@ l_uint8  *array1, *array2;
             break;
         }
     }
-    FREE(array1);
-    FREE(array2);
+    LEPT_FREE(array1);
+    LEPT_FREE(array2);
     *psame = same;
 
     return 0;
@@ -1773,13 +1782,13 @@ FILE  *fp;
         /* Try input filename */
     fname = genPathname(filename, NULL);
     fp = fopen(fname, "rb");
-    FREE(fname);
+    LEPT_FREE(fname);
     if (fp) return fp;
 
         /* Else, strip directory and try locally */
     splitPathAtDirectory(filename, NULL, &tail);
     fp = fopen(tail, "rb");
-    FREE(tail);
+    LEPT_FREE(tail);
 
     if (!fp)
         return (FILE *)ERROR_PTR("file not found", procName, NULL);
@@ -1816,7 +1825,7 @@ FILE  *fp;
 
     fname = genPathname(filename, NULL);
     fp = fopen(fname, modestring);
-    FREE(fname);
+    LEPT_FREE(fname);
     if (!fp)
         return (FILE *)ERROR_PTR("stream not opened", procName, NULL);
     return fp;
@@ -1901,7 +1910,7 @@ lept_calloc(size_t  nmemb,
 {
     if (nmemb <= 0 || size <= 0)
         return NULL;
-    return CALLOC(nmemb, size);
+    return LEPT_CALLOC(nmemb, size);
 }
 
 
@@ -1919,7 +1928,7 @@ void
 lept_free(void *ptr)
 {
     if (!ptr) return;
-    FREE(ptr);
+    LEPT_FREE(ptr);
     return;
 }
 
@@ -1935,18 +1944,20 @@ lept_free(void *ptr)
  *      Return: 0 on success, non-zero on failure
  *
  *  Notes:
- *      (1) This makes a subdirectory of the root temp directory.
- *      (2) The root temp directory is:
- *            /tmp              (unix)  [default]
- *            /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
- *            <Temp>/leptonica  (windows)
+ *      (1) @subdir is a partial path that can consist of one or more
+ *          directories.
+ *      (2) This makes any subdirectories of /tmp that are required.
+ *      (3) The root temp directory is:
+ *            /tmp    (unix)  [default]
+ *            <Temp>  (windows)
  */
 l_int32
 lept_mkdir(const char  *subdir)
 {
-char     *dir;
-l_int32   ret;
-char     *newpath;
+char     *dir, *tmpdir;
+l_int32   i, n;
+l_int32   ret = 0;
+SARRAY   *sa;
 #ifdef  _WIN32
 l_uint32  attributes;
 #endif  /* _WIN32 */
@@ -1958,29 +1969,31 @@ l_uint32  attributes;
     if ((strlen(subdir) == 0) || (subdir[0] == '.') || (subdir[0] == '/'))
         return ERROR_INT("subdir not an actual subdirectory", procName, 1);
 
-    dir = pathJoin("/tmp", subdir);
-
-        /* Make the subdirectory */
+    sa = sarrayCreate(0);
+    sarraySplitString(sa, subdir, "/");
+    n = sarrayGetCount(sa);
+    dir = genPathname("/tmp", NULL);
+       /* Make sure the tmp directory exists */
 #ifndef _WIN32
-    if (ADD_LEPTONICA_SUBDIR == 1)
-        mkdir("/tmp/leptonica", 0777);
-    newpath = genPathname(dir, NULL);
-    ret = mkdir(newpath, 0777);
+    ret = mkdir(dir, 0777);
 #else
-        /* Make sure the tmp directory exists */
-    newpath = genPathname("/tmp", NULL);
-    attributes = GetFileAttributes(newpath);
-    if (attributes == INVALID_FILE_ATTRIBUTES) {
-        ret = (CreateDirectory(newpath, NULL) ? 0 : 1);
+    attributes = GetFileAttributes(dir);
+    if (attributes == INVALID_FILE_ATTRIBUTES)
+        ret = (CreateDirectory(dir, NULL) ? 0 : 1);
+#endif
+        /* Make all the subdirectories */
+    for (i = 0; i < n; i++) {
+        tmpdir = pathJoin(dir, sarrayGetString(sa, i, L_NOCOPY));
+#ifndef _WIN32
+        ret += mkdir(tmpdir, 0777);
+#else
+        ret += (CreateDirectory(tmpdir, NULL) ? 0 : 1);
+#endif
+        LEPT_FREE(dir);
+        dir = tmpdir;
     }
-    FREE(newpath);
-
-    newpath = genPathname(dir, NULL);
-    ret = (CreateDirectory(newpath, NULL) ? 0 : 1);
-#endif  /*  !_WIN32 */
-
-    FREE(newpath);
-    FREE(dir);
+    LEPT_FREE(dir);
+    sarrayDestroy(&sa);
     return ret;
 }
 
@@ -1992,13 +2005,14 @@ l_uint32  attributes;
  *      Return: 0 on success, non-zero on failure
  *
  *  Notes:
- *      (1) This removes all files from the specified subdirectory of
+ *      (1) @subdir is a partial path that can consist of one or more
+ *          directories.
+ *      (2) This removes all files from the specified subdirectory of
  *          the root temp directory:
- *            /tmp               (unix)  [default]
- *            /tmp/leptonica     (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
- *            <Temp>/leptonica   (windows)
+ *            /tmp    (unix)
+ *            <Temp>  (windows)
  *          and then removes the subdirectory.
- *      (2) The combination
+ *      (3) The combination
  *            lept_rmdir(subdir);
  *            lept_mkdir(subdir);
  *          is guaranteed to give you an empty subdirectory.
@@ -2022,46 +2036,40 @@ char    *newpath;
 
         /* Find the temp subdirectory */
     rootdir = genPathname("/tmp", NULL);
-    dir = appendSubdirectory(rootdir, subdir);
-    FREE(rootdir);
+    dir = appendSubdirs(rootdir, subdir);
+    LEPT_FREE(rootdir);
     if (!dir)
         return ERROR_INT("directory name not made", procName, 1);
     lept_direxists(dir, &exists);
     if (!exists) {  /* fail silently */
-        FREE(dir);
+        LEPT_FREE(dir);
         return 0;
     }
 
         /* List all the files */
     if ((sa = getFilenamesInDirectory(dir)) == NULL) {
         L_ERROR("directory %s does not exist!\n", procName, dir);
-        FREE(dir);
+        LEPT_FREE(dir);
         return 1;
     }
     nfiles = sarrayGetCount(sa);
 
-#ifndef _WIN32
     for (i = 0; i < nfiles; i++) {
         fname = sarrayGetString(sa, i, L_NOCOPY);
         fullname = genPathname(dir, fname);
         remove(fullname);
-        FREE(fullname);
+        LEPT_FREE(fullname);
     }
-    ret = remove(dir);
+#ifndef _WIN32
+    ret = rmdir(dir);
 #else
-    for (i = 0; i < nfiles; i++) {
-        fname = sarrayGetString(sa, i, L_NOCOPY);
-        fullname = genPathname(dir, fname);
-        ret = lept_rmfile(fullname);
-        FREE(fullname);
-    }
     newpath = genPathname(dir, NULL);
-    ret = RemoveDirectory(newpath) ? 0 : 1;
-    FREE(newpath);
+    remove(newpath);
+    LEPT_FREE(newpath);
 #endif  /* !_WIN32 */
 
     sarrayDestroy(&sa);
-    FREE(dir);
+    LEPT_FREE(dir);
     return ret;
 }
 
@@ -2075,11 +2083,10 @@ char    *newpath;
  *
  *  Notes:
  *      (1) Always use unix pathname separators.
- *      (2) By calling genPathname(), this does an automatic translation
- *          of "/tmp" if the pathname begins with "/tmp":
- *            ==>  /tmp              (unix)  [default]
- *            ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
- *            ==>  <Temp>/leptonica  (windows)
+ *      (2) By calling genPathname(), if the pathname begins with "/tmp"
+ *          this does an automatic directory translation on windows
+ *          to a path in the windows <Temp> directory:
+ *             "/tmp"  ==>  <Temp> (windows)
  */
 void
 lept_direxists(const char  *dir,
@@ -2109,7 +2116,7 @@ char  *realdir;
     }
 #endif  /* _WIN32 */
 
-    FREE(realdir);
+    LEPT_FREE(realdir);
     return;
 }
 
@@ -2129,11 +2136,10 @@ char  *realdir;
  *          If both @subdir == NULL and @substr == NULL, this removes
  *          all files in /tmp.
  *      (3) Use unix pathname separators.
- *      (4) By calling genPathname(), this does an automatic translation
- *          of "/tmp" if the pathname begins with "/tmp":
- *            ==>  /tmp              (unix)  [default]
- *            ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
- *            ==>  <Temp>/leptonica  (windows)
+ *      (4) By calling genPathname(), if the pathname begins with "/tmp"
+ *          this does an automatic directory translation on windows
+ *          to a path in the windows <Temp> directory:
+ *             "/tmp"  ==>  <Temp> (windows)
  *      (5) Error conditions:
  *            * returns -1 if the directory is not found
  *            * returns the number of files (> 0) that it was unable to remove.
@@ -2155,6 +2161,7 @@ SARRAY  *sa;
     n = sarrayGetCount(sa);
     if (n == 0) {
         L_WARNING("no matching files found\n", procName);
+        sarrayDestroy(&sa);
         return 0;
     }
 
@@ -2166,7 +2173,7 @@ SARRAY  *sa;
             L_ERROR("failed to remove %s\n", procName, path);
             ret++;
         }
-        FREE(path);
+        LEPT_FREE(path);
     }
     sarrayDestroy(&sa);
     return ret;
@@ -2181,10 +2188,9 @@ SARRAY  *sa;
  *      Return: 0 on success, non-zero on failure
  *
  *  Notes:
- *      (1) This uses genPathname() to do a name translation from /tmp:
- *            ==>  /tmp              (unix)  [default]
- *            ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
- *            ==>  <Temp>/leptonica  (windows)
+ *      (1) By calling genPathname(), this does an automatic directory
+ *          translation on windows to a path in the windows <Temp> directory:
+ *             "/tmp/..."  ==>  <Temp>/... (windows)
  */
 l_int32
 lept_rm(const char  *subdir,
@@ -2199,15 +2205,18 @@ l_int32  ret;
     if (!tail || strlen(tail) == 0)
         return ERROR_INT("tail undefined or empty", procName, 1);
 
-    makeTempDirname(newtemp, 256, subdir);
+    if (makeTempDirname(newtemp, 256, subdir))
+        return ERROR_INT("temp dirname not made", procName, 1);
     path = genPathname(newtemp, tail);
     ret = lept_rmfile(path);
-    FREE(path);
+    LEPT_FREE(path);
     return ret;
 }
 
 
 /*!
+ *  TODO: Remove this function ?
+ *
  *  lept_rmfile()
  *
  *      Input:  filepath (full path to file including the directory)
@@ -2218,8 +2227,7 @@ l_int32  ret;
  *      (2) Use unix pathname separators.
  *      (3) Unlike the other lept_* functions in this section, this can remove
  *          any file -- it is not restricted to files that are in /tmp or a
- *          subdirectory of it.  No path translation is applied for files
- *          in /tmp or a subdirectory of /tmp.
+ *          subdirectory of it.
  */
 l_int32
 lept_rmfile(const char  *filepath)
@@ -2260,20 +2268,19 @@ l_int32  ret;
  *          or can be NULL.  In the latter case, the file will be written
  *          into /tmp.
  *      (4) @newtail can either specify a filename tail or, if NULL,
- *          the filename is taken from the tail of @srcfile.
+ *          the filename is taken from src-tail, the tail of @srcfile.
  *      (5) For debugging, the computed newpath can be returned.  It must
  *          be freed by the caller.
  *      (6) Reminders:
- *          (a) use unix pathname separators
- *          (b) Uses directory translation for files in /tmp:
- *              ==>  /tmp              (unix)  [default]
- *              ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
- *              ==>  <Temp>/leptonica  (windows)
- *      (7) Examples before directory translation:
- *          * newdir = NULL, newtail = NULL   ==> /tmp/src-tail
- *          * newdir = NULL, newtail = abc    ==> /tmp/abc
- *          * newdir = def, newtail = NULL    ==> /tmp/def/src-tail
- *          * newdir = def, newtail = abc     ==> /tmp/def/abc
+ *          (a) specify files using unix pathnames
+ *          (b) for windows, translates
+ *                 /tmp  ==>  <Temp>
+ *              where <Temp> is the windows temp directory
+ *      (7) Examples:
+ *          * newdir = NULL,    newtail = NULL    ==> /tmp/src-tail
+ *          * newdir = NULL,    newtail = abc     ==> /tmp/abc
+ *          * newdir = def/ghi, newtail = NULL    ==> /tmp/def/ghi/src-tail
+ *          * newdir = def/ghi, newtail = abc     ==> /tmp/def/ghi/abc
  */
 l_int32
 lept_mv(const char  *srcfile,
@@ -2297,14 +2304,14 @@ l_int32  ret;
         /* Get canonical src pathname */
     splitPathAtDirectory(srcfile, &dir, &srctail);
     srcpath = genPathname(dir, srctail);
-    FREE(dir);
+    LEPT_FREE(dir);
 
         /* Generate output pathname */
     if (!newtail || newtail[0] == '\0')
         newpath = genPathname(newtemp, srctail);
     else
         newpath = genPathname(newtemp, newtail);
-    FREE(srctail);
+    LEPT_FREE(srctail);
 
         /* Overwrite any existing file at 'newpath' */
 #ifndef _WIN32
@@ -2316,11 +2323,11 @@ l_int32  ret;
                      MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING) ? 0 : 1;
 #endif
 
-    FREE(srcpath);
+    LEPT_FREE(srcpath);
     if (pnewpath)
         *pnewpath = newpath;
     else
-        FREE(newpath);
+        LEPT_FREE(newpath);
     return ret;
 }
 
@@ -2342,20 +2349,19 @@ l_int32  ret;
  *          or can be NULL.  In the latter case, the file will be written
  *          into /tmp.
  *      (4) @newtail can either specify a filename tail or, if NULL,
- *          the filename is taken from the tail of @srcfile.
+ *          the filename is taken from src-tail, the tail of @srcfile.
  *      (5) For debugging, the computed newpath can be returned.  It must
  *          be freed by the caller.
  *      (6) Reminders:
- *          (a) use unix pathname separators
- *          (b) Uses directory translation for files in /tmp:
- *              ==>  /tmp              (unix)  [default]
- *              ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
- *              ==>  <Temp>/leptonica  (windows)
+ *          (a) specify files using unix pathnames
+ *          (b) for windows, translates
+ *                 /tmp  ==>  <Temp>
+ *              where <Temp> is the windows temp directory
  *      (7) Examples:
- *          * newdir = NULL, newtail = NULL   ==> /tmp/src-tail
- *          * newdir = NULL, newtail = abc    ==> /tmp/abc
- *          * newdir = def, newtail = NULL    ==> /tmp/def/src-tail
- *          * newdir = def, newtail = abc     ==> /tmp/def/abc
+ *          * newdir = NULL,    newtail = NULL    ==> /tmp/src-tail
+ *          * newdir = NULL,    newtail = abc     ==> /tmp/abc
+ *          * newdir = def/ghi, newtail = NULL    ==> /tmp/def/ghi/src-tail
+ *          * newdir = def/ghi, newtail = abc     ==> /tmp/def/ghi/abc
  *
  */
 l_int32
@@ -2380,14 +2386,14 @@ l_int32  ret;
        /* Get canonical src pathname */
     splitPathAtDirectory(srcfile, &dir, &srctail);
     srcpath = genPathname(dir, srctail);
-    FREE(dir);
+    LEPT_FREE(dir);
 
         /* Generate output pathname */
     if (!newtail || newtail[0] == '\0')
         newpath = genPathname(newtemp, srctail);
     else
         newpath = genPathname(newtemp, newtail);
-    FREE(srctail);
+    LEPT_FREE(srctail);
 
         /* Overwrite any existing file at 'newpath' */
 #ifndef _WIN32
@@ -2396,11 +2402,11 @@ l_int32  ret;
     ret = CopyFile(srcpath, newpath, FALSE) ? 0 : 1;
 #endif
 
-    FREE(srcpath);
+    LEPT_FREE(srcpath);
     if (pnewpath)
         *pnewpath = newpath;
     else
-        FREE(newpath);
+        LEPT_FREE(newpath);
     return ret;
 }
 
@@ -2462,7 +2468,7 @@ char  *cpathname, *lastslash;
             *(lastslash + 1) = '\0';
             *pdir = cpathname;
         } else {
-            FREE(cpathname);
+            LEPT_FREE(cpathname);
         }
     } else {  /* no directory */
         if (pdir)
@@ -2470,7 +2476,7 @@ char  *cpathname, *lastslash;
         if (ptail)
             *ptail = cpathname;
         else
-            FREE(cpathname);
+            LEPT_FREE(cpathname);
     }
 
     return 0;
@@ -2536,8 +2542,8 @@ char   empty[4] = "";
         if (pbasename)
             *pbasename = stringNew(pathname);
     }
-    FREE(dir);
-    FREE(tail);
+    LEPT_FREE(dir);
+    LEPT_FREE(tail);
     return 0;
 }
 
@@ -2644,41 +2650,41 @@ L_BYTEA  *ba;
 
 
 /*!
- *  appendSubdirectory()
+ *  appendSubdirs()
  *
- *      Input:  dir
- *              subdir
- *      Return: concatenated directory path without trailing slash,
+ *      Input:  basedir
+ *              subdirs
+ *      Return: concatenated full directory path without trailing slash,
  *              or null on error
  *
  *  Notes:
  *      (1) Use unix pathname separators
- *      (2) Allocates a new string:  <dir>/<subdir>
+ *      (2) Allocates a new string:  <basedir>/<subdirs>
  */
 char *
-appendSubdirectory(const char  *dir,
-                   const char  *subdir)
+appendSubdirs(const char  *basedir,
+              const char  *subdirs)
 {
 char   *newdir;
 size_t  len1, len2, len3, len4;
 
-    PROCNAME("appendSubdirectory");
+    PROCNAME("appendSubdirs");
 
-    if (!dir || !subdir)
-        return (char *)ERROR_PTR("dir and subdir not both defined",
+    if (!basedir || !subdirs)
+        return (char *)ERROR_PTR("basedir and subdirs not both defined",
                                  procName, NULL);
 
-    len1 = strlen(dir);
-    len2 = strlen(subdir);
+    len1 = strlen(basedir);
+    len2 = strlen(subdirs);
     len3 = len1 + len2 + 6;
-    newdir = (char *)CALLOC(len3, 1);
-    strncat(newdir, dir, len3);  /* add dir */
+    newdir = (char *)LEPT_CALLOC(len3, 1);
+    strncat(newdir, basedir, len3);  /* add basedir */
     if (newdir[len1 - 1] != '/')  /* add '/' if necessary */
         newdir[len1] = '/';
-    if (subdir[0] == '/')  /* add subdir, stripping leading '/' */
-        strncat(newdir, subdir + 1, len3);
+    if (subdirs[0] == '/')  /* add subdirs, stripping leading '/' */
+        strncat(newdir, subdirs + 1, len3);
     else
-        strncat(newdir, subdir, len3);
+        strncat(newdir, subdirs, len3);
     len4 = strlen(newdir);
     if (newdir[len4 - 1] == '/')  /* strip trailing '/' */
         newdir[len4 - 1] = '\0';
@@ -2750,10 +2756,8 @@ size_t   len;
  *              @fname, with @dir == NULL.
  *            * if in a "/tmp" directory and on windows, the windows
  *              temp directory is used.
- *      (2) If the root of @dir is '/tmp', this does name translation:
- *            ==>  /tmp              (unix)  [default]
- *            ==>  /tmp/leptonica    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
- *            ==>  <Temp>/leptonica  (windows)
+ *      (2) If the root of @dir is '/tmp', this does a name translation:
+ *             "/tmp"  ==>  <Temp> (windows)
  *          where <Temp> is the windows temp directory.
  *      (3) There are four cases for the input:
  *          (a) @dir is a directory and @fname is defined: result is a full path
@@ -2795,43 +2799,26 @@ l_int32  dirlen, namelen, size;
 
     namelen = (fname) ? strlen(fname) : 0;
     size = dirlen + namelen + 256;
-    if ((pathout = (char *)CALLOC(size, sizeof(char))) == NULL)
+    if ((pathout = (char *)LEPT_CALLOC(size, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("pathout not made", procName, NULL);
 
         /* First handle @dir (which may be a full pathname) */
     if (strncmp(cdir, "/tmp", 4) != 0) {  /* not in /tmp; OK as is */
         stringCopy(pathout, cdir, dirlen);
     } else {  /* in /tmp */
-#ifdef _WIN32
             /* Start with the temp dir */
-        char  dirt[MAX_PATH];
-        GetTempPath(sizeof(dirt), dirt);  /* get the windows temp directory */
-        stringCopy(pathout, dirt, strlen(dirt) - 1);
-
-            /* Add a special subdirectory if it's not already there.  This is
-             * advantageous for WIN32 because it puts all temporary files in
-             * a single subdirectory of <Temp>, facilitating cleanup.  */
-        if (dirlen <= 5 ||
-            (dirlen > 5 && strncmp(cdir + 5, "leptonica", 9) != 0))
-            stringCat(pathout, size, "/leptonica");
+#ifdef _WIN32
+        char tmpdir[MAX_PATH];
+        GetTempPath(sizeof(tmpdir), tmpdir);  /* get the windows temp dir */
+#else  /* unix */
+        const char *tmpdir = getenv("TMPDIR");
+        if (tmpdir == NULL) tmpdir = "/tmp";
+#endif  /* _WIN32 */
+        stringCopy(pathout, tmpdir, strlen(tmpdir));
 
             /* Add the rest of cdir */
         if (dirlen > 4)
             stringCat(pathout, size, cdir + 4);
-#else  /* unix */
-            /* Add subdirectory if requested and it is not already in cdir.
-             * For the latter, add if either cdir is just /tmp or /tmp/, or
-             * if there is a subdirectory of /tmp but it's not "leptonica". */
-        if (ADD_LEPTONICA_SUBDIR &&
-            (dirlen <= 5 ||
-             (dirlen > 5 && strncmp(cdir + 5, "leptonica", 9) != 0))) {
-            stringCopy(pathout, "/tmp/leptonica", 14);
-            if (dirlen > 4)
-                stringCat(pathout, size, cdir + 4);
-        } else {  /* OK as is */
-            stringCopy(pathout, cdir, dirlen);
-        }
-#endif  /* _WIN32 */
     }
 
        /* Now handle @fname */
@@ -2841,7 +2828,7 @@ l_int32  dirlen, namelen, size;
         strncat(pathout, fname, namelen);
     }
 
-    FREE(cdir);
+    LEPT_FREE(cdir);
     return pathout;
 }
 
@@ -2851,7 +2838,7 @@ l_int32  dirlen, namelen, size;
  *
  *      Input:  result (preallocated on stack or heap and passed in)
  *              nbytes (size of @result array, in bytes)
- *              subdir (<optional>; can be NULL or an empty string)
+ *              subdirs (<optional>; can be NULL or an empty string)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -2859,13 +2846,12 @@ l_int32  dirlen, namelen, size;
  *          written into @result with unix separators.
  *      (2) Caller allocates @result, large enough to hold the path,
  *          which is:
- *            /tmp/@subdir              (unix)  [default]
- *            /tmp/leptonica/@subdir    (unix)  [if ADD_LEPTONICA_SUBDIR == 1]
- *            <Temp>/leptonica/@subdir  (windows)
+ *            /tmp/@subdirs       (unix)
+ *            <Temp>/@subdirs     (windows)
  *          where <Temp> is a path on windows determined by GenTempPath().
  *      (3) Usage example:
  *           char  result[256];
- *           makeTempDirname(result, 256, "golden");
+ *           makeTempDirname(result, 256, "lept/golden");
  */
 l_int32
 makeTempDirname(char        *result,
@@ -2894,8 +2880,8 @@ size_t   pathlen;
         ret = 1;
     }
 
-    FREE(dir);
-    FREE(path);
+    LEPT_FREE(dir);
+    LEPT_FREE(path);
     return ret;
 }
 
@@ -2979,7 +2965,7 @@ size_t  len;
  *      (8) Set @usetime = @usepid = 1 when
  *          (a) more than one process is writing and reading temp files, or
  *          (b) multiple threads from a single process call this function, or
- *          (c) there is the possiblity of an attack where the intruder
+ *          (c) there is the possibility of an attack where the intruder
  *              is logged onto the server and might try to guess filenames.
  */
 char *
@@ -3019,7 +3005,7 @@ l_int32  i, buflen, usec, pid, emptytail;
         snprintf(buf, buflen, "%s/%d_", newpath, pid);
     else
         snprintf(buf, buflen, "%s/", newpath);
-    FREE(newpath);
+    LEPT_FREE(newpath);
 
     return stringJoin(buf, tail);
 }
@@ -3056,17 +3042,17 @@ l_int32  len, nret, num;
 
     splitPathAtDirectory(fname, NULL, &tail);
     splitPathAtExtension(tail, &basename, NULL);
-    FREE(tail);
+    LEPT_FREE(tail);
 
     len = strlen(basename);
     if (numpre + numpost > len - 1) {
-        FREE(basename);
+        LEPT_FREE(basename);
         return ERROR_INT("numpre + numpost too big", procName, -1);
     }
 
     basename[len - numpost] = '\0';
     nret = sscanf(basename + numpre, "%d", &num);
-    FREE(basename);
+    LEPT_FREE(basename);
 
     if (nret == 1)
         return num;
@@ -3127,15 +3113,15 @@ l_uint8  *datain, *dataout;
     rembytes = inbytes - locb - sizeb;  /* >= 0; to be copied, after excision */
 
     outbytes = inbytes - sizeb;
-    dataout = (l_uint8 *)CALLOC(outbytes, 1);
+    dataout = (l_uint8 *)LEPT_CALLOC(outbytes, 1);
     for (i = 0; i < locb; i++)
         dataout[i] = datain[i];
     for (i = 0; i < rembytes; i++)
         dataout[locb + i] = datain[locb + sizeb + i];
     l_binaryWrite(fileout, "w", dataout, outbytes);
 
-    FREE(datain);
-    FREE(dataout);
+    LEPT_FREE(datain);
+    LEPT_FREE(dataout);
     return 0;
 }
 
@@ -3194,7 +3180,7 @@ l_uint8  *data;
     }
 
     l_binaryWrite(fileout, "w", data, bytes);
-    FREE(data);
+    LEPT_FREE(data);
     return 0;
 }
 
@@ -3257,6 +3243,237 @@ lept_roundftoi(l_float32  fval)
 
 
 /*---------------------------------------------------------------------*
+ *                        64-bit hash functions                        *
+ *---------------------------------------------------------------------*/
+/*!
+ *  l_hashStringToUint64()
+ *
+ *      Input:  str
+ *              &hash (<return>)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) The intent of the hash is to avoid collisions by mapping
+ *          the string as randomly as possible into 64 bits.
+ *      (2) To the extent that the hashes are random, the probability of
+ *          a collision can be approximated by the square of the number
+ *          of strings divided by 2^64.  For 1 million strings, the
+ *          collision probability is about 1 in 16 million.
+ *      (3) I expect non-randomness of the distribution to be most evident
+ *          for small text strings.  This hash function has been tested
+ *          for all 5-character text strings composed of 26 letters,
+ *          of which there are 26^5 = 12356630.  There are no hash
+ *          collisions for this set.
+ */
+l_int32
+l_hashStringToUint64(const char  *str,
+                     l_uint64    *phash)
+{
+l_uint64  hash, mulp;
+
+    PROCNAME("l_hashStringToUint64");
+
+    if (phash) *phash = 0;
+    if (!str || (str[0] == '\0'))
+        return ERROR_INT("str not defined or empty", procName, 1);
+    if (!phash)
+        return ERROR_INT("&hash not defined", procName, 1);
+
+    mulp = 26544357894361247;  /* prime, about 1/700 of the max uint64 */
+    hash = 104395301;
+    while (*str) {
+        hash += (*str++ * mulp) ^ (hash >> 7);   /* shift [1...23] are ok */
+    }
+    *phash = hash ^ (hash << 37);
+    return 0;
+}
+
+
+/*!
+ *  l_hashPtToUint64()
+ *
+ *      Input:  x, y
+ *              &hash (<return>)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) I just made up a hash function and fiddled with it to get
+ *          decent coverage over the 2^64 values.  There are no collisions
+ *          for any of 100 million points with x and y up to 10000.
+ */
+l_int32
+l_hashPtToUint64(l_int32    x,
+                 l_int32    y,
+                 l_uint64  *phash)
+{
+l_uint64  hash, mulp;
+
+    PROCNAME("l_hashPtToUint64");
+
+    if (!phash)
+        return ERROR_INT("&hash not defined", procName, 1);
+    *phash = 0;
+
+    mulp = 26544357894361;
+    hash = 104395301;
+    hash += (x * mulp) ^ (hash >> 5);
+    hash ^= (hash << 7);
+    hash += (y * mulp) ^ (hash >> 7);
+    *phash = hash ^ (hash << 11);
+    return 0;
+}
+
+
+/*!
+ *  l_hashPtToUint64Fast()
+ *
+ *      Input:  nbuckets
+ *              x, y
+ *              &hash (<return>)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) This is a simple, fast hash that is used with the dna hash map,
+ *          which takes the mod with a prime number of buckets.  The
+ *          number of buckets is selected so that collisions occur, aiming
+ *          for about 20 results in each bucket.  The design goal is
+ *          that the hash is fast (mult/add) and approximately the same
+ *          number of points are hashed to each bucket.
+ */
+l_int32
+l_hashPtToUint64Fast(l_int32    nbuckets,
+                     l_int32    x,
+                     l_int32    y,
+                     l_uint64  *phash)
+{
+    PROCNAME("l_hashPtToUint64Fast");
+
+    if (!phash)
+        return ERROR_INT("&hash not defined", procName, 1);
+    *phash = (l_uint64)((21.732491 * nbuckets) * x + y);
+    return 0;
+}
+
+
+/*!
+ *  l_hashFloat64ToUint64()
+ *
+ *      Input:  nbuckets
+ *              val
+ *              &hash (<return>)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) Simple, fast hash for using dnaHash with 64-bit data
+ *          (e.g., sets and histograms).
+ *      (2) The resulting hash is called a "key" in a lookup
+ *          operation.  The bucket for @val in a dnaHash is simply
+ *          found by taking the mod of the hash with the number of
+ *          buckets (which is prime).  What gets stored in the
+ *          dna in that bucket could depend on use, but for the most
+ *          flexibility, we store an index into the associated dna.
+ *          This is all that is required for generating either a hash set
+ *          or a histogram (an example of a hash map).
+ *      (3) For example, to generate a histogram, the histogram dna,
+ *          a histogram of unique values aligned with the histogram dna,
+ *          and a dnahash hashmap are built.  See l_dnaHashHistoFromDna().
+ */
+l_int32
+l_hashFloat64ToUint64(l_int32    nbuckets,
+                      l_float64  val,
+                      l_uint64  *phash)
+{
+    PROCNAME("l_hashFloatToUint64");
+
+    if (!phash)
+        return ERROR_INT("&hash not defined", procName, 1);
+    *phash = (l_uint64)((21.732491 * nbuckets) * val);
+    return 0;
+}
+
+
+/*---------------------------------------------------------------------*
+ *                           Prime finders                             *
+ *---------------------------------------------------------------------*/
+/*!
+ *  findNextLargerPrime()
+ *
+ *      Input:  start
+ *              &prime (<return> first prime larger than @start)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+findNextLargerPrime(l_int32    start,
+                    l_uint32  *pprime)
+{
+l_int32  i, is_prime;
+
+    PROCNAME("findNextLargerPrime");
+
+    if (!pprime)
+        return ERROR_INT("&prime not defined", procName, 1);
+    *pprime = 0;
+    if (start <= 0)
+        return ERROR_INT("start must be > 0", procName, 1);
+
+    for (i = start + 1; ; i++) {
+        lept_isPrime(i, &is_prime, NULL);
+        if (is_prime) {
+            *pprime = i;
+            return 0;
+        }
+    }
+
+    return ERROR_INT("prime not found!", procName, 1);
+}
+
+
+/*!
+ *  lept_isPrime()
+ *
+ *      Input:  n (64-bit unsigned)
+ *              &is_prime (<return> 1 if prime, 0 otherwise)
+ *              &factor (<optional return> smallest divisor,
+ *                       or 0 on error or if prime)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+lept_isPrime(l_uint64   n,
+             l_int32   *pis_prime,
+             l_uint32  *pfactor)
+{
+l_uint32  div;
+l_uint64  limit, ratio;
+
+    PROCNAME("lept_isPrime");
+
+    if (pis_prime) *pis_prime = 0;
+    if (pfactor) *pfactor = 0;
+    if (!pis_prime)
+        return ERROR_INT("&is_prime not defined", procName, 1);
+    if (n <= 0)
+        return ERROR_INT("n must be > 0", procName, 1);
+
+    if (n % 2 == 0) {
+        if (pfactor) *pfactor = 2;
+        return 0;
+    }
+
+    limit = sqrt(n);
+    for (div = 3; div < limit; div += 2) {
+       ratio = n / div;
+       if (ratio * div == n) {
+           if (pfactor) *pfactor = div;
+           return 0;
+       }
+    }
+
+    *pis_prime = 1;
+    return 0;
+}
+
+
+/*---------------------------------------------------------------------*
  *                         Gray code conversion                        *
  *---------------------------------------------------------------------*/
 /*!
@@ -3307,7 +3524,7 @@ l_uint32  shift;
 char *
 getLeptonicaVersion()
 {
-    char *version = (char *)CALLOC(100, sizeof(char));
+    char *version = (char *)LEPT_CALLOC(100, sizeof(char));
 
 #ifdef _MSC_VER
   #ifdef _USRDLL
@@ -3398,7 +3615,7 @@ startTimerNested(void)
 {
 struct rusage  *rusage_start;
 
-    rusage_start = (struct rusage *)CALLOC(1, sizeof(struct rusage));
+    rusage_start = (struct rusage *)LEPT_CALLOC(1, sizeof(struct rusage));
     getrusage(RUSAGE_SELF, rusage_start);
     return rusage_start;
 }
@@ -3415,7 +3632,7 @@ struct rusage  rusage_stop;
            ((struct rusage *)rusage_start)->ru_utime.tv_sec;
     tusec = rusage_stop.ru_utime.tv_usec -
            ((struct rusage *)rusage_start)->ru_utime.tv_usec;
-    FREE(rusage_start);
+    LEPT_FREE(rusage_start);
     return (tsec + ((l_float32)tusec) / 1000000.0);
 }
 
@@ -3491,7 +3708,7 @@ ULARGE_INTEGER  *utime_start;
 
     GetProcessTimes (this_process, &start, &stop, &kernel, &user);
 
-    utime_start = (ULARGE_INTEGER *)CALLOC(1, sizeof(ULARGE_INTEGER));
+    utime_start = (ULARGE_INTEGER *)LEPT_CALLOC(1, sizeof(ULARGE_INTEGER));
     utime_start->LowPart  = user.dwLowDateTime;
     utime_start->HighPart = user.dwHighDateTime;
     return utime_start;
@@ -3512,7 +3729,7 @@ ULONGLONG       hnsec;  /* in units of 100 ns intervals */
     utime_stop.LowPart  = user.dwLowDateTime;
     utime_stop.HighPart = user.dwHighDateTime;
     hnsec = utime_stop.QuadPart - ((ULARGE_INTEGER *)utime_start)->QuadPart;
-    FREE(utime_start);
+    LEPT_FREE(utime_start);
     return (l_float32)(signed)hnsec / 10000000.0;
 }
 
@@ -3563,7 +3780,7 @@ startWallTimer(void)
 {
 L_WALLTIMER  *timer;
 
-    timer = (L_WALLTIMER *)CALLOC(1, sizeof(L_WALLTIMER));
+    timer = (L_WALLTIMER *)LEPT_CALLOC(1, sizeof(L_WALLTIMER));
     l_getCurrentTime(&timer->start_sec, &timer->start_usec);
     return timer;
 }
@@ -3585,7 +3802,7 @@ L_WALLTIMER  *timer;
     l_getCurrentTime(&timer->stop_sec, &timer->stop_usec);
     tsec = timer->stop_sec - timer->start_sec;
     tusec = timer->stop_usec - timer->start_usec;
-    FREE(timer);
+    LEPT_FREE(timer);
     *ptimer = NULL;
     return (tsec + ((l_float32)tusec) / 1000000.0);
 }
@@ -3596,16 +3813,50 @@ L_WALLTIMER  *timer;
  *
  *      Input:  (none)
  *      Return: formatted date string, or null on error
+ *
+ *  Notes:
+ *      (1) This is used in pdf, in the form specified in section 3.8.2 of
+ *          http://partners.adobe.com/public/developer/en/pdf/PDFReference.pdf
+ *      (2) Contributed by Dave Bryan.  Works on all platforms.
  */
 char *
 l_getFormattedDate()
 {
-char        buf[64];
-time_t      tmp1;
-struct tm  *tmp2;
+char        buf[sizeof "199812231952SS-08'00'"] = "", sep = 'Z';
+l_int32     gmt_offset, relh, relm;
+time_t      ut, lt;
+int         dst;
+struct tm  *tptr;
 
-    tmp1 = time(NULL);
-    tmp2 = localtime(&tmp1);
-    strftime(buf, sizeof(buf), "%y%m%d%H%M%S", tmp2);
+    ut = time(NULL);
+
+        /* This generates a second "time_t" value by calling "gmtime" to
+           fill in a "tm" structure expressed as UTC and then calling
+           "mktime", which expects a "tm" structure expressed as the
+           local time.  The result is a value that is offset from the
+           value returned by the "time" function by the local UTC offset.
+           "tm_isdst" is set to -1 to tell "mktime" to determine for
+           itself whether DST is in effect.  This is necessary because
+           "gmtime" always sets "tm_isdst" to 0, which would tell
+           "mktime" to presume that DST is not in effect. */
+    tptr = gmtime(&ut);
+    tptr->tm_isdst = -1;
+    lt = mktime(tptr);
+
+        /* Calls "difftime" to obtain the resulting difference in seconds,
+         * because "time_t" is an opaque type, per the C standard. */
+    gmt_offset = (l_int32) difftime(ut, lt);
+
+    if (gmt_offset > 0)
+        sep = '+';
+    else if (gmt_offset < 0)
+        sep = '-';
+
+    relh = L_ABS(gmt_offset) / 3600;
+    relm = (L_ABS(gmt_offset) % 3600) / 60;
+
+    strftime(buf, sizeof(buf), "%Y%m%d%H%M%S", localtime(&ut));
+    sprintf(buf + 14, "%c%02d'%02d'", sep, relh, relm);
     return stringNew(buf);
 }
+

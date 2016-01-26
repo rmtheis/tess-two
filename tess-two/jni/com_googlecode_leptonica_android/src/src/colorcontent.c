@@ -288,9 +288,9 @@ PIXCMAP   *cmap;
         numaDestroy(&nar);
         numaDestroy(&nag);
         numaDestroy(&nab);
-        FREE(rtab);
-        FREE(gtab);
-        FREE(btab);
+        LEPT_FREE(rtab);
+        LEPT_FREE(gtab);
+        LEPT_FREE(btab);
     }
     pixDestroy(&pixc);
     return 0;
@@ -447,9 +447,9 @@ PIXCMAP   *cmap;
         numaDestroy(&nar);
         numaDestroy(&nag);
         numaDestroy(&nab);
-        FREE(rtab);
-        FREE(gtab);
-        FREE(btab);
+        LEPT_FREE(rtab);
+        LEPT_FREE(gtab);
+        LEPT_FREE(btab);
     }
     pixDestroy(&pixc);
     return pixd;
@@ -1041,7 +1041,7 @@ PIXCMAP   *cmap;
     wpl = pixGetWpl(pixs);
     sum = 0;
     if (d != 32) {  /* grayscale */
-        inta = (l_int32 *)CALLOC(256, sizeof(l_int32));
+        inta = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
         for (i = 0; i < h; i += factor) {
             line = data + i * wpl;
             for (j = 0; j < w; j += factor) {
@@ -1057,7 +1057,7 @@ PIXCMAP   *cmap;
         for (i = 0; i < 256; i++)
             if (inta[i]) sum++;
         *pncolors = sum;
-        FREE(inta);
+        LEPT_FREE(inta);
 
         cmap = pixGetColormap(pixs);
         if (cmap && factor == 1) {
@@ -1071,7 +1071,7 @@ PIXCMAP   *cmap;
 
         /* 32 bpp rgb; quit if we get above 256 colors */
     hashsize = 5507;  /* big and prime; collisions are not likely */
-    inta = (l_int32 *)CALLOC(hashsize, sizeof(l_int32));
+    inta = (l_int32 *)LEPT_CALLOC(hashsize, sizeof(l_int32));
     for (i = 0; i < h; i += factor) {
         line = data + i * wpl;
         for (j = 0; j < w; j += factor) {
@@ -1082,7 +1082,7 @@ PIXCMAP   *cmap;
                 inta[val] = 1;
                 sum++;
                 if (sum > 256) {
-                    FREE(inta);
+                    LEPT_FREE(inta);
                     return 0;
                 }
             }
@@ -1090,7 +1090,7 @@ PIXCMAP   *cmap;
     }
 
     *pncolors = sum;
-    FREE(inta);
+    LEPT_FREE(inta);
     return 0;
 }
 
@@ -1152,7 +1152,7 @@ NUMA    *nahisto, *naindex;
 
     n = numaGetCount(naindex);
     ncolors = L_MIN(n, ncolors);
-    if (parray) *parray = (l_uint32 *)CALLOC(ncolors, sizeof(l_uint32));
+    if (parray) *parray = (l_uint32 *)LEPT_CALLOC(ncolors, sizeof(l_uint32));
     if (pcmap) *pcmap = pixcmapCreate(8);
     for (i = 0; i < ncolors; i++) {
         numaGetIValue(naindex, i, &rgbindex);  /* rgb index */
@@ -1278,9 +1278,9 @@ NUMA       *na;
         }
     }
 
-    FREE(rtab);
-    FREE(gtab);
-    FREE(btab);
+    LEPT_FREE(rtab);
+    LEPT_FREE(gtab);
+    LEPT_FREE(btab);
     return na;
 }
 
@@ -1319,9 +1319,9 @@ l_uint32  *rtab, *gtab, *btab;
     if (sigbits < 2 || sigbits > 6)
         return ERROR_INT("sigbits not in [2 ... 6]", procName, 1);
 
-    rtab = (l_uint32 *)CALLOC(256, sizeof(l_uint32));
-    gtab = (l_uint32 *)CALLOC(256, sizeof(l_uint32));
-    btab = (l_uint32 *)CALLOC(256, sizeof(l_uint32));
+    rtab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32));
+    gtab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32));
+    btab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32));
     *prtab = rtab;
     *pgtab = gtab;
     *pbtab = btab;

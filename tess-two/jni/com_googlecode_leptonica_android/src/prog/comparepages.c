@@ -43,7 +43,7 @@ NUMA    *nai1, *nai2;
 NUMAA   *naa1, *naa1r, *naa2;
 PIX     *pixs, *pixt, *pixb1, *pixb2;
 
-    pixs = pixRead("lucasta-47.jpg");
+    pixs = pixRead("lucasta.047.jpg");
     pixb1 = pixConvertTo1(pixs, 128);
     pixGetWordBoxesInTextlines(pixb1, 1, 10, 10, 500, 50, &boxa1, &nai1);
     pixt = pixDrawBoxaRandom(pixs, boxa1, 2);

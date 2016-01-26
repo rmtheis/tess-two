@@ -29,7 +29,7 @@
  *
  *    Read gif from file
  *          PIX        *pixReadStreamGif()
- *          static PIX *pixInterlaceGIF()
+ *          static PIX *pixUninterlaceGIF()
  *
  *    Write gif to file
  *          l_int32     pixWriteStreamGif()
@@ -45,18 +45,28 @@
  *
  *    (1) This uses the gif library, version 4.1.6 or later.
  *        Do not use 4.1.4.  It has serious problems handling 1 bpp images.
- *
  *    (2) There are some issues with version 5.0:
  *        - valgrind detects uninitialized values used used for writing
- *          and conditionally jumping in EGifPutScreenDesc().
+ *          and conditionally jumping in EGifPutScreenDesc().  This has
+ *          not been fixed as of 1/20/2016.
  *        - DGifSlurp() crashes on some images, apparently triggered by
- *          by some GIF extension records.  The latter problem has been
- *          reported but not resolved as of October 2013.
- *
- *    (3) E. Raymond has been changing the high-level interface with 5.0
- *        and 5.1, and to keep up we have used macros determined by the
- *        major and minor version numbers.
+ *          by some GIF extension records.  This has been fixed as of 5.1.
+ *    (3) E. Raymond has changed the high-level interface with 5.0
+ *        and again with 5.1, and to keep up we have used macros
+ *        determined by the major and minor version numbers.  Note that
+ *        tiff, jpeg, png and webp have maintained a consistent high-level
+ *        interface through all versions; version-dependent code paths
+ *        are not required to use them.
+ *    (4) Version 5.1.2 came out on Jan 7, 2016.  Leptonica cannot
+ *        successfully read gif files that it writes with this version;
+ *        DGifSlurp() gets an internal error from an uninitialized array
+ *        and returns failure.  E. Raymond fixed the problem for 5.1.3,
+ *        and we disable leptonica with 5.1.2.
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif  /* HAVE_CONFIG_H */
 
 #include <string.h>
 #include <sys/types.h>
@@ -67,22 +77,20 @@
 #endif  /* _MSC_VER */
 #include "allheaders.h"
 
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
-#endif  /* HAVE_CONFIG_H */
-
 /* --------------------------------------------------------------------*/
 #if  HAVE_LIBGIF  || HAVE_LIBUNGIF             /* defined in environ.h */
 /* --------------------------------------------------------------------*/
 
 #include "gif_lib.h"
 
-    /* GIF supports 4-way horizontal interlacing */
-static PIX * pixInterlaceGIF(PIX  *pixs);
+    /* GIF supports 4-way interlacing by raster lines.
+     * Leptonica restores interlaced data to normal raster order. */
+static PIX * pixUninterlaceGIF(PIX  *pixs);
 static const l_int32 InterlacedOffset[] = {0, 4, 2, 1};
 static const l_int32 InterlacedJumps[] = {8, 8, 4, 2};
 
-    /* Basic interface changed in 5.0 (!) */
+    /* Basic interface changed in 5.0 (!).  We have to do this for
+     * backward compatibililty with 4.1.6. */
 #if GIFLIB_MAJOR < 5
 #define GifMakeMapObject         MakeMapObject
 #define GifFreeMapObject         FreeMapObject
@@ -121,6 +129,11 @@ int              giferr;
 #endif
 
     PROCNAME("pixReadStreamGif");
+
+#if GIFLIB_MAJOR == 5 && GIFLIB_MINOR == 1 && GIFLIB_RELEASE == 2  /* 5.1.2 */
+    L_ERROR("Can't use giflib-5.1.2; suggest 5.1.1 or earlier\n", procName);
+    return NULL;
+#endif  /* 5.1.2 */
 
     if ((fd = fileno(fp)) < 0)
         return (PIX *)ERROR_PTR("invalid file descriptor", procName, NULL);
@@ -200,6 +213,7 @@ int              giferr;
         pixcmapDestroy(&cmap);
         return (PIX *)ERROR_PTR("failed to allocate pixd", procName, NULL);
     }
+    pixSetInputFormat(pixd, IFF_GIF);
     pixSetColormap(pixd, cmap);
 
     wpl = pixGetWpl(pixd);
@@ -223,8 +237,10 @@ int              giferr;
         }
     }
 
+        /* If the image has been interlaced (for viewing in a browser),
+         * this restores the raster lines to normal order. */
     if (gif->Image.Interlace) {
-        pixdi = pixInterlaceGIF(pixd);
+        pixdi = pixUninterlaceGIF(pixd);
         pixTransferAllData(pixd, &pixdi, 0, 0);
     }
 
@@ -234,13 +250,13 @@ int              giferr;
 
 
 static PIX *
-pixInterlaceGIF(PIX  *pixs)
+pixUninterlaceGIF(PIX  *pixs)
 {
 l_int32    w, h, d, wpl, j, k, srow, drow;
 l_uint32  *datas, *datad, *lines, *lined;
 PIX       *pixd;
 
-    PROCNAME("pixInterlaceGIF");
+    PROCNAME("pixUninterlaceGIF");
 
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
@@ -300,6 +316,12 @@ int              giferr;
 #endif
 
     PROCNAME("pixWriteStreamGif");
+
+        /* See version information at top of this file */
+#if GIFLIB_MAJOR == 5 && GIFLIB_MINOR == 1 && GIFLIB_RELEASE == 2  /* 5.1.2 */
+    return ERROR_INT("Can't use giflib-5.1.2; suggest 5.1.1 or earlier\n",
+                     procName, 1);
+#endif  /* 5.1.2 */
 
     if (!fp)
         return ERROR_INT("stream not open", procName, 1);
@@ -402,7 +424,8 @@ int              giferr;
         return ERROR_INT("image depth is not in {1, 2, 4, 8}", procName, 1);
     }
 
-    if ((gif_line = (GifByteType *)CALLOC(sizeof(GifByteType), w)) == NULL) {
+    if ((gif_line = (GifByteType *)LEPT_CALLOC(sizeof(GifByteType), w))
+        == NULL) {
         pixDestroy(&pixd);
         EGifCloseFile(gif, &giferr);
         return ERROR_INT("mem alloc fail for data line", procName, 1);
@@ -431,7 +454,7 @@ int              giferr;
 
             /* Compress and save the line */
         if (EGifPutLine(gif, gif_line, w) != GIF_OK) {
-            FREE(gif_line);
+            LEPT_FREE(gif_line);
             pixDestroy(&pixd);
             EGifCloseFile(gif, &giferr);
             return ERROR_INT("failed to write data line into GIF", procName, 1);
@@ -447,7 +470,7 @@ int              giferr;
             L_WARNING("gif comment not written\n", procName);
     }
 
-    FREE(gif_line);
+    LEPT_FREE(gif_line);
     pixDestroy(&pixd);
     EGifCloseFile(gif, &giferr);
     return 0;

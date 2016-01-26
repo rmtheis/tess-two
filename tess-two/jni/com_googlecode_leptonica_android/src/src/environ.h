@@ -148,30 +148,13 @@ typedef uintptr_t l_uintptr_t;
 
 
 /*--------------------------------------------------------------------*
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*
- *                          USER CONFIGURABLE                         *
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*
- *     Optional subdirectory translation for read/write to /tmp       *
- *--------------------------------------------------------------------*/
-/*
  * It is desirable on Windows to have all temp files written to the same
  * subdirectory of the Windows <Temp> directory, because files under <Temp>
  * persist after reboot, and the regression tests write a lot of files.
- * Consequently, all temp files on Windows are written to <Temp>/leptonica/
- * or subdirectories of it, with the translation:
- *        /tmp/xxx  -->   <Temp>/leptonica/xxx
- *
- * This is not the case for Unix, but we provide an option for reading
- * and writing on Unix with this translation:
- *        /tmp/xxx  -->   /tmp/leptonica/xxx
- * By default, leptonica is distributed for Unix without this translation
- * (except on Cygwin, which runs on Windows).
- */
-#if defined (__CYGWIN__)
-  #define  ADD_LEPTONICA_SUBDIR    1
-#else
-  #define  ADD_LEPTONICA_SUBDIR    0
-#endif
+ * We write all test files to /tmp/lept or subdirectories of /tmp/lept.
+ * Windows temp files are specified as in unix, but have the translation
+ *        /tmp/lept/xxx  -->   <Temp>/lept/xxx
+ *--------------------------------------------------------------------*/
 
 
 /*--------------------------------------------------------------------*
@@ -282,10 +265,10 @@ typedef struct L_WallTimer  L_WALLTIMER;
  *  on all heap data except for Pix.  Memory management for Pix           *
  *  also defaults to malloc and free.  See pix1.c for details.            *
  *------------------------------------------------------------------------*/
-#define MALLOC(blocksize)           malloc(blocksize)
-#define CALLOC(numelem, elemsize)   calloc(numelem, elemsize)
-#define REALLOC(ptr, blocksize)     realloc(ptr, blocksize)
-#define FREE(ptr)                   free(ptr)
+#define LEPT_MALLOC(blocksize)           malloc(blocksize)
+#define LEPT_CALLOC(numelem, elemsize)   calloc(numelem, elemsize)
+#define LEPT_REALLOC(ptr, blocksize)     realloc(ptr, blocksize)
+#define LEPT_FREE(ptr)                   free(ptr)
 
 
 /*------------------------------------------------------------------------*

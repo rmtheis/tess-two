@@ -391,7 +391,7 @@ l_uint32  *data, *line;
  *  pixGetRandomPixel()
  *
  *      Input:  pix (any depth; can be colormapped)
- *              &val (<return> pixel value)
+ *              &val (<optional return> pixel value)
  *              &x (<optional return> x coordinate chosen; can be null)
  *              &y (<optional return> y coordinate chosen; can be null)
  *      Return: 0 if OK; 1 on error
@@ -416,9 +416,6 @@ PIXCMAP  *cmap;
     if (py) *py = 0;
     if (!pval && !px && !py)
         return ERROR_INT("no output requested", procName, 1);
-    if (!pval)
-        return ERROR_INT("&val not defined", procName, 1);
-    *pval = 0;
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
 
@@ -427,12 +424,14 @@ PIXCMAP  *cmap;
     y = rand() % h;
     if (px) *px = x;
     if (py) *py = y;
-    pixGetPixel(pix, x, y, &val);
-    if ((cmap = pixGetColormap(pix)) != NULL) {
-        pixcmapGetColor(cmap, val, &rval, &gval, &bval);
-        composeRGBPixel(rval, gval, bval, pval);
-    } else {
-        *pval = val;
+    if (pval) {
+        pixGetPixel(pix, x, y, &val);
+        if ((cmap = pixGetColormap(pix)) != NULL) {
+            pixcmapGetColor(cmap, val, &rval, &gval, &bval);
+            composeRGBPixel(rval, gval, bval, pval);
+        } else {
+            *pval = val;
+        }
     }
 
     return 0;
@@ -1252,11 +1251,10 @@ l_uint32  *data, *pword;
 
     data = pixGetData(pix);
     wpl = pixGetWpl(pix);
-    endbits = 32 - ((w * d) % 32);
+    endbits = 32 - (((l_int64)w * d) % 32);
     if (endbits == 32)  /* no partial word */
         return 0;
-    fullwords = w * d / 32;
-
+    fullwords = (1LL * w * d) / 32;
     mask = rmask32[endbits];
     if (val == 0)
         mask = ~mask;
@@ -1320,10 +1318,10 @@ l_uint32  *data, *pword;
 
     data = pixGetData(pix);
     wpl = pixGetWpl(pix);
-    endbits = 32 - ((w * d) % 32);
+    endbits = 32 - (((l_int64)w * d) % 32);
     if (endbits == 32)  /* no partial word */
         return 0;
-    fullwords = w * d / 32;
+    fullwords = (l_int64)w * d / 32;
 
     mask = rmask32[endbits];
     if (val == 0)
@@ -3057,7 +3055,7 @@ l_uint32  *rline, *rdata;  /* data in pix raster */
         databpl = w * (d / 8);
     else  /* d == 32 bpp rgb */
         databpl = 3 * w;
-    if ((data = (l_uint8 *)CALLOC(databpl * h, sizeof(l_uint8))) == NULL)
+    if ((data = (l_uint8 *)LEPT_CALLOC(databpl * h, sizeof(l_uint8))) == NULL)
         return ERROR_INT("data not allocated", procName, 1);
     *pdata = data;
     *pnbytes = databpl * h;
@@ -3209,7 +3207,7 @@ pixCleanupByteProcessing(PIX      *pix,
         return ERROR_INT("lineptrs not defined", procName, 1);
 
     pixEndianByteSwap(pix);
-    FREE(lineptrs);
+    LEPT_FREE(lineptrs);
     return 0;
 }
 

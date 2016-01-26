@@ -908,7 +908,7 @@ FPIX       *fpixd;
     datad = fpixGetData(fpixd);
     wpls = fpixGetWpl(fpixs);
     wpld = fpixGetWpl(fpixd);
-    fract = (l_float32 *)CALLOC(factor, sizeof(l_float32));
+    fract = (l_float32 *)LEPT_CALLOC(factor, sizeof(l_float32));
     for (i = 0; i < factor; i++)
         fract[i] = i / (l_float32)factor;
     for (i = 0; i < hs - 1; i++) {
@@ -953,7 +953,7 @@ FPIX       *fpixd;
         lined[wd - 1] = lines[ws - 1];  /* LR corner */
     }
 
-    FREE(fract);
+    LEPT_FREE(fract);
     return fpixd;
 }
 
@@ -998,7 +998,7 @@ DPIX       *dpixd;
     datad = dpixGetData(dpixd);
     wpls = dpixGetWpl(dpixs);
     wpld = dpixGetWpl(dpixd);
-    fract = (l_float64 *)CALLOC(factor, sizeof(l_float64));
+    fract = (l_float64 *)LEPT_CALLOC(factor, sizeof(l_float64));
     for (i = 0; i < factor; i++)
         fract[i] = i / (l_float64)factor;
     for (i = 0; i < hs - 1; i++) {
@@ -1043,7 +1043,7 @@ DPIX       *dpixd;
         lined[wd - 1] = lines[ws - 1];  /* LR corner */
     }
 
-    FREE(fract);
+    LEPT_FREE(fract);
     return dpixd;
 }
 
@@ -1602,7 +1602,7 @@ FPIX      *fpixd;
  *      Return: 0 if OK; 1 on error.
  *
  *  Notes:
- *      (1) This is similiar in structure to pixRasterop(), except
+ *      (1) This is similar in structure to pixRasterop(), except
  *          it only allows copying from the source into the destination.
  *          For that reason, no op code is necessary.  Additionally,
  *          all pixels are 32 bit words (float values), which makes
@@ -1878,7 +1878,7 @@ l_float32  *line, *data, *buffer;
     data = fpixGetData(fpixd);
     wpl = fpixGetWpl(fpixd);  /* 4-byte words */
     bpl = 4 * wpl;
-    if ((buffer = (l_float32 *)CALLOC(wpl, sizeof(l_float32))) == NULL)
+    if ((buffer = (l_float32 *)LEPT_CALLOC(wpl, sizeof(l_float32))) == NULL)
         return (FPIX *)ERROR_PTR("buffer not made", procName, NULL);
     for (i = 0; i < h; i++) {
         line = data + i * wpl;
@@ -1886,7 +1886,7 @@ l_float32  *line, *data, *buffer;
         for (j = 0; j < w; j++)
             line[j] = buffer[w - 1 - j];
     }
-    FREE(buffer);
+    LEPT_FREE(buffer);
     return fpixd;
 }
 
@@ -1933,7 +1933,7 @@ l_float32  *linet, *lineb, *data, *buffer;
     data = fpixGetData(fpixd);
     wpl = fpixGetWpl(fpixd);
     fpixGetDimensions(fpixd, NULL, &h);
-    if ((buffer = (l_float32 *)CALLOC(wpl, sizeof(l_float32))) == NULL)
+    if ((buffer = (l_float32 *)LEPT_CALLOC(wpl, sizeof(l_float32))) == NULL)
         return (FPIX *)ERROR_PTR("buffer not made", procName, NULL);
     h2 = h / 2;
     bpl = 4 * wpl;
@@ -1944,7 +1944,7 @@ l_float32  *linet, *lineb, *data, *buffer;
         memcpy(linet, lineb, bpl);
         memcpy(lineb, buffer, bpl);
     }
-    FREE(buffer);
+    LEPT_FREE(buffer);
     return fpixd;
 }
 
@@ -2009,7 +2009,7 @@ FPIX       *fpixs2, *fpixd, *fpixd2;
     fpixDestroy(&fpixs2);
     ptaDestroy(&ptas2);
     ptaDestroy(&ptad2);
-    FREE(vc);
+    LEPT_FREE(vc);
 
     if (border == 0)
         return fpixd2;
@@ -2126,7 +2126,7 @@ FPIX       *fpixs2, *fpixd, *fpixd2;
     fpixDestroy(&fpixs2);
     ptaDestroy(&ptas2);
     ptaDestroy(&ptad2);
-    FREE(vc);
+    LEPT_FREE(vc);
 
     if (border == 0)
         return fpixd2;
@@ -2353,7 +2353,7 @@ FPIX       *fpixd;
                 (rdenom == 0.0 && gdenom == 0.0 && bdenom == 1.0)) ? 1 : 0;
     recip = NULL;
     if (onedenom) {
-        recip = (l_float32 *)CALLOC(256, sizeof(l_float32));
+        recip = (l_float32 *)LEPT_CALLOC(256, sizeof(l_float32));
         recip[0] = 256;  /* arbitrary large number */
         for (i = 1; i < 256; i++)
             recip[i] = 1.0 / (l_float32)i;
@@ -2394,7 +2394,7 @@ FPIX       *fpixd;
         }
     }
 
-    FREE(recip);
+    LEPT_FREE(recip);
     return fpixd;
 }
 

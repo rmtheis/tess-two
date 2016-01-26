@@ -42,9 +42,9 @@
  *   When this function is called with the display argument
  *        findcorners_reg display
  *   we display some results and additionally generate the following pdfs:
- *        /tmp/regout/seq_output_1.pdf  (morphological operations of
+ *        /tmp/lept/regout/seq_output_1.pdf  (morphological operations of
  *                                       first call to locate barcodes)
- *        /tmp/regout/tickets.pdf  (deskewed result for the set of tickets)
+ *        /tmp/lept/regout/tickets.pdf  (deskewed result for the set of tickets)
  */
 
 #include "allheaders.h"
@@ -120,8 +120,8 @@ L_REGPARAMS  *rp;
     }
     if (rp->display) {
         pixaConvertToPdf(pixa, 0, 1.0, 0, 0, "tickets",
-                         "/tmp/regout/tickets.pdf");
-        L_INFO("Output pdf: /tmp/regout/tickets.pdf\n", rp->testname);
+                         "/tmp/lept/regout/tickets.pdf");
+        L_INFO("Output pdf: /tmp/lept/regout/tickets.pdf\n", rp->testname);
     }
     pixaDestroy(&pixa);
 

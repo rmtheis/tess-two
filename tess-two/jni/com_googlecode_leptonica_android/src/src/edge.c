@@ -292,7 +292,7 @@ PIX       *pixd;
  *              size >= @minjump, normalized to the length of the side
  *            * reversals/length: (rpl) the number of peak <--> valley
  *              reversals, using @minreverse as a minimum deviation of
- *              the peak or valley from its preceeding extremum,
+ *              the peak or valley from its preceding extremum,
  *              normalized to the length of the side
  *      (2) The input pix should be a single connected component, but
  *          this is not required.

@@ -82,7 +82,7 @@ static l_int32 recogCharsetAvailable(l_int32 type);
 static char *l_charToString(char byte);
 static void debugAddImage1(PIXA *pixa1, PIX *pix1, PIX *pix2, L_BMF *bmf,
                            l_float32 score);
-static void debugAddImage2(PIXA **ppixadb, PIXA *pixa1, L_BMF *bmf,
+static void debugAddImage2(PIXA *pixadb, PIXA *pixa1, L_BMF *bmf,
                            l_int32 index);
 
     /* Defaults in pixRemoveOutliers() */
@@ -92,11 +92,10 @@ static const l_float32  DEFAULT_MIN_FRACTION = 0.5;  /* to be kept */
     /* Padding parameters for recognizer */
 static const char *     DEFAULT_BOOT_DIR = "recog/digits";
 static const char *     DEFAULT_BOOT_PATTERN = "digit_set";
-static const char *     DEFAULT_BOOT_PATH = "recog/digits/bootnum1.pa";
 static const l_int32    DEFAULT_CHARSET_TYPE = L_ARABIC_NUMERALS;
 static const l_int32    DEFAULT_MIN_NOPAD = 3;
 static const l_int32    DEFAULT_MAX_AFTERPAD = 15;
-static const l_int32    MIN_TOTAL_SAMPLES = 10;  /* min char samples in recog */
+static const l_int32    DEFAULT_MIN_SAMPLES = 10;  /* char samples in recog */
 
 
 /*------------------------------------------------------------------------*
@@ -206,7 +205,7 @@ PIX       *pixc, *pixb, *pixt, *pix1, *pix2;
     textin = text && (text[0] != '\0');
     textinpix = pixs->text && (pixs->text[0] != '\0');
     if (!textin && !textinpix) {
-        L_ERROR("no text: %d\n", procName, recog->samplenum);
+        L_ERROR("no text: %d\n", procName, recog->num_samples);
         return 1;
     }
     textdata = (textin) ? text : pixs->text;  /* do not free */
@@ -241,12 +240,12 @@ PIX       *pixc, *pixb, *pixt, *pix1, *pix2;
     ncomp = boxaGetCount(boxa3);
     nchars = strlen(textdata);
     if (ncomp != nchars) {
-        L_ERROR("ncomp (%d) != nchars (%d); samplenum = %d\n",
-                procName, ncomp, nchars, recog->samplenum);
+        L_ERROR("ncomp (%d) != nchars (%d); num samples = %d\n",
+                procName, ncomp, nchars, recog->num_samples);
         if (debug) {
             pixt = pixConvertTo32(pixb);
             pixRenderBoxaArb(pixt, boxa3, 1, 255, 0, 0);
-            pixDisplay(pixt, 10 * recog->samplenum, 100);
+            pixDisplay(pixt, 10 * recog->num_samples, 100);
             pixDestroy(&pixt);
         }
         pixDestroy(&pixb);
@@ -267,7 +266,7 @@ PIX       *pixc, *pixb, *pixt, *pix1, *pix2;
         pixSetText(pix2, textstr);  /* inserts a copy */
         pixaAddPix(*ppixa, pix2, L_INSERT);
         boxDestroy(&box2);
-        FREE(textstr);
+        LEPT_FREE(textstr);
     }
 
     pixDestroy(&pixb);
@@ -315,7 +314,7 @@ PIX     *pixc, *pixb, *pixd;
     textin = text && (text[0] != '\0');
     textinpix = (pixs->text && (pixs->text[0] != '\0'));
     if (!textin && !textinpix) {
-        L_ERROR("no text: %d\n", procName, recog->samplenum);
+        L_ERROR("no text: %d\n", procName, recog->num_samples);
         return 1;
     }
     textdata = (textin) ? text : pixs->text;  /* do not free */
@@ -387,7 +386,7 @@ PIXAA   *paa;
     if (!recog)
         return ERROR_INT("recog not defined", procName, 1);
     if (!pixa) {
-        L_ERROR("pixa not defined: %d\n", procName, recog->samplenum);
+        L_ERROR("pixa not defined: %d\n", procName, recog->num_samples);
         return 1;
     }
     if (recog->train_done)
@@ -430,7 +429,7 @@ PIXAA   *paa;
 
             /* Insert the unscaled character image into the right pixa.
              * (Unscaled images are required to split touching characters.) */
-        recog->samplenum++;
+        recog->num_samples++;
         pixaaAddPix(paa, index, pixb, NULL, L_INSERT);
     }
 
@@ -655,8 +654,8 @@ PTA       *ptac;
             pixCentroid(pix1, centtab, sumtab, &xave, &yave);
             ptaAddPt(ptac, xave, yave);
         }
-        FREE(centtab);
-        FREE(sumtab);
+        LEPT_FREE(centtab);
+        LEPT_FREE(sumtab);
     }
 
         /* Find the average value of the centroids */
@@ -956,7 +955,7 @@ PTA       *pta, *pta_u;
 
         /* If anything was removed, recompute the average templates */
     if (nremoved > 0) {
-        recog->samplenum -= nremoved;
+        recog->num_samples -= nremoved;
         recog->ave_done = FALSE;  /* force recomputation */
         recogAverageSamples(recog, debug);
     }
@@ -1045,9 +1044,9 @@ L_RECOG  *recog;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) This trains on unlabelled data, using a bootstrap recognizer
- *          to apply the labels.  In this way, we can build a recognizer
- *          using a source of unlabelled data.
+ *      (1) This trains on one or several characters of unlabelled data,
+ *          using a bootstrap recognizer to apply the labels.  In this
+ *          way, we can build a recognizer using a source of unlabelled data.
  *      (2) The input pix can have several (non-touching) characters.
  *          If box != NULL, we treat the region in the box as a single char
  *          If box == NULL, use all of pixs:
@@ -1056,8 +1055,9 @@ L_RECOG  *recog;
  *          Multiple chars are identified separately by recogboot and
  *          inserted into recog.
  *      (3) recogboot is a trained recognizer.  It would typically be
- *          constructed from a variety of sources, and use the average
- *          templates for scoring.
+ *          constructed from a variety of sources, and use the individual
+ *          templates (not the averages) for scoring.  It must be used
+ *          in scaled mode; typically with width = 20 and height = 32.
  *      (4) For debugging, if bmf is defined in the recog, the correlation
  *          scores are generated and saved (by adding to the pixadb_boot
  *          field) with the matching images.
@@ -1114,7 +1114,7 @@ PIXA      *pixa, *pixaf;
         if (score >= minscore) {
             pixSetText(pixb, text);
             pixaAddPix(pixaf, pixb, L_CLONE);
-            FREE(text);
+            LEPT_FREE(text);
                 /* In use pixs is "unlabelled", so we only find a text
                  * string in the input pixs when testing with labelled data. */
             if (debug && ((text = pixGetText(pixs)) != NULL))
@@ -1161,17 +1161,24 @@ PIXA      *pixa, *pixaf;
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) Before calling this, call recogSetPadParams() if you want
+ *      (1) This function does either padding of the recognizer, or
+ *          its complete replacement.  In both cases, we use a "boot"
+ *          recognizer to provide the sample images.
+ *      (2) Before calling this, call recogSetPadParams() if you want
  *          non-default values for the character set type, min_nopad
- *          and max_afterpad values, and paths for labelled bitmap
- *          character sets that can be used to augment an input recognizer.
- *      (2) If all classes in @recog have at least min_nopad samples,
+ *          and max_afterpad values, paths for labelled bitmap
+ *          character sets that can be used to augment an input
+ *          recognizer, and optional augmentation of the input
+ *          training set using eroded versions of the bitmaps.
+ *      (3) If all classes in @recog have at least min_nopad samples,
  *          nothing is done.  If the total number of samples in @recog
- *          is very small, @recog is replaced by a boot recog from the
- *          specified bootpath.  Otherwise (the intermediate case),
- *          @recog is replaced by one with scaling to fixed height,
- *          where an array of recog are used to augment the input recog.
- *      (3) If padding or total replacement is done, this destroys
+ *          is very small, @recog is replaced in its entirety by a "boot"
+ *          recog, either from the specified bootpath, or by a default
+ *          boot recognizer for that character type.  Otherwise (the
+ *          intermediate case), @recog is replaced by one with scaling
+ *          to fixed height, where an array of recog are used to
+ *          augment the input recog.
+ *      (4) If padding or total replacement is done, this destroys
  *          the input recog and replaces it by a new one.  If the recog
  *          belongs to a recoga, the replacement is also done in the recoga.
  */
@@ -1187,7 +1194,7 @@ l_int32     *lut;
 l_float32    minval, sum;
 NUMA        *naclass, *naheight, *naset, *naindex, *nascore, *naave;
 PIX         *pix1, *pix2;
-PIXA        *pixaboot, *pixa1, *pixa2, *pixadb;
+PIXA        *pixaboot1, *pixaboot2, *pixa1, *pixa2, *pixadb;
 PIXAA       *paa, *paa1;
 L_RECOG     *rec1, *recog, *recogboot;
 L_RECOGA    *recoga;
@@ -1199,10 +1206,40 @@ L_RECOGA    *recoga;
     if ((recog = *precog) == NULL)
         return ERROR_INT("recog not defined", procName, 1);
 
-    /* -------------------------------------------------
-     * First, test if we need to use a boot recognizer.
-     * ------------------------------------------------- */
-        /* Are we asking for any padding at all? */
+    /* ---------------------------------------------------------
+     * If there are too few characters in the input recog, don't
+     * bother with padding.  Destroy the input recog and return a
+     * boot recognizer that will be run using scaling in both width
+     * and height.  This recognizer can be used to train a
+     * book-adapted recognizer.  If no boot recognizer is specified,
+     * use the compiled generic digit one for now.
+     * ----------------------------------------------------------*/
+    if (recog->num_samples < recog->min_samples) {
+        L_WARNING("too few samples in recog; using bootrecog only\n", procName);
+        if (recogCharsetAvailable(recog->charset_type) == FALSE)
+            return ERROR_INT("boot charset type not available", procName, 1);
+        if ((bootpath = recog->bootpath) == NULL) {
+            L_INFO("no boot path; using generic digits\n", procName);
+            pixaboot1 = (PIXA *)l_bootnum_gen1();
+        } else {
+            L_INFO("boot path = %s\n", procName, bootpath);
+            if ((pixaboot1 = pixaRead(bootpath)) == NULL)
+                return ERROR_INT("pixaboot not read", procName, 1);
+        }
+        pixaboot2 = pixaExtendIterative(pixaboot1, L_MORPH_ERODE,
+                                        recog->boot_iters, NULL, 1);
+        rec1 = recogCreateFromPixa(pixaboot2, 20, 32, L_USE_AVERAGE, 100, 1);
+        recogReplaceInRecoga(&recog, rec1);  /* destroys recog */
+        *precog = rec1;
+        pixaDestroy(&pixaboot1);
+        pixaDestroy(&pixaboot2);
+        return 0;
+    }
+
+    /* ---------------------------------------------------
+     * Test if we need to do anything here: are we asking
+     * for padding, or do we have enough samples already?
+     * --------------------------------------------------- */
     min_nopad = recog->min_nopad;
     if (min_nopad <= 0)
         return 0;
@@ -1217,25 +1254,6 @@ L_RECOGA    *recoga;
     numaDestroy(&naclass);
     if (allclasses && minval >= min_nopad)
         return 0;
-
-    /* ---------------------------------------------------------
-     * We need a boot recognizer.  If there are too few characters
-     * in the input recog, don't bother with padding.  Destroy the
-     * input recog and return a generic boot recognizer that will
-     * be run using scaling both width and height.
-     * ----------------------------------------------------------*/
-    if (recog->samplenum < MIN_TOTAL_SAMPLES) {
-        L_WARNING("too few samples in recog; using bootrecog only\n", procName);
-        bootpath = recog->bootpath;
-        L_INFO("boot path = %s\n", procName, bootpath);
-        if ((pixaboot = pixaRead(bootpath)) == NULL)
-            return ERROR_INT("pixaboot not read", procName, 1);
-        rec1 = recogCreateFromPixa(pixaboot, 20, 32, L_USE_AVERAGE, 100, 1);
-        recogReplaceInRecoga(&recog, rec1);  /* destroys recog */
-        *precog = rec1;
-        pixaDestroy(&pixaboot);
-        return 0;
-    }
 
     /* ---------------------------------------------------------
      * We need to pad the input recog.  Do this with an array of
@@ -1276,16 +1294,15 @@ L_RECOGA    *recoga;
          * should be used to select samples for padding the recog. */
     pixadb = (debug) ? pixaCreate(0) : NULL;
     recogBestCorrelForPadding(rec1, recoga, &naset, &naindex, &nascore,
-                              &naave, &pixadb);
-
+                              &naave, pixadb);
     if (pixadb) {
-        lept_mkdir("recog");
+        lept_mkdir("lept/recog");
         numaWriteStream(stderr, naset);
         numaWriteStream(stderr, naindex);
         numaWriteStream(stderr, nascore);
         numaWriteStream(stderr, naave);
         pix1 = pixaDisplayLinearly(pixadb, L_VERT, 1.0, 0, 20, 0, NULL);
-        pixWrite("/tmp/recog/padmatch.png", pix1, IFF_PNG);
+        pixWrite("/tmp/lept/recog/padmatch.png", pix1, IFF_PNG);
         pixDestroy(&pix1);
         pixaDestroy(&pixadb);
     }
@@ -1366,25 +1383,25 @@ L_RECOGA    *recoga;
         for (i = 0; i < nboot; i++) {
             if (lut[i] >= 0)  /* already have this class */
                 continue;
-            pixaboot = pixaaGetPixa(recogboot->pixaa_u, i, L_CLONE);
-            nsamp = pixaGetCount(pixaboot);
+            pixaboot1 = pixaaGetPixa(recogboot->pixaa_u, i, L_CLONE);
+            nsamp = pixaGetCount(pixaboot1);
             ntoadd = L_MIN(recog->max_afterpad, nsamp);
             pixa1 = pixaCreate(ntoadd);
             boottext = sarrayGetString(recogboot->sa_text, i, L_NOCOPY);
             L_INFO("Adding %d chars of type '%s' from recog %d\n", procName,
                    ntoadd, boottext, index);
             for (k = 0; k < ntoadd; k++) {
-                 pix1 = pixaGetPix(pixaboot, k, L_CLONE);
+                 pix1 = pixaGetPix(pixaboot1, k, L_CLONE);
                  pix2 = pixScaleToSize(pix1, 0, targeth);
                  pixSetText(pix2, boottext);
                  pixaAddPix(pixa1, pix2, L_INSERT);
                  pixDestroy(&pix1);
             }
             recogAddSamples(recog, pixa1, -1, debug);
-            pixaDestroy(&pixaboot);
+            pixaDestroy(&pixaboot1);
             pixaDestroy(&pixa1);
         }
-        FREE(lut);
+        LEPT_FREE(lut);
     }
     recogTrainingFinished(recog, 0);
 
@@ -1432,7 +1449,7 @@ l_int32  *lut;
                                     procName, NULL);
 
     n1 = recog1->setsize;
-    if ((lut = (l_int32 *)CALLOC(n1, sizeof(l_int32))) == NULL)
+    if ((lut = (l_int32 *)LEPT_CALLOC(n1, sizeof(l_int32))) == NULL)
         return (l_int32 *)ERROR_PTR("lut not made", procName, NULL);
     for (index1 = 0; index1 < n1; index1++) {
         recogGetClassString(recog1, index1, &charstr);
@@ -1443,7 +1460,7 @@ l_int32  *lut;
         }
         recogStringToIndex(recog2, charstr, &index2);
         lut[index1] = index2;
-        FREE(charstr);
+        LEPT_FREE(charstr);
     }
 
     return lut;
@@ -1518,7 +1535,7 @@ PIXA    *pixa;
  *              &naindex (<return> of matching indices into the best set)
  *              &nascore (<return> of best correlation scores)
  *              &naave (<return> average of correlation scores from each recog)
- *              &pixadb (<optional return> debug images; use NULL for no debug)
+ *              pixadb (<optional> debug images; use NULL for no debug)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -1545,7 +1562,7 @@ recogBestCorrelForPadding(L_RECOG   *recog,
                           NUMA     **pnaindex,
                           NUMA     **pnascore,
                           NUMA     **pnasum,
-                          PIXA     **ppixadb)
+                          PIXA      *pixadb)
 {
 l_int32    i, j, n, nrec, index, maxindex, maxset;
 l_float32  score, maxscore;
@@ -1555,7 +1572,6 @@ L_RECOG   *rec;
 
     PROCNAME("recogBestCorrelForPadding");
 
-    if (ppixadb) *ppixadb = NULL;
     if (pnaset) *pnaset = NULL;
     if (pnaindex) *pnaindex = NULL;
     if (pnascore) *pnascore = NULL;
@@ -1579,7 +1595,7 @@ L_RECOG   *rec;
     naasc = numaaCreate(nrec);
     for (i = 0; i < nrec; i++) {
         rec = recogaGetRecog(recoga, i);
-        recogCorrelAverages(recog, rec, &nain, &nasc, ppixadb);
+        recogCorrelAverages(recog, rec, &nain, &nasc, pixadb);
         numaaAddNuma(naain, nain, L_INSERT);
         numaaAddNuma(naasc, nasc, L_INSERT);
     }
@@ -1627,7 +1643,7 @@ L_RECOG   *rec;
  *              recog2 (potentially providing the padding)
  *              &naindex (<return> of classes in 2 with respect to classes in 1)
  *              &nascore (<return> correlation scores of corresponding classes)
- *              &pixadb (<optional return> debug images)
+ *              pixadb (<optional> debug images)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -1651,7 +1667,7 @@ recogCorrelAverages(L_RECOG  *recog1,
                     L_RECOG  *recog2,
                     NUMA    **pnaindex,
                     NUMA    **pnascore,
-                    PIXA    **ppixadb)
+                    PIXA     *pixadb)
 {
 l_int32    i1, i2, n1, area1, area2, wvar;
 l_int32   *lut;
@@ -1661,7 +1677,6 @@ PIXA      *pixa1;
 
     PROCNAME("recogCorrelAverages");
 
-    if (ppixadb) *ppixadb = NULL;
     if (pnaindex) *pnaindex = NULL;
     if (pnascore) *pnascore = NULL;
     if (!pnaindex || !pnascore)
@@ -1677,7 +1692,7 @@ PIXA      *pixa1;
     *pnaindex = numaCreateFromIArray(lut, n1);
     *pnascore = numaMakeConstant(0.0, n1);
 
-    pixa1 = (ppixadb) ? pixaCreate(n1) : NULL;
+    pixa1 = (pixadb) ? pixaCreate(n1) : NULL;
     for (i1 = 0; i1 < n1; i1++) {
             /* Access the average templates and values for this class */
         if ((i2 = lut[i1]) == -1) {
@@ -1705,10 +1720,10 @@ PIXA      *pixa1;
         pixDestroy(&pix1);
         pixDestroy(&pix2);
     }
-    debugAddImage2(ppixadb, pixa1, recog1->bmf, recog2->index);
+    debugAddImage2(pixadb, pixa1, recog1->bmf, recog2->index);
 
     pixaDestroy(&pixa1);
-    FREE(lut);
+    LEPT_FREE(lut);
     return 0;
 }
 
@@ -1720,11 +1735,14 @@ PIXA      *pixa1;
  *              bootdir (<optional> directory to bootstrap labelled pixa)
  *              bootpattern (<optional> pattern for bootstrap labelled pixa)
  *              bootpath (<optional> path to single bootstrap labelled pixa)
+ *              boot_iters (number of 2x2 erosions for extension of boot pixa)
  *              type (character set type; -1 for default; see enum in recog.h)
  *              size (character set size; -1 for default)
  *              min_nopad (min number in a class without padding; -1 default)
  *              max_afterpad (max number of samples in padded classes;
  *                            -1 for default)
+ *              min_samples (use boot if total num samples is less than this;
+ *                           -1 for default)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -1740,17 +1758,23 @@ PIXA      *pixa1;
  *          are used to identify serialized pixa, from which we can
  *          generate an array of recog.  These can be used to augment
  *          an input but incomplete BAR (book adapted recognizer).
- *      (5) If the BAR is very sparse, we will ignore it and use a generic
- *          bootstrap recognizer at @bootpath.
+ *      (5) The boot recog can be extended using erosions.  Set boot_iters
+ *          to the number of 2x2 erosions desired.  For a typical
+ *          font size, @boot_iters <= 2.
+ *      (6) If the BAR is very sparse, with num_samples < min_samples,
+ *          we will destroy it and use the generic bootstrap recognizer
+ *          given at @bootpath.
  */
 l_int32
 recogSetPadParams(L_RECOG     *recog,
                   const char  *bootdir,
                   const char  *bootpattern,
                   const char  *bootpath,
+                  l_int32      boot_iters,
                   l_int32      type,
                   l_int32      min_nopad,
-                  l_int32      max_afterpad)
+                  l_int32      max_afterpad,
+                  l_int32      min_samples)
 {
 
     PROCNAME("recogSetPadParams");
@@ -1760,20 +1784,22 @@ recogSetPadParams(L_RECOG     *recog,
     if (min_nopad >= 0 && max_afterpad >= 0 && min_nopad >= max_afterpad)
         return ERROR_INT("min_ must be less than max_", procName, 1);
 
-    FREE(recog->bootdir);
-    FREE(recog->bootpattern);
-    FREE(recog->bootpath);
+    LEPT_FREE(recog->bootdir);
+    LEPT_FREE(recog->bootpattern);
+    LEPT_FREE(recog->bootpath);
     recog->bootdir = (bootdir) ? stringNew(bootdir)
                                : stringNew(DEFAULT_BOOT_DIR);
     recog->bootpattern = (bootpattern) ? stringNew(bootpattern)
                                        : stringNew(DEFAULT_BOOT_PATTERN);
-    recog->bootpath = (bootpath) ? stringNew(bootpath)
-                                 : stringNew(DEFAULT_BOOT_PATH);
+    recog->bootpath = (bootpath) ? stringNew(bootpath) : NULL;
+    recog->boot_iters = L_MAX(0, boot_iters);
     recog->charset_type = (type >= 0) ? type : DEFAULT_CHARSET_TYPE;
     recog->charset_size = recogGetCharsetSize(recog->charset_type);
     recog->min_nopad = (min_nopad >= 0) ? min_nopad : DEFAULT_MIN_NOPAD;
     recog->max_afterpad =
         (max_afterpad >= 0) ? max_afterpad : DEFAULT_MAX_AFTERPAD;
+    recog->min_samples = (min_samples >= 0) ? min_samples
+                                            : DEFAULT_MIN_SAMPLES;
     return 0;
 }
 
@@ -2194,8 +2220,8 @@ PIXA      *pixa1, *pixa2;
  *              box  (<optional> region in pix1 for which pix2 matches)
  *              index  (index of matching template; use -1 to disable printing)
  *              score  (score of match)
- *      Return: pixd (pair of images, showing input pix and best template),
- *                    or null on error.
+ *      Return: pixd (pair of images, showing input pix and best template,
+ *                    optionally with matching information), or null on error.
  *
  *  Notes:
  *      (1) pix1 can be one of these:
@@ -2206,8 +2232,8 @@ PIXA      *pixa1, *pixa2;
  *          (b) Both the input pix and the matching template.  In this case,
  *              pix2 and box will both be null.
  *      (2) If the bmf has been made (by a call to recogMakeBmf())
- *          and the index >= 0, the index and score will be rendered;
- *          otherwise their values will be ignored.
+ *          and the index >= 0, the text field, match score and index
+ *          will be rendered; otherwise their values will be ignored.
  */
 PIX *
 recogShowMatch(L_RECOG   *recog,
@@ -2218,6 +2244,7 @@ recogShowMatch(L_RECOG   *recog,
                l_float32  score)
 {
 char    buf[32];
+char   *text;
 L_BMF  *bmf;
 PIX    *pix3, *pix4, *pix5, *pixd;
 PIXA   *pixa;
@@ -2250,10 +2277,12 @@ PIXA   *pixa;
 
     if (bmf) {
         pix5 = pixAddBorderGeneral(pix4, 55, 55, 0, 0, 0xffffff00);
-        snprintf(buf, sizeof(buf), "I = %d, S = %4.3f", index, score);
+        recogGetClassString(recog, index, &text);
+        snprintf(buf, sizeof(buf), "C=%s, S=%4.3f, I=%d", text, score, index);
         pixd = pixAddSingleTextblock(pix5, bmf, buf, 0xff000000,
                                      L_ADD_BELOW, NULL);
         pixDestroy(&pix5);
+        LEPT_FREE(text);
     } else {
         pixd = pixClone(pix4);
     }
@@ -2299,7 +2328,7 @@ l_charToString(char byte)
 {
 char  *str;
 
-  str = (char *)CALLOC(2, sizeof(char));
+  str = (char *)LEPT_CALLOC(2, sizeof(char));
   str[0] = byte;
   return str;
 }
@@ -2338,7 +2367,7 @@ PIXA  *pixa2;
     pixaAddPix(pixa2, pix3, L_INSERT);
     pix4 = pixaDisplayTiledInRows(pixa2, 32, 1000, 1.0, 0, 20, 2);
     snprintf(buf, sizeof(buf), "%5.3f", score);
-    pix5 = pixAddSingleTextline(pix4, bmf, buf, 0xff000000, L_ADD_BELOW);
+    pix5 = pixAddTextlines(pix4, bmf, buf, 0xff000000, L_ADD_BELOW);
     pixaAddPix(pixa1, pix5, L_INSERT);
     pixDestroy(&pix4);
     pixaDestroy(&pixa2);
@@ -2349,8 +2378,7 @@ PIXA  *pixa2;
 /*
  *  debugAddImage2()
  *
- *      Input:  &pixadb (ptr required to allow pixadb to be returned;
- *                       input pixadb can be null)
+ *      Input:  pixadb (pre-allocated debug pixa; if null, this is a no-op)
  *              pixa1 (<optional> accumulated pairs of images)
  *              bmf
  *              index (of recog in recoga)
@@ -2358,17 +2386,15 @@ PIXA  *pixa2;
  *
  *  Notes:
  *      (1) This displays pixa1 into a pix and adds it to pixadb.
- *      (2) If pixa1 is NULL, do nothing.
- *      (3) The first time this function is called, first initialize:
- *            Pixa  *pixadb = NULL;
- *          Then:
- *            debugAddImage2(&pixadb, pixa1, ...);
- *          This will create pixadb from data in pixa1, storing the ptr
- *          at ppixadb.  Subsequent calls (e.g., for different recognizers
- *          that could be used to augment the instances) will add to pixadb.
+ *      (2) If pixa1 or pixadb are NULL, do nothing.
+ *      (3) To get a result, pixadb needs to be initialized:
+ *            Pixa *pixadb = pixaCreate(0);
+ *          Then each call:
+ *            debugAddImage2(pixadb, pixa1, ...);
+ *          will add data (here from pixa1) to pixadb.
  */
 static void
-debugAddImage2(PIXA   **ppixadb,
+debugAddImage2(PIXA    *pixadb,
                PIXA    *pixa1,
                L_BMF   *bmf,
                l_int32  index)
@@ -2377,18 +2403,13 @@ char   buf[16];
 PIX   *pix1, *pix2, *pix3, *pix4;
 
     if (!pixa1) return;
-    if (ppixadb == NULL) {
-        L_ERROR("@pixadb is NULL; shouldn't happen!\n", "debugAddImage2");
-        return;
-    }
-    if (*ppixadb == NULL)
-        *ppixadb = pixaCreate(0);
+    if (!pixadb) return;
     pix1 = pixaDisplayTiledInRows(pixa1, 32, 2000, 1.0, 0, 20, 0);
     snprintf(buf, sizeof(buf), "Recog %d", index);
-    pix2 = pixAddSingleTextline(pix1, bmf, buf, 0xff000000, L_ADD_BELOW);
+    pix2 = pixAddTextlines(pix1, bmf, buf, 0xff000000, L_ADD_BELOW);
     pix3 = pixAddBorder(pix2, 5, 0);
     pix4 = pixAddBorder(pix3, 2, 1);
-    pixaAddPix(*ppixadb, pix4, L_INSERT);
+    pixaAddPix(pixadb, pix4, L_INSERT);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixDestroy(&pix3);

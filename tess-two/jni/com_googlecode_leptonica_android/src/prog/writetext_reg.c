@@ -29,7 +29,7 @@
  *
  *   Regression test for writing a block of text in one of 4 locations
  *   relative to a pix.  This tests writing on 8 different types of images.
- *   Output is written to /tmp/regout/pixd[1,2,3,4].png
+ *   Output is written to /tmp/lept/regout/pixd[1,2,3,4].png
  */
 
 #include "allheaders.h"
@@ -76,7 +76,7 @@ SARRAY       *sa;
 
     bmf = bmfCreate("./fonts", 6);
     bmftop = bmfCreate("./fonts", 10);
-    pixs = pixRead("lucasta-47.jpg");
+    pixs = pixRead("lucasta.047.jpg");
     pix1 = pixScale(pixs, 0.4, 0.4);          /* 8 bpp grayscale */
     pix2 = pixConvertTo32(pix1);              /* 32 bpp rgb */
     pix3 = pixThresholdOn8bpp(pix1, 12, 1);   /* 8 bpp cmapped */

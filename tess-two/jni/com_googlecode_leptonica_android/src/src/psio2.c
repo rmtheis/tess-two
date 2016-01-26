@@ -217,7 +217,7 @@ PIX     *pixc;
     outstr = pixWriteStringPS(pixc, box, res, scale);
     length = strlen(outstr);
     fwrite(outstr, 1, length, fp);
-    FREE(outstr);
+    LEPT_FREE(outstr);
     pixDestroy(&pixc);
 
     return 0;
@@ -329,7 +329,7 @@ PIX       *pix;
         psbpl = 3 * w;
     data = pixGetData(pix);
     hexbytes = 2 * psbpl * h;  /* size of ps hex array */
-    if ((hexdata = (char *)CALLOC(hexbytes + 1, sizeof(char))) == NULL)
+    if ((hexdata = (char *)LEPT_CALLOC(hexbytes + 1, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("hexdata not made", procName, NULL);
     if (d == 1 || d == 8) {
         for (i = 0, k = 0; i < h; i++) {
@@ -658,7 +658,7 @@ L_COMP_DATA  *cid;
 
     if (l_binaryWrite(fileout, "w", outstr, nbytes))
         return ERROR_INT("ps string not written to file", procName, 1);
-    FREE(outstr);
+    LEPT_FREE(outstr);
     l_CIDataDestroy(&cid);
     return 0;
 }
@@ -758,7 +758,7 @@ l_int32  nbytes;
     if (l_binaryWrite(fileout, operation, outstr, nbytes))
         return ERROR_INT("ps string not written to file", procName, 1);
 
-    FREE(outstr);
+    LEPT_FREE(outstr);
     return 0;
 }
 
@@ -1046,7 +1046,7 @@ L_COMP_DATA  *cid;
 
     if (l_binaryWrite(fileout, "w", outstr, nbytes))
         return ERROR_INT("ps string not written to file", procName, 1);
-    FREE(outstr);
+    LEPT_FREE(outstr);
     l_CIDataDestroy(&cid);
     return 0;
 }
@@ -1139,7 +1139,7 @@ l_int32  nbytes;
     if (l_binaryWrite(fileout, operation, outstr, nbytes))
         return ERROR_INT("ps string not written to file", procName, 1);
 
-    FREE(outstr);
+    LEPT_FREE(outstr);
     return 0;
 }
 
@@ -1520,7 +1520,7 @@ L_COMP_DATA  *cid;
 
     if (l_binaryWrite(fileout, "w", outstr, nbytes))
         return ERROR_INT("ps string not written to file", procName, 1);
-    FREE(outstr);
+    LEPT_FREE(outstr);
     l_CIDataDestroy(&cid);
     return 0;
 }
@@ -1619,7 +1619,7 @@ l_int32  nbytes;
     if (l_binaryWrite(fileout, operation, outstr, nbytes))
         return ERROR_INT("ps string not written to file", procName, 1);
 
-    FREE(outstr);
+    LEPT_FREE(outstr);
     return 0;
 }
 

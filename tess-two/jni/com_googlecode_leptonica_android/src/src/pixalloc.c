@@ -184,7 +184,8 @@ L_PTRAA          *paa;
     if (nchunks > 1000.0)
         L_WARNING("There are %.0f chunks\n", procName, nchunks);
 
-    if ((pms = (L_PIX_MEM_STORE *)CALLOC(1, sizeof(L_PIX_MEM_STORE))) == NULL)
+    if ((pms = (L_PIX_MEM_STORE *)LEPT_CALLOC(1, sizeof(L_PIX_MEM_STORE)))
+        == NULL)
         return ERROR_INT("pms not made", procName, 1);
     CustomPMS = pms;
 
@@ -195,7 +196,7 @@ L_PTRAA          *paa;
     nlevels = numaGetCount(numalloc);
     pms->nlevels = nlevels;
 
-    if ((sizes = (size_t *)CALLOC(nlevels, sizeof(size_t))) == NULL)
+    if ((sizes = (size_t *)LEPT_CALLOC(nlevels, sizeof(size_t))) == NULL)
         return ERROR_INT("sizes not made", procName, 1);
     pms->sizes = sizes;
     if (smallest % 4 != 0)
@@ -215,11 +216,13 @@ L_PTRAA          *paa;
         nbytes += alloca[i] * sizes[i];
     pms->nbytes = nbytes;
 
-    if ((baseptr = (l_uint32 *)CALLOC(nbytes / 4, sizeof(l_uint32))) == NULL)
+    if ((baseptr = (l_uint32 *)LEPT_CALLOC(nbytes / 4, sizeof(l_uint32)))
+        == NULL)
         return ERROR_INT("calloc fail for baseptr", procName, 1);
     pms->baseptr = baseptr;
     pms->maxptr = baseptr + nbytes / 4;  /* just beyond the memory store */
-    if ((firstptr = (l_uint32 **)CALLOC(nlevels, sizeof(l_uint32 *))) == NULL)
+    if ((firstptr = (l_uint32 **)LEPT_CALLOC(nlevels, sizeof(l_uint32 *)))
+        == NULL)
         return ERROR_INT("calloc fail for firstptr", procName, 1);
     pms->firstptr = firstptr;
 
@@ -236,10 +239,10 @@ L_PTRAA          *paa;
     }
 
     if (logfile) {
-        pms->memused = (l_int32 *)CALLOC(nlevels, sizeof(l_int32));
-        pms->meminuse = (l_int32 *)CALLOC(nlevels, sizeof(l_int32));
-        pms->memmax = (l_int32 *)CALLOC(nlevels, sizeof(l_int32));
-        pms->memempty = (l_int32 *)CALLOC(nlevels, sizeof(l_int32));
+        pms->memused = (l_int32 *)LEPT_CALLOC(nlevels, sizeof(l_int32));
+        pms->meminuse = (l_int32 *)LEPT_CALLOC(nlevels, sizeof(l_int32));
+        pms->memmax = (l_int32 *)LEPT_CALLOC(nlevels, sizeof(l_int32));
+        pms->memempty = (l_int32 *)LEPT_CALLOC(nlevels, sizeof(l_int32));
         pms->logfile = stringNew(logfile);
     }
 
@@ -266,21 +269,21 @@ L_PIX_MEM_STORE  *pms;
         return;
 
     ptraaDestroy(&pms->paa, FALSE, FALSE);  /* don't touch the ptrs */
-    FREE(pms->baseptr);  /* free the memory */
+    LEPT_FREE(pms->baseptr);  /* free the memory */
 
     if (pms->logfile) {
         pmsLogInfo();
-        FREE(pms->logfile);
-        FREE(pms->memused);
-        FREE(pms->meminuse);
-        FREE(pms->memmax);
-        FREE(pms->memempty);
+        LEPT_FREE(pms->logfile);
+        LEPT_FREE(pms->memused);
+        LEPT_FREE(pms->meminuse);
+        LEPT_FREE(pms->memmax);
+        LEPT_FREE(pms->memempty);
     }
 
-    FREE(pms->sizes);
-    FREE(pms->allocarray);
-    FREE(pms->firstptr);
-    FREE(pms);
+    LEPT_FREE(pms->sizes);
+    LEPT_FREE(pms->allocarray);
+    LEPT_FREE(pms->firstptr);
+    LEPT_FREE(pms);
     CustomPMS = NULL;
     return;
 }
@@ -363,7 +366,7 @@ L_PTRA           *pa;
     }
 
     if (level < 0) {  /* no logging; just free the data */
-        FREE(data);
+        LEPT_FREE(data);
     } else {  /* return the data to the store */
         pa = ptraaGetPtra(pms->paa, level, L_HANDLE_ONLY);
         ptraAdd(pa, data);
@@ -404,7 +407,7 @@ L_PIX_MEM_STORE  *pms;
     if ((pms = CustomPMS) == NULL)
         return (void *)ERROR_PTR("pms not defined", procName, NULL);
 
-    if ((data = (void *)CALLOC(nbytes, sizeof(char))) == NULL)
+    if ((data = (void *)LEPT_CALLOC(nbytes, sizeof(char))) == NULL)
         return (void *)ERROR_PTR("data not made", procName, NULL);
     if (pms->logfile && nbytes >= pms->smallest) {
         fp = fopenWriteStream(pms->logfile, "a");

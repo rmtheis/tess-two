@@ -199,10 +199,10 @@ L_REGPARAMS  *rp;
     boxDestroy(&box);
 
         /* Generate a pdf of the intermediate results */
-    lept_mkdir("lept");
-    L_INFO("Writing to /tmp/lept/colorize.pdf\n", rp->testname);
+    lept_mkdir("lept/color");
+    L_INFO("Writing to /tmp/lept/color/colorize.pdf\n", rp->testname);
     pixaConvertToPdf(pixa, 90, 1.0, 0, 0, "Colorizing highlighted text",
-                     "/tmp/lept/colorize.pdf");
+                     "/tmp/lept/color/colorize.pdf");
 
 
     pixaDestroy(&pixa);
@@ -228,7 +228,7 @@ L_REGPARAMS  *rp;
 
         /* Test the color detector */
     pixa = pixaCreate(7);
-    bmf = bmfCreate("./fonts", 4);
+    bmf = bmfCreate(NULL, 4);
     pix1 = TestForRedColor(rp, "brev.06.75.jpg", 1, bmf);  /* 14 */
     pixaAddPix(pixa, pix1, L_INSERT);
     pix1 = TestForRedColor(rp, "brev.10.75.jpg", 0, bmf);  /* 15 */
@@ -245,9 +245,9 @@ L_REGPARAMS  *rp;
     pixaAddPix(pixa, pix1, L_INSERT);
 
         /* Generate a pdf of the color detector results */
-    L_INFO("Writing to /tmp/lept/colordetect.pdf\n", rp->testname);
+    L_INFO("Writing to /tmp/lept/color/colordetect.pdf\n", rp->testname);
     pixaConvertToPdf(pixa, 45, 1.0, 0, 0, "Color detection",
-                     "/tmp/lept/colordetect.pdf");
+                     "/tmp/lept/color/colordetect.pdf");
     pixaDestroy(&pixa);
     bmfDestroy(&bmf);
 

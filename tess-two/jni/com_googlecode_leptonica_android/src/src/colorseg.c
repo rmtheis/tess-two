@@ -149,7 +149,7 @@ PIX       *pixd;
 #endif  /* DEBUG */
 
         /* Phase 2; refinement in pixel assignment */
-    if ((countarray = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((countarray = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return (PIX *)ERROR_PTR("countarray not made", procName, NULL);
     pixAssignToNearestColor(pixd, pixs, NULL, LEVEL_IN_OCTCUBE, countarray);
 #if DEBUG
@@ -158,7 +158,7 @@ PIX       *pixd;
 
         /* Phase 3: noise removal by separately closing each color */
     pixColorSegmentClean(pixd, selsize, countarray);
-    FREE(countarray);
+    LEPT_FREE(countarray);
 #if DEBUG
     pixWrite("/tmp/colorseg3.png", pixd, IFF_PNG);
 #endif  /* DEBUG */
@@ -458,10 +458,10 @@ PIXCMAP   *cmap;
         }
     }
 
-    FREE(cmaptab);
-    FREE(rtab);
-    FREE(gtab);
-    FREE(btab);
+    LEPT_FREE(cmaptab);
+    LEPT_FREE(rtab);
+    LEPT_FREE(gtab);
+    LEPT_FREE(btab);
     return 0;
 }
 
@@ -590,14 +590,14 @@ PIXCMAP   *cmap;
     }
     numaGetIValue(nasi, finalcolors - 1, &tempindex);  /* retain down to this */
     pixcmapGetColor32(cmap, tempindex, &tempcolor);  /* use this color */
-    tab = (l_int32 *)CALLOC(256, sizeof(l_int32));
+    tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     for (i = finalcolors; i < ncolors; i++) {
         numaGetIValue(nasi, i, &index);
         tab[index] = 1;
     }
 
     pixm = pixMakeMaskFromLUT(pixd, tab);
-    FREE(tab);
+    LEPT_FREE(tab);
 
         /* Reassign the masked pixels temporarily to the saved index
          * (tempindex).  This guarantees that no pixels are labeled by

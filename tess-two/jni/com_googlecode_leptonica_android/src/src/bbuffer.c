@@ -28,7 +28,7 @@
  *   bbuffer.c
  *
  *      Create/Destroy BBuffer
- *          BBUFFER        *bbufferCreate()
+ *          L_BBUFFER      *bbufferCreate()
  *          void           *bbufferDestroy()
  *          l_uint8        *bbufferDestroyAndSaveData()
  *
@@ -116,21 +116,21 @@ static const l_int32  INITIAL_BUFFER_ARRAYSIZE = 1024;   /* n'importe quoi */
  *          the given size.  If a buffer address is given,
  *          it then reads the number of bytes into the byte array.
  */
-BBUFFER *
+L_BBUFFER *
 bbufferCreate(l_uint8  *indata,
               l_int32   nalloc)
 {
-BBUFFER  *bb;
+L_BBUFFER  *bb;
 
     PROCNAME("bbufferCreate");
 
     if (nalloc <= 0)
         nalloc = INITIAL_BUFFER_ARRAYSIZE;
 
-    if ((bb = (BBUFFER *)CALLOC(1, sizeof(BBUFFER))) == NULL)
-        return (BBUFFER *)ERROR_PTR("bb not made", procName, NULL);
-    if ((bb->array = (l_uint8 *)CALLOC(nalloc, sizeof(l_uint8))) == NULL)
-        return (BBUFFER *)ERROR_PTR("byte array not made", procName, NULL);
+    if ((bb = (L_BBUFFER *)LEPT_CALLOC(1, sizeof(L_BBUFFER))) == NULL)
+        return (L_BBUFFER *)ERROR_PTR("bb not made", procName, NULL);
+    if ((bb->array = (l_uint8 *)LEPT_CALLOC(nalloc, sizeof(l_uint8))) == NULL)
+        return (L_BBUFFER *)ERROR_PTR("byte array not made", procName, NULL);
     bb->nalloc = nalloc;
     bb->nwritten = 0;
 
@@ -156,9 +156,9 @@ BBUFFER  *bb;
  *          then nulls the contents of the input ptr.
  */
 void
-bbufferDestroy(BBUFFER  **pbb)
+bbufferDestroy(L_BBUFFER  **pbb)
 {
-BBUFFER  *bb;
+L_BBUFFER  *bb;
 
     PROCNAME("bbufferDestroy");
 
@@ -171,8 +171,8 @@ BBUFFER  *bb;
         return;
 
     if (bb->array)
-        FREE(bb->array);
-    FREE(bb);
+        LEPT_FREE(bb->array);
+    LEPT_FREE(bb);
     *pbb = NULL;
 
     return;
@@ -190,12 +190,12 @@ BBUFFER  *bb;
  *      (1) Copies data to newly allocated array; then destroys the bbuffer.
  */
 l_uint8 *
-bbufferDestroyAndSaveData(BBUFFER  **pbb,
-                          size_t    *pnbytes)
+bbufferDestroyAndSaveData(L_BBUFFER  **pbb,
+                          size_t      *pnbytes)
 {
-l_uint8  *array;
-size_t    nbytes;
-BBUFFER  *bb;
+l_uint8    *array;
+size_t      nbytes;
+L_BBUFFER  *bb;
 
     PROCNAME("bbufferDestroyAndSaveData");
 
@@ -215,7 +215,7 @@ BBUFFER  *bb;
         /* write all unwritten bytes out to a new array */
     nbytes = bb->n - bb->nwritten;
     *pnbytes = nbytes;
-    if ((array = (l_uint8 *)CALLOC(nbytes, sizeof(l_uint8))) == NULL) {
+    if ((array = (l_uint8 *)LEPT_CALLOC(nbytes, sizeof(l_uint8))) == NULL) {
         L_WARNING("calloc failure for array\n", procName);
         return NULL;
     }
@@ -247,9 +247,9 @@ BBUFFER  *bb;
  *          of reallocNew().
  */
 l_int32
-bbufferRead(BBUFFER  *bb,
-            l_uint8  *src,
-            l_int32   nbytes)
+bbufferRead(L_BBUFFER  *bb,
+            l_uint8    *src,
+            l_int32     nbytes)
 {
 l_int32  navail, nadd, nwritten;
 
@@ -294,9 +294,9 @@ l_int32  navail, nadd, nwritten;
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-bbufferReadStream(BBUFFER  *bb,
-                  FILE     *fp,
-                  l_int32   nbytes)
+bbufferReadStream(L_BBUFFER  *bb,
+                  FILE       *fp,
+                  l_int32     nbytes)
 {
 l_int32  navail, nadd, nread, nwritten;
 
@@ -344,8 +344,8 @@ l_int32  navail, nadd, nread, nwritten;
  *          only bb->n are data.
  */
 l_int32
-bbufferExtendArray(BBUFFER  *bb,
-                   l_int32   nbytes)
+bbufferExtendArray(L_BBUFFER  *bb,
+                   l_int32     nbytes)
 {
     PROCNAME("bbufferExtendArray");
 
@@ -375,10 +375,10 @@ bbufferExtendArray(BBUFFER  *bb,
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-bbufferWrite(BBUFFER  *bb,
-             l_uint8  *dest,
-             size_t    nbytes,
-             size_t   *pnout)
+bbufferWrite(L_BBUFFER  *bb,
+             l_uint8    *dest,
+             size_t      nbytes,
+             size_t     *pnout)
 {
 l_int32  nleft, nout;
 
@@ -427,10 +427,10 @@ l_int32  nleft, nout;
  *      Return: 0 if OK, 1 on error
  */
 l_int32
-bbufferWriteStream(BBUFFER  *bb,
-                   FILE     *fp,
-                   size_t    nbytes,
-                   size_t   *pnout)
+bbufferWriteStream(L_BBUFFER  *bb,
+                   FILE       *fp,
+                   size_t      nbytes,
+                   size_t     *pnout)
 {
 l_int32  nleft, nout;
 

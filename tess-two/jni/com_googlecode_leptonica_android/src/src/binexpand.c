@@ -167,7 +167,7 @@ PIX       *pixd;
             }
             memcpy((char *)(lined + wpld), (char *)lined, 4 * wpld);
         }
-        FREE(tab2);
+        LEPT_FREE(tab2);
     } else if (factor == 4) {
         if ((tab4 = makeExpandTab4x()) == NULL)
             return (PIX *)ERROR_PTR("tab4 not made", procName, NULL);
@@ -182,7 +182,7 @@ PIX       *pixd;
             for (k = 1; k < 4; k++)
                 memcpy((char *)(lined + k * wpld), (char *)lined, 4 * wpld);
         }
-        FREE(tab4);
+        LEPT_FREE(tab4);
     } else if (factor == 8) {
         if ((tab8 = makeExpandTab8x()) == NULL)
             return (PIX *)ERROR_PTR("tab8 not made", procName, NULL);
@@ -199,7 +199,7 @@ PIX       *pixd;
             for (k = 1; k < 8; k++)
                 memcpy((char *)(lined + k * wpld), (char *)lined, 4 * wpld);
         }
-        FREE(tab8);
+        LEPT_FREE(tab8);
     } else {  /* factor == 16 */
         sdibits = (w + 1) / 2;
         for (i = 0; i < h; i++) {
@@ -229,7 +229,7 @@ l_int32    i;
 
     PROCNAME("makeExpandTab2x");
 
-    if ((tab = (l_uint16 *) CALLOC(256, sizeof(l_uint16))) == NULL)
+    if ((tab = (l_uint16 *) LEPT_CALLOC(256, sizeof(l_uint16))) == NULL)
         return (l_uint16 *)ERROR_PTR("tab not made", procName, NULL);
 
     for (i = 0; i < 256; i++) {
@@ -263,7 +263,7 @@ l_int32    i;
 
     PROCNAME("makeExpandTab4x");
 
-    if ((tab = (l_uint32 *) CALLOC(256, sizeof(l_uint32))) == NULL)
+    if ((tab = (l_uint32 *) LEPT_CALLOC(256, sizeof(l_uint32))) == NULL)
         return (l_uint32 *)ERROR_PTR("tab not made", procName, NULL);
 
     for (i = 0; i < 256; i++) {
@@ -297,7 +297,7 @@ l_int32    i;
 
     PROCNAME("makeExpandTab8x");
 
-    if ((tab = (l_uint32 *) CALLOC(16, sizeof(l_uint32))) == NULL)
+    if ((tab = (l_uint32 *) LEPT_CALLOC(16, sizeof(l_uint32))) == NULL)
         return (l_uint32 *)ERROR_PTR("tab not made", procName, NULL);
 
     for (i = 0; i < 16; i++) {

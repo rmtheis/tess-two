@@ -305,8 +305,8 @@ PIX       *pixt, *pixd;
         return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
 
         /* Set up the two histogram arrays. */
-    histo = (l_int32 *)CALLOC(256, sizeof(l_int32));
-    histo16 = (l_int32 *)CALLOC(16, sizeof(l_int32));
+    histo = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
+    histo16 = (l_int32 *)LEPT_CALLOC(16, sizeof(l_int32));
     rankloc = (l_int32)(rank * wf * hf);
 
         /* Place the filter center at (0, 0).  This is just a
@@ -429,8 +429,8 @@ PIX       *pixt, *pixd;
     }
 
     pixDestroy(&pixt);
-    FREE(histo);
-    FREE(histo16);
+    LEPT_FREE(histo);
+    LEPT_FREE(histo16);
     return pixd;
 }
 

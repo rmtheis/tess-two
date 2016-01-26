@@ -146,8 +146,8 @@ L_REGPARAMS  *rp;
     regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 12 */
     pixDisplayWithTitle(pixt, 900, 300, "stuff under mask2", rp->display);
     pixaConvertToPdf(pixa1, 75, 1.0, 0, 0, "Segmentation: newspaper_reg",
-                     "/tmp/regout/newspaper.pdf");
-    L_INFO("Output pdf: /tmp/regout/newspaper.pdf\n", rp->testname);
+                     "/tmp/lept/regout/newspaper.pdf");
+    L_INFO("Output pdf: /tmp/lept/regout/newspaper.pdf\n", rp->testname);
 
     pixaDestroy(&pixa1);
     pixDestroy(&pixs);

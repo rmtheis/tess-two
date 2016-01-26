@@ -98,7 +98,7 @@ static char  mainName[] = "jbrankhaus";
         npages = atoi(argv[6]);
     }
 
-#if 1
+#if 0
 
     /*--------------------------------------------------------------*/
 
@@ -136,7 +136,7 @@ static char  mainName[] = "jbrankhaus";
                 npages, nfiles);
     for (i = 0; i < npages; i++) {
         pix = pixaGetPix(pixa, i, L_CLONE);
-        snprintf(filename, BUF_SIZE, "%s.%05d", rootname, i);
+        snprintf(filename, BUF_SIZE, "%s.%04d", rootname, i);
         fprintf(stderr, "filename: %s\n", filename);
         pixWrite(filename, pix, IFF_PNG);
         pixDestroy(&pix);
@@ -189,7 +189,7 @@ static char  mainName[] = "jbrankhaus";
     npages = pixaGetCount(pixadb);
     for (i = 0; i < npages; i++) {
         pix = pixaGetPix(pixadb, i, L_CLONE);
-        snprintf(filename, BUF_SIZE, "%s.db.%05d", rootname, i);
+        snprintf(filename, BUF_SIZE, "%s.db.%04d", rootname, i);
         fprintf(stderr, "filename: %s\n", filename);
         pixWrite(filename, pix, IFF_PNG);
         pixDestroy(&pix);

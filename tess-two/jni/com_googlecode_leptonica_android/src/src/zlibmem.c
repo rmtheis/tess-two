@@ -45,11 +45,11 @@
  *    the background, but the bbuffer implementation is more portable.
  */
 
-#include "allheaders.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config_auto.h"
 #endif  /* HAVE_CONFIG_H */
+
+#include "allheaders.h"
 
 /* --------------------------------------------*/
 #if  HAVE_LIBZ   /* defined in environ.h */
@@ -89,13 +89,13 @@ zlibCompress(l_uint8  *datain,
              size_t    nin,
              size_t   *pnout)
 {
-l_uint8  *dataout;
-l_int32   status;
-l_int32   flush;
-size_t    nbytes;
-l_uint8  *bufferin, *bufferout;
-BBUFFER  *bbin, *bbout;
-z_stream  z;
+l_uint8    *dataout;
+l_int32     status;
+l_int32     flush;
+size_t      nbytes;
+l_uint8    *bufferin, *bufferout;
+L_BBUFFER  *bbin, *bbout;
+z_stream    z;
 
     PROCNAME("zlibCompress");
 
@@ -103,9 +103,11 @@ z_stream  z;
         return (l_uint8 *)ERROR_PTR("datain not defined", procName, NULL);
 
         /* Set up fixed size buffers used in z_stream */
-    if ((bufferin = (l_uint8 *)CALLOC(L_BUF_SIZE, sizeof(l_uint8))) == NULL)
+    if ((bufferin = (l_uint8 *)LEPT_CALLOC(L_BUF_SIZE, sizeof(l_uint8)))
+        == NULL)
         return (l_uint8 *)ERROR_PTR("bufferin not made", procName, NULL);
-    if ((bufferout = (l_uint8 *)CALLOC(L_BUF_SIZE, sizeof(l_uint8))) == NULL)
+    if ((bufferout = (l_uint8 *)LEPT_CALLOC(L_BUF_SIZE, sizeof(l_uint8)))
+        == NULL)
         return (l_uint8 *)ERROR_PTR("bufferout not made", procName, NULL);
 
         /* Set up bbuffers and load bbin with the data */
@@ -160,8 +162,8 @@ z_stream  z;
     bbufferDestroy(&bbin);
     dataout = bbufferDestroyAndSaveData(&bbout, pnout);
 
-    FREE(bufferin);
-    FREE(bufferout);
+    LEPT_FREE(bufferin);
+    LEPT_FREE(bufferout);
     return dataout;
 }
 
@@ -182,21 +184,23 @@ zlibUncompress(l_uint8  *datain,
                size_t    nin,
                size_t   *pnout)
 {
-l_uint8  *dataout;
-l_uint8  *bufferin, *bufferout;
-l_int32   status;
-size_t    nbytes;
-BBUFFER  *bbin, *bbout;
-z_stream  z;
+l_uint8    *dataout;
+l_uint8    *bufferin, *bufferout;
+l_int32     status;
+size_t      nbytes;
+L_BBUFFER  *bbin, *bbout;
+z_stream    z;
 
     PROCNAME("zlibUncompress");
 
     if (!datain)
         return (l_uint8 *)ERROR_PTR("datain not defined", procName, NULL);
 
-    if ((bufferin = (l_uint8 *)CALLOC(L_BUF_SIZE, sizeof(l_uint8))) == NULL)
+    if ((bufferin = (l_uint8 *)LEPT_CALLOC(L_BUF_SIZE, sizeof(l_uint8)))
+        == NULL)
         return (l_uint8 *)ERROR_PTR("bufferin not made", procName, NULL);
-    if ((bufferout = (l_uint8 *)CALLOC(L_BUF_SIZE, sizeof(l_uint8))) == NULL)
+    if ((bufferout = (l_uint8 *)LEPT_CALLOC(L_BUF_SIZE, sizeof(l_uint8)))
+        == NULL)
         return (l_uint8 *)ERROR_PTR("bufferout not made", procName, NULL);
 
     if ((bbin = bbufferCreate(datain, nin)) == NULL)
@@ -240,8 +244,8 @@ z_stream  z;
     bbufferDestroy(&bbin);
     dataout = bbufferDestroyAndSaveData(&bbout, pnout);
 
-    FREE(bufferin);
-    FREE(bufferout);
+    LEPT_FREE(bufferin);
+    LEPT_FREE(bufferout);
     return dataout;
 }
 

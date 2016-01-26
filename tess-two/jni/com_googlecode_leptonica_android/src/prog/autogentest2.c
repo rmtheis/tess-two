@@ -46,10 +46,12 @@ l_int32 main(int    argc,
 l_int32  i, same;
 PIXA    *pixa;
 
+    lept_mkdir("lept/auto");
+
     for (i = 0; i < 2; i++) {
        pixa = (PIXA *)l_autodecode_137(i);  /* this is the dispatcher */
-       pixaWrite("/tmp/junkpa.pa", pixa);
-       filesAreIdentical("/tmp/junkpa.pa", files[i], &same);
+       pixaWrite("/tmp/lept/auto/junkpa.pa", pixa);
+       filesAreIdentical("/tmp/lept/auto/junkpa.pa", files[i], &same);
        if (same)
            fprintf(stderr, "Files are the same for %s\n", files[i]);
        else

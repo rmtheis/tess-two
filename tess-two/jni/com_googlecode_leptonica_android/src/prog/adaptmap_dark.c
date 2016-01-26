@@ -107,7 +107,7 @@ PIX     *pix1, *pix2, *pix3, *pix4, *pix5;
     pix2 = pixBackgroundNorm(pix1, NULL, NULL, 10, 15, thresh, 25, 200, 2, 1);
     snprintf(buf, sizeof(buf), "Norm color: fg thresh = %d", thresh);
     fprintf(stderr, "%s\n", buf);
-    pix3 = pixAddSingleTextline(pix2, bmf, buf, 0x00ff0000, L_ADD_BELOW);
+    pix3 = pixAddTextlines(pix2, bmf, buf, 0x00ff0000, L_ADD_BELOW);
     snprintf(buf, sizeof(buf), "/tmp/lept/adapt_%03d.jpg", index++);
     pixWrite(buf, pix3, IFF_JFIF_JPEG);
     pixDestroy(&pix3);

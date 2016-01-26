@@ -31,11 +31,11 @@
  *           char      *getImagelibVersions()
  */
 
-#include "allheaders.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config_auto.h"
 #endif  /* HAVE_CONFIG_H */
+
+#include "allheaders.h"
 
 #if HAVE_LIBGIF
 #include "gif_lib.h"
@@ -126,7 +126,7 @@ char    *versionStrP = NULL;
     stringJoinIP(&versionStrP, "libjpeg ");
     versionNumP = strtokSafe(buffer, " ", &nextTokenP);
     stringJoinIP(&versionStrP, versionNumP);
-    FREE(versionNumP);
+    LEPT_FREE(versionNumP);
 
   #if defined(LIBJPEG_TURBO_VERSION)
         /* To stringify the result of expansion of a macro argument,
@@ -153,12 +153,12 @@ char    *versionStrP = NULL;
     first = FALSE;
     stringJoinIP(&versionStrP, "libtiff ");
     versionNumP = strtokSafe((char *)TIFFGetVersion(), " \n", &nextTokenP);
-    FREE(versionNumP);
+    LEPT_FREE(versionNumP);
     versionNumP = strtokSafe(NULL, " \n", &nextTokenP);
-    FREE(versionNumP);
+    LEPT_FREE(versionNumP);
     versionNumP = strtokSafe(NULL, " \n", &nextTokenP);
     stringJoinIP(&versionStrP, versionNumP);
-    FREE(versionNumP);
+    LEPT_FREE(versionNumP);
 #endif  /* HAVE_LIBTIFF */
 
 #if HAVE_LIBZ

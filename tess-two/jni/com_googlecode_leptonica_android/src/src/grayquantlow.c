@@ -556,11 +556,11 @@ l_int32  *tabval, *tab38, *tab14;
         return ERROR_INT("table ptrs not all defined", procName, 1);
 
         /* 3 lookup tables: 1-bit value, (3/8)excess, and (1/4)excess */
-    if ((tabval = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tabval = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return ERROR_INT("tabval not made", procName, 1);
-    if ((tab38 = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab38 = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return ERROR_INT("tab38 not made", procName, 1);
-    if ((tab14 = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab14 = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return ERROR_INT("tab14 not made", procName, 1);
     *ptabval = tabval;
     *ptab38 = tab38;
@@ -759,11 +759,11 @@ l_int32  *tabval, *tab38, *tab14;
     PROCNAME("make8To2DitherTables");
 
         /* 3 lookup tables: 2-bit value, (3/8)excess, and (1/4)excess */
-    if ((tabval = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tabval = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return ERROR_INT("tabval not made", procName, 1);
-    if ((tab38 = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab38 = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return ERROR_INT("tab38 not made", procName, 1);
-    if ((tab14 = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab14 = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return ERROR_INT("tab14 not made", procName, 1);
     *ptabval = tabval;
     *ptab38 = tab38;

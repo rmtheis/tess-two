@@ -143,9 +143,9 @@ L_PTRA  *pa;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((pa = (L_PTRA *)CALLOC(1, sizeof(L_PTRA))) == NULL)
+    if ((pa = (L_PTRA *)LEPT_CALLOC(1, sizeof(L_PTRA))) == NULL)
         return (L_PTRA *)ERROR_PTR("pa not made", procName, NULL);
-    if ((pa->array = (void **)CALLOC(n, sizeof(void *))) == NULL)
+    if ((pa->array = (void **)LEPT_CALLOC(n, sizeof(void *))) == NULL)
         return (L_PTRA *)ERROR_PTR("ptr array not made", procName, NULL);
 
     pa->nalloc = n;
@@ -201,7 +201,7 @@ L_PTRA  *pa;
         if (freeflag) {
             for (i = 0; i <= pa->imax; i++) {
                 if ((item = ptraRemove(pa, i, L_NO_COMPACTION)) != NULL)
-                    FREE(item);
+                    LEPT_FREE(item);
             }
         } else if (warnflag) {
             L_WARNING("potential memory leak of %d items in ptra\n",
@@ -209,8 +209,8 @@ L_PTRA  *pa;
         }
     }
 
-    FREE(pa->array);
-    FREE(pa);
+    LEPT_FREE(pa->array);
+    LEPT_FREE(pa);
     *ppa = NULL;
     return;
 }
@@ -527,7 +527,7 @@ void    *olditem;
         return olditem;
 
     if (olditem)
-        FREE(olditem);
+        LEPT_FREE(olditem);
     return NULL;
 }
 
@@ -777,9 +777,9 @@ L_PTRAA  *paa;
     if (n <= 0)
         return (L_PTRAA *)ERROR_PTR("n must be > 0", procName, NULL);
 
-    if ((paa = (L_PTRAA *)CALLOC(1, sizeof(L_PTRAA))) == NULL)
+    if ((paa = (L_PTRAA *)LEPT_CALLOC(1, sizeof(L_PTRAA))) == NULL)
         return (L_PTRAA *)ERROR_PTR("paa not made", procName, NULL);
-    if ((paa->ptra = (L_PTRA **)CALLOC(n, sizeof(L_PTRA *))) == NULL)
+    if ((paa->ptra = (L_PTRA **)LEPT_CALLOC(n, sizeof(L_PTRA *))) == NULL)
         return (L_PTRAA *)ERROR_PTR("ptr array not made", procName, NULL);
 
     paa->nalloc = n;
@@ -824,8 +824,8 @@ L_PTRAA  *paa;
         ptraDestroy(&pa, freeflag, warnflag);
     }
 
-    FREE(paa->ptra);
-    FREE(paa);
+    LEPT_FREE(paa->ptra);
+    LEPT_FREE(paa);
     *ppaa = NULL;
     return;
 }

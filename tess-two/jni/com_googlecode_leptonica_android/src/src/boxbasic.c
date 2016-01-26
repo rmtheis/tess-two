@@ -177,7 +177,7 @@ BOX  *box;
             return (BOX *)ERROR_PTR("y < 0 and box off +quad", procName, NULL);
     }
 
-    if ((box = (BOX *)CALLOC(1, sizeof(BOX))) == NULL)
+    if ((box = (BOX *)LEPT_CALLOC(1, sizeof(BOX))) == NULL)
         return (BOX *)ERROR_PTR("box not made", procName, NULL);
     boxSetGeometry(box, x, y, w, h);
     box->refcount = 1;
@@ -277,7 +277,7 @@ BOX  *box;
 
     boxChangeRefcount(box, -1);
     if (boxGetRefcount(box) <= 0)
-        FREE(box);
+        LEPT_FREE(box);
     *pbox = NULL;
     return;
 }
@@ -455,13 +455,13 @@ BOXA  *boxa;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((boxa = (BOXA *)CALLOC(1, sizeof(BOXA))) == NULL)
+    if ((boxa = (BOXA *)LEPT_CALLOC(1, sizeof(BOXA))) == NULL)
         return (BOXA *)ERROR_PTR("boxa not made", procName, NULL);
     boxa->n = 0;
     boxa->nalloc = n;
     boxa->refcount = 1;
 
-    if ((boxa->box = (BOX **)CALLOC(n, sizeof(BOX *))) == NULL)
+    if ((boxa->box = (BOX **)LEPT_CALLOC(n, sizeof(BOX *))) == NULL)
         return (BOXA *)ERROR_PTR("boxa ptrs not made", procName, NULL);
 
     return boxa;
@@ -544,8 +544,8 @@ BOXA    *boxa;
     if (boxa->refcount <= 0) {
         for (i = 0; i < boxa->n; i++)
             boxDestroy(&boxa->box[i]);
-        FREE(boxa->box);
-        FREE(boxa);
+        LEPT_FREE(boxa->box);
+        LEPT_FREE(boxa);
     }
 
     *pboxa = NULL;
@@ -1142,9 +1142,9 @@ BOXAA  *baa;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((baa = (BOXAA *)CALLOC(1, sizeof(BOXAA))) == NULL)
+    if ((baa = (BOXAA *)LEPT_CALLOC(1, sizeof(BOXAA))) == NULL)
         return (BOXAA *)ERROR_PTR("baa not made", procName, NULL);
-    if ((baa->boxa = (BOXA **)CALLOC(n, sizeof(BOXA *))) == NULL)
+    if ((baa->boxa = (BOXA **)LEPT_CALLOC(n, sizeof(BOXA *))) == NULL)
         return (BOXAA *)ERROR_PTR("boxa ptr array not made", procName, NULL);
 
     baa->nalloc = n;
@@ -1216,8 +1216,8 @@ BOXAA   *baa;
 
     for (i = 0; i < baa->n; i++)
         boxaDestroy(&baa->boxa[i]);
-    FREE(baa->boxa);
-    FREE(baa);
+    LEPT_FREE(baa->boxa);
+    LEPT_FREE(baa);
     *pbaa = NULL;
 
     return;

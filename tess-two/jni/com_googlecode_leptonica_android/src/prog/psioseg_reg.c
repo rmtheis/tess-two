@@ -101,20 +101,20 @@ L_REGPARAMS  *rp;
     regTestWritePixAndCheck(rp, pix4c, IFF_PNG);  /* 4 */
 
          /* Write out the files to be imaged */
-    lept_mkdir("lept");
-    pixWrite("/tmp/lept/image_001.tif", pixs, IFF_TIFF_G4);
-    pixWrite("/tmp/lept/image_002.tif", pixht, IFF_TIFF_G4);
-    pixWrite("/tmp/lept/image_003.tif", pixtxt, IFF_TIFF_G4);
-    pixWrite("/tmp/lept/image_004.jpg", pixcs2, IFF_JFIF_JPEG);
-    pixWrite("/tmp/lept/mask_004.tif", pixmfull, IFF_TIFF_G4);
-    pixWrite("/tmp/lept/image_005.jpg", pix32, IFF_JFIF_JPEG);
-    pixWrite("/tmp/lept/mask_005.tif", pixht, IFF_TIFF_G4);
-    pixWrite("/tmp/lept/image_006.jpg", pix8g, IFF_JFIF_JPEG);
-    pixWrite("/tmp/lept/mask_006.tif", pixht, IFF_TIFF_G4);
-    pixWrite("/tmp/lept/image_007.png", pix8c, IFF_PNG);
-    pixWrite("/tmp/lept/mask_007.tif", pixht, IFF_TIFF_G4);
-    pixWrite("/tmp/lept/image_008.png", pix4c, IFF_PNG);
-    pixWrite("/tmp/lept/mask_008.tif", pixht, IFF_TIFF_G4);
+    lept_mkdir("lept/psio");
+    pixWrite("/tmp/lept/psio/image_001.tif", pixs, IFF_TIFF_G4);
+    pixWrite("/tmp/lept/psio/image_002.tif", pixht, IFF_TIFF_G4);
+    pixWrite("/tmp/lept/psio/image_003.tif", pixtxt, IFF_TIFF_G4);
+    pixWrite("/tmp/lept/psio/image_004.jpg", pixcs2, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/psio/mask_004.tif", pixmfull, IFF_TIFF_G4);
+    pixWrite("/tmp/lept/psio/image_005.jpg", pix32, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/psio/mask_005.tif", pixht, IFF_TIFF_G4);
+    pixWrite("/tmp/lept/psio/image_006.jpg", pix8g, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/psio/mask_006.tif", pixht, IFF_TIFF_G4);
+    pixWrite("/tmp/lept/psio/image_007.png", pix8c, IFF_PNG);
+    pixWrite("/tmp/lept/psio/mask_007.tif", pixht, IFF_TIFF_G4);
+    pixWrite("/tmp/lept/psio/image_008.png", pix4c, IFF_PNG);
+    pixWrite("/tmp/lept/psio/mask_008.tif", pixht, IFF_TIFF_G4);
     pixDestroy(&pixs);
     pixDestroy(&pixc);
     pixDestroy(&pixht);
@@ -128,21 +128,21 @@ L_REGPARAMS  *rp;
     pixDestroy(&pix4c);
 
         /* Generate the 8 page ps */
-    convertSegmentedPagesToPS("/tmp/lept", "image_", 6, "/tmp/lept", "mask_",
-                              5, 0, 10, 2.0, 0.15, 190,
-                              "/tmp/regout/psioseg.5.ps");
-    regTestCheckFile(rp, "/tmp/regout/psioseg.5.ps");  /* 5 */
-    L_INFO("Output ps: /tmp/regout/psioseg.5.ps\n", rp->testname);
+    convertSegmentedPagesToPS("/tmp/lept/psio", "image_", 6, "/tmp/lept/psio",
+                              "mask_", 5, 0, 10, 2.0, 0.15, 190,
+                              "/tmp/lept/regout/psioseg.5.ps");
+    regTestCheckFile(rp, "/tmp/lept/regout/psioseg.5.ps");  /* 5 */
+    L_INFO("Output ps: /tmp/lept/regout/psioseg.5.ps\n", rp->testname);
 
         /* For convenience, also generate a pdf of this, using ps2pdf */
-    psname = genPathname("/tmp/regout", "psioseg.5.ps");
-    pdfname = genPathname("/tmp/regout", "psioseg.5.pdf");
+    psname = genPathname("/tmp/lept/regout", "psioseg.5.ps");
+    pdfname = genPathname("/tmp/lept/regout", "psioseg.5.pdf");
     snprintf(buf, sizeof(buf), "ps2pdf %s %s", psname, pdfname);
     ret = system(buf);  /* ps2pdf */
     lept_free(psname);
     lept_free(pdfname);
     if (!ret)
-        L_INFO("Output pdf: /tmp/regout/psioseg.5.pdf\n", rp->testname);
+        L_INFO("Output pdf: /tmp/lept/regout/psioseg.5.pdf\n", rp->testname);
     else
         L_WARNING("ps2pdf failed to generate pdf\n", rp->testname);
 

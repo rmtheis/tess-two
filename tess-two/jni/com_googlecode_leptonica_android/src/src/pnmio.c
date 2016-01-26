@@ -84,6 +84,10 @@
  *      pixWriteMemPnm().
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif  /* HAVE_CONFIG_H */
+
 #include <string.h>
 #include <ctype.h>
 #include "allheaders.h"
@@ -91,7 +95,6 @@
 /* --------------------------------------------*/
 #if  USE_PNMIO   /* defined in environ.h */
 /* --------------------------------------------*/
-
 
 static l_int32 pnmReadNextAsciiValue(FILE  *fp, l_int32 *pval);
 static l_int32 pnmReadNextNumber(FILE *fp, l_int32 *pval);
@@ -131,6 +134,7 @@ PIX       *pix;
         return (PIX *)ERROR_PTR( "header read failed", procName, NULL);
     if ((pix = pixCreate(w, h, d)) == NULL)
         return (PIX *)ERROR_PTR( "pix not made", procName, NULL);
+    pixSetInputFormat(pix, IFF_PNM);
     data = pixGetData(pix);
     wpl = pixGetWpl(pix);
 
@@ -282,8 +286,6 @@ freadHeaderPnm(FILE     *fp,
 {
 l_int32  w, h, d, type;
 l_int32  maxval;
-char     whitespace;
-char     buf[64];
 
     PROCNAME("freadHeaderPnm");
 
@@ -596,10 +598,6 @@ PIX       *pixs;
 /*---------------------------------------------------------------------*
  *                         Read/write to memory                        *
  *---------------------------------------------------------------------*/
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
-#endif  /* HAVE_CONFIG_H */
-
 #if HAVE_FMEMOPEN
 extern FILE *open_memstream(char **data, size_t *size);
 extern FILE *fmemopen(void *data, size_t size, const char *mode);
@@ -628,7 +626,7 @@ PIX   *pix;
         return (PIX *)ERROR_PTR("cdata not defined", procName, NULL);
 
 #if HAVE_FMEMOPEN
-    if ((fp = fmemopen((l_uint8 *)cdata, size, "r")) == NULL)
+    if ((fp = fmemopen((l_uint8 *)cdata, size, "rb")) == NULL)
         return (PIX *)ERROR_PTR("stream not opened", procName, NULL);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
@@ -676,7 +674,7 @@ FILE    *fp;
         return ERROR_INT("cdata not defined", procName, 1);
 
 #if HAVE_FMEMOPEN
-    if ((fp = fmemopen((l_uint8 *)cdata, size, "r")) == NULL)
+    if ((fp = fmemopen((l_uint8 *)cdata, size, "rb")) == NULL)
         return ERROR_INT("stream not opened", procName, 1);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
@@ -787,7 +785,7 @@ l_int32   c, ignore;
  *      (1) This reads the next set of numeric chars, returning
  *          the value and swallowing the trailing whitespace character.
  *          This is needed to read the maxval in the header, which
- *          preceeds the binary data.
+ *          precedes the binary data.
  */
 static l_int32
 pnmReadNextNumber(FILE     *fp,
@@ -807,6 +805,8 @@ l_int32   i, c, foundws, ignore;
         /* The ascii characters for the number are followed by exactly
          * one whitespace character. */
     foundws = FALSE;
+    for (i = 0; i < 8; i++)
+        buf[i] = '\0';
     for (i = 0; i < 8; i++) {
         if ((c = fgetc(fp)) == EOF)
             return ERROR_INT("end of file reached", procName, 1);

@@ -37,6 +37,7 @@
  *          PTAA       *generatePtaaBoxa()
  *          PTAA       *generatePtaaHashBoxa()
  *          PTA        *generatePtaPolyline()
+ *          PTA        *generatePtaGrid()
  *          PTA        *convertPtaLineTo4cc()
  *          PTA        *generatePtaFilledCircle()
  *          PTA        *generatePtaFilledSquare()
@@ -79,6 +80,8 @@
  *          l_int32     pixRenderPolylineArb()
  *          l_int32     pixRenderPolylineBlend()
  *
+ *          l_int32     pixRenderGrid()
+ *
  *          l_int32     pixRenderRandomCmapPtaa()
  *
  *      Rendering and filling of polygons
@@ -89,6 +92,9 @@
  *          PIX        *pixRenderContours()
  *          PIX        *fpixAutoRenderContours()
  *          PIX        *fpixRenderContours()
+ *
+ *      Boundary pt generation on 1 bpp images
+ *          PTA        *pixGeneratePtaBoundary()
  *
  *  The line rendering functions are relatively crude, but they
  *  get the job done for most simple situations.  We use the pta
@@ -359,7 +365,7 @@ PTA     *ptad, *ptat, *pta;
     }
 
     if (removedups)
-        ptad = ptaRemoveDuplicates(ptat, 0);
+        ptad = ptaRemoveDupsByAset(ptat);
     else
         ptad = ptaClone(ptat);
 
@@ -518,7 +524,7 @@ PTA     *ptad, *ptat, *pta;
     }
 
     if (removedups)
-        ptad = ptaRemoveDuplicates(ptat, 0);
+        ptad = ptaRemoveDupsByAset(ptat);
     else
         ptad = ptaClone(ptat);
 
@@ -677,12 +683,63 @@ PTA     *ptad, *ptat, *pta;
     }
 
     if (removedups)
-        ptad = ptaRemoveDuplicates(ptat, 0);
+        ptad = ptaRemoveDupsByAset(ptat);
     else
         ptad = ptaClone(ptat);
 
     ptaDestroy(&ptat);
     return ptad;
+}
+
+
+/*!
+ *  generatePtaGrid()
+ *
+ *      Input:  w, h (of region where grid will be displayed)
+ *              nx, ny  (number of rectangles in each direction in grid)
+ *              width (of rendered lines)
+ *      Return: ptad, or null on error
+ */
+PTA  *
+generatePtaGrid(l_int32  w,
+                l_int32  h,
+                l_int32  nx,
+                l_int32  ny,
+                l_int32  width)
+{
+l_int32  i, j, bx, by, x1, x2, y1, y2;
+BOX     *box;
+BOXA    *boxa;
+PTA     *pta;
+
+    PROCNAME("generatePtaGrid");
+
+    if (nx < 1 || ny < 1)
+        return (PTA *)ERROR_PTR("nx and ny must be > 0", procName, NULL);
+    if (w < 2 * nx || h < 2 * ny)
+        return (PTA *)ERROR_PTR("w and/or h too small", procName, NULL);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+
+    boxa = boxaCreate(nx * ny);
+    bx = (w + nx - 1) / nx;
+    by = (h + ny - 1) / ny;
+    for (i = 0; i < ny; i++) {
+        y1 = by * i;
+        y2 = L_MIN(y1 + by, h - 1);
+        for (j = 0; j < nx; j++) {
+            x1 = bx * j;
+            x2 = L_MIN(x1 + bx, w - 1);
+            box = boxCreate(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+            boxaAddBox(boxa, box, L_INSERT);
+        }
+    }
+
+    pta = generatePtaBoxa(boxa, width, 1);
+    boxaDestroy(&boxa);
+    return pta;
 }
 
 
@@ -2162,6 +2219,47 @@ PTA  *pta;
 
 
 /*!
+ *  pixRenderGridArb()
+ *
+ *      Input:  pix (any depth, cmapped ok)
+ *              nx, ny (number of rectangles in each direction)
+ *              width  (thickness of grid lines)
+ *              rval, gval, bval
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+pixRenderGridArb(PIX     *pix,
+                 l_int32  nx,
+                 l_int32  ny,
+                 l_int32  width,
+                 l_uint8  rval,
+                 l_uint8  gval,
+                 l_uint8  bval)
+{
+l_int32  w, h;
+PTA     *pta;
+
+    PROCNAME("pixRenderGridArb");
+
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+    if (nx < 1 || ny < 1)
+        return ERROR_INT("nx, ny must be > 0", procName, 1);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+
+    pixGetDimensions(pix, &w, &h, NULL);
+    if ((pta = generatePtaGrid(w, h, nx, ny, width)) == NULL)
+        return ERROR_INT("pta not made", procName, 1);
+    pixRenderPtaArb(pix, pta, rval, gval, bval);
+    ptaDestroy(&pta);
+    return 0;
+}
+
+
+/*!
  *  pixRenderRandomCmapPtaa()
  *
  *      Input:  pix (1, 2, 4, 8, 16, 32 bpp)
@@ -2325,8 +2423,8 @@ PIX      *pixi, *pixd;
         return (PIX *)ERROR_PTR("pta not defined", procName, NULL);
 
     pixGetDimensions(pixs, &w, &h, NULL);
-    xstart = (l_int32 *)CALLOC(w / 2, sizeof(l_int32));
-    xend = (l_int32 *)CALLOC(w / 2, sizeof(l_int32));
+    xstart = (l_int32 *)LEPT_CALLOC(w / 2, sizeof(l_int32));
+    xend = (l_int32 *)LEPT_CALLOC(w / 2, sizeof(l_int32));
 
         /* Find a raster with 2 or more black runs.  The first background
          * pixel after the end of the first run is likely to be inside
@@ -2344,8 +2442,8 @@ PIX      *pixi, *pixd;
     }
     if (!found) {
         L_WARNING("nothing found to fill\n", procName);
-        FREE(xstart);
-        FREE(xend);
+        LEPT_FREE(xstart);
+        LEPT_FREE(xend);
         return 0;
     }
 
@@ -2361,8 +2459,8 @@ PIX      *pixi, *pixd;
     pixOr(pixd, pixd, pixs);
 
     pixDestroy(&pixi);
-    FREE(xstart);
-    FREE(xend);
+    LEPT_FREE(xstart);
+    LEPT_FREE(xend);
     return pixd;
 }
 
@@ -2599,3 +2697,48 @@ PIXCMAP    *cmap;
 
     return pixd;
 }
+
+
+/*------------------------------------------------------------------*
+ *             Boundary pt generation on 1 bpp images               *
+ *------------------------------------------------------------------*/
+/*!
+ *  pixGeneratePtaBoundary()
+ *
+ *      Input:  pixs (1 bpp)
+ *              width (of boundary line)
+ *      Return: pta, or null on error
+ *
+ *  Notes:
+ *      (1) Similar to ptaGetBoundaryPixels(), except here:
+ *          * we only get pixels in the foreground
+ *          * we can have a "line" width greater than 1 pixel.
+ *      (2) Once generated, this can be applied to a random 1 bpp image
+ *          to add a color boundary as follows:
+ *             Pta *pta = pixGeneratePtaBoundary(pixs, width);
+ *             Pix *pix1 = pixConvert1To8Cmap(pixs);
+ *             pixRenderPtaArb(pix1, pta, rval, gval, bval);
+ */
+PTA  *
+pixGeneratePtaBoundary(PIX     *pixs,
+                       l_int32  width)
+{
+PIX  *pix1;
+PTA  *pta;
+
+    PROCNAME("pixGeneratePtaBoundary");
+
+    if (!pixs || pixGetDepth(pixs) != 1)
+        return (PTA *)ERROR_PTR("pixs undefined or not 1 bpp", procName, NULL);
+    if (width < 1) {
+        L_WARNING("width < 1; setting to 1\n", procName);
+        width = 1;
+    }
+
+    pix1 = pixErodeBrick(NULL, pixs, 2 * width + 1, 2 * width + 1);
+    pixXor(pix1, pix1, pixs);
+    pta = ptaGetPixelsFromPix(pix1, NULL);
+    pixDestroy(&pix1);
+    return pta;
+}
+

@@ -847,7 +847,7 @@ l_uint32  *data, *datam, *line, *linem;
         }
     }
 
-    FREE(tab);
+    LEPT_FREE(tab);
     return 0;
 }
 
@@ -1704,9 +1704,9 @@ PIX       *pixd;
     if (rfract == 0.0 && gfract == 0.0 && bfract == 0.0)
         return pixCopy(NULL, pixs);
 
-    rlut = (l_int32 *)CALLOC(256, sizeof(l_int32));
-    glut = (l_int32 *)CALLOC(256, sizeof(l_int32));
-    blut = (l_int32 *)CALLOC(256, sizeof(l_int32));
+    rlut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
+    glut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
+    blut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     for (i = 0; i < 256; i++) {
         fi = i;
         if (rfract >= 0) {
@@ -1741,9 +1741,9 @@ PIX       *pixd;
         }
     }
 
-    FREE(rlut);
-    FREE(glut);
-    FREE(blut);
+    LEPT_FREE(rlut);
+    LEPT_FREE(glut);
+    LEPT_FREE(blut);
     return pixd;
 }
 

@@ -53,8 +53,8 @@
  *
  *   Paul Heckbert published the median cut algorithm, "Color Image
  *   Quantization for Frame Buffer Display," in Proc. SIGGRAPH '82,
- *   Boston, July 1982, pp. 297-307.  A copy of the paper without
- *   figures can be found on the web.
+ *   Boston, July 1982, pp. 297-307.  See:
+ *   http://delivery.acm.org/10.1145/810000/801294/p297-heckbert.pdf
  *
  *   Median cut starts with either the full color space or the occupied
  *   region of color space.  If you're not dithering, the occupied region
@@ -92,7 +92,7 @@
  *         of the subdivided dimensions and helps a low-count color
  *         far from the subdivision boundary to better express itself.
  *     (2a) One can also ask if the boundary should be moved even
- *         farther into the longer side.  This is feasable if we have
+ *         farther into the longer side.  This is feasible if we have
  *         a method for doing extra subdivisions on the high count
  *         vboxes.  And we do (see (3)).
  *     (3) To make sure that the boxes are subdivided toward equal
@@ -390,7 +390,7 @@ PIXCMAP   *cmap;
                                         histo, histosize, sigbits);
         pixd = pixQuantizeWithColormap(pixs, ditherflag, outdepth, cmap,
                                        histo, histosize, sigbits);
-        FREE(histo);
+        LEPT_FREE(histo);
         return pixd;
     }
 
@@ -425,7 +425,7 @@ PIXCMAP   *cmap;
         }
         if (vbox1->vol > 1)
             vbox1->sortparam = vbox1->npix;
-        FREE(vbox);
+        LEPT_FREE(vbox);
         lheapAdd(lh, vbox1);
         if (vbox2) {  /* vbox2 can be NULL */
             if (vbox2->vol > 1)
@@ -465,7 +465,7 @@ PIXCMAP   *cmap;
         }
         if (vbox1->vol > 1)
             vbox1->sortparam = vbox1->npix * vbox1->vol;
-        FREE(vbox);
+        LEPT_FREE(vbox);
         lheapAdd(lhs, vbox1);
         if (vbox2) {  /* vbox2 can be NULL */
             if (vbox2->vol > 1)
@@ -520,7 +520,7 @@ PIXCMAP   *cmap;
         pixcmapResetColor(cmap, index, 255, 255, 255);
 
     lheapDestroy(&lh, TRUE);
-    FREE(histo);
+    LEPT_FREE(histo);
     return pixd;
 }
 
@@ -624,7 +624,7 @@ PIXCMAP   *cmap;
     datag = pixGetData(pixg);
     wplc = pixGetWpl(pixc);
     wplg = pixGetWpl(pixg);
-    lut = (l_int32 *)CALLOC(256, sizeof(l_int32));
+    lut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     for (i = 0; i < 256; i++)
         lut[i] = ncolor + 1 + (i * (ngray - 1) + 128) / 255;
     for (i = 0; i < h; i++) {
@@ -686,7 +686,7 @@ PIXCMAP   *cmap;
 
     pixDestroy(&pixc);
     pixDestroy(&pixg);
-    FREE(lut);
+    LEPT_FREE(lut);
     return pixd;
 }
 
@@ -833,7 +833,7 @@ l_uint32  *data, *line;
         return (l_int32 *)ERROR_PTR("subsample not > 0", procName, NULL);
 
     histosize = 1 << (3 * sigbits);
-    if ((histo = (l_int32 *)CALLOC(histosize, sizeof(l_int32))) == NULL)
+    if ((histo = (l_int32 *)LEPT_CALLOC(histosize, sizeof(l_int32))) == NULL)
         return (l_int32 *)ERROR_PTR("histo not made", procName, NULL);
 
     rshift = 8 - sigbits;
@@ -1007,15 +1007,15 @@ PIX       *pixd;
             }
         }
     } else {  /* ditherflag == 1 */
-        bufu8r = (l_uint8 *)CALLOC(w, sizeof(l_uint8));
-        bufu8g = (l_uint8 *)CALLOC(w, sizeof(l_uint8));
-        bufu8b = (l_uint8 *)CALLOC(w, sizeof(l_uint8));
-        buf1r = (l_int32 *)CALLOC(w, sizeof(l_int32));
-        buf1g = (l_int32 *)CALLOC(w, sizeof(l_int32));
-        buf1b = (l_int32 *)CALLOC(w, sizeof(l_int32));
-        buf2r = (l_int32 *)CALLOC(w, sizeof(l_int32));
-        buf2g = (l_int32 *)CALLOC(w, sizeof(l_int32));
-        buf2b = (l_int32 *)CALLOC(w, sizeof(l_int32));
+        bufu8r = (l_uint8 *)LEPT_CALLOC(w, sizeof(l_uint8));
+        bufu8g = (l_uint8 *)LEPT_CALLOC(w, sizeof(l_uint8));
+        bufu8b = (l_uint8 *)LEPT_CALLOC(w, sizeof(l_uint8));
+        buf1r = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
+        buf1g = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
+        buf1b = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
+        buf2r = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
+        buf2g = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
+        buf2b = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
         if (!bufu8r || !bufu8g || !bufu8b)
             return (PIX *)ERROR_PTR("uint8 line buf not made", procName, NULL);
         if (!buf1r || !buf1g || !buf1b || !buf2r || !buf2g || !buf2b)
@@ -1128,15 +1128,15 @@ PIX       *pixd;
             SET_DATA_BYTE(lined, j, indexmap[index]);
         }
 
-        FREE(bufu8r);
-        FREE(bufu8g);
-        FREE(bufu8b);
-        FREE(buf1r);
-        FREE(buf1g);
-        FREE(buf1b);
-        FREE(buf2r);
-        FREE(buf2g);
-        FREE(buf2b);
+        LEPT_FREE(bufu8r);
+        LEPT_FREE(bufu8g);
+        LEPT_FREE(bufu8b);
+        LEPT_FREE(buf1r);
+        LEPT_FREE(buf1g);
+        LEPT_FREE(buf1b);
+        LEPT_FREE(buf2r);
+        LEPT_FREE(buf2g);
+        LEPT_FREE(buf2b);
     }
 
     return pixd;
@@ -1439,7 +1439,7 @@ PIXCMAP  *cmap;
         vbox = (L_BOX3D *)lheapRemove(lh);
         vboxGetAverageColor(vbox, histo, sigbits, index, &rval, &gval, &bval);
         pixcmapAddColor(cmap, rval, gval, bval);
-        FREE(vbox);
+        LEPT_FREE(vbox);
         index++;
     }
 
@@ -1594,7 +1594,7 @@ box3dCreate(l_int32  r1,
 {
 L_BOX3D  *vbox;
 
-    vbox = (L_BOX3D *)CALLOC(1, sizeof(L_BOX3D));
+    vbox = (L_BOX3D *)LEPT_CALLOC(1, sizeof(L_BOX3D));
     vbox->r1 = r1;
     vbox->r2 = r2;
     vbox->g1 = g1;

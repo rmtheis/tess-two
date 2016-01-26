@@ -100,12 +100,12 @@
  *    pixWriteMemPng().
  */
 
-#include <string.h>
-#include "allheaders.h"
-
 #ifdef  HAVE_CONFIG_H
 #include "config_auto.h"
 #endif  /* HAVE_CONFIG_H */
+
+#include <string.h>
+#include "allheaders.h"
 
 /* --------------------------------------------*/
 #if  HAVE_LIBPNG   /* defined in environ.h */
@@ -273,6 +273,7 @@ PIXCMAP     *cmap;
         png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
         return (PIX *)ERROR_PTR("pix not made", procName, NULL);
     }
+    pixSetInputFormat(pix, IFF_PNG);
     wpl = pixGetWpl(pix);
     data = pixGetData(pix);
     pixSetColormap(pix, cmap);
@@ -555,12 +556,12 @@ l_uint8  *data;
     nbytes = fnbytesInFile(fp);
     if (nbytes < 40)
         return ERROR_INT("file too small to be png", procName, 1);
-    if ((data = (l_uint8 *)CALLOC(40, sizeof(l_uint8))) == NULL)
-        return ERROR_INT("CALLOC fail for data", procName, 1);
+    if ((data = (l_uint8 *)LEPT_CALLOC(40, sizeof(l_uint8))) == NULL)
+        return ERROR_INT("LEPT_CALLOC fail for data", procName, 1);
     if (fread(data, 1, 40, fp) != 40)
         return ERROR_INT("error reading data", procName, 1);
     ret = readHeaderMemPng(data, 40, pw, ph, pbps, pspp, piscmap);
-    FREE(data);
+    LEPT_FREE(data);
     return ret;
 }
 
@@ -805,6 +806,7 @@ png_infop    info_ptr;
          * Without this, an error calls exit. */
     if (setjmp(png_jmpbuf(png_ptr))) {
         png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+        if (pcmap && *pcmap) pixcmapDestroy(pcmap);
         return ERROR_INT("internal png error", procName, 1);
     }
 
@@ -1074,7 +1076,7 @@ char        *text;
         pixcmapIsOpaque(cmap, &opaque);
 
             /* Make and save the palette */
-        if ((palette = (png_colorp)(CALLOC(ncolors, sizeof(png_color))))
+        if ((palette = (png_colorp)(LEPT_CALLOC(ncolors, sizeof(png_color))))
                 == NULL)
             return ERROR_INT("palette not made", procName, 1);
 
@@ -1089,10 +1091,10 @@ char        *text;
         if (!opaque)  /* alpha channel has some transparency; assume valid */
             png_set_tRNS(png_ptr, info_ptr, (png_bytep)alpha,
                          (int)ncolors, NULL);
-        FREE(rmap);
-        FREE(gmap);
-        FREE(bmap);
-        FREE(amap);
+        LEPT_FREE(rmap);
+        LEPT_FREE(gmap);
+        LEPT_FREE(bmap);
+        LEPT_FREE(amap);
     }
 
         /* 0.4545 is treated as the default by some image
@@ -1137,7 +1139,8 @@ char        *text;
         }
 
             /* Make and assign array of image row pointers */
-        if ((row_pointers = (png_bytep *)CALLOC(h, sizeof(png_bytep))) == NULL)
+        if ((row_pointers = (png_bytep *)LEPT_CALLOC(h, sizeof(png_bytep)))
+            == NULL)
             return ERROR_INT("row-pointers not made", procName, 1);
         wpl = pixGetWpl(pixt);
         data = pixGetData(pixt);
@@ -1150,8 +1153,8 @@ char        *text;
         png_write_end(png_ptr, info_ptr);
 
         if (cmflag)
-            FREE(palette);
-        FREE(row_pointers);
+            LEPT_FREE(palette);
+        LEPT_FREE(row_pointers);
         pixDestroy(&pixt);
         png_destroy_write_struct(&png_ptr, &info_ptr);
         return 0;
@@ -1167,7 +1170,7 @@ char        *text;
         }
     } else {  /* 32 bpp rgb and rgba.  Write out the alpha channel if either
              * the pix has 4 spp or writing it is requested anyway */
-        if ((rowbuffer = (png_bytep)CALLOC(w, 4)) == NULL)
+        if ((rowbuffer = (png_bytep)LEPT_CALLOC(w, 4)) == NULL)
             return ERROR_INT("rowbuffer not made", procName, 1);
         for (i = 0; i < h; i++) {
             ppixel = data + i * wpl;
@@ -1182,13 +1185,13 @@ char        *text;
 
             png_write_rows(png_ptr, &rowbuffer, 1);
         }
-        FREE(rowbuffer);
+        LEPT_FREE(rowbuffer);
     }
 
     png_write_end(png_ptr, info_ptr);
 
     if (cmflag)
-        FREE(palette);
+        LEPT_FREE(palette);
     png_destroy_write_struct(&png_ptr, &info_ptr);
     return 0;
 
@@ -1226,7 +1229,7 @@ pixSetZlibCompression(PIX     *pix,
         L_ERROR("Invalid zlib comp val; using default\n", procName);
         compval = Z_DEFAULT_COMPRESSION;
     }
-    pix->special = 10 + compval;  /* valid range [10 ... 19] */
+    pixSetSpecial(pix, 10 + compval);  /* valid range [10 ... 19] */
     return 0;
 }
 
@@ -1279,7 +1282,7 @@ PIX   *pix;
         return (PIX *)ERROR_PTR("cdata not defined", procName, NULL);
 
 #if HAVE_FMEMOPEN
-    if ((fp = fmemopen((void *)cdata, size, "r")) == NULL)
+    if ((fp = fmemopen((void *)cdata, size, "rb")) == NULL)
         return (PIX *)ERROR_PTR("stream not opened", procName, NULL);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);

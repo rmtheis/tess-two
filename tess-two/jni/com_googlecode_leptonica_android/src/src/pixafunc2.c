@@ -37,6 +37,8 @@
  *           PIX      *pixaDisplayTiled()
  *           PIX      *pixaDisplayTiledInRows()
  *           PIX      *pixaDisplayTiledAndScaled()
+ *           PIX      *pixaDisplayTiledWithText()
+ *           PIX      *pixaDisplayTiledByIndex()
  *
  *      Pixaa Display (render into a pix)
  *           PIX      *pixaaDisplay()
@@ -99,11 +101,22 @@
  *        is a reasonably efficient way to pack the subimages.
  *        A boxa of the locations of each input pix is stored in the output.
  *    pixaDisplayTiledAndScaled()
+ *        This scales each pix to a given width and output depth, and then
+ *        tiles them in rows with a given number placed in each row.
+ *        This is useful for presenting a sequence of images that can be
+ *        at different resolutions, but which are derived from the same
+ *        initial image.
+ *    pixaDisplayTiledWithText()
+ *        This is a version of pixaDisplayTiledInRows() that prints, below
+ *        each pix, the text in the pix text field.  It renders a pixa
+ *        to an image with white background that does not exceed a
+ *        given value in width.
+ *    pixaDisplayTiledByIndex()
  *        This scales each pix to a given width and output depth,
- *        and then tiles them in rows with a given number placed in
- *        each row.  This is very useful for presenting a sequence
- *        of images that can be at different resolutions, but which
- *        are derived from the same initial image.
+ *        and then tiles them in columns corresponding to the value
+ *        in an associated numa.  All pix with the same index value are
+ *        rendered in the same column.  Text in the pix text field are
+ *        rendered below the pix.
  */
 
 #include <string.h>
@@ -214,7 +227,7 @@ pixaDisplayOnColor(PIXA     *pixa,
 {
 l_int32  i, n, xb, yb, wb, hb, hascmap, maxdepth, same;
 BOXA    *boxa;
-PIX     *pixt1, *pixt2, *pixd;
+PIX     *pix1, *pix2, *pixd;
 PIXA    *pixat;
 
     PROCNAME("pixaDisplayOnColor");
@@ -240,10 +253,10 @@ PIXA    *pixat;
         maxdepth = 32;
         pixat = pixaCreate(n);
         for (i = 0; i < n; i++) {
-            pixt1 = pixaGetPix(pixa, i, L_CLONE);
-            pixt2 = pixConvertTo32(pixt1);
-            pixaAddPix(pixat, pixt2, L_INSERT);
-            pixDestroy(&pixt1);
+            pix1 = pixaGetPix(pixa, i, L_CLONE);
+            pix2 = pixConvertTo32(pix1);
+            pixaAddPix(pixat, pix2, L_INSERT);
+            pixDestroy(&pix1);
         }
     } else {
         pixat = pixaCopy(pixa, L_CLONE);
@@ -269,9 +282,9 @@ PIXA    *pixat;
             L_WARNING("no box found!\n", procName);
             continue;
         }
-        pixt1 = pixaGetPix(pixat, i, L_CLONE);
-        pixRasterop(pixd, xb, yb, wb, hb, PIX_SRC, pixt1, 0, 0);
-        pixDestroy(&pixt1);
+        pix1 = pixaGetPix(pixat, i, L_CLONE);
+        pixRasterop(pixd, xb, yb, wb, hb, PIX_SRC, pix1, 0, 0);
+        pixDestroy(&pix1);
     }
 
     pixaDestroy(&pixat);
@@ -621,7 +634,7 @@ PIX     *pixt, *pixd;
  *      Return: pix of tiled images, or null on error
  *
  *  Notes:
- *      (1) This renders a pixa to a single image file of width not to
+ *      (1) This renders a pixa to a single image of width not to
  *          exceed maxwidth, with background color either white or black,
  *          and with each subimage spaced on a regular lattice.
  *      (2) The lattice size is determined from the largest width and height,
@@ -734,7 +747,7 @@ PIXA    *pixat;
  *      Return: pixd (of tiled images), or null on error
  *
  *  Notes:
- *      (1) This renders a pixa to a single image file of width not to
+ *      (1) This renders a pixa to a single image of width not to
  *          exceed maxwidth, with background color either white or black,
  *          and with each row tiled such that the top of each pix is
  *          aligned and separated by 'spacing' from the next one.
@@ -891,7 +904,7 @@ PIXA     *pixan;
     }
     boxaWriteMem(&data, &size, boxa);
     pixSetText(pixd, (char *)data);  /* data is ascii */
-    FREE(data);
+    LEPT_FREE(data);
     boxaDestroy(&boxa);
 
     numaDestroy(&nainrow);
@@ -990,7 +1003,7 @@ PIXA      *pixan;
         /* Determine the size of each row and of pixd */
     wd = tilewidth * ncols + spacing * (ncols + 1);
     nrows = (n + ncols - 1) / ncols;
-    if ((rowht = (l_int32 *)CALLOC(nrows, sizeof(l_int32))) == NULL)
+    if ((rowht = (l_int32 *)LEPT_CALLOC(nrows, sizeof(l_int32))) == NULL)
         return (PIX *)ERROR_PTR("rowht array not made", procName, NULL);
     maxht = 0;
     ninrow = 0;
@@ -1038,9 +1051,216 @@ PIXA      *pixan;
     }
 
     pixaDestroy(&pixan);
-    FREE(rowht);
+    LEPT_FREE(rowht);
     return pixd;
 }
+
+
+/*!
+ *  pixaDisplayTiledWithText()
+ *
+ *      Input:  pixa
+ *              maxwidth (of output image)
+ *              scalefactor (applied to every pix; use 1.0 for no scaling)
+ *              spacing  (between images, and on outside)
+ *              border (width of black border added to each image;
+ *                      use 0 for no border)
+ *              fontsize (4, 6, ... 20)
+ *              textcolor (0xrrggbb00)
+ *      Return: pixd (of tiled images), or null on error
+ *
+ *  Notes:
+ *      (1) This is a version of pixaDisplayTiledInRows() that prints, below
+ *          each pix, the text in the pix text field.  Up to 127 chars
+ *          of text in the pix text field are rendered below each pix.
+ *      (2) It renders a pixa to a single image of width not to
+ *          exceed @maxwidth, with white background color, with each row
+ *          tiled such that the top of each pix is aligned and separated
+ *          by @spacing from the next one.
+ *      (3) All pix are converted to 32 bpp.
+ *      (4) This does a reasonably spacewise-efficient job of laying
+ *          out the individual pix images into a tiled composite.
+ */
+PIX *
+pixaDisplayTiledWithText(PIXA      *pixa,
+                         l_int32    maxwidth,
+                         l_float32  scalefactor,
+                         l_int32    spacing,
+                         l_int32    border,
+                         l_int32    fontsize,
+                         l_uint32   textcolor)
+{
+char      buf[128];
+char     *textstr;
+l_int32   i, n, maxw;
+L_BMF    *bmf;
+PIX      *pix1, *pix2, *pix3, *pix4, *pixd;
+PIXA     *pixad;
+
+    PROCNAME("pixaDisplayTiledWithText");
+
+    if (!pixa)
+        return (PIX *)ERROR_PTR("pixa not defined", procName, NULL);
+    if ((n = pixaGetCount(pixa)) == 0)
+        return (PIX *)ERROR_PTR("no components", procName, NULL);
+    if (maxwidth <= 0)
+        return (PIX *)ERROR_PTR("invalid maxwidth", procName, NULL);
+    if (border < 0)
+        border = 0;
+    if (scalefactor <= 0.0) {
+        L_WARNING("invalid scalefactor; setting to 1.0\n", procName);
+        scalefactor = 1.0;
+    }
+    if (fontsize < 4 || fontsize > 20 || (fontsize & 1)) {
+        l_int32 fsize = L_MAX(L_MIN(fontsize, 20), 4);
+        if (fsize & 1) fsize--;
+        L_WARNING("changed fontsize from %d to %d\n", procName,
+                  fontsize, fsize);
+        fontsize = fsize;
+    }
+
+        /* Be sure the width can accommodate a single column of images */
+    pixaSizeRange(pixa, NULL, NULL, &maxw, NULL);
+    maxwidth = L_MAX(maxwidth, scalefactor * (maxw + 2 * spacing + 2 * border));
+
+    bmf = bmfCreate(NULL, fontsize);
+    pixad = pixaCreate(n);
+    for (i = 0; i < n; i++) {
+        pix1 = pixaGetPix(pixa, i, L_CLONE);
+        pix2 = pixConvertTo32(pix1);
+        pix3 = pixAddBorderGeneral(pix2, spacing, spacing, spacing,
+                                   spacing, 0xffffff00);
+        textstr = pixGetText(pix1);
+        if (textstr && strlen(textstr) > 0) {
+            snprintf(buf, sizeof(buf), "%s", textstr);
+            pix4 = pixAddSingleTextblock(pix3, bmf, buf, textcolor,
+                                     L_ADD_BELOW, NULL);
+        } else {
+            pix4 = pixClone(pix3);
+        }
+        pixaAddPix(pixad, pix4, L_INSERT);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+        pixDestroy(&pix3);
+    }
+    bmfDestroy(&bmf);
+
+    pixd = pixaDisplayTiledInRows(pixad, 32, maxwidth, scalefactor,
+                                  0, 10, border);
+    pixaDestroy(&pixad);
+    return pixd;
+}
+
+
+/*!
+ *  pixaDisplayTiledByIndex()
+ *
+ *      Input:  pixa
+ *              numa (with indices corresponding to the pix in pixa)
+ *              width (each pix is scaled to this width)
+ *              spacing  (between images, and on outside)
+ *              border (width of black border added to each image;
+ *                      use 0 for no border)
+ *              fontsize (4, 6, ... 20)
+ *              textcolor (0xrrggbb00)
+ *      Return: pixd (of tiled images), or null on error
+ *
+ *  Notes:
+ *      (1) This renders a pixa to a single image with white
+ *          background color, where the pix are placed in columns
+ *          given by the index value in the numa.  Each pix
+ *          is separated by @spacing from the adjacent ones, and
+ *          an optional border is placed around them.
+ *      (2) Up to 127 chars of text in the pix text field are rendered
+ *          below each pix.  Use newlines in the text field to write
+ *          the text in multiple lines that fit within the pix width.
+ *      (3) To avoid having empty columns, if there are N different
+ *          index values, they should be in [0 ... N-1].
+ *      (4) All pix are converted to 32 bpp.
+ */
+PIX *
+pixaDisplayTiledByIndex(PIXA     *pixa,
+                        NUMA     *na,
+                        l_int32   width,
+                        l_int32   spacing,
+                        l_int32   border,
+                        l_int32   fontsize,
+                        l_uint32  textcolor)
+{
+char      buf[128];
+char     *textstr;
+l_int32    i, n, x, y, w, h, yval, index;
+l_float32  maxindex;
+L_BMF     *bmf;
+BOX       *box;
+NUMA      *nay;  /* top of the next pix to add in that column */
+PIX       *pix1, *pix2, *pix3, *pix4, *pix5, *pixd;
+PIXA      *pixad;
+
+    PROCNAME("pixaDisplayTiledByIndex");
+
+    if (!pixa)
+        return (PIX *)ERROR_PTR("pixa not defined", procName, NULL);
+    if (!na)
+        return (PIX *)ERROR_PTR("na not defined", procName, NULL);
+    if ((n = pixaGetCount(pixa)) == 0)
+        return (PIX *)ERROR_PTR("no pixa components", procName, NULL);
+    if (n != numaGetCount(na))
+        return (PIX *)ERROR_PTR("pixa and na counts differ", procName, NULL);
+    if (width <= 0)
+        return (PIX *)ERROR_PTR("invalid width", procName, NULL);
+    if (width < 20)
+        L_WARNING("very small width: %d\n", procName, width);
+    if (border < 0)
+        border = 0;
+    if (fontsize < 4 || fontsize > 20 || (fontsize & 1)) {
+        l_int32 fsize = L_MAX(L_MIN(fontsize, 20), 4);
+        if (fsize & 1) fsize--;
+        L_WARNING("changed fontsize from %d to %d\n", procName,
+                  fontsize, fsize);
+        fontsize = fsize;
+    }
+
+        /* The pix will be rendered in the order they occupy in pixa. */
+    bmf = bmfCreate(NULL, fontsize);
+    pixad = pixaCreate(n);
+    numaGetMax(na, &maxindex, NULL);
+    nay = numaMakeConstant(spacing, lept_roundftoi(maxindex) + 1);
+    for (i = 0; i < n; i++) {
+        numaGetIValue(na, i, &index);
+        numaGetIValue(nay, index, &yval);
+        pix1 = pixaGetPix(pixa, i, L_CLONE);
+        pix2 = pixConvertTo32(pix1);
+        pix3 = pixScaleToSize(pix2, width, 0);
+        pix4 = pixAddBorderGeneral(pix3, border, border, border, border, 0);
+        textstr = pixGetText(pix1);
+        if (textstr && strlen(textstr) > 0) {
+            snprintf(buf, sizeof(buf), "%s", textstr);
+            pix5 = pixAddTextlines(pix4, bmf, textstr, textcolor, L_ADD_BELOW);
+        } else {
+            pix5 = pixClone(pix4);
+        }
+        pixaAddPix(pixad, pix5, L_INSERT);
+        x = spacing + border + index * (2 * border + width + spacing);
+        y = yval;
+        pixGetDimensions(pix5, &w, &h, NULL);
+        yval += h + spacing;
+        numaSetValue(nay, index, yval);
+        box = boxCreate(x, y, w, h);
+        pixaAddBox(pixad, box, L_INSERT);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+        pixDestroy(&pix3);
+        pixDestroy(&pix4);
+    }
+    numaDestroy(&nay);
+    bmfDestroy(&bmf);
+
+    pixd = pixaDisplay(pixad, 0, 0);
+    pixaDestroy(&pixad);
+    return pixd;
+}
+
 
 
 /*---------------------------------------------------------------------*
@@ -1256,7 +1476,7 @@ PIXA     *pixa;
         y += harray[hindex++] + yspace;
         pixaDestroy(&pixa);
     }
-    FREE(harray);
+    LEPT_FREE(harray);
 
     numaDestroy(&nah);
     return pixd;
@@ -1608,9 +1828,9 @@ SARRAY    *sa;
             pix2 = pixScaleToSize(pix1, tw, 0);  /* all images have width tw */
             if (bmf) {
                 splitPathAtDirectory(fname, NULL, &tail);
-                pix3 = pixAddSingleTextline(pix2, bmf, tail, 0xff000000,
-                                            L_ADD_BELOW);
-                FREE(tail);
+                pix3 = pixAddTextlines(pix2, bmf, tail, 0xff000000,
+                                       L_ADD_BELOW);
+                LEPT_FREE(tail);
             } else {
                 pix3 = pixClone(pix2);
             }

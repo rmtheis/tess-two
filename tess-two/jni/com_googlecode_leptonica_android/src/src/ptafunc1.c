@@ -38,8 +38,20 @@
  *           PTA      *ptaSort()
  *           l_int32   ptaGetSortIndex()
  *           PTA      *ptaSortByIndex()
- *           PTA      *ptaRemoveDuplicates()
  *           PTAA     *ptaaSortByIndex()
+ *
+ *      Union and intersection by aset (rbtree)
+ *           PTA        *ptaUnionByAset()
+ *           PTA        *ptaRemoveDupsByAset()
+ *           PTA        *ptaIntersectionByAset()
+ *           L_ASET     *l_asetCreateFromPta()
+ *
+ *      Union and intersection by hash
+ *           PTA        *ptaUnionByHash()
+ *           l_int32     ptaRemoveDupsByHash()
+ *           PTA        *ptaIntersectionByHash();
+ *           l_int32     ptaFindPtByHash()
+ *           L_DNAHASH  *l_dnaHashCreateFromPta()
  *
  *      Geometric
  *           BOX      *ptaGetBoundingRegion()
@@ -70,6 +82,8 @@
  *           PIX      *pixGenerateFromPta()
  *           PTA      *ptaGetBoundaryPixels()
  *           PTAA     *ptaaGetBoundaryPixels()
+ *           PTAA     *ptaaIndexLabelledPixels()
+ *           PTA      *ptaGetNeighborPixLocs()
  *
  *      Display Pta and Ptaa
  *           PIX      *pixDisplayPta()
@@ -86,8 +100,8 @@
 #define M_PI 3.14159265358979323846
 #endif  /* M_PI */
 
-    /* Default spreading factor for hashing pts in a plane */
-static const l_int32  DEFAULT_SPREADING_FACTOR = 7500;
+
+static l_int32 l_dnaCopyUniquePts(L_DNA *da, PTA *ptas, PTA *ptad);
 
 
 /*---------------------------------------------------------------------*
@@ -482,82 +496,6 @@ PTA       *ptad;
 
 
 /*!
- *  ptaRemoveDuplicates()
- *
- *      Input:  ptas (assumed to be integer values)
- *              factor (should be larger than the largest point value;
- *                      use 0 for default)
- *      Return: ptad (with duplicates removed), or null on error
- */
-PTA *
-ptaRemoveDuplicates(PTA      *ptas,
-                    l_uint32  factor)
-{
-l_int32    nsize, i, j, k, index, n, nvals;
-l_int32    x, y, xk, yk;
-l_int32   *ia;
-PTA       *ptad;
-NUMA      *na;
-NUMAHASH  *nahash;
-
-    PROCNAME("ptaRemoveDuplicates");
-
-    if (!ptas)
-        return (PTA *)ERROR_PTR("ptas not defined", procName, NULL);
-    if (factor == 0)
-        factor = DEFAULT_SPREADING_FACTOR;
-
-        /* Build up numaHash of indices, hashed by a key that is
-         * a large linear combination of x and y values designed to
-         * randomize the key. */
-    nsize = 5507;  /* buckets in hash table; prime */
-    nahash = numaHashCreate(nsize, 2);
-    n = ptaGetCount(ptas);
-    for (i = 0; i < n; i++) {
-        ptaGetIPt(ptas, i, &x, &y);
-        numaHashAdd(nahash, factor * x + y, (l_float32)i);
-    }
-
-    if ((ptad = ptaCreate(n)) == NULL)
-        return (PTA *)ERROR_PTR("ptad not made", procName, NULL);
-    for (i = 0; i < nsize; i++) {
-        na = numaHashGetNuma(nahash, i);
-        if (!na) continue;
-
-        nvals = numaGetCount(na);
-            /* If more than 1 pt, compare exhaustively with double loop;
-             * otherwise, just enter it. */
-        if (nvals > 1) {
-            if ((ia = (l_int32 *)CALLOC(nvals, sizeof(l_int32))) == NULL)
-                return (PTA *)ERROR_PTR("ia not made", procName, NULL);
-            for (j = 0; j < nvals; j++) {
-                if (ia[j] == 1) continue;
-                numaGetIValue(na, j, &index);
-                ptaGetIPt(ptas, index, &x, &y);
-                ptaAddPt(ptad, x, y);
-                for (k = j + 1; k < nvals; k++) {
-                    if (ia[k] == 1) continue;
-                    numaGetIValue(na, k, &index);
-                    ptaGetIPt(ptas, index, &xk, &yk);
-                    if (x == xk && y == yk)  /* duplicate */
-                        ia[k] = 1;
-                }
-            }
-            FREE(ia);
-        } else {
-            numaGetIValue(na, 0, &index);
-            ptaGetIPt(ptas, index, &x, &y);
-            ptaAddPt(ptad, x, y);
-        }
-        numaDestroy(&na);  /* the clone */
-    }
-
-    numaHashDestroy(&nahash);
-    return ptad;
-}
-
-
-/*!
  *  ptaaSortByIndex()
  *
  *      Input:  ptaas
@@ -590,6 +528,441 @@ PTAA    *ptaad;
     }
 
     return ptaad;
+}
+
+
+/*---------------------------------------------------------------------*
+ *                 Union and intersection by aset (rbtree)             *
+ *---------------------------------------------------------------------*/
+/*!
+ *  ptaUnionByAset()
+ *
+ *      Input:  pta1, pta2
+ *      Return: ptad (with the union of the set of points), or null on error
+ *
+ *  Notes:
+ *      (1) See sarrayRemoveDupsByAset() for the approach.
+ *      (2) The key is a 64-bit hash from the (x,y) pair.
+ *      (3) This is slower than ptaUnionByHash(), mostly because of the
+ *          nlogn sort to build up the rbtree.  Do not use for large
+ *          numbers of points (say, > 1M).
+ *      (4) The *Aset() functions use the sorted l_Aset, which is just
+ *          an rbtree in disguise.
+ */
+PTA *
+ptaUnionByAset(PTA  *pta1,
+               PTA  *pta2)
+{
+PTA  *pta3, *ptad;
+
+    PROCNAME("ptaUnionByAset");
+
+    if (!pta1)
+        return (PTA *)ERROR_PTR("pta1 not defined", procName, NULL);
+    if (!pta2)
+        return (PTA *)ERROR_PTR("pta2 not defined", procName, NULL);
+
+        /* Join */
+    pta3 = ptaCopy(pta1);
+    ptaJoin(pta3, pta2, 0, -1);
+
+        /* Eliminate duplicates */
+    ptad = ptaRemoveDupsByAset(pta3);
+    ptaDestroy(&pta3);
+    return ptad;
+}
+
+
+/*!
+ *  ptaRemoveDupsByAset()
+ *
+ *      Input:  ptas (assumed to be integer values)
+ *      Return: ptad (with duplicates removed), or null on error
+ *
+ *  Notes:
+ *      (1) This is slower than ptaRemoveDupsByHash(), mostly because
+ *          of the nlogn sort to build up the rbtree.  Do not use for
+ *          large numbers of points (say, > 1M).
+ */
+PTA *
+ptaRemoveDupsByAset(PTA  *ptas)
+{
+l_int32   i, n, x, y;
+PTA      *ptad;
+l_uint64  hash;
+L_ASET   *set;
+RB_TYPE   key;
+
+    PROCNAME("ptaRemoveDupsByAset");
+
+    if (!ptas)
+        return (PTA *)ERROR_PTR("ptas not defined", procName, NULL);
+
+    set = l_asetCreate(L_UINT_TYPE);
+    n = ptaGetCount(ptas);
+    ptad = ptaCreate(n);
+    for (i = 0; i < n; i++) {
+        ptaGetIPt(ptas, i, &x, &y);
+        l_hashPtToUint64(x, y, &hash);
+        key.utype = hash;
+        if (!l_asetFind(set, key)) {
+            ptaAddPt(ptad, x, y);
+            l_asetInsert(set, key);
+        }
+    }
+
+    l_asetDestroy(&set);
+    return ptad;
+}
+
+
+/*!
+ *  ptaIntersectionByAset()
+ *
+ *      Input:  pta1, pta2
+ *      Return: ptad (intersection of the point sets), or null on error
+ *
+ *  Notes:
+ *      (1) See sarrayIntersectionByAset() for the approach.
+ *      (2) The key is a 64-bit hash from the (x,y) pair.
+ *      (3) This is slower than ptaIntersectionByHash(), mostly because
+ *          of the nlogn sort to build up the rbtree.  Do not use for
+ *          large numbers of points (say, > 1M).
+ */
+PTA *
+ptaIntersectionByAset(PTA  *pta1,
+                      PTA  *pta2)
+{
+l_int32   n1, n2, i, n, x, y;
+l_uint64  hash;
+L_ASET   *set1, *set2;
+RB_TYPE   key;
+PTA      *pta_small, *pta_big, *ptad;
+
+    PROCNAME("ptaIntersectionByAset");
+
+    if (!pta1)
+        return (PTA *)ERROR_PTR("pta1 not defined", procName, NULL);
+    if (!pta2)
+        return (PTA *)ERROR_PTR("pta2 not defined", procName, NULL);
+
+        /* Put the elements of the biggest array into a set */
+    n1 = ptaGetCount(pta1);
+    n2 = ptaGetCount(pta2);
+    pta_small = (n1 < n2) ? pta1 : pta2;   /* do not destroy pta_small */
+    pta_big = (n1 < n2) ? pta2 : pta1;   /* do not destroy pta_big */
+    set1 = l_asetCreateFromPta(pta_big);
+
+        /* Build up the intersection of points */
+    ptad = ptaCreate(0);
+    n = ptaGetCount(pta_small);
+    set2 = l_asetCreate(L_UINT_TYPE);
+    for (i = 0; i < n; i++) {
+        ptaGetIPt(pta_small, i, &x, &y);
+        l_hashPtToUint64(x, y, &hash);
+        key.utype = hash;
+        if (l_asetFind(set1, key) && !l_asetFind(set2, key)) {
+            ptaAddPt(ptad, x, y);
+            l_asetInsert(set2, key);
+        }
+    }
+
+    l_asetDestroy(&set1);
+    l_asetDestroy(&set2);
+    return ptad;
+}
+
+
+/*!
+ *  l_asetCreateFromPta()
+ *
+ *      Input:  pta
+ *      Return: set (using a 64-bit hash of (x,y) as the key)
+ */
+L_ASET *
+l_asetCreateFromPta(PTA  *pta)
+{
+l_int32   i, n, x, y;
+l_uint64  hash;
+L_ASET   *set;
+RB_TYPE   key;
+
+    PROCNAME("l_asetCreateFromPta");
+
+    if (!pta)
+        return (L_ASET *)ERROR_PTR("pta not defined", procName, NULL);
+
+    set = l_asetCreate(L_UINT_TYPE);
+    n = ptaGetCount(pta);
+    for (i = 0; i < n; i++) {
+        ptaGetIPt(pta, i, &x, &y);
+        l_hashPtToUint64(x, y, &hash);
+        key.utype = hash;
+        l_asetInsert(set, key);
+    }
+
+    return set;
+}
+
+
+/*---------------------------------------------------------------------*
+ *                    Union and intersection by hash                   *
+ *---------------------------------------------------------------------*/
+/*!
+ *  ptaUnionByHash()
+ *
+ *      Input:  pta1, pta2
+ *      Return: ptad (with the union of the set of points), or null on error
+ *
+ *  Notes:
+ *      (1) This is faster than ptaUnionByAset(), because the
+ *          bucket lookup is O(n).  It should be used if the pts are
+ *          integers (e.g., representing pixel positions).
+ */
+PTA *
+ptaUnionByHash(PTA  *pta1,
+               PTA  *pta2)
+{
+PTA  *pta3, *ptad;
+
+    PROCNAME("ptaUnionByHash");
+
+    if (!pta1)
+        return (PTA *)ERROR_PTR("pta1 not defined", procName, NULL);
+    if (!pta2)
+        return (PTA *)ERROR_PTR("pta2 not defined", procName, NULL);
+
+        /* Join */
+    pta3 = ptaCopy(pta1);
+    ptaJoin(pta3, pta2, 0, -1);
+
+        /* Eliminate duplicates */
+    ptaRemoveDupsByHash(pta3, &ptad, NULL);
+    ptaDestroy(&pta3);
+    return ptad;
+}
+
+
+/*!
+ *  ptaRemoveDupsByHash()
+ *
+ *      Input:  ptas (assumed to be integer values)
+ *              &ptad (<return> unique set of pts; duplicates removed)
+ *              &dahash (<optional return> dnahash used for lookup)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) Generates a pta with unique values.
+ *      (2) The dnahash is built up with ptad to assure uniqueness.
+ *          It can be used to find if a point is in the set:
+ *              ptaFindPtByHash(ptad, dahash, x, y, &index)
+ *      (3) The hash of the (x,y) location is simple and fast.  It scales
+ *          up with the number of buckets to insure a fairly random
+ *          bucket selection for adjacent points.
+ *      (4) A Dna is used rather than a Numa because we need accurate
+ *          representation of 32-bit integers that are indices into ptas.
+ *          Integer --> float --> integer conversion makes errors for
+ *          integers larger than 10M.
+ *      (5) This is faster than ptaRemoveDupsByAset(), because the
+ *          bucket lookup is O(n), although there is a double-loop
+ *          lookup within the dna in each bucket.
+ */
+l_int32
+ptaRemoveDupsByHash(PTA         *ptas,
+                    PTA        **pptad,
+                    L_DNAHASH  **pdahash)
+{
+l_int32     i, n, index, items, x, y;
+l_uint32    nsize;
+l_uint64    key;
+l_float64   val;
+PTA        *ptad;
+L_DNAHASH  *dahash;
+
+    PROCNAME("ptaRemoveDupsByHash");
+
+    if (pdahash) *pdahash = NULL;
+    if (!pptad)
+        return ERROR_INT("&ptad not defined", procName, 1);
+    *pptad = NULL;
+    if (!ptas)
+        return ERROR_INT("ptas not defined", procName, 1);
+
+    n = ptaGetCount(ptas);
+    findNextLargerPrime(n / 20, &nsize);  /* buckets in hash table */
+    dahash = l_dnaHashCreate(nsize, 8);
+    ptad = ptaCreate(n);
+    *pptad = ptad;
+    for (i = 0, items = 0; i < n; i++) {
+        ptaGetIPt(ptas, i, &x, &y);
+        ptaFindPtByHash(ptad, dahash, x, y, &index);
+        if (index < 0) {  /* not found */
+            l_hashPtToUint64Fast(nsize, x, y, &key);
+            l_dnaHashAdd(dahash, key, (l_float64)items);
+            ptaAddPt(ptad, x, y);
+            items++;
+        }
+    }
+
+    if (pdahash)
+        *pdahash = dahash;
+    else
+        l_dnaHashDestroy(&dahash);
+    return 0;
+}
+
+
+/*!
+ *  ptaIntersectionByHash()
+ *
+ *      Input:  pta1, pta2
+ *      Return: ptad (intersection of the point sets), or null on error
+ *
+ *  Notes:
+ *      (1) This is faster than ptaIntersectionByAset(), because the
+ *          bucket lookup is O(n).  It should be used if the pts are
+ *          integers (e.g., representing pixel positions).
+ */
+PTA *
+ptaIntersectionByHash(PTA  *pta1,
+                      PTA  *pta2)
+{
+l_int32     n1, n2, nsmall, i, x, y, index1, index2;
+l_uint32    nsize2;
+l_uint64    key;
+L_DNAHASH  *dahash1, *dahash2;
+PTA        *pta_small, *pta_big, *ptad;
+
+    PROCNAME("ptaIntersectionByHash");
+
+    if (!pta1)
+        return (PTA *)ERROR_PTR("pta1 not defined", procName, NULL);
+    if (!pta2)
+        return (PTA *)ERROR_PTR("pta2 not defined", procName, NULL);
+
+        /* Put the elements of the biggest pta into a dnahash */
+    n1 = ptaGetCount(pta1);
+    n2 = ptaGetCount(pta2);
+    pta_small = (n1 < n2) ? pta1 : pta2;   /* do not destroy pta_small */
+    pta_big = (n1 < n2) ? pta2 : pta1;   /* do not destroy pta_big */
+    dahash1 = l_dnaHashCreateFromPta(pta_big);
+
+        /* Build up the intersection of points.  Add to ptad
+         * if the point is in pta_big (using dahash1) but hasn't
+         * yet been seen in the traversal of pta_small (using dahash2). */
+    ptad = ptaCreate(0);
+    nsmall = ptaGetCount(pta_small);
+    findNextLargerPrime(nsmall / 20, &nsize2);  /* buckets in hash table */
+    dahash2 = l_dnaHashCreate(nsize2, 0);
+    for (i = 0; i < nsmall; i++) {
+        ptaGetIPt(pta_small, i, &x, &y);
+        ptaFindPtByHash(pta_big, dahash1, x, y, &index1);
+        if (index1 >= 0) {  /* found */
+            ptaFindPtByHash(pta_small, dahash2, x, y, &index2);
+            if (index2 == -1) {  /* not found */
+                ptaAddPt(ptad, x, y);
+                l_hashPtToUint64Fast(nsize2, x, y, &key);
+                l_dnaHashAdd(dahash2, key, (l_float64)i);
+            }
+        }
+    }
+
+    l_dnaHashDestroy(&dahash1);
+    l_dnaHashDestroy(&dahash2);
+    return ptad;
+}
+
+
+/*!
+ *  ptaFindPtByHash()
+ *
+ *      Input:  pta
+ *              dahash (built from pta)
+ *              x, y  (arbitrary points)
+ *              &index (<return> index into pta if (x,y) is in pta;
+ *                      -1 otherwise)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Notes:
+ *      (1) Fast lookup in dnaHash associated with a pta, to see if a
+ *          random point (x,y) is already stored in the hash table.
+ */
+l_int32
+ptaFindPtByHash(PTA        *pta,
+                L_DNAHASH  *dahash,
+                l_int32     x,
+                l_int32     y,
+                l_int32    *pindex)
+{
+l_int32   i, nbuckets, nvals, index, xi, yi;
+l_uint64  key;
+L_DNA    *da;
+
+    PROCNAME("ptaFindPtByHash");
+
+    if (!pindex)
+        return ERROR_INT("&index not defined", procName, 1);
+    *pindex = -1;
+    if (!pta)
+        return ERROR_INT("pta not defined", procName, 1);
+    if (!dahash)
+        return ERROR_INT("dahash not defined", procName, 1);
+
+    nbuckets = l_dnaHashGetCount(dahash);
+    l_hashPtToUint64Fast(nbuckets, x, y, &key);
+    da = l_dnaHashGetDna(dahash, key, L_NOCOPY);
+    if (!da) return 0;
+
+        /* Run through the da, looking for this point */
+    nvals = l_dnaGetCount(da);
+    for (i = 0; i < nvals; i++) {
+        l_dnaGetIValue(da, i, &index);
+        ptaGetIPt(pta, index, &xi, &yi);
+        if (x == xi && y == yi) {
+            *pindex = index;
+            return 0;
+        }
+    }
+
+    return 0;
+}
+
+
+/*!
+ *  l_dnaHashCreateFromPta()
+ *
+ *      Input:  pta
+ *      Return: dahash, or null on error
+ */
+L_DNAHASH *
+l_dnaHashCreateFromPta(PTA  *pta)
+{
+l_int32     i, n, x, y;
+l_uint32    nsize;
+l_uint64    key;
+L_DNAHASH  *dahash;
+
+    PROCNAME("l_dnaHashCreateFromPta");
+
+        /* Build up dnaHash of indices, hashed by a key that is
+         * a large linear combination of x and y values designed to
+         * randomize the key.  Having about 20 pts in each bucket is
+         * roughly optimal for speed for large sets. */
+    n = ptaGetCount(pta);
+    findNextLargerPrime(n / 20, &nsize);  /* buckets in hash table */
+/*    fprintf(stderr, "Prime used: %d\n", nsize); */
+
+        /* Add each point, using the hash as key and the index into
+         * @ptas as the value.  Storing the index enables operations
+         * that check for duplicates. */
+    dahash = l_dnaHashCreate(nsize, 8);
+    for (i = 0; i < n; i++) {
+        ptaGetIPt(pta, i, &x, &y);
+        l_hashPtToUint64Fast(nsize, x, y, &key);
+        l_dnaHashAdd(dahash, key, (l_float64)i);
+    }
+
+    return dahash;
 }
 
 
@@ -1174,7 +1547,7 @@ NUMA       *nafit;
     }
 
     for (i = 0; i < 3; i++)
-        f[i] = (l_float32 *)CALLOC(3, sizeof(l_float32));
+        f[i] = (l_float32 *)LEPT_CALLOC(3, sizeof(l_float32));
     f[0][0] = sx4;
     f[0][1] = sx3;
     f[0][2] = sx2;
@@ -1191,7 +1564,7 @@ NUMA       *nafit;
         /* Solve for the unknowns, also putting f-inverse into f */
     ret = gaussjordan(f, g, 3);
     for (i = 0; i < 3; i++)
-        FREE(f[i]);
+        LEPT_FREE(f[i]);
     if (ret)
         return ERROR_INT("quadratic solution failed", procName, 1);
 
@@ -1293,7 +1666,7 @@ NUMA       *nafit;
     }
 
     for (i = 0; i < 4; i++)
-        f[i] = (l_float32 *)CALLOC(4, sizeof(l_float32));
+        f[i] = (l_float32 *)LEPT_CALLOC(4, sizeof(l_float32));
     f[0][0] = sx6;
     f[0][1] = sx5;
     f[0][2] = sx4;
@@ -1318,7 +1691,7 @@ NUMA       *nafit;
         /* Solve for the unknowns, also putting f-inverse into f */
     ret = gaussjordan(f, g, 4);
     for (i = 0; i < 4; i++)
-        FREE(f[i]);
+        LEPT_FREE(f[i]);
     if (ret)
         return ERROR_INT("cubic solution failed", procName, 1);
 
@@ -1431,7 +1804,7 @@ NUMA       *nafit;
     }
 
     for (i = 0; i < 5; i++)
-        f[i] = (l_float32 *)CALLOC(5, sizeof(l_float32));
+        f[i] = (l_float32 *)LEPT_CALLOC(5, sizeof(l_float32));
     f[0][0] = sx8;
     f[0][1] = sx7;
     f[0][2] = sx6;
@@ -1466,7 +1839,7 @@ NUMA       *nafit;
         /* Solve for the unknowns, also putting f-inverse into f */
     ret = gaussjordan(f, g, 5);
     for (i = 0; i < 5; i++)
-        FREE(f[i]);
+        LEPT_FREE(f[i]);
     if (ret)
         return ERROR_INT("quartic solution failed", procName, 1);
 
@@ -1857,9 +2230,9 @@ PIX            *pixt;
         numaDestroy(&nar);
         numaDestroy(&nag);
         numaDestroy(&nab);
-        FREE(rtitle);
-        FREE(gtitle);
-        FREE(btitle);
+        LEPT_FREE(rtitle);
+        LEPT_FREE(gtitle);
+        LEPT_FREE(btitle);
     } else {
         na = numaCreate(npts);
         for (i = 0; i < npts; i++) {
@@ -1979,6 +2352,8 @@ PIX     *pix;
  *
  *  Notes:
  *      (1) This generates a pta of either fg or bg boundary pixels.
+ *      (2) See also pixGeneratePtaBoundary() for rendering of
+ *          fg boundary pixels.
  */
 PTA *
 ptaGetBoundaryPixels(PIX     *pixs,
@@ -2086,6 +2461,127 @@ PTAA    *ptaa;
     else
         pixaDestroy(&pixa);
     return ptaa;
+}
+
+
+/*!
+ *  ptaaIndexLabelledPixels()
+ *
+ *      Input:  pixs (32 bpp, of indices of c.c.)
+ *              &ncc (<optional return> number of connected components)
+ *      Return: ptaa, or null on error
+ *
+ *  Notes:
+ *      (1) The pixel values in @pixs are the index of the connected component
+ *          to which the pixel belongs; @pixs is typically generated from
+ *          a 1 bpp pix by pixConnCompTransform().  Background pixels in
+ *          the generating 1 bpp pix are represented in @pixs by 0.
+ *          We do not check that the pixel values are correctly labelled.
+ *      (2) Each pta in the returned ptaa gives the pixel locations
+ *          correspnding to a connected component, with the label of each
+ *          given by the index of the pta into the ptaa.
+ *      (3) Initialize with the first pta in ptaa being empty and
+ *          representing the background value (index 0) in the pix.
+ */
+PTAA *
+ptaaIndexLabelledPixels(PIX      *pixs,
+                        l_int32  *pncc)
+{
+l_int32    wpl, index, i, j, w, h;
+l_uint32   maxval;
+l_uint32  *data, *line;
+PTA       *pta;
+PTAA      *ptaa;
+
+    PROCNAME("ptaaIndexLabelledPixels");
+
+    if (pncc) *pncc = 0;
+    if (!pixs || (pixGetDepth(pixs) != 32))
+        return (PTAA *)ERROR_PTR("pixs undef or not 32 bpp", procName, NULL);
+
+        /* The number of c.c. is the maximum pixel value.  Use this to
+         * initialize ptaa with sufficient pta arrays */
+    pixGetMaxValueInRect(pixs, NULL, &maxval, NULL, NULL);
+    if (pncc) *pncc = maxval;
+    pta = ptaCreate(1);
+    ptaa = ptaaCreate(maxval + 1);
+    ptaaInitFull(ptaa, pta);
+    ptaDestroy(&pta);
+
+        /* Sweep over @pixs, saving the pixel coordinates of each pixel
+         * with nonzero value in the appropriate pta, indexed by that value. */
+    pixGetDimensions(pixs, &w, &h, NULL);
+    data = pixGetData(pixs);
+    wpl = pixGetWpl(pixs);
+    for (i = 0; i < h; i++) {
+        line = data + wpl * i;
+        for (j = 0; j < w; j++) {
+            index = line[j];
+            if (index > 0)
+                ptaaAddPt(ptaa, index, j, i);
+        }
+    }
+
+    return ptaa;
+}
+
+
+/*!
+ *  ptaGetNeighborPixLocs()
+ *
+ *      Input:  pixs (any depth)
+ *              x, y (pixel from which we search for nearest neighbors
+ *              conn (4 or 8 connectivity)
+ *      Return: pta, or null on error
+ *
+ *  Notes:
+ *      (1) Generates a pta of all valid neighbor pixel locations,
+ *          or null on error.
+ */
+PTA *
+ptaGetNeighborPixLocs(PIX  *pixs,
+                      l_int32  x,
+                      l_int32  y,
+                      l_int32  conn)
+{
+l_int32  w, h;
+PTA     *pta;
+
+    PROCNAME("ptaGetNeighborPixLocs");
+
+    if (!pixs)
+        return (PTA *)ERROR_PTR("pixs not defined", procName, NULL);
+    pixGetDimensions(pixs, &w, &h, NULL);
+    if (x < 0 || x >= w || y < 0 || y >= h)
+        return (PTA *)ERROR_PTR("(x,y) not in pixs", procName, NULL);
+    if (conn != 4 && conn != 8)
+        return (PTA *)ERROR_PTR("conn not 4 or 8", procName, NULL);
+
+    pta = ptaCreate(conn);
+    if (x > 0)
+        ptaAddPt(pta, x - 1, y);
+    if (x < w - 1)
+        ptaAddPt(pta, x + 1, y);
+    if (y > 0)
+        ptaAddPt(pta, x, y - 1);
+    if (y < h - 1)
+        ptaAddPt(pta, x, y + 1);
+    if (conn == 8) {
+        if (x > 0) {
+            if (y > 0)
+                ptaAddPt(pta, x - 1, y - 1);
+            if (y < h - 1)
+                ptaAddPt(pta, x - 1, y + 1);
+        }
+        if (x < w - 1) {
+            if (y > 0)
+                ptaAddPt(pta, x + 1, y - 1);
+            if (y < h - 1)
+                ptaAddPt(pta, x + 1, y + 1);
+        }
+    }
+
+    return pta;
 }
 
 
@@ -2373,7 +2869,7 @@ PTA       *pta;
     pixGetDimensions(pixd, &w, &h, NULL);
 
         /* Make a colormap for the paths */
-    if ((pixela = (l_uint32 *)CALLOC(npta, sizeof(l_uint32))) == NULL)
+    if ((pixela = (l_uint32 *)LEPT_CALLOC(npta, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("calloc fail for pixela", procName, NULL);
     na1 = numaPseudorandomSequence(256, 14657);
     na2 = numaPseudorandomSequence(256, 34631);
@@ -2400,6 +2896,6 @@ PTA       *pta;
         ptaDestroy(&pta);
     }
 
-    FREE(pixela);
+    LEPT_FREE(pixela);
     return pixd;
 }

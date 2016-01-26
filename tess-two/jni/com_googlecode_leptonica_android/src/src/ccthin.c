@@ -383,14 +383,14 @@ SELA  *sela;
         selaAddSel(sela, sel, NULL, 0);
         sel = selCreateFromString(sel_4_7, 3, 3, "sel_4_7");
         selaAddSel(sela, sel, NULL, 0);
-	sel = selRotateOrth(sel, 1);
+        sel = selRotateOrth(sel, 1);
         selaAddSel(sela, sel, "sel_4_7_rot", 0);
         break;
     case 3:
         sela = selaCreate(3);
         sel = selCreateFromString(sel_48_1, 3, 3, "sel_48_1");
         selaAddSel(sela, sel, NULL, 0);
-	sel = selRotateOrth(sel, 1);
+        sel = selRotateOrth(sel, 1);
         selaAddSel(sela, sel, "sel_48_1_rot", 0);
         sel = selCreateFromString(sel_48_2, 3, 3, "sel_48_2");
         selaAddSel(sela, sel, NULL, 0);

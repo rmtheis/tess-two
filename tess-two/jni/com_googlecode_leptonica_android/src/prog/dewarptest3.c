@@ -49,7 +49,9 @@ PIXA       *pixa;
 PTA        *pta, *ptad;
 PTAA       *ptaa1, *ptaa2;
 
-    pixs = pixRead("cat-35.jpg");
+    lept_mkdir("lept");
+
+    pixs = pixRead("cat.035.jpg");
 /*    pixs = pixRead("zanotti-78.jpg"); */
 
         /* Normalize for varying background and binarize */
@@ -65,7 +67,7 @@ PTAA       *ptaa1, *ptaa2;
     pixt1 = pixCreateTemplate(pixs);
     pixSetAll(pixt1);
     pixt2 = pixDisplayPtaa(pixt1, ptaa1);
-    pixWrite("/tmp/textline1.png", pixt2, IFF_PNG);
+    pixWrite("/tmp/lept/textline1.png", pixt2, IFF_PNG);
     pixDisplayWithTitle(pixt2, 0, 100, "textline centers 1", 1);
     pixaAddPix(pixa, pixt2, L_INSERT);
     pixDestroy(&pixt1);
@@ -76,7 +78,7 @@ PTAA       *ptaa1, *ptaa2;
     pixt1 = pixCreateTemplate(pixs);
     pixSetAll(pixt1);
     pixt2 = pixDisplayPtaa(pixt1, ptaa2);
-    pixWrite("/tmp/textline2.png", pixt2, IFF_PNG);
+    pixWrite("/tmp/lept/textline2.png", pixt2, IFF_PNG);
     pixDisplayWithTitle(pixt2, 300, 100, "textline centers 2", 1);
     pixaAddPix(pixa, pixt2, L_INSERT);
     pixDestroy(&pixt1);
@@ -88,7 +90,7 @@ PTAA       *ptaa1, *ptaa2;
         /* Long lines over input image */
     pixt1 = pixCopy(NULL, pixs);
     pixt2 = pixDisplayPtaa(pixt1, ptaa2);
-    pixWrite("/tmp/textline3.png", pixt2, IFF_PNG);
+    pixWrite("/tmp/lept/textline3.png", pixt2, IFF_PNG);
     pixDisplayWithTitle(pixt2, 600, 100, "textline centers 3", 1);
     pixaAddPix(pixa, pixt2, L_INSERT);
     pixDestroy(&pixt1);
@@ -108,7 +110,7 @@ PTAA       *ptaa1, *ptaa2;
         numaDestroy(&nax);
         numaDestroy(&nafit);
     }
-    pixWrite("/tmp/textline4.png", pixt1, IFF_PNG);
+    pixWrite("/tmp/lept/textline4.png", pixt1, IFF_PNG);
     pixDisplayWithTitle(pixt1, 900, 100, "textline centers 4", 1);
     pixaAddPix(pixa, pixt1, L_INSERT);
 
@@ -127,7 +129,7 @@ PTAA       *ptaa1, *ptaa2;
         numaDestroy(&nax);
         numaDestroy(&nafit);
     }
-    pixWrite("/tmp/textline5.png", pixt1, IFF_PNG);
+    pixWrite("/tmp/lept/textline5.png", pixt1, IFF_PNG);
     pixDisplayWithTitle(pixt1, 1200, 100, "textline centers 5", 1);
     pixaAddPix(pixa, pixt1, L_INSERT);
 
@@ -147,13 +149,13 @@ PTAA       *ptaa1, *ptaa2;
         numaDestroy(&nax);
         numaDestroy(&nafit);
     }
-    pixWrite("/tmp/textline6.png", pixt1, IFF_PNG);
+    pixWrite("/tmp/lept/textline6.png", pixt1, IFF_PNG);
     pixDisplayWithTitle(pixt1, 1500, 100, "textline centers 6", 1);
     pixaAddPix(pixa, pixt1, L_INSERT);
 
     pixaConvertToPdf(pixa, 300, 0.5, L_JPEG_ENCODE, 75,
-                     "LS fittings to textlines", "/tmp/dewarp_fittings.pdf");
-
+                     "LS fittings to textlines",
+                     "/tmp/lept/dewarp_fittings.pdf");
     pixaDestroy(&pixa);
     pixDestroy(&pixs);
     ptaaDestroy(&ptaa2);

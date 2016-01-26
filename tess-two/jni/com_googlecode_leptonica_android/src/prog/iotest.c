@@ -59,17 +59,19 @@ PIXCMAP     *cmap;
 static char  mainName[] = "iotest";
 
     if (argc != 1)
-	return ERROR_INT(" Syntax: iotest", mainName, 1);
+        return ERROR_INT(" Syntax: iotest", mainName, 1);
+
+    lept_mkdir("lept/io");
 
         /* Test 16 to 8 stripping */
     pixs = pixRead("test16.tif");
-    pixWrite("/tmp/test16.png", pixs, IFF_PNG);
-    pix1 = pixRead("/tmp/test16.png");
+    pixWrite("/tmp/lept/io/test16.png", pixs, IFF_PNG);
+    pix1 = pixRead("/tmp/lept/io/test16.png");
     if ((d = pixGetDepth(pix1)) != 8)
         fprintf(stderr, "Error: d = %d; should be 8", d);
     pixDestroy(&pix1);
     l_pngSetReadStrip16To8(0);
-    pix1 = pixRead("/tmp/test16.png");
+    pix1 = pixRead("/tmp/lept/io/test16.png");
     if ((d = pixGetDepth(pix1)) != 16)
         fprintf(stderr, "Error: d = %d; should be 16", d);
     pixDestroy(&pix1);
@@ -79,8 +81,8 @@ static char  mainName[] = "iotest";
     pixs = pixRead("feyn.tif");
     for (level = 0; level < 10; level++) {
         pixSetZlibCompression(pixs, level);
-        pixWrite("/tmp/zlibtest.png", pixs, IFF_PNG);
-        size = nbytesInFile("/tmp/zlibtest.png");
+        pixWrite("/tmp/lept/io/zlibtest.png", pixs, IFF_PNG);
+        size = nbytesInFile("/tmp/lept/io/zlibtest.png");
         fprintf(stderr, "zlib level = %d, file size = %ld\n",
                 level, (unsigned long)size);
     }
@@ -88,16 +90,16 @@ static char  mainName[] = "iotest";
 
         /* Test chroma sampling options in jpeg */
     pixs = pixRead("marge.jpg");
-    pixWrite("/tmp/chromatest.jpg", pixs, IFF_JFIF_JPEG);
-    size = nbytesInFile("/tmp/chromatest.jpg");
+    pixWrite("/tmp/lept/io/chromatest.jpg", pixs, IFF_JFIF_JPEG);
+    size = nbytesInFile("/tmp/lept/io/chromatest.jpg");
     fprintf(stderr, "chroma default: file size = %ld\n", (unsigned long)size);
     pixSetChromaSampling(pixs, 0);
-    pixWrite("/tmp/chromatest.jpg", pixs, IFF_JFIF_JPEG);
-    size = nbytesInFile("/tmp/chromatest.jpg");
+    pixWrite("/tmp/lept/io/chromatest.jpg", pixs, IFF_JFIF_JPEG);
+    size = nbytesInFile("/tmp/lept/io/chromatest.jpg");
     fprintf(stderr, "no ch. sampling: file size = %ld\n", (unsigned long)size);
     pixSetChromaSampling(pixs, 1);
-    pixWrite("/tmp/chromatest.jpg", pixs, IFF_JFIF_JPEG);
-    size = nbytesInFile("/tmp/chromatest.jpg");
+    pixWrite("/tmp/lept/io/chromatest.jpg", pixs, IFF_JFIF_JPEG);
+    size = nbytesInFile("/tmp/lept/io/chromatest.jpg");
     fprintf(stderr, "chroma sampling: file size = %ld\n", (unsigned long)size);
     pixDestroy(&pixs);
 
@@ -108,17 +110,17 @@ static char  mainName[] = "iotest";
     pixDisplay(pixg, 300, 100);
     pixDestroy(&pixg);
     pix1 = pixAlphaBlendUniform(pixs, 0xffffff00);  /* render rgb over white */
-    pixWrite("/tmp/logo1.png", pix1, IFF_PNG);
+    pixWrite("/tmp/lept/io/logo1.png", pix1, IFF_PNG);
     pixDisplay(pix1, 0, 250);
     pix2 = pixSetAlphaOverWhite(pix1);  /* regenerate alpha from white */
     pixDisplay(pix2, 0, 400);
-    pixWrite("/tmp/logo2.png", pix2, IFF_PNG);
+    pixWrite("/tmp/lept/io/logo2.png", pix2, IFF_PNG);
     pixg = pixGetRGBComponent(pix2, L_ALPHA_CHANNEL);
     pixDisplay(pixg, 300, 400);
     pixDestroy(&pixg);
-    pix3 = pixRead("/tmp/logo2.png");
+    pix3 = pixRead("/tmp/lept/io/logo2.png");
     pix4 = pixAlphaBlendUniform(pix3, 0x00ffff00);  /* render rgb over cyan */
-    pixWrite("/tmp/logo3.png", pix3, IFF_PNG);
+    pixWrite("/tmp/lept/io/logo3.png", pix3, IFF_PNG);
     pixDisplay(pix3, 0, 550);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
@@ -140,23 +142,23 @@ static char  mainName[] = "iotest";
     cmap = pixGetColormap(pixs);
         /* Write and read back the colormap */
     pixcmapWriteStream(stderr, pixGetColormap(pixs));
-    fp = lept_fopen("/tmp/cmap1", "wb");
+    fp = lept_fopen("/tmp/lept/io/cmap1", "wb");
     pixcmapWriteStream(fp, pixGetColormap(pixs));
     lept_fclose(fp);
-    fp = lept_fopen("/tmp/cmap1", "rb");
+    fp = lept_fopen("/tmp/lept/io/cmap1", "rb");
     cmap = pixcmapReadStream(fp);
     lept_fclose(fp);
-    fp = lept_fopen("/tmp/cmap2", "wb");
+    fp = lept_fopen("/tmp/lept/io/cmap2", "wb");
     pixcmapWriteStream(fp, cmap);
     lept_fclose(fp);
     pixcmapDestroy(&cmap);
         /* Remove and regenerate colormap */
     pix1 = pixRemoveColormap(pixs, REMOVE_CMAP_BASED_ON_SRC);
     pixaAddPix(pixa, pix1, L_CLONE);
-    pixWrite("/tmp/weaselrgb.png", pix1, IFF_PNG);
+    pixWrite("/tmp/lept/io/weaselrgb.png", pix1, IFF_PNG);
     pix2 = pixConvertRGBToColormap(pix1, 1);
     pixaAddPix(pixa, pix2, L_CLONE);
-    pixWrite("/tmp/weaselcmap.png", pix2, IFF_PNG);
+    pixWrite("/tmp/lept/io/weaselcmap.png", pix2, IFF_PNG);
     pixDestroy(&pixs);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
@@ -165,10 +167,10 @@ static char  mainName[] = "iotest";
     pixaAddPix(pixa, pixs, L_CLONE);
     pix1 = pixRemoveColormap(pixs, REMOVE_CMAP_BASED_ON_SRC);
     pixaAddPix(pixa, pix1, L_CLONE);
-    pixWrite("/tmp/weaselgray.png", pix1, IFF_PNG);
+    pixWrite("/tmp/lept/io/weaselgray.png", pix1, IFF_PNG);
     pix2 = pixConvertGrayToColormap(pix1);
     pixaAddPix(pixa, pix2, L_CLONE);
-    pixWrite("/tmp/weaselcmap2.png", pix2, IFF_PNG);
+    pixWrite("/tmp/lept/io/weaselcmap2.png", pix2, IFF_PNG);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pix3 = pixaDisplayTiled(pixa, 400, 0, 20);
@@ -200,26 +202,26 @@ static char  mainName[] = "iotest";
     fprintf(stderr, "Input format extension: %s\n",
             ImageFileFormatExtensions[format]);
     pixs = pixRead("feyn-fract.tif");
-    pixWrite("/tmp/fract1.tif", pixs, IFF_TIFF);
-    size = nbytesInFile("/tmp/fract1.tif");
+    pixWrite("/tmp/lept/io/fract1.tif", pixs, IFF_TIFF);
+    size = nbytesInFile("/tmp/lept/io/fract1.tif");
     fprintf(stderr, "uncompressed: %ld\n", (unsigned long)size);
-    pixWrite("/tmp/fract2.tif", pixs, IFF_TIFF_PACKBITS);
-    size = nbytesInFile("/tmp/fract2.tif");
+    pixWrite("/tmp/lept/io/fract2.tif", pixs, IFF_TIFF_PACKBITS);
+    size = nbytesInFile("/tmp/lept/io/fract2.tif");
     fprintf(stderr, "packbits: %ld\n", (unsigned long)size);
-    pixWrite("/tmp/fract3.tif", pixs, IFF_TIFF_RLE);
-    size = nbytesInFile("/tmp/fract3.tif");
+    pixWrite("/tmp/lept/io/fract3.tif", pixs, IFF_TIFF_RLE);
+    size = nbytesInFile("/tmp/lept/io/fract3.tif");
     fprintf(stderr, "rle: %ld\n", (unsigned long)size);
-    pixWrite("/tmp/fract4.tif", pixs, IFF_TIFF_G3);
-    size = nbytesInFile("/tmp/fract4.tif");
+    pixWrite("/tmp/lept/io/fract4.tif", pixs, IFF_TIFF_G3);
+    size = nbytesInFile("/tmp/lept/io/fract4.tif");
     fprintf(stderr, "g3: %ld\n", (unsigned long)size);
-    pixWrite("/tmp/fract5.tif", pixs, IFF_TIFF_G4);
-    size = nbytesInFile("/tmp/fract5.tif");
+    pixWrite("/tmp/lept/io/fract5.tif", pixs, IFF_TIFF_G4);
+    size = nbytesInFile("/tmp/lept/io/fract5.tif");
     fprintf(stderr, "g4: %ld\n", (unsigned long)size);
-    pixWrite("/tmp/fract6.tif", pixs, IFF_TIFF_LZW);
-    size = nbytesInFile("/tmp/fract6.tif");
+    pixWrite("/tmp/lept/io/fract6.tif", pixs, IFF_TIFF_LZW);
+    size = nbytesInFile("/tmp/lept/io/fract6.tif");
     fprintf(stderr, "lzw: %ld\n", (unsigned long)size);
-    pixWrite("/tmp/fract7.tif", pixs, IFF_TIFF_ZIP);
-    size = nbytesInFile("/tmp/fract7.tif");
+    pixWrite("/tmp/lept/io/fract7.tif", pixs, IFF_TIFF_ZIP);
+    size = nbytesInFile("/tmp/lept/io/fract7.tif");
     fprintf(stderr, "zip: %ld\n", (unsigned long)size);
     pixDestroy(&pixs);
 

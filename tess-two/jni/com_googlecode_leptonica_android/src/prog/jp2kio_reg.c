@@ -49,6 +49,7 @@
 #endif /* HAVE_CONFIG_H */
 
 void DoJp2kTest1(L_REGPARAMS *rp, const char *fname);
+void DoJp2kTest2(L_REGPARAMS *rp, const char *fname);
 
 
 int main(int    argc,
@@ -73,9 +74,11 @@ L_REGPARAMS  *rp;
     if (regTestSetup(argc, argv, &rp))
         return 1;
 
-    lept_mkdir("lept");
+    lept_mkdir("lept/jp2");
     DoJp2kTest1(rp, "karen8.jpg");
     DoJp2kTest1(rp, "test24.jpg");
+    DoJp2kTest2(rp, "karen8.jpg");
+    DoJp2kTest2(rp, "test24.jpg");
 
     return regTestCleanup(rp);
 }
@@ -92,7 +95,7 @@ PIX     *pix1, *pix2, *pix3;
     pix1 = pixRead(fname);
     pixGetDimensions(pix1, &w, &h, NULL);
     box = boxCreate(w / 4, h / 4, w / 2, h / 2);
-    snprintf(buf, sizeof(buf), "/tmp/lept/jp2kio.%03d.jp2", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/lept/jp2/jp2kio.%03d.jp2", rp->index + 1);
     pixWrite(buf, pix1, IFF_JP2);
     regTestCheckFile(rp, buf);
     pix2 = pixRead(buf);
@@ -101,7 +104,6 @@ PIX     *pix1, *pix2, *pix3;
     pixDestroy(&pix2);
 
     pix1 = pixReadJp2k(buf, 1, box, 0, 0);  /* just read the box region */
-    snprintf(buf, sizeof(buf), "/tmp/lept/jp2kio.%03d.jp2", rp->index + 1);
     pixWriteJp2k(buf, pix1, 38, 0, 0, 0);
     regTestCheckFile(rp, buf);
     pix2 = pixRead(buf);
@@ -115,4 +117,46 @@ PIX     *pix1, *pix2, *pix3;
     pixDestroy(&pix3);
     return;
 }
+
+void DoJp2kTest2(L_REGPARAMS  *rp,
+                 const char   *fname)
+{
+char      buf[256];
+l_uint8  *data;
+l_int32   w, h;
+size_t    nbytes;
+BOX      *box;
+PIX      *pix1, *pix2, *pix3;
+
+    pix1 = pixRead(fname);
+    pixGetDimensions(pix1, &w, &h, NULL);
+    box = boxCreate(w / 3, h / 3, w / 3, h / 3);
+    snprintf(buf, sizeof(buf), "/tmp/lept/jp2/jp2kio.%03d.jp2", rp->index + 1);
+    pixWrite(buf, pix1, IFF_JP2);
+    regTestCheckFile(rp, buf);
+    pix2 = pixRead(buf);
+    data = l_binaryRead(buf, &nbytes);
+    pix2 = pixReadMemJp2k(data, nbytes, 1, NULL, 0, 0);
+    pixDisplayWithTitle(pix2, 0, 100, "1", rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    lept_free(data);
+
+    pix1 = pixReadJp2k(buf, 1, box, 0, 0);  /* just read the box region */
+    pixWriteJp2k(buf, pix1, 38, 0, 0, 0);
+    regTestCheckFile(rp, buf);
+    data = l_binaryRead(buf, &nbytes);
+    pix2 = pixReadMemJp2k(data, nbytes, 1, NULL, 0, 0);
+    regTestWritePixAndCheck(rp, pix2, IFF_JP2);
+    pixDisplayWithTitle(pix2, 500, 100, "2", rp->display);
+    pix3 = pixReadMemJp2k(data, nbytes, 2, NULL, 0, 0);  /* read at 2x red */
+    regTestWritePixAndCheck(rp, pix3, IFF_JP2);
+    pixDisplayWithTitle(pix3, 1000, 100, "3", rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    lept_free(data);
+    return;
+}
+
 

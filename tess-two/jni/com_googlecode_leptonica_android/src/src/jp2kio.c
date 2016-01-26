@@ -97,12 +97,12 @@
  *      use the latter, you will pay dearly in the size of the compressed file.
  */
 
-#include <string.h>
-#include "allheaders.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config_auto.h"
 #endif  /* HAVE_CONFIG_H */
+
+#include <string.h>
+#include "allheaders.h"
 
 /* --------------------------------------------*/
 #if  HAVE_LIBJP2K   /* defined in environ.h */
@@ -379,6 +379,7 @@ PIX               *pix = NULL;
         pix = pixCreate(w, h, 8);
     else
         pix = pixCreate(w, h, 32);
+    pixSetInputFormat(pix, IFF_JP2);
     pixSetResolution(pix, xres, yres);
     data = pixGetData(pix);
     wpl = pixGetWpl(pix);
@@ -587,16 +588,16 @@ opj_image_t       *image = NULL;
         char *version1 = getLeptonicaVersion();
         const char *version2 = opj_version();
         len1 += len2 + strlen(version1) + strlen(version2) + 1;
-        parameters.cp_comment = (char *)MALLOC(len1);
+        parameters.cp_comment = (char *)LEPT_MALLOC(len1);
         snprintf(parameters.cp_comment, len1, "%s%s%s%s", comment1, version1,
                  comment2, version2);
-        FREE(version1);
+        LEPT_FREE(version1);
     }
 
         /* Get the encoder handle */
     if ((l_codec = opj_create_compress(OPJ_CODEC_JP2)) == NULL) {
         opj_image_destroy(image);
-        FREE(parameters.cp_comment);
+        LEPT_FREE(parameters.cp_comment);
         return ERROR_INT("failed to get the encoder handle\n", procName, 1);
     }
 
@@ -611,7 +612,7 @@ opj_image_t       *image = NULL;
     if (!opj_setup_encoder(l_codec, &parameters, image)) {
         opj_destroy_codec(l_codec);
         opj_image_destroy(image);
-        FREE(parameters.cp_comment);
+        LEPT_FREE(parameters.cp_comment);
         return ERROR_INT("failed to set up the encoder\n", procName, 1);
     }
 
@@ -622,7 +623,7 @@ opj_image_t       *image = NULL;
     if ((l_stream = opjCreateStream(fp, 0)) == NULL) {
         opj_destroy_codec(l_codec);
         opj_image_destroy(image);
-        FREE(parameters.cp_comment);
+        LEPT_FREE(parameters.cp_comment);
         return ERROR_INT("failed to open l_stream\n", procName, 1);
     }
 
@@ -631,14 +632,14 @@ opj_image_t       *image = NULL;
         opj_stream_destroy(l_stream);
         opj_destroy_codec(l_codec);
         opj_image_destroy(image);
-        FREE(parameters.cp_comment);
+        LEPT_FREE(parameters.cp_comment);
         return ERROR_INT("opj_start_compress failed\n", procName, 1);
     }
     if (!opj_encode(l_codec, l_stream)) {
         opj_stream_destroy(l_stream);
         opj_destroy_codec(l_codec);
         opj_image_destroy(image);
-        FREE(parameters.cp_comment);
+        LEPT_FREE(parameters.cp_comment);
         return ERROR_INT("opj_encode failed\n", procName, 1);
     }
     success = opj_end_compress(l_codec, l_stream);
@@ -647,7 +648,7 @@ opj_image_t       *image = NULL;
     opj_stream_destroy(l_stream);
     opj_destroy_codec(l_codec);
     opj_image_destroy(image);
-    FREE(parameters.cp_comment);
+    LEPT_FREE(parameters.cp_comment);
     if (success)
         return 0;
     else
@@ -781,8 +782,8 @@ PIX      *pix;
     if (!data)
         return (PIX *)ERROR_PTR("data not defined", procName, NULL);
 
-#if 0  /* Avoid the crash for now */
-    if ((fp = fmemopen((void *)data, size, "r")) == NULL)
+#if HAVE_FMEMOPEN
+    if ((fp = fmemopen((void *)data, size, "rb")) == NULL)
         return (PIX *)ERROR_PTR("stream not opened", procName, NULL);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);

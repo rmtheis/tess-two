@@ -31,6 +31,7 @@
  *          NUMA        *numaCreate()
  *          NUMA        *numaCreateFromIArray()
  *          NUMA        *numaCreateFromFArray()
+ *          NUMA        *numaCreateFromString()
  *          void        *numaDestroy()
  *          NUMA        *numaCopy()
  *          NUMA        *numaClone()
@@ -75,7 +76,7 @@
  *
  *      Add Numa to Numaa
  *          l_int32      numaaAddNuma()
- *          l_int32      numaaExtendArray()
+ *          static l_int32   numaaExtendArray()
  *
  *      Numaa accessors
  *          l_int32      numaaGetCount()
@@ -92,25 +93,6 @@
  *          NUMAA       *numaaReadStream()
  *          l_int32      numaaWrite()
  *          l_int32      numaaWriteStream()
- *
- *      Numa2d creation, destruction
- *          NUMA2D      *numa2dCreate()
- *          void        *numa2dDestroy()
- *
- *      Numa2d Accessors
- *          l_int32      numa2dAddNumber()
- *          l_int32      numa2dGetCount()
- *          NUMA        *numa2dGetNuma()
- *          l_int32      numa2dGetFValue()
- *          l_int32      numa2dGetIValue()
- *
- *      NumaHash creation, destruction
- *          NUMAHASH    *numaHashCreate()
- *          void        *numaHashDestroy()
- *
- *      NumaHash Accessors
- *          NUMA        *numaHashGetNuma()
- *          void        *numaHashAdd()
  *
  *    (1) The Numa is a struct holding an array of floats.  It can also
  *        be used to store l_int32 values, with some loss of precision
@@ -180,8 +162,9 @@
 
 static const l_int32 INITIAL_PTR_ARRAYSIZE = 50;      /* n'importe quoi */
 
-    /* Static function */
+    /* Static functions */
 static l_int32 numaExtendArray(NUMA  *na);
+static l_int32 numaaExtendArray(NUMAA  *naa);
 
 
 /*--------------------------------------------------------------------------*
@@ -203,9 +186,9 @@ NUMA  *na;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((na = (NUMA *)CALLOC(1, sizeof(NUMA))) == NULL)
+    if ((na = (NUMA *)LEPT_CALLOC(1, sizeof(NUMA))) == NULL)
         return (NUMA *)ERROR_PTR("na not made", procName, NULL);
-    if ((na->array = (l_float32 *)CALLOC(n, sizeof(l_float32))) == NULL)
+    if ((na->array = (l_float32 *)LEPT_CALLOC(n, sizeof(l_float32))) == NULL)
         return (NUMA *)ERROR_PTR("number array not made", procName, NULL);
 
     na->nalloc = n;
@@ -285,12 +268,62 @@ NUMA    *na;
 
     na = numaCreate(size);
     if (copyflag == L_INSERT) {
-        if (na->array) FREE(na->array);
+        if (na->array) LEPT_FREE(na->array);
         na->array = farray;
         na->n = size;
     } else {  /* just copy the contents */
         for (i = 0; i < size; i++)
             numaAddNumber(na, farray[i]);
+    }
+
+    return na;
+}
+
+
+/*!
+ *  numaCreateFromString()
+ *
+ *      Input:  string (of comma-separated numbers)
+ *      Return: na, or null on error
+ *
+ *  Notes:
+ *      (1) The numbers can be ints or floats; they will be interpreted
+ *          and stored as floats.  To use them as integers (e.g., for
+ *          indexing into arrays), use numaGetIValue(...).
+ */
+NUMA *
+numaCreateFromString(const char  *str)
+{
+char      *substr;
+l_int32    i, n, nerrors;
+l_float32  val;
+NUMA      *na;
+SARRAY    *sa;
+
+    PROCNAME("numaCreateFromString");
+
+    if (!str || (strlen(str) == 0))
+        return (NUMA *)ERROR_PTR("str not defined or empty", procName, NULL);
+
+    sa = sarrayCreate(0);
+    sarraySplitString(sa, str, ",");
+    n = sarrayGetCount(sa);
+    na = numaCreate(n);
+    nerrors = 0;
+    for (i = 0; i < n; i++) {
+        substr = sarrayGetString(sa, i, L_NOCOPY);
+        if (sscanf(substr, "%f", &val) != 1) {
+            L_ERROR("substr %d not float\n", procName, i);
+            nerrors++;
+        } else {
+            numaAddNumber(na, val);
+        }
+    }
+
+    sarrayDestroy(&sa);
+    if (nerrors > 0) {
+        numaDestroy(&na);
+        return (NUMA *)ERROR_PTR("non-floats in string", procName, NULL);
     }
 
     return na;
@@ -326,8 +359,8 @@ NUMA  *na;
     numaChangeRefcount(na, -1);
     if (numaGetRefcount(na) <= 0) {
         if (na->array)
-            FREE(na->array);
-        FREE(na);
+            LEPT_FREE(na->array);
+        LEPT_FREE(na);
     }
 
     *pna = NULL;
@@ -765,7 +798,7 @@ l_int32  *array;
         return (l_int32 *)ERROR_PTR("na not defined", procName, NULL);
 
     n = numaGetCount(na);
-    if ((array = (l_int32 *)CALLOC(n, sizeof(l_int32))) == NULL)
+    if ((array = (l_int32 *)LEPT_CALLOC(n, sizeof(l_int32))) == NULL)
         return (l_int32 *)ERROR_PTR("array not made", procName, NULL);
     for (i = 0; i < n; i++) {
         numaGetIValue(na, i, &ival);
@@ -790,7 +823,7 @@ l_int32  *array;
  *          directly on the bare array of the numa.
  *      (2) Very important: for L_NOCOPY, any writes to the array
  *          will be in the numa.  Do not write beyond the size of
- *          the count field, because it will not be accessable
+ *          the count field, because it will not be accessible
  *          from the numa!  If necessary, be sure to set the count
  *          field to a larger number (such as the alloc size)
  *          BEFORE calling this function.  Creating with numaMakeConstant()
@@ -812,7 +845,7 @@ l_float32  *array;
         array = na->array;
     } else {  /* copyflag == L_COPY */
         n = numaGetCount(na);
-        if ((array = (l_float32 *)CALLOC(n, sizeof(l_float32))) == NULL)
+        if ((array = (l_float32 *)LEPT_CALLOC(n, sizeof(l_float32))) == NULL)
             return (l_float32 *)ERROR_PTR("array not made", procName, NULL);
         for (i = 0; i < n; i++)
             array[i] = na->array[i];
@@ -1165,9 +1198,9 @@ NUMAA  *naa;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((naa = (NUMAA *)CALLOC(1, sizeof(NUMAA))) == NULL)
+    if ((naa = (NUMAA *)LEPT_CALLOC(1, sizeof(NUMAA))) == NULL)
         return (NUMAA *)ERROR_PTR("naa not made", procName, NULL);
-    if ((naa->numa = (NUMA **)CALLOC(n, sizeof(NUMA *))) == NULL)
+    if ((naa->numa = (NUMA **)LEPT_CALLOC(n, sizeof(NUMA *))) == NULL)
         return (NUMAA *)ERROR_PTR("numa ptr array not made", procName, NULL);
 
     naa->nalloc = n;
@@ -1180,7 +1213,7 @@ NUMAA  *naa;
 /*!
  *  numaaCreateFull()
  *
- *      Input:  ntop: size of numa ptr array to be alloc'd
+ *      Input:  nptr: size of numa ptr array to be alloc'd
  *              n: size of individual numa arrays to be alloc'd (0 for default)
  *      Return: naa, or null on error
  *
@@ -1191,15 +1224,15 @@ NUMAA  *naa;
  *          to add val to the index-th numa in naa.
  */
 NUMAA *
-numaaCreateFull(l_int32  ntop,
+numaaCreateFull(l_int32  nptr,
                 l_int32  n)
 {
 l_int32  i;
 NUMAA   *naa;
 NUMA    *na;
 
-    naa = numaaCreate(ntop);
-    for (i = 0; i < ntop; i++) {
+    naa = numaaCreate(nptr);
+    for (i = 0; i < nptr; i++) {
         na = numaCreate(n);
         numaaAddNuma(naa, na, L_INSERT);
     }
@@ -1216,8 +1249,8 @@ NUMA    *na;
  *
  *  Notes:
  *      (1) This identifies the largest index containing a numa that
- *          has any numbers within it, destroys all numa above that index,
- *          and resets the count.
+ *          has any numbers within it, destroys all numa beyond that
+ *          index, and resets the count.
  */
 l_int32
 numaaTruncate(NUMAA  *naa)
@@ -1271,8 +1304,8 @@ NUMAA   *naa;
 
     for (i = 0; i < naa->n; i++)
         numaDestroy(&naa->numa[i]);
-    FREE(naa->numa);
-    FREE(naa);
+    LEPT_FREE(naa->numa);
+    LEPT_FREE(naa);
     *pnaa = NULL;
 
     return;
@@ -1332,7 +1365,7 @@ NUMA    *nac;
  *      Input:  naa
  *      Return: 0 if OK, 1 on error
  */
-l_int32
+static l_int32
 numaaExtendArray(NUMAA  *naa)
 {
     PROCNAME("numaaExtendArray");
@@ -1733,388 +1766,3 @@ NUMA    *na;
     return 0;
 }
 
-
-/*--------------------------------------------------------------------------*
- *                      Numa2d creation, destruction                        *
- *--------------------------------------------------------------------------*/
-/*!
- *  numa2dCreate()
- *
- *      Input:  nrows (of 2d array)
- *              ncols (of 2d array)
- *              initsize (initial size of each allocated numa)
- *      Return: numa2d, or null on error
- *
- *  Notes:
- *      (1) The numa2d holds a doubly-indexed array of numa.
- *      (2) The numa ptr array is initialized with all ptrs set to NULL.
- *      (3) The numas are created only when a number is to be stored
- *          at an index (i,j) for which a numa has not yet been made.
- */
-NUMA2D *
-numa2dCreate(l_int32  nrows,
-             l_int32  ncols,
-             l_int32  initsize)
-{
-l_int32  i;
-NUMA2D  *na2d;
-
-    PROCNAME("numa2dCreate");
-
-    if (nrows <= 1 || ncols <= 1)
-        return (NUMA2D *)ERROR_PTR("rows, cols not both >= 1", procName, NULL);
-
-    if ((na2d = (NUMA2D *)CALLOC(1, sizeof(NUMA2D))) == NULL)
-        return (NUMA2D *)ERROR_PTR("na2d not made", procName, NULL);
-    na2d->nrows = nrows;
-    na2d->ncols = ncols;
-    na2d->initsize = initsize;
-
-        /* Set up the 2D array */
-    if ((na2d->numa = (NUMA ***)CALLOC(nrows, sizeof(NUMA **))) == NULL)
-        return (NUMA2D *)ERROR_PTR("numa row array not made", procName, NULL);
-    for (i = 0; i < nrows; i++) {
-        if ((na2d->numa[i] = (NUMA **)CALLOC(ncols, sizeof(NUMA *))) == NULL)
-            return (NUMA2D *)ERROR_PTR("numa cols not made", procName, NULL);
-    }
-
-    return na2d;
-}
-
-
-/*!
- *  numa2dDestroy()
- *
- *      Input:  &numa2d (<to be nulled if it exists>)
- *      Return: void
- */
-void
-numa2dDestroy(NUMA2D  **pna2d)
-{
-l_int32  i, j;
-NUMA2D  *na2d;
-
-    PROCNAME("numa2dDestroy");
-
-    if (pna2d == NULL) {
-        L_WARNING("ptr address is NULL!\n", procName);
-        return;
-    }
-
-    if ((na2d = *pna2d) == NULL)
-        return;
-
-    for (i = 0; i < na2d->nrows; i++) {
-        for (j = 0; j < na2d->ncols; j++)
-            numaDestroy(&na2d->numa[i][j]);
-        FREE(na2d->numa[i]);
-    }
-    FREE(na2d->numa);
-    FREE(na2d);
-    *pna2d = NULL;
-
-    return;
-}
-
-
-
-/*--------------------------------------------------------------------------*
- *                               Numa2d accessors                           *
- *--------------------------------------------------------------------------*/
-/*!
- *  numa2dAddNumber()
- *
- *      Input:  na2d
- *              row of 2d array
- *              col of 2d array
- *              val  (float or int to be added; stored as a float)
- *      Return: 0 if OK, 1 on error
- */
-l_int32
-numa2dAddNumber(NUMA2D    *na2d,
-                l_int32    row,
-                l_int32    col,
-                l_float32  val)
-{
-NUMA  *na;
-
-    PROCNAME("numa2dAddNumber");
-
-    if (!na2d)
-        return ERROR_INT("na2d not defined", procName, 1);
-    if (row < 0 || row >= na2d->nrows)
-        return ERROR_INT("row out of bounds", procName, 1);
-    if (col < 0 || col >= na2d->ncols)
-        return ERROR_INT("col out of bounds", procName, 1);
-
-    if ((na = na2d->numa[row][col]) == NULL) {
-        na = numaCreate(na2d->initsize);
-        na2d->numa[row][col] = na;
-    }
-    numaAddNumber(na, val);
-    return 0;
-}
-
-
-/*!
- *  numa2dGetCount()
- *
- *      Input:  na2d
- *              row of 2d array
- *              col of 2d array
- *      Return: size of numa at [row][col], or 0 if the numa doesn't exist
- *              or on error
- */
-l_int32
-numa2dGetCount(NUMA2D  *na2d,
-               l_int32  row,
-               l_int32  col)
-{
-NUMA  *na;
-
-    PROCNAME("numa2dGetCount");
-
-    if (!na2d)
-        return ERROR_INT("na2d not defined", procName, 0);
-    if (row < 0 || row >= na2d->nrows)
-        return ERROR_INT("row out of bounds", procName, 0);
-    if (col < 0 || col >= na2d->ncols)
-        return ERROR_INT("col out of bounds", procName, 0);
-    if ((na = na2d->numa[row][col]) == NULL)
-        return 0;
-    else
-        return na->n;
-}
-
-
-/*!
- *  numa2dGetNuma()
- *
- *      Input:  na2d
- *              row of 2d array
- *              col of 2d array
- *      Return: na (a clone of the numa if it exists) or null if it doesn't
- *
- *  Notes:
- *      (1) This does not give an error if the index is out of bounds.
- */
-NUMA *
-numa2dGetNuma(NUMA2D     *na2d,
-              l_int32     row,
-              l_int32     col)
-{
-NUMA  *na;
-
-    PROCNAME("numa2dGetNuma");
-
-    if (!na2d)
-        return (NUMA *)ERROR_PTR("na2d not defined", procName, NULL);
-    if (row < 0 || row >= na2d->nrows || col < 0 || col >= na2d->ncols)
-        return NULL;
-    if ((na = na2d->numa[row][col]) == NULL)
-        return NULL;
-    return numaClone(na);
-}
-
-
-/*!
- *  numa2dGetFValue()
- *
- *      Input:  na2d
- *              row of 2d array
- *              col of 2d array
- *              index (into numa)
- *              &val (<return> float value)
- *      Return: 0 if OK, 1 on error
- */
-l_int32
-numa2dGetFValue(NUMA2D     *na2d,
-                l_int32     row,
-                l_int32     col,
-                l_int32     index,
-                l_float32  *pval)
-{
-NUMA  *na;
-
-    PROCNAME("numa2dGetFValue");
-
-    if (!na2d)
-        return ERROR_INT("na2d not defined", procName, 1);
-    if (!pval)
-        return ERROR_INT("&val not defined", procName, 1);
-    *pval = 0.0;
-
-    if (row < 0 || row >= na2d->nrows)
-        return ERROR_INT("row out of bounds", procName, 1);
-    if (col < 0 || col >= na2d->ncols)
-        return ERROR_INT("col out of bounds", procName, 1);
-    if ((na = na2d->numa[row][col]) == NULL)
-        return ERROR_INT("numa does not exist", procName, 1);
-
-    return numaGetFValue(na, index, pval);
-}
-
-
-/*!
- *  numa2dGetIValue()
- *
- *      Input:  na2d
- *              row of 2d array
- *              col of 2d array
- *              index (into numa)
- *              &val (<return> integer value)
- *      Return: 0 if OK, 1 on error
- */
-l_int32
-numa2dGetIValue(NUMA2D   *na2d,
-                l_int32   row,
-                l_int32   col,
-                l_int32   index,
-                l_int32  *pval)
-{
-NUMA  *na;
-
-    PROCNAME("numa2dGetIValue");
-
-    if (!na2d)
-        return ERROR_INT("na2d not defined", procName, 1);
-    if (!pval)
-        return ERROR_INT("&val not defined", procName, 1);
-    *pval = 0;
-
-    if (row < 0 || row >= na2d->nrows)
-        return ERROR_INT("row out of bounds", procName, 1);
-    if (col < 0 || col >= na2d->ncols)
-        return ERROR_INT("col out of bounds", procName, 1);
-    if ((na = na2d->numa[row][col]) == NULL)
-        return ERROR_INT("numa does not exist", procName, 1);
-
-    return numaGetIValue(na, index, pval);
-}
-
-
-/*--------------------------------------------------------------------------*
- *               Number array hash: Creation and destruction                *
- *--------------------------------------------------------------------------*/
-/*!
- *  numaHashCreate()
- *
- *      Input: nbuckets (the number of buckets in the hash table,
- *                       which should be prime.)
- *             initsize (initial size of each allocated numa; 0 for default)
- *      Return: ptr to new nahash, or null on error
- *
- *  Note: actual numa are created only as required by numaHashAdd()
- */
-NUMAHASH *
-numaHashCreate(l_int32  nbuckets,
-               l_int32  initsize)
-{
-NUMAHASH  *nahash;
-
-    PROCNAME("numaHashCreate");
-
-    if (nbuckets <= 0)
-        return (NUMAHASH *)ERROR_PTR("negative hash size", procName, NULL);
-    if ((nahash = (NUMAHASH *)CALLOC(1, sizeof(NUMAHASH))) == NULL)
-        return (NUMAHASH *)ERROR_PTR("nahash not made", procName, NULL);
-    if ((nahash->numa = (NUMA **)CALLOC(nbuckets, sizeof(NUMA *))) == NULL) {
-        FREE(nahash);
-        return (NUMAHASH *)ERROR_PTR("numa ptr array not made", procName, NULL);
-    }
-
-    nahash->nbuckets = nbuckets;
-    nahash->initsize = initsize;
-    return nahash;
-}
-
-
-/*!
- *  numaHashDestroy()
- *
- *      Input:  &nahash (<to be nulled, if it exists>)
- *      Return: void
- */
-void
-numaHashDestroy(NUMAHASH **pnahash)
-{
-NUMAHASH  *nahash;
-l_int32    i;
-
-    PROCNAME("numaHashDestroy");
-
-    if (pnahash == NULL) {
-        L_WARNING("ptr address is NULL!\n", procName);
-        return;
-    }
-
-    if ((nahash = *pnahash) == NULL)
-        return;
-
-    for (i = 0; i < nahash->nbuckets; i++)
-        numaDestroy(&nahash->numa[i]);
-    FREE(nahash->numa);
-    FREE(nahash);
-    *pnahash = NULL;
-}
-
-
-/*--------------------------------------------------------------------------*
- *               Number array hash: Add elements and return numas
- *--------------------------------------------------------------------------*/
-/*!
- *  numaHashGetNuma()
- *
- *      Input:  nahash
- *              key  (key to be hashed into a bucket number)
- *      Return: ptr to numa
- */
-NUMA *
-numaHashGetNuma(NUMAHASH  *nahash,
-                l_uint32   key)
-{
-l_int32  bucket;
-NUMA    *na;
-
-    PROCNAME("numaHashGetNuma");
-
-    if (!nahash)
-        return (NUMA *)ERROR_PTR("nahash not defined", procName, NULL);
-    bucket = key % nahash->nbuckets;
-    na = nahash->numa[bucket];
-    if (na)
-        return numaClone(na);
-    else
-        return NULL;
-}
-
-/*!
- *  numaHashAdd()
- *
- *      Input:  nahash
- *              key  (key to be hashed into a bucket number)
- *              value  (float value to be appended to the specific numa)
- *      Return: 0 if OK; 1 on error
- */
-l_int32
-numaHashAdd(NUMAHASH  *nahash,
-            l_uint32   key,
-            l_float32  value)
-{
-l_int32  bucket;
-NUMA    *na;
-
-    PROCNAME("numaHashAdd");
-
-    if (!nahash)
-        return ERROR_INT("nahash not defined", procName, 1);
-    bucket = key % nahash->nbuckets;
-    na = nahash->numa[bucket];
-    if (!na) {
-        if ((na = numaCreate(nahash->initsize)) == NULL)
-            return ERROR_INT("na not made", procName, 1);
-        nahash->numa[bucket] = na;
-    }
-    numaAddNumber(na, value);
-    return 0;
-}

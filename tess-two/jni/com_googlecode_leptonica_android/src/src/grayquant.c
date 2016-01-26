@@ -187,6 +187,7 @@ PIX       *pixt, *pixd;
     if ((pixd = pixCreate(w, h, 1)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
 
@@ -196,16 +197,16 @@ PIX       *pixt, *pixd;
     wplt = pixGetWpl(pixt);
 
         /* Two line buffers, 1 for current line and 2 for next line */
-    if ((bufs1 = (l_uint32 *)CALLOC(wplt, sizeof(l_uint32))) == NULL)
+    if ((bufs1 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("bufs1 not made", procName, NULL);
-    if ((bufs2 = (l_uint32 *)CALLOC(wplt, sizeof(l_uint32))) == NULL)
+    if ((bufs2 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("bufs2 not made", procName, NULL);
 
     ditherToBinaryLow(datad, w, h, wpld, datat, wplt, bufs1, bufs2,
                       lowerclip, upperclip);
 
-    FREE(bufs1);
-    FREE(bufs2);
+    LEPT_FREE(bufs1);
+    LEPT_FREE(bufs2);
     pixDestroy(&pixt);
 
     return pixd;
@@ -251,6 +252,7 @@ PIX       *pixt, *pixd;
     if ((pixd = pixCreate(w, h, 1)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
 
@@ -306,6 +308,7 @@ PIX       *pixd;
 
     pixd = pixCreate(w, h, 1);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
     datas = pixGetData(pixs);
@@ -462,6 +465,7 @@ PIX       *pixt, *pixd;
     if ((pixd = pixCreate(w, h, 1)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
 
@@ -471,9 +475,9 @@ PIX       *pixt, *pixd;
     wplt = pixGetWpl(pixt);
 
         /* Two line buffers, 1 for current line and 2 for next line */
-    if ((bufs1 = (l_uint32 *)CALLOC(wplt, sizeof(l_uint32))) == NULL)
+    if ((bufs1 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("bufs1 not made", procName, NULL);
-    if ((bufs2 = (l_uint32 *)CALLOC(wplt, sizeof(l_uint32))) == NULL)
+    if ((bufs2 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("bufs2 not made", procName, NULL);
 
         /* 3 lookup tables: 1-bit value, (3/8)excess, and (1/4)excess */
@@ -482,11 +486,11 @@ PIX       *pixt, *pixd;
     ditherToBinaryLUTLow(datad, w, h, wpld, datat, wplt, bufs1, bufs2,
                          tabval, tab38, tab14);
 
-    FREE(bufs1);
-    FREE(bufs2);
-    FREE(tabval);
-    FREE(tab38);
-    FREE(tab14);
+    LEPT_FREE(bufs1);
+    LEPT_FREE(bufs2);
+    LEPT_FREE(tabval);
+    LEPT_FREE(tab38);
+    LEPT_FREE(tab14);
     pixDestroy(&pixt);
 
     return pixd;
@@ -550,6 +554,7 @@ PIX       *pixg, *pixd;
 
     pixd = pixCreate(w, h, 1);
     pixCopyResolution(pixd, pixg);
+    pixCopyInputFormat(pixd, pixs);
     datag = pixGetData(pixg);
     wplg = pixGetWpl(pixg);
     datad = pixGetData(pixd);
@@ -641,6 +646,7 @@ PIX       *pixg, *pixd;
 
     pixd = pixCreate(w, h, 1);
     pixCopyResolution(pixd, pixg);
+    pixCopyInputFormat(pixd, pixs);
     datag = pixGetData(pixg);
     wplg = pixGetWpl(pixg);
     datad = pixGetData(pixd);
@@ -772,6 +778,7 @@ PIXCMAP   *cmap;
     if ((pixd = pixCreate(w, h, 2)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
 
@@ -781,9 +788,9 @@ PIXCMAP   *cmap;
     wplt = pixGetWpl(pixt);
 
         /* Two line buffers, 1 for current line and 2 for next line */
-    if ((bufs1 = (l_uint32 *)CALLOC(wplt, sizeof(l_uint32))) == NULL)
+    if ((bufs1 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("bufs1 not made", procName, NULL);
-    if ((bufs2 = (l_uint32 *)CALLOC(wplt, sizeof(l_uint32))) == NULL)
+    if ((bufs2 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("bufs2 not made", procName, NULL);
 
         /* 3 lookup tables: 2-bit value, (3/8)excess, and (1/4)excess */
@@ -797,11 +804,11 @@ PIXCMAP   *cmap;
         pixSetColormap(pixd, cmap);
     }
 
-    FREE(bufs1);
-    FREE(bufs2);
-    FREE(tabval);
-    FREE(tab38);
-    FREE(tab14);
+    LEPT_FREE(bufs1);
+    LEPT_FREE(bufs2);
+    LEPT_FREE(tabval);
+    LEPT_FREE(tab38);
+    LEPT_FREE(tab14);
     pixDestroy(&pixt);
 
     return pixd;
@@ -883,6 +890,7 @@ PIXCMAP   *cmap;
     if ((pixd = pixCreate(w, h, 2)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
 
@@ -898,7 +906,7 @@ PIXCMAP   *cmap;
 
     thresholdTo2bppLow(datad, h, wpld, datat, wplt, qtab);
 
-    if (qtab) FREE(qtab);
+    if (qtab) LEPT_FREE(qtab);
     pixDestroy(&pixt);
     return pixd;
 }
@@ -981,6 +989,7 @@ PIXCMAP   *cmap;
     if ((pixd = pixCreate(w, h, 4)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
 
@@ -996,7 +1005,7 @@ PIXCMAP   *cmap;
 
     thresholdTo4bppLow(datad, h, wpld, datat, wplt, qtab);
 
-    if (qtab) FREE(qtab);
+    if (qtab) LEPT_FREE(qtab);
     pixDestroy(&pixt);
     return pixd;
 }
@@ -1060,6 +1069,8 @@ PIXCMAP   *cmap;
     }
 
     pixGetDimensions(pixd, &w, &h, NULL);
+    pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
     for (i = 0; i < h; i++) {
@@ -1071,7 +1082,7 @@ PIXCMAP   *cmap;
         }
     }
 
-    if (qtab) FREE(qtab);
+    if (qtab) LEPT_FREE(qtab);
     return pixd;
 }
 
@@ -1169,7 +1180,7 @@ PIXCMAP   *cmap;
     makeGrayQuantTableArb(na, outdepth, &qtab, &cmap);
     if (use_average) {  /* use the average value in each bin */
         pixcmapDestroy(&cmap);
-	makeGrayQuantColormapArb(pixs, qtab, outdepth, &cmap);
+        makeGrayQuantColormapArb(pixs, qtab, outdepth, &cmap);
     }
     pixcmapSetBlackAndWhite(cmap, setblack, setwhite);
     numaDestroy(&na);
@@ -1177,6 +1188,7 @@ PIXCMAP   *cmap;
     if ((pixd = pixCreate(w, h, outdepth)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     pixSetColormap(pixd, cmap);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
@@ -1202,7 +1214,7 @@ PIXCMAP   *cmap;
         }
     }
 
-    FREE(qtab);
+    LEPT_FREE(qtab);
     pixDestroy(&pixt);
     return pixd;
 }
@@ -1230,7 +1242,7 @@ l_int32    i, j, thresh;
 
     PROCNAME("makeGrayQuantIndexTable");
 
-    if ((tab = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return (l_int32 *)ERROR_PTR("calloc fail for tab", procName, NULL);
     for (i = 0; i < 256; i++) {
         for (j = 0; j < nlevels; j++) {
@@ -1281,7 +1293,7 @@ l_int32    i, j, thresh, maxval, quantval;
 
     PROCNAME("makeGrayQuantTargetTable");
 
-    if ((tab = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return (l_int32 *)ERROR_PTR("calloc fail for tab", procName, NULL);
     maxval = (1 << depth) - 1;
     if (depth < 8)
@@ -1350,7 +1362,7 @@ PIXCMAP  *cmap;
     if (n + 1 > (1 << outdepth))
         return ERROR_INT("more bins than cmap levels", procName, 1);
 
-    if ((tab = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return ERROR_INT("calloc fail for tab", procName, 1);
     if ((cmap = pixcmapCreate(outdepth)) == NULL)
         return ERROR_INT("cmap not made", procName, 1);
@@ -1424,9 +1436,9 @@ l_uint32  *line, *data;
         return ERROR_INT("more bins than cmap levels", procName, 1);
 
         /* Find the count and weighted count for each bin */
-    if ((bincount = (l_int32 *)CALLOC(nbins, sizeof(l_int32))) == NULL)
+    if ((bincount = (l_int32 *)LEPT_CALLOC(nbins, sizeof(l_int32))) == NULL)
         return ERROR_INT("calloc fail for bincount", procName, 1);
-    if ((binave = (l_int32 *)CALLOC(nbins, sizeof(l_int32))) == NULL)
+    if ((binave = (l_int32 *)LEPT_CALLOC(nbins, sizeof(l_int32))) == NULL)
         return ERROR_INT("calloc fail for binave", procName, 1);
     factor = (l_int32)(sqrt((l_float64)(w * h) / 30000.) + 0.5);
     factor = L_MAX(1, factor);
@@ -1442,7 +1454,7 @@ l_uint32  *line, *data;
     }
 
         /* Find the smallest gray values in each bin */
-    if ((binstart = (l_int32 *)CALLOC(nbins, sizeof(l_int32))) == NULL)
+    if ((binstart = (l_int32 *)LEPT_CALLOC(nbins, sizeof(l_int32))) == NULL)
         return ERROR_INT("calloc fail for binstart", procName, 1);
     for (i = 1, index = 1; i < 256; i++) {
         if (tab[i] < index) continue;
@@ -1451,7 +1463,7 @@ l_uint32  *line, *data;
     }
 
         /* Get the averages.  If there are no samples in a bin, use
-	 * the center value of the bin. */
+         * the center value of the bin. */
     *pcmap = pixcmapCreate(outdepth);
     for (i = 0; i < nbins; i++) {
         if (bincount[i]) {
@@ -1465,9 +1477,9 @@ l_uint32  *line, *data;
         pixcmapAddColor(*pcmap, val, val, val);
     }
 
-    FREE(bincount);
-    FREE(binave);
-    FREE(binstart);
+    LEPT_FREE(bincount);
+    LEPT_FREE(binave);
+    LEPT_FREE(binstart);
     return 0;
 }
 
@@ -1549,6 +1561,7 @@ PIX       *pixd;
 
     pixd = pixCreate(w, h, 1);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     datas = pixGetData(pixs);
     wpls = pixGetWpl(pixs);
     datad = pixGetData(pixd);
@@ -1598,7 +1611,7 @@ PIX *
 pixGenerateMaskByDiscr32(PIX      *pixs,
                          l_uint32  refval1,
                          l_uint32  refval2,
-			 l_int32   distflag)
+                         l_int32   distflag)
 {
 l_int32    i, j, w, h, d, wpls, wpld;
 l_int32    rref1, gref1, bref1, rref2, gref2, bref2, rval, gval, bval;
@@ -1620,6 +1633,7 @@ PIX       *pixd;
     extractRGBValues(refval2, &rref2, &gref2, &bref2);
     pixd = pixCreate(w, h, 1);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     datas = pixGetData(pixs);
     wpls = pixGetWpl(pixs);
     datad = pixGetData(pixd);
@@ -1766,6 +1780,8 @@ PIXCMAP   *cmap;
         cmap = pixcmapCreate(8);
         pixSetColormap(pixd, cmap);
     }
+    pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
 
         /* Use original mask, if it exists, to select gray pixels */
     na = pixGetGrayHistogramMasked(pixs, pixm, 0, 0, 1);
@@ -1791,7 +1807,7 @@ PIXCMAP   *cmap;
                 SET_DATA_BYTE(lined, j, vald);
             }
         }
-        FREE(lut);
+        LEPT_FREE(lut);
         return pixd;
     }
 
@@ -1810,7 +1826,7 @@ PIXCMAP   *cmap;
         }
     }
     pixDestroy(&pixmr);
-    FREE(lut);
+    LEPT_FREE(lut);
     return pixd;
 }
 
@@ -1857,7 +1873,7 @@ l_float32  total;
     numaGetSum(na, &total);
     mincount = (l_int32)(minfract * total);
     iahisto = numaGetIArray(na);
-    if ((lut = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((lut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return ERROR_INT("lut not made", procName, 1);
     *plut = lut;
     index = pixcmapGetCount(cmap);  /* start with number of colors
@@ -1902,7 +1918,7 @@ l_float32  total;
         ret = pixcmapAddColor(cmap, val, val, val);
     }
 
-    FREE(iahisto);
+    LEPT_FREE(iahisto);
     return ret;
 }
 
@@ -1961,7 +1977,7 @@ PIX       *pixd;
     }
 
         /* Make LUT into colormap */
-    if ((tab = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return (PIX *)ERROR_PTR("tab not made", procName, NULL);
     for (i = 0; i < 256; i++) {
         pixcmapGetNearestGrayIndex(cmapd, i, &index);
@@ -1993,6 +2009,6 @@ PIX       *pixd;
         }
     }
 
-    FREE(tab);
+    LEPT_FREE(tab);
     return pixd;
 }

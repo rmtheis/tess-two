@@ -102,7 +102,7 @@ PIX      *pixs, *pix1, *pix2, *pix3, *pix4, *pix5;
 
         /* Test file read/write (general functions) */
     pixs = pixRead(fname);
-    snprintf(buf, sizeof(buf), "/tmp/regout/jpegio.%d.jpg", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/lept/regout/jpegio.%d.jpg", rp->index + 1);
     pixWrite(buf, pixs, IFF_JFIF_JPEG);
     pix1 = pixRead(buf);
     regTestCompareSimilarPix(rp, pixs, pix1, 6, 0.01, 0);
@@ -117,7 +117,7 @@ PIX      *pixs, *pix1, *pix2, *pix3, *pix4, *pix5;
         /* Test file read/write (specialized jpeg functions) */
     pix3 = pixReadJpeg(fname, 0, 1, NULL, 0);
     regTestComparePix(rp, pixs, pix3);
-    snprintf(buf, sizeof(buf), "/tmp/regout/jpegio.%d.jpg", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/lept/regout/jpegio.%d.jpg", rp->index + 1);
     pixWriteJpeg(buf, pix3, 75, 0);
     pix4 = pixReadJpeg(buf, 0, 1, NULL, 0);
     regTestComparePix(rp, pix2, pix4);
@@ -148,7 +148,7 @@ PIX      *pixs, *pix1, *pix2, *pix3, *pix4, *pix5, *pix6;
 
         /* Test file read/write (general functions) */
     pixs = pixRead(fname);
-    snprintf(buf, sizeof(buf), "/tmp/regout/jpegio.%d.jpg", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/lept/regout/jpegio.%d.jpg", rp->index + 1);
     pixWrite(buf, pixs, IFF_JFIF_JPEG);
     pix1 = pixRead(buf);
     if (pixGetColormap(pixs) != NULL)
@@ -166,7 +166,7 @@ PIX      *pixs, *pix1, *pix2, *pix3, *pix4, *pix5, *pix6;
 
         /* Test file write (specialized jpeg function) */
     pix4 = pixRead(fname);
-    snprintf(buf, sizeof(buf), "/tmp/regout/jpegio.%d.jpg", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/lept/regout/jpegio.%d.jpg", rp->index + 1);
     pixWriteJpeg(buf, pix4, 75, 0);
     pix5 = pixReadJpeg(buf, 0, 1, NULL, 0);
     regTestComparePix(rp, pix5, pix5);
@@ -238,7 +238,7 @@ PIX     *pixs;
     snprintf(comment1, sizeof(comment1), "Test %d", rp->index + 1);
     pixSetText(pixs, comment1);
     pixSetResolution(pixs, 137, 137);
-    snprintf(buf, sizeof(buf), "/tmp/regout/jpegio.%d.jpg", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/lept/regout/jpegio.%d.jpg", rp->index + 1);
     pixWrite(buf, pixs, IFF_JFIF_JPEG);
     regTestCheckFile(rp, buf);
     fp = lept_fopen(buf, "rb");

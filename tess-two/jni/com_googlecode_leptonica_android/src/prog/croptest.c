@@ -133,7 +133,7 @@ static char  mainName[] = "croptest";
 
 #if 0
 /*    pixs = pixRead("lucasta-cropped.jpg"); */
-    Pix *pixs = pixRead("1555-7.jpg");
+    Pix *pixs = pixRead("1555.007.jpg");
 /*    pixs = pixRead("feyn.tif"); */
     int w, h, d, minrev;
     pixGetDimensions(pixs, &w, &h, &d);

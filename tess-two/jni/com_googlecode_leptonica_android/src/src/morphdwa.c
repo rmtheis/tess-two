@@ -204,28 +204,26 @@ PIX     *pixt1, *pixt2, *pixt3;
     selaDestroy(&sela);
     if (!found) {
         L_INFO("Calling the decomposable dwa function\n", procName);
-	if (selnameh) FREE(selnameh);
-	if (selnamev) FREE(selnamev);
-	return pixDilateCompBrickDwa(pixd, pixs, hsize, vsize);
+        if (selnameh) LEPT_FREE(selnameh);
+        if (selnamev) LEPT_FREE(selnamev);
+        return pixDilateCompBrickDwa(pixd, pixs, hsize, vsize);
     }
 
     if (vsize == 1) {
         pixt2 = pixMorphDwa_1(NULL, pixs, L_MORPH_DILATE, selnameh);
-        FREE(selnameh);
-    }
-    else if (hsize == 1) {
+        LEPT_FREE(selnameh);
+    } else if (hsize == 1) {
         pixt2 = pixMorphDwa_1(NULL, pixs, L_MORPH_DILATE, selnamev);
-        FREE(selnamev);
-    }
-    else {
+        LEPT_FREE(selnamev);
+    } else {
         pixt1 = pixAddBorder(pixs, 32, 0);
         pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh);
         pixFMorphopGen_1(pixt1, pixt3, L_MORPH_DILATE, selnamev);
         pixt2 = pixRemoveBorder(pixt1, 32);
         pixDestroy(&pixt1);
         pixDestroy(&pixt3);
-        FREE(selnameh);
-        FREE(selnamev);
+        LEPT_FREE(selnameh);
+        LEPT_FREE(selnamev);
     }
 
     if (!pixd)
@@ -306,28 +304,26 @@ PIX     *pixt1, *pixt2, *pixt3;
     selaDestroy(&sela);
     if (!found) {
         L_INFO("Calling the decomposable dwa function\n", procName);
-	if (selnameh) FREE(selnameh);
-	if (selnamev) FREE(selnamev);
-	return pixErodeCompBrickDwa(pixd, pixs, hsize, vsize);
+        if (selnameh) LEPT_FREE(selnameh);
+        if (selnamev) LEPT_FREE(selnamev);
+        return pixErodeCompBrickDwa(pixd, pixs, hsize, vsize);
     }
 
     if (vsize == 1) {
         pixt2 = pixMorphDwa_1(NULL, pixs, L_MORPH_ERODE, selnameh);
-        FREE(selnameh);
-    }
-    else if (hsize == 1) {
+        LEPT_FREE(selnameh);
+    } else if (hsize == 1) {
         pixt2 = pixMorphDwa_1(NULL, pixs, L_MORPH_ERODE, selnamev);
-        FREE(selnamev);
-    }
-    else {
+        LEPT_FREE(selnamev);
+    } else {
         pixt1 = pixAddBorder(pixs, 32, 0);
         pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh);
         pixFMorphopGen_1(pixt1, pixt3, L_MORPH_ERODE, selnamev);
         pixt2 = pixRemoveBorder(pixt1, 32);
         pixDestroy(&pixt1);
         pixDestroy(&pixt3);
-        FREE(selnameh);
-        FREE(selnamev);
+        LEPT_FREE(selnameh);
+        LEPT_FREE(selnamev);
     }
 
     if (!pixd)
@@ -408,27 +404,25 @@ PIX     *pixt1, *pixt2, *pixt3;
     selaDestroy(&sela);
     if (!found) {
         L_INFO("Calling the decomposable dwa function\n", procName);
-	if (selnameh) FREE(selnameh);
-	if (selnamev) FREE(selnamev);
-	return pixOpenCompBrickDwa(pixd, pixs, hsize, vsize);
+        if (selnameh) LEPT_FREE(selnameh);
+        if (selnamev) LEPT_FREE(selnamev);
+        return pixOpenCompBrickDwa(pixd, pixs, hsize, vsize);
     }
 
     pixt1 = pixAddBorder(pixs, 32, 0);
     if (vsize == 1) {   /* horizontal only */
         pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_OPEN, selnameh);
-        FREE(selnameh);
-    }
-    else if (hsize == 1) {   /* vertical only */
+        LEPT_FREE(selnameh);
+    } else if (hsize == 1) {   /* vertical only */
         pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_OPEN, selnamev);
-        FREE(selnamev);
-    }
-    else {  /* do separable */
+        LEPT_FREE(selnamev);
+    } else {  /* do separable */
         pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh);
         pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_ERODE, selnamev);
         pixFMorphopGen_1(pixt3, pixt2, L_MORPH_DILATE, selnameh);
         pixFMorphopGen_1(pixt2, pixt3, L_MORPH_DILATE, selnamev);
-        FREE(selnameh);
-        FREE(selnamev);
+        LEPT_FREE(selnameh);
+        LEPT_FREE(selnamev);
         pixDestroy(&pixt3);
     }
     pixt3 = pixRemoveBorder(pixt2, 32);
@@ -515,14 +509,14 @@ PIX     *pixt1, *pixt2, *pixt3;
     selaDestroy(&sela);
     if (!found) {
         L_INFO("Calling the decomposable dwa function\n", procName);
-	if (selnameh) FREE(selnameh);
-	if (selnamev) FREE(selnamev);
-	return pixCloseCompBrickDwa(pixd, pixs, hsize, vsize);
+        if (selnameh) LEPT_FREE(selnameh);
+        if (selnamev) LEPT_FREE(selnamev);
+        return pixCloseCompBrickDwa(pixd, pixs, hsize, vsize);
     }
 
         /* For "safe closing" with ASYMMETRIC_MORPH_BC, we always need
          * an extra 32 OFF pixels around the image (in addition to
-	 * the 32 added pixels for all dwa operations), whereas with
+         * the 32 added pixels for all dwa operations), whereas with
          * SYMMETRIC_MORPH_BC this is not necessary. */
     bordercolor = getMorphBorderPixelColor(L_MORPH_ERODE, 1);
     if (bordercolor == 0)   /* asymmetric b.c. */
@@ -533,19 +527,17 @@ PIX     *pixt1, *pixt2, *pixt3;
 
     if (vsize == 1) {   /* horizontal only */
         pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_CLOSE, selnameh);
-        FREE(selnameh);
-    }
-    else if (hsize == 1) {   /* vertical only */
+        LEPT_FREE(selnameh);
+    } else if (hsize == 1) {   /* vertical only */
         pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_CLOSE, selnamev);
-        FREE(selnamev);
-    }
-    else {  /* do separable */
+        LEPT_FREE(selnamev);
+    } else {  /* do separable */
         pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh);
         pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_DILATE, selnamev);
         pixFMorphopGen_1(pixt3, pixt2, L_MORPH_ERODE, selnameh);
         pixFMorphopGen_1(pixt2, pixt3, L_MORPH_ERODE, selnamev);
-        FREE(selnameh);
-        FREE(selnamev);
+        LEPT_FREE(selnameh);
+        LEPT_FREE(selnamev);
         pixDestroy(&pixt3);
     }
     pixt3 = pixRemoveBorder(pixt2, bordersize);
@@ -640,41 +632,39 @@ PIX     *pixt1, *pixt2, *pixt3;
 
 #if DEBUG_SEL_LOOKUP
     fprintf(stderr, "nameh1=%s, nameh2=%s, namev1=%s, namev2=%s\n",
-		    selnameh1, selnameh2, selnamev1, selnamev2);
+            selnameh1, selnameh2, selnamev1, selnamev2);
     fprintf(stderr, "hsize1=%d, hsize2=%d, vsize1=%d, vsize2=%d\n",
-		    hsize1, hsize2, vsize1, vsize2);
+            hsize1, hsize2, vsize1, vsize2);
 #endif  /* DEBUG_SEL_LOOKUP */
 
     pixt1 = pixAddBorder(pixs, 64, 0);
     if (vsize == 1) {
-        if (hsize2 == 1)
+        if (hsize2 == 1) {
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
-        else {
+        } else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_DILATE, selnameh2);
             pixDestroy(&pixt3);
         }
-    }
-    else if (hsize == 1) {
-        if (vsize2 == 1)
+    } else if (hsize == 1) {
+        if (vsize2 == 1) {
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnamev1);
-        else {
+        } else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnamev1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_DILATE, selnamev2);
             pixDestroy(&pixt3);
         }
-    }
-    else {  /* vsize and hsize both > 1 */
-        if (hsize2 == 1)
+    } else {  /* vsize and hsize both > 1 */
+        if (hsize2 == 1) {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
-        else {
+        } else {
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
             pixt3 = pixFMorphopGen_2(NULL, pixt2, L_MORPH_DILATE, selnameh2);
             pixDestroy(&pixt2);
         }
-        if (vsize2 == 1)
+        if (vsize2 == 1) {
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_DILATE, selnamev1);
-        else {
+        } else {
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_DILATE, selnamev1);
             pixFMorphopGen_2(pixt2, pixt2, L_MORPH_DILATE, selnamev2);
         }
@@ -683,10 +673,10 @@ PIX     *pixt1, *pixt2, *pixt3;
     pixDestroy(&pixt1);
     pixt1 = pixRemoveBorder(pixt2, 64);
     pixDestroy(&pixt2);
-    if (selnameh1) FREE(selnameh1);
-    if (selnameh2) FREE(selnameh2);
-    if (selnamev1) FREE(selnamev1);
-    if (selnamev2) FREE(selnamev2);
+    if (selnameh1) LEPT_FREE(selnameh1);
+    if (selnameh2) LEPT_FREE(selnameh2);
+    if (selnamev1) LEPT_FREE(selnamev1);
+    if (selnamev2) LEPT_FREE(selnamev2);
 
     if (!pixd)
         return pixt1;
@@ -776,34 +766,32 @@ PIX     *pixt1, *pixt2, *pixt3;
     pixt1 = pixAddBorder(pixs, 64, bordercolor);
 
     if (vsize == 1) {
-        if (hsize2 == 1)
+        if (hsize2 == 1) {
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
-        else {
+        } else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_ERODE, selnameh2);
             pixDestroy(&pixt3);
         }
-    }
-    else if (hsize == 1) {
-        if (vsize2 == 1)
+    } else if (hsize == 1) {
+        if (vsize2 == 1) {
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnamev1);
-        else {
+        } else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnamev1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_ERODE, selnamev2);
             pixDestroy(&pixt3);
         }
-    }
-    else {  /* vsize and hsize both > 1 */
-        if (hsize2 == 1)
+    } else {  /* vsize and hsize both > 1 */
+        if (hsize2 == 1) {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
-        else {
+        } else {
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
             pixt3 = pixFMorphopGen_2(NULL, pixt2, L_MORPH_ERODE, selnameh2);
             pixDestroy(&pixt2);
         }
-        if (vsize2 == 1)
+        if (vsize2 == 1) {
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_ERODE, selnamev1);
-        else {
+        } else {
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_ERODE, selnamev1);
             pixFMorphopGen_2(pixt2, pixt2, L_MORPH_ERODE, selnamev2);
         }
@@ -812,10 +800,10 @@ PIX     *pixt1, *pixt2, *pixt3;
     pixDestroy(&pixt1);
     pixt1 = pixRemoveBorder(pixt2, 64);
     pixDestroy(&pixt2);
-    if (selnameh1) FREE(selnameh1);
-    if (selnameh2) FREE(selnameh2);
-    if (selnamev1) FREE(selnamev1);
-    if (selnamev2) FREE(selnamev2);
+    if (selnameh1) LEPT_FREE(selnameh1);
+    if (selnameh2) LEPT_FREE(selnameh2);
+    if (selnamev1) LEPT_FREE(selnamev1);
+    if (selnamev2) LEPT_FREE(selnamev2);
 
     if (!pixd)
         return pixt1;
@@ -910,8 +898,7 @@ PIX     *pixt1, *pixt2, *pixt3;
             if (bordercolor == 1)
                 pixSetOrClearBorder(pixt3, 64, 64, 64, 64, PIX_CLR);
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_DILATE, selnameh1);
-        }
-        else {
+        } else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_ERODE, selnameh2);
             if (bordercolor == 1)
@@ -919,15 +906,13 @@ PIX     *pixt1, *pixt2, *pixt3;
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_DILATE, selnameh1);
             pixFMorphopGen_2(pixt2, pixt3, L_MORPH_DILATE, selnameh2);
         }
-    }
-    else if (hsize == 1) {
+    } else if (hsize == 1) {
         if (vsize2 == 1)  {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnamev1);
             if (bordercolor == 1)
                 pixSetOrClearBorder(pixt3, 64, 64, 64, 64, PIX_CLR);
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_DILATE, selnamev1);
-	}
-       	else {
+        } else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnamev1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_ERODE, selnamev2);
             if (bordercolor == 1)
@@ -935,8 +920,7 @@ PIX     *pixt1, *pixt2, *pixt3;
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_DILATE, selnamev1);
             pixFMorphopGen_2(pixt2, pixt3, L_MORPH_DILATE, selnamev2);
         }
-    }
-    else {  /* vsize and hsize both > 1 */
+    } else {  /* vsize and hsize both > 1 */
         if (hsize2 == 1 && vsize2 == 1) {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_ERODE, selnamev1);
@@ -944,8 +928,7 @@ PIX     *pixt1, *pixt2, *pixt3;
                 pixSetOrClearBorder(pixt2, 64, 64, 64, 64, PIX_CLR);
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_DILATE, selnameh1);
             pixFMorphopGen_1(pixt2, pixt3, L_MORPH_DILATE, selnamev1);
-        }
-        else if (vsize2 == 1) {
+        } else if (vsize2 == 1) {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_ERODE, selnameh2);
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_ERODE, selnamev1);
@@ -954,8 +937,7 @@ PIX     *pixt1, *pixt2, *pixt3;
             pixFMorphopGen_1(pixt2, pixt3, L_MORPH_DILATE, selnameh1);
             pixFMorphopGen_2(pixt3, pixt2, L_MORPH_DILATE, selnameh2);
             pixFMorphopGen_1(pixt2, pixt3, L_MORPH_DILATE, selnamev1);
-        }
-        else if (hsize2 == 1) {
+        } else if (hsize2 == 1) {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_ERODE, selnamev1);
             pixFMorphopGen_2(pixt3, pixt2, L_MORPH_ERODE, selnamev2);
@@ -964,8 +946,7 @@ PIX     *pixt1, *pixt2, *pixt3;
             pixFMorphopGen_1(pixt2, pixt3, L_MORPH_DILATE, selnameh1);
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_DILATE, selnamev1);
             pixFMorphopGen_2(pixt2, pixt3, L_MORPH_DILATE, selnamev2);
-        }
-        else {   /* both directions are combed */
+        } else {   /* both directions are combed */
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_ERODE, selnameh1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_ERODE, selnameh2);
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_ERODE, selnamev1);
@@ -983,10 +964,10 @@ PIX     *pixt1, *pixt2, *pixt3;
     pixDestroy(&pixt1);
     pixt1 = pixRemoveBorder(pixt2, 64);
     pixDestroy(&pixt2);
-    if (selnameh1) FREE(selnameh1);
-    if (selnameh2) FREE(selnameh2);
-    if (selnamev1) FREE(selnamev1);
-    if (selnamev2) FREE(selnamev2);
+    if (selnameh1) LEPT_FREE(selnameh1);
+    if (selnameh2) LEPT_FREE(selnameh2);
+    if (selnamev1) LEPT_FREE(selnamev1);
+    if (selnamev2) LEPT_FREE(selnamev2);
 
     if (!pixd)
         return pixt1;
@@ -1078,9 +1059,9 @@ PIX     *pixt1, *pixt2, *pixt3;
     pixt1 = pixAddBorder(pixs, 64, 0);
 
     if (vsize == 1) {
-        if (hsize2 == 1)
+        if (hsize2 == 1) {
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_CLOSE, selnameh1);
-        else {
+        } else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_DILATE, selnameh2);
             if (setborder == 1)
@@ -1088,11 +1069,10 @@ PIX     *pixt1, *pixt2, *pixt3;
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_ERODE, selnameh1);
             pixFMorphopGen_2(pixt2, pixt3, L_MORPH_ERODE, selnameh2);
         }
-    }
-    else if (hsize == 1) {
-        if (vsize2 == 1)
+    } else if (hsize == 1) {
+        if (vsize2 == 1) {
             pixt2 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_CLOSE, selnamev1);
-       	else {
+        } else {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnamev1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_DILATE, selnamev2);
             if (setborder == 1)
@@ -1100,8 +1080,7 @@ PIX     *pixt1, *pixt2, *pixt3;
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_ERODE, selnamev1);
             pixFMorphopGen_2(pixt2, pixt3, L_MORPH_ERODE, selnamev2);
         }
-    }
-    else {  /* vsize and hsize both > 1 */
+    } else {  /* vsize and hsize both > 1 */
         if (hsize2 == 1 && vsize2 == 1) {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_DILATE, selnamev1);
@@ -1109,8 +1088,7 @@ PIX     *pixt1, *pixt2, *pixt3;
                 pixSetOrClearBorder(pixt2, 64, 64, 64, 64, PIX_SET);
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_ERODE, selnameh1);
             pixFMorphopGen_1(pixt2, pixt3, L_MORPH_ERODE, selnamev1);
-        }
-        else if (vsize2 == 1) {
+        } else if (vsize2 == 1) {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_DILATE, selnameh2);
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_DILATE, selnamev1);
@@ -1119,8 +1097,7 @@ PIX     *pixt1, *pixt2, *pixt3;
             pixFMorphopGen_1(pixt2, pixt3, L_MORPH_ERODE, selnameh1);
             pixFMorphopGen_2(pixt3, pixt2, L_MORPH_ERODE, selnameh2);
             pixFMorphopGen_1(pixt2, pixt3, L_MORPH_ERODE, selnamev1);
-        }
-        else if (hsize2 == 1) {
+        } else if (hsize2 == 1) {
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
             pixt2 = pixFMorphopGen_1(NULL, pixt3, L_MORPH_DILATE, selnamev1);
             pixFMorphopGen_2(pixt3, pixt2, L_MORPH_DILATE, selnamev2);
@@ -1129,8 +1106,7 @@ PIX     *pixt1, *pixt2, *pixt3;
             pixFMorphopGen_1(pixt2, pixt3, L_MORPH_ERODE, selnameh1);
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_ERODE, selnamev1);
             pixFMorphopGen_2(pixt2, pixt3, L_MORPH_ERODE, selnamev2);
-        }
-        else {   /* both directions are combed */
+        } else {   /* both directions are combed */
             pixt3 = pixFMorphopGen_1(NULL, pixt1, L_MORPH_DILATE, selnameh1);
             pixt2 = pixFMorphopGen_2(NULL, pixt3, L_MORPH_DILATE, selnameh2);
             pixFMorphopGen_1(pixt3, pixt2, L_MORPH_DILATE, selnamev1);
@@ -1148,10 +1124,10 @@ PIX     *pixt1, *pixt2, *pixt3;
     pixDestroy(&pixt1);
     pixt1 = pixRemoveBorder(pixt2, 64);
     pixDestroy(&pixt2);
-    if (selnameh1) FREE(selnameh1);
-    if (selnameh2) FREE(selnameh2);
-    if (selnamev1) FREE(selnamev1);
-    if (selnamev2) FREE(selnamev2);
+    if (selnameh1) LEPT_FREE(selnameh1);
+    if (selnameh2) LEPT_FREE(selnameh2);
+    if (selnamev1) LEPT_FREE(selnamev1);
+    if (selnamev2) LEPT_FREE(selnamev2);
 
     if (!pixd)
         return pixt1;
@@ -1220,13 +1196,13 @@ PIX     *pixt1, *pixt2, *pixt3;
 
         /* Horizontal dilation first: pixs --> pixt2.  Do not alter pixs. */
     pixt1 = pixCreateTemplateNoInit(pixs);  /* temp image */
-    if (hsize == 1)
+    if (hsize == 1) {
         pixt2 = pixClone(pixs);
-    else if (hsize < 64)
+    } else if (hsize < 64) {
         pixt2 = pixDilateCompBrickDwa(NULL, pixs, hsize, 1);
-    else if (hsize == 64)  /* approximate */
+    } else if (hsize == 64) {  /* approximate */
         pixt2 = pixDilateCompBrickDwa(NULL, pixs, 63, 1);
-    else {
+    } else {
         nops = (extrah < 3) ? nh : nh + 1;
         if (nops & 1) {  /* odd */
             if (extrah > 2)
@@ -1237,13 +1213,11 @@ PIX     *pixt1, *pixt2, *pixt3;
                 pixDilateCompBrickDwa(pixt1, pixt2, 63, 1);
                 pixDilateCompBrickDwa(pixt2, pixt1, 63, 1);
             }
-        }
-        else {  /* nops even */
+        } else {  /* nops even */
             if (extrah > 2) {
                 pixDilateCompBrickDwa(pixt1, pixs, extrah, 1);
                 pixt2 = pixDilateCompBrickDwa(NULL, pixt1, 63, 1);
-            }
-            else {  /* they're all 63s */
+            } else {  /* they're all 63s */
                 pixDilateCompBrickDwa(pixt1, pixs, 63, 1);
                 pixt2 = pixDilateCompBrickDwa(NULL, pixt1, 63, 1);
             }
@@ -1255,13 +1229,13 @@ PIX     *pixt1, *pixt2, *pixt3;
     }
 
         /* Vertical dilation: pixt2 --> pixt3.  */
-    if (vsize == 1)
+    if (vsize == 1) {
         pixt3 = pixClone(pixt2);
-    else if (vsize < 64)
+    } else if (vsize < 64) {
         pixt3 = pixDilateCompBrickDwa(NULL, pixt2, 1, vsize);
-    else if (vsize == 64)  /* approximate */
+    } else if (vsize == 64) {  /* approximate */
         pixt3 = pixDilateCompBrickDwa(NULL, pixt2, 1, 63);
-    else {
+    } else {
         nops = (extrav < 3) ? nv : nv + 1;
         if (nops & 1) {  /* odd */
             if (extrav > 2)
@@ -1272,13 +1246,11 @@ PIX     *pixt1, *pixt2, *pixt3;
                 pixDilateCompBrickDwa(pixt1, pixt3, 1, 63);
                 pixDilateCompBrickDwa(pixt3, pixt1, 1, 63);
             }
-        }
-        else {  /* nops even */
+        } else {  /* nops even */
             if (extrav > 2) {
                 pixDilateCompBrickDwa(pixt1, pixt2, 1, extrav);
                 pixt3 = pixDilateCompBrickDwa(NULL, pixt1, 1, 63);
-            }
-            else {  /* they're all 63s */
+            } else {  /* they're all 63s */
                 pixDilateCompBrickDwa(pixt1, pixt2, 1, 63);
                 pixt3 = pixDilateCompBrickDwa(NULL, pixt1, 1, 63);
             }
@@ -1342,13 +1314,13 @@ PIX     *pixt1, *pixt2, *pixt3;
 
         /* Horizontal erosion first: pixs --> pixt2.  Do not alter pixs. */
     pixt1 = pixCreateTemplateNoInit(pixs);  /* temp image */
-    if (hsize == 1)
+    if (hsize == 1) {
         pixt2 = pixClone(pixs);
-    else if (hsize < 64)
+    } else if (hsize < 64) {
         pixt2 = pixErodeCompBrickDwa(NULL, pixs, hsize, 1);
-    else if (hsize == 64)  /* approximate */
+    } else if (hsize == 64) {  /* approximate */
         pixt2 = pixErodeCompBrickDwa(NULL, pixs, 63, 1);
-    else {
+    } else {
         nops = (extrah < 3) ? nh : nh + 1;
         if (nops & 1) {  /* odd */
             if (extrah > 2)
@@ -1359,13 +1331,11 @@ PIX     *pixt1, *pixt2, *pixt3;
                 pixErodeCompBrickDwa(pixt1, pixt2, 63, 1);
                 pixErodeCompBrickDwa(pixt2, pixt1, 63, 1);
             }
-        }
-        else {  /* nops even */
+        } else {  /* nops even */
             if (extrah > 2) {
                 pixErodeCompBrickDwa(pixt1, pixs, extrah, 1);
                 pixt2 = pixErodeCompBrickDwa(NULL, pixt1, 63, 1);
-            }
-            else {  /* they're all 63s */
+            } else {  /* they're all 63s */
                 pixErodeCompBrickDwa(pixt1, pixs, 63, 1);
                 pixt2 = pixErodeCompBrickDwa(NULL, pixt1, 63, 1);
             }
@@ -1377,13 +1347,13 @@ PIX     *pixt1, *pixt2, *pixt3;
     }
 
         /* Vertical erosion: pixt2 --> pixt3.  */
-    if (vsize == 1)
+    if (vsize == 1) {
         pixt3 = pixClone(pixt2);
-    else if (vsize < 64)
+    } else if (vsize < 64) {
         pixt3 = pixErodeCompBrickDwa(NULL, pixt2, 1, vsize);
-    else if (vsize == 64)  /* approximate */
+    } else if (vsize == 64) {  /* approximate */
         pixt3 = pixErodeCompBrickDwa(NULL, pixt2, 1, 63);
-    else {
+    } else {
         nops = (extrav < 3) ? nv : nv + 1;
         if (nops & 1) {  /* odd */
             if (extrav > 2)
@@ -1394,13 +1364,11 @@ PIX     *pixt1, *pixt2, *pixt3;
                 pixErodeCompBrickDwa(pixt1, pixt3, 1, 63);
                 pixErodeCompBrickDwa(pixt3, pixt1, 1, 63);
             }
-        }
-        else {  /* nops even */
+        } else {  /* nops even */
             if (extrav > 2) {
                 pixErodeCompBrickDwa(pixt1, pixt2, 1, extrav);
                 pixt3 = pixErodeCompBrickDwa(NULL, pixt1, 1, 63);
-            }
-            else {  /* they're all 63s */
+            } else {  /* they're all 63s */
                 pixErodeCompBrickDwa(pixt1, pixt2, 1, 63);
                 pixt3 = pixErodeCompBrickDwa(NULL, pixt1, 1, 63);
             }
@@ -1505,9 +1473,9 @@ PIX     *pixt1, *pixt2, *pixt3;
     if (bordercolor == 0) {  /* asymmetric b.c. */
         borderx = 32 + (hsize / 64) * 32;
         bordery = 32 + (vsize / 64) * 32;
-    }
-    else   /* symmetric b.c. */
+    } else {  /* symmetric b.c. */
         borderx = bordery = 32;
+    }
     pixt1 = pixAddBorderGeneral(pixs, borderx, borderx, bordery, bordery, 0);
 
     pixt2 = pixDilateCompBrickExtendDwa(NULL, pixt1, hsize, vsize);
@@ -1582,8 +1550,7 @@ l_int32  n, extra, fact1, fact2;
     if (size <= 63) {
         n = 0;
         extra = L_MIN(1, size);
-    }
-    else {  /* size > 63 */
+    } else {  /* size > 63 */
         n = 1 + (l_int32)((size - 63) / 62);
         extra = size - 63 - (n - 1) * 62 + 1;
     }

@@ -57,6 +57,9 @@
  *           l_int32   pixaCountText()
  *           void   ***pixaGetLinePtrs()
  *
+ *      Pixa output info
+ *           l_int32   pixaWriteStreamInfo()
+ *
  *      Pixa array modifiers
  *           l_int32   pixaReplacePix()
  *           l_int32   pixaInsertPix()
@@ -116,6 +119,10 @@
  *     it is necessary to call pixaDestroy() on it.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif  /* HAVE_CONFIG_H */
+
 #include <string.h>
 #include "allheaders.h"
 
@@ -133,6 +140,9 @@ static l_int32 pixaExtendArray(PIXA  *pixa);
  *
  *      Input:  n  (initial number of ptrs)
  *      Return: pixa, or null on error
+ *
+ *  Notes:
+ *      (1) This creates an empty boxa.
  */
 PIXA *
 pixaCreate(l_int32  n)
@@ -144,13 +154,13 @@ PIXA  *pixa;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((pixa = (PIXA *)CALLOC(1, sizeof(PIXA))) == NULL)
+    if ((pixa = (PIXA *)LEPT_CALLOC(1, sizeof(PIXA))) == NULL)
         return (PIXA *)ERROR_PTR("pixa not made", procName, NULL);
     pixa->n = 0;
     pixa->nalloc = n;
     pixa->refcount = 1;
 
-    if ((pixa->pix = (PIX **)CALLOC(n, sizeof(PIX *))) == NULL)
+    if ((pixa->pix = (PIX **)LEPT_CALLOC(n, sizeof(PIX *))) == NULL)
         return (PIXA *)ERROR_PTR("pix ptrs not made", procName, NULL);
     if ((pixa->boxa = boxaCreate(n)) == NULL)
         return (PIXA *)ERROR_PTR("boxa not made", procName, NULL);
@@ -382,9 +392,9 @@ PIXA    *pixa;
     if (pixa->refcount <= 0) {
         for (i = 0; i < pixa->n; i++)
             pixDestroy(&pixa->pix[i]);
-        FREE(pixa->pix);
+        LEPT_FREE(pixa->pix);
         boxaDestroy(&pixa->boxa);
-        FREE(pixa);
+        LEPT_FREE(pixa);
     }
 
     *ppixa = NULL;
@@ -1012,8 +1022,8 @@ PIX     *pix;
  *          of the pix that it refers to.
  *      (3) This is an array of arrays.  To destroy it:
  *            for (i = 0; i < size; i++)
- *                FREE(lineset[i]);
- *            FREE(lineset);
+ *                LEPT_FREE(lineset[i]);
+ *            LEPT_FREE(lineset);
  */
 void ***
 pixaGetLinePtrs(PIXA     *pixa,
@@ -1033,7 +1043,7 @@ PIX     *pix;
         return (void ***)ERROR_PTR("pixa not all same depth", procName, NULL);
     n = pixaGetCount(pixa);
     if (psize) *psize = n;
-    if ((lineset = (void ***)CALLOC(n, sizeof(void **))) == NULL)
+    if ((lineset = (void ***)LEPT_CALLOC(n, sizeof(void **))) == NULL)
         return (void ***)ERROR_PTR("lineset not made", procName, NULL);
     for (i = 0; i < n; i++) {
         pix = pixaGetPix(pixa, i, L_CLONE);
@@ -1045,6 +1055,59 @@ PIX     *pix;
     return lineset;
 }
 
+
+/*---------------------------------------------------------------------*
+ *                         Pixa output info                            *
+ *---------------------------------------------------------------------*/
+/*!
+ *  pixaWriteStreamInfo()
+ *
+ *      Input:  stream
+ *              pixa
+ *      Return: 0 if OK, 1 on error.
+ *
+ *  Notes:
+ *      (1) For each pix in the pixa, write out the pix dimensions, spp,
+ *          text string (if it exists), and cmap info.
+ */
+l_int32
+pixaWriteStreamInfo(FILE  *fp,
+                    PIXA  *pixa)
+{
+char     *text;
+l_int32   i, n, w, h, d, spp, count, hastext;
+PIX      *pix;
+PIXCMAP  *cmap;
+
+    PROCNAME("pixaWriteStreamInfo");
+
+    if (!fp)
+        return ERROR_INT("stream not defined", procName, 1);
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+
+    n = pixaGetCount(pixa);
+    for (i = 0; i < n; i++) {
+        if ((pix = pixaGetPix(pixa, i, L_CLONE)) == NULL) {
+            fprintf(fp, "%d: no pix at this index\n", i);
+            continue;
+        }
+        pixGetDimensions(pix, &w, &h, &d);
+        spp = pixGetSpp(pix);
+        text = pixGetText(pix);
+        hastext = (text && strlen(text) > 0);
+        if ((cmap = pixGetColormap(pix)) != NULL)
+            count = pixcmapGetCount(cmap);
+        fprintf(fp, "Pix %d: w = %d, h = %d, d = %d, spp = %d",
+                i, w, h, d, spp);
+        if (cmap) fprintf(fp, ", cmap(%d colors)", count);
+        if (hastext) fprintf(fp, ", text = %s", text);
+        fprintf(fp, "\n");
+        pixDestroy(&pix);
+    }
+
+    return 0;
+}
 
 
 /*---------------------------------------------------------------------*
@@ -1478,12 +1541,12 @@ PIXAA  *paa;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((paa = (PIXAA *)CALLOC(1, sizeof(PIXAA))) == NULL)
+    if ((paa = (PIXAA *)LEPT_CALLOC(1, sizeof(PIXAA))) == NULL)
         return (PIXAA *)ERROR_PTR("paa not made", procName, NULL);
     paa->n = 0;
     paa->nalloc = n;
 
-    if ((paa->pixa = (PIXA **)CALLOC(n, sizeof(PIXA *))) == NULL) {
+    if ((paa->pixa = (PIXA **)LEPT_CALLOC(n, sizeof(PIXA *))) == NULL) {
         pixaaDestroy(&paa);
         return (PIXAA *)ERROR_PTR("pixa ptrs not made", procName, NULL);
     }
@@ -1591,10 +1654,10 @@ PIXAA   *paa;
 
     for (i = 0; i < paa->n; i++)
         pixaDestroy(&paa->pixa[i]);
-    FREE(paa->pixa);
+    LEPT_FREE(paa->pixa);
     boxaDestroy(&paa->boxa);
 
-    FREE(paa);
+    LEPT_FREE(paa);
     *ppaa = NULL;
 
     return;
@@ -2115,10 +2178,6 @@ PIXA    *pixa;
 /*---------------------------------------------------------------------*
  *                          Pixa serialized I/O                        *
  *---------------------------------------------------------------------*/
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
-#endif  /* HAVE_CONFIG_H */
-
 /*!
  *  pixaRead()
  *

@@ -70,10 +70,10 @@ L_REGPARAMS  *rp;
     pixs = pixRead("feyn-fract.tif");
     pixGetDimensions(pixs, &w, &h, NULL);
     scale = L_MIN(factor * 2550 / w, factor * 3300 / h);
-    fp1 = lept_fopen("/tmp/regout/psio0.ps", "wb+");
+    fp1 = lept_fopen("/tmp/lept/regout/psio0.ps", "wb+");
     pixWriteStreamPS(fp1, pixs, NULL, 300, scale);
     lept_fclose(fp1);
-    regTestCheckFile(rp, "/tmp/regout/psio0.ps");  /* 0 */
+    regTestCheckFile(rp, "/tmp/lept/regout/psio0.ps");  /* 0 */
     pixDestroy(&pixs);
 
         /* Uncompressed PS with scaling, with LL corner at (1500, 1500) mils */
@@ -82,48 +82,48 @@ L_REGPARAMS  *rp;
     scale = L_MIN(factor * 2550 / w, factor * 3300 / h);
     box = boxCreate(1500, 1500, (l_int32)(1000 * scale * w / 300),
                     (l_int32)(1000 * scale * h / 300));
-    fp1 = lept_fopen("/tmp/regout/psio1.ps", "wb+");
+    fp1 = lept_fopen("/tmp/lept/regout/psio1.ps", "wb+");
     pixWriteStreamPS(fp1, pixs, box, 300, 1.0);
     lept_fclose(fp1);
-    regTestCheckFile(rp, "/tmp/regout/psio1.ps");  /* 1 */
+    regTestCheckFile(rp, "/tmp/lept/regout/psio1.ps");  /* 1 */
     boxDestroy(&box);
     pixDestroy(&pixs);
 
         /* DCT compressed PS with LL corner at (300, 1000) pixels */
     pixs = pixRead("marge.jpg");
     pixt = pixConvertTo32(pixs);
-    pixWrite("/tmp/regout/psio2.jpg", pixt, IFF_JFIF_JPEG);
-    convertJpegToPS("/tmp/regout/psio2.jpg", "/tmp/regout/psio3.ps",
+    pixWrite("/tmp/lept/regout/psio2.jpg", pixt, IFF_JFIF_JPEG);
+    convertJpegToPS("/tmp/lept/regout/psio2.jpg", "/tmp/lept/regout/psio3.ps",
                     "w", 300, 1000, 0, 4.0, 1, 1);
-    regTestCheckFile(rp, "/tmp/regout/psio2.jpg");  /* 2 */
-    regTestCheckFile(rp, "/tmp/regout/psio3.ps");  /* 3 */
+    regTestCheckFile(rp, "/tmp/lept/regout/psio2.jpg");  /* 2 */
+    regTestCheckFile(rp, "/tmp/lept/regout/psio3.ps");  /* 3 */
     pixDestroy(&pixt);
     pixDestroy(&pixs);
 
         /* For each page, apply tiff g4 image first; then jpeg or png over it */
-    convertG4ToPS("feyn.tif", "/tmp/regout/psio4.ps", "w",
+    convertG4ToPS("feyn.tif", "/tmp/lept/regout/psio4.ps", "w",
                   0, 0, 0, 1.0, 1, 1, 0);
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio4.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio4.ps",
                     "a", 500, 100, 300, 2.0, 1,  0);
-    convertFlateToPS("weasel4.11c.png", "/tmp/regout/psio4.ps",
+    convertFlateToPS("weasel4.11c.png", "/tmp/lept/regout/psio4.ps",
                      "a", 300, 400, 300, 6.0, 1,  0);
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio4.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio4.ps",
                     "a", 100, 800, 300, 1.5, 1, 1);
 
-    convertG4ToPS("feyn.tif", "/tmp/regout/psio4.ps",
+    convertG4ToPS("feyn.tif", "/tmp/lept/regout/psio4.ps",
                   "a", 0, 0, 0, 1.0, 2, 1, 0);
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio4.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio4.ps",
                     "a", 1000, 700, 300, 2.0, 2, 0);
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio4.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio4.ps",
                     "a", 100, 200, 300, 2.0, 2, 1);
 
-    convertG4ToPS("feyn.tif", "/tmp/regout/psio4.ps",
+    convertG4ToPS("feyn.tif", "/tmp/lept/regout/psio4.ps",
                   "a", 0, 0, 0, 1.0, 3, 1, 0);
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio4.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio4.ps",
                     "a", 200, 200, 300, 2.0, 3, 0);
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio4.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio4.ps",
                     "a", 200, 900, 300, 2.0, 3, 1);
-    regTestCheckFile(rp, "/tmp/regout/psio4.ps");  /* 4 */
+    regTestCheckFile(rp, "/tmp/lept/regout/psio4.ps");  /* 4 */
 
         /* Now apply jpeg first; then paint through a g4 mask.
          * For gv, the first image with a b.b. determines the
@@ -143,81 +143,82 @@ L_REGPARAMS  *rp;
          * the images remain in the background of the text. */
     pixs = pixRead("wyom.jpg");
     pixt = pixScaleToSize(pixs, 2528, 3300);
-    pixWrite("/tmp/regout/psio5.jpg", pixt, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/regout/psio5.jpg", pixt, IFF_JFIF_JPEG);
     pixDestroy(&pixs);
     pixDestroy(&pixt);
-    convertJpegToPS("/tmp/regout/psio5.jpg", "/tmp/regout/psio5.ps",
+    convertJpegToPS("/tmp/lept/regout/psio5.jpg", "/tmp/lept/regout/psio5.ps",
                       "w", 0, 0, 300, 1.0, 1, 0);
-    convertFlateToPS("weasel8.240c.png", "/tmp/regout/psio5.ps",
+    convertFlateToPS("weasel8.240c.png", "/tmp/lept/regout/psio5.ps",
                      "a", 100, 100, 300, 5.0, 1, 0);
-    convertFlateToPS("weasel8.149g.png", "/tmp/regout/psio5.ps",
+    convertFlateToPS("weasel8.149g.png", "/tmp/lept/regout/psio5.ps",
                      "a", 200, 300, 300, 5.0, 1, 0);
-    convertFlateToPS("weasel4.11c.png", "/tmp/regout/psio5.ps",
+    convertFlateToPS("weasel4.11c.png", "/tmp/lept/regout/psio5.ps",
                      "a", 300, 500, 300, 5.0, 1, 0);
-    convertG4ToPS("feyn.tif", "/tmp/regout/psio5.ps",
+    convertG4ToPS("feyn.tif", "/tmp/lept/regout/psio5.ps",
                   "a", 0, 0, 0, 1.0, 1, 1, 1);
 
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio5.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio5.ps",
                     "a", 500, 100, 300, 2.0, 2,  0);
-    convertFlateToPS("weasel4.11c.png", "/tmp/regout/psio5.ps",
+    convertFlateToPS("weasel4.11c.png", "/tmp/lept/regout/psio5.ps",
                      "a", 300, 400, 300, 6.0, 2,  0);
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio5.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio5.ps",
                     "a", 100, 800, 300, 1.5, 2, 0);
-    convertG4ToPS("feyn.tif", "/tmp/regout/psio5.ps",
+    convertG4ToPS("feyn.tif", "/tmp/lept/regout/psio5.ps",
                   "a", 0, 0, 0, 1.0, 2, 1, 1);
 
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio5.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio5.ps",
                     "a", 500, 100, 300, 2.0, 3,  0);
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio5.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio5.ps",
                     "a", 100, 800, 300, 2.0, 3, 0);
-    convertG4ToPS("feyn.tif", "/tmp/regout/psio5.ps",
+    convertG4ToPS("feyn.tif", "/tmp/lept/regout/psio5.ps",
                   "a", 0, 0, 0, 1.0, 3, 1, 1);
 
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio5.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio5.ps",
                     "a", 700, 700, 300, 2.0, 4, 0);
-    convertFlateToPS("weasel8.149g.png", "/tmp/regout/psio5.ps",
+    convertFlateToPS("weasel8.149g.png", "/tmp/lept/regout/psio5.ps",
                      "a", 400, 400, 300, 5.0, 4, 0);
-    convertG4ToPS("feyn.tif", "/tmp/regout/psio5.ps",
+    convertG4ToPS("feyn.tif", "/tmp/lept/regout/psio5.ps",
                   "a", 0, 0, 0, 1.0, 4, 1, 0);
-    convertFlateToPS("weasel8.240c.png", "/tmp/regout/psio5.ps",
+    convertFlateToPS("weasel8.240c.png", "/tmp/lept/regout/psio5.ps",
                      "a", 100, 220, 300, 5.0, 4, 0);
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio5.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio5.ps",
                     "a", 100, 200, 300, 2.0, 4, 1);
 
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio5.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio5.ps",
                     "a", 200, 200, 300, 1.5, 5, 0);
-    convertFlateToPS("weasel8.240c.png", "/tmp/regout/psio5.ps",
+    convertFlateToPS("weasel8.240c.png", "/tmp/lept/regout/psio5.ps",
                      "a", 140, 80, 300, 7.0, 5, 0);
-    convertG4ToPS("feyn.tif", "/tmp/regout/psio5.ps",
+    convertG4ToPS("feyn.tif", "/tmp/lept/regout/psio5.ps",
                   "a", 0, 0, 0, 1.0, 5, 1, 0);
-    convertFlateToPS("weasel8.149g.png", "/tmp/regout/psio5.ps",
+    convertFlateToPS("weasel8.149g.png", "/tmp/lept/regout/psio5.ps",
                      "a", 280, 310, 300, 5.0, 4, 0);
-    convertJpegToPS("marge.jpg", "/tmp/regout/psio5.ps",
+    convertJpegToPS("marge.jpg", "/tmp/lept/regout/psio5.ps",
                     "a", 200, 900, 300, 2.0, 5, 1);
-    regTestCheckFile(rp, "/tmp/regout/psio5.ps");  /* 5 */
+    regTestCheckFile(rp, "/tmp/lept/regout/psio5.ps");  /* 5 */
 
         /* Generation using segmentation masks */
     convertSegmentedPagesToPS(".", "lion-page", 10, ".", "lion-mask", 10,
-                              0, 100, 2.0, 0.8, 190, "/tmp/regout/psio6.ps");
-    regTestCheckFile(rp, "/tmp/regout/psio6.ps");  /* 6 */
+                              0, 100, 2.0, 0.8, 190,
+                              "/tmp/lept/regout/psio6.ps");
+    regTestCheckFile(rp, "/tmp/lept/regout/psio6.ps");  /* 6 */
 
         /* PS generation for embeddding */
-    convertJpegToPSEmbed("tetons.jpg", "/tmp/regout/psio7.ps");
-    regTestCheckFile(rp, "/tmp/regout/psio7.ps");  /* 7 */
+    convertJpegToPSEmbed("tetons.jpg", "/tmp/lept/regout/psio7.ps");
+    regTestCheckFile(rp, "/tmp/lept/regout/psio7.ps");  /* 7 */
 
-    convertG4ToPSEmbed("feyn-fract.tif", "/tmp/regout/psio8.ps");
-    regTestCheckFile(rp, "/tmp/regout/psio8.ps");  /* 8 */
+    convertG4ToPSEmbed("feyn-fract.tif", "/tmp/lept/regout/psio8.ps");
+    regTestCheckFile(rp, "/tmp/lept/regout/psio8.ps");  /* 8 */
 
-    convertFlateToPSEmbed("weasel8.240c.png", "/tmp/regout/psio9.ps");
-    regTestCheckFile(rp, "/tmp/regout/psio9.ps");  /* 9 */
+    convertFlateToPSEmbed("weasel8.240c.png", "/tmp/lept/regout/psio9.ps");
+    regTestCheckFile(rp, "/tmp/lept/regout/psio9.ps");  /* 9 */
 
         /* Writing compressed from a pixa */
     sa = sarrayCreate(0);
     for (i = 0; i < 11; i++)
         sarrayAddString(sa, WeaselNames[i], L_COPY);
     pixa = pixaReadFilesSA(sa);
-    pixaWriteCompressedToPS(pixa, "/tmp/regout/psio10.ps", 0, 3);
-    regTestCheckFile(rp, "/tmp/regout/psio10.ps");  /* 10 */
+    pixaWriteCompressedToPS(pixa, "/tmp/lept/regout/psio10.ps", 0, 3);
+    regTestCheckFile(rp, "/tmp/lept/regout/psio10.ps");  /* 10 */
     pixaDestroy(&pixa);
     sarrayDestroy(&sa);
 

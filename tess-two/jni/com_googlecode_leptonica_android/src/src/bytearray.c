@@ -95,10 +95,10 @@ L_BYTEA  *ba;
     if (nbytes <= 0)
         nbytes = INITIAL_ARRAYSIZE;
 
-    if ((ba = (L_BYTEA *)CALLOC(1, sizeof(L_BYTEA))) == NULL)
+    if ((ba = (L_BYTEA *)LEPT_CALLOC(1, sizeof(L_BYTEA))) == NULL)
         return (L_BYTEA *)ERROR_PTR("ba not made", procName, NULL);
 
-    if ((ba->data = (l_uint8 *)CALLOC(nbytes + 1, sizeof(l_uint8))) == NULL)
+    if ((ba->data = (l_uint8 *)LEPT_CALLOC(nbytes + 1, sizeof(l_uint8))) == NULL)
         return (L_BYTEA *)ERROR_PTR("ba array not made", procName, NULL);
     ba->nalloc = nbytes + 1;
     ba->refcount = 1;
@@ -185,7 +185,7 @@ L_BYTEA  *ba;
         return (L_BYTEA *)ERROR_PTR("ba not made", procName, NULL);
     memcpy(ba->data, data, nbytes);
     ba->size = nbytes;
-    FREE(data);
+    LEPT_FREE(data);
     return ba;
 }
 
@@ -248,8 +248,8 @@ L_BYTEA  *ba;
         /* Decrement the ref count.  If it is 0, destroy the lba. */
     ba->refcount--;
     if (ba->refcount <= 0) {
-        if (ba->data) FREE(ba->data);
-        FREE(ba);
+        if (ba->data) LEPT_FREE(ba->data);
+        LEPT_FREE(ba);
     }
 
     *pba = NULL;

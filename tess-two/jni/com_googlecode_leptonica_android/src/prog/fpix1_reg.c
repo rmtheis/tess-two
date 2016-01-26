@@ -189,7 +189,7 @@ L_REGPARAMS  *rp;
 #else
     Sleep(2000);
 #endif  /* _WIN32 */
-    pixt5 = pixRead("/tmp/lept/compare_gray0.png");
+    pixt5 = pixRead("/tmp/lept/comp/compare_gray0.png");
     regTestWritePixAndCheck(rp, pixt5, IFF_PNG);  /* 10 */
     pixSaveTiled(pixt5, pixa, 1.0, 1, 20, 8);
     pixDestroy(&pixt5);
@@ -203,7 +203,7 @@ L_REGPARAMS  *rp;
 
         /* Test some more convolutions, with sampled output. First on pix */
     pixa = pixaCreate(0);
-    pixs = pixRead("1555-7.jpg");
+    pixs = pixRead("1555.007.jpg");
     pixg = pixConvertTo8(pixs, 0);
     l_setConvolveSampling(5, 5);
     pixt1 = pixConvolve(pixg, kel, 8, 1);
@@ -252,7 +252,7 @@ L_REGPARAMS  *rp;
         /* Test extension (continued and slope).
          * First, build a smooth vertical disparity array;
          * then extend and show the contours. */
-    pixs = pixRead("cat-35.jpg");
+    pixs = pixRead("cat.035.jpg");
     pixn = pixBackgroundNormSimple(pixs, NULL, NULL);
     pixg = pixConvertRGBToGray(pixn, 0.5, 0.3, 0.2);
     pixb = pixThresholdToBinary(pixg, 130);
@@ -302,8 +302,8 @@ L_REGPARAMS  *rp;
     dpixDestroy(&dpix2);
 
         /* Test affine and projective transforms on fpix */
-    fpixWrite("/tmp/regout/fpix1.fp", dew->fullvdispar);
-    fpix1 = fpixRead("/tmp/regout/fpix1.fp");
+    fpixWrite("/tmp/lept/regout/fpix1.fp", dew->fullvdispar);
+    fpix1 = fpixRead("/tmp/lept/regout/fpix1.fp");
     pixt1 = fpixAutoRenderContours(fpix1, 40);
     regTestWritePixAndCheck(rp, pixt1, IFF_PNG);  /* 26 */
     pixDisplayWithTitle(pixt1, 0, 500, NULL, rp->display);

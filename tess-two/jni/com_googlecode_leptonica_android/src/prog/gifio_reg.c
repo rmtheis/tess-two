@@ -95,6 +95,9 @@ L_REGPARAMS  *rp;
         return 1;
     pixDisplayWrite(NULL, -1);
 
+    lept_rmdir("lept/gif");
+    lept_mkdir("lept/gif");
+
     /* ------------ Part 1: Test lossless r/w to file ------------*/
     test_gif(FILE_1BPP, rp);
     test_gif(FILE_2BPP, rp);
@@ -154,10 +157,10 @@ l_int32  same;
 PIX     *pixs, *pix1, *pix2;
 
     pixs = pixRead(fname);
-    snprintf(buf, sizeof(buf), "/tmp/gifio-a.%d.gif", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/lept/gif/gifio-a.%d.gif", rp->index + 1);
     pixWrite(buf, pixs, IFF_GIF);
     pix1 = pixRead(buf);
-    snprintf(buf, sizeof(buf), "/tmp/gifio-b.%d.gif", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/lept/gif/gifio-b.%d.gif", rp->index + 1);
     pixWrite(buf, pix1, IFF_GIF);
     pix2 = pixRead(buf);
     regTestWritePixAndCheck(rp, pix2, IFF_GIF);

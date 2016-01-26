@@ -242,8 +242,8 @@ struct JbFindTemplatesState
     l_int32          w;          /* desired width                         */
     l_int32          h;          /* desired height                        */
     l_int32          i;          /* index into two_by_two step array      */
-    NUMA            *numa;       /* current number array                  */
-    l_int32          n;          /* current element of numa               */
+    L_DNA           *dna;        /* current number array                  */
+    l_int32          n;          /* current element of dna                */
 };
 typedef struct JbFindTemplatesState JBFINDCTX;
 
@@ -318,7 +318,7 @@ JBCLASSER  *classer;
     classer->maxheight = maxheight;
     classer->sizehaus = size;
     classer->rankhaus = rank;
-    classer->nahash = numaHashCreate(5507, 4);  /* 5507 is prime */
+    classer->dahash = l_dnaHashCreate(5507, 4);  /* 5507 is prime */
     return classer;
 }
 
@@ -412,7 +412,7 @@ JBCLASSER  *classer;
     classer->maxheight = maxheight;
     classer->thresh = thresh;
     classer->weightfactor = weightfactor;
-    classer->nahash = numaHashCreate(5507, 4);  /* 5507 is prime */
+    classer->dahash = l_dnaHashCreate(5507, 4);  /* 5507 is prime */
     classer->keep_pixaa = keep_components;
     return classer;
 }
@@ -450,7 +450,7 @@ PIX     *pix;
     classer->safiles = sarrayCopy(safiles);
     nfiles = sarrayGetCount(safiles);
     for (i = 0; i < nfiles; i++) {
-        fname = sarrayGetString(safiles, i, 0);
+        fname = sarrayGetString(safiles, i, L_NOCOPY);
         if ((pix = pixRead(fname)) == NULL) {
             L_WARNING("image file %d not read\n", procName, i);
             continue;
@@ -593,7 +593,7 @@ NUMA       *naclass, *napage;
 NUMA       *nafg;   /* fg area of all instances */
 NUMA       *nafgt;  /* fg area of all templates */
 JBFINDCTX  *findcontext;
-NUMAHASH   *nahash;
+L_DNAHASH  *dahash;
 PIX        *pix, *pix1, *pix2, *pix3, *pix4;
 PIXA       *pixa, *pixa1, *pixa2, *pixat, *pixatd;
 PIXAA      *pixaa;
@@ -678,7 +678,7 @@ SEL        *sel;
          * we do this separately for the case of rank == 1.0 (exact
          * match within the Hausdorff distance) and rank < 1.0.  */
     rank = classer->rankhaus;
-    nahash = classer->nahash;
+    dahash = classer->dahash;
     if (rank == 1.0) {
         for (i = 0; i < n; i++) {
             pix1 = pixaGetPix(pixa1, i, L_CLONE);
@@ -720,7 +720,7 @@ SEL        *sel;
                 pixaAddPix(pixa, pix, L_INSERT);
                 wt = pixGetWidth(pix);
                 ht = pixGetHeight(pix);
-                numaHashAdd(nahash, ht * wt, nt);
+                l_dnaHashAdd(dahash, ht * wt, nt);
                 box = boxaGetBox(boxa, i, L_CLONE);
                 pixaAddBox(pixa, box, L_INSERT);
                 pixaaAddPixa(pixaa, pixa, L_INSERT);  /* unbordered instance */
@@ -781,7 +781,7 @@ SEL        *sel;
                 pixaAddPix(pixa, pix, L_INSERT);
                 wt = pixGetWidth(pix);
                 ht = pixGetHeight(pix);
-                numaHashAdd(nahash, ht * wt, nt);
+                l_dnaHashAdd(dahash, ht * wt, nt);
                 box = boxaGetBox(boxa, i, L_CLONE);
                 pixaAddBox(pixa, box, L_INSERT);
                 pixaaAddPixa(pixaa, pixa, L_INSERT);  /* unbordered instance */
@@ -794,12 +794,12 @@ SEL        *sel;
                 pixDestroy(&pix2);
             }
         }
-        FREE(tab8);
+        LEPT_FREE(tab8);
         numaDestroy(&nafg);
     }
     classer->nclass = pixaGetCount(pixat);
 
-    FREE(sumtab);
+    LEPT_FREE(sumtab);
     ptaDestroy(&pta);
     pixaDestroy(&pixa1);
     pixaDestroy(&pixa2);
@@ -1030,7 +1030,7 @@ NUMA       *naclass, *napage;
 NUMA       *nafgt;   /* fg area of all templates */
 NUMA       *naarea;   /* w * h area of all templates */
 JBFINDCTX  *findcontext;
-NUMAHASH   *nahash;
+L_DNAHASH  *dahash;
 PIX        *pix, *pix1, *pix2;
 PIXA       *pixa, *pixa1, *pixat;
 PIXAA      *pixaa;
@@ -1071,8 +1071,8 @@ l_uint8     byte;
     nafgt = classer->nafgt;    /* holds fg areas of the templates */
     sumtab = makePixelSumTab8();
 
-    pixcts = (l_int32 *)CALLOC(n, sizeof(*pixcts));
-    pixrowcts = (l_int32 **)CALLOC(n, sizeof(*pixrowcts));
+    pixcts = (l_int32 *)LEPT_CALLOC(n, sizeof(*pixcts));
+    pixrowcts = (l_int32 **)LEPT_CALLOC(n, sizeof(*pixrowcts));
     centtab = makePixelCentroidTab8();
     if (!pixcts || !pixrowcts || !centtab)
         return ERROR_INT("calloc fail in pix*cts or centtab", procName, 1);
@@ -1087,7 +1087,7 @@ l_uint8     byte;
     pta = ptaCreate(n);
     for (i = 0; i < n; i++) {
         pix = pixaGetPix(pixa1, i, L_CLONE);
-        pixrowcts[i] = (l_int32 *)CALLOC(pixGetHeight(pix),
+        pixrowcts[i] = (l_int32 *)LEPT_CALLOC(pixGetHeight(pix),
                                          sizeof(**pixrowcts));
         xsum = 0;
         ysum = 0;
@@ -1162,7 +1162,7 @@ l_uint8     byte;
     thresh = classer->thresh;
     weight = classer->weightfactor;
     naarea = classer->naarea;
-    nahash = classer->nahash;
+    dahash = classer->dahash;
     for (i = 0; i < n; i++) {
         pix1 = pixaGetPix(pixa1, i, L_CLONE);
         area1 = pixcts[i];
@@ -1203,15 +1203,19 @@ l_uint8     byte;
                 count = (l_int32)rint(sqrt(score * area1 * area2));
                 testcount = (l_int32)rint(sqrt(testscore * area1 * area2));
                 if ((score >= threshold) != (testscore >= threshold)) {
-                    fprintf(stderr, "Correlation score mismatch: %d(%g,%d) vs %d(%g,%d) (%g)\n",
+                    fprintf(stderr, "Correlation score mismatch: "
+                            "%d(%g,%d) vs %d(%g,%d) (%g)\n",
                             count, score, score >= threshold,
                             testcount, testscore, testscore >= threshold,
                             score - testscore);
                 }
 
                 if ((score >= threshold) != overthreshold) {
-                    fprintf(stderr, "Mismatch between correlation/threshold comparison: %g(%g,%d) >= %g(%g) vs %s\n",
-                            score, score*area1*area2, count, threshold, threshold*area1*area2, (overthreshold ? "true" : "false"));
+                    fprintf(stderr, "Mismatch between correlation/threshold "
+                            "comparison: %g(%g,%d) >= %g(%g) vs %s\n",
+                            score, score*area1*area2, count, threshold,
+                            threshold*area1*area2,
+                            (overthreshold ? "true" : "false"));
                 }
             }
 #endif  /* DEBUG_CORRELATION_SCORE */
@@ -1242,7 +1246,7 @@ l_uint8     byte;
             pixaAddPix(pixa, pix, L_INSERT);
             wt = pixGetWidth(pix);
             ht = pixGetHeight(pix);
-            numaHashAdd(nahash, ht * wt, nt);
+            l_dnaHashAdd(dahash, ht * wt, nt);
             box = boxaGetBox(boxa, i, L_CLONE);
             pixaAddBox(pixa, box, L_INSERT);
             pixaaAddPixa(pixaa, pixa, L_INSERT);  /* unbordered instance */
@@ -1258,14 +1262,14 @@ l_uint8     byte;
     }
     classer->nclass = pixaGetCount(pixat);
 
-    FREE(pixcts);
-    FREE(centtab);
+    LEPT_FREE(pixcts);
+    LEPT_FREE(centtab);
     for (i = 0; i < n; i++) {
-        FREE(pixrowcts[i]);
+        LEPT_FREE(pixrowcts[i]);
     }
-    FREE(pixrowcts);
+    LEPT_FREE(pixrowcts);
 
-    FREE(sumtab);
+    LEPT_FREE(sumtab);
     ptaDestroy(&pta);
     pixaDestroy(&pixa1);
     return 0;
@@ -1359,7 +1363,7 @@ PIXA      *pixa, *pixat;
             pixt1 = pixReduceRankBinaryCascade(pixs, 1, 1, 0, 0);
         }
 
-            /* Estimate the word mask, at aproximately 150 ppi.
+            /* Estimate the word mask, at approximately 150 ppi.
              * This has both very large and very small components left in. */
         pixWordMaskByDilation(pixt1, 8, &pixt2, NULL);
 
@@ -1481,11 +1485,12 @@ PIX     *pix1, *pix2;
     if (psize) *psize = imin + 1;
 
 #if  DEBUG_PLOT_CC
+    lept_mkdir("lept/jb");
     {GPLOT *gplot;
      NUMA  *naseq;
         L_INFO("Best dilation: %d\n", procName, imin);
         naseq = numaMakeSequence(1, 1, numaGetCount(nacc));
-        gplot = gplotCreate("/tmp/numcc", GPLOT_PNG,
+        gplot = gplotCreate("/tmp/lept/jb/numcc", GPLOT_PNG,
                             "Number of cc vs. horizontal dilation",
                             "Sel horiz", "Number of cc");
         gplotAddPlot(gplot, naseq, nacc, GPLOT_LINES, "");
@@ -1493,7 +1498,7 @@ PIX     *pix1, *pix2;
         gplotDestroy(&gplot);
         numaDestroy(&naseq);
         naseq = numaMakeSequence(1, 1, numaGetCount(nadiff));
-        gplot = gplotCreate("/tmp/diffcc", GPLOT_PNG,
+        gplot = gplotCreate("/tmp/lept/jb/diffcc", GPLOT_PNG,
                             "Diff count of cc vs. horizontal dilation",
                             "Sel horiz", "Diff in cc");
         gplotAddPlot(gplot, naseq, nadiff, GPLOT_LINES, "");
@@ -1730,7 +1735,7 @@ JBCLASSER  *classer;
 
     PROCNAME("jbClasserCreate");
 
-    if ((classer = (JBCLASSER *)CALLOC(1, sizeof(JBCLASSER))) == NULL)
+    if ((classer = (JBCLASSER *)LEPT_CALLOC(1, sizeof(JBCLASSER))) == NULL)
         return (JBCLASSER *)ERROR_PTR("classer not made", procName, NULL);
     if (method != JB_RANKHAUS && method != JB_CORRELATION)
         return (JBCLASSER *)ERROR_PTR("invalid type", procName, NULL);
@@ -1777,7 +1782,7 @@ JBCLASSER  *classer;
     pixaaDestroy(&classer->pixaa);
     pixaDestroy(&classer->pixat);
     pixaDestroy(&classer->pixatd);
-    numaHashDestroy(&classer->nahash);
+    l_dnaHashDestroy(&classer->dahash);
     numaDestroy(&classer->nafgt);
     numaDestroy(&classer->naarea);
     ptaDestroy(&classer->ptac);
@@ -1786,7 +1791,7 @@ JBCLASSER  *classer;
     numaDestroy(&classer->napage);
     ptaDestroy(&classer->ptaul);
     ptaDestroy(&classer->ptall);
-    FREE(classer);
+    LEPT_FREE(classer);
     *pclasser = NULL;
     return;
 }
@@ -1828,7 +1833,7 @@ PIX     *pix;
     if (!pix)
         return (JBDATA *)ERROR_PTR("data not made", procName, NULL);
 
-    if ((data = (JBDATA *)CALLOC(1, sizeof(JBDATA))) == NULL)
+    if ((data = (JBDATA *)LEPT_CALLOC(1, sizeof(JBDATA))) == NULL)
         return (JBDATA *)ERROR_PTR("data not made", procName, NULL);
     data->pix = pix;
     data->npages = classer->npages;
@@ -1865,7 +1870,7 @@ JBDATA  *data;
     numaDestroy(&data->naclass);
     numaDestroy(&data->napage);
     ptaDestroy(&data->ptaul);
-    FREE(data);
+    LEPT_FREE(data);
     *pdata = NULL;
     return;
 }
@@ -1972,18 +1977,18 @@ SARRAY   *sa;
     if ((sa = sarrayCreateLinesFromString((char *)data, 0)) == NULL)
         return (JBDATA *)ERROR_PTR("sa not made", procName, NULL);
     nsa = sarrayGetCount(sa);   /* number of cc + 6 */
-    linestr = sarrayGetString(sa, 0, 0);
+    linestr = sarrayGetString(sa, 0, L_NOCOPY);
     if (strcmp(linestr, "jb data file"))
         return (JBDATA *)ERROR_PTR("invalid jb data file", procName, NULL);
-    linestr = sarrayGetString(sa, 1, 0);
+    linestr = sarrayGetString(sa, 1, L_NOCOPY);
     sscanf(linestr, "num pages = %d", &npages);
-    linestr = sarrayGetString(sa, 2, 0);
+    linestr = sarrayGetString(sa, 2, L_NOCOPY);
     sscanf(linestr, "page size: w = %d, h = %d", &w, &h);
-    linestr = sarrayGetString(sa, 3, 0);
+    linestr = sarrayGetString(sa, 3, L_NOCOPY);
     sscanf(linestr, "num components = %d", &ncomp);
-    linestr = sarrayGetString(sa, 4, 0);
+    linestr = sarrayGetString(sa, 4, L_NOCOPY);
     sscanf(linestr, "num classes = %d\n", &nclass);
-    linestr = sarrayGetString(sa, 5, 0);
+    linestr = sarrayGetString(sa, 5, L_NOCOPY);
     sscanf(linestr, "template lattice size: w = %d, h = %d\n", &cellw, &cellh);
 
 #if 1
@@ -2001,14 +2006,14 @@ SARRAY   *sa;
     if ((ptaul = ptaCreate(ncomp)) == NULL)
         return (JBDATA *)ERROR_PTR("pta not made", procName, NULL);
     for (i = 6; i < nsa; i++) {
-        linestr = sarrayGetString(sa, i, 0);
+        linestr = sarrayGetString(sa, i, L_NOCOPY);
         sscanf(linestr, "%d %d %d %d\n", &ipage, &iclass, &x, &y);
         numaAddNumber(napage, ipage);
         numaAddNumber(naclass, iclass);
         ptaAddPt(ptaul, x, y);
     }
 
-    if ((jbdata = (JBDATA *)CALLOC(1, sizeof(JBDATA))) == NULL)
+    if ((jbdata = (JBDATA *)LEPT_CALLOC(1, sizeof(JBDATA))) == NULL)
         return (JBDATA *)ERROR_PTR("data not made", procName, NULL);
     jbdata->pix = pixs;
     jbdata->npages = npages;
@@ -2021,7 +2026,7 @@ SARRAY   *sa;
     jbdata->napage = napage;
     jbdata->ptaul = ptaul;
 
-    FREE(data);
+    LEPT_FREE(data);
     sarrayDestroy(&sa);
     return jbdata;
 }
@@ -2200,7 +2205,7 @@ PTA       *ptac, *ptact, *ptaul;
         pixDestroy(&pixt);
     }
 
-    FREE(sumtab);
+    LEPT_FREE(sumtab);
     return 0;
 }
 
@@ -2318,7 +2323,7 @@ findSimilarSizedTemplatesInit(JBCLASSER  *classer,
 {
 JBFINDCTX  *state;
 
-    state = (JBFINDCTX *)CALLOC(1, sizeof(JBFINDCTX));
+    state = (JBFINDCTX *)LEPT_CALLOC(1, sizeof(JBFINDCTX));
     state->w = pixGetWidth(pixs) - 2 * JB_ADDED_PIXELS;
     state->h = pixGetHeight(pixs) - 2 * JB_ADDED_PIXELS;
     state->classer = classer;
@@ -2341,8 +2346,8 @@ JBFINDCTX  *state;
     if ((state = *pstate) == NULL)
         return;
 
-    numaDestroy(&state->numa);
-    FREE(state);
+    l_dnaDestroy(&state->dna);
+    LEPT_FREE(state);
     *pstate = NULL;
     return;
 }
@@ -2352,17 +2357,18 @@ JBFINDCTX  *state;
  *  findSimilarSizedTemplatesNext()
  *
  *      Input:  state (from findSimilarSizedTemplatesInit)
- *      Return: Next template number, or -1 when finished
+ *      Return: next template number, or -1 when finished
  *
- *  We have a hash table mapping template area to a list of template
+ *  We have a dna hash table that maps template area to a list of template
  *  numbers with that area.  We wish to find similar sized templates,
  *  so we first look for templates with the same width and height, and
  *  then with width + 1, etc.  This walk is guided by the
  *  two_by_two_walk array, above.
  *
- *  We don't want to have to collect the whole list of templates first because
- *  (we hope) to find it quickly.  So we keep the context for this walk in an
- *  explictit state structure and this function acts like a generator.
+ *  We don't want to have to collect the whole list of templates first,
+ *  because we hope to find a well-matching template quickly.  So we
+ *  keep the context for this walk in an explictit state structure,
+ *  and this function acts like a generator.
  */
 static l_int32
 findSimilarSizedTemplatesNext(JBFINDCTX  *state)
@@ -2371,7 +2377,7 @@ l_int32  desiredh, desiredw, size, templ;
 PIX     *pixt;
 
     while(1) {  /* Continue the walk over step 'i' */
-        if (state->i >= 25) {  /* all done */
+        if (state->i >= 25) {  /* all done; didn't find a good match */
             return -1;
         }
 
@@ -2382,22 +2388,22 @@ PIX     *pixt;
             continue;
         }
 
-        if (!state->numa) {
+        if (!state->dna) {
                 /* We have yet to start walking the array for the step 'i' */
-            state->numa = numaHashGetNuma(state->classer->nahash,
-                                          desiredh * desiredw);
-            if (!state->numa) {  /* nothing there */
+            state->dna = l_dnaHashGetDna(state->classer->dahash,
+                                         desiredh * desiredw, L_CLONE);
+            if (!state->dna) {  /* nothing there */
                 state->i++;
                 continue;
             }
 
-            state->n = 0;  /* OK, we got a numa. */
+            state->n = 0;  /* OK, we got a dna. */
         }
 
-            /* Continue working on this numa */
-        size = numaGetCount(state->numa);
+            /* Continue working on this dna */
+        size = l_dnaGetCount(state->dna);
         for ( ; state->n < size; ) {
-            templ = (l_int32)(state->numa->array[state->n++] + 0.5);
+            templ = (l_int32)(state->dna->array[state->n++] + 0.5);
             pixt = pixaGetPix(state->classer->pixat, templ, L_CLONE);
             if (pixGetWidth(pixt) - 2 * JB_ADDED_PIXELS == desiredw &&
                 pixGetHeight(pixt) - 2 * JB_ADDED_PIXELS == desiredh) {
@@ -2407,9 +2413,10 @@ PIX     *pixt;
             pixDestroy(&pixt);
         }
 
-            /* Exhausted the numa; take another step and try again */
+            /* Exhausted the dna (no match found); take another step and
+             * try again. */
         state->i++;
-        numaDestroy(&state->numa);
+        l_dnaDestroy(&state->dna);
         continue;
     }
 }

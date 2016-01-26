@@ -271,7 +271,7 @@ SARRAY  *sa1, *sa2, *sa3;
         return ERROR_INT("filestr not made", procName, 1);
     if ((sa2 = sarrayCreateLinesFromString(filestr, 1)) == NULL)
         return ERROR_INT("sa2 not made", procName, 1);
-    FREE(filestr);
+    LEPT_FREE(filestr);
 
         /* Make strings containing function call names */
     sprintf(bigbuf, "PIX *pixHMTDwa_%d(PIX *pixd, PIX *pixs, "
@@ -340,12 +340,12 @@ SARRAY  *sa1, *sa2, *sa3;
     sprintf(bigbuf, "static char  SEL_NAMES[][80] = {");
     sarrayAddString(sa3, bigbuf, L_COPY);
     for (i = 0; i < nsels - 1; i++) {
-        sprintf(bigbuf,
-        "                             \"%s\",", sarrayGetString(sa1, i, 0));
+        sprintf(bigbuf, "                             \"%s\",",
+                sarrayGetString(sa1, i, L_NOCOPY));
         sarrayAddString(sa3, bigbuf, L_COPY);
     }
-    sprintf(bigbuf,
-        "                             \"%s\"};", sarrayGetString(sa1, i, 0));
+    sprintf(bigbuf, "                             \"%s\"};",
+            sarrayGetString(sa1, i, L_NOCOPY));
     sarrayAddString(sa3, bigbuf, L_COPY);
 
         /* Start pixHMTDwa_*() function description */
@@ -396,7 +396,7 @@ SARRAY  *sa1, *sa2, *sa3;
     sarrayDestroy(&sa1);
     sarrayDestroy(&sa2);
     sarrayDestroy(&sa3);
-    FREE(filestr);
+    LEPT_FREE(filestr);
     return 0;
 }
 
@@ -451,23 +451,23 @@ SEL     *sel;
         return ERROR_INT("filestr not made", procName, 1);
     if ((sa1 = sarrayCreateLinesFromString(filestr, 1)) == NULL)
         return ERROR_INT("sa1 not made", procName, 1);
-    FREE(filestr);
+    LEPT_FREE(filestr);
 
         /* Make the array of static function names */
     if ((sa2 = sarrayCreate(nsels)) == NULL)
         return ERROR_INT("sa2 not made", procName, 1);
     for (i = 0; i < nsels; i++) {
         sprintf(bigbuf, "fhmt_%d_%d", fileindex, i);
-        sarrayAddString(sa2, bigbuf, 1);
+        sarrayAddString(sa2, bigbuf, L_COPY);
     }
 
         /* Make the static prototype strings */
     if ((sa3 = sarrayCreate(2 * nsels)) == NULL)
         return ERROR_INT("sa3 not made", procName, 1);
     for (i = 0; i < nsels; i++) {
-        fname = sarrayGetString(sa2, i, 0);
+        fname = sarrayGetString(sa2, i, L_NOCOPY);
         sprintf(bigbuf, "static void  %s%s", fname, PROTOARGS);
-        sarrayAddString(sa3, bigbuf, 1);
+        sarrayAddString(sa3, bigbuf, L_COPY);
     }
 
         /* Make strings containing function names */
@@ -551,7 +551,7 @@ SEL     *sel;
             return ERROR_INT("sel not returned", procName, 1);
         if ((sa5 = sarrayMakeWplsCode(sel)) == NULL)
             return ERROR_INT("sa5 not made", procName, 1);
-        sarrayConcatenate(sa4, sa5);
+        sarrayJoin(sa4, sa5);
         sarrayDestroy(&sa5);
 
             /* Make sure sel has at least one hit */
@@ -577,7 +577,7 @@ SEL     *sel;
             /* Insert barrel-op code for *dptr */
         if ((sa6 = sarrayMakeInnerLoopDWACode(sel, nhits, nmisses)) == NULL)
             return ERROR_INT("sa6 not made", procName, 1);
-        sarrayConcatenate(sa4, sa6);
+        sarrayJoin(sa4, sa6);
         sarrayDestroy(&sa6);
 
             /* Finish the function code */
@@ -597,7 +597,7 @@ SEL     *sel;
     sarrayDestroy(&sa2);
     sarrayDestroy(&sa3);
     sarrayDestroy(&sa4);
-    FREE(filestr);
+    LEPT_FREE(filestr);
 
     return 0;
 }
@@ -641,27 +641,27 @@ SARRAY  *sa;
 
         /* Declarations */
     if (ymax > 4)
-        sarrayAddString(sa, wpldecls[2], 1);
+        sarrayAddString(sa, wpldecls[2], L_COPY);
     if (ymax > 8)
-        sarrayAddString(sa, wpldecls[6], 1);
+        sarrayAddString(sa, wpldecls[6], L_COPY);
     if (ymax > 12)
-        sarrayAddString(sa, wpldecls[10], 1);
+        sarrayAddString(sa, wpldecls[10], L_COPY);
     if (ymax > 16)
-        sarrayAddString(sa, wpldecls[14], 1);
+        sarrayAddString(sa, wpldecls[14], L_COPY);
     if (ymax > 20)
-        sarrayAddString(sa, wpldecls[18], 1);
+        sarrayAddString(sa, wpldecls[18], L_COPY);
     if (ymax > 24)
-        sarrayAddString(sa, wpldecls[22], 1);
+        sarrayAddString(sa, wpldecls[22], L_COPY);
     if (ymax > 28)
-        sarrayAddString(sa, wpldecls[26], 1);
+        sarrayAddString(sa, wpldecls[26], L_COPY);
     if (ymax > 1)
-        sarrayAddString(sa, wpldecls[ymax - 2], 1);
+        sarrayAddString(sa, wpldecls[ymax - 2], L_COPY);
 
-    sarrayAddString(sa, emptystring, 1);
+    sarrayAddString(sa, emptystring, L_COPY);
 
         /* Definitions */
     for (i = 2; i <= ymax; i++)
-        sarrayAddString(sa, wpldefs[i - 2], 1);
+        sarrayAddString(sa, wpldefs[i - 2], L_COPY);
 
     return sa;
 }
@@ -711,8 +711,8 @@ SARRAY  *sa;
                     sprintf(bigbuf, "                    %s %s", string, land);
                 else  /* nfound == ntot */
                     sprintf(bigbuf, "                    %s;", string);
-                sarrayAddString(sa, bigbuf, 1);
-                FREE(string);
+                sarrayAddString(sa, bigbuf, L_COPY);
+                LEPT_FREE(string);
             }
         }
     }

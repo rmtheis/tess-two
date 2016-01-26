@@ -68,7 +68,7 @@ struct JbClasser
                                    /* and not dilated                        */
     struct Pixa     *pixatd;       /* templates for each class; bordered     */
                                    /* and dilated                            */
-    struct NumaHash *nahash;       /* Hash table to find templates by size   */
+    struct L_DnaHash *dahash;      /* Hash table to find templates by size   */
     struct Numa     *nafgt;        /* fg areas of undilated templates;       */
                                    /* only used for rank < 1.0               */
     struct Pta      *ptac;         /* centroids of all bordered cc           */

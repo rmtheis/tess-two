@@ -78,8 +78,8 @@ static char *getRootNameFromArgv0(const char *argv0);
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
- *      (1) Call this function with the args to the reg test.
- *          There are three cases:
+ *      (1) Call this function with the args to the reg test.  The first arg
+ *          is the name of the reg test.  There are three cases:
  *          Case 1:
  *              There is either only one arg, or the second arg is "compare".
  *              This is the mode in which you run a regression test
@@ -87,7 +87,7 @@ static char *getRootNameFromArgv0(const char *argv0);
  *              the results to a file.  The output, which includes
  *              logging of all reg test failures plus a SUCCESS or
  *              FAILURE summary for each test, is appended to the file
- *              "/tmp/reg_results.txt.  For this case, as in Case 2,
+ *              "/tmp/lept/reg_results.txt.  For this case, as in Case 2,
  *              the display field in rp is set to FALSE, preventing
  *              image display.
  *          Case 2:
@@ -117,14 +117,14 @@ L_REGPARAMS  *rp;
 
     if (argc != 1 && argc != 2) {
         snprintf(errormsg, sizeof(errormsg),
-            "Syntax: %s [ [generate] | compare | display ]", argv[0]);
+            "Syntax: %s [ [compare] | generate | display ]", argv[0]);
         return ERROR_INT(errormsg, procName, 1);
     }
 
     if ((testname = getRootNameFromArgv0(argv[0])) == NULL)
         return ERROR_INT("invalid root", procName, 1);
 
-    if ((rp = (L_REGPARAMS *)CALLOC(1, sizeof(L_REGPARAMS))) == NULL)
+    if ((rp = (L_REGPARAMS *)LEPT_CALLOC(1, sizeof(L_REGPARAMS))) == NULL)
         return ERROR_INT("rp not made", procName, 1);
     *prp = rp;
     rp->testname = testname;
@@ -134,13 +134,13 @@ L_REGPARAMS  *rp;
          * as a failure of the regression test. */
     rp->success = TRUE;
 
-        /* Make sure the regout subdirectory exists */
-    lept_mkdir("regout");
+        /* Make sure the lept/regout subdirectory exists */
+    lept_mkdir("lept/regout");
 
         /* Only open a stream to a temp file for the 'compare' case */
     if (argc == 1 || !strcmp(argv[1], "compare")) {
         rp->mode = L_REG_COMPARE;
-        rp->tempfile = genPathname("/tmp/regout", "regtest_output.txt");
+        rp->tempfile = genPathname("/tmp/lept/regout", "regtest_output.txt");
         rp->fp = fopenWriteStream(rp->tempfile, "wb");
         if (rp->fp == NULL) {
             rp->success = FALSE;
@@ -148,12 +148,12 @@ L_REGPARAMS  *rp;
         }
     } else if (!strcmp(argv[1], "generate")) {
         rp->mode = L_REG_GENERATE;
-        lept_mkdir("golden");
+        lept_mkdir("lept/golden");
     } else if (!strcmp(argv[1], "display")) {
         rp->mode = L_REG_DISPLAY;
         rp->display = TRUE;
     } else {
-        FREE(rp);
+        LEPT_FREE(rp);
         snprintf(errormsg, sizeof(errormsg),
             "Syntax: %s [ [generate] | compare | display ]", argv[0]);
         return ERROR_INT(errormsg, procName, 1);
@@ -165,10 +165,10 @@ L_REGPARAMS  *rp;
             rp->testname);
     vers = getLeptonicaVersion();
     fprintf(stderr, "%s\n", vers);
-    FREE(vers);
+    LEPT_FREE(vers);
     vers = getImagelibVersions();
     fprintf(stderr, "%s\n", vers);
-    FREE(vers);
+    LEPT_FREE(vers);
 
     rp->tstart = startTimerNested();
     return 0;
@@ -183,7 +183,7 @@ L_REGPARAMS  *rp;
  *
  *  Notes:
  *      (1) This copies anything written to the temporary file to the
- *          output file /tmp/reg_results.txt.
+ *          output file /tmp/lept/reg_results.txt.
  */
 l_int32
 regTestCleanup(L_REGPARAMS  *rp)
@@ -204,19 +204,20 @@ size_t   nbytes;
 
         /* If generating golden files or running in display mode, release rp */
     if (!rp->fp) {
-        FREE(rp->testname);
-        FREE(rp->tempfile);
-        FREE(rp);
+        LEPT_FREE(rp->testname);
+        LEPT_FREE(rp->tempfile);
+        LEPT_FREE(rp);
         return 0;
     }
 
         /* Compare mode: read back data from temp file */
     fclose(rp->fp);
     text = (char *)l_binaryRead(rp->tempfile, &nbytes);
-    FREE(rp->tempfile);
+    LEPT_FREE(rp->tempfile);
     if (!text) {
         rp->success = FALSE;
-        FREE(rp);
+        LEPT_FREE(rp->testname);
+        LEPT_FREE(rp);
         return ERROR_INT("text not returned", procName, 1);
     }
 
@@ -226,15 +227,15 @@ size_t   nbytes;
     else
         snprintf(result, sizeof(result), "FAILURE: %s_reg\n", rp->testname);
     message = stringJoin(text, result);
-    FREE(text);
-    results_file = genPathname("/tmp", "reg_results.txt");
+    LEPT_FREE(text);
+    results_file = genPathname("/tmp/lept", "reg_results.txt");
     fileAppendString(results_file, message);
     retval = (rp->success) ? 0 : 1;
-    FREE(results_file);
-    FREE(message);
+    LEPT_FREE(results_file);
+    LEPT_FREE(message);
 
-    FREE(rp->testname);
-    FREE(rp);
+    LEPT_FREE(rp->testname);
+    LEPT_FREE(rp);
     return retval;
 }
 
@@ -322,15 +323,15 @@ char     buf[256];
         /* Output on failure */
     if (fail == TRUE) {
             /* Write the two strings to file */
-        snprintf(buf, sizeof(buf), "/tmp/regout/string1_%d_%lu", rp->index,
+        snprintf(buf, sizeof(buf), "/tmp/lept/regout/string1_%d_%lu", rp->index,
                  (unsigned long)bytes1);
         l_binaryWrite(buf, "w", string1, bytes1);
-        snprintf(buf, sizeof(buf), "/tmp/regout/string2_%d_%lu", rp->index,
+        snprintf(buf, sizeof(buf), "/tmp/lept/regout/string2_%d_%lu", rp->index,
                  (unsigned long)bytes2);
         l_binaryWrite(buf, "w", string2, bytes2);
 
             /* Report comparison failure */
-        snprintf(buf, sizeof(buf), "/tmp/regout/string*_%d_*", rp->index);
+        snprintf(buf, sizeof(buf), "/tmp/lept/regout/string*_%d_*", rp->index);
         if (rp->fp) {
             fprintf(rp->fp,
                     "Failure in %s_reg: string comp for index %d; "
@@ -468,9 +469,10 @@ l_int32  w, h, factor, similar;
  *           * "compare": compares @localname contents with the golden file
  *           * "display": makes the @localname file but does no comparison
  *      (2) The canonical format of the golden filenames is:
- *            /tmp/golden/<root of main name>_golden.<index>.<ext of localname>
+ *            /tmp/lept/golden/<root of main name>_golden.<index>.
+ *                                                       <ext of localname>
  *          e.g.,
- *             /tmp/golden/maze_golden.0.png
+ *             /tmp/lept/golden/maze_golden.0.png
  *          It is important to add an extension to the local name, because
  *          the extension is added to the name of the golden file.
  */
@@ -503,9 +505,9 @@ PIX     *pix1, *pix2;
 
         /* Generate the golden file name; used in 'generate' and 'compare' */
     splitPathAtExtension(localname, NULL, &ext);
-    snprintf(namebuf, sizeof(namebuf), "/tmp/golden/%s_golden.%02d%s",
+    snprintf(namebuf, sizeof(namebuf), "/tmp/lept/golden/%s_golden.%02d%s",
              rp->testname, rp->index, ext);
-    FREE(ext);
+    LEPT_FREE(ext);
 
         /* Generate mode.  No testing. */
     if (rp->mode == L_REG_GENERATE) {
@@ -516,8 +518,8 @@ PIX     *pix1, *pix2;
             char *local = genPathname(localname, NULL);
             char *golden = genPathname(namebuf, NULL);
             L_INFO("Copy: %s to %s\n", procName, local, golden);
-            FREE(local);
-            FREE(golden);
+            LEPT_FREE(local);
+            LEPT_FREE(golden);
         }
 #endif
         return ret;
@@ -570,9 +572,10 @@ PIX     *pix1, *pix2;
  *  Notes:
  *      (1) This only does something in "compare" mode.
  *      (2) The canonical format of the golden filenames is:
- *            /tmp/golden/<root of main name>_golden.<index>.<ext of localname>
+ *            /tmp/lept/golden/<root of main name>_golden.<index>.
+ *                                                      <ext of localname>
  *          e.g.,
- *            /tmp/golden/maze_golden.0.png
+ *            /tmp/lept/golden/maze_golden.0.png
  */
 l_int32
 regTestCompareFiles(L_REGPARAMS  *rp,
@@ -602,7 +605,7 @@ SARRAY  *sa;
 
         /* Generate the golden file names */
     snprintf(namebuf, sizeof(namebuf), "%s_golden.%02d.", rp->testname, index1);
-    sa = getSortedPathnamesInDirectory("/tmp/golden", namebuf, 0, 0);
+    sa = getSortedPathnamesInDirectory("/tmp/lept/golden", namebuf, 0, 0);
     if (sarrayGetCount(sa) != 1) {
         sarrayDestroy(&sa);
         rp->success = FALSE;
@@ -613,11 +616,11 @@ SARRAY  *sa;
     sarrayDestroy(&sa);
 
     snprintf(namebuf, sizeof(namebuf), "%s_golden.%02d.", rp->testname, index2);
-    sa = getSortedPathnamesInDirectory("/tmp/golden", namebuf, 0, 0);
+    sa = getSortedPathnamesInDirectory("/tmp/lept/golden", namebuf, 0, 0);
     if (sarrayGetCount(sa) != 1) {
         sarrayDestroy(&sa);
         rp->success = FALSE;
-        FREE(name1);
+        LEPT_FREE(name1);
         L_ERROR("golden file %s not found\n", procName, namebuf);
         return 1;
     }
@@ -636,8 +639,8 @@ SARRAY  *sa;
         rp->success = FALSE;
     }
 
-    FREE(name1);
-    FREE(name2);
+    LEPT_FREE(name1);
+    LEPT_FREE(name2);
     return 0;
 }
 
@@ -657,9 +660,9 @@ SARRAY  *sa;
  *             (b) make a local file and "compare" with the golden file
  *             (c) make a local file and "display" the results
  *      (3) The canonical format of the local filename is:
- *            /tmp/regout/<root of main name>.<count>.<format extension string>
+ *            /tmp/lept/regout/<root of main name>.<count>.<format extension>
  *          e.g., for scale_reg,
- *            /tmp/regout/scale.0.png
+ *            /tmp/lept/regout/scale.0.png
  */
 l_int32
 regTestWritePixAndCheck(L_REGPARAMS  *rp,
@@ -682,8 +685,8 @@ char   namebuf[256];
     }
 
         /* Generate the local file name */
-    snprintf(namebuf, sizeof(namebuf), "/tmp/regout/%s.%02d.%s", rp->testname,
-             rp->index + 1, ImageFileFormatExtensions[format]);
+    snprintf(namebuf, sizeof(namebuf), "/tmp/lept/regout/%s.%02d.%s",
+             rp->testname, rp->index + 1, ImageFileFormatExtensions[format]);
 
         /* Write the local file */
     if (pixGetDepth(pix) < 8)
@@ -722,7 +725,7 @@ char    *root;
 
     splitPathAtDirectory(argv0, NULL, &root);
     if ((len = strlen(root)) <= 4) {
-        FREE(root);
+        LEPT_FREE(root);
         return (char *)ERROR_PTR("invalid argv0; too small", procName, NULL);
     }
 
@@ -732,7 +735,7 @@ char    *root;
         l_int32  loc;
         if (stringFindSubstr(root, "-", &loc)) {
             newroot = stringNew(root + loc + 1);  /* strip out "lt-" */
-            FREE(root);
+            LEPT_FREE(root);
             root = newroot;
             len = strlen(root);
         }

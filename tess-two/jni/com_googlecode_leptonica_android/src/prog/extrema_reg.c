@@ -56,8 +56,8 @@ L_REGPARAMS  *rp;
     na1 = numaCreate(500);
     for (i = 0; i < 500; i++) {
         f = 48.3 * sin(0.13 * (l_float32)i);
-	f += 63.4 * cos(0.21 * (l_float32)i);
-	numaAddNumber(na1, f);
+        f += 63.4 * cos(0.21 * (l_float32)i);
+        numaAddNumber(na1, f);
     }
     gplot = gplotCreate("/tmp/extrema", GPLOT_PNG, "Extrema test", "x", "y");
     gplotAddPlot(gplot, NULL, na1, GPLOT_LINES, "plot 1");
@@ -69,7 +69,7 @@ L_REGPARAMS  *rp;
     for (i = 0; i < n; i++) {
         numaGetIValue(na2, i, &ival);
         numaGetFValue(na1, ival, &val);
-	numaAddNumber(na3, val);
+        numaAddNumber(na3, val);
     }
     gplotAddPlot(gplot, na2, na3, GPLOT_POINTS, "plot 2");
     gplotMakeOutput(gplot);

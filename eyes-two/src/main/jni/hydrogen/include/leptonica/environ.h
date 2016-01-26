@@ -82,7 +82,6 @@ typedef unsigned int uintptr_t;
 
 typedef intptr_t l_intptr_t;
 typedef uintptr_t l_uintptr_t;
-typedef void *L_TIMER;
 
 
 /*--------------------------------------------------------------------*
@@ -93,11 +92,11 @@ typedef void *L_TIMER;
  *               Manual Configuration Only: NOT AUTO_CONF             *
  *--------------------------------------------------------------------*/
 /*
- *  Leptonica provides interfaces to link to five external image I/O
- *  libraries, plus zlib.  Setting any of these to 0 here causes
+ *  Leptonica provides interfaces to link to several external image
+ *  I/O libraries, plus zlib.  Setting any of these to 0 here causes
  *  non-functioning stubs to be linked.
  */
-#ifndef HAVE_CONFIG_H
+#if !defined(HAVE_CONFIG_H) && !defined(ANDROID_BUILD)
 #define  HAVE_LIBJPEG     1
 #define  HAVE_LIBTIFF     1
 #define  HAVE_LIBPNG      1
@@ -105,37 +104,57 @@ typedef void *L_TIMER;
 #define  HAVE_LIBGIF      0
 #define  HAVE_LIBUNGIF    0
 #define  HAVE_LIBWEBP     0
-#endif  /* ~HAVE_CONFIG_H */
+#define  HAVE_LIBJP2K     0
+
+    /* Leptonica supports both OpenJPEG 2.0 and 2.1.  If you have a
+     * version of openjpeg (HAVE_LIBJP2K) that is not 2.1, set the
+     * path to the openjpeg.h header in angle brackets here. */
+#define  LIBJP2K_HEADER   <openjpeg-2.1/openjpeg.h>
+#endif  /* ! HAVE_CONFIG_H etc. */
 
 /*
  * On linux systems, you can do I/O between Pix and memory.  Specifically,
  * you can compress (write compressed data to memory from a Pix) and
  * uncompress (read from compressed data in memory to a Pix).
- * For jpeg, png, pnm and bmp, these use the non-posix GNU functions
- * fmemopen() and open_memstream().  These functions are not
- * available on other systems.  To use these functions in linux,
- * you must define HAVE_FMEMOPEN to be 1 here.
+ * For jpeg, png, jp2k, gif, pnm and bmp, these use the non-posix GNU
+ * functions fmemopen() and open_memstream().  These functions are not
+ * available on other systems.
+ * To use these functions in linux, you must define HAVE_FMEMOPEN to 1.
+ * To use them on MacOS, which does not support these functions, set it to 0.
  */
-#ifndef HAVE_CONFIG_H
-#define  HAVE_FMEMOPEN    0
-#endif  /* ~HAVE_CONFIG_H */
+#if !defined(HAVE_CONFIG_H) && !defined(ANDROID_BUILD) && !defined(_MSC_VER)
+#define  HAVE_FMEMOPEN    1
+#endif  /* ! HAVE_CONFIG_H etc. */
 
 
 /*--------------------------------------------------------------------*
  * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*
  *                          USER CONFIGURABLE                         *
  * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*
- *       Environ variables for uncompressed formatted image I/O       *
+ *     Environ variables for image I/O without external libraries     *
  *--------------------------------------------------------------------*/
 /*
- *  Leptonica supplies image I/O for bmp, pnm, jp2k, pdf and ps.
+ *  Leptonica supplies I/O support without using external libraries for:
+ *     * image read/write for bmp, pnm
+ *     * header read for jp2k
+ *     * image wrapping write for pdf and ps.
  *  Setting any of these to 0 causes non-functioning stubs to be linked.
  */
 #define  USE_BMPIO        1
 #define  USE_PNMIO        1
-#define  USE_JP2KIO       1
+#define  USE_JP2KHEADER   1
 #define  USE_PDFIO        1
 #define  USE_PSIO         1
+
+
+/*--------------------------------------------------------------------*
+ * It is desirable on Windows to have all temp files written to the same
+ * subdirectory of the Windows <Temp> directory, because files under <Temp>
+ * persist after reboot, and the regression tests write a lot of files.
+ * We write all test files to /tmp/lept or subdirectories of /tmp/lept.
+ * Windows temp files are specified as in unix, but have the translation
+ *        /tmp/lept/xxx  -->   <Temp>/lept/xxx
+ *--------------------------------------------------------------------*/
 
 
 /*--------------------------------------------------------------------*
@@ -218,16 +237,38 @@ enum {
 
 
 /*------------------------------------------------------------------------*
+ *                     Path separator conversion                          *
+ *------------------------------------------------------------------------*/
+enum {
+    UNIX_PATH_SEPCHAR = 0,
+    WIN_PATH_SEPCHAR = 1
+};
+
+
+/*------------------------------------------------------------------------*
+ *                          Timing structs                                *
+ *------------------------------------------------------------------------*/
+typedef void *L_TIMER;
+struct L_WallTimer {
+    l_int32  start_sec;
+    l_int32  start_usec;
+    l_int32  stop_sec;
+    l_int32  stop_usec;
+};
+typedef struct L_WallTimer  L_WALLTIMER;
+
+
+/*------------------------------------------------------------------------*
  *                      Standard memory allocation                        *
  *                                                                        *
  *  These specify the memory management functions that are used           *
  *  on all heap data except for Pix.  Memory management for Pix           *
  *  also defaults to malloc and free.  See pix1.c for details.            *
  *------------------------------------------------------------------------*/
-#define MALLOC(blocksize)           malloc(blocksize)
-#define CALLOC(numelem, elemsize)   calloc(numelem, elemsize)
-#define REALLOC(ptr, blocksize)     realloc(ptr, blocksize)
-#define FREE(ptr)                   free(ptr)
+#define LEPT_MALLOC(blocksize)           malloc(blocksize)
+#define LEPT_CALLOC(numelem, elemsize)   calloc(numelem, elemsize)
+#define LEPT_REALLOC(ptr, blocksize)     realloc(ptr, blocksize)
+#define LEPT_FREE(ptr)                   free(ptr)
 
 
 /*------------------------------------------------------------------------*

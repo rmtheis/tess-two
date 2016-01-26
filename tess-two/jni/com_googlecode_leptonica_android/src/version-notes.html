@@ -22,6 +22,39 @@ They are <i>not</i> a complete listing of the modifications.
 
 <pre>
 
+1.73   25 Jan 16
+       All lept_* functions have been rewritten to avoid path rewrites for
+       output to temp files, which were introduced in 1.72.
+       Now, (1) files are written to the directory specified and (2) we
+       are careful to write to subdirectories of /tmp/lept/ for all test
+       programs, starting with the reg tests and prog/dewarp* and
+       prog/recog*.  This also required re-writing stringcode.c and
+       stringtemplate1.txt to write temp files to subdirectories.
+       Goal is to write to the specified path while not spamming the
+       /tmp and /tmp/lept directories.  This is particularly important
+       on windows because files in the <TEMP> directory are not cleared
+       on reboot.
+       Naming changes (to avoid collisions):
+         #defines MALLOC --> LEPT_MALLOC, CALLOC --> LEPT_CALLOC, etc.
+         ByteBuffer --> L_ByteBuffer
+       Added grayscale histogram functions that can be used to compare images.
+       Added functions to determine if an image region has horizontal
+       text lines.
+       Added functions to compare photo regions of images to determine
+       if they're essentially the same.
+       Added red-black tree utility functions to implement maps and sets.
+       The keys for maps and sets can be 64-bit entities (signed and
+       unsigned integers and doubles).
+       Implemented hashsets and hashmaps, using 64 bit keys.
+       Replaced the numaHash by l_dnaHash; removed numa2d
+       Improved security of tiff and gif reading, to prevent memory corruption
+       when reading bad data.
+       Removed src files: bootnumgen.c
+       Added src files: rbtree.c, rbtree.h, map.c, bootnumgen1.c, bootnumgen2.c
+       Added prog files: rbtreetest.c, maptest.c, settest.c, hashtest.c,
+                         recog_bootnum.c, percolatetest.c
+       Added files for building using cmake (Egor Pugin)
+
 1.72   5 Apr 15
        Better handling of 1 bpp colormap read/write with png so that
        they are losseless.  The colormap is always removed on read and

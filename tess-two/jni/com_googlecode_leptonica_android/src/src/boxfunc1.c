@@ -870,7 +870,7 @@ PTA       *pta;
     n = ptaGetCount(pta);
     if (n > 0) {
         ptaGetIPt(pta, 0, px1, py1);  /* accept the first one */
-	*pn = 1;
+        *pn = 1;
     }
     for (i = 1; i < n; i++) {
         ptaGetIPt(pta, i, &xt, &yt);
@@ -1278,6 +1278,10 @@ BOX     *box;
     for (i = 0; i < n; i++) {
         box = boxaGetBox(boxad, i, L_CLONE);
         boxGetGeometry(box, &x, &y, &w, &h);
+        if (w == 0 || h == 0) {  /* invalid; do not alter */
+            boxDestroy(&box);
+            continue;
+        }
         diff = h - target;
         if (sides == L_ADJUST_TOP) {
             if (L_ABS(diff) >= thresh)
@@ -1373,7 +1377,7 @@ NUMA     *na;
     if (n != boxaGetCount(boxa2))
         return 0;
 
-    countarray = (l_int32 *)CALLOC(n, sizeof(l_int32));
+    countarray = (l_int32 *)LEPT_CALLOC(n, sizeof(l_int32));
     na = numaMakeConstant(0.0, n);
 
     for (i = 0; i < n; i++) {
@@ -1396,7 +1400,7 @@ NUMA     *na;
         boxDestroy(&box1);
         if (!found) {
             numaDestroy(&na);
-            FREE(countarray);
+            LEPT_FREE(countarray);
             return 0;
         }
     }
@@ -1406,7 +1410,7 @@ NUMA     *na;
         *pnaindex = na;
     else
         numaDestroy(&na);
-    FREE(countarray);
+    LEPT_FREE(countarray);
     return 0;
 }
 
@@ -1472,14 +1476,17 @@ l_int32  loc1, loc2;
  *      Input:  boxa1
  *              boxa2
  *              leftdiff, rightdiff, topdiff, botdiff
- *              debugflag (output details of non-similar boxes)
+ *              debug (output details of non-similar boxes)
  *              &similar (<return> 1 if similar; 0 otherwise)
+ *              &nasim (<optional return> na containing 1 if similar; else 0)
  *      Return  0 if OK, 1 on error
  *
  *  Notes:
  *      (1) See boxSimilar() for parameter usage.
  *      (2) Corresponding boxes are taken in order in the two boxa.
- *      (3) With debugflag == 1, boxes continue to be tested after failure.
+ *      (3) @nasim is an indicator array with a (0/1) for each box pair.
+ *      (4) With @nasim or debug == 1, boxes continue to be tested
+ *          after failure.
  */
 l_int32
 boxaSimilar(BOXA     *boxa1,
@@ -1488,40 +1495,45 @@ boxaSimilar(BOXA     *boxa1,
             l_int32   rightdiff,
             l_int32   topdiff,
             l_int32   botdiff,
-            l_int32   debugflag,
-            l_int32  *psimilar)
+            l_int32   debug,
+            l_int32  *psimilar,
+            NUMA    **pnasim)
 {
-l_int32  i, n, match, mismatch;
+l_int32  i, n1, n2, match, mismatch;
 BOX     *box1, *box2;
 
     PROCNAME("boxaSimilar");
 
-    if (!psimilar)
-        return ERROR_INT("&similar not defined", procName, 1);
-    *psimilar = 0;
+    if (psimilar) *psimilar = 0;
+    if (pnasim) *pnasim = NULL;
     if (!boxa1 || !boxa2)
         return ERROR_INT("boxa1 and boxa2 not both defined", procName, 1);
-    n = boxaGetCount(boxa1);
-    if (n != boxaGetCount(boxa2)) {
-        if (debugflag)
-            L_INFO("boxa counts differ\n", procName);
-        return 0;
+    if (!psimilar)
+        return ERROR_INT("&similar not defined", procName, 1);
+    n1 = boxaGetCount(boxa1);
+    n2 = boxaGetCount(boxa2);
+    if (n1 != n2) {
+        L_ERROR("boxa counts differ: %d vs %d\n", procName, n1, n2);
+        return 1;
     }
+    if (pnasim) *pnasim = numaCreate(n1);
 
     mismatch = FALSE;
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < n1; i++) {
         box1 = boxaGetBox(boxa1, i, L_CLONE);
         box2 = boxaGetBox(boxa2, i, L_CLONE);
         boxSimilar(box1, box2, leftdiff, rightdiff, topdiff, botdiff,
                    &match);
         boxDestroy(&box1);
         boxDestroy(&box2);
+        if (pnasim)
+            numaAddNumber(*pnasim, match);
         if (!match) {
             mismatch = TRUE;
-            if (debugflag)
-                L_INFO("boxes %d not similar\n", procName, i);
-            else
+            if (!debug && pnasim == NULL)
                 return 0;
+            else if (debug)
+                L_INFO("box %d not similar\n", procName, i);
         }
     }
 

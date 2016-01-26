@@ -287,7 +287,7 @@ SARRAY    *saw, *sad;
 
             /* Save the widths as a string */
         nbars = numaGetCount(na);
-        barstr = (char *)CALLOC(nbars + 1, sizeof(char));
+        barstr = (char *)LEPT_CALLOC(nbars + 1, sizeof(char));
         for (j = 0; j < nbars; j++) {
             numaGetIValue(na, j, &ival);
             barstr[j] = 0x30 + ival;
@@ -1126,7 +1126,7 @@ static NUMA *
 numaGetPeakCentroids(NUMA  *nahist,
                      NUMA  *narange)
 {
-l_int32    i, j, nh, nr, low, high;
+l_int32    i, j, nr, low, high;
 l_float32  cent, sum, val;
 NUMA      *nad;
 
@@ -1136,7 +1136,6 @@ NUMA      *nad;
         return (NUMA *)ERROR_PTR("nahist not defined", procName, NULL);
     if (!narange)
         return (NUMA *)ERROR_PTR("narange not defined", procName, NULL);
-    nh = numaGetCount(nahist);
     nr = numaGetCount(narange) / 2;
 
     nad = numaCreate(4);

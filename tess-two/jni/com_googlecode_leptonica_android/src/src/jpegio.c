@@ -124,12 +124,12 @@
  *    into the library.
  */
 
-#include <string.h>
-#include "allheaders.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config_auto.h"
 #endif  /* HAVE_CONFIG_H */
+
+#include <string.h>
+#include "allheaders.h"
 
 /* --------------------------------------------*/
 #if  HAVE_LIBJPEG   /* defined in environ.h */
@@ -234,7 +234,7 @@ PIX      *pix;
         ret = fgetJpegComment(fp, &comment);
         if (!ret && comment)
             pixSetText(pix, (char *)comment);
-        FREE(comment);
+        LEPT_FREE(comment);
     }
     fclose(fp);
 
@@ -301,7 +301,7 @@ jmp_buf                        jmpbuf;  /* must be local to the function */
     cinfo.client_data = (void *)&jmpbuf;
     if (setjmp(jmpbuf)) {
         pixDestroy(&pix);
-        FREE(rowbuffer);
+        LEPT_FREE(rowbuffer);
         return (PIX *)ERROR_PTR("internal jpeg error", procName, NULL);
     }
 
@@ -330,14 +330,15 @@ jmp_buf                        jmpbuf;  /* must be local to the function */
                                 procName, NULL);
     }
     if ((spp == 3 && cmapflag == 0) || ycck || cmyk) {  /* rgb or 4 bpp color */
-        rowbuffer = (JSAMPROW)CALLOC(sizeof(JSAMPLE), spp * w);
+        rowbuffer = (JSAMPROW)LEPT_CALLOC(sizeof(JSAMPLE), spp * w);
         pix = pixCreate(w, h, 32);
     } else {  /* 8 bpp gray or colormapped */
-        rowbuffer = (JSAMPROW)CALLOC(sizeof(JSAMPLE), w);
+        rowbuffer = (JSAMPROW)LEPT_CALLOC(sizeof(JSAMPLE), w);
         pix = pixCreate(w, h, 8);
     }
+    pixSetInputFormat(pix, IFF_JFIF_JPEG);
     if (!rowbuffer || !pix) {
-        FREE(rowbuffer);
+        LEPT_FREE(rowbuffer);
         pixDestroy(&pix);
         return (PIX *)ERROR_PTR("rowbuffer or pix not made", procName, NULL);
     }
@@ -383,7 +384,7 @@ jmp_buf                        jmpbuf;  /* must be local to the function */
             L_ERROR("read error at scanline %d\n", procName, i);
             pixDestroy(&pix);
             jpeg_destroy_decompress(&cinfo);
-            FREE(rowbuffer);
+            LEPT_FREE(rowbuffer);
             return (PIX *)ERROR_PTR("bad data", procName, NULL);
         }
 
@@ -466,7 +467,7 @@ jmp_buf                        jmpbuf;  /* must be local to the function */
 
     jpeg_finish_decompress(&cinfo);
     jpeg_destroy_decompress(&cinfo);
-    FREE(rowbuffer);
+    LEPT_FREE(rowbuffer);
 
     if (nwarn > 0) {
         if (hint & L_JPEG_FAIL_ON_BAD_DATA) {
@@ -686,7 +687,7 @@ struct callback_data           cb_data;  /* contains local jmp_buf */
     cb_data.comment = NULL;
     cinfo.client_data = (void *)&cb_data;
     if (setjmp(cb_data.jmpbuf)) {
-        FREE(cb_data.comment);
+        LEPT_FREE(cb_data.comment);
         return ERROR_INT("internal jpeg error", procName, 1);
     }
 
@@ -830,7 +831,7 @@ jmp_buf                      jmpbuf;  /* must be local to the function */
     cinfo.client_data = (void *)&jmpbuf;
     jerr.error_exit = jpeg_error_catch_all_1;
     if (setjmp(jmpbuf)) {
-        FREE(rowbuffer);
+        LEPT_FREE(rowbuffer);
         pixDestroy(&pix);
         return ERROR_INT("internal jpeg error", procName, 1);
     }
@@ -898,7 +899,8 @@ jmp_buf                      jmpbuf;  /* must be local to the function */
         /* Allocate row buffer */
     spp = cinfo.input_components;
     rowsamples = spp * w;
-    if ((rowbuffer = (JSAMPROW)CALLOC(sizeof(JSAMPLE), rowsamples)) == NULL) {
+    if ((rowbuffer = (JSAMPROW)LEPT_CALLOC(sizeof(JSAMPLE), rowsamples))
+        == NULL) {
         pixDestroy(&pix);
         return ERROR_INT("calloc fail for rowbuffer", procName, 1);
     }
@@ -929,7 +931,7 @@ jmp_buf                      jmpbuf;  /* must be local to the function */
     jpeg_finish_compress(&cinfo);
 
     pixDestroy(&pix);
-    FREE(rowbuffer);
+    LEPT_FREE(rowbuffer);
     jpeg_destroy_compress(&cinfo);
     return 0;
 }
@@ -982,7 +984,7 @@ PIX      *pix;
         return (PIX *)ERROR_PTR("data not defined", procName, NULL);
 
 #if HAVE_FMEMOPEN
-    if ((fp = fmemopen((l_uint8 *)data, size, "r")) == NULL)
+    if ((fp = fmemopen((l_uint8 *)data, size, "rb")) == NULL)
         return (PIX *)ERROR_PTR("stream not opened", procName, NULL);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
@@ -996,7 +998,7 @@ PIX      *pix;
         ret = fgetJpegComment(fp, &comment);
         if (!ret && comment) {
             pixSetText(pix, (char *)comment);
-            FREE(comment);
+            LEPT_FREE(comment);
         }
     }
     fclose(fp);
@@ -1042,7 +1044,7 @@ FILE    *fp;
         return ERROR_INT("no results requested", procName, 1);
 
 #if HAVE_FMEMOPEN
-    if ((fp = fmemopen((l_uint8 *)data, size, "r")) == NULL)
+    if ((fp = fmemopen((l_uint8 *)data, size, "rb")) == NULL)
         return ERROR_INT("stream not opened", procName, 1);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);
@@ -1122,8 +1124,8 @@ FILE    *fp;
  *  Notes:
  *      (1) The default is for 2x2 chroma subsampling because the files are
  *          considerably smaller and the appearance is typically satisfactory.
- *          Call this with @sampling == 0 for full resolution output in
- *          chroma channels for jpeg writing.
+ *          To get full resolution output in the chroma channels for
+ *          jpeg writing, call this with @sampling == 0.
  */
 l_int32
 pixSetChromaSampling(PIX     *pix,
@@ -1134,9 +1136,9 @@ pixSetChromaSampling(PIX     *pix,
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1 );
     if (sampling)
-        pix->special = 0;  /* default */
+        pixSetSpecial(pix, 0);  /* default */
     else
-        pix->special = L_NO_CHROMA_SAMPLING_JPEG;
+        pixSetSpecial(pix, L_NO_CHROMA_SAMPLING_JPEG);
     return 0;
 }
 
@@ -1222,7 +1224,7 @@ struct callback_data  *pcb_data;
         return 1;
 
         /* Extract the comment from the file */
-    if ((comment = (l_uint8 *)CALLOC(length + 1, sizeof(l_uint8))) == NULL)
+    if ((comment = (l_uint8 *)LEPT_CALLOC(length + 1, sizeof(l_uint8))) == NULL)
         return 0;
     for (i = 0; i < length; i++)
         comment[i] = jpeg_getc(cinfo);

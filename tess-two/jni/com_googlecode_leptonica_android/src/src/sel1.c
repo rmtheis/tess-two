@@ -245,14 +245,14 @@ SELA  *sela;
     if (n > MANY_SELS)
         L_WARNING("%d sels\n", procName, n);
 
-    if ((sela = (SELA *)CALLOC(1, sizeof(SELA))) == NULL)
+    if ((sela = (SELA *)LEPT_CALLOC(1, sizeof(SELA))) == NULL)
         return (SELA *)ERROR_PTR("sela not made", procName, NULL);
 
     sela->nalloc = n;
     sela->n = 0;
 
         /* make array of se ptrs */
-    if ((sela->sel = (SEL **)CALLOC(n, sizeof(SEL *))) == NULL)
+    if ((sela->sel = (SEL **)LEPT_CALLOC(n, sizeof(SEL *))) == NULL)
         return (SELA *)ERROR_PTR("sel ptrs not made", procName, NULL);
 
     return sela;
@@ -277,8 +277,8 @@ l_int32  i;
 
     for (i = 0; i < sela->n; i++)
         selDestroy(&sela->sel[i]);
-    FREE(sela->sel);
-    FREE(sela);
+    LEPT_FREE(sela->sel);
+    LEPT_FREE(sela);
     *psela = NULL;
     return;
 }
@@ -306,7 +306,7 @@ SEL  *sel;
 
     PROCNAME("selCreate");
 
-    if ((sel = (SEL *)CALLOC(1, sizeof(SEL))) == NULL)
+    if ((sel = (SEL *)LEPT_CALLOC(1, sizeof(SEL))) == NULL)
         return (SEL *)ERROR_PTR("sel not made", procName, NULL);
     if (name)
         sel->name = stringNew(name);
@@ -341,11 +341,11 @@ SEL     *sel;
         return;
 
     for (i = 0; i < sel->sy; i++)
-        FREE(sel->data[i]);
-    FREE(sel->data);
+        LEPT_FREE(sel->data[i]);
+    LEPT_FREE(sel->data);
     if (sel->name)
-        FREE(sel->name);
-    FREE(sel);
+        LEPT_FREE(sel->name);
+    LEPT_FREE(sel);
 
     *psel = NULL;
     return;
@@ -369,7 +369,7 @@ SEL     *csel;
     if (!sel)
         return (SEL *)ERROR_PTR("sel not defined", procName, NULL);
 
-    if ((csel = (SEL *)CALLOC(1, sizeof(SEL))) == NULL)
+    if ((csel = (SEL *)LEPT_CALLOC(1, sizeof(SEL))) == NULL)
         return (SEL *)ERROR_PTR("csel not made", procName, NULL);
     selGetParameters(sel, &sy, &sx, &cy, &cx);
     csel->sy = sy;
@@ -504,11 +504,11 @@ l_int32  **array;
 
     PROCNAME("create2dIntArray");
 
-    if ((array = (l_int32 **)CALLOC(sy, sizeof(l_int32 *))) == NULL)
+    if ((array = (l_int32 **)LEPT_CALLOC(sy, sizeof(l_int32 *))) == NULL)
         return (l_int32 **)ERROR_PTR("ptr array not made", procName, NULL);
 
     for (i = 0; i < sy; i++) {
-        if ((array[i] = (l_int32 *)CALLOC(sx, sizeof(l_int32))) == NULL)
+        if ((array[i] = (l_int32 *)LEPT_CALLOC(sx, sizeof(l_int32))) == NULL)
             return (l_int32 **)ERROR_PTR("array not made", procName, NULL);
     }
 
@@ -939,7 +939,7 @@ SEL     *sel;
 char *
 selaGetCombName(SELA    *sela,
                 l_int32  size,
-		l_int32  direction)
+                l_int32  direction)
 {
 char    *selname;
 char     combname[L_BUF_SIZE];
@@ -964,13 +964,13 @@ SEL     *sel;
     for (i = 0; i < nsels; i++) {
         sel = selaGetSel(sela, i);
         selGetParameters(sel, &sy, &sx, NULL, NULL);
-	if (sy != 1 && sx != 1)  /* 2-D; not a comb */
+        if (sy != 1 && sx != 1)  /* 2-D; not a comb */
             continue;
-	selname = selGetName(sel);
+        selname = selGetName(sel);
         if (!strcmp(selname, combname)) {
             found = TRUE;
-	    break;
-	}
+            break;
+        }
     }
 
     if (found)
@@ -1025,16 +1025,16 @@ SELA    *selabasic, *selacomb;
         snprintf(buf, L_BUF_SIZE,
                  "      { %d, %d, %d, \"%s\", \"%s\", \"%s\", \"%s\" },",
                  size, size1, size2, nameh1, nameh2, namev1, namev2);
-	sarrayAddString(sa, buf, L_COPY);
-        FREE(nameh1);
-        FREE(nameh2);
-        FREE(namev1);
-        FREE(namev2);
+        sarrayAddString(sa, buf, L_COPY);
+        LEPT_FREE(nameh1);
+        LEPT_FREE(nameh2);
+        LEPT_FREE(namev1);
+        LEPT_FREE(namev2);
     }
     str = sarrayToString(sa, 1);
     len = strlen(str);
     l_binaryWrite(fileout, "w", str, len + 1);
-    FREE(str);
+    LEPT_FREE(str);
     sarrayDestroy(&sa);
     selaDestroy(&selabasic);
     selaDestroy(&selacomb);
@@ -1124,7 +1124,7 @@ SARRAY  *sa;
     for (i = 0; i < n; i++) {
         sel = selaGetSel(sela, i);
         selname = selGetName(sel);
-        sarrayAddString(sa, selname, 1);
+        sarrayAddString(sa, selname, L_COPY);
     }
 
     return sa;
@@ -1396,7 +1396,7 @@ SEL     *sel;
     }
     ignore = fscanf(fp, "\n");
 
-    FREE(selname);
+    LEPT_FREE(selname);
     return sel;
 }
 
@@ -1642,7 +1642,7 @@ l_int32  sx, sy, cx, cy, x, y;
         return (char *)ERROR_PTR("sel not defined", procName, NULL);
 
     selGetParameters(sel, &sy, &sx, &cy, &cx);
-    if ((str = (char *)CALLOC(1, sy * (sx + 1) + 1)) == NULL)
+    if ((str = (char *)LEPT_CALLOC(1, sy * (sx + 1) + 1)) == NULL)
         return (char *)ERROR_PTR("calloc fail for str", procName, NULL);
     strptr = str;
 
@@ -1719,7 +1719,7 @@ SELA    *sela;
 
     filestr = (char *)l_binaryRead(filename, &nbytes);
     sa = sarrayCreateLinesFromString(filestr, 1);
-    FREE(filestr);
+    LEPT_FREE(filestr);
     n = sarrayGetCount(sa);
     sela = selaCreate(0);
 
@@ -1736,9 +1736,9 @@ SELA    *sela;
              line[0] != '\t' && line[0] != '\n' && line[0] != '#')) {
             numaAddNumber(nafirst, i);
             insel = TRUE;
-	    continue;
+            continue;
         }
-	if (insel &&
+        if (insel &&
             (line[0] == '\0' || line[0] == ' ' ||
              line[0] == '\t' || line[0] == '\n' || line[0] == '#')) {
             numaAddNumber(nalast, i - 1);
@@ -1762,7 +1762,7 @@ SELA    *sela;
             numaDestroy(&nalast);
             return (SELA *)ERROR_PTR("bad sela file", procName, NULL);
         }
-	selaAddSel(sela, sel, NULL, 0);
+        selaAddSel(sela, sel, NULL, 0);
     }
 
     numaDestroy(&nafirst);
@@ -1802,8 +1802,8 @@ SELA    *sela;
  */
 static SEL *
 selCreateFromSArray(SARRAY  *sa,
-		    l_int32  first,
-		    l_int32  last)
+                    l_int32  first,
+                    l_int32  last)
 {
 char     ch;
 char    *name, *line;
@@ -1906,7 +1906,7 @@ SEL     *sel;
     selSetOrigin(sel, cy, cx);
     for (i = 0; i < n; i++) {
         ptaGetIPt(pta, i, &x, &y);
-	selSetElement(sel, y, x, SEL_HIT);
+        selSetElement(sel, y, x, SEL_HIT);
     }
 
     return sel;
@@ -1984,13 +1984,13 @@ char  *basename, *selname;
 
     splitPathAtExtension (pathname, &basename, NULL);
     splitPathAtDirectory (basename, NULL, &selname);
-    FREE(basename);
+    LEPT_FREE(basename);
 
     if ((pix = pixRead(pathname)) == NULL)
         return (SEL *)ERROR_PTR("pix not returned", procName, NULL);
     if ((sel = selCreateFromColorPix(pix, selname)) == NULL)
         return (SEL *)ERROR_PTR("sel not made", procName, NULL);
-    FREE(selname);
+    LEPT_FREE(selname);
     pixDestroy(&pix);
 
     return sel;
@@ -2184,11 +2184,11 @@ PTA     *pta1, *pta2, *pta1t, *pta2t;
         x0 = gthick;
         for (j = 0; j < sx; j++) {
             selGetElement(sel, i, j, &type);
-	    if (i == cy && j == cx)  /* origin */
+            if (i == cy && j == cx)  /* origin */
                 pixRasterop(pixd, x0, y0, size, size, PIX_SRC, pixorig, 0, 0);
-	    else if (type == SEL_HIT)
+            else if (type == SEL_HIT)
                 pixRasterop(pixd, x0, y0, size, size, PIX_SRC, pixh, 0, 0);
-	    else if (type == SEL_MISS)
+            else if (type == SEL_MISS)
                 pixRasterop(pixd, x0, y0, size, size, PIX_SRC, pixm, 0, 0);
             x0 += size + gthick;
         }

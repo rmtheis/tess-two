@@ -30,11 +30,11 @@
  *     Stubs for gifio.c functions
  */
 
-#include "allheaders.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config_auto.h"
 #endif  /* HAVE_CONFIG_H */
+
+#include "allheaders.h"
 
 /* -----------------------------------------------------------------*/
 #if  (!HAVE_LIBGIF) && (!HAVE_LIBUNGIF)     /* defined in environ.h */

@@ -26,9 +26,6 @@
 
 /*
  *  pdfiotest.c
- *
- *    Note: pdftk (pdftk.exe for Windows) is required to run the
- *          last part of this test.
  */
 
 #include <string.h>
@@ -60,51 +57,52 @@ static char  mainName[] = "pdfiotest";
         return ERROR_INT("syntax: pdfiotest", mainName, 1);
     l_pdfSetDateAndVersion(0);
 
-    lept_mkdir("pdf");
+    lept_mkdir("lept/pdf");
 
 #if 1
     /* ---------------  Single image tests  ------------------- */
     fprintf(stderr, "\n*** Writing single images as pdf files\n");
 
-    convertToPdf("weasel2.4c.png", L_FLATE_ENCODE, 0, "/tmp/pdf/file01.pdf",
+    convertToPdf("weasel2.4c.png", L_FLATE_ENCODE, 0, "/tmp/lept/pdf/file01.pdf",
                  0, 0, 72, "weasel2.4c.png", NULL, 0);
-    convertToPdf("test24.jpg", L_JPEG_ENCODE, 0, "/tmp/pdf/file02.pdf",
+    convertToPdf("test24.jpg", L_JPEG_ENCODE, 0, "/tmp/lept/pdf/file02.pdf",
                  0, 0, 72, "test24.jpg", NULL, 0);
-    convertToPdf("feyn.tif", L_G4_ENCODE, 0, "/tmp/pdf/file03.pdf",
+    convertToPdf("feyn.tif", L_G4_ENCODE, 0, "/tmp/lept/pdf/file03.pdf",
                  0, 0, 300, "feyn.tif", NULL, 0);
 
     pixs = pixRead("feyn.tif");
-    pixConvertToPdf(pixs, L_G4_ENCODE, 0, "/tmp/pdf/file04.pdf", 0, 0, 300,
+    pixConvertToPdf(pixs, L_G4_ENCODE, 0, "/tmp/lept/pdf/file04.pdf", 0, 0, 300,
                     "feyn.tif", NULL, 0);
     pixDestroy(&pixs);
 
     pixs = pixRead("test24.jpg");
-    pixConvertToPdf(pixs, L_JPEG_ENCODE, 5, "/tmp/pdf/file05.pdf", 0, 0, 72,
-                    "test24.jpg", NULL, 0);
+    pixConvertToPdf(pixs, L_JPEG_ENCODE, 5, "/tmp/lept/pdf/file05.pdf",
+                    0, 0, 72, "test24.jpg", NULL, 0);
     pixDestroy(&pixs);
 
     pixs = pixRead("feyn.tif");
     pixt = pixScaleToGray2(pixs);
-    pixWrite("/tmp/pdf/feyn8.png", pixt, IFF_PNG);
-    convertToPdf("/tmp/pdf/feyn8.png", L_JPEG_ENCODE, 0, "/tmp/pdf/file06.pdf",
-                 0, 0, 150, "feyn8.png", NULL, 0);
+    pixWrite("/tmp/lept/pdf/feyn8.png", pixt, IFF_PNG);
+    convertToPdf("/tmp/lept/pdf/feyn8.png", L_JPEG_ENCODE, 0,
+                 "/tmp/lept/pdf/file06.pdf", 0, 0, 150, "feyn8.png", NULL, 0);
     pixDestroy(&pixs);
     pixDestroy(&pixt);
 
-    convertToPdf("weasel4.16g.png", L_FLATE_ENCODE, 0, "/tmp/pdf/file07.pdf",
-                 0, 0, 30, "weasel4.16g.png", NULL, 0);
+    convertToPdf("weasel4.16g.png", L_FLATE_ENCODE, 0,
+                 "/tmp/lept/pdf/file07.pdf", 0, 0, 30,
+                 "weasel4.16g.png", NULL, 0);
 
     pixs = pixRead("test24.jpg");
     pixg = pixConvertTo8(pixs, 0);
     box = boxCreate(100, 100, 100, 100);
     pixc = pixClipRectangle(pixs, box, NULL);
     pixgc = pixClipRectangle(pixg, box, NULL);
-    pixWrite("/tmp/pdf/pix32.jpg", pixc, IFF_JFIF_JPEG);
-    pixWrite("/tmp/pdf/pix8.jpg", pixgc, IFF_JFIF_JPEG);
-    convertToPdf("/tmp/pdf/pix32.jpg", L_FLATE_ENCODE, 0, "/tmp/pdf/file08.pdf",
-                 0, 0, 72, "pix32.jpg", NULL, 0);
-    convertToPdf("/tmp/pdf/pix8.jpg", L_FLATE_ENCODE, 0, "/tmp/pdf/file09.pdf",
-                 0, 0, 72, "pix8.jpg", NULL, 0);
+    pixWrite("/tmp/lept/pdf/pix32.jpg", pixc, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/pdf/pix8.jpg", pixgc, IFF_JFIF_JPEG);
+    convertToPdf("/tmp/lept/pdf/pix32.jpg", L_FLATE_ENCODE, 0,
+                 "/tmp/lept/pdf/file08.pdf", 0, 0, 72, "pix32.jpg", NULL, 0);
+    convertToPdf("/tmp/lept/pdf/pix8.jpg", L_FLATE_ENCODE, 0,
+                 "/tmp/lept/pdf/file09.pdf", 0, 0, 72, "pix8.jpg", NULL, 0);
     pixDestroy(&pixs);
     pixDestroy(&pixg);
     pixDestroy(&pixc);
@@ -130,7 +128,7 @@ static char  mainName[] = "pdfiotest";
                             100 * i, 70, title, &lpd, seq);
         }
     }
-    pixConvertToPdf(pix1, L_G4_ENCODE, 0, "/tmp/pdf/file10.pdf", 0, 0, 80,
+    pixConvertToPdf(pix1, L_G4_ENCODE, 0, "/tmp/lept/pdf/file10.pdf", 0, 0, 80,
                     NULL, &lpd, L_LAST_IMAGE);
 
         /* Now, write the 1 bpp image over the weasels */
@@ -143,7 +141,7 @@ static char  mainName[] = "pdfiotest";
                             100 * i, 70, title, &lpd, seq);
         }
     }
-    pixConvertToPdf(pix1, L_G4_ENCODE, 0, "/tmp/pdf/file11.pdf", 0, 0, 80,
+    pixConvertToPdf(pix1, L_G4_ENCODE, 0, "/tmp/lept/pdf/file11.pdf", 0, 0, 80,
                     NULL, &lpd, L_LAST_IMAGE);
     l_pdfSetG4ImageMask(1);
     pixDestroy(&pix1);
@@ -156,36 +154,36 @@ static char  mainName[] = "pdfiotest";
 
     pix1 = pixRead("rabi.png");
     pix2 = pixScaleToGray2(pix1);
-    pixWrite("/tmp/pdf/rabi8.jpg", pix2, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/pdf/rabi8.jpg", pix2, IFF_JFIF_JPEG);
     pix3 = pixThresholdTo4bpp(pix2, 16, 1);
-    pixWrite("/tmp/pdf/rabi4.png", pix3, IFF_PNG);
+    pixWrite("/tmp/lept/pdf/rabi4.png", pix3, IFF_PNG);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixDestroy(&pix3);
 
         /* 1 bpp input */
     convertToPdfSegmented("rabi.png", 300, L_G4_ENCODE, 128, NULL, 0, 0,
-                          NULL, "/tmp/pdf/file12.pdf");
+                          NULL, "/tmp/lept/pdf/file12.pdf");
     convertToPdfSegmented("rabi.png", 300, L_JPEG_ENCODE, 128, NULL, 0, 0,
-                          NULL, "/tmp/pdf/file13.pdf");
+                          NULL, "/tmp/lept/pdf/file13.pdf");
     convertToPdfSegmented("rabi.png", 300, L_FLATE_ENCODE, 128, NULL, 0, 0,
-                          NULL, "/tmp/pdf/file14.pdf");
+                          NULL, "/tmp/lept/pdf/file14.pdf");
 
         /* 8 bpp input, no cmap */
-    convertToPdfSegmented("/tmp/pdf/rabi8.jpg", 150, L_G4_ENCODE, 128,
-                          NULL, 0, 0, NULL, "/tmp/pdf/file15.pdf");
-    convertToPdfSegmented("/tmp/pdf/rabi8.jpg", 150, L_JPEG_ENCODE, 128,
-                          NULL, 0, 0, NULL, "/tmp/pdf/file16.pdf");
-    convertToPdfSegmented("/tmp/pdf/rabi8.jpg", 150, L_FLATE_ENCODE, 128,
-                          NULL, 0, 0, NULL, "/tmp/pdf/file17.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi8.jpg", 150, L_G4_ENCODE, 128,
+                          NULL, 0, 0, NULL, "/tmp/lept/pdf/file15.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi8.jpg", 150, L_JPEG_ENCODE, 128,
+                          NULL, 0, 0, NULL, "/tmp/lept/pdf/file16.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi8.jpg", 150, L_FLATE_ENCODE, 128,
+                          NULL, 0, 0, NULL, "/tmp/lept/pdf/file17.pdf");
 
         /* 4 bpp input, cmap */
-    convertToPdfSegmented("/tmp/pdf/rabi4.png", 150, L_G4_ENCODE, 128,
-                          NULL, 0, 0, NULL, "/tmp/pdf/file18.pdf");
-    convertToPdfSegmented("/tmp/pdf/rabi4.png", 150, L_JPEG_ENCODE, 128,
-                          NULL, 0, 0, NULL, "/tmp/pdf/file19.pdf");
-    convertToPdfSegmented("/tmp/pdf/rabi4.png", 150, L_FLATE_ENCODE, 128,
-                          NULL, 0, 0, NULL, "/tmp/pdf/file20.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi4.png", 150, L_G4_ENCODE, 128,
+                          NULL, 0, 0, NULL, "/tmp/lept/pdf/file18.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi4.png", 150, L_JPEG_ENCODE, 128,
+                          NULL, 0, 0, NULL, "/tmp/lept/pdf/file19.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi4.png", 150, L_FLATE_ENCODE, 128,
+                          NULL, 0, 0, NULL, "/tmp/lept/pdf/file20.pdf");
 
 #endif
 
@@ -209,41 +207,41 @@ static char  mainName[] = "pdfiotest";
 
         /* 1 bpp input */
     convertToPdfSegmented("rabi.png", 300, L_G4_ENCODE, 128, boxa1,
-                          0, 0.25, NULL, "/tmp/pdf/file21.pdf");
+                          0, 0.25, NULL, "/tmp/lept/pdf/file21.pdf");
     convertToPdfSegmented("rabi.png", 300, L_JPEG_ENCODE, 128, boxa1,
-                          0, 0.25, NULL, "/tmp/pdf/file22.pdf");
+                          0, 0.25, NULL, "/tmp/lept/pdf/file22.pdf");
     convertToPdfSegmented("rabi.png", 300, L_FLATE_ENCODE, 128, boxa1,
-                          0, 0.25, NULL, "/tmp/pdf/file23.pdf");
+                          0, 0.25, NULL, "/tmp/lept/pdf/file23.pdf");
 
         /* 8 bpp input, no cmap */
-    convertToPdfSegmented("/tmp/pdf/rabi8.jpg", 150, L_G4_ENCODE, 128, boxa2,
-                          0, 0.5, NULL, "/tmp/pdf/file24.pdf");
-    convertToPdfSegmented("/tmp/pdf/rabi8.jpg", 150, L_JPEG_ENCODE, 128, boxa2,
-                          0, 0.5, NULL, "/tmp/pdf/file25.pdf");
-    convertToPdfSegmented("/tmp/pdf/rabi8.jpg", 150, L_FLATE_ENCODE, 128, boxa2,
-                          0, 0.5, NULL, "/tmp/pdf/file26.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi8.jpg", 150, L_G4_ENCODE, 128,
+                          boxa2, 0, 0.5, NULL, "/tmp/lept/pdf/file24.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi8.jpg", 150, L_JPEG_ENCODE, 128,
+                          boxa2, 0, 0.5, NULL, "/tmp/lept/pdf/file25.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi8.jpg", 150, L_FLATE_ENCODE, 128,
+                          boxa2, 0, 0.5, NULL, "/tmp/lept/pdf/file26.pdf");
 
         /* 4 bpp input, cmap */
-    convertToPdfSegmented("/tmp/pdf/rabi4.png", 150, L_G4_ENCODE, 128, boxa2,
-                          0, 0.5, NULL, "/tmp/pdf/file27.pdf");
-    convertToPdfSegmented("/tmp/pdf/rabi4.png", 150, L_JPEG_ENCODE, 128, boxa2,
-                          0, 0.5, NULL, "/tmp/pdf/file28.pdf");
-    convertToPdfSegmented("/tmp/pdf/rabi4.png", 150, L_FLATE_ENCODE, 128, boxa2,
-                          0, 0.5, NULL, "/tmp/pdf/file29.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi4.png", 150, L_G4_ENCODE, 128,
+                          boxa2, 0, 0.5, NULL, "/tmp/lept/pdf/file27.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi4.png", 150, L_JPEG_ENCODE, 128,
+                          boxa2, 0, 0.5, NULL, "/tmp/lept/pdf/file28.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/rabi4.png", 150, L_FLATE_ENCODE, 128,
+                          boxa2, 0, 0.5, NULL, "/tmp/lept/pdf/file29.pdf");
 
         /* 4 bpp input, cmap, data output */
     data = NULL;
-    convertToPdfDataSegmented("/tmp/pdf/rabi4.png", 150, L_G4_ENCODE,
+    convertToPdfDataSegmented("/tmp/lept/pdf/rabi4.png", 150, L_G4_ENCODE,
                               128, boxa2, 0, 0.5, NULL, &data, &nbytes);
-    l_binaryWrite("/tmp/pdf/file30.pdf", "w", data, nbytes);
+    l_binaryWrite("/tmp/lept/pdf/file30.pdf", "w", data, nbytes);
     lept_free(data);
-    convertToPdfDataSegmented("/tmp/pdf/rabi4.png", 150, L_JPEG_ENCODE,
+    convertToPdfDataSegmented("/tmp/lept/pdf/rabi4.png", 150, L_JPEG_ENCODE,
                               128, boxa2, 0, 0.5, NULL, &data, &nbytes);
-    l_binaryWrite("/tmp/pdf/file31.pdf", "w", data, nbytes);
+    l_binaryWrite("/tmp/lept/pdf/file31.pdf", "w", data, nbytes);
     lept_free(data);
-    convertToPdfDataSegmented("/tmp/pdf/rabi4.png", 150, L_FLATE_ENCODE,
+    convertToPdfDataSegmented("/tmp/lept/pdf/rabi4.png", 150, L_FLATE_ENCODE,
                               128, boxa2, 0, 0.5, NULL, &data, &nbytes);
-    l_binaryWrite("/tmp/pdf/file32.pdf", "w", data, nbytes);
+    l_binaryWrite("/tmp/lept/pdf/file32.pdf", "w", data, nbytes);
     lept_free(data);
 
     boxaDestroy(&boxa1);
@@ -255,16 +253,19 @@ static char  mainName[] = "pdfiotest";
     /* -------- pdf convert segmented from color image -------- */
     fprintf(stderr, "\n*** Writing color segmented images\n");
 
-    pix1 = pixRead("candelabrum-11.jpg");
+    pix1 = pixRead("candelabrum.011.jpg");
     pix2 = pixScale(pix1, 3.0, 3.0);
-    pixWrite("/tmp/pdf/candelabrum3.jpg", pix2, IFF_JFIF_JPEG);
-    GetImageMask(pix2, 200, &boxa1, "/tmp/pdf/seg1.jpg");
-    convertToPdfSegmented("/tmp/pdf/candelabrum3.jpg", 200, L_G4_ENCODE,
-                          100, boxa1, 0, 0.25, NULL, "/tmp/pdf/file33.pdf");
-    convertToPdfSegmented("/tmp/pdf/candelabrum3.jpg", 200, L_JPEG_ENCODE,
-                          100, boxa1, 0, 0.25, NULL, "/tmp/pdf/file34.pdf");
-    convertToPdfSegmented("/tmp/pdf/candelabrum3.jpg", 200, L_FLATE_ENCODE,
-                          100, boxa1, 0, 0.25, NULL, "/tmp/pdf/file35.pdf");
+    pixWrite("/tmp/lept/pdf/candelabrum3.jpg", pix2, IFF_JFIF_JPEG);
+    GetImageMask(pix2, 200, &boxa1, "/tmp/lept/pdf/seg1.jpg");
+    convertToPdfSegmented("/tmp/lept/pdf/candelabrum3.jpg", 200, L_G4_ENCODE,
+                          100, boxa1, 0, 0.25, NULL,
+                          "/tmp/lept/pdf/file33.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/candelabrum3.jpg", 200, L_JPEG_ENCODE,
+                          100, boxa1, 0, 0.25, NULL,
+                          "/tmp/lept/pdf/file34.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/candelabrum3.jpg", 200, L_FLATE_ENCODE,
+                          100, boxa1, 0, 0.25, NULL,
+                          "/tmp/lept/pdf/file35.pdf");
 
     pixDestroy(&pix1);
     pixDestroy(&pix2);
@@ -272,25 +273,25 @@ static char  mainName[] = "pdfiotest";
 
     pix1 = pixRead("lion-page.00016.jpg");
     pix2 = pixScale(pix1, 3.0, 3.0);
-    pixWrite("/tmp/pdf/lion16.jpg", pix2, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/pdf/lion16.jpg", pix2, IFF_JFIF_JPEG);
     pix3 = pixRead("lion-mask.00016.tif");
     boxa1 = pixConnComp(pix3, NULL, 8);
     boxa2 = boxaTransform(boxa1, 0, 0, 3.0, 3.0);
-    convertToPdfSegmented("/tmp/pdf/lion16.jpg", 200, L_G4_ENCODE,
-                          190, boxa2, 0, 0.5, NULL, "/tmp/pdf/file36.pdf");
-    convertToPdfSegmented("/tmp/pdf/lion16.jpg", 200, L_JPEG_ENCODE,
-                          190, boxa2, 0, 0.5, NULL, "/tmp/pdf/file37.pdf");
-    convertToPdfSegmented("/tmp/pdf/lion16.jpg", 200, L_FLATE_ENCODE,
-                          190, boxa2, 0, 0.5, NULL, "/tmp/pdf/file38.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/lion16.jpg", 200, L_G4_ENCODE,
+                          190, boxa2, 0, 0.5, NULL, "/tmp/lept/pdf/file36.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/lion16.jpg", 200, L_JPEG_ENCODE,
+                          190, boxa2, 0, 0.5, NULL, "/tmp/lept/pdf/file37.pdf");
+    convertToPdfSegmented("/tmp/lept/pdf/lion16.jpg", 200, L_FLATE_ENCODE,
+                          190, boxa2, 0, 0.5, NULL, "/tmp/lept/pdf/file38.pdf");
 
         /* Quantize the non-image part and flate encode.
          * This is useful because it results in a smaller file than
          * when you flate-encode the un-quantized non-image regions. */
     pix4 = pixScale(pix3, 3.0, 3.0);  /* higher res mask, for combining */
     pix5 = QuantizeNonImageRegion(pix2, pix4, 12);
-    pixWrite("/tmp/pdf/lion16-quant.png", pix5, IFF_PNG);
-    convertToPdfSegmented("/tmp/pdf/lion16-quant.png", 200, L_FLATE_ENCODE,
-                          190, boxa2, 0, 0.5, NULL, "/tmp/pdf/file39.pdf");
+    pixWrite("/tmp/lept/pdf/lion16-quant.png", pix5, IFF_PNG);
+    convertToPdfSegmented("/tmp/lept/pdf/lion16-quant.png", 200, L_FLATE_ENCODE,
+                          190, boxa2, 0, 0.5, NULL, "/tmp/lept/pdf/file39.pdf");
 
     pixDestroy(&pix1);
     pixDestroy(&pix2);
@@ -307,66 +308,55 @@ static char  mainName[] = "pdfiotest";
 
         /* Generate a multi-page pdf from all these files */
     startTimer();
-    concatenatePdf("/tmp/pdf", "file", "/tmp/pdf/cat_lept.pdf");
-    fprintf(stderr, "All files have been concatenated: /tmp/pdf/cat_lept.pdf\n"
+    concatenatePdf("/tmp/lept/pdf", "file", "/tmp/lept/pdf/cat_lept.pdf");
+    fprintf(stderr,
+            "All files have been concatenated: /tmp/lept/pdf/cat_lept.pdf\n"
                     "Concatenation time: %7.3f\n", stopTimer());
 #endif
 
 #if 1
-    /* -------------------- Test corruption recovery ------------------- */
+    /* ----------- Test corruption recovery by concatenation ------------ */
         /* Put two good pdf files in a directory */
-    lept_mkdir("good");
-    lept_cp("testfile1.pdf", "good", NULL, NULL);
-    lept_cp("testfile2.pdf", "good", NULL, NULL);
-    concatenatePdf("/tmp/good", "file", "/tmp/pdf/good.pdf");
+    lept_rmdir("lept/good");
+    lept_mkdir("lept/good");
+    lept_cp("testfile1.pdf", "lept/good", NULL, NULL);
+    lept_cp("testfile2.pdf", "lept/good", NULL, NULL);
+    concatenatePdf("/tmp/lept/good", "file", "/tmp/lept/pdf/good.pdf");
 
-        /* Make a version with the pdf id removed, so that it is not
+        /* Make a bad version with the pdf id removed, so that it is not
          * recognized as a pdf */
+    lept_rmdir("lept/bad");
+    lept_mkdir("lept/bad");
     ba = l_byteaInitFromFile("testfile2.pdf");
     data = l_byteaGetData(ba, &nbytes);
-    l_binaryWrite("testfile0.notpdf.pdf", "w", data + 10, nbytes - 10);
+    l_binaryWrite("/tmp/lept/bad/testfile0.notpdf.pdf", "w",
+                  data + 10, nbytes - 10);
 
         /* Make a version with a corrupted trailer */
     if (data)
         data[2297] = '2';  /* munge trailer object 6: change 458 --> 428 */
-    l_binaryWrite("testfile2.bad.pdf", "w", data, nbytes);
-
-        /* Put these two bad files, along with a good file, in a directory */
-    lept_mkdir("bad");
-    lept_mv("testfile0.notpdf.pdf", "bad", NULL, NULL);
-    lept_cp("testfile1.pdf", "bad", NULL, NULL);
-    lept_mv("testfile2.bad.pdf", "bad", NULL, NULL);
+    l_binaryWrite("/tmp/lept/bad/testfile2.bad.pdf", "w", data, nbytes);
     l_byteaDestroy(&ba);
 
-        /* Run concat on the bad files.   In the /tmp/bad/ directory,
-         * the "not pdf" file should be ignored, and the corrupted pdf
-         * file should be properly parsed, so the resulting
-         * concatenated files should be identical.  */
+        /* Copy testfile1.pdf to the /tmp/lept/bad directory.  Then
+         * run concat on the bad files.  The "not pdf" file should be
+         * ignored, and the corrupted pdf file should be properly parsed,
+         * so the resulting concatenated pdf files should be identical.  */
     fprintf(stderr, "\nWe attempt to build from the bad directory\n");
-    concatenatePdf("/tmp/bad", "file", "/tmp/pdf/bad.pdf");
-    filesAreIdentical("/tmp/pdf/good.pdf", "/tmp/pdf/bad.pdf", &same);
+    lept_cp("testfile1.pdf", "lept/bad", NULL, NULL);
+    concatenatePdf("/tmp/lept/bad", "file", "/tmp/lept/pdf/bad.pdf");
+    filesAreIdentical("/tmp/lept/pdf/good.pdf", "/tmp/lept/pdf/bad.pdf", &same);
     if (same)
         fprintf(stderr, "Fixed: files are the same\n"
-                        "Attempt succeeded\n\n");
+                        "Attempt succeeded\n");
     else
         fprintf(stderr, "Busted: files are different\n");
-
-        /* pdftk fails because the first file is not a pdf */
-    fprintf(stderr, "pdftk attempts to build from the bad directory\n");
-    tempfile1 = genPathname("/tmp/bad", "*.pdf");
-    tempfile2 = genPathname("/tmp", "pdftk.bad.pdf");
-    snprintf(buffer, sizeof(buffer), "pdftk %s output %s",
-             tempfile1, tempfile2);
-    ret = system(buffer);  /* pdftk */
-    lept_free(tempfile1);
-    lept_free(tempfile2);
-    fprintf(stderr, "Attempt failed\n\n");
 #endif
 
-#if 1
+#if 0
     fprintf(stderr, "\n*** pdftk writes multipage pdfs from images\n");
-    tempfile1 = genPathname("/tmp/pdf", "file*.pdf");
-    tempfile2 = genPathname("/tmp/pdf", "cat_pdftk.pdf");
+    tempfile1 = genPathname("/tmp/lept/pdf", "file*.pdf");
+    tempfile2 = genPathname("/tmp/lept/pdf", "cat_pdftk.pdf");
     snprintf(buffer, sizeof(buffer), "pdftk %s output %s",
              tempfile1, tempfile2);
     ret = system(buffer);  /* pdftk */
@@ -383,22 +373,22 @@ static char  mainName[] = "pdfiotest";
          *     file2.jpg:  dct (8 bpp, 256 colors because of the jpeg encoding)
          *     file3.tif:  g4 (1 bpp)
          *     file4.jpg:  dct (32 bpp)    */
-    lept_mkdir("image");
+    lept_mkdir("lept/image");
     pix1 = pixRead("feyn.tif");
     pix2 = pixRead("rabi.png");
     pix3 = pixScaleToGray3(pix1);
     pix4 = pixScaleToGray3(pix2);
     pix5 = pixScale(pix1, 0.33, 0.33);
     pix6 = pixRead("test24.jpg");
-    pixWrite("/tmp/image/file1.png", pix3, IFF_PNG);  /* 10 colors */
-    pixWrite("/tmp/image/file2.jpg", pix4, IFF_JFIF_JPEG);  /* 256 colors */
-    pixWrite("/tmp/image/file3.tif", pix5, IFF_TIFF_G4);
-    pixWrite("/tmp/image/file4.jpg", pix6, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/image/file1.png", pix3, IFF_PNG);  /* 10 colors */
+    pixWrite("/tmp/lept/image/file2.jpg", pix4, IFF_JFIF_JPEG); /* 256 colors */
+    pixWrite("/tmp/lept/image/file3.tif", pix5, IFF_TIFF_G4);
+    pixWrite("/tmp/lept/image/file4.jpg", pix6, IFF_JFIF_JPEG);
 
     startTimer();
-    convertFilesToPdf("/tmp/image", "file", 100, 0.8, 0, 75, "4 file test",
-                      "/tmp/pdf/fourimages.pdf");
-    fprintf(stderr, "4-page pdf generated: /tmp/pdf/fourimages.pdf\n"
+    convertFilesToPdf("/tmp/lept/image", "file", 100, 0.8, 0, 75, "4 file test",
+                      "/tmp/lept/pdf/fourimages.pdf");
+    fprintf(stderr, "4-page pdf generated: /tmp/lept/pdf/fourimages.pdf\n"
                     "Time: %7.3f\n", stopTimer());
     pixDestroy(&pix1);
     pixDestroy(&pix2);

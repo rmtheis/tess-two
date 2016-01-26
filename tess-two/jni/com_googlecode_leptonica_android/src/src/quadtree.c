@@ -453,10 +453,10 @@ BOXAA    *baa;
 
     baa = boxaaCreate(nlevels);
     maxpts = 1 << (nlevels - 1);
-    xstart = (l_int32 *)CALLOC(maxpts, sizeof(l_int32));
-    xend = (l_int32 *)CALLOC(maxpts, sizeof(l_int32));
-    ystart = (l_int32 *)CALLOC(maxpts, sizeof(l_int32));
-    yend = (l_int32 *)CALLOC(maxpts, sizeof(l_int32));
+    xstart = (l_int32 *)LEPT_CALLOC(maxpts, sizeof(l_int32));
+    xend = (l_int32 *)LEPT_CALLOC(maxpts, sizeof(l_int32));
+    ystart = (l_int32 *)LEPT_CALLOC(maxpts, sizeof(l_int32));
+    yend = (l_int32 *)LEPT_CALLOC(maxpts, sizeof(l_int32));
     for (k = 0; k < nlevels; k++) {
         nside = 1 << k;  /* number of boxes in each direction */
         for (i = 0; i < nside; i++) {
@@ -485,10 +485,10 @@ BOXAA    *baa;
         boxaaAddBoxa(baa, boxa, L_INSERT);
     }
 
-    FREE(xstart);
-    FREE(xend);
-    FREE(ystart);
-    FREE(yend);
+    LEPT_FREE(xstart);
+    LEPT_FREE(xend);
+    LEPT_FREE(ystart);
+    LEPT_FREE(yend);
     return baa;
 }
 

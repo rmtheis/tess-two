@@ -92,6 +92,7 @@
  *          l_int32       pixGetInputFormat()
  *          l_int32       pixSetInputFormat()
  *          l_int32       pixCopyInputFormat()
+ *          l_int32       pixSetSpecial()
  *          char         *pixGetText()
  *          l_int32       pixSetText()
  *          l_int32       pixAddText()
@@ -323,7 +324,7 @@ l_uint32  *data;
     if ((pixd = pixCreateHeader(width, height, depth)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     wpl = pixGetWpl(pixd);
-    if ((data = (l_uint32 *)pix_malloc(4 * wpl * height)) == NULL) {
+    if ((data = (l_uint32 *)pix_malloc(4LL * wpl * height)) == NULL) {
         pixDestroy(&pixd);
         return (PIX *)ERROR_PTR("pix_malloc fail for data", procName, NULL);
     }
@@ -419,7 +420,7 @@ pixCreateHeader(l_int32  width,
                 l_int32  depth)
 {
 l_int32   wpl;
-l_uint64  bignum;
+l_uint64  wpl64, bignum;
 PIX      *pixd;
 
     PROCNAME("pixCreateHeader");
@@ -434,7 +435,15 @@ PIX      *pixd;
         return (PIX *)ERROR_PTR("height must be > 0", procName, NULL);
 
         /* Avoid overflow in malloc arg, malicious or otherwise */
-    wpl = (width * depth + 31) / 32;
+    wpl = 0;
+    wpl64 = ((l_uint64)width * (l_uint64)depth + 31) / 32;
+    if (wpl64 > ((1LL << 29) - 1)) {
+        L_ERROR("requested w = %d, h = %d, d = %d\n",
+                procName, width, height, depth);
+        return (PIX *)ERROR_PTR("wpl >= 2^29", procName, NULL);
+    } else {
+      wpl = (l_int32)wpl64;
+    }
     bignum = 4L * wpl * height;   /* number of bytes to be requested */
     if (bignum > ((1LL << 31) - 1)) {
         L_ERROR("requested w = %d, h = %d, d = %d\n",
@@ -442,8 +451,8 @@ PIX      *pixd;
         return (PIX *)ERROR_PTR("requested bytes >= 2^31", procName, NULL);
     }
 
-    if ((pixd = (PIX *)CALLOC(1, sizeof(PIX))) == NULL)
-        return (PIX *)ERROR_PTR("CALLOC fail for pixd", procName, NULL);
+    if ((pixd = (PIX *)LEPT_CALLOC(1, sizeof(PIX))) == NULL)
+        return (PIX *)ERROR_PTR("LEPT_CALLOC fail for pixd", procName, NULL);
     pixSetWidth(pixd, width);
     pixSetHeight(pixd, height);
     pixSetDepth(pixd, depth);
@@ -549,9 +558,9 @@ char      *text;
         if ((data = pixGetData(pix)) != NULL)
             pix_free(data);
         if ((text = pixGetText(pix)) != NULL)
-            FREE(text);
+            LEPT_FREE(text);
         pixDestroyColormap(pix);
-        FREE(pix);
+        LEPT_FREE(pix);
     }
     return;
 }
@@ -1335,7 +1344,6 @@ pixSetInputFormat(PIX     *pix,
 
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
-
     pix->informat = informat;
     return 0;
 }
@@ -1355,6 +1363,19 @@ pixCopyInputFormat(PIX  *pixd,
         return 0;   /* no-op */
 
     pixSetInputFormat(pixd, pixGetInputFormat(pixs));
+    return 0;
+}
+
+
+l_int32
+pixSetSpecial(PIX     *pix,
+              l_int32  special)
+{
+    PROCNAME("pixSetSpecial");
+
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+    pix->special = special;
     return 0;
 }
 
@@ -1430,7 +1451,7 @@ char  *newstring;
 
     newstring = stringJoin(pixGetText(pix), textstring);
     stringReplace(&pix->text, newstring);
-    FREE(newstring);
+    LEPT_FREE(newstring);
     return 0;
 }
 
@@ -1521,7 +1542,7 @@ PIXCMAP  *cmap;
  *
  *  Notes:
  *      (1) This gives a new handle for the data.  The data is still
- *          owned by the pix, so do not call FREE() on it.
+ *          owned by the pix, so do not call LEPT_FREE() on it.
  */
 l_uint32 *
 pixGetData(PIX  *pix)
@@ -1661,7 +1682,7 @@ l_uint32  *data;
  *              void **lineg8 = pixGetLinePtrs(pixg, NULL);
  *              val = GET_DATA_BYTE(lineg8[i], j);  // fast access; BYTE, 8
  *              ...
- *              FREE(lineg8);  // don't forget this
+ *              LEPT_FREE(lineg8);  // don't forget this
  *      (5) These are convenient for accessing bytes sequentially in an
  *          8 bpp grayscale image.  People who write image processing code
  *          on 8 bpp images are accustomed to grabbing pixels directly out
@@ -1679,7 +1700,7 @@ l_uint32  *data;
  *                  }
  *              }
  *              pixEndianByteSwap(pix);  // restore big-endian order
- *              FREE(lineptrs);
+ *              LEPT_FREE(lineptrs);
  *          This can be done even more simply as follows:
  *              l_uint8 **lineptrs = pixSetupByteProcessing(pix, &w, &h);
  *              for (i = 0; i < h; i++) {
@@ -1707,7 +1728,7 @@ void     **lines;
 
     h = pixGetHeight(pix);
     if (psize) *psize = h;
-    if ((lines = (void **)CALLOC(h, sizeof(void *))) == NULL)
+    if ((lines = (void **)LEPT_CALLOC(h, sizeof(void *))) == NULL)
         return (void **)ERROR_PTR("lines not made", procName, NULL);
     wpl = pixGetWpl(pix);
     data = pixGetData(pix);
@@ -1736,6 +1757,7 @@ pixPrintStreamInfo(FILE        *fp,
                    PIX         *pix,
                    const char  *text)
 {
+char     *textdata;
 l_int32   informat;
 PIXCMAP  *cmap;
 
@@ -1753,6 +1775,7 @@ PIXCMAP  *cmap;
                pixGetSpp(pix));
     fprintf(fp, "    wpl = %d, data = %p, refcount = %d\n",
                pixGetWpl(pix), pixGetData(pix), pixGetRefcount(pix));
+    fprintf(fp, "    xres = %d, yres = %d\n", pixGetXRes(pix), pixGetYRes(pix));
     if ((cmap = pixGetColormap(pix)) != NULL)
         pixcmapWriteStream(fp, cmap);
     else
@@ -1760,6 +1783,8 @@ PIXCMAP  *cmap;
     informat = pixGetInputFormat(pix);
     fprintf(fp, "    input format: %d (%s)\n", informat,
             ImageFileFormatExtensions[informat]);
+    if ((textdata = pixGetText(pix)) != NULL)
+        fprintf(fp, "    text: %s\n", textdata);
 
     return 0;
 }

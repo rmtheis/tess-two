@@ -114,9 +114,11 @@ struct L_Recog {
     char          *bootdir;      /* dir with bootstrap pixa charsets         */
     char          *bootpattern;  /* file pattern for bootstrap pixa charsets */
     char          *bootpath;     /* path for single bootstrap pixa charset   */
+    l_int32        boot_iters;   /* number of 2x2 erosion iters on boot pixa */
     l_int32        min_nopad;    /* min number of samples without padding    */
     l_int32        max_afterpad; /* max number of samples after padding      */
-    l_int32        samplenum;    /* keep track of number of training samples */
+    l_int32        min_samples;  /* min num of total samples; else use boot  */
+    l_int32        num_samples;  /* keep track of number of training samples */
     l_int32        minwidth_u;   /* min width of averaged unscaled templates */
     l_int32        maxwidth_u;   /* max width of averaged unscaled templates */
     l_int32        minheight_u;  /* min height of averaged unscaled templates */

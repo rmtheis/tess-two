@@ -219,7 +219,7 @@ PIX        *pixd;
         }
     }
 
-    FREE(randa);
+    LEPT_FREE(randa);
     return pixd;
 }
 
@@ -235,7 +235,7 @@ l_float64  *randa;
 
     PROCNAME("generateRandomNumberArray");
 
-    if ((randa = (l_float64 *)CALLOC(size, sizeof(l_float64))) == NULL)
+    if ((randa = (l_float64 *)LEPT_CALLOC(size, sizeof(l_float64))) == NULL)
         return (l_float64 *)ERROR_PTR("calloc fail for randa", procName, NULL);
 
         /* Return random values between 0.5 and 1.0 */
@@ -370,7 +370,7 @@ PIX        *pixd;
     }
 
     numaDestroy(&na);
-    FREE(randa);
+    LEPT_FREE(randa);
     return pixd;
 }
 

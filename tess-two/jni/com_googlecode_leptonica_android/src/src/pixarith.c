@@ -1199,7 +1199,7 @@ PIX        *pixd;
                     SET_DATA_BYTE(lined, j, dval);
                 }
             }
-            FREE(tab);
+            LEPT_FREE(tab);
         }
     } else if (d == 8) {
         if (type == L_LINEAR_SCALE) {
@@ -1225,7 +1225,7 @@ PIX        *pixd;
                     SET_DATA_BYTE(lined, j, dval);
                 }
             }
-            FREE(tab);
+            LEPT_FREE(tab);
         }
     } else if (d == 16) {
         if (type == L_LINEAR_SCALE) {
@@ -1251,7 +1251,7 @@ PIX        *pixd;
                     SET_DATA_BYTE(lined, j, dval);
                 }
             }
-            FREE(tab);
+            LEPT_FREE(tab);
         }
     } else {  /* d == 32 */
         if (type == L_LINEAR_SCALE) {
@@ -1277,7 +1277,7 @@ PIX        *pixd;
                     SET_DATA_BYTE(lined, j, dval);
                 }
             }
-            FREE(tab);
+            LEPT_FREE(tab);
         }
     }
 
@@ -1303,7 +1303,7 @@ l_float32  *tab;
 
     PROCNAME("makeLogBase2Tab");
 
-    if ((tab = (l_float32 *)CALLOC(256, sizeof(l_float32))) == NULL)
+    if ((tab = (l_float32 *)LEPT_CALLOC(256, sizeof(l_float32))) == NULL)
         return (l_float32 *)ERROR_PTR("tab not made", procName, NULL);
 
     log2 = (l_float32)log((l_float32)2);

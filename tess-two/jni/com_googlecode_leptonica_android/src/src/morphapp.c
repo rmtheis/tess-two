@@ -60,6 +60,9 @@
  *      Display of matched patterns
  *            PIX       *pixDisplayMatchedPattern()
  *
+ *      Extension of pixa by iterative erosion or dilation
+ *            PIXA      *pixaExtendIterative()
+ *
  *      Iterative morphological seed filling (don't use for real work)
  *            PIX       *pixSeedfillMorph()
  *
@@ -846,6 +849,82 @@ PIXCMAP  *cmap;
 
 
 /*-----------------------------------------------------------------*
+ *       Extension of pixa by iterative erosion or dilation        *
+ *-----------------------------------------------------------------*/
+/*!
+ *  pixaExtendIterative()
+ *
+ *      Input:  pixas
+ *              type (L_MORPH_DILATE, L_MORPH_ERODE)
+ *              niters
+ *              sel (used for dilation, erosion); uses 2x2 if null
+ *              include (1 to include a copy of the input pixas in pixad;
+ *                       0 to omit)
+ *      Return: pixad (of derived pix, using all iterations), or null on error
+ *
+ *  Notes:
+ *    (1) This dilates or erodes every pix in @pixas, iteratively,
+ *        using the input Sel (or, if null, a 2x2 Sel by default),
+ *        and puts the results in @pixad.
+ *    (2) If @niters <= 0, this is a no-op; it returns a clone of pixas.
+ *    (3) If @include == 1, the output @pixad contains all the pix
+ *        in @pixas.  Otherwise, it doesn't, but pixaJoin() can be
+ *        used later to join pixas with pixad.
+ */
+PIXA *
+pixaExtendIterative(PIXA    *pixas,
+                    l_int32  type,
+                    l_int32  niters,
+                    SEL     *sel,
+                    l_int32  include)
+{
+l_int32  maxdepth, i, j, n;
+PIX     *pix0, *pix1, *pix2;
+SEL     *selt;
+PIXA    *pixad;
+
+    PROCNAME("pixaExtendIterative");
+
+    if (!pixas)
+        return (PIXA *)ERROR_PTR("pixas undefined", procName, NULL);
+    if (niters <= 0) {
+        L_INFO("niters = %d; nothing to do\n", procName, niters);
+        return pixaCopy(pixas, L_CLONE);
+    }
+    if (type != L_MORPH_DILATE && type != L_MORPH_ERODE)
+        return (PIXA *)ERROR_PTR("invalid type", procName, NULL);
+    pixaGetDepthInfo(pixas, &maxdepth, NULL);
+    if (maxdepth > 1)
+        return (PIXA *)ERROR_PTR("some pix have bpp > 1", procName, NULL);
+
+    if (!sel)
+        selt = selCreateBrick(2, 2, 0, 0, SEL_HIT);  /* default */
+    else
+        selt = selCopy(sel);
+    n = pixaGetCount(pixas);
+    pixad = pixaCreate(n * niters);
+    for (i = 0; i < n; i++) {
+        pix1 = pixaGetPix(pixas, i, L_CLONE);
+        if (include) pixaAddPix(pixad, pix1, L_COPY);
+        pix0 = pix1;  /* need to keep the handle to destroy the clone */
+        for (j = 0; j < niters; j++) {
+            if (type == L_MORPH_DILATE) {
+                pix2 = pixDilate(NULL, pix1, selt);
+            } else {  /* L_MORPH_ERODE */
+                pix2 = pixErode(NULL, pix1, selt);
+            }
+            pixaAddPix(pixad, pix2, L_INSERT);
+            pix1 = pix2;  /* owned by pixad; do not destroy */
+        }
+        pixDestroy(&pix0);
+    }
+
+    selDestroy(&selt);
+    return pixad;
+}
+
+
+/*-----------------------------------------------------------------*
  *             Iterative morphological seed filling                *
  *-----------------------------------------------------------------*/
 /*!
@@ -886,7 +965,7 @@ SEL     *sel_3;
     if (pixSizesEqual(pixs, pixm) == 0)
         return (PIX *)ERROR_PTR("pix sizes unequal", procName, NULL);
 
-    if ((sel_3 = selCreateBrick(3, 3, 1, 1, 1)) == NULL)
+    if ((sel_3 = selCreateBrick(3, 3, 1, 1, SEL_HIT)) == NULL)
         return (PIX *)ERROR_PTR("sel_3 not made", procName, NULL);
     if (connectivity == 4) {  /* remove corner hits to make a '+' */
         selSetElement(sel_3, 0, 0, SEL_DONT_CARE);
@@ -951,9 +1030,9 @@ SEL       *sel_2a;
         return (NUMA *)ERROR_PTR("pixs must be binary", procName, NULL);
 
     if (direction == L_HORIZ)
-        sel_2a = selCreateBrick(1, 2, 0, 0, 1);
+        sel_2a = selCreateBrick(1, 2, 0, 0, SEL_HIT);
     else   /* direction == L_VERT */
-        sel_2a = selCreateBrick(2, 1, 0, 0, 1);
+        sel_2a = selCreateBrick(2, 1, 0, 0, SEL_HIT);
     if (!sel_2a)
         return (NUMA *)ERROR_PTR("sel_2a not made", procName, NULL);
 
@@ -1319,8 +1398,8 @@ PTA       *pta;
         ptaAddPt(pta, x, y);
     }
 
-    FREE(centtab);
-    FREE(sumtab);
+    LEPT_FREE(centtab);
+    LEPT_FREE(sumtab);
     return pta;
 }
 
@@ -1439,7 +1518,7 @@ l_int32   *ctab, *stab;
         }
     }
 
-    if (!centtab) FREE(ctab);
-    if (!sumtab) FREE(stab);
+    if (!centtab) LEPT_FREE(ctab);
+    if (!sumtab) LEPT_FREE(stab);
     return 0;
 }

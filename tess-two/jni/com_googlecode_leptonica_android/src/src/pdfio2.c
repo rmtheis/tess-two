@@ -403,8 +403,8 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
         }
         if (i == npages - 1)  /* last one */
             l_dnaAddNumber(da_outlocs, l_byteaGetSize(bad));
-        FREE(sizes);
-        FREE(locs);
+        LEPT_FREE(sizes);
+        LEPT_FREE(locs);
         l_dnaDestroy(&da_locs);
         numaDestroy(&na_objs);
         l_dnaDestroy(&da_sizes);
@@ -433,8 +433,8 @@ NUMAA    *naa_objs;  /* object mapping numbers to new values */
     numaaDestroy(&naa_objs);
     l_dnaDestroy(&da_outlocs);
     l_dnaaDestroy(&daa_locs);
-    FREE(str_pages);
-    FREE(str_trailer);
+    LEPT_FREE(str_pages);
+    LEPT_FREE(str_trailer);
     return 0;
 }
 
@@ -605,7 +605,7 @@ PIXCMAP      *cmap = NULL;
          * the png file, so after extraction we expect datacomp to
          * be nearly full (i.e., nbytescomp will be only slightly less
          * than nbytespng).  Also extract the colormap if present. */
-    if ((datacomp = (l_uint8 *)CALLOC(1, nbytespng)) == NULL)
+    if ((datacomp = (l_uint8 *)LEPT_CALLOC(1, nbytespng)) == NULL)
         return (L_COMP_DATA *)ERROR_PTR("unable to allocate memory",
                                         procName, NULL);
 
@@ -626,8 +626,8 @@ PIXCMAP      *cmap = NULL;
         n += pngcomp[i - 6] << 8;
         n += pngcomp[i - 5] << 0;
         if (i + n >= nbytespng) {
-            FREE(pngcomp);
-            FREE(datacomp);
+            LEPT_FREE(pngcomp);
+            LEPT_FREE(datacomp);
             pixcmapDestroy(&cmap);
             L_ERROR("invalid png: i = %d, n = %d, nbytes = %lu\n", procName,
                     i, n, (unsigned long)nbytespng);
@@ -644,8 +644,8 @@ PIXCMAP      *cmap = NULL;
         if (cmapflag && !cmap &&
             strncmp((const char *)(pngcomp + i - 4), "PLTE", 4) == 0) {
             if ((n / 3) > (1 << bps)) {
-                FREE(pngcomp);
-                FREE(datacomp);
+                LEPT_FREE(pngcomp);
+                LEPT_FREE(datacomp);
                 pixcmapDestroy(&cmap);
                 L_ERROR("invalid png: i = %d, n = %d, cmapsize = %d\n",
                         procName, i, n, (1 << bps));
@@ -659,10 +659,10 @@ PIXCMAP      *cmap = NULL;
         }
         i += n;  /* move to the end of the data chunk */
     }
-    FREE(pngcomp);
+    LEPT_FREE(pngcomp);
 
     if (nbytescomp == 0) {
-        FREE(datacomp);
+        LEPT_FREE(datacomp);
         pixcmapDestroy(&cmap);
         return (L_COMP_DATA *)ERROR_PTR("invalid PNG file", procName, NULL);
     }
@@ -673,12 +673,12 @@ PIXCMAP      *cmap = NULL;
         pixcmapSerializeToMemory(cmap, 3, &ncolors, &cmapdata);
         pixcmapDestroy(&cmap);
         if (!cmapdata) {
-            FREE(datacomp);
+            LEPT_FREE(datacomp);
             return (L_COMP_DATA *)ERROR_PTR("cmapdata not made",
                                             procName, NULL);
         }
         cmapdatahex = pixcmapConvertToHex(cmapdata, ncolors);
-        FREE(cmapdata);
+        LEPT_FREE(cmapdata);
     }
 
         /* Note that this is the only situation where the predictor
@@ -688,7 +688,7 @@ PIXCMAP      *cmap = NULL;
          * ignored by the pdf interpreter, which just needs to know that
          * the first byte on each compressed scanline is some predictor
          * whose type can be inferred from the byte itself.  */
-    cid = (L_COMP_DATA *)CALLOC(1, sizeof(L_COMP_DATA));
+    cid = (L_COMP_DATA *)LEPT_CALLOC(1, sizeof(L_COMP_DATA));
     cid->datacomp = datacomp;
     cid->type = L_FLATE_ENCODE;
     cid->cmapdatahex = cmapdatahex;
@@ -751,14 +751,14 @@ L_COMP_DATA  *cid;
         /* Optionally, encode the compressed data */
     if (ascii85flag == 1) {
         data85 = encodeAscii85(datacomp, nbytescomp, &nbytes85);
-        FREE(datacomp);
+        LEPT_FREE(datacomp);
         if (!data85)
             return (L_COMP_DATA *)ERROR_PTR("data85 not made", procName, NULL);
         else
             data85[nbytes85 - 1] = '\0';  /* remove the newline */
     }
 
-    cid = (L_COMP_DATA *)CALLOC(1, sizeof(L_COMP_DATA));
+    cid = (L_COMP_DATA *)LEPT_CALLOC(1, sizeof(L_COMP_DATA));
     if (!cid)
         return (L_COMP_DATA *)ERROR_PTR("cid not made", procName, NULL);
     if (ascii85flag == 0) {
@@ -799,7 +799,7 @@ L_COMP_DATA  *cid;
     if (!fname)
         return (L_COMP_DATA *)ERROR_PTR("fname not defined", procName, NULL);
 
-    if ((cid = (L_COMP_DATA *)CALLOC(1, sizeof(L_COMP_DATA))) == NULL)
+    if ((cid = (L_COMP_DATA *)LEPT_CALLOC(1, sizeof(L_COMP_DATA))) == NULL)
         return (L_COMP_DATA *)ERROR_PTR("cid not made", procName, NULL);
 
         /* The returned jp2k data in memory is the entire jp2k file */
@@ -1091,7 +1091,7 @@ PIXCMAP      *cmap;
 
         cmapdata85 = encodeAscii85(cmapdata, 3 * ncolors, &ncmapbytes85);
         cmapdatahex = pixcmapConvertToHex(cmapdata, ncolors);
-        FREE(cmapdata);
+        LEPT_FREE(cmapdata);
     }
 
         /* Extract and compress the raster data */
@@ -1099,25 +1099,25 @@ PIXCMAP      *cmap;
     pixDestroy(&pixt);
     datacomp = zlibCompress(data, nbytes, &nbytescomp);
     if (!datacomp) {
-        if (cmapdata85) FREE(cmapdata85);
-        if (cmapdatahex) FREE(cmapdatahex);
+        if (cmapdata85) LEPT_FREE(cmapdata85);
+        if (cmapdatahex) LEPT_FREE(cmapdatahex);
         return (L_COMP_DATA *)ERROR_PTR("datacomp not made", procName, NULL);
     }
-    FREE(data);
+    LEPT_FREE(data);
 
         /* Optionally, encode the compressed data */
     if (ascii85flag == 1) {
         data85 = encodeAscii85(datacomp, nbytescomp, &nbytes85);
-        FREE(datacomp);
+        LEPT_FREE(datacomp);
         if (!data85) {
-            FREE(cmapdata85);
+            LEPT_FREE(cmapdata85);
             return (L_COMP_DATA *)ERROR_PTR("data85 not made", procName, NULL);
         } else {
             data85[nbytes85 - 1] = '\0';  /* remove the newline */
         }
     }
 
-    cid = (L_COMP_DATA *)CALLOC(1, sizeof(L_COMP_DATA));
+    cid = (L_COMP_DATA *)LEPT_CALLOC(1, sizeof(L_COMP_DATA));
     if (!cid)
         return (L_COMP_DATA *)ERROR_PTR("cid not made", procName, NULL);
     if (ascii85flag == 0) {
@@ -1272,14 +1272,14 @@ FILE         *fp;
         /* Optionally, encode the compressed data */
     if (ascii85flag == 1) {
         data85 = encodeAscii85(datacomp, nbytescomp, &nbytes85);
-        FREE(datacomp);
+        LEPT_FREE(datacomp);
         if (!data85)
             return (L_COMP_DATA *)ERROR_PTR("data85 not made", procName, NULL);
         else
             data85[nbytes85 - 1] = '\0';  /* remove the newline */
     }
 
-    cid = (L_COMP_DATA *)CALLOC(1, sizeof(L_COMP_DATA));
+    cid = (L_COMP_DATA *)LEPT_CALLOC(1, sizeof(L_COMP_DATA));
     if (!cid)
         return (L_COMP_DATA *)ERROR_PTR("cid not made", procName, NULL);
     if (ascii85flag == 0) {
@@ -1376,11 +1376,11 @@ L_COMP_DATA  *cid;
     if ((cid = *pcid) == NULL)
         return;
 
-    if (cid->datacomp) FREE(cid->datacomp);
-    if (cid->data85) FREE(cid->data85);
-    if (cid->cmapdata85) FREE(cid->cmapdata85);
-    if (cid->cmapdatahex) FREE(cid->cmapdatahex);
-    FREE(cid);
+    if (cid->datacomp) LEPT_FREE(cid->datacomp);
+    if (cid->data85) LEPT_FREE(cid->data85);
+    if (cid->cmapdata85) LEPT_FREE(cid->cmapdata85);
+    if (cid->cmapdatahex) LEPT_FREE(cid->cmapdatahex);
+    LEPT_FREE(cid);
     *pcid = NULL;
     return;
 }
@@ -1461,11 +1461,11 @@ SARRAY  *sa;
         datestr = l_getFormattedDate();
         snprintf(buf, sizeof(buf), "/CreationDate (D:%s)\n", datestr);
         sarrayAddString(sa, (char *)buf, L_COPY);
-        FREE(datestr);
+        LEPT_FREE(datestr);
         version = getLeptonicaVersion();
         snprintf(buf, sizeof(buf),
                  "/Producer (leptonica: %s)\n", version);
-        FREE(version);
+        LEPT_FREE(version);
     } else {
         snprintf(buf, sizeof(buf), "/Producer (leptonica)\n");
     }
@@ -1543,7 +1543,7 @@ SARRAY  *sa;
          * 50 bytes for each reference to an image in the
          * ProcSet array.  */
     bufsize = 1000 + 50 * lpd->n;
-    if ((buf = (char *)CALLOC(bufsize, sizeof(char))) == NULL)
+    if ((buf = (char *)LEPT_CALLOC(bufsize, sizeof(char))) == NULL)
         return ERROR_INT("calloc fail for buf", procName, 1);
 
     boxGetGeometry(lpd->mediabox, NULL, NULL, &wpt, &hpt);
@@ -1574,8 +1574,8 @@ SARRAY  *sa;
     lpd->obj4 = stringNew(buf);
     l_dnaAddNumber(lpd->objsize, strlen(lpd->obj4));
     sarrayDestroy(&sa);
-    FREE(buf);
-    FREE(xstr);
+    LEPT_FREE(buf);
+    LEPT_FREE(xstr);
     return 0;
 }
 
@@ -1592,7 +1592,7 @@ SARRAY    *sa;
     PROCNAME("generateContentStringPdf");
 
     bufsize = 1000 + 200 * lpd->n;
-    if ((buf = (char *)CALLOC(bufsize, sizeof(char))) == NULL)
+    if ((buf = (char *)LEPT_CALLOC(bufsize, sizeof(char))) == NULL)
         return ERROR_INT("calloc fail for buf", procName, 1);
 
     sa = sarrayCreate(lpd->n);
@@ -1619,8 +1619,8 @@ SARRAY    *sa;
     lpd->obj5 = stringNew(buf);
     l_dnaAddNumber(lpd->objsize, strlen(lpd->obj5));
     sarrayDestroy(&sa);
-    FREE(buf);
-    FREE(cstr);
+    LEPT_FREE(buf);
+    LEPT_FREE(cstr);
     return 0;
 }
 
@@ -1732,10 +1732,10 @@ SARRAY       *sa;
         sarrayAddString(sa, xstr, L_INSERT);
         l_dnaAddNumber(lpd->objsize,
                       strlen(xstr) + cid->nbytescomp + strlen(lpd->poststream));
-        FREE(cstr);
-        FREE(bstr);
-        FREE(fstr);
-        FREE(pstr);
+        LEPT_FREE(cstr);
+        LEPT_FREE(bstr);
+        LEPT_FREE(fstr);
+        LEPT_FREE(pstr);
     }
 
     return 0;
@@ -1898,7 +1898,7 @@ L_COMP_DATA  *cid;
         return ERROR_INT("&nbytes not defined", procName, 1);
     nbytes = lpd->xrefloc + strlen(lpd->trailer);
     *pnbytes = nbytes;
-    if ((data = (l_uint8 *)CALLOC(nbytes, sizeof(l_uint8))) == NULL)
+    if ((data = (l_uint8 *)LEPT_CALLOC(nbytes, sizeof(l_uint8))) == NULL)
         return ERROR_INT("calloc fail for data", procName, 1);
     *pdata = data;
 
@@ -1934,8 +1934,8 @@ L_COMP_DATA  *cid;
 
         /* And finally the trailer */
     memcpy((char *)(data + lpd->xrefloc), lpd->trailer, strlen(lpd->trailer));
-    FREE(sizes);
-    FREE(locs);
+    LEPT_FREE(sizes);
+    LEPT_FREE(locs);
     return 0;
 }
 
@@ -2063,7 +2063,7 @@ SARRAY  *sa;
 
     n = numaGetCount(napage);
     bufsize = 100 + 16 * n;  /* large enough to hold the output string */
-    buf = (char *)CALLOC(bufsize, sizeof(char));
+    buf = (char *)LEPT_CALLOC(bufsize, sizeof(char));
     sa = sarrayCreate(n);
     for (i = 0; i < n; i++) {
         numaGetIValue(napage, i, &index);
@@ -2079,7 +2079,7 @@ SARRAY  *sa;
                                "/Count %d\n"
                                ">>\n", str, n);
     sarrayDestroy(&sa);
-    FREE(str);
+    LEPT_FREE(str);
     return buf;
 }
 
@@ -2095,7 +2095,7 @@ SARRAY  *sa;
  *      (1) Interpret the first set of bytes as the object number,
  *          map to the new number, and write it out.
  *      (2) Find all occurrences of this 4-byte sequence: " 0 R"
- *      (3) Find the location and value of the integer preceeding this,
+ *      (3) Find the location and value of the integer preceding this,
  *          and map it to the new value.
  *      (4) Rewrite the object with new object numbers.
  */
@@ -2127,7 +2127,7 @@ L_DNA    *da_match;
     da_match = arrayFindEachSequence(datas, size, (l_uint8 *)" 0 R", 4);
     if (!da_match) {
         l_byteaAppendData(bad, datas + start, size - start);
-        FREE(objs);
+        LEPT_FREE(objs);
         return bad;
     }
 
@@ -2150,8 +2150,8 @@ L_DNA    *da_match;
     }
     l_byteaAppendData(bad, datas + start, size - start);
 
-    FREE(objs);
-    FREE(matches);
+    LEPT_FREE(objs);
+    LEPT_FREE(matches);
     l_dnaDestroy(&da_match);
     return bad;
 }
@@ -2165,7 +2165,7 @@ pdfdataCreate(const char  *title)
 {
 L_PDF_DATA *lpd;
 
-    lpd = (L_PDF_DATA *)CALLOC(1, sizeof(L_PDF_DATA));
+    lpd = (L_PDF_DATA *)LEPT_CALLOC(1, sizeof(L_PDF_DATA));
     if (title) lpd->title = stringNew(title);
     lpd->cida = ptraCreate(10);
     lpd->xy = ptaCreate(10);
@@ -2193,21 +2193,21 @@ L_PDF_DATA   *lpd;
     if ((lpd = *plpd) == NULL)
         return;
 
-    if (lpd->title) FREE(lpd->title);
+    if (lpd->title) LEPT_FREE(lpd->title);
     for (i = 0; i < lpd->n; i++) {
         cid = (L_COMP_DATA *)ptraRemove(lpd->cida, i, L_NO_COMPACTION);
         l_CIDataDestroy(&cid);
     }
 
     ptraDestroy(&lpd->cida, 0, 0);
-    if (lpd->id) FREE(lpd->id);
-    if (lpd->obj1) FREE(lpd->obj1);
-    if (lpd->obj2) FREE(lpd->obj2);
-    if (lpd->obj3) FREE(lpd->obj3);
-    if (lpd->obj4) FREE(lpd->obj4);
-    if (lpd->obj5) FREE(lpd->obj5);
-    if (lpd->poststream) FREE(lpd->poststream);
-    if (lpd->trailer) FREE(lpd->trailer);
+    if (lpd->id) LEPT_FREE(lpd->id);
+    if (lpd->obj1) LEPT_FREE(lpd->obj1);
+    if (lpd->obj2) LEPT_FREE(lpd->obj2);
+    if (lpd->obj3) LEPT_FREE(lpd->obj3);
+    if (lpd->obj4) LEPT_FREE(lpd->obj4);
+    if (lpd->obj5) LEPT_FREE(lpd->obj5);
+    if (lpd->poststream) LEPT_FREE(lpd->poststream);
+    if (lpd->trailer) LEPT_FREE(lpd->trailer);
     if (lpd->xy) ptaDestroy(&lpd->xy);
     if (lpd->wh) ptaDestroy(&lpd->wh);
     if (lpd->mediabox) boxDestroy(&lpd->mediabox);
@@ -2215,7 +2215,7 @@ L_PDF_DATA   *lpd;
     if (lpd->sacmap) sarrayDestroy(&lpd->sacmap);
     if (lpd->objsize) l_dnaDestroy(&lpd->objsize);
     if (lpd->objloc) l_dnaDestroy(&lpd->objloc);
-    FREE(lpd);
+    LEPT_FREE(lpd);
     *plpd = NULL;
     return;
 }

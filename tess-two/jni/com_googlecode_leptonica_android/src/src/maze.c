@@ -265,7 +265,7 @@ L_QUEUE   *lq;
                 }
             }
         }
-        FREE(elp);
+        LEPT_FREE(elp);
     }
 
     lqueueDestroy(&lq, TRUE);
@@ -281,7 +281,7 @@ mazeelCreate(l_int32  x,
 {
 MAZEEL *el;
 
-    el = (MAZEEL *)CALLOC(1, sizeof(MAZEEL));
+    el = (MAZEEL *)LEPT_CALLOC(1, sizeof(MAZEEL));
     el->x = x;
     el->y = y;
     el->dir = dir;
@@ -401,7 +401,7 @@ PTA       *pta;
         y = elp->y;
         if (x == xf && y == yf) {
             found = TRUE;
-            FREE(elp);
+            LEPT_FREE(elp);
             break;
         }
 
@@ -453,12 +453,12 @@ PTA       *pta;
                 }
             }
         }
-        FREE(elp);
+        LEPT_FREE(elp);
     }
 
     lqueueDestroy(&lq, TRUE);
     pixDestroy(&pixm);
-    FREE(linem1);
+    LEPT_FREE(linem1);
 
     if (ppixd) {
         pixd = pixUnpackBinary(pixs, 32, 1);
@@ -500,7 +500,7 @@ PTA       *pta;
                         SET_DATA_FOUR_BYTES(lined32[i], j, gpixel);
                 }
             }
-            FREE(lined32);
+            LEPT_FREE(lined32);
         }
     }
     if (pixd) {
@@ -509,8 +509,8 @@ PTA       *pta;
     }
 
     pixDestroy(&pixp);
-    FREE(lines1);
-    FREE(linep8);
+    LEPT_FREE(lines1);
+    LEPT_FREE(linep8);
     return pta;
 }
 
@@ -783,7 +783,7 @@ PTA      *pta;
         x = elp->x;
         y = elp->y;
         if (x == xf && y == yf) {  /* exit condition */
-            FREE(elp);
+            LEPT_FREE(elp);
             break;
         }
         distparent = (l_int32)elp->distance;
@@ -850,7 +850,7 @@ PTA      *pta;
                 lheapAdd(lh, el);
             }
         }
-        FREE(elp);
+        LEPT_FREE(elp);
     }
 
     lheapDestroy(&lh, TRUE);
@@ -895,9 +895,9 @@ PTA      *pta;
 
     pixDestroy(&pixp);
     pixDestroy(&pixr);
-    FREE(lines8);
-    FREE(linep8);
-    FREE(liner32);
+    LEPT_FREE(lines8);
+    LEPT_FREE(linep8);
+    LEPT_FREE(liner32);
     return pta;
 }
 
@@ -985,7 +985,7 @@ PIX       *pixw, *pixh;  /* keeps the width and height for the largest */
         return ERROR_INT("invalid polarity", procName, 1);
 
         /* Initialize lowest "fg" seen so far for each column */
-    lowestfg = (l_int32 *)CALLOC(w, sizeof(l_int32));
+    lowestfg = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
     for (i = 0; i < w; i++)
         lowestfg[i] = -1;
 
@@ -1065,9 +1065,9 @@ PIX       *pixw, *pixh;  /* keeps the width and height for the largest */
         pixDestroy(&pixdb);
     }
 
-    FREE(linew);
-    FREE(lineh);
-    FREE(lowestfg);
+    LEPT_FREE(linew);
+    LEPT_FREE(lineh);
+    LEPT_FREE(lowestfg);
     pixDestroy(&pixw);
     pixDestroy(&pixh);
     return 0;

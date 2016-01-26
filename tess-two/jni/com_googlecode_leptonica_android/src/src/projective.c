@@ -160,7 +160,7 @@ PIX        *pixd;
         /* Get backwards transform from dest to src, and apply it */
     getProjectiveXformCoeffs(ptad, ptas, &vc);
     pixd = pixProjectiveSampled(pixs, vc, incolor);
-    FREE(vc);
+    LEPT_FREE(vc);
 
     return pixd;
 }
@@ -423,7 +423,7 @@ PIX        *pixd;
         /* Get backwards transform from dest to src, and apply it */
     getProjectiveXformCoeffs(ptad, ptas, &vc);
     pixd = pixProjectiveColor(pixs, vc, colorval);
-    FREE(vc);
+    LEPT_FREE(vc);
 
     return pixd;
 }
@@ -526,7 +526,7 @@ PIX        *pixd;
         /* Get backwards transform from dest to src, and apply it */
     getProjectiveXformCoeffs(ptad, ptas, &vc);
     pixd = pixProjectiveGray(pixs, vc, grayval);
-    FREE(vc);
+    LEPT_FREE(vc);
 
     return pixd;
 }
@@ -777,7 +777,7 @@ l_float32  *a[8];  /* 8x8 matrix A  */
     if (!pvc)
         return ERROR_INT("&vc not defined", procName, 1);
 
-    if ((b = (l_float32 *)CALLOC(8, sizeof(l_float32))) == NULL)
+    if ((b = (l_float32 *)LEPT_CALLOC(8, sizeof(l_float32))) == NULL)
         return ERROR_INT("b not made", procName, 1);
     *pvc = b;
 
@@ -791,7 +791,7 @@ l_float32  *a[8];  /* 8x8 matrix A  */
     ptaGetPt(ptad, 3, &b[6], &b[7]);
 
     for (i = 0; i < 8; i++) {
-        if ((a[i] = (l_float32 *)CALLOC(8, sizeof(l_float32))) == NULL)
+        if ((a[i] = (l_float32 *)LEPT_CALLOC(8, sizeof(l_float32))) == NULL)
             return ERROR_INT("a[i] not made", procName, 1);
     }
 
@@ -839,7 +839,7 @@ l_float32  *a[8];  /* 8x8 matrix A  */
     gaussjordan(a, b, 8);
 
     for (i = 0; i < 8; i++)
-        FREE(a[i]);
+        LEPT_FREE(a[i]);
 
     return 0;
 }

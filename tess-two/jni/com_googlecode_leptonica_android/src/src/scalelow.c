@@ -993,9 +993,9 @@ l_float32  wratio, hratio;
 
         /* the source row corresponding to dest row i ==> srow[i]
          * the source col corresponding to dest col j ==> scol[j]  */
-    if ((srow = (l_int32 *)CALLOC(hd, sizeof(l_int32))) == NULL)
+    if ((srow = (l_int32 *)LEPT_CALLOC(hd, sizeof(l_int32))) == NULL)
         return ERROR_INT("srow not made", procName, 1);
-    if ((scol = (l_int32 *)CALLOC(wd, sizeof(l_int32))) == NULL)
+    if ((scol = (l_int32 *)LEPT_CALLOC(wd, sizeof(l_int32))) == NULL)
         return ERROR_INT("scol not made", procName, 1);
 
     wratio = (l_float32)ws / (l_float32)wd;
@@ -1076,8 +1076,8 @@ l_float32  wratio, hratio;
         prevlines = lines;
     }
 
-    FREE(srow);
-    FREE(scol);
+    LEPT_FREE(srow);
+    LEPT_FREE(scol);
     return 0;
 }
 
@@ -1123,9 +1123,9 @@ l_float32  wratio, hratio, norm;
            We store the UL corner location of the square of
            src pixels that correspond to dest pixel (j,i).
            The are labelled by the arrays srow[i] and scol[j]. */
-    if ((srow = (l_int32 *)CALLOC(hd, sizeof(l_int32))) == NULL)
+    if ((srow = (l_int32 *)LEPT_CALLOC(hd, sizeof(l_int32))) == NULL)
         return ERROR_INT("srow not made", procName, 1);
-    if ((scol = (l_int32 *)CALLOC(wd, sizeof(l_int32))) == NULL)
+    if ((scol = (l_int32 *)LEPT_CALLOC(wd, sizeof(l_int32))) == NULL)
         return ERROR_INT("scol not made", procName, 1);
 
     norm = 1. / (l_float32)(size * size);
@@ -1180,8 +1180,8 @@ l_float32  wratio, hratio, norm;
         }
     }
 
-    FREE(srow);
-    FREE(scol);
+    LEPT_FREE(srow);
+    LEPT_FREE(scol);
     return 0;
 }
 
@@ -1613,9 +1613,9 @@ l_float32  wratio, hratio;
 
         /* The source row corresponding to dest row i ==> srow[i]
          * The source col corresponding to dest col j ==> scol[j]  */
-    if ((srow = (l_int32 *)CALLOC(hd, sizeof(l_int32))) == NULL)
+    if ((srow = (l_int32 *)LEPT_CALLOC(hd, sizeof(l_int32))) == NULL)
         return ERROR_INT("srow not made", procName, 1);
-    if ((scol = (l_int32 *)CALLOC(wd, sizeof(l_int32))) == NULL)
+    if ((scol = (l_int32 *)LEPT_CALLOC(wd, sizeof(l_int32))) == NULL)
         return ERROR_INT("scol not made", procName, 1);
 
     wratio = (l_float32)ws / (l_float32)wd;
@@ -1650,8 +1650,8 @@ l_float32  wratio, hratio;
         prevlines = lines;
     }
 
-    FREE(srow);
-    FREE(scol);
+    LEPT_FREE(srow);
+    LEPT_FREE(scol);
     return 0;
 }
 
@@ -1745,7 +1745,7 @@ l_uint32  *tab;
 
     PROCNAME("makeSumTabSG2");
 
-    if ((tab = (l_uint32 *)CALLOC(256, sizeof(l_uint32))) == NULL)
+    if ((tab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32))) == NULL)
         return (l_uint32 *)ERROR_PTR("calloc fail for tab", procName, NULL);
 
         /* Pack the four sums separately in four bytes */
@@ -1776,7 +1776,7 @@ l_uint8  *tab;
 
     PROCNAME("makeValTabSG2");
 
-    if ((tab = (l_uint8 *)CALLOC(5, sizeof(l_uint8))) == NULL)
+    if ((tab = (l_uint8 *)LEPT_CALLOC(5, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("calloc fail for tab", procName, NULL);
 
     for (i = 0; i < 5; i++)
@@ -1902,7 +1902,7 @@ l_uint32  *tab;
 
     PROCNAME("makeSumTabSG3");
 
-    if ((tab = (l_uint32 *)CALLOC(64, sizeof(l_uint32))) == NULL)
+    if ((tab = (l_uint32 *)LEPT_CALLOC(64, sizeof(l_uint32))) == NULL)
         return (l_uint32 *)ERROR_PTR("calloc fail for tab", procName, NULL);
 
         /* Pack the two sums separately in two bytes */
@@ -1930,7 +1930,7 @@ l_uint8  *tab;
 
     PROCNAME("makeValTabSG3");
 
-    if ((tab = (l_uint8 *)CALLOC(10, sizeof(l_uint8))) == NULL)
+    if ((tab = (l_uint8 *)LEPT_CALLOC(10, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("calloc fail for tab", procName, NULL);
 
     for (i = 0; i < 10; i++)
@@ -2018,7 +2018,7 @@ l_uint32  *tab;
 
     PROCNAME("makeSumTabSG4");
 
-    if ((tab = (l_uint32 *)CALLOC(256, sizeof(l_uint32))) == NULL)
+    if ((tab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32))) == NULL)
         return (l_uint32 *)ERROR_PTR("calloc fail for tab", procName, NULL);
 
         /* Pack the two sums separately in two bytes */
@@ -2048,7 +2048,7 @@ l_uint8  *tab;
 
     PROCNAME("makeValTabSG4");
 
-    if ((tab = (l_uint8 *)CALLOC(17, sizeof(l_uint8))) == NULL)
+    if ((tab = (l_uint8 *)LEPT_CALLOC(17, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("calloc fail for tab", procName, NULL);
 
     for (i = 0; i < 17; i++)
@@ -2192,7 +2192,7 @@ l_uint8  *tab;
 
     PROCNAME("makeValTabSG6");
 
-    if ((tab = (l_uint8 *)CALLOC(37, sizeof(l_uint8))) == NULL)
+    if ((tab = (l_uint8 *)LEPT_CALLOC(37, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("calloc fail for tab", procName, NULL);
 
     for (i = 0; i < 37; i++)
@@ -2280,7 +2280,7 @@ l_uint8  *tab;
 
     PROCNAME("makeValTabSG8");
 
-    if ((tab = (l_uint8 *)CALLOC(65, sizeof(l_uint8))) == NULL)
+    if ((tab = (l_uint8 *)LEPT_CALLOC(65, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("calloc fail for tab", procName, NULL);
 
     for (i = 0; i < 65; i++)
@@ -2412,9 +2412,9 @@ l_float32  ratio, w1, w2;
            srow[i], scol[j].  The UL corner locations of the higher
            resolution src pixels are obtained from these arrays
            by multiplying by 2. */
-    if ((srow = (l_int32 *)CALLOC(hd, sizeof(l_int32))) == NULL)
+    if ((srow = (l_int32 *)LEPT_CALLOC(hd, sizeof(l_int32))) == NULL)
         return ERROR_INT("srow not made", procName, 1);
-    if ((scol = (l_int32 *)CALLOC(wd, sizeof(l_int32))) == NULL)
+    if ((scol = (l_int32 *)LEPT_CALLOC(wd, sizeof(l_int32))) == NULL)
         return ERROR_INT("scol not made", procName, 1);
     ratio = 1. / (2. * red);  /* 0.5 for red = 1, 1 for red = 0.5 */
     for (i = 0; i < hd; i++)
@@ -2443,7 +2443,7 @@ l_float32  ratio, w1, w2;
         }
     }
 
-    FREE(srow);
-    FREE(scol);
+    LEPT_FREE(srow);
+    LEPT_FREE(scol);
     return 0;
 }

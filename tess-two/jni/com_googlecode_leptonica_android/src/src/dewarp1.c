@@ -436,7 +436,7 @@ L_DEWARP  *dew;
     if (pixGetDepth(pixs) != 1)
         return (L_DEWARP *)ERROR_PTR("pixs not 1 bpp", procName, NULL);
 
-    if ((dew = (L_DEWARP *)CALLOC(1, sizeof(L_DEWARP))) == NULL)
+    if ((dew = (L_DEWARP *)LEPT_CALLOC(1, sizeof(L_DEWARP))) == NULL)
         return (L_DEWARP *)ERROR_PTR("dew not made", procName, NULL);
     dew->pixs = pixClone(pixs);
     dew->pageno = pageno;
@@ -469,7 +469,7 @@ L_DEWARP  *dew;
 
     PROCNAME("dewarpCreateRef");
 
-    if ((dew = (L_DEWARP *)CALLOC(1, sizeof(L_DEWARP))) == NULL)
+    if ((dew = (L_DEWARP *)LEPT_CALLOC(1, sizeof(L_DEWARP))) == NULL)
         return (L_DEWARP *)ERROR_PTR("dew not made", procName, NULL);
     dew->pageno = pageno;
     dew->hasref = 1;
@@ -505,7 +505,7 @@ L_DEWARP  *dew;
     fpixDestroy(&dew->fullhdispar);
     numaDestroy(&dew->namidys);
     numaDestroy(&dew->nacurves);
-    FREE(dew);
+    LEPT_FREE(dew);
     *pdew = NULL;
     return;
 }
@@ -578,13 +578,13 @@ L_DEWARPA  *dewa;
     if (maxdist < 0)
          maxdist = DEFAULT_MAX_REF_DIST;
 
-    if ((dewa = (L_DEWARPA *)CALLOC(1, sizeof(L_DEWARPA))) == NULL)
+    if ((dewa = (L_DEWARPA *)LEPT_CALLOC(1, sizeof(L_DEWARPA))) == NULL)
         return (L_DEWARPA *)ERROR_PTR("dewa not made", procName, NULL);
     if ((dewa->dewarp =
-         (L_DEWARP **)CALLOC(nptrs, sizeof(L_DEWARPA *))) == NULL)
+         (L_DEWARP **)LEPT_CALLOC(nptrs, sizeof(L_DEWARPA *))) == NULL)
         return (L_DEWARPA *)ERROR_PTR("dewarp ptrs not made", procName, NULL);
     if ((dewa->dewarpcache =
-        (L_DEWARP **)CALLOC(nptrs, sizeof(L_DEWARPA *))) == NULL)
+        (L_DEWARP **)LEPT_CALLOC(nptrs, sizeof(L_DEWARPA *))) == NULL)
         return (L_DEWARPA *)ERROR_PTR("dewarpcache ptrs not made",
                                       procName, NULL);
     dewa->nalloc = nptrs;
@@ -717,9 +717,9 @@ L_DEWARPA  *dewa;
     numaDestroy(&dewa->namodels);
     numaDestroy(&dewa->napages);
 
-    FREE(dewa->dewarp);
-    FREE(dewa->dewarpcache);
-    FREE(dewa);
+    LEPT_FREE(dewa->dewarp);
+    LEPT_FREE(dewa->dewarpcache);
+    LEPT_FREE(dewa);
     *pdewa = NULL;
     return;
 }
@@ -1144,7 +1144,7 @@ FPIX      *fpixv, *fpixh;
     }
     getc(fp);
 
-    dew = (L_DEWARP *)CALLOC(1, sizeof(L_DEWARP));
+    dew = (L_DEWARP *)LEPT_CALLOC(1, sizeof(L_DEWARP));
     dew->w = w;
     dew->h = h;
     dew->pageno = pageno;

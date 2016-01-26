@@ -53,10 +53,10 @@ static char  mainName[] = "gifio_leaktest";
 
     vers = getLeptonicaVersion();
     fprintf(stderr, "%s\n", vers);
-    FREE(vers);
+    lept_free(vers);
     vers = getImagelibVersions();
     fprintf(stderr, "%s\n", vers);
-    FREE(vers);
+    lept_free(vers);
 
     if (argc > 2)
         return ERROR_INT(" Syntax:  gifio_leaktest [skipWriteTests]",

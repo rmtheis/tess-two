@@ -66,24 +66,28 @@
  *  (3) Other file types will get an "unknown format" error.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif  /* HAVE_CONFIG_H */
+
 #include <string.h>
 #include "allheaders.h"
 
     /* Output files for ioFormatTest(). */
-static const char *FILE_BMP  =  "/tmp/lept/format.bmp";
-static const char *FILE_PNG  =  "/tmp/lept/format.png";
-static const char *FILE_PNM  =  "/tmp/lept/format.pnm";
-static const char *FILE_G3   =  "/tmp/lept/format_g3.tif";
-static const char *FILE_G4   =  "/tmp/lept/format_g4.tif";
-static const char *FILE_RLE  =  "/tmp/lept/format_rle.tif";
-static const char *FILE_PB   =  "/tmp/lept/format_packbits.tif";
-static const char *FILE_LZW  =  "/tmp/lept/format_lzw.tif";
-static const char *FILE_ZIP  =  "/tmp/lept/format_zip.tif";
-static const char *FILE_TIFF =  "/tmp/lept/format.tif";
-static const char *FILE_JPG  =  "/tmp/lept/format.jpg";
-static const char *FILE_GIF  =  "/tmp/lept/format.gif";
-static const char *FILE_WEBP =  "/tmp/lept/format.webp";
-static const char *FILE_JP2K =  "/tmp/lept/format.jp2";
+static const char *FILE_BMP  =  "/tmp/lept/format/file.bmp";
+static const char *FILE_PNG  =  "/tmp/lept/format/file.png";
+static const char *FILE_PNM  =  "/tmp/lept/format/file.pnm";
+static const char *FILE_G3   =  "/tmp/lept/format/file_g3.tif";
+static const char *FILE_G4   =  "/tmp/lept/format/file_g4.tif";
+static const char *FILE_RLE  =  "/tmp/lept/format/file_rle.tif";
+static const char *FILE_PB   =  "/tmp/lept/format/file_packbits.tif";
+static const char *FILE_LZW  =  "/tmp/lept/format/file_lzw.tif";
+static const char *FILE_ZIP  =  "/tmp/lept/format/file_zip.tif";
+static const char *FILE_TIFF =  "/tmp/lept/format/file.tif";
+static const char *FILE_JPG  =  "/tmp/lept/format/file.jpg";
+static const char *FILE_GIF  =  "/tmp/lept/format/file.gif";
+static const char *FILE_WEBP =  "/tmp/lept/format/file.webp";
+static const char *FILE_JP2K =  "/tmp/lept/format/file.jp2";
 
 static const unsigned char JP2K_CODESTREAM[4] = { 0xff, 0x4f, 0xff, 0x51 };
 static const unsigned char JP2K_IMAGE_DATA[12] = { 0x00, 0x00, 0x00, 0x0C,
@@ -324,7 +328,7 @@ PIX      *pix;
         ret = fgetJpegComment(fp, &comment);
         if (!ret && comment)
             pixSetText(pix, (char *)comment);
-        FREE(comment);
+        LEPT_FREE(comment);
         break;
 
     case IFF_PNG:
@@ -991,10 +995,6 @@ PIX     *pix;
 /*---------------------------------------------------------------------*
  *             Test function for I/O with different formats            *
  *---------------------------------------------------------------------*/
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
-#endif  /* HAVE_CONFIG_H */
-
 /*!
  *  ioFormatTest()
  *
@@ -1042,7 +1042,7 @@ PIXCMAP   *cmap;
     }
     pixDestroy(&pix1);
 
-    lept_mkdir("lept");
+    lept_mkdir("lept/format");
 
         /* Note that the reader automatically removes colormaps
          * from 1 bpp BMP images, but not from 8 bpp BMP images.

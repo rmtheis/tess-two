@@ -108,8 +108,8 @@ static char  mainName[] = "cleanpdf";
         splitPathAtExtension(tail, &basename, NULL);
         snprintf(buf, sizeof(buf), "pdfimages -j %s %s/%s",
                  fname, imagedir, basename);
-        FREE(tail);
-        FREE(basename);
+        lept_free(tail);
+        lept_free(basename);
         fprintf(stderr, "%s\n", buf);
         ret = system(buf);   /* pdfimages -j */
     }
@@ -140,8 +140,8 @@ static char  mainName[] = "cleanpdf";
         pixDestroy(&pix2);
         pixDestroy(&pix3);
         pixDestroy(&pix4);
-        FREE(tail);
-        FREE(basename);
+        lept_free(tail);
+        lept_free(basename);
     }
     sarrayDestroy(&sa);
 #endif

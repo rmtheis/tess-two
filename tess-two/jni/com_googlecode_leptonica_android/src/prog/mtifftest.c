@@ -174,29 +174,29 @@ static char  mainName[] = "mtifftest";
     numaAddNumber(naflags, 700);
     str = "<xmp>This is a Fake XMP packet</xmp>\n<text>Guess what ...?</text>";
     length = strlen(str);
-    sarrayAddString(savals, (char *)str, 1);
-    sarrayAddString(satypes, (char *)"char*", 1);
+    sarrayAddString(savals, (char *)str, L_COPY);
+    sarrayAddString(satypes, (char *)"char*", L_COPY);
     numaAddNumber(nasizes, length);  /* get it all */
 
     numaAddNumber(naflags, 269);  /* DOCUMENTNAME */
-    sarrayAddString(savals, (char *)"One silly title", 1);
-    sarrayAddString(satypes, (char *)"const char*", 1);
+    sarrayAddString(savals, (char *)"One silly title", L_COPY);
+    sarrayAddString(satypes, (char *)"const char*", L_COPY);
     numaAddNumber(naflags, 270);  /* IMAGEDESCRIPTION */
-    sarrayAddString(savals, (char *)"One page of text", 1);
-    sarrayAddString(satypes, (char *)"const char*", 1);
+    sarrayAddString(savals, (char *)"One page of text", L_COPY);
+    sarrayAddString(satypes, (char *)"const char*", L_COPY);
         /* the max sample is used by rendering programs
          * to scale the dynamic range */
     numaAddNumber(naflags, 281);  /* MAXSAMPLEVALUE */
-    sarrayAddString(savals, (char *)"4", 1);
-    sarrayAddString(satypes, (char *)"l_uint16", 1);
+    sarrayAddString(savals, (char *)"4", L_COPY);
+    sarrayAddString(satypes, (char *)"l_uint16", L_COPY);
         /* note that date is required to be a 20 byte string */
     numaAddNumber(naflags, 306);  /* DATETIME */
-    sarrayAddString(savals, (char *)"2004:10:11 09:35:15", 1);
-    sarrayAddString(satypes, (char *)"const char*", 1);
+    sarrayAddString(savals, (char *)"2004:10:11 09:35:15", L_COPY);
+    sarrayAddString(satypes, (char *)"const char*", L_COPY);
         /* note that page number requires 2 l_uint16 input */
     numaAddNumber(naflags, 297);  /* PAGENUMBER */
-    sarrayAddString(savals, (char *)"1-412", 1);
-    sarrayAddString(satypes, (char *)"l_uint16-l_uint16", 1);
+    sarrayAddString(savals, (char *)"1-412", L_COPY);
+    sarrayAddString(satypes, (char *)"l_uint16-l_uint16", L_COPY);
     pixWriteTiffCustom("/tmp/tiff/tags.tif", pix, IFF_TIFF_G4, "w", naflags,
                        savals, satypes, nasizes);
     fprintTiffInfo(stderr, (char *)"/tmp/tiff/tags.tif");

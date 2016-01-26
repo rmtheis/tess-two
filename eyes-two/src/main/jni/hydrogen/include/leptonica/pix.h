@@ -10,7 +10,7 @@
  -     copyright notice, this list of conditions and the following
  -     disclaimer in the documentation and/or other materials
  -     provided with the distribution.
- - 
+ -
  -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -92,20 +92,24 @@
  *       Line orientation flags
  *       Scan direction flags
  *       Box size adjustment flags
+ *       Flags for selecting box boundaries from two choices
  *       Handling overlapping bounding boxes in boxa
+ *       Flags for replacing invalid boxes
  *       Horizontal warp
  *       Pixel selection for resampling
  *       Thinning flags
  *       Runlength flags
  *       Edge filter flags
- *       Handling negative values in conversion to unsigned int
  *       Subpixel color component ordering in LCD display
- *       Relative to zero flags
  *       HSV histogram flags
  *       Region flags (inclusion, exclusion)
  *       Flags for adding text to a pix
+ *       Flags for plotting on a pix
  *       Flags for selecting display program
  *       Flags in the 'special' pix field for non-default operations
+ *       Handling negative values in conversion to unsigned int
+ *       Relative to zero flags
+ *       Flags for adding or removing traling slash from string                *
  */
 
 
@@ -238,51 +242,56 @@ enum {
  * is found from PIX_SRC & PIX_DST.  Note that
  * PIX_NOT(PIX_CLR) = PIX_SET, and v.v., as they must be.
  *
- * We would like to use the following set of definitions:
+ * We use the following set of definitions:
  *
  *      #define   PIX_SRC      0xc
  *      #define   PIX_DST      0xa
- *      #define   PIX_NOT(op)  ((op) ^ 0xf)
+ *      #define   PIX_NOT(op)  (op) ^ 0xf
  *      #define   PIX_CLR      0x0
  *      #define   PIX_SET      0xf
  *
- * Now, these definitions differ from Sun's, in that Sun
- * left-shifted each value by 1 pixel, and used the least
- * significant bit as a flag for the "pseudo-operation" of
- * clipping.  We don't need this bit, because it is both
- * efficient and safe ALWAYS to clip the rectangles to the src
- * and dest images, which is what we do.  See the notes in rop.h
- * on the general choice of these bit flags.
+ * These definitions differ from Sun's, in that Sun left-shifted
+ * each value by 1 pixel, and used the least significant bit as a
+ * flag for the "pseudo-operation" of clipping.  We don't need
+ * this bit, because it is both efficient and safe ALWAYS to clip
+ * the rectangles to the src and dest images, which is what we do.
+ * See the notes in rop.h on the general choice of these bit flags.
  *
- * However, if you include Sun's xview package, you will get their
- * definitions, and because I like using these flags, we will
- * adopt the original Sun definitions to avoid redefinition conflicts.
+ * [If for some reason you need compatibility with Sun's xview package,
+ * you can adopt the original Sun definitions to avoid redefinition conflicts:
  *
- * Then we have, for reference, the following 16 unique op flags:
+ *      #define   PIX_SRC      (0xc << 1)
+ *      #define   PIX_DST      (0xa << 1)
+ *      #define   PIX_NOT(op)  ((op) ^ 0x1e)
+ *      #define   PIX_CLR      (0x0 << 1)
+ *      #define   PIX_SET      (0xf << 1)
+ * ]
  *
- *      PIX_CLR                           00000             0x0
- *      PIX_SET                           11110             0x1e
- *      PIX_SRC                           11000             0x18
- *      PIX_DST                           10100             0x14
- *      PIX_NOT(PIX_SRC)                  00110             0x06
- *      PIX_NOT(PIX_DST)                  01010             0x0a
- *      PIX_SRC | PIX_DST                 11100             0x1c
- *      PIX_SRC & PIX_DST                 10000             0x10
- *      PIX_SRC ^ PIX_DST                 01100             0x0c
- *      PIX_NOT(PIX_SRC) | PIX_DST        10110             0x16
- *      PIX_NOT(PIX_SRC) & PIX_DST        00100             0x04
- *      PIX_SRC | PIX_NOT(PIX_DST)        11010             0x1a
- *      PIX_SRC & PIX_NOT(PIX_DST)        01000             0x08
- *      PIX_NOT(PIX_SRC | PIX_DST)        00010             0x02
- *      PIX_NOT(PIX_SRC & PIX_DST)        01110             0x0e
- *      PIX_NOT(PIX_SRC ^ PIX_DST)        10010             0x12
+ * We have, for reference, the following 16 unique op flags:
+ *
+ *      PIX_CLR                           0000             0x0
+ *      PIX_SET                           1111             0xf
+ *      PIX_SRC                           1100             0xc
+ *      PIX_DST                           1010             0xa
+ *      PIX_NOT(PIX_SRC)                  0011             0x3
+ *      PIX_NOT(PIX_DST)                  0101             0x5
+ *      PIX_SRC | PIX_DST                 1110             0xe
+ *      PIX_SRC & PIX_DST                 1000             0x8
+ *      PIX_SRC ^ PIX_DST                 0110             0x6
+ *      PIX_NOT(PIX_SRC) | PIX_DST        1011             0xb
+ *      PIX_NOT(PIX_SRC) & PIX_DST        0010             0x2
+ *      PIX_SRC | PIX_NOT(PIX_DST)        1101             0xd
+ *      PIX_SRC & PIX_NOT(PIX_DST)        0100             0x4
+ *      PIX_NOT(PIX_SRC | PIX_DST)        0001             0x1
+ *      PIX_NOT(PIX_SRC & PIX_DST)        0111             0x7
+ *      PIX_NOT(PIX_SRC ^ PIX_DST)        1001             0x9
  *
  *-------------------------------------------------------------------------*/
-#define   PIX_SRC      (0xc << 1)
-#define   PIX_DST      (0xa << 1)
-#define   PIX_NOT(op)  ((op) ^ 0x1e)
-#define   PIX_CLR      (0x0 << 1)
-#define   PIX_SET      (0xf << 1)
+#define   PIX_SRC      (0xc)
+#define   PIX_DST      (0xa)
+#define   PIX_NOT(op)  ((op) ^ 0x0f)
+#define   PIX_CLR      (0x0)
+#define   PIX_SET      (0xf)
 
 #define   PIX_PAINT    (PIX_SRC | PIX_DST)
 #define   PIX_MASK     (PIX_SRC & PIX_DST)
@@ -324,7 +333,7 @@ enum {
  *           colors are ordered from MSB to LSB, as follows:
  *
  *                |  MSB  |  2nd MSB  |  3rd MSB  |  LSB  |
- *                   red      green       blue      alpha 
+ *                   red      green       blue      alpha
  *                    0         1           2         3   (big-endian)
  *                    3         2           1         0   (little-endian)
  *
@@ -728,7 +737,8 @@ enum {
     L_SELECT_GREEN = 2,           /* use green component                   */
     L_SELECT_BLUE = 3,            /* use blue component                    */
     L_SELECT_MIN = 4,             /* use min color component               */
-    L_SELECT_MAX = 5              /* use max color component               */
+    L_SELECT_MAX = 5,             /* use max color component               */
+    L_SELECT_AVERAGE = 6          /* use average of color components       */
 };
 
 
@@ -736,9 +746,12 @@ enum {
  *                         16-bit conversion flags                         *
  *-------------------------------------------------------------------------*/
 enum {
-    L_LS_BYTE = 0,                /* use LSB                               */
-    L_MS_BYTE = 1,                /* use MSB                               */
-    L_CLIP_TO_255 = 2             /* use max(val, 255)                     */
+    L_LS_BYTE = 1,                /* use LSB                               */
+    L_MS_BYTE = 2,                /* use MSB                               */
+    L_CLIP_TO_FF = 3,             /* use max(val, 255)                     */
+    L_LS_TWO_BYTES = 4,           /* use two LSB                           */
+    L_MS_TWO_BYTES = 5,           /* use two MSB                           */
+    L_CLIP_TO_FFFF = 6            /* use max(val, 65535)                   */
 };
 
 
@@ -900,7 +913,9 @@ enum {
     L_FROM_BOT = 3,            /* scan from bottom                         */
     L_SCAN_NEGATIVE = 4,       /* scan in negative direction               */
     L_SCAN_POSITIVE = 5,       /* scan in positive direction               */
-    L_SCAN_BOTH = 6            /* scan in both directions                  */
+    L_SCAN_BOTH = 6,           /* scan in both directions                  */
+    L_SCAN_HORIZONTAL = 7,     /* horizontal scan (direction unimportant)  */
+    L_SCAN_VERTICAL = 8        /* vertical scan (direction unimportant)    */
 };
 
 
@@ -929,11 +944,30 @@ enum {
 
 
 /*-------------------------------------------------------------------------*
+ *          Flags for selecting box boundaries from two choices            *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_USE_MINSIZE = 1,             /* use boundaries giving min size       */
+    L_USE_MAXSIZE = 2,             /* use boundaries giving max size       */
+    L_SUB_ON_BIG_DIFF = 3,         /* substitute boundary if big abs diff  */
+    L_USE_CAPPED_MIN = 4,          /* substitute boundary with capped min  */
+    L_USE_CAPPED_MAX = 5           /* substitute boundary with capped max  */
+};
+
+/*-------------------------------------------------------------------------*
  *              Handling overlapping bounding boxes in boxa                *
  *-------------------------------------------------------------------------*/
 enum {
     L_COMBINE = 1,           /* resize to bounding region; remove smaller  */
     L_REMOVE_SMALL = 2       /* only remove smaller                        */
+};
+
+/*-------------------------------------------------------------------------*
+ *                    Flags for replacing invalid boxes                    *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_USE_ALL_BOXES = 1,         /* consider all boxes in the sequence     */
+    L_USE_SAME_PARITY_BOXES = 2  /* consider boxes with the same parity    */
 };
 
 /*-------------------------------------------------------------------------*
@@ -987,15 +1021,6 @@ enum {
 
 
 /*-------------------------------------------------------------------------*
- *          Handling negative values in conversion to unsigned int         *
- *-------------------------------------------------------------------------*/
-enum {
-    L_CLIP_TO_ZERO = 1,        /* Clip negative values to 0                */
-    L_TAKE_ABSVAL = 2          /* Convert to positive using L_ABS()        */
-};
-
-
-/*-------------------------------------------------------------------------*
  *             Subpixel color component ordering in LCD display            *
  *-------------------------------------------------------------------------*/
 enum {
@@ -1003,16 +1028,6 @@ enum {
     L_SUBPIXEL_ORDER_BGR = 2,   /* sensor order left-to-right BGR          */
     L_SUBPIXEL_ORDER_VRGB = 3,  /* sensor order top-to-bottom RGB          */
     L_SUBPIXEL_ORDER_VBGR = 4   /* sensor order top-to-bottom BGR          */
-};
-
-
-/*-------------------------------------------------------------------------*
- *                         Relative to zero flags                          *
- *-------------------------------------------------------------------------*/
-enum {
-    L_LESS_THAN_ZERO = 1,      /* Choose values less than zero             */
-    L_EQUAL_TO_ZERO = 2,       /* Choose values equal to zero              */
-    L_GREATER_THAN_ZERO = 3    /* Choose values greater than zero          */
 };
 
 
@@ -1051,6 +1066,19 @@ enum {
 
 
 /*-------------------------------------------------------------------------*
+ *                       Flags for plotting on a pix                       *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_PLOT_AT_TOP = 1,         /* Plot horizontally at top                 */
+    L_PLOT_AT_MID_HORIZ = 2,   /* Plot horizontally at middle              */
+    L_PLOT_AT_BOT = 3,         /* Plot horizontally at bottom              */
+    L_PLOT_AT_LEFT = 4,        /* Plot vertically at left                  */
+    L_PLOT_AT_MID_VERT = 5,    /* Plot vertically at middle                */
+    L_PLOT_AT_RIGHT = 6        /* Plot vertically at right                 */
+};
+
+
+/*-------------------------------------------------------------------------*
  *                   Flags for selecting display program                   *
  *-------------------------------------------------------------------------*/
 enum {
@@ -1063,11 +1091,41 @@ enum {
 
 /*-------------------------------------------------------------------------*
  *    Flag(s) used in the 'special' pix field for non-default operations   *
- *      - 0 is default                                                     *
- *      - 10-19 are reserved for zlib compression in png write             *
+ *      - 0 is default for chroma sampling in jpeg                         *
+ *      - 10-19 are used for zlib compression in png write                 *
+ *      - 4 and 8 are used for specifying connectivity in labelling        *
  *-------------------------------------------------------------------------*/
 enum {
     L_NO_CHROMA_SAMPLING_JPEG = 1     /* Write full resolution chroma      */
 };
+
+
+/*-------------------------------------------------------------------------*
+ *          Handling negative values in conversion to unsigned int         *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_CLIP_TO_ZERO = 1,        /* Clip negative values to 0                */
+    L_TAKE_ABSVAL = 2          /* Convert to positive using L_ABS()        */
+};
+
+
+/*-------------------------------------------------------------------------*
+ *                        Relative to zero flags                           *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_LESS_THAN_ZERO = 1,      /* Choose values less than zero             */
+    L_EQUAL_TO_ZERO = 2,       /* Choose values equal to zero              */
+    L_GREATER_THAN_ZERO = 3    /* Choose values greater than zero          */
+};
+
+
+/*-------------------------------------------------------------------------*
+ *         Flags for adding or removing traling slash from string          *
+ *-------------------------------------------------------------------------*/
+enum {
+    L_ADD_TRAIL_SLASH = 1,     /* Add trailing slash to string             */
+    L_REMOVE_TRAIL_SLASH = 2   /* Remove trailing slash from string        */
+};
+
 
 #endif  /* LEPTONICA_PIX_H */

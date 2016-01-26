@@ -351,7 +351,7 @@ L_RDID   *did;
         /* Set up the array for ycent1.  This gives the y-centroid location
          * for a window of width w2, starting at location i. */
     nx = w1 - w2 + 1;  /* number of positions w2 can be placed in w1 */
-    ycent1 = (l_int32 *)CALLOC(nx, sizeof(l_int32));
+    ycent1 = (l_int32 *)LEPT_CALLOC(nx, sizeof(l_int32));
     arraysum = numaGetIArray(nasum);
     arraymoment = numaGetIArray(namoment);
     for (i = 0, sum = 0, moment = 0; i < w2; i++) {
@@ -395,9 +395,9 @@ L_RDID   *did;
 
     pixDestroy(&pix2);
     pixDestroy(&pix3);
-    FREE(ycent1);
-    FREE(arraysum);
-    FREE(arraymoment);
+    LEPT_FREE(ycent1);
+    LEPT_FREE(arraysum);
+    LEPT_FREE(arraymoment);
     return 0;
 }
 
@@ -532,7 +532,7 @@ L_RDID     *did;
         *ppixdb = recogShowPath(recog, 0);
     }
 
-    FREE(area2);
+    LEPT_FREE(area2);
     return 0;
 }
 
@@ -592,7 +592,7 @@ L_RDID    *did;
         }
         pixDestroy(&pix1);
         boxDestroy(&box1);
-        FREE(text);
+        LEPT_FREE(text);
     }
 
 /*    numaWriteStream(stderr, recog->did->nadely_r);  */
@@ -655,7 +655,7 @@ L_RDID    *did;
         pixXor(pix4, pix4, pix3);
         numaGetFValue(nascore_s, i, &score);
         snprintf(textstr, sizeof(textstr), "%5.3f", score);
-        pix5 = pixAddSingleTextline(pix4, bmf, textstr, 1, L_ADD_BELOW);
+        pix5 = pixAddTextlines(pix4, bmf, textstr, 1, L_ADD_BELOW);
         numaGetIValue(naxloc_s, i, &xloc);
         numaGetIValue(nadely_s, i, &dely);
         pixPaintThroughMask(pix1, pix5, 4 * xloc, 4 * dely, 0xff000000);
@@ -698,7 +698,7 @@ L_RDID  *did;
 
     recogDestroyDid(recog);
 
-    did = (L_RDID *)CALLOC(1, sizeof(L_RDID));
+    did = (L_RDID *)LEPT_CALLOC(1, sizeof(L_RDID));
     recog->did = did;
     did->pixs = pixClone(pixs);
     did->narray = recog->setsize;
@@ -715,16 +715,16 @@ L_RDID  *did;
     did->nascore_r = numaCreate(5);
 
         /* Make the arrays */
-    did->setwidth = (l_int32 *)CALLOC(did->narray, sizeof(l_int32));
-    did->counta = (l_int32 **)CALLOC(did->narray, sizeof(l_int32 *));
-    did->delya = (l_int32 **)CALLOC(did->narray, sizeof(l_int32 *));
-    did->beta = (l_float32 *)CALLOC(5, sizeof(l_float32));
-    did->gamma = (l_float32 *)CALLOC(5, sizeof(l_float32));
-    did->trellisscore = (l_float32 *)CALLOC(did->size, sizeof(l_float32));
-    did->trellistempl = (l_int32 *)CALLOC(did->size, sizeof(l_int32));
+    did->setwidth = (l_int32 *)LEPT_CALLOC(did->narray, sizeof(l_int32));
+    did->counta = (l_int32 **)LEPT_CALLOC(did->narray, sizeof(l_int32 *));
+    did->delya = (l_int32 **)LEPT_CALLOC(did->narray, sizeof(l_int32 *));
+    did->beta = (l_float32 *)LEPT_CALLOC(5, sizeof(l_float32));
+    did->gamma = (l_float32 *)LEPT_CALLOC(5, sizeof(l_float32));
+    did->trellisscore = (l_float32 *)LEPT_CALLOC(did->size, sizeof(l_float32));
+    did->trellistempl = (l_int32 *)LEPT_CALLOC(did->size, sizeof(l_int32));
     for (i = 0; i < did->narray; i++) {
-        did->counta[i] = (l_int32 *)CALLOC(did->size, sizeof(l_int32));
-        did->delya[i] = (l_int32 *)CALLOC(did->size, sizeof(l_int32));
+        did->counta[i] = (l_int32 *)LEPT_CALLOC(did->size, sizeof(l_int32));
+        did->delya[i] = (l_int32 *)LEPT_CALLOC(did->size, sizeof(l_int32));
     }
 
         /* Populate the setwidth array */
@@ -764,16 +764,16 @@ L_RDID  *did;
         return ERROR_INT("ptr array is null; shouldn't happen!", procName, 1);
 
     for (i = 0; i < did->narray; i++) {
-        FREE(did->counta[i]);
-        FREE(did->delya[i]);
+        LEPT_FREE(did->counta[i]);
+        LEPT_FREE(did->delya[i]);
     }
-    FREE(did->setwidth);
-    FREE(did->counta);
-    FREE(did->delya);
-    FREE(did->beta);
-    FREE(did->gamma);
-    FREE(did->trellisscore);
-    FREE(did->trellistempl);
+    LEPT_FREE(did->setwidth);
+    LEPT_FREE(did->counta);
+    LEPT_FREE(did->delya);
+    LEPT_FREE(did->beta);
+    LEPT_FREE(did->gamma);
+    LEPT_FREE(did->trellisscore);
+    LEPT_FREE(did->trellistempl);
     pixDestroy(&did->pixs);
     numaDestroy(&did->nasum);
     numaDestroy(&did->namoment);
@@ -787,7 +787,7 @@ L_RDID  *did;
     numaDestroy(&did->nadely_r);
     numaDestroy(&did->nawidth_r);
     numaDestroy(&did->nascore_r);
-    FREE(did);
+    LEPT_FREE(did);
     recog->did = NULL;
     return 0;
 }

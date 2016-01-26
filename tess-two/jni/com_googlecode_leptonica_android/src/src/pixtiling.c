@@ -36,7 +36,6 @@
  *        l_int32          pixTilingNoStripOnPaint()
  *        l_int32          pixTilingPaintTile()
  *
- *
  *   This provides a simple way to split an image into tiles
  *   and to perform operations independently on each tile.
  *
@@ -95,7 +94,8 @@
  *              ny    (number of tiles down image)
  *              w     (desired width of each tile)
  *              h     (desired height of each tile)
- *              overlap (amount of overlap into neighboring tile on each side)
+ *              xoverlap (overlap into neighboring tiles on each side)
+ *              yoverlap (overlap into neighboring tiles above and below)
  *      Return: pixtiling, or null on error
  *
  *  Notes:
@@ -115,11 +115,11 @@
  */
 PIXTILING *
 pixTilingCreate(PIX     *pixs,
-		l_int32  nx,
-		l_int32  ny,
-		l_int32  w,
-		l_int32  h,
-		l_int32  xoverlap,
+                l_int32  nx,
+                l_int32  ny,
+                l_int32  w,
+                l_int32  h,
+                l_int32  xoverlap,
                 l_int32  yoverlap)
 {
 l_int32     width, height;
@@ -150,7 +150,7 @@ PIXTILING  *pt;
         return (PIXTILING *)ERROR_PTR("overlap too large", procName, NULL);
     }
 
-    if ((pt = (PIXTILING *)CALLOC(1, sizeof(PIXTILING))) == NULL)
+    if ((pt = (PIXTILING *)LEPT_CALLOC(1, sizeof(PIXTILING))) == NULL)
         return (PIXTILING *)ERROR_PTR("pt not made", procName, NULL);
     pt->pix = pixClone(pixs);
     pt->xoverlap = xoverlap;
@@ -186,7 +186,7 @@ PIXTILING  *pt;
         return;
 
     pixDestroy(&pt->pix);
-    FREE(pt);
+    LEPT_FREE(pt);
     *ppt = NULL;
     return;
 }
@@ -271,7 +271,7 @@ PIX     *pixs, *pixt, *pixd;
         return (PIX *)ERROR_PTR("invalid column index j", procName, NULL);
 
         /* Grab the tile with as much overlap as exists within the
-	 * input pix.   First, compute the (left, top) coordinates.  */
+         * input pix.   First, compute the (left, top) coordinates.  */
     pixGetDimensions(pixs, &wpix, &hpix, NULL);
     pixTilingGetSize(pt, &wt, &ht);
     xoverlap = pt->xoverlap;
@@ -282,7 +282,7 @@ PIX     *pixs, *pixt, *pixd;
     top = L_MAX(0, i * ht - yoverlap);
 
         /* Get the width and height of the tile, including whatever
-	 * overlap is available. */
+         * overlap is available. */
     if (nx == 1)
         width = wpix;
     else if (j == 0)
@@ -304,10 +304,14 @@ PIX     *pixs, *pixt, *pixd;
     pixt = pixClipRectangle(pixs, box, NULL);
     boxDestroy(&box);
 
-       /* Add overlap as a mirrored border, in the 8 special cases where
-	* the tile touches the border of the input pix.  The xtratop (etc)
-	* parameters are required where the tile is either full width
-	* or full height.  */
+        /* If no overlap, do not add any special case borders */
+    if (xoverlap == 0 && yoverlap == 0)
+        return pixt;
+
+        /* Add overlap as a mirrored border, in the 8 special cases where
+         * the tile touches the border of the input pix.  The xtratop (etc)
+         * parameters are required where the tile is either full width
+         * or full height.  */
     xtratop = xtrabot = xtraleft = xtraright = 0;
     if (nx == 1)
         xtraleft = xtraright = xoverlap;
@@ -400,12 +404,14 @@ l_int32  w, h;
 
         /* Strip added border pixels off if requested */
     pixGetDimensions(pixs, &w, &h, NULL);
-    if (pt->strip == TRUE)
+    if (pt->strip == TRUE) {
         pixRasterop(pixd, j * pt->w, i * pt->h,
                     w - 2 * pt->xoverlap, h - 2 * pt->yoverlap, PIX_SRC,
                     pixs, pt->xoverlap, pt->yoverlap);
-    else
+    } else {
         pixRasterop(pixd, j * pt->w, i * pt->h, w, h, PIX_SRC, pixs, 0, 0);
+    }
 
     return 0;
 }
+

@@ -44,14 +44,14 @@
  *      For implementation details, see bbuffer.c.
  */
 
-struct ByteBuffer
+struct L_ByteBuffer
 {
     l_int32      nalloc;       /* size of allocated byte array            */
     l_int32      n;            /* number of bytes read into to the array  */
     l_int32      nwritten;     /* number of bytes written from the array  */
     l_uint8     *array;        /* byte array                              */
 };
-typedef struct ByteBuffer BBUFFER;
+typedef struct L_ByteBuffer L_BBUFFER;
 
 
 #endif  /* LEPTONICA_BBUFFER_H */

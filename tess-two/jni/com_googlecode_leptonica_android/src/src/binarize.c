@@ -722,9 +722,9 @@ PIX        *pixsd, *pixd;
     usetab = (w * h > 100000) ? 1 : 0;
     if (usetab) {
         tabsize = 1 << 16;
-        tab = (l_float32 *)CALLOC(tabsize, sizeof(l_float32));
+        tab = (l_float32 *)LEPT_CALLOC(tabsize, sizeof(l_float32));
         for (i = 0; i < tabsize; i++)
-            tab[i] = (l_float32)sqrt((l_float64)i);
+            tab[i] = sqrtf((l_float32)i);
     }
 
     pixd = pixCreate(w, h, 8);
@@ -752,14 +752,14 @@ PIX        *pixsd, *pixd;
             if (usetab)
                 sd = tab[var];
             else
-                sd = (l_float32)sqrt((l_float32)var);
+                sd = sqrtf((l_float32)var);
             if (ppixsd) SET_DATA_BYTE(linesd, j, (l_int32)sd);
             thresh = (l_int32)(mv * (1.0 - factor * (1.0 - sd / 128.)));
             SET_DATA_BYTE(lined, j, thresh);
         }
     }
 
-    if (usetab) FREE(tab);
+    if (usetab) LEPT_FREE(tab);
     return pixd;
 }
 

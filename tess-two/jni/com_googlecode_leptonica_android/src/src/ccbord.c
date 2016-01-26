@@ -245,12 +245,12 @@
  *
  */
 
-#include <string.h>
-#include "allheaders.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config_auto.h"
 #endif  /* HAVE_CONFIG_H */
+
+#include <string.h>
+#include "allheaders.h"
 
 static const l_int32  INITIAL_PTR_ARRAYSIZE = 20;    /* n'import quoi */
 
@@ -303,7 +303,7 @@ CCBORDA  *ccba;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((ccba = (CCBORDA *)CALLOC(1, sizeof(CCBORDA))) == NULL)
+    if ((ccba = (CCBORDA *)LEPT_CALLOC(1, sizeof(CCBORDA))) == NULL)
         return (CCBORDA *)ERROR_PTR("ccba not made", procName, NULL);
     if (pixs) {
         ccba->pix = pixClone(pixs);
@@ -313,7 +313,7 @@ CCBORDA  *ccba;
     ccba->n = 0;
     ccba->nalloc = n;
 
-    if ((ccba->ccb = (CCBORD **)CALLOC(n, sizeof(CCBORD *))) == NULL)
+    if ((ccba->ccb = (CCBORD **)LEPT_CALLOC(n, sizeof(CCBORD *))) == NULL)
         return (CCBORDA *)ERROR_PTR("ccba ptrs not made", procName, NULL);
 
     return ccba;
@@ -345,8 +345,8 @@ CCBORDA  *ccba;
     pixDestroy(&ccba->pix);
     for (i = 0; i < ccba->n; i++)
         ccbDestroy(&ccba->ccb[i]);
-    FREE(ccba->ccb);
-    FREE(ccba);
+    LEPT_FREE(ccba->ccb);
+    LEPT_FREE(ccba);
     *pccba = NULL;
     return;
 }
@@ -373,7 +373,7 @@ PTAA    *local;
             return (CCBORD *)ERROR_PTR("pixs not binary", procName, NULL);
     }
 
-    if ((ccb = (CCBORD *)CALLOC(1, sizeof(CCBORD))) == NULL)
+    if ((ccb = (CCBORD *)LEPT_CALLOC(1, sizeof(CCBORD))) == NULL)
         return (CCBORD *)ERROR_PTR("ccb not made", procName, NULL);
     ccb->refcount++;
     if (pixs)
@@ -431,7 +431,7 @@ CCBORD  *ccb;
             ptaDestroy(&ccb->splocal);
         if (ccb->spglobal)
             ptaDestroy(&ccb->spglobal);
-        FREE(ccb);
+        LEPT_FREE(ccb);
         *pccb = NULL;
     }
     return;
@@ -2182,18 +2182,18 @@ l_int32
 ccbaWriteStream(FILE     *fp,
                 CCBORDA  *ccba)
 {
-char      strbuf[256];
-l_uint8   bval;
-l_uint8  *datain, *dataout;
-l_int32   i, j, k, bx, by, bw, bh, val, startx, starty;
-l_int32   ncc, nb, n;
-l_uint32  w, h;
-size_t    inbytes, outbytes;
-BBUFFER  *bbuf;
-CCBORD   *ccb;
-NUMA     *na;
-NUMAA    *naa;
-PTA      *pta;
+char        strbuf[256];
+l_uint8     bval;
+l_uint8    *datain, *dataout;
+l_int32     i, j, k, bx, by, bw, bh, val, startx, starty;
+l_int32     ncc, nb, n;
+l_uint32    w, h;
+size_t      inbytes, outbytes;
+L_BBUFFER  *bbuf;
+CCBORD     *ccb;
+NUMA       *na;
+NUMAA      *naa;
+PTA        *pta;
 
     PROCNAME("ccbaWriteStream");
 
@@ -2263,8 +2263,8 @@ PTA      *pta;
     dataout = zlibCompress(datain, inbytes, &outbytes);
     fwrite(dataout, 1, outbytes, fp);
 
-    FREE(datain);
-    FREE(dataout);
+    LEPT_FREE(datain);
+    LEPT_FREE(dataout);
     return 0;
 
 #endif  /* !HAVE_LIBZ */
@@ -2424,8 +2424,8 @@ NUMAA    *step;
             }
         }
     }
-    FREE(datain);
-    FREE(dataout);
+    LEPT_FREE(datain);
+    LEPT_FREE(dataout);
 
     return ccba;
 
@@ -2460,7 +2460,7 @@ char  *svgstr;
         return ERROR_INT("svgstr not made", procName, 1);
 
     l_binaryWrite(filename, "w", svgstr, strlen(svgstr));
-    FREE(svgstr);
+    LEPT_FREE(svgstr);
 
     return 0;
 }
@@ -2501,9 +2501,9 @@ SARRAY  *sa;
 
     if ((sa = sarrayCreate(0)) == NULL)
         return (char *)ERROR_PTR("sa not made", procName, NULL);
-    sarrayAddString(sa, line0, 1);
-    sarrayAddString(sa, line1, 1);
-    sarrayAddString(sa, line2, 1);
+    sarrayAddString(sa, line0, L_COPY);
+    sarrayAddString(sa, line1, L_COPY);
+    sarrayAddString(sa, line2, L_COPY);
 
     ncc = ccbaGetCount(ccba);
     for (i = 0; i < ncc; i++) {
@@ -2511,18 +2511,18 @@ SARRAY  *sa;
             return (char *)ERROR_PTR("ccb not found", procName, NULL);
         if ((pta = ccb->spglobal) == NULL)
             return (char *)ERROR_PTR("spglobal not made", procName, NULL);
-        sarrayAddString(sa, line3, 1);
+        sarrayAddString(sa, line3, L_COPY);
         npt = ptaGetCount(pta);
         for (j = 0; j < npt; j++) {
             ptaGetIPt(pta, j, &x, &y);
             sprintf(smallbuf, "%0d,%0d", x, y);
-            sarrayAddString(sa, smallbuf, 1);
+            sarrayAddString(sa, smallbuf, L_COPY);
         }
-        sarrayAddString(sa, line4, 1);
+        sarrayAddString(sa, line4, L_COPY);
         ccbDestroy(&ccb);
     }
-    sarrayAddString(sa, line5, 1);
-    sarrayAddString(sa, space, 1);
+    sarrayAddString(sa, line5, L_COPY);
+    sarrayAddString(sa, space, L_COPY);
 
     svgstr = sarrayToString(sa, 1);
 /*    fprintf(stderr, "%s", svgstr); */

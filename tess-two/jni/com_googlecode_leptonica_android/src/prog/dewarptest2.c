@@ -35,8 +35,8 @@
  *     where: method = 1 (use single page dewarp function)
  *                     2 (break down into multiple steps)
  *
- *   Default image is cat-35.jpg.
- *   Others are 1555-7.jpg, etc.
+ *   Default image is cat.035.jpg.
+ *   Others are 1555.007.jpg, etc.
  */
 
 #include "allheaders.h"
@@ -57,7 +57,7 @@ static char  mainName[] = "dewarptest2";
                          mainName, 1);
 
     if (argc == 2) {
-        pixs = pixRead("cat-35.jpg");
+        pixs = pixRead("cat.035.jpg");
         pageno = 35;
     }
     else {
@@ -67,13 +67,13 @@ static char  mainName[] = "dewarptest2";
     if (!pixs)
         return ERROR_INT("image not read", mainName, 1);
     method = atoi(argv[1]);
-    lept_mkdir("lept");
+    lept_mkdir("lept/dewarp");
 
     if (method == 1) {  /* Use single page dewarp function */
-        dewarpSinglePage(pixs, 1, 100, 1, &pixd, NULL, 1);
+        dewarpSinglePage(pixs, 0, 1, 1, &pixd, NULL, 1);
         pixDisplay(pixd, 100, 100);
-    } else {  /* Break down into multiple steps; require min of only 6 lines */
-        dewa = dewarpaCreate(40, 30, 1, 6, 50);
+    } else {  /* Break down into multiple steps; require min of only 8 lines */
+        dewa = dewarpaCreate(40, 30, 1, 8, 50);
         dewarpaUseBothArrays(dewa, 1);
 
 #if NORMALIZE
@@ -92,9 +92,9 @@ static char  mainName[] = "dewarptest2";
             /* Run the basic functions */
         dew1 = dewarpCreate(pixb, pageno);
         dewarpaInsertDewarp(dewa, dew1);
-        dewarpBuildPageModel(dew1, "/tmp/lept/test2_model.pdf");
+        dewarpBuildPageModel(dew1, "/tmp/lept/dewarp/test2_model.pdf");
         dewarpaApplyDisparity(dewa, pageno, pixg, -1, 0, 0, &pixd,
-                              "/tmp/lept/test2_apply.pdf");
+                              "/tmp/lept/dewarp/test2_apply.pdf");
 
         dewarpaInfo(stderr, dewa);
         dewarpaDestroy(&dewa);

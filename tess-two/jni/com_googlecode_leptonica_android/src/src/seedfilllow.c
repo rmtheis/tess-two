@@ -408,7 +408,7 @@ L_QUEUE  *lq_pixel;
                         }
                     }
                     if (boolval) {
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -432,7 +432,7 @@ L_QUEUE  *lq_pixel;
             pixel = (L_PIXEL *)lqueueRemove(lq_pixel);
             i = pixel->x;
             j = pixel->y;
-            FREE(pixel);
+            LEPT_FREE(pixel);
             lines = datas + i * wpls;
             linem = datam + i * wplm;
 
@@ -442,7 +442,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem - wplm, j);
                     if (val > val2 && val2 != maskval) {
                         SET_DATA_BYTE(lines - wpls, j, L_MIN(val, maskval));
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i - 1;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -454,7 +454,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem, j - 1);
                     if (val > val4 && val4 != maskval) {
                         SET_DATA_BYTE(lines, j - 1, L_MIN(val, maskval));
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j - 1;
                         lqueueAdd(lq_pixel, pixel);
@@ -465,7 +465,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem + wplm, j);
                     if (val > val7 && val7 != maskval) {
                         SET_DATA_BYTE(lines + wpls, j, L_MIN(val, maskval));
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i + 1;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -476,7 +476,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem, j + 1);
                     if (val > val5 && val5 != maskval) {
                         SET_DATA_BYTE(lines, j + 1, L_MIN(val, maskval));
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j + 1;
                         lqueueAdd(lq_pixel, pixel);
@@ -588,7 +588,7 @@ L_QUEUE  *lq_pixel;
                         }
                     }
                     if (boolval) {
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -612,7 +612,7 @@ L_QUEUE  *lq_pixel;
             pixel = (L_PIXEL *)lqueueRemove(lq_pixel);
             i = pixel->x;
             j = pixel->y;
-            FREE(pixel);
+            LEPT_FREE(pixel);
             lines = datas + i * wpls;
             linem = datam + i * wplm;
 
@@ -622,8 +622,9 @@ L_QUEUE  *lq_pixel;
                         val1 = GET_DATA_BYTE(lines - wpls, j - 1);
                         maskval = GET_DATA_BYTE(linem - wplm, j - 1);
                         if (val > val1 && val1 != maskval) {
-                            SET_DATA_BYTE(lines - wpls, j - 1, L_MIN(val, maskval));
-                            pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                            SET_DATA_BYTE(lines - wpls, j - 1,
+                                          L_MIN(val, maskval));
+                            pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                             pixel->x = i - 1;
                             pixel->y = j - 1;
                             lqueueAdd(lq_pixel, pixel);
@@ -633,8 +634,9 @@ L_QUEUE  *lq_pixel;
                         val3 = GET_DATA_BYTE(lines - wpls, j + 1);
                         maskval = GET_DATA_BYTE(linem - wplm, j + 1);
                         if (val > val3 && val3 != maskval) {
-                            SET_DATA_BYTE(lines - wpls, j + 1, L_MIN(val, maskval));
-                            pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                            SET_DATA_BYTE(lines - wpls, j + 1,
+                                          L_MIN(val, maskval));
+                            pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                             pixel->x = i - 1;
                             pixel->y = j + 1;
                             lqueueAdd(lq_pixel, pixel);
@@ -644,7 +646,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem - wplm, j);
                     if (val > val2 && val2 != maskval) {
                         SET_DATA_BYTE(lines - wpls, j, L_MIN(val, maskval));
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i - 1;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -656,7 +658,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem, j - 1);
                     if (val > val4 && val4 != maskval) {
                         SET_DATA_BYTE(lines, j - 1, L_MIN(val, maskval));
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j - 1;
                         lqueueAdd(lq_pixel, pixel);
@@ -667,8 +669,9 @@ L_QUEUE  *lq_pixel;
                         val6 = GET_DATA_BYTE(lines + wpls, j - 1);
                         maskval = GET_DATA_BYTE(linem + wplm, j - 1);
                         if (val > val6 && val6 != maskval) {
-                            SET_DATA_BYTE(lines + wpls, j - 1, L_MIN(val, maskval));
-                            pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                            SET_DATA_BYTE(lines + wpls, j - 1,
+                                          L_MIN(val, maskval));
+                            pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                             pixel->x = i + 1;
                             pixel->y = j - 1;
                             lqueueAdd(lq_pixel, pixel);
@@ -678,8 +681,9 @@ L_QUEUE  *lq_pixel;
                         val8 = GET_DATA_BYTE(lines + wpls, j + 1);
                         maskval = GET_DATA_BYTE(linem + wplm, j + 1);
                         if (val > val8 && val8 != maskval) {
-                            SET_DATA_BYTE(lines + wpls, j + 1, L_MIN(val, maskval));
-                            pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                            SET_DATA_BYTE(lines + wpls, j + 1,
+                                          L_MIN(val, maskval));
+                            pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                             pixel->x = i + 1;
                             pixel->y = j + 1;
                             lqueueAdd(lq_pixel, pixel);
@@ -689,7 +693,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem + wplm, j);
                     if (val > val7 && val7 != maskval) {
                         SET_DATA_BYTE(lines + wpls, j, L_MIN(val, maskval));
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i + 1;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -700,7 +704,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem, j + 1);
                     if (val > val5 && val5 != maskval) {
                         SET_DATA_BYTE(lines, j + 1, L_MIN(val, maskval));
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j + 1;
                         lqueueAdd(lq_pixel, pixel);
@@ -865,7 +869,7 @@ L_QUEUE  *lq_pixel;
                         }
                     }
                     if (boolval) {
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -889,7 +893,7 @@ L_QUEUE  *lq_pixel;
             pixel = (L_PIXEL *)lqueueRemove(lq_pixel);
             i = pixel->x;
             j = pixel->y;
-            FREE(pixel);
+            LEPT_FREE(pixel);
             lines = datas + i * wpls;
             linem = datam + i * wplm;
 
@@ -899,7 +903,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem - wplm, j);
                     if (val > val2 && val > maskval) {
                         SET_DATA_BYTE(lines - wpls, j, val);
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i - 1;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -911,7 +915,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem, j - 1);
                     if (val > val4 && val > maskval) {
                         SET_DATA_BYTE(lines, j - 1, val);
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j - 1;
                         lqueueAdd(lq_pixel, pixel);
@@ -922,7 +926,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem + wplm, j);
                     if (val > val7 && val > maskval) {
                         SET_DATA_BYTE(lines + wpls, j, val);
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i + 1;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -933,7 +937,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem, j + 1);
                     if (val > val5 && val > maskval) {
                         SET_DATA_BYTE(lines, j + 1, val);
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j + 1;
                         lqueueAdd(lq_pixel, pixel);
@@ -1052,7 +1056,7 @@ L_QUEUE  *lq_pixel;
                         }
                     }
                     if (boolval) {
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -1076,7 +1080,7 @@ L_QUEUE  *lq_pixel;
             pixel = (L_PIXEL *)lqueueRemove(lq_pixel);
             i = pixel->x;
             j = pixel->y;
-            FREE(pixel);
+            LEPT_FREE(pixel);
             lines = datas + i * wpls;
             linem = datam + i * wplm;
 
@@ -1087,7 +1091,7 @@ L_QUEUE  *lq_pixel;
                         maskval = GET_DATA_BYTE(linem - wplm, j - 1);
                         if (val > val1 && val > maskval) {
                             SET_DATA_BYTE(lines - wpls, j - 1, val);
-                            pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                            pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                             pixel->x = i - 1;
                             pixel->y = j - 1;
                             lqueueAdd(lq_pixel, pixel);
@@ -1098,7 +1102,7 @@ L_QUEUE  *lq_pixel;
                         maskval = GET_DATA_BYTE(linem - wplm, j + 1);
                         if (val > val3 && val > maskval) {
                             SET_DATA_BYTE(lines - wpls, j + 1, val);
-                            pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                            pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                             pixel->x = i - 1;
                             pixel->y = j + 1;
                             lqueueAdd(lq_pixel, pixel);
@@ -1108,7 +1112,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem - wplm, j);
                     if (val > val2 && val > maskval) {
                         SET_DATA_BYTE(lines - wpls, j, val);
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i - 1;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -1120,7 +1124,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem, j - 1);
                     if (val > val4 && val > maskval) {
                         SET_DATA_BYTE(lines, j - 1, val);
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j - 1;
                         lqueueAdd(lq_pixel, pixel);
@@ -1132,7 +1136,7 @@ L_QUEUE  *lq_pixel;
                         maskval = GET_DATA_BYTE(linem + wplm, j - 1);
                         if (val > val6 && val > maskval) {
                             SET_DATA_BYTE(lines + wpls, j - 1, val);
-                            pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                            pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                             pixel->x = i + 1;
                             pixel->y = j - 1;
                             lqueueAdd(lq_pixel, pixel);
@@ -1143,7 +1147,7 @@ L_QUEUE  *lq_pixel;
                         maskval = GET_DATA_BYTE(linem + wplm, j + 1);
                         if (val > val8 && val > maskval) {
                             SET_DATA_BYTE(lines + wpls, j + 1, val);
-                            pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                            pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                             pixel->x = i + 1;
                             pixel->y = j + 1;
                             lqueueAdd(lq_pixel, pixel);
@@ -1153,7 +1157,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem + wplm, j);
                     if (val > val7 && val > maskval) {
                         SET_DATA_BYTE(lines + wpls, j, val);
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i + 1;
                         pixel->y = j;
                         lqueueAdd(lq_pixel, pixel);
@@ -1164,7 +1168,7 @@ L_QUEUE  *lq_pixel;
                     maskval = GET_DATA_BYTE(linem, j + 1);
                     if (val > val5 && val > maskval) {
                         SET_DATA_BYTE(lines, j + 1, val);
-                        pixel = (L_PIXEL *)CALLOC(1, sizeof(L_PIXEL));
+                        pixel = (L_PIXEL *)LEPT_CALLOC(1, sizeof(L_PIXEL));
                         pixel->x = i;
                         pixel->y = j + 1;
                         lqueueAdd(lq_pixel, pixel);

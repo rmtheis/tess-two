@@ -40,13 +40,13 @@
  *    Lossless writing is extremely slow.
  */
 
-#include <math.h>
-#include "allheaders.h"
-
-    /* Needed for HAVE_LIBWEBP */
+    /* Needed for HAVE_LIBWEBP and HAVE_LIBJPEG */
 #ifdef HAVE_CONFIG_H
 #include <config_auto.h>
 #endif /* HAVE_CONFIG_H */
+
+#include "allheaders.h"
+#include <math.h>
 
 void DoWebpTest1(L_REGPARAMS *rp, const char *fname);
 void DoWebpTest2(L_REGPARAMS *rp, const char *fname, l_int32 quality,
@@ -75,6 +75,9 @@ L_REGPARAMS  *rp;
     if (regTestSetup(argc, argv, &rp))
         return 1;
 
+    lept_rmdir("lept/webp");
+    lept_mkdir("lept/webp");
+
     DoWebpTest1(rp, "weasel2.4c.png");
     DoWebpTest1(rp, "weasel8.240c.png");
     DoWebpTest1(rp, "karen8.jpg");
@@ -100,7 +103,7 @@ PIX  *pixs, *pix1;
     pixs = pixRead(fname);
     fprintf(stderr, "Time to read jpg: %7.3f\n", stopTimer());
     startTimer();
-    snprintf(buf, sizeof(buf), "/tmp/webpio.%d.webp", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/lept/webp/webpio.%d.webp", rp->index + 1);
     pixWrite(buf, pixs, IFF_WEBP);
     fprintf(stderr, "Time to write webp: %7.3f\n", stopTimer());
     regTestCheckFile(rp, buf);
@@ -125,11 +128,11 @@ l_float32  psnr;
 PIX       *pixs, *pix1;
 
     pixs = pixRead(fname);
-    snprintf(buf, sizeof(buf), "/tmp/webpio.%d.webp", rp->index + 1);
+    snprintf(buf, sizeof(buf), "/tmp/lept/webp/webpio.%d.webp", rp->index + 1);
     if (lossless) startTimer();
-    pixWriteWebP("/tmp/junk.webp", pixs, quality, lossless);
+    pixWriteWebP("/tmp/lept/webp/junk.webp", pixs, quality, lossless);
     if (lossless) fprintf(stderr, "Lossless write: %7.3f sec\n", stopTimer());
-    pix1 = pixRead("/tmp/junk.webp");
+    pix1 = pixRead("/tmp/lept/webp/junk.webp");
     pixGetPSNR(pixs, pix1, 4, &psnr);
     if (lossless)
         fprintf(stderr, "lossless; psnr should be 1000: psnr = %7.3f\n", psnr);

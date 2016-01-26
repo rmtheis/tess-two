@@ -71,7 +71,9 @@
  *       void             strcodeCreateFromFile()
  *       l_int32          strcodeGenerate()
  *       void             strcodeFinalize()
+ *       l_int32          l_getStructnameFromFile()   (useful externally)
  *
+ *   Static helpers
  *       static l_int32   l_getIndexFromType()
  *       static l_int32   l_getIndexFromStructname()
  *       static l_int32   l_getIndexFromFile()
@@ -152,7 +154,9 @@ L_STRCODE  *strcode;
 
     PROCNAME("strcodeCreate");
 
-    if ((strcode = (L_STRCODE *)CALLOC(1, sizeof(L_STRCODE))) == NULL)
+    lept_mkdir("lept/auto");
+
+    if ((strcode = (L_STRCODE *)LEPT_CALLOC(1, sizeof(L_STRCODE))) == NULL)
         return (L_STRCODE *)ERROR_PTR("strcode not made", procName, NULL);
 
     strcode->fileno = fileno;
@@ -187,7 +191,7 @@ L_STRCODE  *strcode;
     sarrayDestroy(&strcode->function);
     sarrayDestroy(&strcode->data);
     sarrayDestroy(&strcode->descr);
-    FREE(strcode);
+    LEPT_FREE(strcode);
     *pstrcode = NULL;
     return;
 }
@@ -198,7 +202,7 @@ L_STRCODE  *strcode;
  *
  *      Input:  filein (containing filenames of serialized data)
  *              fileno (integer that labels the two output files)
- *              outdir (<optional> if null, files are made in /tmp)
+ *              outdir (<optional> if null, files are made in /tmp/lept/auto)
  *      Return: 0 if OK, 1 on error
  *
  *  Notes:
@@ -229,7 +233,7 @@ L_STRCODE   *strcode;
     if ((data = l_binaryRead(filein, &nbytes)) == NULL)
         return ERROR_INT("data not read from file", procName, 1);
     sa = sarrayCreateLinesFromString((char *)data, 0);
-    FREE(data);
+    LEPT_FREE(data);
     if (!sa)
         return ERROR_INT("sa not made", procName, 1);
     if ((n = sarrayGetCount(sa)) == 0) {
@@ -315,7 +319,7 @@ l_int32  itype;
  *  strcodeFinalize()
  *
  *      Input: &strcode (destroys after .c and .h files have been generated)
- *              outdir (<optional> if null, files are made in /tmp)
+ *              outdir (<optional> if null, files are made in /tmp/lept/auto)
  *      Return: void
  */
 l_int32
@@ -331,12 +335,14 @@ SARRAY     *sa1, *sa2, *sa3;
 
     PROCNAME("strcodeFinalize");
 
+    lept_mkdir("lept/auto");
+
     if (!pstrcode || *pstrcode == NULL)
         return ERROR_INT("No input data", procName, 1);
     strcode = *pstrcode;
     if (!outdir) {
-        L_INFO("no outdir specified; writing to /tmp\n", procName);
-        realoutdir = stringNew("/tmp");
+        L_INFO("no outdir specified; writing to /tmp/lept/auto\n", procName);
+        realoutdir = stringNew("/tmp/lept/auto");
     } else {
         realoutdir = stringNew(outdir);
     }
@@ -350,7 +356,7 @@ SARRAY     *sa1, *sa2, *sa3;
         return ERROR_INT("filestr not made", procName, 1);
     if ((sa1 = sarrayCreateLinesFromString(filestr, 1)) == NULL)
         return ERROR_INT("sa1 not made", procName, 1);
-    FREE(filestr);
+    LEPT_FREE(filestr);
 
     if ((sa3 = sarrayCreate(0)) == NULL)
         return ERROR_INT("sa3 not made", procName, 1);
@@ -426,7 +432,7 @@ SARRAY     *sa1, *sa2, *sa3;
     nbytes = strlen(filestr);
     snprintf(buf, sizeof(buf), "%s/autogen.%d.c", realoutdir, fileno);
     l_binaryWrite(buf, "w", filestr, nbytes);
-    FREE(filestr);
+    LEPT_FREE(filestr);
     sarrayDestroy(&sa1);
     sarrayDestroy(&sa3);
 
@@ -439,7 +445,7 @@ SARRAY     *sa1, *sa2, *sa3;
         return ERROR_INT("filestr not made", procName, 1);
     if ((sa2 = sarrayCreateLinesFromString(filestr, 1)) == NULL)
         return ERROR_INT("sa2 not made", procName, 1);
-    FREE(filestr);
+    LEPT_FREE(filestr);
 
     if ((sa3 = sarrayCreate(0)) == NULL)
         return ERROR_INT("sa3 not made", procName, 1);
@@ -489,8 +495,8 @@ SARRAY     *sa1, *sa2, *sa3;
     nbytes = strlen(filestr);
     snprintf(buf, sizeof(buf), "%s/autogen.%d.h", realoutdir, fileno);
     l_binaryWrite(buf, "w", filestr, nbytes);
-    FREE(filestr);
-    FREE(realoutdir);
+    LEPT_FREE(filestr);
+    LEPT_FREE(realoutdir);
     sarrayDestroy(&sa2);
     sarrayDestroy(&sa3);
 
@@ -500,6 +506,38 @@ SARRAY     *sa1, *sa2, *sa3;
 }
 
 
+/*!
+ *  l_getStructnameFromFile()
+ *
+ *      Input:  filename
+ *              &sn (<return> structname; e.g., "Pixa")
+ *      Return: 0 if found, 1 on error.
+ */
+l_int32
+l_getStructnameFromFile(const char  *filename,
+                        char       **psn)
+{
+l_int32  index;
+
+
+    PROCNAME("l_getStructnameFromFile");
+
+    if (!psn)
+        return ERROR_INT("&sn not defined", procName, 1);
+    *psn = NULL;
+    if (!filename)
+        return ERROR_INT("filename not defined", procName, 1);
+
+    if (l_getIndexFromFile(filename, &index))
+        return ERROR_INT("index not retrieved", procName, 1);
+    *psn = stringNew(l_assoc[index].structname);
+    return 0;
+}
+
+
+/*---------------------------------------------------------------------*/
+/*                           Static helpers                            */
+/*---------------------------------------------------------------------*/
 /*!
  *  l_getIndexFromType()
  *
@@ -578,7 +616,7 @@ l_int32  i, found;
  *  l_getIndexFromFile()
  *
  *      Input:  filename
- *              &sn (<return>  e.g., "Pixa")
+ *              &index (<return>)
  *      Return: 0 if found, 1 on error.
  */
 static l_int32
@@ -594,7 +632,7 @@ SARRAY  *sa;
     PROCNAME("l_getIndexFromFile");
 
     if (!pindex)
-        return ERROR_INT("&sn not defined", procName, 1);
+        return ERROR_INT("&index not defined", procName, 1);
     *pindex = 0;
     if (!filename)
         return ERROR_INT("filename not defined", procName, 1);
@@ -659,9 +697,9 @@ SARRAY   *sa;
     data2 = zlibCompress(data1, size1, &size2);
     cdata1 = encodeBase64(data2, size2, &csize1);
     cdata2 = reformatPacked64(cdata1, csize1, 4, 72, 1, &csize2);
-    FREE(data1);
-    FREE(data2);
-    FREE(cdata1);
+    LEPT_FREE(data1);
+    LEPT_FREE(data2);
+    LEPT_FREE(cdata1);
 
         /* Prepend the string declaration signature and put it together */
     sa = sarrayCreate(3);
@@ -701,13 +739,14 @@ char  *code = NULL;
     stringJoinIP(&code,
                  "        data2 = zlibUncompress(data1, size1, &size2);\n");
     stringJoinIP(&code,
-        "        l_binaryWrite(\"/tmp/data.bin\", \"w\", data2, size2);\n");
+        "        l_binaryWrite(\"/tmp/lept/auto/data.bin\","
+        "\"w\", data2, size2);\n");
     snprintf(buf, sizeof(buf),
-             "        result = (void *)%s(\"/tmp/data.bin\");\n",
+             "        result = (void *)%s(\"/tmp/lept/auto/data.bin\");\n",
              l_assoc[itype].reader);
     stringJoinIP(&code, buf);
-    stringJoinIP(&code, "        FREE(data1);\n");
-    stringJoinIP(&code, "        FREE(data2);\n");
+    stringJoinIP(&code, "        lept_free(data1);\n");
+    stringJoinIP(&code, "        lept_free(data2);\n");
     stringJoinIP(&code, "        break;\n");
     return code;
 }
@@ -738,7 +777,7 @@ char  *tail;
     snprintf(buf, sizeof(buf), " *     %-2d       %-10s    %-14s   %s",
              ifunc, l_assoc[itype].type, l_assoc[itype].reader, tail);
 
-    FREE(tail);
+    LEPT_FREE(tail);
     return stringNew(buf);
 }
 

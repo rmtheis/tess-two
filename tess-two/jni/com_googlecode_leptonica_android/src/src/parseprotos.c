@@ -84,7 +84,7 @@ static l_int32 getOffsetForMatchingRP(SARRAY *sa, l_int32 start,
  *              cpp -ansi <filein>
  *          Three plans were attempted, with success on the third.
  *      (2) Plan 1.  A cursory examination of the cpp output indicated that
- *          every function was preceeded by a cpp comment statement.
+ *          every function was preceded by a cpp comment statement.
  *          So we just need to look at statements beginning after comments.
  *          Unfortunately, this is NOT the case.  Some functions start
  *          without cpp comment lines, typically when there are no
@@ -179,18 +179,18 @@ SARRAY  *sa, *saout, *satest;
              * 'extern' keywords we are looking for, if they exist,
              * would be the second word. */
         satest = sarrayCreateWordsFromString(str);
-        secondword = sarrayGetString(satest, 1, 0);
+        secondword = sarrayGetString(satest, 1, L_NOCOPY);
         if (strcmp(secondword, "static") &&  /* not static */
             strcmp(secondword, "extern")) {  /* not extern */
             if (prestring) {  /* prepend it to the prototype */
                 newstr = stringJoin(prestring, str);
                 sarrayAddString(saout, newstr, L_INSERT);
-                FREE(str);
+                LEPT_FREE(str);
             } else {
                 sarrayAddString(saout, str, L_INSERT);
             }
         } else {
-            FREE(str);
+            LEPT_FREE(str);
         }
         sarrayDestroy(&satest);
 
@@ -200,7 +200,7 @@ SARRAY  *sa, *saout, *satest;
 
         /* Flatten into a string with newlines between prototypes */
     parsestr = sarrayToString(saout, 1);
-    FREE(strdata);
+    LEPT_FREE(strdata);
     sarrayDestroy(&sa);
     sarrayDestroy(&saout);
 
@@ -241,7 +241,7 @@ l_int32  i, n;
 
     n = sarrayGetCount(sa);
     for (i = start; i < n; i++) {
-        if ((str = sarrayGetString(sa, i, 0)) == NULL)
+        if ((str = sarrayGetString(sa, i, L_NOCOPY)) == NULL)
             return ERROR_INT("str not returned; shouldn't happen", procName, 1);
         if (str[0] != '#') {
             *pnext = i;
@@ -287,7 +287,7 @@ l_int32  i, j, n, len;
 
     n = sarrayGetCount(sa);
     for (i = start; i < n; i++) {
-        if ((str = sarrayGetString(sa, i, 0)) == NULL)
+        if ((str = sarrayGetString(sa, i, L_NOCOPY)) == NULL)
             return ERROR_INT("str not returned; shouldn't happen", procName, 1);
         len = strlen(str);
         for (j = 0; j < len; j++) {
@@ -337,7 +337,7 @@ l_int32  i, n, len;
 
     n = sarrayGetCount(sa);
     for (i = start; i < n; i++) {
-        if ((str = sarrayGetString(sa, i, 0)) == NULL)
+        if ((str = sarrayGetString(sa, i, L_NOCOPY)) == NULL)
             return ERROR_INT("str not returned; shouldn't happen", procName, 1);
         len = strlen(str);
         if (len < 2 || str[0] != '/' || str[1] != '/') {
@@ -517,18 +517,18 @@ l_int32  i;
 
     sap = sarrayCreate(0);
     for (i = start; i < stop; i++) {
-        str = sarrayGetString(sa, i, 1);
-        sarrayAddString(sap, str, 0);
+        str = sarrayGetString(sa, i, L_COPY);
+        sarrayAddString(sap, str, L_INSERT);
     }
-    str = sarrayGetString(sa, stop, 1);
+    str = sarrayGetString(sa, stop, L_COPY);
     str[charindex + 1] = '\0';
     newstr = stringJoin(str, ";");
-    sarrayAddString(sap, newstr, 0);
-    FREE(str);
+    sarrayAddString(sap, newstr, L_INSERT);
+    LEPT_FREE(str);
     protostr = sarrayToString(sap, 2);
     sarrayDestroy(&sap);
     cleanstr = cleanProtoSignature(protostr);
-    FREE(protostr);
+    LEPT_FREE(protostr);
 
     return cleanstr;
 }
@@ -561,9 +561,9 @@ SARRAY  *sa, *saout;
     sa = sarrayCreateWordsFromString(instr);
     nwords = sarrayGetCount(sa);
     saout = sarrayCreate(0);
-    sarrayAddString(saout, externstring, 1);
+    sarrayAddString(saout, externstring, L_COPY);
     for (i = 0; i < nwords; i++) {
-        str = sarrayGetString(sa, i, 0);
+        str = sarrayGetString(sa, i, L_NOCOPY);
         nchars = strlen(str);
         index = 0;
         for (j = 0; j < nchars; j++) {
@@ -581,7 +581,7 @@ SARRAY  *sa, *saout;
             }
         }
         buf[index] = '\0';
-        sarrayAddString(saout, buf, 1);
+        sarrayAddString(saout, buf, L_COPY);
     }
 
         /* Flatten to a prototype string with spaces added after
@@ -673,7 +673,7 @@ l_int32  i, j, jstart, n, sumbrace, found, instring, nchars;
     sumbrace = 1;
     found = FALSE;
     for (i = start; i < n; i++) {
-        str = sarrayGetString(sa, i, 0);
+        str = sarrayGetString(sa, i, L_NOCOPY);
         jstart = 0;
         if (i == start)
             jstart = lbindex + 1;
@@ -743,7 +743,7 @@ l_int32  i, j, n, jstart, nchars, found;
     n = sarrayGetCount(sa);
     found = FALSE;
     for (i = start; i < n; i++) {
-        str = sarrayGetString(sa, i, 0);
+        str = sarrayGetString(sa, i, L_NOCOPY);
         jstart = 0;
         if (i == start)
             jstart = charindex + 1;
@@ -817,7 +817,7 @@ l_int32  i, j, n, nchars, totchars, found;
     found = FALSE;
     totchars = 0;
     for (i = start; i < n; i++) {
-        if ((str = sarrayGetString(sa, i, 0)) == NULL)
+        if ((str = sarrayGetString(sa, i, L_NOCOPY)) == NULL)
             return ERROR_INT("str not returned; shouldn't happen", procName, 1);
         nchars = strlen(str);
         for (j = 0; j < nchars; j++) {
@@ -908,7 +908,7 @@ l_int32  i, j, n, nchars, totchars, leftmatch, firstline, jstart, found;
     leftmatch = 1;  /* count of (LP - RP); we're finished when it goes to 0. */
     firstline = start + soffsetlp;
     for (i = firstline; i < n; i++) {
-        if ((str = sarrayGetString(sa, i, 0)) == NULL)
+        if ((str = sarrayGetString(sa, i, L_NOCOPY)) == NULL)
             return ERROR_INT("str not returned; shouldn't happen", procName, 1);
         nchars = strlen(str);
         jstart = 0;

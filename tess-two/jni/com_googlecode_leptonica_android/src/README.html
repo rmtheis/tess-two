@@ -75,11 +75,11 @@ This work is licensed under a <a rel="license" href="http://creativecommons.org/
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-README  (1.72: 5 Apr 2015)
+README  (1.73: 25 Jan 2016)
 ---------------------------
 
-gunzip leptonica-1.72.tar.gz
-tar -xvf leptonica-1.72.tar
+gunzip leptonica-1.73.tar.gz
+tar -xvf leptonica-1.73.tar
 
 </pre>
 
@@ -115,14 +115,14 @@ Building leptonica
   Libraries, executables and prototypes are easily made, as described below.
 
   When you extract from the archive, all files are put in a
-  subdirectory 'leptonica-1.72'.  In that directory you will
+  subdirectory 'leptonica-1.73'.  In that directory you will
   find a src directory containing the source files for the library,
   and a prog directory containing source files for various
   testing and example programs.
 
 2. Building on Linux/Unix/MacOS
 
-  There are two ways to build the library:
+  There are three ways to build the library:
 
     (1) By customization:  Use the existing static makefile,
         src/makefile.static and customize the build by setting flags
@@ -130,7 +130,8 @@ Building leptonica
         Note: if you are going to develop with leptonica, I encourage
         you to use the static makefiles.
 
-    (2) Using autoconf.  Run ./configure in this directory to
+    (2) Using autoconf (supported by James Le Cuirot).
+        Run ./configure in this directory to
         build Makefiles here and in src.  Autoconf handles the
         following automatically:
             * architecture endianness
@@ -140,6 +141,22 @@ Building leptonica
               I/O to memory (on linux only)
         After running ./configure: make; make install.  There's also
         a 'make check' for testing.
+
+    (3) Using cmake (supported by Egor Pugin).
+        The build must always be in a different directory from the root
+        of the source (here).  It is common to build in a subdirectory
+        of the root.  From here:
+          mkdir build
+          cd build
+          cmake ..
+          make
+        Alternatively, from here:
+          mkdir build
+          cmake -H . -Bbuild   (-H means the source directory,
+                                -B means the director for the build
+          make
+        To clean out the current build, just remove everything in
+        the build subdirectory.
 
   In more detail:
 
@@ -220,7 +237,7 @@ Building leptonica
                              If the test fails, just run with 'make check']
 
        Configure also supports building in a separate directory from the
-       source.  Run "/(path-to)/leptonica-1.72/configure" and then "make"
+       source.  Run "/(path-to)/leptonica-1.73/configure" and then "make"
        from the desired build directory.
 
        Configure has a number of useful options; run "configure --help" for
@@ -249,9 +266,22 @@ Building leptonica
        'make install' puts into /usr/local/bin.  It has no dependency on
        the image files that are bundled in the prog directory for testing.
 
-    (3) Cross-compiling for windows
+    (3) Using cmake
 
-       You can use src/makefile.mingw for cross-compiling in linux.
+       There are a couple of flags you can use on the cmake line to
+       determine what is built here.
+
+       * By default, cmake builds a shared library.  To make a static
+         library: 
+            cmake .. -DSTATIC=1
+
+       * By default, cmake only builds the library, not the programs.
+         To make progs from the build subdirectory:
+            cmake .. -DBUILD_PROG=1
+
+    (4) Cross-compiling for windows
+
+        You can use src/makefile.mingw for cross-compiling in linux.
 
 
 3. Building on Windows
@@ -1027,8 +1057,12 @@ What's in leptonica?
    incorporation in ubuntu 12-04.  Leptonica has about 2400 functions,
    and the binary API changed slightly with the new 1.71 release.  Having
    a proper binary release version is required for all debian packages.
-   The binary release version for 1.69 is 3.0.0, for 1.70 it is 4.0.0,
-   for 1.71 it is 4.2.0 and for 1.72 it is 4.3.0.
+   The binary release versions are:
+        1.69 : 3.0.0
+        1.70 : 4.0.0
+        1.71 : 4.2.0
+        1.72 : 4.3.0
+        1.73 : 4.4.0
 
    A brief version chronology is maintained in version-notes.html.
    Starting with gcc 4.3.3, error warnings (-Werror) are given for

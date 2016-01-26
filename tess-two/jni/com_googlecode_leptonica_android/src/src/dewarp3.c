@@ -144,10 +144,10 @@ PIX       *pixv, *pixh;
     *ppixd = pixv;
     if (debugfile) {
         pixDisplayWithTitle(pixv, 300, 0, "pixv", 1);
-        lept_rmdir("dewapply");  /* remove previous images */
-        lept_mkdir("dewapply");
-        pixWrite("/tmp/dewapply/001.png", pixs, IFF_PNG);
-        pixWrite("/tmp/dewapply/002.png", pixv, IFF_PNG);
+        lept_rmdir("lept/dewapply");  /* remove previous images */
+        lept_mkdir("lept/dewapply");
+        pixWrite("/tmp/lept/dewapply/001.png", pixs, IFF_PNG);
+        pixWrite("/tmp/lept/dewapply/002.png", pixv, IFF_PNG);
     }
 
         /* Optionally, correct for horizontal disparity */
@@ -160,7 +160,7 @@ PIX       *pixv, *pixh;
                 *ppixd = pixh;
                 if (debugfile) {
                     pixDisplayWithTitle(pixh, 600, 0, "pixh", 1);
-                    pixWrite("/tmp/dewapply/003.png", pixh, IFF_PNG);
+                    pixWrite("/tmp/lept/dewapply/003.png", pixh, IFF_PNG);
                 }
             } else {
                 L_ERROR("horiz disparity failed on page %d\n",
@@ -171,10 +171,10 @@ PIX       *pixv, *pixh;
 
     if (debugfile) {
         dew1 = dewarpaGetDewarp(dewa, pageno);
-        dewarpDebug(dew1, "dewapply", 0);
-        convertFilesToPdf("/tmp/dewapply", NULL, 135, 1.0, 0, 0,
+        dewarpDebug(dew1, "lept/dewapply", 0);
+        convertFilesToPdf("/tmp/lept/dewapply", NULL, 135, 1.0, 0, 0,
                          "Dewarp Apply Disparity", debugfile);
-        fprintf(stderr, "pdf file made: %s\n", debugfile);
+        fprintf(stderr, "pdf file: %s\n", debugfile);
     }
 
         /* Get rid of the large full res disparity arrays */
@@ -360,7 +360,7 @@ PIX        *pixd;
         }
     }
 
-    FREE(lineptrs);
+    LEPT_FREE(lineptrs);
     return pixd;
 }
 
@@ -544,16 +544,16 @@ PIX       *pixv, *pixh;
     debug_out = debugfile && (mapdir == 1);
     if (debug_out) {
         PIX  *pix1;
-        lept_rmdir("dewboxa");  /* remove previous images */
-        lept_mkdir("dewboxa");
+        lept_rmdir("lept/dewboxa");  /* remove previous images */
+        lept_mkdir("lept/dewboxa");
         pix1 = pixConvertTo32(pixs);
         pixRenderBoxaArb(pix1, boxas, 2, 255, 0, 0);
-        pixWrite("/tmp/dewboxa/01.png", pix1, IFF_PNG);
+        pixWrite("/tmp/lept/dewboxa/01.png", pix1, IFF_PNG);
         pixDestroy(&pix1);
         pixv = pixApplyVertDisparity(dew, pixs, 255);
         pix1 = pixConvertTo32(pixv);
         pixRenderBoxaArb(pix1, boxav, 2, 0, 255, 0);
-        pixWrite("/tmp/dewboxa/02.png", pix1, IFF_PNG);
+        pixWrite("/tmp/lept/dewboxa/02.png", pix1, IFF_PNG);
         pixDestroy(&pix1);
     }
 
@@ -573,7 +573,7 @@ PIX       *pixv, *pixh;
                     pixh = pixApplyHorizDisparity(dew, pixv, 255);
                     pix1 = pixConvertTo32(pixh);
                     pixRenderBoxaArb(pix1, boxah, 2, 0, 0, 255);
-                    pixWrite("/tmp/dewboxa/03.png", pix1, IFF_PNG);
+                    pixWrite("/tmp/lept/dewboxa/03.png", pix1, IFF_PNG);
                     pixDestroy(&pixh);
                     pixDestroy(&pix1);
                 }
@@ -584,10 +584,10 @@ PIX       *pixv, *pixh;
     if (debug_out) {
         pixDestroy(&pixv);
         dew1 = dewarpaGetDewarp(dewa, pageno);
-        dewarpDebug(dew1, "dewapply", 0);
-        convertFilesToPdf("/tmp/dewboxa", NULL, 135, 1.0, 0, 0,
+        dewarpDebug(dew1, "lept/dewapply", 0);
+        convertFilesToPdf("/tmp/lept/dewboxa", NULL, 135, 1.0, 0, 0,
                          "Dewarp Apply Disparity Boxa", debugfile);
-        fprintf(stderr, "Dewarp Apply Disparity Boxa pdf file made: %s\n",
+        fprintf(stderr, "Dewarp Apply Disparity Boxa pdf file: %s\n",
                 debugfile);
     }
 

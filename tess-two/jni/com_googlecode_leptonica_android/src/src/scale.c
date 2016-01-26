@@ -153,7 +153,7 @@ extern l_float32  AlphaMaskBorderVals[2];
  *  pixels.  Subsmpling removes entire columns and rows, so the edge is
  *  not blurred.  However, there are two reasons for not doing this.
  *  First, it moves edges, so that a straight line at a large angle to
- *  both horizontal and vertical will have noticable kinks where
+ *  both horizontal and vertical will have noticeable kinks where
  *  horizontal and vertical rasters are removed.  Second, although it
  *  is very fast, you get good results on sharp edges by applying
  *  a sharpening filter.
@@ -341,6 +341,7 @@ PIX       *pixt, *pixt2, *pixd;
 
     pixDestroy(&pixt);
     pixDestroy(&pixt2);
+    pixCopyInputFormat(pixd, pixs);
     return pixd;
 }
 
@@ -403,6 +404,7 @@ PIX       *pixt, *pixd;
         pixd = pixScaleColorLI(pixt, scalex, scaley);
 
     pixDestroy(&pixt);
+    pixCopyInputFormat(pixd, pixs);
     return pixd;
 }
 
@@ -471,6 +473,8 @@ PIX       *pixd;
     scaleColorLILow(datad, wd, hd, wpld, datas, ws, hs, wpls);
     if (pixGetSpp(pixs) == 4)
         pixScaleAndTransferAlpha(pixd, pixs, scalex, scaley);
+
+    pixCopyInputFormat(pixd, pixs);
     return pixd;
 }
 
@@ -516,6 +520,8 @@ PIX       *pixd;
     scaleColor2xLILow(datad, wpld, datas, ws, hs, wpls);
     if (pixGetSpp(pixs) == 4)
         pixScaleAndTransferAlpha(pixd, pixs, 2.0, 2.0);
+
+    pixCopyInputFormat(pixd, pixs);
     return pixd;
 }
 
@@ -563,6 +569,7 @@ PIX  *pixd;
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     if (pixGetSpp(pixs) == 4)
         pixScaleAndTransferAlpha(pixd, pixs, 4.0, 4.0);
+    pixCopyInputFormat(pixd, pixs);
 
     pixDestroy(&pixrs);
     pixDestroy(&pixgs);
@@ -684,6 +691,7 @@ PIX       *pixd;
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyText(pixd, pixs);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     pixScaleResolution(pixd, scalex, scaley);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
@@ -724,6 +732,7 @@ PIX       *pixd;
     if ((pixd = pixCreate(2 * ws, 2 * hs, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     pixScaleResolution(pixd, 2.0, 2.0);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
@@ -764,6 +773,7 @@ PIX       *pixd;
     if ((pixd = pixCreate(4 * ws, 4 * hs, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     pixScaleResolution(pixd, 4.0, 4.0);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
@@ -820,6 +830,7 @@ PIX       *pixd;
     pixScaleResolution(pixd, scalex, scaley);
     pixCopyColormap(pixd, pixs);
     pixCopyText(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     pixCopySpp(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
@@ -969,6 +980,7 @@ PIX       *pixd;
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     scale = 1. / (l_float32) factor;
     pixScaleResolution(pixd, scale, scale);
     datad = pixGetData(pixd);
@@ -1032,6 +1044,7 @@ PIX       *pixd;
     if ((pixd = pixCreate(wd, hd, 1)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     scale = 1. / (l_float32) factor;
     pixScaleResolution(pixd, scale, scale);
     datad = pixGetData(pixd);
@@ -1095,6 +1108,7 @@ PIX       *pixd;
     if ((pixd = pixCreate(wd, hd, 1)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     scale = 1. / (l_float32) factor;
     pixScaleResolution(pixd, scale, scale);
     datad = pixGetData(pixd);
@@ -1211,6 +1225,7 @@ PIX       *pixs, *pixd;
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     }
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     pixScaleResolution(pixd, scalex, scaley);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
@@ -1256,6 +1271,7 @@ PIX       *pixd;
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     pixScaleResolution(pixd, 0.5, 0.5);
     wpld = pixGetWpl(pixd);
     datad = pixGetData(pixd);
@@ -1371,6 +1387,7 @@ PIX       *pixs, *pixd, *pixt1, *pixt2, *pixt3;
         pixDestroy(&pixs);
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     }
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, scalex, scaley);
     datad = pixGetData(pixd);
@@ -1446,6 +1463,7 @@ PIX       *pixs, *pixd;
     pixd = pixCreate(wd, hd, d);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 0.5, 0.5);
     scaleAreaMapLow2(datad, wd, hd, wpld, datas, d, wpls);
@@ -1500,6 +1518,7 @@ PIX       *pixd;
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyColormap(pixd, pixs);
     pixCopyText(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, scalex, scaley);
     datad = pixGetData(pixd);
@@ -1661,10 +1680,9 @@ PIX       *pixt, *pixd;
     pixDestroy(&pixt);
     if (!pixd)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
-    else
-        return pixd;
+    pixCopyInputFormat(pixd, pixs);
+    return pixd;
 }
-
 
 
 /*!
@@ -1743,8 +1761,8 @@ PIX       *pixt, *pixd;
     pixDestroy(&pixt);
     if (!pixd)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
-    else
-        return pixd;
+    pixCopyInputFormat(pixd, pixs);
+    return pixd;
 }
 
 
@@ -1783,6 +1801,7 @@ PIX       *pixd;
 
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 0.5, 0.5);
     datas = pixGetData(pixs);
@@ -1797,8 +1816,8 @@ PIX       *pixd;
 
     scaleToGray2Low(datad, wd, hd, wpld, datas, wpls, sumtab, valtab);
 
-    FREE(sumtab);
-    FREE(valtab);
+    LEPT_FREE(sumtab);
+    LEPT_FREE(valtab);
     return pixd;
 }
 
@@ -1841,6 +1860,7 @@ PIX       *pixd;
 
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 0.33333, 0.33333);
     datas = pixGetData(pixs);
@@ -1855,8 +1875,8 @@ PIX       *pixd;
 
     scaleToGray3Low(datad, wd, hd, wpld, datas, wpls, sumtab, valtab);
 
-    FREE(sumtab);
-    FREE(valtab);
+    LEPT_FREE(sumtab);
+    LEPT_FREE(valtab);
     return pixd;
 }
 
@@ -1896,6 +1916,7 @@ PIX       *pixd;
 
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 0.25, 0.25);
     datas = pixGetData(pixs);
@@ -1910,8 +1931,8 @@ PIX       *pixd;
 
     scaleToGray4Low(datad, wd, hd, wpld, datas, wpls, sumtab, valtab);
 
-    FREE(sumtab);
-    FREE(valtab);
+    LEPT_FREE(sumtab);
+    LEPT_FREE(valtab);
     return pixd;
 }
 
@@ -1951,6 +1972,7 @@ PIX       *pixd;
 
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 0.16667, 0.16667);
     datas = pixGetData(pixs);
@@ -1965,8 +1987,8 @@ PIX       *pixd;
 
     scaleToGray6Low(datad, wd, hd, wpld, datas, wpls, tab8, valtab);
 
-    FREE(tab8);
-    FREE(valtab);
+    LEPT_FREE(tab8);
+    LEPT_FREE(valtab);
     return pixd;
 }
 
@@ -2003,6 +2025,7 @@ PIX       *pixd;
 
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 0.125, 0.125);
     datas = pixGetData(pixs);
@@ -2017,8 +2040,8 @@ PIX       *pixd;
 
     scaleToGray8Low(datad, wd, hd, wpld, datas, wpls, tab8, valtab);
 
-    FREE(tab8);
-    FREE(valtab);
+    LEPT_FREE(tab8);
+    LEPT_FREE(valtab);
     return pixd;
 }
 
@@ -2054,6 +2077,7 @@ PIX       *pixd;
 
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 0.0625, 0.0625);
     datas = pixGetData(pixs);
@@ -2066,7 +2090,7 @@ PIX       *pixd;
 
     scaleToGray16Low(datad, wd, hd, wpld, datas, wpls, tab8);
 
-    FREE(tab8);
+    LEPT_FREE(tab8);
     return pixd;
 }
 
@@ -2164,6 +2188,7 @@ PIX       *pixs1, *pixs2, *pixt, *pixd;
     }
 
     pixd = pixScaleMipmap(pixs1, pixs2, red);
+    pixCopyInputFormat(pixd, pixs);
 
     pixDestroy(&pixs1);
     pixDestroy(&pixs2);
@@ -2224,6 +2249,7 @@ PIX       *pixd;
     hd = (l_int32)(2. * scale * pixGetHeight(pixs2));
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs1);
     pixCopyResolution(pixd, pixs1);
     pixScaleResolution(pixd, scale, scale);
     datad = pixGetData(pixd);
@@ -2275,6 +2301,7 @@ PIX       *pixd;
     if ((pixd = pixCreate(wd, hd, d)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyColormap(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, (l_float32)factor, (l_float32)factor);
     datas = pixGetData(pixs);
@@ -2405,12 +2432,13 @@ PIX       *pixd;
 
         /* Make line buffer for 2 lines of virtual intermediate image */
     wplb = (wd + 3) / 4;
-    if ((lineb = (l_uint32 *)CALLOC(2 * wplb, sizeof(l_uint32))) == NULL)
+    if ((lineb = (l_uint32 *)LEPT_CALLOC(2 * wplb, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("lineb not made", procName, NULL);
 
         /* Make dest binary image */
     if ((pixd = pixCreate(wd, hd, 1)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 2.0, 2.0);
     wpld = pixGetWpl(pixd);
@@ -2432,7 +2460,7 @@ PIX       *pixd;
     thresholdToBinaryLineLow(lined, wd, lineb, 8, thresh);
     thresholdToBinaryLineLow(lined + wpld, wd, lineb + wplb, 8, thresh);
 
-    FREE(lineb);
+    LEPT_FREE(lineb);
     return pixd;
 }
 
@@ -2478,21 +2506,22 @@ PIX       *pixd;
     wpls = pixGetWpl(pixs);
 
         /* Make line buffers for 2 lines of src image */
-    if ((bufs = (l_uint32 *)CALLOC(2 * wpls, sizeof(l_uint32))) == NULL)
+    if ((bufs = (l_uint32 *)LEPT_CALLOC(2 * wpls, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("bufs not made", procName, NULL);
 
         /* Make line buffer for 2 lines of virtual intermediate image */
     wplb = (wd + 3) / 4;
-    if ((lineb = (l_uint32 *)CALLOC(2 * wplb, sizeof(l_uint32))) == NULL)
+    if ((lineb = (l_uint32 *)LEPT_CALLOC(2 * wplb, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("lineb not made", procName, NULL);
 
         /* Make line buffer for 1 line of virtual intermediate image */
-    if ((linebp = (l_uint32 *)CALLOC(wplb, sizeof(l_uint32))) == NULL)
+    if ((linebp = (l_uint32 *)LEPT_CALLOC(wplb, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("linebp not made", procName, NULL);
 
         /* Make dest binary image */
     if ((pixd = pixCreate(wd, hd, 1)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 2.0, 2.0);
     wpld = pixGetWpl(pixd);
@@ -2536,9 +2565,9 @@ PIX       *pixd;
                           DEFAULT_CLIP_LOWER_1, DEFAULT_CLIP_UPPER_1, 1);
                                                    /* last dest line */
 
-    FREE(bufs);
-    FREE(lineb);
-    FREE(linebp);
+    LEPT_FREE(bufs);
+    LEPT_FREE(lineb);
+    LEPT_FREE(linebp);
     return pixd;
 }
 
@@ -2588,12 +2617,13 @@ PIX       *pixd;
 
         /* Make line buffer for 4 lines of virtual intermediate image */
     wplb = (wd + 3) / 4;
-    if ((lineb = (l_uint32 *)CALLOC(4 * wplb, sizeof(l_uint32))) == NULL)
+    if ((lineb = (l_uint32 *)LEPT_CALLOC(4 * wplb, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("lineb not made", procName, NULL);
 
         /* Make dest binary image */
     if ((pixd = pixCreate(wd, hd, 1)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 4.0, 4.0);
     wpld = pixGetWpl(pixd);
@@ -2619,7 +2649,7 @@ PIX       *pixd;
                                  lineb + j * wplb, 8, thresh);
     }
 
-    FREE(lineb);
+    LEPT_FREE(lineb);
     return pixd;
 }
 
@@ -2670,21 +2700,22 @@ PIX       *pixd;
     wpls = pixGetWpl(pixs);
 
         /* Make line buffers for 2 lines of src image */
-    if ((bufs = (l_uint32 *)CALLOC(2 * wpls, sizeof(l_uint32))) == NULL)
+    if ((bufs = (l_uint32 *)LEPT_CALLOC(2 * wpls, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("bufs not made", procName, NULL);
 
         /* Make line buffer for 4 lines of virtual intermediate image */
     wplb = (wd + 3) / 4;
-    if ((lineb = (l_uint32 *)CALLOC(4 * wplb, sizeof(l_uint32))) == NULL)
+    if ((lineb = (l_uint32 *)LEPT_CALLOC(4 * wplb, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("lineb not made", procName, NULL);
 
         /* Make line buffer for 1 line of virtual intermediate image */
-    if ((linebp = (l_uint32 *)CALLOC(wplb, sizeof(l_uint32))) == NULL)
+    if ((linebp = (l_uint32 *)LEPT_CALLOC(wplb, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("linebp not made", procName, NULL);
 
         /* Make dest binary image */
     if ((pixd = pixCreate(wd, hd, 1)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 4.0, 4.0);
     wpld = pixGetWpl(pixd);
@@ -2735,9 +2766,9 @@ PIX       *pixd;
     ditherToBinaryLineLow(lined + 3 * wpld, wd, lineb + 3 * wplb, NULL,
                               DEFAULT_CLIP_LOWER_1, DEFAULT_CLIP_UPPER_1, 1);
 
-    FREE(bufs);
-    FREE(lineb);
-    FREE(linebp);
+    LEPT_FREE(bufs);
+    LEPT_FREE(lineb);
+    LEPT_FREE(linebp);
     return pixd;
 }
 
@@ -2804,6 +2835,7 @@ PIX       *pixd;
     }
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     datas = pixGetData(pixs);
     datad = pixGetData(pixd);
     wpls = pixGetWpl(pixs);
@@ -2896,6 +2928,7 @@ PIX       *pixd;
     hd = hs / 2;
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     datas = pixGetData(pixs);
     datad = pixGetData(pixd);
     wpls = pixGetWpl(pixs);
@@ -3040,6 +3073,7 @@ PIX       *pixd;
     hd = hs / 2;
     if ((pixd = pixCreate(wd, hd, 8)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyInputFormat(pixd, pixs);
     datas = pixGetData(pixs);
     datad = pixGetData(pixd);
     wpls = pixGetWpl(pixs);
@@ -3237,6 +3271,7 @@ PIX     *pixd, *pix32, *pixg2, *pixgs;
 
         /* Combine into a 4 spp result */
     pixSetRGBComponent(pixd, pixgs, L_ALPHA_CHANNEL);
+    pixCopyInputFormat(pixd, pixs);
 
     pixDestroy(&pixg2);
     pixDestroy(&pixgs);

@@ -115,15 +115,15 @@ PTA  *pta;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((pta = (PTA *)CALLOC(1, sizeof(PTA))) == NULL)
+    if ((pta = (PTA *)LEPT_CALLOC(1, sizeof(PTA))) == NULL)
         return (PTA *)ERROR_PTR("pta not made", procName, NULL);
     pta->n = 0;
     pta->nalloc = n;
     ptaChangeRefcount(pta, 1);  /* sets to 1 */
 
-    if ((pta->x = (l_float32 *)CALLOC(n, sizeof(l_float32))) == NULL)
+    if ((pta->x = (l_float32 *)LEPT_CALLOC(n, sizeof(l_float32))) == NULL)
         return (PTA *)ERROR_PTR("x array not made", procName, NULL);
-    if ((pta->y = (l_float32 *)CALLOC(n, sizeof(l_float32))) == NULL)
+    if ((pta->y = (l_float32 *)LEPT_CALLOC(n, sizeof(l_float32))) == NULL)
         return (PTA *)ERROR_PTR("y array not made", procName, NULL);
 
     return pta;
@@ -195,9 +195,9 @@ PTA  *pta;
 
     ptaChangeRefcount(pta, -1);
     if (ptaGetRefcount(pta) <= 0) {
-        FREE(pta->x);
-        FREE(pta->y);
-        FREE(pta);
+        LEPT_FREE(pta->x);
+        LEPT_FREE(pta->y);
+        LEPT_FREE(pta);
     }
 
     *ppta = NULL;
@@ -808,12 +808,12 @@ PTAA  *ptaa;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((ptaa = (PTAA *)CALLOC(1, sizeof(PTAA))) == NULL)
+    if ((ptaa = (PTAA *)LEPT_CALLOC(1, sizeof(PTAA))) == NULL)
         return (PTAA *)ERROR_PTR("ptaa not made", procName, NULL);
     ptaa->n = 0;
     ptaa->nalloc = n;
 
-    if ((ptaa->pta = (PTA **)CALLOC(n, sizeof(PTA *))) == NULL)
+    if ((ptaa->pta = (PTA **)LEPT_CALLOC(n, sizeof(PTA *))) == NULL)
         return (PTAA *)ERROR_PTR("pta ptrs not made", procName, NULL);
 
     return ptaa;
@@ -844,9 +844,9 @@ PTAA    *ptaa;
 
     for (i = 0; i < ptaa->n; i++)
         ptaDestroy(&ptaa->pta[i]);
-    FREE(ptaa->pta);
+    LEPT_FREE(ptaa->pta);
 
-    FREE(ptaa);
+    LEPT_FREE(ptaa);
     *pptaa = NULL;
     return;
 }

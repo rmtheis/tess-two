@@ -609,7 +609,7 @@ PIXCMAP   *cmap;
          * set the tab value to 1.  Then generate a 1 bpp mask with
          * fg pixels for every pixel in pixd that is close enough
          * to srcval (i.e., has value 1 in tab). */
-    if ((tab = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return (PIX *)ERROR_PTR("tab not made", procName, pixd);
     for (i = 0; i < ncolors; i++) {
         pixcmapGetColor(cmap, i, &rval, &gval, &bval);
@@ -619,7 +619,7 @@ PIXCMAP   *cmap;
             tab[i] = 1;
     }
     pixm = pixMakeMaskFromLUT(pixd, tab);
-    FREE(tab);
+    LEPT_FREE(tab);
 
         /* Use the binary mask to set all selected pixels to
          * the dest color index. */
@@ -693,9 +693,9 @@ l_uint32  *line, *data;
     rsval = L_MIN(254, L_MAX(1, rsval));
     gsval = L_MIN(254, L_MAX(1, gsval));
     bsval = L_MIN(254, L_MAX(1, bsval));
-    rtab = (l_int32 *)CALLOC(256, sizeof(l_int32));
-    gtab = (l_int32 *)CALLOC(256, sizeof(l_int32));
-    btab = (l_int32 *)CALLOC(256, sizeof(l_int32));
+    rtab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
+    gtab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
+    btab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     for (i = 0; i < 256; i++) {
         if (i <= rsval)
             rtab[i] = (i * rdval) / rsval;
@@ -723,9 +723,9 @@ l_uint32  *line, *data;
         }
     }
 
-    FREE(rtab);
-    FREE(gtab);
-    FREE(btab);
+    LEPT_FREE(rtab);
+    LEPT_FREE(gtab);
+    LEPT_FREE(btab);
     return pixd;
 }
 
@@ -873,9 +873,9 @@ PIXCMAP   *cmap;
 
     extractRGBValues(srcval, &rsval, &gsval, &bsval);
     extractRGBValues(dstval, &rdval, &gdval, &bdval);
-    rtab = (l_int32 *)CALLOC(256, sizeof(l_int32));
-    gtab = (l_int32 *)CALLOC(256, sizeof(l_int32));
-    btab = (l_int32 *)CALLOC(256, sizeof(l_int32));
+    rtab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
+    gtab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
+    btab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     for (i = 0; i < 256; i++) {
         if (rdval == rsval)
             rtab[i] = i;
@@ -909,9 +909,9 @@ PIXCMAP   *cmap;
         }
     }
 
-    FREE(rtab);
-    FREE(gtab);
-    FREE(btab);
+    LEPT_FREE(rtab);
+    LEPT_FREE(gtab);
+    LEPT_FREE(btab);
     return pixd;
 }
 

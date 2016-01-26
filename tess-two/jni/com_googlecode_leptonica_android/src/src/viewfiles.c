@@ -151,14 +151,14 @@ SARRAY    *safiles, *sathumbs, *saviews, *sahtml, *salink;
         fprintf(stderr, "name: %s\n", fullname);
         if ((pix = pixRead(fullname)) == NULL) {
             fprintf(stderr, "file %s not a readable image\n", fullname);
-            FREE(fullname);
+            LEPT_FREE(fullname);
             continue;
         }
-        FREE(fullname);
+        LEPT_FREE(fullname);
         if (copyorig) {
             outname = genPathname(dirout, fname);
             pixWrite(outname, pix, IFF_JFIF_JPEG);
-            FREE(outname);
+            LEPT_FREE(outname);
         }
 
             /* Make and store the thumb */
@@ -170,7 +170,7 @@ SARRAY    *safiles, *sathumbs, *saviews, *sahtml, *salink;
         sarrayAddString(sathumbs, charbuf, L_COPY);
         outname = genPathname(dirout, charbuf);
         pixWrite(outname, pixthumb, IFF_JFIF_JPEG);
-        FREE(outname);
+        LEPT_FREE(outname);
         pixDestroy(&pixthumb);
 
             /* Make and store the view */
@@ -185,7 +185,7 @@ SARRAY    *safiles, *sathumbs, *saviews, *sahtml, *salink;
         sarrayAddString(saviews, charbuf, L_COPY);
         outname = genPathname(dirout, charbuf);
         pixWrite(outname, pixview, IFF_JFIF_JPEG);
-        FREE(outname);
+        LEPT_FREE(outname);
         pixDestroy(&pixview);
 
         pixDestroy(&pix);
@@ -206,8 +206,8 @@ SARRAY    *safiles, *sathumbs, *saviews, *sahtml, *salink;
     sarrayAddString(sahtml, framestring, L_COPY);
     shtml = sarrayToString(sahtml, 1);
     l_binaryWrite(mainname, "w", shtml, strlen(shtml));
-    FREE(shtml);
-    FREE(mainname);
+    LEPT_FREE(shtml);
+    LEPT_FREE(mainname);
 
         /* Generate the link html file */
     nimages = sarrayGetCount(saviews);
@@ -223,9 +223,9 @@ SARRAY    *safiles, *sathumbs, *saviews, *sahtml, *salink;
     }
     slink = sarrayToString(salink, 1);
     l_binaryWrite(linkname, "w", slink, strlen(slink));
-    FREE(slink);
-    FREE(linkname);
-    FREE(linknameshort);
+    LEPT_FREE(slink);
+    LEPT_FREE(linkname);
+    LEPT_FREE(linknameshort);
 
     sarrayDestroy(&safiles);
     sarrayDestroy(&sathumbs);

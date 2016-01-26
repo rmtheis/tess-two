@@ -132,8 +132,8 @@ SARRAY  *safiles;
             pixWrite(buf, pixb, IFF_PNG);
         }
         pixDestroy(&pixb);
-        FREE(tail);
-        FREE(basename);
+        LEPT_FREE(tail);
+        LEPT_FREE(basename);
     }
 
     sarrayDestroy(&safiles);

@@ -531,7 +531,7 @@ l_int32    threshold;
                 }
 
                     /* If the count is over the threshold, no need to
-                     * calculate any futher.  Likewise, return early if the
+                     * calculate any further.  Likewise, return early if the
                      * count plus the maximum count attainable from further
                      * rows is below the threshold. */
                 if (count >= threshold) return TRUE;

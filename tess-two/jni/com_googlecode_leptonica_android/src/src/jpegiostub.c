@@ -30,11 +30,11 @@
  *     Stubs for jpegio.c functions
  */
 
-#include "allheaders.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config_auto.h"
 #endif  /* HAVE_CONFIG_H */
+
+#include "allheaders.h"
 
 /* --------------------------------------------*/
 #if  !HAVE_LIBJPEG   /* defined in environ.h */

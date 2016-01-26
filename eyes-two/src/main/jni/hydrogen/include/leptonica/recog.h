@@ -114,9 +114,11 @@ struct L_Recog {
     char          *bootdir;      /* dir with bootstrap pixa charsets         */
     char          *bootpattern;  /* file pattern for bootstrap pixa charsets */
     char          *bootpath;     /* path for single bootstrap pixa charset   */
+    l_int32        boot_iters;   /* number of 2x2 erosion iters on boot pixa */
     l_int32        min_nopad;    /* min number of samples without padding    */
     l_int32        max_afterpad; /* max number of samples after padding      */
-    l_int32        samplenum;    /* keep track of number of training samples */
+    l_int32        min_samples;  /* min num of total samples; else use boot  */
+    l_int32        num_samples;  /* keep track of number of training samples */
     l_int32        minwidth_u;   /* min width of averaged unscaled templates */
     l_int32        maxwidth_u;   /* max width of averaged unscaled templates */
     l_int32        minheight_u;  /* min height of averaged unscaled templates */
@@ -153,12 +155,11 @@ struct L_Recog {
     struct Pix    *pixdb_range;  /* debug: best matches within range         */
     struct Pixa   *pixadb_boot;  /* debug: bootstrap training results        */
     struct Pixa   *pixadb_split; /* debug: splitting results                 */
-    char          *fontdir;      /* directory for bitmapped fonts            */
     struct L_Bmf  *bmf;          /* bmf fonts                                */
     l_int32        bmf_size;     /* font size of bmf; default is 6 pt        */
-    struct L_Rdid  *did;         /* temp data used for image decoding        */
-    struct L_Rch   *rch;         /* temp data used for holding best char     */
-    struct L_Rcha  *rcha;        /* temp data used for array of best chars   */
+    struct L_Rdid *did;          /* temp data used for image decoding        */
+    struct L_Rch  *rch;          /* temp data used for holding best char     */
+    struct L_Rcha *rcha;         /* temp data used for array of best chars   */
     l_int32        bootrecog;    /* 1 if using bootstrap samples; else 0     */
     l_int32        index;        /* recog index in recoga; -1 if no parent   */
     struct L_Recoga  *parent;    /* ptr to parent array; can be null         */

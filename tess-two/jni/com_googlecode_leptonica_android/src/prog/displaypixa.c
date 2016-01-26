@@ -33,7 +33,7 @@
  *   where disp = 1 to display on the screen; 0 to skip
  *         lossless = 1 for tiff or png
  *
- *   This reads a pixa from file and generates a composite of the
+ *   This reads a pixa or a pixacomp from file and generates a composite of the
  *   images tiled in rows.  It also optionally displays on the screen.
  *   No scaling is done if @scalefact == 0.0 or @scalefact == 1.0.
  *   If showtext = 1, the text field for all pix with text is written
@@ -47,12 +47,13 @@ int main(int    argc,
          char **argv)
 {
 char         buf[32];
-char        *filein, *fileout, *fontdir, *textstr;
+char        *filein, *fileout, *sn, *fontdir, *textstr;
 l_int32      n, i, maxdepth, ntext, border, lossless, display, showtext;
 l_float32    scalefact;
 L_BMF       *bmf;
 PIX         *pix1, *pix2, *pix3, *pix4, *pixd;
 PIXA        *pixa, *pixad;
+PIXAC       *pac;
 static char  mainName[] = "displaypixa";
 
     if (argc != 3 && argc != 4 && argc != 7 && argc != 8) {
@@ -63,9 +64,20 @@ static char  mainName[] = "displaypixa";
          return 1;
     }
 
+        /* Input file can be either pixa or pixacomp */
     filein = argv[1];
-    if ((pixa = pixaRead(filein)) == NULL)
-        return ERROR_INT("pixa not made", mainName, 1);
+    l_getStructnameFromFile(filein, &sn);
+    if (strcmp(sn, "Pixa") == 0) {
+        if ((pixa = pixaRead(filein)) == NULL)
+            return ERROR_INT("pixa not made", mainName, 1);
+    } else if (strcmp(sn, "Pixacomp") == 0) {
+        if ((pac = pixacompRead(filein)) == NULL)
+            return ERROR_INT("pac not made", mainName, 1);
+        pixa = pixaCreateFromPixacomp(pac, L_COPY);
+        pixacompDestroy(&pac);
+    } else {
+        return ERROR_INT("invalid file type", mainName, 1);
+    }
     pixaCountText(pixa, &ntext);
 
     if (argc == 3 || argc == 4)

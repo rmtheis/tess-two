@@ -119,7 +119,7 @@ l_int32   outsize, i, j, index, linecount;
          * enough array, and add 4 bytes to make sure it is big enough. */
     outsize = 4 * ((insize + 2) / 3);  /* without newlines */
     outsize += outsize / MAX_BASE64_LINE + 4;  /* with the newlines */
-    if ((chara = (char *)CALLOC(outsize, sizeof(char))) == NULL)
+    if ((chara = (char *)LEPT_CALLOC(outsize, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("chara not made", procName, NULL);
 
         /* Read all the input data, and convert in sets of 3 input
@@ -217,7 +217,7 @@ l_int32   i, j, outsize, in_index, out_index;
          * out the newlines during decoding.  This guarantees that
          * the allocated array is large enough. */
     outsize = 3 * ((insize + 3) / 4) + 4;
-    if ((bytea = (l_uint8 *)CALLOC(outsize, sizeof(l_uint8))) == NULL)
+    if ((bytea = (l_uint8 *)LEPT_CALLOC(outsize, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("bytea not made", procName, NULL);
 
         /* The number of encoded input data bytes is always a multiple of 4.
@@ -255,7 +255,7 @@ l_int32   i, j, outsize, in_index, out_index;
     }
     *poutsize = out_index;
 
-    FREE(rtable64);
+    LEPT_FREE(rtable64);
     return bytea;
 }
 
@@ -278,7 +278,7 @@ genReverseTab64()
 l_int32   i;
 l_int32  *rtable64;
 
-    rtable64 = (l_int32 *)CALLOC(128, sizeof(l_int32));
+    rtable64 = (l_int32 *)LEPT_CALLOC(128, sizeof(l_int32));
     for (i = 0; i < 64; i++) {
         rtable64[(unsigned char)tablechar64[i]] = i;
     }
@@ -351,9 +351,9 @@ l_int32  maxsize, i, index, outindex, linecount, nbout, eof;
         /* Accumulate results in char array */
     maxsize = (l_int32)(80. + (insize * 5. / 4.) *
                         (1. + 2. / MAX_ASCII85_LINE));
-    if ((chara = (char *)CALLOC(maxsize, sizeof(char))) == NULL)
+    if ((chara = (char *)LEPT_CALLOC(maxsize, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("chara not made", procName, NULL);
-    if ((outbuf = (char *)CALLOC(8, sizeof(char))) == NULL)
+    if ((outbuf = (char *)LEPT_CALLOC(8, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("outbuf not made", procName, NULL);
 
     linecount = 0;
@@ -379,7 +379,7 @@ l_int32  maxsize, i, index, outindex, linecount, nbout, eof;
         }
     }
 
-    FREE(outbuf);
+    LEPT_FREE(outbuf);
     *poutsize = outindex;
     return chara;
 }
@@ -486,7 +486,7 @@ l_uint32  oword;
 
         /* Accumulate results in outa */
     maxsize = (l_int32)(80. + (insize * 4. / 5.));  /* plenty big */
-    if ((outa = (l_uint8 *)CALLOC(maxsize, sizeof(l_uint8))) == NULL)
+    if ((outa = (l_uint8 *)LEPT_CALLOC(maxsize, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("outa not made", procName, NULL);
 
     pin = inarray;
@@ -600,7 +600,7 @@ l_int32  i, j, flatindex, flatsize, outindex, nlines, linewithpad, linecount;
         return (char *)ERROR_PTR("linechars % 4 must be 0", procName, NULL);
 
         /* Remove all white space */
-    if ((flata = (char *)CALLOC(insize, sizeof(char))) == NULL)
+    if ((flata = (char *)LEPT_CALLOC(insize, sizeof(char))) == NULL)
         return (char *)ERROR_PTR("flata not made", procName, NULL);
     for (i = 0, flatindex = 0; i < insize; i++) {
         if (isBase64(inarray[i]) || inarray[i] == '=')
@@ -612,7 +612,8 @@ l_int32  i, j, flatindex, flatsize, outindex, nlines, linewithpad, linecount;
     nlines = (flatsize + linechars - 1) / linechars;
     linewithpad = leadspace + linechars + 1;  /* including newline */
     if (addquotes) linewithpad += 2;
-    if ((outa = (char *)CALLOC(nlines * linewithpad, sizeof(char))) == NULL)
+    if ((outa = (char *)LEPT_CALLOC(nlines * linewithpad, sizeof(char)))
+        == NULL)
         return (char *)ERROR_PTR("outa not made", procName, NULL);
     for (j = 0, outindex = 0; j < leadspace; j++)
         outa[outindex++] = ' ';
@@ -632,7 +633,7 @@ l_int32  i, j, flatindex, flatsize, outindex, nlines, linewithpad, linecount;
     if (addquotes) outa[outindex++] = '"';
     *poutsize = outindex;
 
-    FREE(flata);
+    LEPT_FREE(flata);
     return outa;
 }
 

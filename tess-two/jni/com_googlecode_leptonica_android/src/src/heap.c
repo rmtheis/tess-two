@@ -58,7 +58,7 @@
  *    from the head of the array and added to the end of the array.
  *    When an item is removed from the head, the item at the end
  *    of the array is moved to the head.  When items are either
- *    added or removed, it is usually necesary to swap array items
+ *    added or removed, it is usually necessary to swap array items
  *    to restore the heap order.  It is guaranteed that the number
  *    of swaps does not exceed log(n).
  *
@@ -108,9 +108,9 @@ L_HEAP  *lh;
         nalloc = MIN_BUFFER_SIZE;
 
         /* Allocate ptr array and initialize counters. */
-    if ((lh = (L_HEAP *)CALLOC(1, sizeof(L_HEAP))) == NULL)
+    if ((lh = (L_HEAP *)LEPT_CALLOC(1, sizeof(L_HEAP))) == NULL)
         return (L_HEAP *)ERROR_PTR("lh not made", procName, NULL);
-    if ((lh->array = (void **)CALLOC(nalloc, sizeof(void *))) == NULL)
+    if ((lh->array = (void **)LEPT_CALLOC(nalloc, sizeof(void *))) == NULL)
         return (L_HEAP *)ERROR_PTR("ptr array not made", procName, NULL);
     lh->nalloc = nalloc;
     lh->n = 0;
@@ -153,14 +153,14 @@ L_HEAP  *lh;
 
     if (freeflag) {  /* free each struct in the array */
         for (i = 0; i < lh->n; i++)
-            FREE(lh->array[i]);
+            LEPT_FREE(lh->array[i]);
     } else if (lh->n > 0) {  /* freeflag == FALSE but elements exist on array */
         L_WARNING("memory leak of %d items in lheap!\n", procName, lh->n);
     }
 
     if (lh->array)
-        FREE(lh->array);
-    FREE(lh);
+        LEPT_FREE(lh->array);
+    LEPT_FREE(lh);
     *plh = NULL;
 
     return;

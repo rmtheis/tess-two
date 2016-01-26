@@ -68,11 +68,11 @@ L_REGPARAMS  *rp;
         return 1;
 
     /* ------------  Generate pixa char bitmap files from file ----------- */
-    lept_rmdir("filefonts");
-    lept_mkdir("filefonts");
+    lept_rmdir("lept/filefonts");
+    lept_mkdir("lept/filefonts");
     for (i = 0; i < 9; i++) {
-        pixaSaveFont("fonts", "/tmp/filefonts", sizes[i]);
-        pathname = genPathname("/tmp/filefonts", outputfonts[i]);
+        pixaSaveFont("fonts", "/tmp/lept/filefonts", sizes[i]);
+        pathname = genPathname("/tmp/lept/filefonts", outputfonts[i]);
         pixa = pixaRead(pathname);
         if (rp->display) {
             fprintf(stderr, "Found %d chars in font size %d\n",
@@ -85,14 +85,14 @@ L_REGPARAMS  *rp;
         pixaDestroy(&pixa);
         lept_free(pathname);
     }
-    lept_rmdir("filefonts");
+    lept_rmdir("lept/filefonts");
 
     /* ----------  Generate pixa char bitmap files from string --------- */
-    lept_rmdir("strfonts");
-    lept_mkdir("strfonts");
+    lept_rmdir("lept/strfonts");
+    lept_mkdir("lept/strfonts");
     for (i = 0; i < 9; i++) {
-        pixaSaveFont(NULL, "/tmp/strfonts", sizes[i]);
-        pathname = genPathname("/tmp/strfonts", outputfonts[i]);
+        pixaSaveFont(NULL, "/tmp/lept/strfonts", sizes[i]);
+        pathname = genPathname("/tmp/lept/strfonts", outputfonts[i]);
         pixa = pixaRead(pathname);
         if (rp->display) {
             fprintf(stderr, "Found %d chars in font size %d\n",
@@ -107,12 +107,12 @@ L_REGPARAMS  *rp;
     }
 
     /* -----  Use pixaGetFont() and write the result out  -----*/
-    lept_rmdir("pafonts");
-    lept_mkdir("pafonts");
+    lept_rmdir("lept/pafonts");
+    lept_mkdir("lept/pafonts");
     for (i = 0; i < 9; i++) {
-        pixa = pixaGetFont("/tmp/strfonts", sizes[i], &bl1, &bl2, &bl3);
+        pixa = pixaGetFont("/tmp/lept/strfonts", sizes[i], &bl1, &bl2, &bl3);
         fprintf(stderr, "Baselines are at: %d, %d, %d\n", bl1, bl2, bl3);
-        snprintf(buf, sizeof(buf), "/tmp/pafonts/chars-%d.pa", sizes[i]);
+        snprintf(buf, sizeof(buf), "/tmp/lept/pafonts/chars-%d.pa", sizes[i]);
         pixaWrite(buf, pixa);
         if (i == 2) {
             pixd = pixaDisplayTiled(pixa, 1500, 0, 15);
@@ -121,11 +121,11 @@ L_REGPARAMS  *rp;
         }
         pixaDestroy(&pixa);
     }
-    lept_rmdir("pafonts");
+    lept_rmdir("lept/pafonts");
 
     /* -------  Generate 4/3 encoded ascii strings from tiff files ------ */
-    lept_rmdir("fontencode");
-    lept_mkdir("fontencode");
+    lept_rmdir("lept/encfonts");
+    lept_mkdir("lept/encfonts");
     for (i = 0; i < 9; i++) {
         fontsize = 2 * i + 4;
         pathname = genPathname("fonts", inputfonts[i]);
@@ -135,15 +135,16 @@ L_REGPARAMS  *rp;
             fprintf(stderr, "nbytes = %lu, sbytes = %d\n",
                     (unsigned long)nbytes, sbytes);
         formstr = reformatPacked64(datastr, sbytes, 4, 72, 1, &formbytes);
-        snprintf(buf, sizeof(buf), "/tmp/fontencode/formstr_%d.txt", fontsize);
+        snprintf(buf, sizeof(buf), "/tmp/lept/encfonts/formstr_%d.txt",
+                 fontsize);
         l_binaryWrite(buf, "w", formstr, formbytes);
         regTestCheckFile(rp, buf);  /* 18-26 */
         if (i == 8)
             pix1 = pixReadMem(data1, nbytes);  /* original */
-        FREE(data1);
+        lept_free(data1);
 
         data2 = decodeBase64(datastr, sbytes, &rbytes);
-        snprintf(buf, sizeof(buf), "/tmp/fontencode/image_%d.tif", fontsize);
+        snprintf(buf, sizeof(buf), "/tmp/lept/encfonts/image_%d.tif", fontsize);
         l_binaryWrite(buf, "w", data2, rbytes);
         if (i == 8) {
             pix2 = pixReadMem(data2, rbytes);  /* encode/decode */
@@ -151,11 +152,11 @@ L_REGPARAMS  *rp;
             pixDestroy(&pix1);
             pixDestroy(&pix2);
         }
-        FREE(data2);
+        lept_free(data2);
 
-        FREE(pathname);
-        FREE(datastr);
-        FREE(formstr);
+        lept_free(pathname);
+        lept_free(datastr);
+        lept_free(formstr);
     }
 
     /* ------------  Get timing for font generation ----------- */

@@ -90,7 +90,7 @@ l_float32  *mat;
 
     PROCNAME("createMatrix2dTranslate");
 
-    if ((mat = (l_float32 *)CALLOC(9, sizeof(l_float32))) == NULL)
+    if ((mat = (l_float32 *)LEPT_CALLOC(9, sizeof(l_float32))) == NULL)
         return (l_float32 *)ERROR_PTR("mat not made", procName, NULL);
 
     mat[0] = mat[4] = mat[8] = 1;
@@ -129,7 +129,7 @@ l_float32  *mat;
 
     PROCNAME("createMatrix2dScale");
 
-    if ((mat = (l_float32 *)CALLOC(9, sizeof(l_float32))) == NULL)
+    if ((mat = (l_float32 *)LEPT_CALLOC(9, sizeof(l_float32))) == NULL)
         return (l_float32 *)ERROR_PTR("mat not made", procName, NULL);
 
     mat[0] = scalex;
@@ -182,7 +182,7 @@ l_float32  *mat;
 
     PROCNAME("createMatrix2dRotate");
 
-    if ((mat = (l_float32 *)CALLOC(9, sizeof(l_float32))) == NULL)
+    if ((mat = (l_float32 *)LEPT_CALLOC(9, sizeof(l_float32))) == NULL)
         return (l_float32 *)ERROR_PTR("mat not made", procName, NULL);
 
     sina = sin(angle);
@@ -608,11 +608,11 @@ l_float32  *matt;
     if (!matd)
         return ERROR_INT("result matrix not defined", procName, 1);
 
-    if ((matt = (l_float32 *)CALLOC(size * size, sizeof(l_float32))) == NULL)
+    if ((matt = (l_float32 *)LEPT_CALLOC(size * size, sizeof(l_float32))) == NULL)
         return ERROR_INT("matt not made", procName, 1);
     l_productMat2(mat1, mat2, matt, size);
     l_productMat2(matt, mat3, matd, size);
-    FREE(matt);
+    LEPT_FREE(matt);
     return 0;
 }
 
@@ -649,10 +649,10 @@ l_float32  *matt;
     if (!matd)
         return ERROR_INT("result matrix not defined", procName, 1);
 
-    if ((matt = (l_float32 *)CALLOC(size * size, sizeof(l_float32))) == NULL)
+    if ((matt = (l_float32 *)LEPT_CALLOC(size * size, sizeof(l_float32))) == NULL)
         return ERROR_INT("matt not made", procName, 1);
     l_productMat3(mat1, mat2, mat3, matt, size);
     l_productMat2(matt, mat4, matd, size);
-    FREE(matt);
+    LEPT_FREE(matt);
     return 0;
 }

@@ -453,7 +453,7 @@ l_uint32  *line, *data, *buffer;
     }
 
         /* Possibly inplace assigning return val, so on failure return pixd */
-    if ((buffer = (l_uint32 *)CALLOC(wpl, sizeof(l_uint32))) == NULL)
+    if ((buffer = (l_uint32 *)LEPT_CALLOC(wpl, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("buffer not made", procName, pixd);
 
     bpl = 4 * wpl;
@@ -550,8 +550,8 @@ l_uint32  *line, *data, *buffer;
             break;
     }
 
-    FREE(buffer);
-    if (tab) FREE(tab);
+    LEPT_FREE(buffer);
+    if (tab) LEPT_FREE(tab);
     return pixd;
 }
 
@@ -608,7 +608,7 @@ l_uint32  *data, *buffer;
 
     data = pixGetData(pixd);
     wpl = pixGetWpl(pixd);
-    if ((buffer = (l_uint32 *)CALLOC(wpl, sizeof(l_uint32))) == NULL)
+    if ((buffer = (l_uint32 *)LEPT_CALLOC(wpl, sizeof(l_uint32))) == NULL)
         return (PIX *)ERROR_PTR("buffer not made", procName, pixd);
 
     h2 = h / 2;
@@ -621,7 +621,7 @@ l_uint32  *data, *buffer;
         memcpy(lineb, buffer, bpl);
     }
 
-    FREE(buffer);
+    LEPT_FREE(buffer);
     return pixd;
 }
 
@@ -644,7 +644,7 @@ l_uint8  *tab;
 
     PROCNAME("makeReverseByteTab1");
 
-    if ((tab = (l_uint8 *)CALLOC(256, sizeof(l_uint8))) == NULL)
+    if ((tab = (l_uint8 *)LEPT_CALLOC(256, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("calloc fail for tab", procName, NULL);
 
     for (i = 0; i < 256; i++)
@@ -676,7 +676,7 @@ l_uint8  *tab;
 
     PROCNAME("makeReverseByteTab2");
 
-    if ((tab = (l_uint8 *)CALLOC(256, sizeof(l_uint8))) == NULL)
+    if ((tab = (l_uint8 *)LEPT_CALLOC(256, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("calloc fail for tab", procName, NULL);
 
     for (i = 0; i < 256; i++)
@@ -703,7 +703,7 @@ l_uint8  *tab;
 
     PROCNAME("makeReverseByteTab4");
 
-    if ((tab = (l_uint8 *)CALLOC(256, sizeof(l_uint8))) == NULL)
+    if ((tab = (l_uint8 *)LEPT_CALLOC(256, sizeof(l_uint8))) == NULL)
         return (l_uint8 *)ERROR_PTR("calloc fail for tab", procName, NULL);
 
     for (i = 0; i < 256; i++)

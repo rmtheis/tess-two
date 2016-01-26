@@ -242,51 +242,56 @@ enum {
  * is found from PIX_SRC & PIX_DST.  Note that
  * PIX_NOT(PIX_CLR) = PIX_SET, and v.v., as they must be.
  *
- * We would like to use the following set of definitions:
+ * We use the following set of definitions:
  *
  *      #define   PIX_SRC      0xc
  *      #define   PIX_DST      0xa
- *      #define   PIX_NOT(op)  ((op) ^ 0xf)
+ *      #define   PIX_NOT(op)  (op) ^ 0xf
  *      #define   PIX_CLR      0x0
  *      #define   PIX_SET      0xf
  *
- * Now, these definitions differ from Sun's, in that Sun
- * left-shifted each value by 1 pixel, and used the least
- * significant bit as a flag for the "pseudo-operation" of
- * clipping.  We don't need this bit, because it is both
- * efficient and safe ALWAYS to clip the rectangles to the src
- * and dest images, which is what we do.  See the notes in rop.h
- * on the general choice of these bit flags.
+ * These definitions differ from Sun's, in that Sun left-shifted
+ * each value by 1 pixel, and used the least significant bit as a
+ * flag for the "pseudo-operation" of clipping.  We don't need
+ * this bit, because it is both efficient and safe ALWAYS to clip
+ * the rectangles to the src and dest images, which is what we do.
+ * See the notes in rop.h on the general choice of these bit flags.
  *
- * However, if you include Sun's xview package, you will get their
- * definitions, and because I like using these flags, we will
- * adopt the original Sun definitions to avoid redefinition conflicts.
+ * [If for some reason you need compatibility with Sun's xview package,
+ * you can adopt the original Sun definitions to avoid redefinition conflicts:
  *
- * Then we have, for reference, the following 16 unique op flags:
+ *      #define   PIX_SRC      (0xc << 1)
+ *      #define   PIX_DST      (0xa << 1)
+ *      #define   PIX_NOT(op)  ((op) ^ 0x1e)
+ *      #define   PIX_CLR      (0x0 << 1)
+ *      #define   PIX_SET      (0xf << 1)
+ * ]
  *
- *      PIX_CLR                           00000             0x0
- *      PIX_SET                           11110             0x1e
- *      PIX_SRC                           11000             0x18
- *      PIX_DST                           10100             0x14
- *      PIX_NOT(PIX_SRC)                  00110             0x06
- *      PIX_NOT(PIX_DST)                  01010             0x0a
- *      PIX_SRC | PIX_DST                 11100             0x1c
- *      PIX_SRC & PIX_DST                 10000             0x10
- *      PIX_SRC ^ PIX_DST                 01100             0x0c
- *      PIX_NOT(PIX_SRC) | PIX_DST        10110             0x16
- *      PIX_NOT(PIX_SRC) & PIX_DST        00100             0x04
- *      PIX_SRC | PIX_NOT(PIX_DST)        11010             0x1a
- *      PIX_SRC & PIX_NOT(PIX_DST)        01000             0x08
- *      PIX_NOT(PIX_SRC | PIX_DST)        00010             0x02
- *      PIX_NOT(PIX_SRC & PIX_DST)        01110             0x0e
- *      PIX_NOT(PIX_SRC ^ PIX_DST)        10010             0x12
+ * We have, for reference, the following 16 unique op flags:
+ *
+ *      PIX_CLR                           0000             0x0
+ *      PIX_SET                           1111             0xf
+ *      PIX_SRC                           1100             0xc
+ *      PIX_DST                           1010             0xa
+ *      PIX_NOT(PIX_SRC)                  0011             0x3
+ *      PIX_NOT(PIX_DST)                  0101             0x5
+ *      PIX_SRC | PIX_DST                 1110             0xe
+ *      PIX_SRC & PIX_DST                 1000             0x8
+ *      PIX_SRC ^ PIX_DST                 0110             0x6
+ *      PIX_NOT(PIX_SRC) | PIX_DST        1011             0xb
+ *      PIX_NOT(PIX_SRC) & PIX_DST        0010             0x2
+ *      PIX_SRC | PIX_NOT(PIX_DST)        1101             0xd
+ *      PIX_SRC & PIX_NOT(PIX_DST)        0100             0x4
+ *      PIX_NOT(PIX_SRC | PIX_DST)        0001             0x1
+ *      PIX_NOT(PIX_SRC & PIX_DST)        0111             0x7
+ *      PIX_NOT(PIX_SRC ^ PIX_DST)        1001             0x9
  *
  *-------------------------------------------------------------------------*/
-#define   PIX_SRC      (0xc << 1)
-#define   PIX_DST      (0xa << 1)
-#define   PIX_NOT(op)  ((op) ^ 0x1e)
-#define   PIX_CLR      (0x0 << 1)
-#define   PIX_SET      (0xf << 1)
+#define   PIX_SRC      (0xc)
+#define   PIX_DST      (0xa)
+#define   PIX_NOT(op)  ((op) ^ 0x0f)
+#define   PIX_CLR      (0x0)
+#define   PIX_SET      (0xf)
 
 #define   PIX_PAINT    (PIX_SRC | PIX_DST)
 #define   PIX_MASK     (PIX_SRC & PIX_DST)
@@ -741,9 +746,12 @@ enum {
  *                         16-bit conversion flags                         *
  *-------------------------------------------------------------------------*/
 enum {
-    L_LS_BYTE = 0,                /* use LSB                               */
-    L_MS_BYTE = 1,                /* use MSB                               */
-    L_CLIP_TO_255 = 2             /* use max(val, 255)                     */
+    L_LS_BYTE = 1,                /* use LSB                               */
+    L_MS_BYTE = 2,                /* use MSB                               */
+    L_CLIP_TO_FF = 3,             /* use max(val, 255)                     */
+    L_LS_TWO_BYTES = 4,           /* use two LSB                           */
+    L_MS_TWO_BYTES = 5,           /* use two MSB                           */
+    L_CLIP_TO_FFFF = 6            /* use max(val, 65535)                   */
 };
 
 
@@ -1083,8 +1091,9 @@ enum {
 
 /*-------------------------------------------------------------------------*
  *    Flag(s) used in the 'special' pix field for non-default operations   *
- *      - 0 is default                                                     *
- *      - 10-19 are reserved for zlib compression in png write             *
+ *      - 0 is default for chroma sampling in jpeg                         *
+ *      - 10-19 are used for zlib compression in png write                 *
+ *      - 4 and 8 are used for specifying connectivity in labelling        *
  *-------------------------------------------------------------------------*/
 enum {
     L_NO_CHROMA_SAMPLING_JPEG = 1     /* Write full resolution chroma      */

@@ -293,38 +293,49 @@ pixSeedfillBinaryRestricted(PIX     *pixd,
                             l_int32  ymax)
 {
 l_int32  w, h;
-PIX     *pixr, *pixt;
+PIX     *pix1, *pix2;
 
     PROCNAME("pixSeedfillBinaryRestricted");
 
-    if (xmax <= 0 && ymax <= 0)  /* no filling permitted */
+    if (!pixs || pixGetDepth(pixs) != 1)
+        return (PIX *)ERROR_PTR("pixs undefined or not 1 bpp", procName, pixd);
+    if (!pixm || pixGetDepth(pixm) != 1)
+        return (PIX *)ERROR_PTR("pixm undefined or not 1 bpp", procName, pixd);
+    if (connectivity != 4 && connectivity != 8)
+        return (PIX *)ERROR_PTR("connectivity not in {4,8}", procName, pixd);
+    if (xmax == 0 && ymax == 0)  /* no filling permitted */
         return pixClone(pixs);
-    if (xmax < 0 || ymax < 0)
-        return (PIX *)ERROR_PTR("pixt not made", procName, pixd);
+    if (xmax < 0 || ymax < 0) {
+        L_ERROR("xmax and ymax must be non-negative", procName);
+        return pixClone(pixs);
+    }
 
         /* Full fill from the seed into the mask. */
-    if ((pixt = pixSeedfillBinary(NULL, pixs, pixm, connectivity)) == NULL)
-        return (PIX *)ERROR_PTR("pixt not made", procName, pixd);
+    if ((pix1 = pixSeedfillBinary(NULL, pixs, pixm, connectivity)) == NULL)
+        return (PIX *)ERROR_PTR("pix1 not made", procName, pixd);
 
         /* Dilate the seed.  This gives the maximal region where changes
          * are permitted.  Invert to get the region where pixs is
          * not allowed to change.  */
-    pixr = pixDilateCompBrick(NULL, pixs, 2 * xmax + 1, 2 * ymax + 1);
-    pixInvert(pixr, pixr);
+    pix2 = pixDilateCompBrick(NULL, pixs, 2 * xmax + 1, 2 * ymax + 1);
+    pixInvert(pix2, pix2);
 
-        /* Blank the region of pixt specified by the fg of pixr.
-         * This is not the final result, because it may have fg that
-         * is not accessible from the seed in the restricted distance.
-         * There we treat this as a new mask, and eliminate the
-         * bad fg regions by doing a second seedfill from the original seed. */
+        /* Blank the region of pix1 specified by the fg of pix2.
+         * This is not yet the final result, because it may have fg pixels
+         * that are not accessible from the seed in the restricted distance.
+         * For example, such pixels may be connected to the original seed,
+         * but through a path that goes outside the permitted region. */
     pixGetDimensions(pixs, &w, &h, NULL);
-    pixRasterop(pixt, 0, 0, w, h, PIX_DST & PIX_NOT(PIX_SRC), pixr, 0, 0);
+    pixRasterop(pix1, 0, 0, w, h, PIX_DST & PIX_NOT(PIX_SRC), pix2, 0, 0);
 
-        /* Fill again from the seed, into this new mask. */
-    pixd = pixSeedfillBinary(pixd, pixs, pixt, connectivity);
+        /* To get the accessible pixels in the restricted region, do
+         * a second seedfill from the original seed, using pix1 as
+         * a mask.  The result, in pixd, will not have any bad fg
+         * pixels that were in pix1. */
+    pixd = pixSeedfillBinary(pixd, pixs, pix1, connectivity);
 
-    pixDestroy(&pixt);
-    pixDestroy(&pixr);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
     return pixd;
 }
 
@@ -622,7 +633,7 @@ PIXA      *pixa;
     }
     boxaDestroy(&boxa);
     pixaDestroy(&pixa);
-    FREE(tab);
+    LEPT_FREE(tab);
 
     return pixd;
 }

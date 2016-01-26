@@ -105,7 +105,7 @@ L_KERNEL  *kel;
 
     PROCNAME("kernelCreate");
 
-    if ((kel = (L_KERNEL *)CALLOC(1, sizeof(L_KERNEL))) == NULL)
+    if ((kel = (L_KERNEL *)LEPT_CALLOC(1, sizeof(L_KERNEL))) == NULL)
         return (L_KERNEL *)ERROR_PTR("kel not made", procName, NULL);
     kel->sy = height;
     kel->sx = width;
@@ -138,9 +138,9 @@ L_KERNEL  *kel;
         return;
 
     for (i = 0; i < kel->sy; i++)
-        FREE(kel->data[i]);
-    FREE(kel->data);
-    FREE(kel);
+        LEPT_FREE(kel->data[i]);
+    LEPT_FREE(kel->data);
+    LEPT_FREE(kel);
 
     *pkel = NULL;
     return;
@@ -479,11 +479,12 @@ l_float32  **array;
 
     PROCNAME("create2dFloatArray");
 
-    if ((array = (l_float32 **)CALLOC(sy, sizeof(l_float32 *))) == NULL)
+    if ((array = (l_float32 **)LEPT_CALLOC(sy, sizeof(l_float32 *))) == NULL)
         return (l_float32 **)ERROR_PTR("ptr array not made", procName, NULL);
 
     for (i = 0; i < sy; i++) {
-        if ((array[i] = (l_float32 *)CALLOC(sx, sizeof(l_float32))) == NULL)
+        if ((array[i] = (l_float32 *)LEPT_CALLOC(sx, sizeof(l_float32)))
+            == NULL)
             return (l_float32 **)ERROR_PTR("array not made", procName, NULL);
     }
 
@@ -678,7 +679,7 @@ NUMA      *na;
     n = numaGetCount(na);
     if (n != w * h) {
         numaDestroy(&na);
-	fprintf(stderr, "w = %d, h = %d, num ints = %d\n", w, h, n);
+        fprintf(stderr, "w = %d, h = %d, num ints = %d\n", w, h, n);
         return (L_KERNEL *)ERROR_PTR("invalid integer data", procName, NULL);
     }
 
@@ -687,7 +688,7 @@ NUMA      *na;
         for (j = 0; j < w; j++) {
             numaGetFValue(na, index, &val);
             kernelSetElement(kel, i, j, val);
-	    index++;
+            index++;
         }
     }
 
@@ -748,7 +749,7 @@ L_KERNEL  *kel;
 
     filestr = (char *)l_binaryRead(filename, &size);
     sa = sarrayCreateLinesFromString(filestr, 1);
-    FREE(filestr);
+    LEPT_FREE(filestr);
     nlines = sarrayGetCount(sa);
 
         /* Find the first data line. */
@@ -963,7 +964,7 @@ PIX       *pixd, *pixt0, *pixt1;
             kernelGetElement(kel, i, j, &val);
             normval = (l_int32)(norm * L_ABS(val));
             pixSetMaskedGeneral(pixd, pixt0, normval, x0, y0);
-	    if (i == cy && j == cx)
+            if (i == cy && j == cx)
                 pixPaintThroughMask(pixd, pixt1, x0, y0, 255 - normval);
             x0 += size + gthick;
         }
@@ -1007,14 +1008,14 @@ NUMA      *na;
     head = strtokSafe(newstr, seps, &tail);
     val = atof(head);
     numaAddNumber(na, val);
-    FREE(head);
+    LEPT_FREE(head);
     while ((head = strtokSafe(NULL, seps, &tail)) != NULL) {
         val = atof(head);
         numaAddNumber(na, val);
-        FREE(head);
+        LEPT_FREE(head);
     }
 
-    FREE(newstr);
+    LEPT_FREE(newstr);
     return na;
 }
 

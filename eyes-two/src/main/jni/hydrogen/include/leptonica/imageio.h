@@ -24,6 +24,45 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
+/*
+ *  General features of image I/O in leptonica
+ *
+ *  At present, there are 9 file formats for images that can be read
+ *  and written:
+ *      png (requires libpng, libz)
+ *      jpeg (requires libjpeg)
+ *      tiff (requires libtiff, libz)
+ *      gif (requires libgif)
+ *      webp (requires libwebp)
+ *      jp2 (requires libopenjp2)
+ *      bmp (no library required)
+ *      pnm (no library required)
+ *      spix (no library required)
+ *  Additionally, there are two file formats for writing (only) images:
+ *      PostScript (requires libpng, libz, libjpeg, libtiff)
+ *      pdf (requires libpng, libz, libjpeg, libtiff)
+ *
+ *  For all 9 read/write formats, leptonica provides interconversion
+ *  between pix (with raster data) and formatted image data:
+ *      Conversion from pix (typically compression):
+ *          pixWrite():        pix --> file
+ *          pixWriteStream():  pix --> filestream (aka FILE*)
+ *          pixWriteMem():     pix --> memory buffer
+ *      Conversion to pix (typically decompression):
+ *          pixRead():         file --> pix
+ *          pixReadStream():   filestream --> pix
+ *          pixReadMem():      memory buffer --> pix
+ *
+ *  Conversions for which the image data is not compressed are:
+ *     * uncompressed tiff   (IFF_TIFF)
+ *     * bmp
+ *     * pnm
+ *     * spix (fast serialization that copies the pix raster data)
+ *
+ *  The image header (metadata) information can be read from either
+ *  the compressed file or a memory buffer, for all 9 formats.
+ */
+
 #ifndef  LEPTONICA_IMAGEIO_H
 #define  LEPTONICA_IMAGEIO_H
 
@@ -73,18 +112,20 @@ enum {
 };
 
 
-/* ------------------ Gray hinting in jpeg reader --------------- */
+/* ------------- Hinting bit flags in jpeg reader --------------- */
 enum {
-    L_HINT_GRAY = 1,  /* only want grayscale information */
+    L_JPEG_READ_LUMINANCE = 1,  /* only want luminance data; no chroma */
+    L_JPEG_FAIL_ON_BAD_DATA = 2  /* don't return possibly damaged pix */
 };
 
 
-/* ------------------ Pdf formated encoding types --------------- */
+/* ------------------ Pdf formatted encoding types -------------- */
 enum {
-    L_JPEG_ENCODE   = 1,    /* use dct encoding: 8 and 32 bpp, no cmap     */
-    L_G4_ENCODE     = 2,    /* use ccitt g4 fax encoding: 1 bpp            */
-    L_FLATE_ENCODE  = 3,    /* use flate encoding: any depth, cmap ok      */
-    L_JP2K_ENCODE  = 4      /* use jp2k encoding: 8 and 32 bpp, no cmap    */
+    L_DEFAULT_ENCODE  = 0,  /* use default encoding based on image        */
+    L_JPEG_ENCODE     = 1,  /* use dct encoding: 8 and 32 bpp, no cmap    */
+    L_G4_ENCODE       = 2,  /* use ccitt g4 fax encoding: 1 bpp           */
+    L_FLATE_ENCODE    = 3,  /* use flate encoding: any depth, cmap ok     */
+    L_JP2K_ENCODE     = 4   /* use jp2k encoding: 8 and 32 bpp, no cmap   */
 };
 
 
@@ -101,7 +142,7 @@ enum {
  */
 struct L_Compressed_Data
 {
-    l_int32            type;         /* encoding type: L_JPEG_ENCODE, etc  */
+    l_int32            type;         /* encoding type: L_JPEG_ENCODE, etc   */
     l_uint8           *datacomp;     /* gzipped raster data                 */
     size_t             nbytescomp;   /* number of compressed bytes          */
     char              *data85;       /* ascii85-encoded gzipped raster data */
@@ -114,6 +155,7 @@ struct L_Compressed_Data
     l_int32            bps;          /* bits/sample; typ. 1, 2, 4 or 8      */
     l_int32            spp;          /* samples/pixel; typ. 1 or 3          */
     l_int32            minisblack;   /* tiff g4 photometry                  */
+    l_int32            predictor;    /* flate data has PNG predictors       */
     size_t             nbytes;       /* number of uncompressed raster bytes */
     l_int32            res;          /* resolution (ppi)                    */
 };

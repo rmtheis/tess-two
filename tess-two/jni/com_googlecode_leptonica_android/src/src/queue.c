@@ -92,9 +92,9 @@ L_QUEUE  *lq;
     if (nalloc < MIN_BUFFER_SIZE)
         nalloc = INITIAL_BUFFER_ARRAYSIZE;
 
-    if ((lq = (L_QUEUE *)CALLOC(1, sizeof(L_QUEUE))) == NULL)
+    if ((lq = (L_QUEUE *)LEPT_CALLOC(1, sizeof(L_QUEUE))) == NULL)
         return (L_QUEUE *)ERROR_PTR("lq not made", procName, NULL);
-    if ((lq->array = (void **)CALLOC(nalloc, sizeof(void *))) == NULL)
+    if ((lq->array = (void **)LEPT_CALLOC(nalloc, sizeof(void *))) == NULL)
         return (L_QUEUE *)ERROR_PTR("ptr array not made", procName, NULL);
     lq->nalloc = nalloc;
     lq->nhead = lq->nelem = 0;
@@ -139,17 +139,17 @@ L_QUEUE  *lq;
     if (freeflag) {
         while(lq->nelem > 0) {
             item = lqueueRemove(lq);
-            FREE(item);
+            LEPT_FREE(item);
         }
     } else if (lq->nelem > 0) {
         L_WARNING("memory leak of %d items in lqueue!\n", procName, lq->nelem);
     }
 
     if (lq->array)
-        FREE(lq->array);
+        LEPT_FREE(lq->array);
     if (lq->stack)
         lstackDestroy(&lq->stack, freeflag);
-    FREE(lq);
+    LEPT_FREE(lq);
     *plq = NULL;
 
     return;

@@ -166,15 +166,15 @@ static char  mainName[] = "xtractprotos";
 
         /* First the extern C head */
     sa = sarrayCreate(0);
-    sarrayAddString(sa, (char *)"/*", 1);
+    sarrayAddString(sa, (char *)"/*", L_COPY);
     snprintf(buf, L_BUF_SIZE,
              " *  These prototypes were autogen'd by xtractprotos, v. %s",
              version);
-    sarrayAddString(sa, buf, 1);
-    sarrayAddString(sa, (char *)" */", 1);
-    sarrayAddString(sa, (char *)"#ifdef __cplusplus", 1);
-    sarrayAddString(sa, (char *)"extern \"C\" {", 1);
-    sarrayAddString(sa, (char *)"#endif  /* __cplusplus */\n", 1);
+    sarrayAddString(sa, buf, L_COPY);
+    sarrayAddString(sa, (char *)" */", L_COPY);
+    sarrayAddString(sa, (char *)"#ifdef __cplusplus", L_COPY);
+    sarrayAddString(sa, (char *)"extern \"C\" {", L_COPY);
+    sarrayAddString(sa, (char *)"#endif  /* __cplusplus */\n", L_COPY);
     str = sarrayToString(sa, 1);
     l_byteaAppendString(ba, str);
     lept_free(str);
@@ -185,22 +185,22 @@ static char  mainName[] = "xtractprotos";
     protos_added = FALSE;
     for (i = firstfile; i < argc; i++) {
         filein = argv[i];
-	len = strlen(filein);
-	if (filein[len - 1] == 'h')  /* skip .h files */
-	    continue;
-	snprintf(buf, L_BUF_SIZE, "cpp -ansi -DNO_PROTOS %s %s",
-	         filein, tempfile);
-	ret = system(buf);  /* cpp */
-	if (ret) {
+        len = strlen(filein);
+        if (filein[len - 1] == 'h')  /* skip .h files */
+            continue;
+        snprintf(buf, L_BUF_SIZE, "cpp -ansi -DNO_PROTOS %s %s",
+                 filein, tempfile);
+        ret = system(buf);  /* cpp */
+        if (ret) {
             fprintf(stderr, "cpp failure for %s; continuing\n", filein);
-	    continue;
-	}
+            continue;
+        }
 
-	if ((str = parseForProtos(tempfile, prestring)) == NULL) {
+        if ((str = parseForProtos(tempfile, prestring)) == NULL) {
             fprintf(stderr, "parse failure for %s; continuing\n", filein);
-	    continue;
-	}
-	if (strlen(str) > 1) {  /* strlen(str) == 1 is a file without protos */
+            continue;
+        }
+        if (strlen(str) > 1) {  /* strlen(str) == 1 is a file without protos */
             l_byteaAppendString(ba, str);
             protos_added = TRUE;
         }
@@ -209,9 +209,9 @@ static char  mainName[] = "xtractprotos";
 
         /* Lastly the extern C tail */
     sa = sarrayCreate(0);
-    sarrayAddString(sa, (char *)"\n#ifdef __cplusplus", 1);
-    sarrayAddString(sa, (char *)"}", 1);
-    sarrayAddString(sa, (char *)"#endif  /* __cplusplus */", 1);
+    sarrayAddString(sa, (char *)"\n#ifdef __cplusplus", L_COPY);
+    sarrayAddString(sa, (char *)"}", L_COPY);
+    sarrayAddString(sa, (char *)"#endif  /* __cplusplus */", L_COPY);
     str = sarrayToString(sa, 1);
     l_byteaAppendString(ba, str);
     lept_free(str);

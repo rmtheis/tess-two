@@ -86,38 +86,39 @@ liblept_la_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 am_liblept_la_OBJECTS = adaptmap.lo affine.lo affinecompose.lo \
 	arrayaccess.lo bardecode.lo baseline.lo bbuffer.lo \
 	bilateral.lo bilinear.lo binarize.lo binexpand.lo binreduce.lo \
-	blend.lo bmf.lo bmpio.lo bmpiostub.lo bootnumgen.lo \
-	boxbasic.lo boxfunc1.lo boxfunc2.lo boxfunc3.lo boxfunc4.lo \
-	bytearray.lo ccbord.lo ccthin.lo classapp.lo colorcontent.lo \
-	coloring.lo colormap.lo colormorph.lo colorquant1.lo \
-	colorquant2.lo colorseg.lo colorspace.lo compare.lo \
-	conncomp.lo convertfiles.lo convolve.lo correlscore.lo \
-	dewarp1.lo dewarp2.lo dewarp3.lo dewarp4.lo dnabasic.lo \
-	dwacomb.2.lo dwacomblow.2.lo edge.lo encoding.lo enhance.lo \
-	fhmtauto.lo fhmtgen.1.lo fhmtgenlow.1.lo finditalic.lo \
-	flipdetect.lo fliphmtgen.lo fmorphauto.lo fmorphgen.1.lo \
-	fmorphgenlow.1.lo fpix1.lo fpix2.lo gifio.lo gifiostub.lo \
-	gplot.lo graphics.lo graymorph.lo grayquant.lo grayquantlow.lo \
-	heap.lo jbclass.lo jp2kheader.lo jp2kheaderstub.lo jp2kio.lo \
-	jp2kiostub.lo jpegio.lo jpegiostub.lo kernel.lo leptwin.lo \
-	libversions.lo list.lo maze.lo morph.lo morphapp.lo \
-	morphdwa.lo morphseq.lo numabasic.lo numafunc1.lo numafunc2.lo \
-	pageseg.lo paintcmap.lo parseprotos.lo partition.lo pdfio1.lo \
-	pdfio1stub.lo pdfio2.lo pdfio2stub.lo pix1.lo pix2.lo pix3.lo \
-	pix4.lo pix5.lo pixabasic.lo pixacc.lo pixafunc1.lo \
-	pixafunc2.lo pixalloc.lo pixarith.lo pixcomp.lo pixconv.lo \
-	pixlabel.lo pixtiling.lo pngio.lo pngiostub.lo pnmio.lo \
-	pnmiostub.lo projective.lo psio1.lo psio1stub.lo psio2.lo \
-	psio2stub.lo ptabasic.lo ptafunc1.lo ptra.lo quadtree.lo \
-	queue.lo rank.lo readbarcode.lo readfile.lo recogbasic.lo \
-	recogdid.lo recogident.lo recogtrain.lo regutils.lo rop.lo \
-	ropiplow.lo roplow.lo rotate.lo rotateam.lo rotateamlow.lo \
-	rotateorth.lo rotateshear.lo runlength.lo sarray.lo scale.lo \
-	scalelow.lo seedfill.lo seedfilllow.lo sel1.lo sel2.lo \
-	selgen.lo shear.lo skew.lo spixio.lo stack.lo stringcode.lo \
-	sudoku.lo textops.lo tiffio.lo tiffiostub.lo utils.lo \
-	viewfiles.lo warper.lo watershed.lo webpio.lo webpiostub.lo \
-	writefile.lo zlibmem.lo zlibmemstub.lo
+	blend.lo bmf.lo bmpio.lo bmpiostub.lo bootnumgen1.lo \
+	bootnumgen2.lo boxbasic.lo boxfunc1.lo boxfunc2.lo boxfunc3.lo \
+	boxfunc4.lo bytearray.lo ccbord.lo ccthin.lo classapp.lo \
+	colorcontent.lo coloring.lo colormap.lo colormorph.lo \
+	colorquant1.lo colorquant2.lo colorseg.lo colorspace.lo \
+	compare.lo conncomp.lo convertfiles.lo convolve.lo \
+	correlscore.lo dewarp1.lo dewarp2.lo dewarp3.lo dewarp4.lo \
+	dnabasic.lo dwacomb.2.lo dwacomblow.2.lo edge.lo encoding.lo \
+	enhance.lo fhmtauto.lo fhmtgen.1.lo fhmtgenlow.1.lo \
+	finditalic.lo flipdetect.lo fliphmtgen.lo fmorphauto.lo \
+	fmorphgen.1.lo fmorphgenlow.1.lo fpix1.lo fpix2.lo gifio.lo \
+	gifiostub.lo gplot.lo graphics.lo graymorph.lo grayquant.lo \
+	grayquantlow.lo heap.lo jbclass.lo jp2kheader.lo \
+	jp2kheaderstub.lo jp2kio.lo jp2kiostub.lo jpegio.lo \
+	jpegiostub.lo kernel.lo leptwin.lo libversions.lo list.lo \
+	map.lo maze.lo morph.lo morphapp.lo morphdwa.lo morphseq.lo \
+	numabasic.lo numafunc1.lo numafunc2.lo pageseg.lo paintcmap.lo \
+	parseprotos.lo partition.lo pdfio1.lo pdfio1stub.lo pdfio2.lo \
+	pdfio2stub.lo pix1.lo pix2.lo pix3.lo pix4.lo pix5.lo \
+	pixabasic.lo pixacc.lo pixafunc1.lo pixafunc2.lo pixalloc.lo \
+	pixarith.lo pixcomp.lo pixconv.lo pixlabel.lo pixtiling.lo \
+	pngio.lo pngiostub.lo pnmio.lo pnmiostub.lo projective.lo \
+	psio1.lo psio1stub.lo psio2.lo psio2stub.lo ptabasic.lo \
+	ptafunc1.lo ptra.lo quadtree.lo queue.lo rank.lo rbtree.lo \
+	readbarcode.lo readfile.lo recogbasic.lo recogdid.lo \
+	recogident.lo recogtrain.lo regutils.lo rop.lo ropiplow.lo \
+	roplow.lo rotate.lo rotateam.lo rotateamlow.lo rotateorth.lo \
+	rotateshear.lo runlength.lo sarray.lo scale.lo scalelow.lo \
+	seedfill.lo seedfilllow.lo sel1.lo sel2.lo selgen.lo shear.lo \
+	skew.lo spixio.lo stack.lo stringcode.lo sudoku.lo textops.lo \
+	tiffio.lo tiffiostub.lo utils.lo viewfiles.lo warper.lo \
+	watershed.lo webpio.lo webpiostub.lo writefile.lo zlibmem.lo \
+	zlibmemstub.lo
 liblept_la_OBJECTS = $(am_liblept_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -290,13 +291,14 @@ top_srcdir = @top_srcdir@
 AM_CFLAGS = $(DEBUG_FLAGS)
 lib_LTLIBRARIES = liblept.la
 liblept_la_LIBADD = $(LIBM) $(ZLIB_LIBS) $(LIBPNG_LIBS) $(JPEG_LIBS) $(GIFLIB_LIBS) $(LIBTIFF_LIBS) $(LIBWEBP_LIBS) $(LIBJP2K_LIBS) $(GDI_LIBS)
-liblept_la_LDFLAGS = -no-undefined -version-info 4:3:0
+liblept_la_LDFLAGS = -no-undefined -version-info 5:0:0
 liblept_la_SOURCES = adaptmap.c affine.c                        \
  affinecompose.c arrayaccess.c                                  \
  bardecode.c baseline.c bbuffer.c                               \
  bilateral.c bilinear.c binarize.c                              \
  binexpand.c binreduce.c                                        \
- blend.c bmf.c bmpio.c bmpiostub.c bootnumgen.c                 \
+ blend.c bmf.c bmpio.c bmpiostub.c                              \
+ bootnumgen1.c bootnumgen2.c                                    \
  boxbasic.c boxfunc1.c boxfunc2.c boxfunc3.c boxfunc4.c         \
  bytearray.c ccbord.c ccthin.c classapp.c                       \
  colorcontent.c coloring.c                                      \
@@ -316,7 +318,7 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  grayquant.c grayquantlow.c heap.c jbclass.c                    \
  jp2kheader.c jp2kheaderstub.c                                  \
  jp2kio.c jp2kiostub.c jpegio.c jpegiostub.c                    \
- kernel.c leptwin.c libversions.c list.c maze.c                 \
+ kernel.c leptwin.c libversions.c list.c map.c maze.c           \
  morph.c morphapp.c morphdwa.c morphseq.c                       \
  numabasic.c numafunc1.c numafunc2.c                            \
  pageseg.c paintcmap.c                                          \
@@ -329,7 +331,7 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  pnmio.c pnmiostub.c projective.c	                        \
  psio1.c psio1stub.c psio2.c psio2stub.c                        \
  ptabasic.c ptafunc1.c ptra.c	                                \
- quadtree.c queue.c rank.c                                      \
+ quadtree.c queue.c rank.c rbtree.c                             \
  readbarcode.c readfile.c                                       \
  recogbasic.c recogdid.c recogident.c                           \
  recogtrain.c regutils.c                                        \
@@ -354,8 +356,8 @@ pkginclude_HEADERS = allheaders.h alltypes.h                    \
  dewarp.h endianness.h environ.h		                \
  gplot.h heap.h imageio.h jbclass.h                             \
  leptwin.h list.h	                                        \
- morph.h pix.h ptra.h queue.h readbarcode.h                     \
- recog.h regutils.h stack.h                                     \
+ morph.h pix.h ptra.h queue.h rbtree.h                          \
+ readbarcode.h recog.h regutils.h stack.h                       \
  stringcode.h sudoku.h watershed.h
 
 LDADD = liblept.la
@@ -470,7 +472,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bmf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bmpio.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bmpiostub.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bootnumgen.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bootnumgen1.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bootnumgen2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boxbasic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boxfunc1.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boxfunc2.Plo@am__quote@
@@ -533,6 +536,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/leptwin.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libversions.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/map.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/maze.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/morph.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/morphapp.Plo@am__quote@
@@ -579,6 +583,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/quadtree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/queue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rank.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rbtree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readbarcode.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readfile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recogbasic.Plo@am__quote@

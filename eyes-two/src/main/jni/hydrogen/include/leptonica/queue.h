@@ -10,7 +10,7 @@
  -     copyright notice, this list of conditions and the following
  -     disclaimer in the documentation and/or other materials
  -     provided with the distribution.
- - 
+ -
  -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -44,7 +44,7 @@
  *      be removed, is array[nhead].  The location at the tail of the
  *      queue to which the next element will be added is
  *      array[nhead + nelem].
- *               
+ *
  *      As items are added to the queue, nelem increases.
  *      As items are removed, nhead increases and nelem decreases.
  *      Any time the tail reaches the end of the allocated array,

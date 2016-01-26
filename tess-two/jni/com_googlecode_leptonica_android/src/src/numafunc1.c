@@ -98,11 +98,16 @@
  *          l_int32      numaGetMode()
  *          l_int32      numaGetMedianVariation()
  *
- *      Numa combination
+ *      Rearrangements
  *          l_int32      numaJoin()
  *          l_int32      numaaJoin()
  *          NUMA        *numaaFlattenToNuma()
  *
+ *      Union and intersection
+ *          NUMA        *numaUnionByAset()
+ *          NUMA        *numaRemoveDupsByAset()
+ *          NUMA        *numaIntersectionByAset()
+ *          L_ASET      *l_asetCreateFromNuma()
  *
  *    Things to remember when using the Numa:
  *
@@ -215,7 +220,7 @@ l_float32  val1, val2;
  *
  *  Notes:
  *      (1) The sizes of na1 and na2 must be equal.
- *      (2) nad can only null or equal to na1.
+ *      (2) nad can only be null or equal to na1.
  *      (3) This is intended for use with indicator arrays (0s and 1s).
  *          Input data is extracted as integers (0 == false, anything
  *          else == true); output results are 0 and 1.
@@ -1873,7 +1878,7 @@ NUMA       *nasx, *nasy, *nadx, *nady;
     fay = numaGetFArray(nasy, L_NOCOPY);
 
         /* Get array of indices into fax for interpolated locations */
-    if ((index = (l_int32 *)CALLOC(npts, sizeof(l_int32))) == NULL)
+    if ((index = (l_int32 *)LEPT_CALLOC(npts, sizeof(l_int32))) == NULL)
         return ERROR_INT("ind not made", procName, 1);
     del = (x1 - x0) / (npts - 1.0);
     for (i = 0, j = 0; j < nx && i < npts; i++) {
@@ -1930,7 +1935,7 @@ NUMA       *nasx, *nasy, *nadx, *nady;
         numaAddNumber(nady, yval);
     }
 
-    FREE(index);
+    LEPT_FREE(index);
     numaDestroy(&nasx);
     numaDestroy(&nasy);
     return 0;
@@ -2534,7 +2539,7 @@ NUMA       *naisort;
     n = numaGetCount(na);
     if ((array = numaGetFArray(na, L_COPY)) == NULL)
         return (NUMA *)ERROR_PTR("array not made", procName, NULL);
-    if ((iarray = (l_float32 *)CALLOC(n, sizeof(l_float32))) == NULL)
+    if ((iarray = (l_float32 *)LEPT_CALLOC(n, sizeof(l_float32))) == NULL)
         return (NUMA *)ERROR_PTR("iarray not made", procName, NULL);
     for (i = 0; i < n; i++)
         iarray[i] = i;
@@ -2563,8 +2568,8 @@ NUMA       *naisort;
     for (i = 0; i < n; i++)
         numaAddNumber(naisort, iarray[i]);
 
-    FREE(array);
-    FREE(iarray);
+    LEPT_FREE(array);
+    LEPT_FREE(iarray);
     return naisort;
 }
 
@@ -2705,7 +2710,7 @@ numaIsSorted(NUMA     *nas,
              l_int32  *psorted)
 {
 l_int32    i, n;
-l_float32  preval, val;
+l_float32  prevval, val;
 
     PROCNAME("numaIsSorted");
 
@@ -2718,11 +2723,11 @@ l_float32  preval, val;
         return ERROR_INT("invalid sortorder", procName, 1);
 
     n = numaGetCount(nas);
-    numaGetFValue(nas, 0, &preval);
+    numaGetFValue(nas, 0, &prevval);
     for (i = 1; i < n; i++) {
         numaGetFValue(nas, i, &val);
-        if ((sortorder == L_SORT_INCREASING && val < preval) ||
-            (sortorder == L_SORT_DECREASING && val > preval))
+        if ((sortorder == L_SORT_INCREASING && val < prevval) ||
+            (sortorder == L_SORT_DECREASING && val > prevval))
             return 0;
     }
 
@@ -2807,7 +2812,7 @@ NUMA     *nad;
 
     n = numaGetCount(nas);
     nad = numaMakeConstant(0.0, n);
-    test = (l_int32 *)CALLOC(n, sizeof(l_int32));
+    test = (l_int32 *)LEPT_CALLOC(n, sizeof(l_int32));
     error = 0;
     for (i = 0; i < n; i++) {
         numaGetIValue(nas, i, &val);
@@ -2824,7 +2829,7 @@ NUMA     *nad;
         }
     }
 
-    FREE(test);
+    LEPT_FREE(test);
     if (error) {
         numaDestroy(&nad);
         return (NUMA *)ERROR_PTR("nas not invertible", procName, NULL);
@@ -2863,7 +2868,7 @@ NUMA     *na;
     if (size <= 0)
         return (NUMA *)ERROR_PTR("size <= 0", procName, NULL);
 
-    if ((array = (l_int32 *)CALLOC(size, sizeof(l_int32))) == NULL)
+    if ((array = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
         return (NUMA *)ERROR_PTR("array not made", procName, NULL);
     for (i = 0; i < size; i++)
         array[i] = i;
@@ -2877,7 +2882,7 @@ NUMA     *na;
     }
 
     na = numaCreateFromIArray(array, size);
-    FREE(array);
+    LEPT_FREE(array);
     return na;
 }
 
@@ -3172,7 +3177,7 @@ NUMA      *navar;
 
 
 /*----------------------------------------------------------------------*
- *                          Numa combination                            *
+ *                            Rearrangements                            *
  *----------------------------------------------------------------------*/
 /*!
  *  numaJoin()
@@ -3304,3 +3309,168 @@ NUMA   **array;
 
     return nad;
 }
+
+
+/*----------------------------------------------------------------------*
+ *                        Union and intersection                        *
+ *----------------------------------------------------------------------*/
+/*!
+ *  numaUnionByAset()
+ *
+ *      Input:  na1, na2
+ *      Return: nad (with the union of the set of numbers), or null on error
+ *
+ *  Notes:
+ *      (1) See sarrayUnion() for the approach.
+ *      (2) Here, the key in building the sorted tree is the number itself.
+ *      (3) A bucket sort approach can be used if the numbers are
+ *          integers and if they are small enough, because that is O(n)
+ *          instead of O(nlogn).
+ */
+NUMA *
+numaUnionByAset(NUMA  *na1,
+                NUMA  *na2)
+{
+NUMA  *na3, *nad;
+
+    PROCNAME("numaUnionByAset");
+
+    if (!na1)
+        return (NUMA *)ERROR_PTR("na1 not defined", procName, NULL);
+    if (!na2)
+        return (NUMA *)ERROR_PTR("na2 not defined", procName, NULL);
+
+        /* Join */
+    na3 = numaCopy(na1);
+    numaJoin(na3, na2, 0, -1);
+
+        /* Eliminate duplicates */
+    nad = numaRemoveDupsByAset(na3);
+    numaDestroy(&na3);
+    return nad;
+}
+
+
+/*!
+ *  numaRemoveDupsByAset()
+ *
+ *      Input:  nas
+ *      Return: nad (with duplicates removed), or null on error
+ */
+NUMA *
+numaRemoveDupsByAset(NUMA  *nas)
+{
+l_int32    i, n;
+l_float32  val;
+NUMA      *nad;
+L_ASET    *set;
+RB_TYPE    key;
+
+    PROCNAME("numaRemoveDupsByAset");
+
+    if (!nas)
+        return (NUMA *)ERROR_PTR("nas not defined", procName, NULL);
+
+    set = l_asetCreate(L_FLOAT_TYPE);
+    nad = numaCreate(0);
+    n = numaGetCount(nas);
+    for (i = 0; i < n; i++) {
+        numaGetFValue(nas, i, &val);
+        key.ftype = val;
+        if (!l_asetFind(set, key)) {
+            numaAddNumber(nad, val);
+            l_asetInsert(set, key);
+        }
+    }
+
+    l_asetDestroy(&set);
+    return nad;
+}
+
+
+/*!
+ *  numaIntersectionByAset()
+ *
+ *      Input:  na1, na2
+ *      Return: nad (with the intersection of the numa set), or null on error
+ *
+ *  Notes:
+ *      (1) See sarrayIntersection() for the approach.
+ *      (2) Here, the key in building the sorted tree is the number itself.
+ *      (3) A bucket sort approach can be used if the numbers are
+ *          integers and if they are small enough, because that is O(n)
+ *          instead of O(nlogn).
+ */
+NUMA *
+numaIntersectionByAset(NUMA  *na1,
+                       NUMA  *na2)
+{
+l_int32    n1, n2, i, n;
+l_float32  val;
+L_ASET    *set1, *set2;
+RB_TYPE    key;
+NUMA      *na_small, *na_big, *nad;
+
+    PROCNAME("numaIntersectionByAset");
+
+    if (!na1)
+        return (NUMA *)ERROR_PTR("na1 not defined", procName, NULL);
+    if (!na2)
+        return (NUMA *)ERROR_PTR("na2 not defined", procName, NULL);
+
+        /* Put the elements of the largest array into a set */
+    n1 = numaGetCount(na1);
+    n2 = numaGetCount(na2);
+    na_small = (n1 < n2) ? na1 : na2;   /* do not destroy na_small */
+    na_big = (n1 < n2) ? na2 : na1;   /* do not destroy na_big */
+    set1 = l_asetCreateFromNuma(na_big);
+
+        /* Build up the intersection of floats */
+    nad = numaCreate(0);
+    n = numaGetCount(na_small);
+    set2 = l_asetCreate(L_FLOAT_TYPE);
+    for (i = 0; i < n; i++) {
+        numaGetFValue(na_small, i, &val);
+        key.ftype = val;
+        if (l_asetFind(set1, key) && !l_asetFind(set2, key)) {
+            numaAddNumber(nad, val);
+            l_asetInsert(set2, key);
+        }
+    }
+
+    l_asetDestroy(&set1);
+    l_asetDestroy(&set2);
+    return nad;
+}
+
+
+/*!
+ *  l_asetCreateFromNuma()
+ *
+ *      Input:  na
+ *      Return: set (using the floats in the numa as keys)
+ */
+L_ASET *
+l_asetCreateFromNuma(NUMA  *na)
+{
+l_int32  i, n, val;
+L_ASET  *set;
+RB_TYPE  key;
+
+    PROCNAME("l_asetCreateFromNuma");
+
+    if (!na)
+        return (L_ASET *)ERROR_PTR("na not defined", procName, NULL);
+
+    set = l_asetCreate(L_FLOAT_TYPE);
+    n = numaGetCount(na);
+    for (i = 0; i < n; i++) {
+        numaGetIValue(na, i, &val);
+        key.ftype = val;
+        l_asetInsert(set, key);
+    }
+
+    return set;
+}
+
+

@@ -30,11 +30,12 @@
  *
  *    Font layout
  *       PIX             *pixAddSingleTextblock()
- *       PIX             *pixAddSingleTextline()
+ *       PIX             *pixAddTextlines()
  *       l_int32          pixSetTextblock()
  *       l_int32          pixSetTextline()
  *       PIXA            *pixaAddTextNumber()
- *       PIXA            *pixaAddTextline()
+ *       PIXA            *pixaAddTextlines()
+ *       l_int32          pixaAddPixWithText()
  *
  *    Text size estimation and partitioning
  *       SARRAY          *bmfGetLineStrings()
@@ -50,12 +51,23 @@
  *    is provided, with a variety of pt sizes.  For example, to put a
  *    line of green 10 pt text on an image, with the beginning baseline
  *    at (50, 50):
- *        L_Bmf  *bmf = bmfCreate("./fonts", 10);
+ *        L_Bmf  *bmf = bmfCreate(NULL, 10);
  *        const char *textstr = "This is a funny cat";
  *        pixSetTextline(pixs, bmf, textstr, 0x00ff0000, 50, 50, NULL, NULL);
  *
  *    The simplest interfaces for adding text to an image are
- *    pixAddSingleTextline() and pixAddSingleTextblock().
+ *    pixAddTextlines() and pixAddSingleTextblock().
+ *    For example, to add the same text in red, centered, below the image:
+ *        Pix *pixd = pixAddTextlines(pixs, bmf, textstr, 0xff000000,
+ *                                    L_ADD_BELOW);  // red text
+ *
+ *    To add text to all pix in a pixa, generating a new pixa, use
+ *    either an sarray to hold the strings for each pix, or use the
+ *    strings in the text field of each pix; e.g.,
+ *        Pixa *pixa2 = pixaAddTextlines(pixa1, bmf, sa, 0x0000ff00,
+ *                                    L_ADD_LEFT);  // blue text
+ *        Pixa *pixa2 = pixaAddTextlines(pixa1, bmf, NULL, 0x00ff0000,
+ *                                    L_ADD_RIGHT);  // green text
  */
 
 #include <string.h>
@@ -196,7 +208,7 @@ SARRAY   *salines;
         /* Keep track of overflow condition on line width */
     overflow = 0;
     for (i = 0, y = ystart; i < nlines; i++) {
-        linestr = sarrayGetString(salines, i, 0);
+        linestr = sarrayGetString(salines, i, L_NOCOPY);
         pixSetTextline(pixd, bmf, linestr, textcolor,
                        xstart, y, NULL, &ovf);
         y += bmf->lineheight + bmf->vertlinesep;
@@ -219,7 +231,7 @@ SARRAY   *salines;
 
 
 /*!
- *  pixAddSingleTextline()
+ *  pixAddTextlines()
  *
  *      Input:  pixs (input pix; colormap ok)
  *              bmf (bitmap font data)
@@ -230,33 +242,39 @@ SARRAY   *salines;
  *                    or null on error
  *
  *  Notes:
- *      (1) This function expands an image as required to paint a single
- *          line of text adjacent to the image.  If @bmf == NULL, this
- *          returns a copy.
+ *      (1) This function expands an image as required to paint one or
+ *          more lines of text adjacent to the image.  If @bmf == NULL,
+ *          this returns a copy.  If above or below, the lines are
+ *          centered with respect to the image; if left or right, they
+ *          are left justified.
  *      (2) @val is the pixel value to be painted through the font mask.
  *          It should be chosen to agree with the depth of pixs.
  *          If it is out of bounds, an intermediate value is chosen.
  *          For RGB, use hex notation: 0xRRGGBB00, where RR is the
  *          hex representation of the red intensity, etc.
- *      (3) If textstr == NULL, use the text field in the pix.
+ *      (3) If textstr == NULL, use the text field in the pix.  The
+ *          text field contains one or most "lines" of text, where newlines
+ *          are used as line separators.
  *      (4) If there is a colormap, this does the best it can to use
  *          the requested color, or something similar to it.
  *      (5) Typical usage is for labelling a pix with some text data.
  */
 PIX *
-pixAddSingleTextline(PIX         *pixs,
-                     L_BMF       *bmf,
-                     const char  *textstr,
-                     l_uint32     val,
-                     l_int32      location)
+pixAddTextlines(PIX         *pixs,
+                L_BMF       *bmf,
+                const char  *textstr,
+                l_uint32     val,
+                l_int32      location)
 {
-l_int32   w, h, d, wtext, htext, wadd, hadd, spacer, hbaseline;
-l_int32   rval, gval, bval, index;
+char     *str;
+l_int32   i, w, h, d, rval, gval, bval, index;
+l_int32   wline, wtext, htext, wadd, hadd, spacer, hbaseline, nlines;
 l_uint32  textcolor;
 PIX      *pixd;
 PIXCMAP  *cmap, *cmapd;
+SARRAY   *sa;
 
-    PROCNAME("pixAddSingleTextline");
+    PROCNAME("pixAddTextlines");
 
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
@@ -292,15 +310,25 @@ PIXCMAP  *cmap, *cmapd;
     else if (d == 32 && val < 256)
         val = 0x80808000;
 
+        /* Get the text in each line */
+    sa = sarrayCreateLinesFromString(textstr, 0);
+    nlines = sarrayGetCount(sa);
+
         /* Get the necessary text size */
-    bmfGetStringWidth(bmf, textstr, &wtext);
+    wtext = 0;
+    for (i = 0; i < nlines; i++) {
+        str = sarrayGetString(sa, i, L_NOCOPY);
+        bmfGetStringWidth(bmf, str, &wline);
+        if (wline > wtext)
+            wtext = wline;
+    }
     hbaseline = bmf->baselinetab[93];
-    htext = 1.5 * hbaseline;
+    htext = 1.5 * hbaseline * nlines;
 
         /* Add white border */
     spacer = 10;  /* pixels away from the added border */
     if (location == L_ADD_ABOVE || location == L_ADD_BELOW) {
-        hadd = htext + spacer;
+        hadd = htext + 2 * spacer;
         pixd = pixCreate(w, h + hadd, d);
         pixCopyColormap(pixd, pixs);
         pixSetBlackOrWhite(pixd, L_BRING_IN_WHITE);
@@ -309,7 +337,7 @@ PIXCMAP  *cmap, *cmapd;
         else  /* add below */
             pixRasterop(pixd, 0, 0, w, h, PIX_SRC, pixs, 0, 0);
     } else {  /*  L_ADD_LEFT or L_ADD_RIGHT */
-        wadd = wtext + spacer;
+        wadd = wtext + 2 * spacer;
         pixd = pixCreate(w + wadd, h, d);
         pixCopyColormap(pixd, pixs);
         pixSetBlackOrWhite(pixd, L_BRING_IN_WHITE);
@@ -332,19 +360,28 @@ PIXCMAP  *cmap, *cmapd;
     }
 
         /* Add the text */
-    if (location == L_ADD_ABOVE)
-        pixSetTextline(pixd, bmf, textstr, textcolor,
-                       (w - wtext) / 2, hbaseline, NULL, NULL);
-    else if (location == L_ADD_BELOW)
-        pixSetTextline(pixd, bmf, textstr, textcolor,
-                       (w - wtext) / 2, h + spacer + hbaseline, NULL, NULL);
-    else if (location == L_ADD_LEFT)
-        pixSetTextline(pixd, bmf, textstr, textcolor,
-                       0, (h - htext) / 2 + hbaseline, NULL, NULL);
-    else  /* location == L_ADD_RIGHT */
-        pixSetTextline(pixd, bmf, textstr, textcolor,
-                       w + spacer, (h - htext) / 2 + hbaseline, NULL, NULL);
+    for (i = 0; i < nlines; i++) {
+        str = sarrayGetString(sa, i, L_NOCOPY);
+        bmfGetStringWidth(bmf, str, &wtext);
+        if (location == L_ADD_ABOVE)
+            pixSetTextline(pixd, bmf, str, textcolor,
+                           (w - wtext) / 2, spacer + hbaseline * (1 + 1.5 * i),
+                           NULL, NULL);
+        else if (location == L_ADD_BELOW)
+            pixSetTextline(pixd, bmf, str, textcolor,
+                           (w - wtext) / 2, h + spacer +
+                           hbaseline * (1 + 1.5 * i), NULL, NULL);
+        else if (location == L_ADD_LEFT)
+            pixSetTextline(pixd, bmf, str, textcolor,
+                           spacer, (h - htext) / 2 + hbaseline * (1 + 1.5 * i),
+                           NULL, NULL);
+        else  /* location == L_ADD_RIGHT */
+            pixSetTextline(pixd, bmf, str, textcolor,
+                           w + spacer, (h - htext) / 2 +
+                           hbaseline * (1 + 1.5 * i), NULL, NULL);
+    }
 
+    sarrayDestroy(&sa);
     return pixd;
 }
 
@@ -441,7 +478,7 @@ PIXCMAP  *cmap;
             x = x0 + firstindent * xwidth;
         else
             x = x0;
-        linestr = sarrayGetString(salines, i, 0);
+        linestr = sarrayGetString(salines, i, L_NOCOPY);
         pixSetTextline(pixs, bmf, linestr, val, x, y, &wline, &ovf);
         y += bmf->lineheight + bmf->vertlinesep;
         if (ovf)
@@ -615,7 +652,7 @@ PIXA    *pixad;
         else
             index = i + 1;
         snprintf(textstr, sizeof(textstr), "%d", index);
-        pix2 = pixAddSingleTextline(pix1, bmf, textstr, val, location);
+        pix2 = pixAddTextlines(pix1, bmf, textstr, val, location);
         pixaAddPix(pixad, pix2, L_INSERT);
         pixDestroy(&pix1);
     }
@@ -625,7 +662,7 @@ PIXA    *pixad;
 
 
 /*!
- *  pixaAddTextline()
+ *  pixaAddTextlines()
  *
  *      Input:  pixas (input pixa; colormap ok)
  *              bmf (bitmap font data)
@@ -635,33 +672,35 @@ PIXA    *pixad;
  *      Return: pixad (new pixa with rendered text), or null on error
  *
  *  Notes:
- *      (1) This function paints a line of text external to each pix,
- *          in a position given by @location.  In all cases, the pix is
- *          expanded as necessary to accommodate the text.
+ *      (1) This function adds one or more lines of text externally to
+ *          each pix, in a position given by @location.  In all cases,
+ *          the pix is expanded as necessary to accommodate the text.
  *      (2) @val is the pixel value to be painted through the font mask.
  *          It should be chosen to agree with the depth of pixs.
  *          If it is out of bounds, an intermediate value is chosen.
  *          For RGB, use hex notation: 0xRRGGBB00, where RR is the
  *          hex representation of the red intensity, etc.
- *      (3) If sa == NULL, use the text embedded in each pix.
+ *      (3) If sa == NULL, use the text embedded in each pix.  In all
+ *          cases, newlines in the text string are used to separate the
+ *          lines of text that are added to the pix.
  *      (4) If sa has a smaller count than pixa, issue a warning
- *          but do not use any embedded text.
+ *          and do not use any embedded text.
  *      (5) If there is a colormap, this does the best it can to use
  *          the requested color, or something similar to it.
  */
 PIXA *
-pixaAddTextline(PIXA     *pixas,
-                L_BMF    *bmf,
-                SARRAY   *sa,
-                l_uint32  val,
-                l_int32   location)
+pixaAddTextlines(PIXA     *pixas,
+                 L_BMF    *bmf,
+                 SARRAY   *sa,
+                 l_uint32  val,
+                 l_int32   location)
 {
 char    *textstr;
 l_int32  i, n, nstr;
 PIX     *pix1, *pix2;
 PIXA    *pixad;
 
-    PROCNAME("pixaAddTextline");
+    PROCNAME("pixaAddTextlines");
 
     if (!pixas)
         return (PIXA *)ERROR_PTR("pixas not defined", procName, NULL);
@@ -682,12 +721,100 @@ PIXA    *pixad;
             textstr = sarrayGetString(sa, i, L_NOCOPY);
         else
             textstr = pixGetText(pix1);
-        pix2 = pixAddSingleTextline(pix1, bmf, textstr, val, location);
+        pix2 = pixAddTextlines(pix1, bmf, textstr, val, location);
         pixaAddPix(pixad, pix2, L_INSERT);
         pixDestroy(&pix1);
     }
 
     return pixad;
+}
+
+
+/*!
+ *  pixaAddPixWithText()
+ *
+ *      Input:  pixa
+ *              pixs (any depth, colormap ok)
+ *              reduction (integer subsampling factor)
+ *              bmf (<optional> bitmap font data)
+ *              textstr (<optional> text string to be added)
+ *              val (color to set the text)
+ *              location (L_ADD_ABOVE, L_ADD_BELOW, L_ADD_LEFT, L_ADD_RIGHT)
+ *      Return: 0 if OK, 1 on error.
+ *
+ *  Notes:
+ *      (1) This function generates a new pix with added text, and adds
+ *          it by insertion into the pixa.
+ *      (2) If the input pixs is not cmapped and not 32 bpp, it is
+ *          converted to 32 bpp rgb.  @val is a standard 32 bpp pixel,
+ *          expressed as 0xrrggbb00.  If there is a colormap, this does
+ *          the best it can to use the requested color, or something close.
+ *      (3) if @bmf == NULL, generate an 8 pt font; this takes about 5 msec.
+ *      (4) If @textstr == NULL, use the text field in the pix.
+ *      (5) In general, the text string can be written in multiple lines;
+ *          use newlines as the separators.
+ *      (6) Typical usage is for debugging, where the pixa of labelled images
+ *          is used to generate a pdf.  Suggest using 1.0 for scalefactor.
+ */
+l_int32
+pixaAddPixWithText(PIXA        *pixa,
+                   PIX         *pixs,
+                   l_int32      reduction,
+                   L_BMF       *bmf,
+                   const char  *textstr,
+                   l_uint32     val,
+                   l_int32      location)
+{
+l_int32   d;
+L_BMF    *bmf8;
+PIX      *pix1, *pix2, *pix3;
+PIXCMAP  *cmap;
+
+    PROCNAME("pixaAddPixWithText");
+
+    if (!pixa)
+        return ERROR_INT("pixa not defined", procName, 1);
+    if (!pixs)
+        return ERROR_INT("pixs not defined", procName, 1);
+    if (!textstr) {
+        textstr = pixGetText(pixs);
+        if (!textstr) {
+            L_ERROR("no textstring defined; inserting copy", procName);
+            pixaAddPix(pixa, pixs, L_COPY);
+            return 1;
+        }
+    }
+    if (location != L_ADD_ABOVE && location != L_ADD_BELOW &&
+        location != L_ADD_LEFT && location != L_ADD_RIGHT)
+        return ERROR_INT("invalid location", procName, 1);
+
+        /* Default font size is 8. */
+    bmf8 = (bmf) ? bmf : bmfCreate(NULL, 8);
+
+    if (reduction != 1)
+        pix1 = pixScaleByIntSampling(pixs, reduction);
+    else
+        pix1 = pixClone(pixs);
+
+        /* We want the text to be rendered in color.  This works
+         * automatically if pixs is cmapped or 32 bpp rgb; otherwise,
+         * we need to convert to rgb. */
+    cmap = pixGetColormap(pix1);
+    d = pixGetDepth(pix1);
+    if (!cmap && d != 32)
+        pix2 = pixConvertTo32(pix1);
+    else
+        pix2 = pixClone(pix1);
+
+    pix3 = pixAddTextlines(pix2, bmf, textstr, val, location);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    if (!pix3)
+        return ERROR_INT("pix3 not made", procName, 1);
+
+    pixaAddPix(pixa, pix3, L_INSERT);
+    if (!bmf) bmfDestroy(&bmf8);
+    return 0;
 }
 
 
@@ -753,7 +880,7 @@ SARRAY  *sa, *sawords;
             len = strlen(linestr);
             if (len > 0)  /* it should always be */
                 linestr[len - 1] = '\0';  /* remove the last space */
-            sarrayAddString(sa, linestr, 0);
+            sarrayAddString(sa, linestr, L_INSERT);
             ifirst = i;
             sumw = w;
         }
@@ -762,7 +889,7 @@ SARRAY  *sa, *sawords;
     }
     linestr = sarrayToStringRange(sawords, ifirst, nwords - ifirst, 2);
     if (linestr)
-        sarrayAddString(sa, linestr, 0);
+        sarrayAddString(sa, linestr, L_INSERT);
     nlines = sarrayGetCount(sa);
     *ph = nlines * bmf->lineheight + (nlines - 1) * bmf->vertlinesep;
 
@@ -804,7 +931,7 @@ NUMA    *na;
         return (NUMA *)ERROR_PTR("na not made", procName, NULL);
 
     for (i = 0; i < nwords; i++) {
-        wordstr = sarrayGetString(sa, i, 0);  /* not a copy */
+        wordstr = sarrayGetString(sa, i, L_NOCOPY);
         bmfGetStringWidth(bmf, wordstr, &width);
         numaAddNumber(na, width);
     }
@@ -885,24 +1012,24 @@ SARRAY  *salines, *satemp, *saout;
     saout = sarrayCreate(0);
     satemp = sarrayCreate(0);
 
-    linestr = sarrayGetString(salines, 0, 0);
-    sarrayAddString(satemp, linestr, 1);
+    linestr = sarrayGetString(salines, 0, L_NOCOPY);
+    sarrayAddString(satemp, linestr, L_COPY);
     for (i = 1; i < nlines; i++) {
-        linestr = sarrayGetString(salines, i, 0);
+        linestr = sarrayGetString(salines, i, L_NOCOPY);
         stringAllWhitespace(linestr, &allwhite);
         stringLeadingWhitespace(linestr, &leadwhite);
         if ((splitflag == SPLIT_ON_LEADING_WHITE && leadwhite) ||
             (splitflag == SPLIT_ON_BLANK_LINE && allwhite) ||
             (splitflag == SPLIT_ON_BOTH && (allwhite || leadwhite))) {
             parastring = sarrayToString(satemp, 1);  /* add nl to each line */
-            sarrayAddString(saout, parastring, 0);  /* insert */
+            sarrayAddString(saout, parastring, L_INSERT);
             sarrayDestroy(&satemp);
             satemp = sarrayCreate(0);
         }
-        sarrayAddString(satemp, linestr, 1);
+        sarrayAddString(satemp, linestr, L_COPY);
     }
     parastring = sarrayToString(satemp, 1);  /* add nl to each line */
-    sarrayAddString(saout, parastring, 0);  /* insert */
+    sarrayAddString(saout, parastring, L_INSERT);
     sarrayDestroy(&satemp);
 
     return saout;

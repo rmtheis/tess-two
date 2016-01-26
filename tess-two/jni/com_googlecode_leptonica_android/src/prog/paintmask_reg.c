@@ -175,11 +175,11 @@ L_REGPARAMS  *rp;
     boxDestroy(&box);
 
         /* Finally, do the 1 bpp painting through clipped region.
-	 * We start with two 1 bpp text sources, use the inverse
-	 * of the 2nd for the mask (so we take all of the 1st
-	 * pixels under this mask), and for the remainder, which
-	 * are the fg pixels in the 2nd, we paint them black (1).
-	 * So this is a simple and fast blending of two 1 bpp pix. */
+         * We start with two 1 bpp text sources, use the inverse
+         * of the 2nd for the mask (so we take all of the 1st
+         * pixels under this mask), and for the remainder, which
+         * are the fg pixels in the 2nd, we paint them black (1).
+         * So this is a simple and fast blending of two 1 bpp pix. */
     pixs = pixRead("feyn.tif");
     box = boxCreate(670, 827, 800, 500);
     pixt2 = pixClipRectangle(pixs, box, NULL);
@@ -202,8 +202,8 @@ L_REGPARAMS  *rp;
         /* If in testing mode, make a pdf */
     if (rp->display) {
         pixaConvertToPdf(pixa, 100, 1.0, L_FLATE_ENCODE, 0,
-                         "Paint through mask", "/tmp/regout/paintmask.pdf");
-        L_INFO("Output pdf: /tmp/regout/paintmask.pdf\n", rp->testname);
+                         "Paint through mask", "/tmp/lept/regout/paintmask.pdf");
+        L_INFO("Output pdf: /tmp/lept/regout/paintmask.pdf\n", rp->testname);
     }
 
     pixaDestroy(&pixa);

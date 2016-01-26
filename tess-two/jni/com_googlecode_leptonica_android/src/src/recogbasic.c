@@ -271,12 +271,12 @@ L_RECOGA  *recoga;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((recoga = (L_RECOGA *)CALLOC(1, sizeof(L_RECOGA))) == NULL)
+    if ((recoga = (L_RECOGA *)LEPT_CALLOC(1, sizeof(L_RECOGA))) == NULL)
         return (L_RECOGA *)ERROR_PTR("recoga not made", procName, NULL);
     recoga->n = 0;
     recoga->nalloc = n;
 
-    if ((recoga->recog = (L_RECOG **)CALLOC(n, sizeof(L_RECOG *))) == NULL)
+    if ((recoga->recog = (L_RECOG **)LEPT_CALLOC(n, sizeof(L_RECOG *))) == NULL)
         return (L_RECOGA *)ERROR_PTR("recoga ptrs not made", procName, NULL);
 
     return recoga;
@@ -319,8 +319,8 @@ L_RECOGA  *recoga;
         recog->parent = NULL;  /* orphan it */
         recogDestroy(&recog);
     }
-    FREE(recoga->recog);
-    FREE(recoga);
+    LEPT_FREE(recoga->recog);
+    LEPT_FREE(recoga);
     *precoga = NULL;
     return;
 }
@@ -713,7 +713,7 @@ PIXAA    *paa;
     if (threshold < 1 || threshold > 255)
         return (L_RECOG *)ERROR_PTR("invalid threshold", procName, NULL);
 
-    if ((recog = (L_RECOG *)CALLOC(1, sizeof(L_RECOG))) == NULL)
+    if ((recog = (L_RECOG *)LEPT_CALLOC(1, sizeof(L_RECOG))) == NULL)
         return (L_RECOG *)ERROR_PTR("rec not made", procName, NULL);
     recog->templ_type = templ_type;
     recog->threshold = threshold;
@@ -721,7 +721,7 @@ PIXAA    *paa;
     recog->scaleh = scaleh;
     recog->maxyshift = maxyshift;
     recog->asperity_fr = DEFAULT_ASPERITY_FRACT;
-    recogSetPadParams(recog, NULL, NULL, NULL, -1, -1, -1);
+    recogSetPadParams(recog, NULL, NULL, NULL, 0, -1, -1, -1, -1);
     recog->bmf = bmfCreate(NULL, 6);
     recog->bmf_size = 6;
     recog->maxarraysize = MAX_EXAMPLES_IN_CLASS;
@@ -781,12 +781,12 @@ L_RECOG  *recog;
         return;
     }
 
-    FREE(recog->bootdir);
-    FREE(recog->bootpattern);
-    FREE(recog->bootpath);
-    FREE(recog->centtab);
-    FREE(recog->sumtab);
-    FREE(recog->fname);
+    LEPT_FREE(recog->bootdir);
+    LEPT_FREE(recog->bootpattern);
+    LEPT_FREE(recog->bootpath);
+    LEPT_FREE(recog->centtab);
+    LEPT_FREE(recog->sumtab);
+    LEPT_FREE(recog->fname);
     sarrayDestroy(&recog->sa_text);
     l_dnaDestroy(&recog->dna_tochar);
     pixaaDestroy(&recog->pixaa_u);
@@ -812,7 +812,7 @@ L_RECOG  *recog;
     rchDestroy(&recog->rch);
     rchaDestroy(&recog->rcha);
     recogDestroyDid(recog);
-    FREE(recog);
+    LEPT_FREE(recog);
     *precog = NULL;
     return;
 }
@@ -976,7 +976,7 @@ l_int32  i, n, diff;
             continue;
         }
         diff = strcmp(text, charstr);
-        FREE(charstr);
+        LEPT_FREE(charstr);
         if (diff) continue;
         *pindex = i;
         return 0;
@@ -1015,7 +1015,7 @@ recogGetClassString(L_RECOG  *recog,
 
     if (index < 0 || index >= recog->setsize)
         return ERROR_INT("invalid index", procName, 1);
-    FREE(*pcharstr);
+    LEPT_FREE(*pcharstr);
     *pcharstr = sarrayGetString(recog->sa_text, index, L_COPY);
     return 0;
 }

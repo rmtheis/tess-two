@@ -70,7 +70,7 @@ L_REGPARAMS  *rp;
     }
 
         /* Place an image inside the frame and convert to HSV */
-    pixt1 = pixRead("1555-3.jpg");
+    pixt1 = pixRead("1555.003.jpg");
     pixt2 = pixScale(pixt1, 0.5, 0.5);
     pixRasterop(pixs, 100, 100, 2000, 2000, PIX_SRC, pixt2, 0, 0);
     pixDestroy(&pixt1);
@@ -89,25 +89,25 @@ L_REGPARAMS  *rp;
     pixaAddPix(pixa, pixhsv, L_INSERT);
     pixaAddPix(pixa, pixg, L_INSERT);
     pixaAddPix(pixa, pixf, L_INSERT);
-    gplotSimple1(nahue, GPLOT_PNG, "/tmp/regout/junkhue",
+    gplotSimple1(nahue, GPLOT_PNG, "/tmp/lept/regout/junkhue",
                  "Histogram of hue values");
 #ifndef  _WIN32
     sleep(1);
 #else
     Sleep(1000);
 #endif  /* _WIN32 */
-    pixt3 = pixRead("/tmp/regout/junkhue.png");
+    pixt3 = pixRead("/tmp/lept/regout/junkhue.png");
     regTestWritePixAndCheck(rp, pixt3, IFF_PNG);  /* 1 */
     pixDisplayWithTitle(pixt3, 100, 300, "Histo of hue", rp->display);
     pixaAddPix(pixa, pixt3, L_INSERT);
-    gplotSimple1(nasat, GPLOT_PNG, "/tmp/regout/junksat",
+    gplotSimple1(nasat, GPLOT_PNG, "/tmp/lept/regout/junksat",
                  "Histogram of saturation values");
 #ifndef  _WIN32
     sleep(1);
 #else
     Sleep(1000);
 #endif  /* _WIN32 */
-    pixt3 = pixRead("/tmp/regout/junksat.png");
+    pixt3 = pixRead("/tmp/lept/regout/junksat.png");
     regTestWritePixAndCheck(rp, pixt3, IFF_PNG);  /* 2 */
     pixDisplayWithTitle(pixt3, 100, 800, "Histo of saturation", rp->display);
     pixaAddPix(pixa, pixt3, L_INSERT);

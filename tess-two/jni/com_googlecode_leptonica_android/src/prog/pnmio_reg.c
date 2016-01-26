@@ -43,14 +43,17 @@ L_REGPARAMS  *rp;
     if (regTestSetup(argc, argv, &rp))
         return 1;
 
+    lept_rmdir("lept/pnm");
+    lept_mkdir("lept/pnm");
+
         /* Test 1 bpp (pbm) read/write */
     pix1 = pixRead("char.tif");
-    fp = lept_fopen("/tmp/pix1.1.pnm", "wb");
+    fp = lept_fopen("/tmp/lept/pnm/pix1.1.pnm", "wb");
     pixWriteStreamAsciiPnm(fp, pix1);
     lept_fclose(fp);
-    pix2 = pixRead("/tmp/pix1.1.pnm");
-    pixWrite("/tmp/pix2.1.pnm", pix2, IFF_PNM);
-    pix3 = pixRead("/tmp/pix2.1.pnm");
+    pix2 = pixRead("/tmp/lept/pnm/pix1.1.pnm");
+    pixWrite("/tmp/lept/pnm/pix2.1.pnm", pix2, IFF_PNM);
+    pix3 = pixRead("/tmp/lept/pnm/pix2.1.pnm");
     regTestComparePix(rp, pix1, pix3);  /* 0 */
     pixDestroy(&pix1);
     pixDestroy(&pix2);
@@ -59,35 +62,35 @@ L_REGPARAMS  *rp;
         /* Test 2, 4 and 8 bpp (pgm) read/write */
     pix1 = pixRead("weasel8.png");
     pix2 = pixThresholdTo2bpp(pix1, 4, 0);
-    fp = lept_fopen("/tmp/pix2.2.pnm", "wb");
+    fp = lept_fopen("/tmp/lept/pnm/pix2.2.pnm", "wb");
     pixWriteStreamAsciiPnm(fp, pix2);
     lept_fclose(fp);
-    pix3 = pixRead("/tmp/pix2.2.pnm");
-    pixWrite("/tmp/pix3.2.pnm", pix3, IFF_PNM);
-    pix4 = pixRead("/tmp/pix3.2.pnm");
+    pix3 = pixRead("/tmp/lept/pnm/pix2.2.pnm");
+    pixWrite("/tmp/lept/pnm/pix3.2.pnm", pix3, IFF_PNM);
+    pix4 = pixRead("/tmp/lept/pnm/pix3.2.pnm");
     regTestComparePix(rp, pix2, pix4);  /* 1 */
     pixDestroy(&pix2);
     pixDestroy(&pix3);
     pixDestroy(&pix4);
 
     pix2 = pixThresholdTo4bpp(pix1, 16, 0);
-    fp = lept_fopen("/tmp/pix2.4.pnm", "wb");
+    fp = lept_fopen("/tmp/lept/pnm/pix2.4.pnm", "wb");
     pixWriteStreamAsciiPnm(fp, pix2);
     lept_fclose(fp);
-    pix3 = pixRead("/tmp/pix2.4.pnm");
-    pixWrite("/tmp/pix3.4.pnm", pix3, IFF_PNM);
-    pix4 = pixRead("/tmp/pix3.4.pnm");
+    pix3 = pixRead("/tmp/lept/pnm/pix2.4.pnm");
+    pixWrite("/tmp/lept/pnm/pix3.4.pnm", pix3, IFF_PNM);
+    pix4 = pixRead("/tmp/lept/pnm/pix3.4.pnm");
     regTestComparePix(rp, pix2, pix4);  /* 2 */
     pixDestroy(&pix2);
     pixDestroy(&pix3);
     pixDestroy(&pix4);
 
-    fp = lept_fopen("/tmp/pix1.8.pnm", "wb");
+    fp = lept_fopen("/tmp/lept/pnm/pix1.8.pnm", "wb");
     pixWriteStreamAsciiPnm(fp, pix1);
     lept_fclose(fp);
-    pix2 = pixRead("/tmp/pix1.8.pnm");
-    pixWrite("/tmp/pix2.8.pnm", pix2, IFF_PNM);
-    pix3 = pixRead("/tmp/pix2.8.pnm");
+    pix2 = pixRead("/tmp/lept/pnm/pix1.8.pnm");
+    pixWrite("/tmp/lept/pnm/pix2.8.pnm", pix2, IFF_PNM);
+    pix3 = pixRead("/tmp/lept/pnm/pix2.8.pnm");
     regTestComparePix(rp, pix1, pix3);  /* 3 */
     pixDestroy(&pix1);
     pixDestroy(&pix2);
@@ -95,12 +98,12 @@ L_REGPARAMS  *rp;
 
         /* Test ppm (24 bpp rgb) read/write */
     pix1 = pixRead("marge.jpg");
-    fp = lept_fopen("/tmp/pix1.24.pnm", "wb");
+    fp = lept_fopen("/tmp/lept/pnm/pix1.24.pnm", "wb");
     pixWriteStreamAsciiPnm(fp, pix1);
     lept_fclose(fp);
-    pix2 = pixRead("/tmp/pix1.24.pnm");
-    pixWrite("/tmp/pix2.24.pnm", pix2, IFF_PNM);
-    pix3 = pixRead("/tmp/pix2.24.pnm");
+    pix2 = pixRead("/tmp/lept/pnm/pix1.24.pnm");
+    pixWrite("/tmp/lept/pnm/pix2.24.pnm", pix2, IFF_PNM);
+    pix3 = pixRead("/tmp/lept/pnm/pix2.24.pnm");
     regTestComparePix(rp, pix1, pix3);  /* 4 */
     pixDestroy(&pix1);
     pixDestroy(&pix2);

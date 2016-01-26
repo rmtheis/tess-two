@@ -61,7 +61,7 @@ L_REGPARAMS  *rp;
     pixa = pixaCreate(5);
     bmf = bmfCreate("./fonts", 6);
     bmftop = bmfCreate("./fonts", 10);
-    pixs = pixRead("lucasta-47.jpg");
+    pixs = pixRead("lucasta.047.jpg");
     pixg = pixScale(pixs, 0.4, 0.4);  /* 8 bpp grayscale */
     pix1 = pixConvertTo32(pixg);  /* 32 bpp rgb */
     AddTextAndSave(pixa, pix1, 1, bmf, textstr[0], L_ADD_BELOW, 0xff000000);

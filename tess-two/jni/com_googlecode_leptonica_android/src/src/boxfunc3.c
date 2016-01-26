@@ -49,6 +49,10 @@
  *      Comparison between boxa
  *           l_int32          boxaCompareRegions()
  *
+ *      Reliable selection of a single large box
+ *           BOX             *pixSelectLargeULComp()
+ *           BOX             *boxaSelectLargeULBox()
+ *
  *  See summary in pixPaintBoxa() of various ways to paint and draw
  *  boxes on images.
  */
@@ -1113,13 +1117,13 @@ BOX     *boxr;
 failure:
     numaAddNumber(nascore, 0);
     boxaAddBox(boxat, boxCreate(0, 0, 1, 1), L_INSERT);  /* min box */
-    FREE(lines1);
+    LEPT_FREE(lines1);
     return 0;
 
 success:
     numaAddNumber(nascore, score);
     boxaAddBox(boxat, boxr, L_INSERT);
-    FREE(lines1);
+    LEPT_FREE(lines1);
     return 0;
 }
 
@@ -1303,7 +1307,7 @@ PIXA     *pixa;
     pixCountPixels(pix4, &count4, tab);
     pix5 = pixXor(NULL, pix3, pix4);
     pixCountPixels(pix5, &countxor, tab);
-    FREE(tab);
+    LEPT_FREE(tab);
     *pdiffxor = (l_float32)countxor / (l_float32)(count3 + count4);
 
     if (ppixdb) {
@@ -1336,4 +1340,127 @@ PIXA     *pixa;
     pixDestroy(&pix5);
     return 0;
 }
+
+
+/*---------------------------------------------------------------------*
+ *                Reliable selection of a single large box             *
+ *---------------------------------------------------------------------*/
+/*!
+ *  pixSelectLargeULComp()
+ *
+ *      Input:  pixs (1 bpp)
+ *              areaslop (fraction near but less than 1.0)
+ *              yslop (number of pixels in y direction)
+ *              connectivity (4 or 8)
+ *      Return: box, or null on error
+ *
+ *  Notes:
+ *      (1) This selects a box near the top (first) and left (second)
+ *          of the image, from the set of all boxes that have
+ *                area >= @areaslop * (area of biggest box),
+ *          where @areaslop is some fraction; say ~ 0.9.
+ *      (2) For all boxes satisfying the above condition, select
+ *          the left-most box that is within @yslop (say, 20) pixels
+ *          of the box nearest the top.
+ *      (3) This can be used to reliably select a specific one of
+ *          the largest regions in an image, for applications where
+ *          there are expected to be small variations in region size
+ *          and location.
+ *      (4) See boxSelectLargeULBox() for implementation details.
+ */
+BOX *
+pixSelectLargeULComp(PIX       *pixs,
+                     l_float32  areaslop,
+                     l_int32    yslop,
+                     l_int32    connectivity)
+{
+BOX   *box;
+BOXA  *boxa1;
+
+    PROCNAME("pixSelectLargeULComp");
+
+    if (!pixs)
+        return (BOX *)ERROR_PTR("pixs not defined", procName, NULL);
+    if (areaslop < 0.0 || areaslop > 1.0)
+        return (BOX *)ERROR_PTR("invalid value for areaslop", procName, NULL);
+    yslop = L_MAX(0, yslop);
+
+    boxa1 = pixConnCompBB(pixs, connectivity);
+    if (boxaGetCount(boxa1) == 0)
+        return NULL;
+    box = boxaSelectLargeULBox(boxa1, areaslop, yslop);
+    boxaDestroy(&boxa1);
+    return box;
+}
+
+
+/*!
+ *  boxaSelectLargeULBox()
+ *
+ *      Input:  boxa (1 bpp)
+ *              areaslop (fraction near but less than 1.0)
+ *              yslop (number of pixels in y direction)
+ *              connectivity (4 or 8)
+ *      Return: box, or null on error
+ *
+ *  Notes:
+ *      (1) See usage notes in pixSelectLargeULComp().
+ */
+BOX *
+boxaSelectLargeULBox(BOXA      *boxas,
+                     l_float32  areaslop,
+                     l_int32    yslop)
+{
+l_int32    w, h, i, n, x1, y1, x2, y2, select;
+l_float32  area, max_area;
+BOX       *box;
+BOXA      *boxa1, *boxa2, *boxa3;
+
+    PROCNAME("boxaSelectLargeULBox");
+
+    if (!boxas)
+        return (BOX *)ERROR_PTR("boxas not defined", procName, NULL);
+    if (boxaGetCount(boxas) == 0)
+        return (BOX *)ERROR_PTR("no boxes in boxas", procName, NULL);
+    if (areaslop < 0.0 || areaslop > 1.0)
+        return (BOX *)ERROR_PTR("invalid value for areaslop", procName, NULL);
+    yslop = L_MAX(0, yslop);
+
+    boxa1 = boxaSort(boxas, L_SORT_BY_AREA, L_SORT_DECREASING, NULL);
+    boxa2 = boxaSort(boxa1, L_SORT_BY_Y, L_SORT_INCREASING, NULL);
+    n = boxaGetCount(boxa2);
+    boxaGetBoxGeometry(boxa1, 0, NULL, NULL, &w, &h);  /* biggest box by area */
+    max_area = (l_float32)(w * h);
+
+        /* boxa3 collects all boxes eligible by area, sorted top-down */
+    boxa3 = boxaCreate(4);
+    for (i = 0; i < n; i++) {
+        boxaGetBoxGeometry(boxa2, i, NULL, NULL, &w, &h);
+        area = (l_float32)(w * h);
+        if (area / max_area >= areaslop) {
+            box = boxaGetBox(boxa2, i, L_COPY);
+            boxaAddBox(boxa3, box, L_INSERT);
+        }
+    }
+
+        /* Take the first (top-most box) unless the second (etc) has
+         * nearly the same y value but a smaller x value. */
+    n = boxaGetCount(boxa3);
+    boxaGetBoxGeometry(boxa3, 0, &x1, &y1, NULL, NULL);
+    select = 0;
+    for (i = 1; i < n; i++) {
+        boxaGetBoxGeometry(boxa3, i, &x2, &y2, NULL, NULL);
+        if (y2 - y1 < yslop && x2 < x1) {
+            select = i;
+            x1 = x2;  /* but always compare against y1 */
+        }
+    }
+
+    box = boxaGetBox(boxa3, select, L_COPY);
+    boxaDestroy(&boxa1);
+    boxaDestroy(&boxa2);
+    boxaDestroy(&boxa3);
+    return box;
+}
+
 

@@ -10,7 +10,7 @@
  -     copyright notice, this list of conditions and the following
  -     disclaimer in the documentation and/or other materials
  -     provided with the distribution.
- - 
+ -
  -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -68,7 +68,7 @@ struct JbClasser
                                    /* and not dilated                        */
     struct Pixa     *pixatd;       /* templates for each class; bordered     */
                                    /* and dilated                            */
-    struct NumaHash *nahash;       /* Hash table to find templates by size   */
+    struct L_DnaHash *dahash;      /* Hash table to find templates by size   */
     struct Numa     *nafgt;        /* fg areas of undilated templates;       */
                                    /* only used for rank < 1.0               */
     struct Pta      *ptac;         /* centroids of all bordered cc           */

@@ -169,7 +169,7 @@ SARRAY  *sa;
     pixt2 = NULL;
     x = y = 0;
     for (i = 0; i < nops; i++) {
-        rawop = sarrayGetString(sa, i, 0);
+        rawop = sarrayGetString(sa, i, L_NOCOPY);
         op = stringRemoveChars(rawop, " \n\t");
         switch (op[0])
         {
@@ -222,7 +222,7 @@ SARRAY  *sa;
             /* All invalid ops are caught in the first pass */
             break;
         }
-        FREE(op);
+        LEPT_FREE(op);
 
             /* Debug output */
         if (dispsep > 0) {
@@ -239,7 +239,7 @@ SARRAY  *sa;
 
     if (pdfout) {
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        FREE(fname);
+        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 
@@ -336,7 +336,7 @@ SARRAY  *sa;
     pixt2 = NULL;
     x = y = 0;
     for (i = 0; i < nops; i++) {
-        rawop = sarrayGetString(sa, i, 0);
+        rawop = sarrayGetString(sa, i, L_NOCOPY);
         op = stringRemoveChars(rawop, " \n\t");
         switch (op[0])
         {
@@ -389,7 +389,7 @@ SARRAY  *sa;
             /* All invalid ops are caught in the first pass */
             break;
         }
-        FREE(op);
+        LEPT_FREE(op);
 
             /* Debug output */
         if (dispsep > 0) {
@@ -406,7 +406,7 @@ SARRAY  *sa;
 
     if (pdfout) {
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        FREE(fname);
+        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 
@@ -484,7 +484,7 @@ SARRAY  *sa;
     pixt2 = NULL;
     x = y = 0;
     for (i = 0; i < nops; i++) {
-        rawop = sarrayGetString(sa, i, 0);
+        rawop = sarrayGetString(sa, i, L_NOCOPY);
         op = stringRemoveChars(rawop, " \n\t");
         switch (op[0])
         {
@@ -537,7 +537,7 @@ SARRAY  *sa;
             /* All invalid ops are caught in the first pass */
             break;
         }
-        FREE(op);
+        LEPT_FREE(op);
 
             /* Debug output */
         if (dispsep > 0) {
@@ -554,7 +554,7 @@ SARRAY  *sa;
 
     if (pdfout) {
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        FREE(fname);
+        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 
@@ -632,7 +632,7 @@ SARRAY  *sa;
     pixt2 = NULL;
     x = y = 0;
     for (i = 0; i < nops; i++) {
-        rawop = sarrayGetString(sa, i, 0);
+        rawop = sarrayGetString(sa, i, L_NOCOPY);
         op = stringRemoveChars(rawop, " \n\t");
         switch (op[0])
         {
@@ -685,7 +685,7 @@ SARRAY  *sa;
             /* All invalid ops are caught in the first pass */
             break;
         }
-        FREE(op);
+        LEPT_FREE(op);
 
             /* Debug output */
         if (dispsep > 0) {
@@ -702,7 +702,7 @@ SARRAY  *sa;
 
     if (pdfout) {
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        FREE(fname);
+        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 
@@ -744,7 +744,7 @@ l_int32  intlogbase2[5] = {1, 2, 3, 0, 4};  /* of arg/4 */
     netred = 0;
     border = 0;
     for (i = 0; i < nops; i++) {
-        rawop = sarrayGetString(sa, i, 0);
+        rawop = sarrayGetString(sa, i, L_NOCOPY);
         op = stringRemoveChars(rawop, " \n\t");
         switch (op[0])
         {
@@ -838,7 +838,7 @@ l_int32  intlogbase2[5] = {1, 2, 3, 0, 4};  /* of arg/4 */
             fprintf(stderr, "*** nonexistent op = %s\n", op);
             valid = FALSE;
         }
-        FREE(op);
+        LEPT_FREE(op);
     }
 
     if (border != 0 && netred != 0) {
@@ -928,7 +928,7 @@ SARRAY  *sa;
         /* Verify that the operation sequence is valid */
     valid = TRUE;
     for (i = 0; i < nops; i++) {
-        rawop = sarrayGetString(sa, i, 0);
+        rawop = sarrayGetString(sa, i, L_NOCOPY);
         op = stringRemoveChars(rawop, " \n\t");
         switch (op[0])
         {
@@ -977,7 +977,7 @@ SARRAY  *sa;
             fprintf(stderr, "*** nonexistent op = %s\n", op);
             valid = FALSE;
         }
-        FREE(op);
+        LEPT_FREE(op);
     }
     if (!valid) {
         sarrayDestroy(&sa);
@@ -996,7 +996,7 @@ SARRAY  *sa;
     pixt2 = NULL;
     x = 0;
     for (i = 0; i < nops; i++) {
-        rawop = sarrayGetString(sa, i, 0);
+        rawop = sarrayGetString(sa, i, L_NOCOPY);
         op = stringRemoveChars(rawop, " \n\t");
         switch (op[0])
         {
@@ -1037,7 +1037,7 @@ SARRAY  *sa;
             /* All invalid ops are caught in the first pass */
             break;
         }
-        FREE(op);
+        LEPT_FREE(op);
 
             /* Debug output */
         if (dispsep > 0) {
@@ -1050,7 +1050,7 @@ SARRAY  *sa;
 
     if (pdfout) {
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        FREE(fname);
+        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 
@@ -1132,7 +1132,7 @@ SARRAY  *sa;
         /* Verify that the operation sequence is valid */
     valid = TRUE;
     for (i = 0; i < nops; i++) {
-        rawop = sarrayGetString(sa, i, 0);
+        rawop = sarrayGetString(sa, i, L_NOCOPY);
         op = stringRemoveChars(rawop, " \n\t");
         switch (op[0])
         {
@@ -1162,7 +1162,7 @@ SARRAY  *sa;
             fprintf(stderr, "*** nonexistent op = %s\n", op);
             valid = FALSE;
         }
-        FREE(op);
+        LEPT_FREE(op);
     }
     if (!valid) {
         sarrayDestroy(&sa);
@@ -1181,7 +1181,7 @@ SARRAY  *sa;
     pixt2 = NULL;
     x = 0;
     for (i = 0; i < nops; i++) {
-        rawop = sarrayGetString(sa, i, 0);
+        rawop = sarrayGetString(sa, i, L_NOCOPY);
         op = stringRemoveChars(rawop, " \n\t");
         switch (op[0])
         {
@@ -1213,7 +1213,7 @@ SARRAY  *sa;
             /* All invalid ops are caught in the first pass */
             break;
         }
-        FREE(op);
+        LEPT_FREE(op);
 
             /* Debug output */
         if (dispsep > 0) {
@@ -1226,7 +1226,7 @@ SARRAY  *sa;
 
     if (pdfout) {
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        FREE(fname);
+        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 

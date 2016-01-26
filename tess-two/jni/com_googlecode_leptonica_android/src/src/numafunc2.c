@@ -35,6 +35,7 @@
  *
  *      Other transforms
  *          NUMA        *numaTransform()
+ *          l_int32      numaSimpleStats()
  *          l_int32      numaWindowedStats()
  *          NUMA        *numaWindowedMean()
  *          NUMA        *numaWindowedMeanSquare()
@@ -60,8 +61,10 @@
  *      Splitting a distribution
  *          l_int32      numaSplitDistribution()
  *
- *      Comparing two histograms
+ *      Comparing histograms
+ *          l_int32      grayHistogramsToEMD()
  *          l_int32      numaEarthMoverDistance()
+ *          l_int32      grayInterHistogramStats()
  *
  *      Extrema finding
  *          NUMA        *numaFindPeaks()
@@ -75,6 +78,9 @@
  *          NUMA        *numaEvalBestHaarParameters()
  *          l_int32      numaEvalHaarSum()
  *
+ *      Generating numbers in a range under constraints
+ *          NUMA        *genConstrainedNumaInRange()
+ *
  *    Things to remember when using the Numa:
  *
  *    (1) The numa is a struct, not an array.  Always use accessors
@@ -82,7 +88,9 @@
  *
  *    (2) The number array holds l_float32 values.  It can also
  *        be used to store l_int32 values.  See numabasic.c for
- *        details on using the accessors.
+ *        details on using the accessors.  Integers larger than
+ *        about 10M will lose accuracy due on retrieval due to round-off.
+ *        For large integers, use the dna (array of l_float64) instead.
  *
  *    (3) Occasionally, in the comments we denote the i-th element of a
  *        numa by na[i].  This is conceptual only -- the numa is not an array!
@@ -179,7 +187,7 @@ NUMA       *nad;
     n = numaGetCount(nas);
     hsize = size / 2;
     len = n + 2 * hsize;
-    if ((fas = (l_float32 *)CALLOC(len, sizeof(l_float32))) == NULL)
+    if ((fas = (l_float32 *)LEPT_CALLOC(len, sizeof(l_float32))) == NULL)
         return (NUMA *)ERROR_PTR("fas not made", procName, NULL);
     for (i = 0; i < hsize; i++)
          fas[i] = 1.0e37;
@@ -199,7 +207,7 @@ NUMA       *nad;
         fad[i] = minval;
     }
 
-    FREE(fas);
+    LEPT_FREE(fas);
     return nad;
 }
 
@@ -245,7 +253,7 @@ NUMA       *nad;
     n = numaGetCount(nas);
     hsize = size / 2;
     len = n + 2 * hsize;
-    if ((fas = (l_float32 *)CALLOC(len, sizeof(l_float32))) == NULL)
+    if ((fas = (l_float32 *)LEPT_CALLOC(len, sizeof(l_float32))) == NULL)
         return (NUMA *)ERROR_PTR("fas not made", procName, NULL);
     for (i = 0; i < hsize; i++)
          fas[i] = -1.0e37;
@@ -265,7 +273,7 @@ NUMA       *nad;
         fad[i] = maxval;
     }
 
-    FREE(fas);
+    LEPT_FREE(fas);
     return nad;
 }
 
@@ -399,6 +407,66 @@ NUMA      *nad;
 
 
 /*!
+ *  numaSimpleStats()
+ *
+ *      Input:  na (input numa)
+ *              first (first element to use)
+ *              last (last element to use; 0 to go to the end)
+ *              &mean (<optional return> mean value)
+ *              &var (<optional return> variance)
+ *              &rvar (<optional return> rms deviation from the mean)
+ *      Return: 0 if OK, 1 on error
+ */
+l_int32
+numaSimpleStats(NUMA       *na,
+                l_int32     first,
+                l_int32     last,
+                l_float32  *pmean,
+                l_float32  *pvar,
+                l_float32  *prvar)
+{
+l_int32    i, n, ni;
+l_float32  sum, sumsq, val, mean, var;
+
+    PROCNAME("numaSimpleStats");
+
+    if (pmean) *pmean = 0.0;
+    if (pvar) *pvar = 0.0;
+    if (prvar) *prvar = 0.0;
+    if (!pmean && !pvar && !prvar)
+        return ERROR_INT("nothing requested", procName, 1);
+    if (!na)
+        return ERROR_INT("na not defined", procName, 1);
+    if ((n = numaGetCount(na)) == 0)
+        return ERROR_INT("na is empty", procName, 1);
+    if (last == 0) last = n - 1;
+    last = L_MIN(last, n - 1);
+    if (first > last) {
+        L_ERROR("invalid: first(%d) > last(%d)\n", procName, first, last);
+        return 1;
+    }
+    ni = last - first + 1;
+    sum = sumsq = 0.0;
+    for (i = first; i <= last; i++) {
+        numaGetFValue(na, i, &val);
+        sum += val;
+        sumsq += val * val;
+    }
+
+    mean = sum / ni;
+    if (pmean)
+        *pmean = mean;
+    if (pvar || prvar) {
+        var = sumsq / ni - mean * mean;
+        if (pvar) *pvar = var;
+        if (prvar) *prvar = sqrtf(var);
+    }
+
+    return 0;
+}
+
+
+/*!
  *  numaWindowedStats()
  *
  *      Input:  nas (input numa)
@@ -501,7 +569,7 @@ NUMA       *na1, *nad;
     fad = numaGetFArray(nad, L_NOCOPY);
 
         /* Make sum array; note the indexing */
-    if ((suma = (l_float32 *)CALLOC(n1 + 1, sizeof(l_float32))) == NULL)
+    if ((suma = (l_float32 *)LEPT_CALLOC(n1 + 1, sizeof(l_float32))) == NULL)
         return (NUMA *)ERROR_PTR("suma not made", procName, NULL);
     sum = 0.0;
     suma[0] = 0.0;
@@ -514,7 +582,7 @@ NUMA       *na1, *nad;
     for (i = 0; i < n; i++)
         fad[i] = norm * (suma[width + i] - suma[i]);
 
-    FREE(suma);
+    LEPT_FREE(suma);
     numaDestroy(&na1);
     return nad;
 }
@@ -556,7 +624,7 @@ NUMA       *na1, *nad;
     fad = numaGetFArray(nad, L_NOCOPY);
 
         /* Make sum array; note the indexing */
-    if ((suma = (l_float32 *)CALLOC(n1 + 1, sizeof(l_float32))) == NULL)
+    if ((suma = (l_float32 *)LEPT_CALLOC(n1 + 1, sizeof(l_float32))) == NULL)
         return (NUMA *)ERROR_PTR("suma not made", procName, NULL);
     sum = 0.0;
     suma[0] = 0.0;
@@ -569,7 +637,7 @@ NUMA       *na1, *nad;
     for (i = 0; i < n; i++)
         fad[i] = norm * (suma[width + i] - suma[i]);
 
-    FREE(suma);
+    LEPT_FREE(suma);
     numaDestroy(&na1);
     return nad;
 }
@@ -638,7 +706,7 @@ NUMA       *nav, *narv;  /* variance and square root of variance */
         if (pnav)
             fav[i] = var;
         if (pnarv)
-            farv[i] = (l_float32)sqrt(var);
+            farv[i] = sqrtf(var);
     }
 
     return 0;
@@ -654,9 +722,10 @@ NUMA       *nav, *narv;  /* variance and square root of variance */
  *
  *  Notes:
  *      (1) The requested window has width = 2 * @halfwin + 1.
- *      (2) If the input nas has less then 3 elements, just return a copy.
- *      (3) If the requested filter is too large, it is reduced in size.
- *      (4) We add a mirrored border of size @halfwin to each end of
+ *      (2) If the input nas has less then 3 elements, return a copy.
+ *      (3) If the filter is too small (@halfwin <= 0), return a copy.
+ *      (4) If the filter is too large, it is reduced in size.
+ *      (5) We add a mirrored border of size @halfwin to each end of
  *          the array to simplify the calculation by avoiding end-effects.
  */
 NUMA *
@@ -673,6 +742,10 @@ NUMA      *na1, *na2, *nad;
         return (NUMA *)ERROR_PTR("nas not defined", procName, NULL);
     if ((n = numaGetCount(nas)) < 3)
         return numaCopy(nas);
+    if (halfwin <= 0) {
+        L_ERROR("filter too small; returning a copy\n", procName);
+        return numaCopy(nas);
+    }
 
     if (halfwin > (n - 1) / 2) {
         halfwin = (n - 1) / 2;
@@ -1272,7 +1345,7 @@ numaGetHistogramStatsOnInterval(NUMA       *nahisto,
 l_int32    i, n, imax;
 l_float32  sum, sumval, halfsum, moment, var, x, y, ymax;
 
-    PROCNAME("numaGetHistogramStats");
+    PROCNAME("numaGetHistogramStatsOnInterval");
 
     if (pxmean) *pxmean = 0.0;
     if (pxmedian) *pxmedian = 0.0;
@@ -1295,8 +1368,10 @@ l_float32  sum, sumval, halfsum, moment, var, x, y, ymax;
         moment += x * y;
         var += x * x * y;
     }
-    if (sum == 0.0)
-        return ERROR_INT("sum is 0", procName, 1);
+    if (sum == 0.0) {
+        L_INFO("sum is 0\n", procName);
+        return 0;
+    }
 
     if (pxmean)
         *pxmean = moment / sum;
@@ -1908,7 +1983,7 @@ NUMA      *nascore, *naave1, *naave2, *nanum1, *nanum2;
     if (pnascore) {  /* debug mode */
         fprintf(stderr, "minrange = %d, maxrange = %d\n", minrange, maxrange);
         fprintf(stderr, "minval = %10.0f\n", minval);
-        gplotSimple1(nascore, GPLOT_PNG, "/tmp/nascore",
+        gplotSimple1(nascore, GPLOT_PNG, "/tmp/lept/nascore",
                      "Score for split distribution");
         *pnascore = nascore;
     } else {
@@ -1924,8 +1999,69 @@ NUMA      *nascore, *naave1, *naave2, *nanum1, *nanum2;
 
 
 /*----------------------------------------------------------------------*
- *                        Comparing two histograms                      *
+ *                         Comparing histograms                         *
  *----------------------------------------------------------------------*/
+/*!
+ *  grayHistogramsToEMD()
+ *
+ *      Input:  naa1, naa2 (two numaa, each with one or more 256-element
+ *                          histograms)
+ *              &nad (<return> nad of EM distances for each histogram)
+ *      Return: 0 if OK, 1 on error
+ *
+ * Notes:
+ *     (1) The two numaas must be the same size and have corresponding
+ *         256-element histograms.  Pairs do not need to be normalized
+ *         to the same sum.
+ *     (2) This is typically used on two sets of histograms from
+ *         corresponding tiles of two images.  The similarity of two
+ *         images can be found with the scoring function used in
+ *         pixCompareGrayByHisto():
+ *             score S = 1.0 - k * D, where
+ *                 k is a constant, say in the range 5-10
+ *                 D = EMD
+ *             for each tile; for multiple tiles, take the Min(S) over
+ *             the set of tiles to be the final score.
+ */
+l_int32
+grayHistogramsToEMD(NUMAA  *naa1,
+                    NUMAA  *naa2,
+                    NUMA  **pnad)
+{
+l_int32     i, n, nt;
+l_float32   dist;
+NUMA       *na1, *na2, *nad;
+
+    PROCNAME("grayHistogramsToEMD");
+
+    if (!pnad)
+        return ERROR_INT("&nad not defined", procName, 1);
+    *pnad = NULL;
+    if (!naa1 || !naa2)
+        return ERROR_INT("na1 and na2 not both defined", procName, 1);
+    n = numaaGetCount(naa1);
+    if (n != numaaGetCount(naa2))
+        return ERROR_INT("naa1 and naa2 numa counts differ", procName, 1);
+    nt = numaaGetNumberCount(naa1);
+    if (nt != numaaGetNumberCount(naa2))
+        return ERROR_INT("naa1 and naa2 number counts differ", procName, 1);
+    if (256 * n != nt)  /* good enough check */
+        return ERROR_INT("na sizes must be 256", procName, 1);
+
+    nad = numaCreate(n);
+    *pnad = nad;
+    for (i = 0; i < n; i++) {
+        na1 = numaaGetNuma(naa1, i, L_CLONE);
+        na2 = numaaGetNuma(naa2, i, L_CLONE);
+        numaEarthMoverDistance(na1, na2, &dist);
+        numaAddNumber(nad, dist / 255.);  /* normalize to [0.0 - 1.0] */
+        numaDestroy(&na1);
+        numaDestroy(&na2);
+    }
+    return 0;
+}
+
+
 /*!
  *  numaEarthMoverDistance()
  *
@@ -1943,11 +2079,13 @@ NUMA      *nascore, *naave1, *naave2, *nanum1, *nanum2;
  *     (3) We divide the sum of the absolute value of everything moved
  *         (by 1 unit at a time) by the sum of the numa (amount of "earth")
  *         to get the average distance that the "earth" was moved.
- *         Further normalization, by the number of buckets (minus 1),
- *         gives the distance as a fraction of the maximum possible
- *         distance, which is n-1.  This fraction is 1.0 for the situation
- *         where all the 'earth' in the first array is at one end, and
- *         all in the second array is at the other end.
+ *         This is the value returned here.
+ *     (4) The caller can do a further normalization, by the number of
+ *         buckets (minus 1), to get the EM distance as a fraction of
+ *         the maximum possible distance, which is n-1.  This fraction
+ *         is 1.0 for the situation where all the 'earth' in the first
+ *         array is at one end, and all in the second array is at the
+ *         other end.
  */
 l_int32
 numaEarthMoverDistance(NUMA       *na1,
@@ -1991,6 +2129,120 @@ NUMA       *na3;
     *pdist = total / sum1;
 
     numaDestroy(&na3);
+    return 0;
+}
+
+
+/*!
+ *  grayInterHistogramStats()
+ *
+ *      Input:  naa (numaa with two or more 256-element histograms)
+ *              wc (half-width of the smoothing window)
+ *              &nam (<optional return> mean values)
+ *              &nams (<optional return> mean square values)
+ *              &pnav (<optional return> variances)
+ *              &pnarv (<optional return> rms deviations from the mean)
+ *      Return: 0 if OK, 1 on error
+ *
+ * Notes:
+ *     (1) The @naa has two or more 256-element numa histograms, which
+ *         are to be compared value-wise at each of the 256 gray levels.
+ *         The result are stats (mean, mean square, variance, root variance)
+ *         aggregated across the set of histograms, and each is output
+ *         as a 256 entry numa.  Think of these histograms as a matrix,
+ *         where each histogram is one row of the array.  The stats are
+ *         then aggregated column-wise, between the histograms.
+ *     (2) These stats are:
+*             - average value: <v>  (nam)
+ *            - average squared value: <v*v> (nams)
+ *            - variance: <(v - <v>)*(v - <v>)> = <v*v> - <v>*<v>  (nav)
+ *            - square-root of variance: (narv)
+ *         where the brackets < .. > indicate that the average value is
+ *         to be taken over each column of the array.
+ *     (3) The input histograms are optionally smoothed before these
+ *         statistical operations.
+ *     (4) The input histograms are normalized to a sum of 10000.  By
+ *         doing this, the resulting numbers are independent of the
+ *         number of samples used in building the individual histograms.
+ *     (5) A typical application is on a set of histograms from tiles
+ *         of an image, to distinguish between text/tables and photo
+ *         regions.  If the tiles are much larger than the text line
+ *         spacing, text/table regions typically have smaller variance
+ *         across tiles than photo regions.  For this application, it
+ *         may be useful to ignore values near white, which are large for
+ *         text and would magnify the variance due to variations in
+ *         illumination.  However, because the variance of a drawing or
+ *         a light photo can be similar to that of grayscale text, this
+ *         function is only a discriminator between darker photos/drawings
+ *         and light photos/text/line-graphics.
+ */
+l_int32
+grayInterHistogramStats(NUMAA   *naa,
+                        l_int32  wc,
+                        NUMA   **pnam,
+                        NUMA   **pnams,
+                        NUMA   **pnav,
+                        NUMA   **pnarv)
+{
+l_int32      i, j, n, nn;
+l_float32  **arrays;
+l_float32    mean, var, rvar;
+NUMA        *na1, *na2, *na3, *na4;
+
+    PROCNAME("grayInterHistogramStats");
+
+    if (pnam) *pnam = NULL;
+    if (pnams) *pnams = NULL;
+    if (pnav) *pnav = NULL;
+    if (pnarv) *pnarv = NULL;
+    if (!pnam && !pnams && !pnav && !pnarv)
+        return ERROR_INT("nothing requested", procName, 1);
+    if (!naa)
+        return ERROR_INT("naa not defined", procName, 1);
+    n = numaaGetCount(naa);
+    for (i = 0; i < n; i++) {
+        nn = numaaGetNumaCount(naa, i);
+        if (nn != 256) {
+            L_ERROR("%d numbers in numa[%d]\n", procName, nn, i);
+            return 1;
+        }
+    }
+
+    if (pnam) *pnam = numaCreate(256);
+    if (pnams) *pnams = numaCreate(256);
+    if (pnav) *pnav = numaCreate(256);
+    if (pnarv) *pnarv = numaCreate(256);
+
+        /* First, use mean smoothing, normalize each histogram,
+         * and save all results in a 2D matrix. */
+    arrays = (l_float32 **)LEPT_CALLOC(n, sizeof(l_float32 *));
+    for (i = 0; i < n; i++) {
+        na1 = numaaGetNuma(naa, i, L_CLONE);
+        na2 = numaWindowedMean(na1, wc);
+        na3 = numaNormalizeHistogram(na2, 10000.);
+        arrays[i] = numaGetFArray(na3, L_COPY);
+        numaDestroy(&na1);
+        numaDestroy(&na2);
+        numaDestroy(&na3);
+    }
+
+        /* Get stats between histograms */
+    for (j = 0; j < 256; j++) {
+        na4 = numaCreate(n);
+        for (i = 0; i < n; i++) {
+            numaAddNumber(na4, arrays[i][j]);
+        }
+        numaSimpleStats(na4, 0, 0, &mean, &var, &rvar);
+        if (pnam) numaAddNumber(*pnam, mean);
+        if (pnams) numaAddNumber(*pnams, mean * mean);
+        if (pnav) numaAddNumber(*pnav, var);
+        if (pnarv) numaAddNumber(*pnarv, rvar);
+        numaDestroy(&na4);
+    }
+
+    for (i = 0; i < n; i++)
+        LEPT_FREE(arrays[i]);
+    LEPT_FREE(arrays);
     return 0;
 }
 
@@ -2681,3 +2933,72 @@ l_float32  score, weight, val;
     *pscore = 2.0 * width * score / (l_float32)n;
     return 0;
 }
+
+
+/*----------------------------------------------------------------------*
+ *            Generating numbers in a range under constraints           *
+ *----------------------------------------------------------------------*/
+/*!
+ *  genConstrainedNumaInRange()
+ *
+ *      Input:  first (first number to choose; >= 0)
+ *              last (biggest possible number to reach; >= first)
+ *              nmax (maximum number of numbers to select; > 0)
+ *              use_pairs (1 = select pairs of adjacent numbers;
+ *                         0 = select individual numbers)
+ *      Return: 0 if OK, 1 on error
+ *
+ *  Note:
+ *     (1) Selection is made uniformly in the range.  This can be used
+ *         to select pages distributed as uniformly as possible
+ *         through a book, where you are constrained to:
+ *          - choose between [first, ... biggest],
+ *          - choose no more than nmax numbers, and
+ *         and you have the option of requiring pairs of adjacent numbers.
+ */
+NUMA *
+genConstrainedNumaInRange(l_int32  first,
+                          l_int32  last,
+                          l_int32  nmax,
+                          l_int32  use_pairs)
+{
+l_int32    i, nsets, val;
+l_float32  delta;
+NUMA      *na;
+
+    PROCNAME("genConstrainedNumaInRange");
+
+    first = L_MAX(0, first);
+    if (last < first)
+        return (NUMA *)ERROR_PTR("last < first!", procName, NULL);
+    if (nmax < 1)
+        return (NUMA *)ERROR_PTR("nmax < 1!", procName, NULL);
+
+    nsets = L_MIN(nmax, last - first + 1);
+    if (use_pairs == 1)
+        nsets = nsets / 2;
+    if (nsets == 0)
+        return (NUMA *)ERROR_PTR("nsets == 0", procName, NULL);
+
+        /* Select delta so that selection covers the full range if possible */
+    if (nsets == 1) {
+        delta = 0.0;
+    } else {
+        if (use_pairs == 0)
+            delta = (l_float32)(last - first) / (nsets - 1);
+        else
+            delta = (l_float32)(last - first - 1) / (nsets - 1);
+    }
+
+    na = numaCreate(nsets);
+    for (i = 0; i < nsets; i++) {
+        val = (l_int32)(first + i * delta + 0.5);
+        numaAddNumber(na, val);
+        if (use_pairs == 1)
+            numaAddNumber(na, val + 1);
+    }
+
+    return na;
+}
+
+

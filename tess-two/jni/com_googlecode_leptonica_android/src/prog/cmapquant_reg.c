@@ -42,72 +42,91 @@
 int main(int    argc,
          char **argv)
 {
-l_int32      same;
-l_uint32    *rtab, *gtab, *btab;
-l_int32     *cmaptab;
-BOX         *box;
-PIX         *pixs, *pixt1, *pixt2, *pixt3, *pixt4;
-PIXCMAP     *cmap;
-static char  mainName[] = "cmapquant_reg";
+BOX          *box;
+PIX          *pixs, *pix1, *pix2, *pix3, *pix4, *pix5, *pix6, *pix7;
+PIX          *pix8, *pix9;
+PIXCMAP      *cmap;
+L_REGPARAMS  *rp;
+
+   if (regTestSetup(argc, argv, &rp))
+        return 1;
 
     pixs = pixRead("lucasta-frag.jpg");
-    if (argc != 1)
-        return ERROR_INT("syntax: cmapquant_req", mainName, 1);
 
         /* Convert to 4 bpp with 6 levels and a colormap */
-    pixt1 = pixThresholdTo4bpp(pixs, 6, 1);
+    pix1 = pixThresholdTo4bpp(pixs, 6, 1);
 
         /* Color some non-white pixels, preserving antialiasing, and
          * adding these colors to the colormap */
     box = boxCreate(120, 30, 200, 200);
-    pixColorGray(pixt1, box, L_PAINT_DARK, 220, 0, 0, 255);
-    pixDisplayWrite(pixt1, 1);
+    pixColorGray(pix1, box, L_PAINT_DARK, 220, 0, 0, 255);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 0 */
+    pixDisplayWithTitle(pix1, 0, 0, NULL, rp->display);
     boxDestroy(&box);
 
         /* Scale up by 1.5; losing the colormap */
-    startTimer();
-    pixt2 = pixScale(pixt1, 1.5, 1.5);
-    fprintf(stderr, "Time to scale by 1.5x = %7.3f sec\n", stopTimer());
-    pixDisplayWrite(pixt2, 1);
+    pix2 = pixScale(pix1, 1.5, 1.5);
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 1 */
+    pixDisplayWithTitle(pix2, 0, 0, NULL, rp->display);
 
-        /* Re-quantize using the same colormap */
+        /* Octcube quantize using the same colormap */
     startTimer();
-    cmap = pixGetColormap(pixt1);
-    pixt3 = pixOctcubeQuantFromCmap(pixt2, cmap, MIN_DEPTH,
-                                    LEVEL, L_EUCLIDEAN_DISTANCE);
-    fprintf(stderr, "Time to requantize to cmap = %7.3f sec\n", stopTimer());
-    pixDisplayWrite(pixt3, 1);
+    cmap = pixGetColormap(pix1);
+    pix3 = pixOctcubeQuantFromCmap(pix2, cmap, MIN_DEPTH,
+                                   LEVEL, L_EUCLIDEAN_DISTANCE);
+    fprintf(stderr, "Time to re-quantize to cmap = %7.3f sec\n", stopTimer());
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 2 */
+    pixDisplayWithTitle(pix3, 0, 0, NULL, rp->display);
 
-        /* Re-quantize first making the tables and then
-         * using the lower-level function */
+        /* Convert the quantized image to rgb */
+    pix4 = pixConvertTo32(pix3);
+
+        /* Re-quantize using median cut */
+    pix5 = pixMedianCutQuant(pix4, 0);
+    regTestWritePixAndCheck(rp, pix5, IFF_PNG);  /* 3 */
+    pixDisplayWithTitle(pix5, 0, 0, NULL, rp->display);
+
+        /* Re-quantize to few colors using median cut */
+    pix6 = pixFewColorsMedianCutQuantMixed(pix4, 30, 30, 100, 0, 0, 0);
+    regTestWritePixAndCheck(rp, pix6, IFF_PNG);  /* 4 */
+    pixDisplayWithTitle(pix6, 0, 0, NULL, rp->display);
+
+        /* Octcube quantize mixed with gray */
     startTimer();
-    makeRGBToIndexTables(&rtab, &gtab, &btab, LEVEL);
-    cmaptab = pixcmapToOctcubeLUT(cmap, LEVEL, L_EUCLIDEAN_DISTANCE);
-    fprintf(stderr, "Time to make tables = %7.3f sec\n", stopTimer());
+    pix7 = pixOctcubeQuantMixedWithGray(pix2, 4, 5, 5);
+    fprintf(stderr, "Time to re-quantize mixed = %7.3f sec\n", stopTimer());
+    regTestWritePixAndCheck(rp, pix7, IFF_PNG);  /* 5 */
+    pixDisplayWithTitle(pix7, 0, 0, NULL, rp->display);
+
+        /* Fixed octcube quantization */
     startTimer();
-    pixt4 = pixOctcubeQuantFromCmapLUT(pixt2, cmap, MIN_DEPTH,
-                                       cmaptab, rtab, gtab, btab);
-    fprintf(stderr, "Time for lowlevel re-quant = %7.3f sec\n", stopTimer());
-    pixDisplayWrite(pixt4, 1);
+    pix8 = pixFixedOctcubeQuant256(pix2, 0);
+    fprintf(stderr, "Time to re-quantize 256 = %7.3f sec\n", stopTimer());
+    regTestWritePixAndCheck(rp, pix8, IFF_PNG);  /* 6 */
+    pixDisplayWithTitle(pix8, 0, 0, NULL, rp->display);
 
-    pixEqual(pixt3, pixt4, &same);
-    if (same)
-        fprintf(stderr, "Correct: images are the same\n");
-    else
-        fprintf(stderr, "Error: images differ\n");
-    lept_free(cmaptab);
-    lept_free(rtab);
-    lept_free(gtab);
-    lept_free(btab);
+        /* Remove unused colors */
+    startTimer();
+    pix9 = pixCopy(NULL, pix8);
+    pixRemoveUnusedColors(pix9);
+    fprintf(stderr, "Time to remove unused colors = %7.3f sec\n", stopTimer());
+    regTestWritePixAndCheck(rp, pix9, IFF_PNG);  /* 7 */
+    pixDisplayWithTitle(pix8, 0, 0, NULL, rp->display);
 
-    pixDisplayMultiple("/tmp/display/file*");
+         /* Compare before and after colors removed */
+    regTestComparePix(rp, pix8, pix9);  /* 8 */
 
     pixDestroy(&pixs);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
-    return 0;
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
+    pixDestroy(&pix6);
+    pixDestroy(&pix7);
+    pixDestroy(&pix8);
+    pixDestroy(&pix9);
+    return regTestCleanup(rp);
 }
 
 

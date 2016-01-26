@@ -57,6 +57,7 @@
  *           BOXA     *boxaModifyWithBoxa()
  *           BOXA     *boxaConstrainSize()
  *           BOXA     *boxaReconcileEvenOddHeight()
+ *           BOXA     *boxaReconcilePairWidth()
  *           l_int32   boxaPlotSides()    [for debugging]
  *           BOXA     *boxaFillSequence()
  *    static l_int32   boxaFillAll()
@@ -1443,7 +1444,7 @@ BOXA    *boxad;
  *              delh (threshold on median height difference)
  *              op (L_ADJUST_CHOOSE_MIN, L_ADJUST_CHOOSE_MAX)
  *              factor (> 0.0, typically near 1.0)
- *      Return: boxad (adjusted)
+ *      Return: boxad (adjusted), or a copy of boxas on error
  *
  *  Notes:
  *      (1) The basic idea is to reconcile differences in box height
@@ -1541,6 +1542,114 @@ BOXA    *boxae, *boxao, *boxa1e, *boxa1o, *boxad;
         }
         if (doeven) boxaAdjustHeightToTarget(boxae, boxae, sides, hmed, delh);
         if (!doeven) boxaAdjustHeightToTarget(boxao, boxao, sides, hmed, delh);
+    }
+
+    boxad = boxaMergeEvenOdd(boxae, boxao, 0);
+    boxaDestroy(&boxae);
+    boxaDestroy(&boxao);
+    return boxad;
+}
+
+
+/*!
+ *  boxaReconcilePairWidth()
+ *
+ *      Input:  boxas
+ *              delw (threshold on adjacent width difference)
+ *              op (L_ADJUST_CHOOSE_MIN, L_ADJUST_CHOOSE_MAX)
+ *              factor (> 0.0, typically near 1.0)
+ *              na (<optional> indicator array allowing change)
+ *      Return: boxad (adjusted), or a copy of boxas on error
+ *
+ *  Notes:
+ *      (1) This reconciles differences in the width of adjacent boxes,
+ *          by moving one side of one of the boxes in each pair.
+ *          If the widths in the pair differ by more than some
+ *          threshold, move either the left side for even boxes or
+ *          the right side for odd boxes, depending on if we're choosing
+ *          the min or max.  If choosing min, the width of the max is
+ *          set to factor * (width of min).  If choosing max, the width
+ *          of the min is set to factor * (width of max).
+ *      (2) If @na exists, it is an indicator array corresponding to the
+ *          boxes in @boxas.  If @na != NULL, only boxes with an
+ *          indicator value of 1 are allowed to adjust; otherwise,
+ *          all boxes can adjust.
+ *      (3) Typical input might be the output of boxaSmoothSequence(),
+ *          where even and odd boxa have been independently regulated.
+ */
+BOXA *
+boxaReconcilePairWidth(BOXA      *boxas,
+                       l_int32    delw,
+                       l_int32    op,
+                       l_float32  factor,
+                       NUMA      *na)
+{
+l_int32  i, ne, no, nmin, xe, we, xo, wo, inde, indo, x, w;
+BOX     *boxe, *boxo;
+BOXA    *boxae, *boxao, *boxad;
+
+    PROCNAME("boxaReconcilePairWidth");
+
+    if (!boxas)
+        return (BOXA *)ERROR_PTR("boxas not defined", procName, NULL);
+    if (factor <= 0.0) {
+        L_WARNING("invalid factor; setting to 1.0\n", procName);
+        factor = 1.0;
+    }
+
+        /* Taking the boxes in pairs, if the difference in width reaches
+         * the threshold @delw, adjust the left or right side of one
+         * of the pair. */
+    boxaSplitEvenOdd(boxas, 0, &boxae, &boxao);
+    ne = boxaGetCount(boxae);
+    no = boxaGetCount(boxao);
+    nmin = L_MIN(ne, no);
+    for (i = 0; i < nmin; i++) {
+            /* Set indicator values */
+        if (na) {
+            numaGetIValue(na, 2 * i, &inde);
+            numaGetIValue(na, 2 * i + 1, &indo);
+        } else {
+            inde = indo = 1;
+        }
+        if (inde == 0 && indo == 0) continue;
+
+        boxe = boxaGetBox(boxae, i, L_CLONE);
+        boxo = boxaGetBox(boxao, i, L_CLONE);
+        boxGetGeometry(boxe, &xe, NULL, &we, NULL);
+        boxGetGeometry(boxo, &xo, NULL, &wo, NULL);
+        if (we == 0 || wo == 0) {  /* if either is invalid; skip */
+            boxDestroy(&boxe);
+            boxDestroy(&boxo);
+            continue;
+        } else if (L_ABS(we - wo) > delw) {
+            if (op == L_ADJUST_CHOOSE_MIN) {
+                if (we > wo && inde == 1) {
+                        /* move left side of even to the right */
+                    w = factor * wo;
+                    x = xe + (we - w);
+                    boxSetGeometry(boxe, x, -1, w, -1);
+                } else if (we < wo && indo == 1) {
+                        /* move right side of odd to the left */
+                    w = factor * we;
+                    boxSetGeometry(boxo, -1, -1, w, -1);
+                }
+            } else {  /* maximize width */
+                if (we < wo && inde == 1) {
+                        /* move left side of even to the left */
+                    w = factor * wo;
+                    x = L_MAX(0, xe + (we - w));
+                    w = we + (xe - x);  /* covers both cases for the max */
+                    boxSetGeometry(boxe, x, -1, w, -1);
+                } else if (we > wo && indo == 1) {
+                        /* move right side of odd to the right */
+                    w = factor * we;
+                    boxSetGeometry(boxo, -1, -1, w, -1);
+                }
+            }
+        }
+        boxDestroy(&boxe);
+        boxDestroy(&boxo);
     }
 
     boxad = boxaMergeEvenOdd(boxae, boxao, 0);
@@ -1673,7 +1782,7 @@ NUMA           *nal, *nat, *nar, *nab;
  *
  *  Notes:
  *      (1) This simple function replaces invalid boxes with a copy of
- *          the nearest valid box, selected from either in the entire
+ *          the nearest valid box, selected from either the entire
  *          sequence (L_USE_ALL_BOXES) or from the boxes with the
  *          same parity (L_USE_SAME_PARITY_BOXES).  It returns a new boxa.
  *      (2) This is useful if you expect boxes in the sequence to
@@ -1756,7 +1865,7 @@ BOX      *box, *boxt;
     }
 
         /* Make indicator array for valid boxes */
-    if ((indic = (l_int32 *)CALLOC(n, sizeof(l_int32))) == NULL)
+    if ((indic = (l_int32 *)LEPT_CALLOC(n, sizeof(l_int32))) == NULL)
         return ERROR_INT("indic not made", procName, 1);
     for (i = 0; i < n; i++) {
         box = boxaGetValidBox(boxa, i, L_CLONE);
@@ -1791,7 +1900,7 @@ BOX      *box, *boxt;
         boxDestroy(&box);
     }
 
-    FREE(indic);
+    LEPT_FREE(indic);
     return 0;
 }
 

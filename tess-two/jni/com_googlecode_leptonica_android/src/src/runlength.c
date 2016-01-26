@@ -284,11 +284,11 @@ PIX       *pixt, *pixd;
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
 
-    if ((start = (l_int32 *)CALLOC(maxsize, sizeof(l_int32))) == NULL)
+    if ((start = (l_int32 *)LEPT_CALLOC(maxsize, sizeof(l_int32))) == NULL)
         return (PIX *)ERROR_PTR("start not made", procName, NULL);
-    if ((end = (l_int32 *)CALLOC(maxsize, sizeof(l_int32))) == NULL)
+    if ((end = (l_int32 *)LEPT_CALLOC(maxsize, sizeof(l_int32))) == NULL)
         return (PIX *)ERROR_PTR("end not made", procName, NULL);
-    if ((buffer = (l_int32 *)CALLOC(bufsize, sizeof(l_int32))) == NULL)
+    if ((buffer = (l_int32 *)LEPT_CALLOC(bufsize, sizeof(l_int32))) == NULL)
         return (PIX *)ERROR_PTR("buffer not made", procName, NULL);
 
         /* Use fg runs for evaluation */
@@ -329,9 +329,9 @@ PIX       *pixt, *pixd;
     }
 
     pixDestroy(&pixt);
-    FREE(start);
-    FREE(end);
-    FREE(buffer);
+    LEPT_FREE(start);
+    LEPT_FREE(end);
+    LEPT_FREE(buffer);
     return pixd;
 }
 
@@ -773,7 +773,7 @@ l_uint8   byte, mask;
 
     PROCNAME("makeMSBitLocTab");
 
-    if ((tab = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return (l_int32 *)ERROR_PTR("tab not made", procName, NULL);
 
     for (i = 0; i < 256; i++) {

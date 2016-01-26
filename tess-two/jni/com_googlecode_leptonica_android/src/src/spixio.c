@@ -30,7 +30,7 @@
  *    This does fast serialization of a pix in memory to file,
  *    copying the raw data for maximum speed.  The underlying
  *    function serializes it to memory, and it is wrapped to be
- *    callable from standard pixRead and pixWrite functions.
+ *    callable from standard pixRead() and pixWrite() file functions.
  *
  *      Reading spix from file
  *           PIX        *pixReadStreamSpix()
@@ -47,10 +47,20 @@
  *           l_int32     pixSerializeToMemory()
  *           PIX        *pixDeserializeFromMemory()
  *
+ *    Note: these functions have not been extensively tested for fuzzing
+ *    (bad input data that can result in, e.g., memory faults).
+ *    The spix serialization format is only defined here, in leptonica.
+ *    The image data is uncompressed and the serialization is not intended
+ *    to be a secure file format from untrusted sources.
  */
 
 #include <string.h>
 #include "allheaders.h"
+
+    /* Image dimension limits */
+static const l_int32  L_MAX_ALLOWED_WIDTH = 1000000;
+static const l_int32  L_MAX_ALLOWED_HEIGHT = 1000000;
+static const l_int64  L_MAX_ALLOWED_AREA = 400000000LL;
 
 #ifndef  NO_CONSOLE_IO
 #define  DEBUG_SERIALIZE      0
@@ -85,11 +95,11 @@ PIX      *pix;
     if ((data = l_binaryReadStream(fp, &nbytes)) == NULL)
         return (PIX *)ERROR_PTR("data not read", procName, NULL);
     if ((pix = pixReadMemSpix(data, nbytes)) == NULL) {
-        FREE(data);
+        LEPT_FREE(data);
         return (PIX *)ERROR_PTR("pix not made", procName, NULL);
     }
 
-    FREE(data);
+    LEPT_FREE(data);
     return pix;
 }
 
@@ -168,12 +178,12 @@ l_uint32  *data;
     nbytes = fnbytesInFile(fp);
     if (nbytes < 32)
         return ERROR_INT("file too small to be spix", procName, 1);
-    if ((data = (l_uint32 *)CALLOC(6, sizeof(l_uint32))) == NULL)
-        return ERROR_INT("CALLOC fail for data", procName, 1);
+    if ((data = (l_uint32 *)LEPT_CALLOC(6, sizeof(l_uint32))) == NULL)
+        return ERROR_INT("LEPT_CALLOC fail for data", procName, 1);
     if (fread(data, 4, 6, fp) != 6)
         return ERROR_INT("error reading data", procName, 1);
     ret = sreadHeaderSpix(data, pwidth, pheight, pbps, pspp, piscmap);
-    FREE(data);
+    LEPT_FREE(data);
     return ret;
 }
 
@@ -263,7 +273,7 @@ size_t    size;
     if (pixWriteMemSpix(&data, &size, pix))
         return ERROR_INT("failure to write pix to memory", procName, 1);
     fwrite(data, 1, size, fp);
-    FREE(data);
+    LEPT_FREE(data);
     return 0;
 }
 
@@ -356,7 +366,7 @@ PIXCMAP   *cmap;
         pixcmapSerializeToMemory(cmap, 4, &ncolors, &cdata);
 
     nbytes = 24 + 4 * ncolors + 4 + rdatasize;
-    if ((data = (l_uint32 *)CALLOC(nbytes / 4, sizeof(l_uint32))) == NULL)
+    if ((data = (l_uint32 *)LEPT_CALLOC(nbytes / 4, sizeof(l_uint32))) == NULL)
         return ERROR_INT("data not made", procName, 1);
     *pdata = data;
     *pnbytes = nbytes;
@@ -382,7 +392,7 @@ PIXCMAP   *cmap;
             rdatasize, ncolors, nbytes);
 #endif  /* DEBUG_SERIALIZE */
 
-    FREE(cdata);
+    LEPT_FREE(cdata);
     return 0;
 }
 
@@ -396,15 +406,16 @@ PIXCMAP   *cmap;
  *
  *  Notes:
  *      (1) See pixSerializeToMemory() for the binary format.
+ *      (2) Note the image size limits.
  */
 PIX *
 pixDeserializeFromMemory(const l_uint32  *data,
                          size_t           nbytes)
 {
 char      *id;
-l_int32    w, h, d, imdatasize, ncolors;
+l_int32    w, h, d, pixdata_size, memdata_size, imdata_size, ncolors;
 l_uint32  *imdata;  /* data in pix raster */
-PIX       *pixd;
+PIX       *pix1, *pixd;
 PIXCMAP   *cmap;
 
     PROCNAME("pixDeserializeFromMemory");
@@ -420,10 +431,35 @@ PIXCMAP   *cmap;
     w = data[1];
     h = data[2];
     d = data[3];
+    ncolors = data[5];
+    imdata_size = data[6 + ncolors];
+
+        /* Sanity checks on the amount of image data */
+    if (w < 1 || w > L_MAX_ALLOWED_WIDTH)
+        return (PIX *)ERROR_PTR("invalid width", procName, NULL);
+    if (h < 1 || h > L_MAX_ALLOWED_HEIGHT)
+        return (PIX *)ERROR_PTR("invalid height", procName, NULL);
+    if (1LL * w * h > L_MAX_ALLOWED_AREA)
+        return (PIX *)ERROR_PTR("area too large", procName, NULL);
+    if (ncolors < 0 || ncolors > 256)
+        return (PIX *)ERROR_PTR("invalid ncolors", procName, NULL);
+    pix1 = pixCreateHeader(w, h, d);  /* just make the header */
+    if (!pix1)
+        return (PIX *)ERROR_PTR("failed to make header", procName, NULL);
+    pixdata_size = 4 * h * pixGetWpl(pix1);
+    memdata_size = nbytes - 24 - 4 * ncolors - 4;
+    imdata_size = data[6 + ncolors];
+    pixDestroy(&pix1);
+    if (pixdata_size != memdata_size || pixdata_size != imdata_size) {
+        L_ERROR("pixdata_size = %d, memdata_size = %d, imdata_size = %d "
+                "not all equal!\n", procName, pixdata_size, memdata_size,
+                imdata_size);
+        return NULL;
+    }
+
     if ((pixd = pixCreate(w, h, d)) == NULL)
         return (PIX *)ERROR_PTR("pix not made", procName, NULL);
 
-    ncolors = data[5];
     if (ncolors > 0) {
         cmap = pixcmapDeserializeFromMemory((l_uint8 *)(&data[6]), 4, ncolors);
         if (!cmap)
@@ -432,15 +468,12 @@ PIXCMAP   *cmap;
     }
 
     imdata = pixGetData(pixd);
-    imdatasize = nbytes - 24 - 4 * ncolors - 4;
-    if (imdatasize != data[6 + ncolors])
-        L_ERROR("imdatasize is inconsistent with nbytes\n", procName);
-    memcpy((char *)imdata, (char *)(data + 7 + ncolors), imdatasize);
+    memcpy((char *)imdata, (char *)(data + 7 + ncolors), imdata_size);
 
 #if  DEBUG_SERIALIZE
     fprintf(stderr, "Deserialize: "
             "raster size = %d, ncolors in cmap = %d, total bytes = %lu\n",
-            imdatasize, ncolors, nbytes);
+            imdata_size, ncolors, nbytes);
 #endif  /* DEBUG_SERIALIZE */
 
     return pixd;

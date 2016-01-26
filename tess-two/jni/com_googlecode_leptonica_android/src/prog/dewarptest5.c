@@ -46,7 +46,9 @@ L_DEWARP   *dew;
 L_DEWARPA  *dewa;
 PIX        *pixs, *pixn, *pixg, *pixb, *pix2, *pix3, *pix4, *pix5, *pix6;
 
-    snprintf(buf, sizeof(buf), "cat-%d.jpg", pageno);
+    lept_mkdir("lept");
+
+    snprintf(buf, sizeof(buf), "cat.%03d.jpg", pageno);
     pixs = pixRead(buf);
     dewa = dewarpaCreate(40, 30, 1, 15, 10);
     dewarpaUseBothArrays(dewa, 1);
@@ -61,7 +63,7 @@ PIX        *pixs, *pixn, *pixg, *pixb, *pix2, *pix3, *pix4, *pix5, *pix6;
     dew = dewarpCreate(pixb, pageno);
     dewarpaInsertDewarp(dewa, dew);
     if (build_output) {
-        snprintf(buf, sizeof(buf), "/tmp/dewarp_build_%d.pdf", pageno);
+        snprintf(buf, sizeof(buf), "/tmp/lept/dewarp_build_%d.pdf", pageno);
         dewarpBuildPageModel(dew, buf);
     } else {
         dewarpBuildPageModel(dew, NULL);
@@ -70,7 +72,7 @@ PIX        *pixs, *pixn, *pixg, *pixb, *pix2, *pix3, *pix4, *pix5, *pix6;
         /* Apply the model */
     dewarpPopulateFullRes(dew, pixg, 0, 0);
     if (apply_output) {
-        snprintf(buf, sizeof(buf), "/tmp/dewarp_apply_%d.pdf", pageno);
+        snprintf(buf, sizeof(buf), "/tmp/lept/dewarp_apply_%d.pdf", pageno);
         dewarpaApplyDisparity(dewa, pageno, pixb, 200, 0, 0, &pix2, buf);
     } else {
         dewarpaApplyDisparity(dewa, pageno, pixb, 200, 0, 0, &pix2, NULL);
@@ -85,7 +87,7 @@ PIX        *pixs, *pixn, *pixg, *pixb, *pix2, *pix3, *pix4, *pix5, *pix6;
 
         /* ... and map to the word boxes for the input image */
     if (map_output) {
-        snprintf(buf, sizeof(buf), "/tmp/dewarp_map1_%d.pdf", pageno);
+        snprintf(buf, sizeof(buf), "/tmp/lept/dewarp_map1_%d.pdf", pageno);
         dewarpaApplyDisparityBoxa(dewa, pageno, pix2, boxa1, 0, 0, 0, &boxa2,
                                   buf);
     } else {
@@ -104,7 +106,7 @@ PIX        *pixs, *pixn, *pixg, *pixb, *pix2, *pix3, *pix4, *pix5, *pix6;
 
         /* ... and map to the word boxes for the dewarped image */
     if (map_output) {
-        snprintf(buf, sizeof(buf), "/tmp/dewarp_map2_%d.pdf", pageno);
+        snprintf(buf, sizeof(buf), "/tmp/lept/dewarp_map2_%d.pdf", pageno);
         dewarpaApplyDisparityBoxa(dewa, pageno, pixb, boxa3, 1, 0, 0, &boxa4,
                                   buf);
     } else {

@@ -31,10 +31,9 @@
  *  Contains the following structs:
  *      struct Numa
  *      struct Numaa
- *      struct Numa2d
- *      struct NumaHash
  *      struct L_Dna
  *      struct L_Dnaa
+ *      struct L_DnaHash
  *      struct Sarray
  *      struct L_Bytea
  *
@@ -63,7 +62,6 @@ struct Numa
 };
 typedef struct Numa  NUMA;
 
-
     /* Array of number arrays */
 struct Numaa
 {
@@ -72,28 +70,6 @@ struct Numaa
     struct Numa    **numa;      /* array of Numa                        */
 };
 typedef struct Numaa  NUMAA;
-
-
-    /* Sparse 2-dimensional array of number arrays */
-struct Numa2d
-{
-    l_int32          nrows;      /* number of rows allocated for ptr array  */
-    l_int32          ncols;      /* number of cols allocated for ptr array  */
-    l_int32          initsize;   /* initial size of each numa that is made  */
-    struct Numa   ***numa;       /* 2D array of Numa                        */
-};
-typedef struct Numa2d  NUMA2D;
-
-
-    /* A hash table of Numas */
-struct NumaHash
-{
-    l_int32          nbuckets;
-    l_int32          initsize;   /* initial size of each numa that is made  */
-    struct Numa    **numa;
-};
-typedef struct NumaHash NUMAHASH;
-
 
 #define  DNA_VERSION_NUMBER     1
 
@@ -109,7 +85,6 @@ struct L_Dna
 };
 typedef struct L_Dna  L_DNA;
 
-
     /* Array of double number arrays */
 struct L_Dnaa
 {
@@ -119,6 +94,14 @@ struct L_Dnaa
 };
 typedef struct L_Dnaa  L_DNAA;
 
+    /* A hash table of Dnas */
+struct L_DnaHash
+{
+    l_int32          nbuckets;
+    l_int32          initsize;   /* initial size of each dna that is made  */
+    struct L_Dna   **dna;
+};
+typedef struct L_DnaHash L_DNAHASH;
 
 #define  SARRAY_VERSION_NUMBER     1
 
@@ -131,7 +114,6 @@ struct Sarray
     char           **array;     /* string array                        */
 };
 typedef struct Sarray SARRAY;
-
 
     /* Byte array (analogous to C++ "string") */
 struct L_Bytea

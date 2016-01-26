@@ -232,27 +232,27 @@ SRC =		adaptnorm_reg.c affine_reg.c \
 		flipselgen.c fmorphautogen.c \
 		fpixcontours.c gammatest.c \
 		gifio_leaktest.c graphicstest.c graymorphtest.c \
-		histotest.c iotest.c italictest.c \
+		hashtest.c histotest.c iotest.c italictest.c \
 		jbcorrelation.c jbrankhaus.c jbwords.c \
 		lineremoval.c listtest.c \
 		livre_adapt.c livre_hmt.c \
 		livre_makefigs.c livre_orient.c \
 		livre_pageseg.c livre_seedgen.c livre_tophat.c \
-		maketile.c misctest1.c \
+		maketile.c maptest.c misctest1.c \
 		modifyhuesat.c morphtest1.c mtifftest.c \
 		numaranktest.c otsutest1.c otsutest2.c \
 		pagesegtest1.c pagesegtest2.c \
 		partitiontest.c pdfiotest.c \
-		pixaatest.c plottest.c \
+		percolatetest.c pixaatest.c plottest.c \
 		printimage.c printsplitimage.c printtiff.c \
-		quadtreetest.c ranktest.c \
-		recogsort.c recogtest1.c \
+		quadtreetest.c ranktest.c rbtreetest.c \
+		recog_bootnum.c recogsort.c recogtest1.c \
 		reducetest.c removecmap.c \
 		renderfonts.c rotatefastalt.c \
 		rotateorthtest1.c rotatetest1.c \
 		runlengthtest.c scaleandtile.c \
 		scaletest1.c scaletest2.c \
-		seedfilltest.c sharptest.c \
+		seedfilltest.c settest.c sharptest.c \
 		sheartest.c showedges.c \
 		skewtest.c snapcolortest.c \
 		sorttest.c splitimage2pdf.c \
@@ -873,6 +873,9 @@ graphicstest:	graphicstest.o $(LEPTLIB)
 graymorphtest:	graymorphtest.o $(LEPTLIB)
 	$(CC) -o graymorphtest graymorphtest.o $(ALL_LIBS) $(EXTRALIBS)
 
+hashtest:	hashtest.o $(LEPTLIB)
+	$(CC) -o hashtest hashtest.o $(ALL_LIBS) $(EXTRALIBS)
+
 histotest:	histotest.o $(LEPTLIB)
 	$(CC) -o histotest histotest.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -921,6 +924,9 @@ livre_tophat:	livre_tophat.o $(LEPTLIB)
 maketile:	maketile.o $(LEPTLIB)
 	$(CC) -o maketile maketile.o $(ALL_LIBS) $(EXTRALIBS)
 
+maptest:	maptest.o $(LEPTLIB)
+	$(CC) -o maptest maptest.o $(ALL_LIBS) $(EXTRALIBS)
+
 misctest1:	misctest1.o $(LEPTLIB)
 	$(CC) -o misctest1 misctest1.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -954,6 +960,9 @@ partitiontest:	partitiontest.o $(LEPTLIB)
 pdfiotest:	pdfiotest.o $(LEPTLIB)
 	$(CC) -o pdfiotest pdfiotest.o $(ALL_LIBS) $(EXTRALIBS)
 
+percolatetest:	percolatetest.o $(LEPTLIB)
+	$(CC) -o percolatetest percolatetest.o $(ALL_LIBS) $(EXTRALIBS)
+
 pixaatest:	pixaatest.o $(LEPTLIB)
 	$(CC) -o pixaatest pixaatest.o $(ALL_LIBS) $(EXTRALIBS)
 
@@ -974,6 +983,12 @@ quadtreetest:	quadtreetest.o $(LEPTLIB)
 
 ranktest:	ranktest.o $(LEPTLIB)
 	$(CC) -o ranktest ranktest.o $(ALL_LIBS) $(EXTRALIBS)
+
+rbtreetest:	rbtreetest.o $(LEPTLIB)
+	$(CC) -o rbtreetest rbtreetest.o $(ALL_LIBS) $(EXTRALIBS)
+
+recog_bootnum:	recog_bootnum.o $(LEPTLIB)
+	$(CC) -o recog_bootnum recog_bootnum.o $(ALL_LIBS) $(EXTRALIBS)
 
 recogsort:	recogsort.o $(LEPTLIB)
 	$(CC) -o recogsort recogsort.o $(ALL_LIBS) $(EXTRALIBS)
@@ -1013,6 +1028,9 @@ scaletest2:	scaletest2.o $(LEPTLIB)
 
 seedfilltest:	seedfilltest.o $(LEPTLIB)
 	$(CC) -o seedfilltest seedfilltest.o $(ALL_LIBS) $(EXTRALIBS)
+
+settest:	settest.o $(LEPTLIB)
+	$(CC) -o settest settest.o $(ALL_LIBS) $(EXTRALIBS)
 
 sharptest:	sharptest.o $(LEPTLIB)
 	$(CC) -o sharptest sharptest.o $(ALL_LIBS) $(EXTRALIBS)

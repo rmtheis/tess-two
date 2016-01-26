@@ -177,7 +177,7 @@ PIXC     *pixc;
         comptype != IFF_PNG && comptype != IFF_JFIF_JPEG)
         return (PIXC *)ERROR_PTR("invalid comptype", procName, NULL);
 
-    if ((pixc = (PIXC *)CALLOC(1, sizeof(PIXC))) == NULL)
+    if ((pixc = (PIXC *)LEPT_CALLOC(1, sizeof(PIXC))) == NULL)
         return (PIXC *)ERROR_PTR("pixc not made", procName, NULL);
     pixGetDimensions(pix, &pixc->w, &pixc->h, &pixc->d);
     pixGetResolution(pix, &pixc->xres, &pixc->yres);
@@ -231,7 +231,7 @@ PIXC    *pixc;
 
     if (pixReadHeaderMem(data, size, &format, &w, &h, &bps, &spp, &iscmap) == 1)
         return (PIXC *)ERROR_PTR("header data not read", procName, NULL);
-    if ((pixc = (PIXC *)CALLOC(1, sizeof(PIXC))) == NULL)
+    if ((pixc = (PIXC *)LEPT_CALLOC(1, sizeof(PIXC))) == NULL)
         return (PIXC *)ERROR_PTR("pixc not made", procName, NULL);
     d = (spp == 3) ? 32 : bps * spp;
     pixc->w = w;
@@ -295,7 +295,7 @@ PIXC     *pixc;
     if (comptype != IFF_DEFAULT && comptype == format) {
         data = l_binaryRead(filename, &nbytes);
         if ((pixc = pixcompCreateFromString(data, nbytes, L_INSERT)) == NULL) {
-            FREE(data);
+            LEPT_FREE(data);
             return (PIXC *)ERROR_PTR("pixc not made (string)", procName, NULL);
         }
         return pixc;
@@ -337,10 +337,10 @@ PIXC  *pixc;
     if ((pixc = *ppixc) == NULL)
         return;
 
-    FREE(pixc->data);
+    LEPT_FREE(pixc->data);
     if (pixc->text)
-        FREE(pixc->text);
-    FREE(pixc);
+        LEPT_FREE(pixc->text);
+    LEPT_FREE(pixc);
     *ppixc = NULL;
     return;
 }
@@ -496,13 +496,13 @@ PIXAC  *pixac;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((pixac = (PIXAC *)CALLOC(1, sizeof(PIXAC))) == NULL)
+    if ((pixac = (PIXAC *)LEPT_CALLOC(1, sizeof(PIXAC))) == NULL)
         return (PIXAC *)ERROR_PTR("pixac not made", procName, NULL);
     pixac->n = 0;
     pixac->nalloc = n;
     pixac->offset = 0;
 
-    if ((pixac->pixc = (PIXC **)CALLOC(n, sizeof(PIXC *))) == NULL)
+    if ((pixac->pixc = (PIXC **)LEPT_CALLOC(n, sizeof(PIXC *))) == NULL)
         return (PIXAC *)ERROR_PTR("pixc ptrs not made", procName, NULL);
     if ((pixac->boxa = boxaCreate(n)) == NULL)
         return (PIXAC *)ERROR_PTR("boxa not made", procName, NULL);
@@ -761,9 +761,9 @@ PIXAC   *pixac;
 
     for (i = 0; i < pixac->n; i++)
         pixcompDestroy(&pixac->pixc[i]);
-    FREE(pixac->pixc);
+    LEPT_FREE(pixac->pixc);
     boxaDestroy(&pixac->boxa);
-    FREE(pixac);
+    LEPT_FREE(pixac);
 
     *ppixac = NULL;
     return;
@@ -1408,7 +1408,7 @@ PIXAC    *pixac;
     pixacompSetOffset(pixac, offset);
 
     for (i = 0; i < n; i++) {
-        if ((pixc = (PIXC *)CALLOC(1, sizeof(PIXC))) == NULL)
+        if ((pixc = (PIXC *)LEPT_CALLOC(1, sizeof(PIXC))) == NULL)
             return (PIXAC *)ERROR_PTR("pixc not made", procName, NULL);
         if (fscanf(fp, "\nPixcomp[%d]: w = %d, h = %d, d = %d\n",
                    &ignore, &w, &h, &d) != 4)
@@ -1427,7 +1427,7 @@ PIXAC    *pixac;
         if (sscanf(buf, "  xres = %d, yres = %d\n", &xres, &yres) != 2)
             return (PIXAC *)ERROR_PTR("read fail for res", procName, NULL);
 
-        if ((data = (l_uint8 *)CALLOC(1, size)) == NULL)
+        if ((data = (l_uint8 *)LEPT_CALLOC(1, size)) == NULL)
             return (PIXAC *)ERROR_PTR("calloc fail for data", procName, NULL);
         if (fread(data, 1, size, fp) != size)
             return (PIXAC *)ERROR_PTR("error reading data", procName, NULL);
@@ -1534,7 +1534,7 @@ PIXC    *pixc;
  *                   use 0 to respect the resolution embedded in the input)
  *              scalefactor (scaling factor applied to each image; > 0.0)
  *              type (encoding type (L_JPEG_ENCODE, L_G4_ENCODE,
- *                    L_FLATE_ENCODE, or 0 for default)
+ *                    L_FLATE_ENCODE, or L_DEFAULT_ENCODE for default)
  *              quality (used for JPEG only; 0 for default (75))
  *              title (<optional> pdf title)
  *              fileout (pdf file of all images)
@@ -1571,12 +1571,12 @@ size_t    nbytes;
     ret = pixacompConvertToPdfData(pixac, res, scalefactor, type, quality,
                                    title, &data, &nbytes);
     if (ret) {
-        FREE(data);
+        LEPT_FREE(data);
         return ERROR_INT("conversion to pdf failed", procName, 1);
     }
 
     ret = l_binaryWrite(fileout, "w", data, nbytes);
-    FREE(data);
+    LEPT_FREE(data);
     if (ret)
         L_ERROR("pdf data not written to file\n", procName);
     return ret;
@@ -1590,7 +1590,7 @@ size_t    nbytes;
  *              res (input resolution of all images)
  *              scalefactor (scaling factor applied to each image; > 0.0)
  *              type (encoding type (L_JPEG_ENCODE, L_G4_ENCODE,
- *                    L_FLATE_ENCODE, or 0 for default)
+ *                    L_FLATE_ENCODE, or L_DEFAULT_ENCODE for default)
  *              quality (used for JPEG only; 0 for default (75))
  *              title (<optional> pdf title)
  *              &data (<return> output pdf data (of all images)
@@ -1628,10 +1628,10 @@ L_PTRA   *pa_data;
     if (!pixac)
         return ERROR_INT("pixac not defined", procName, 1);
     if (scalefactor <= 0.0) scalefactor = 1.0;
-    if (type < 0 || type > L_FLATE_ENCODE) {
+    if (type < L_DEFAULT_ENCODE || type > L_FLATE_ENCODE) {
         L_WARNING("invalid compression type; using per-page default\n",
                   procName);
-        type = 0;
+        type = L_DEFAULT_ENCODE;
     }
 
         /* Generate all the encoded pdf strings */
@@ -1654,7 +1654,7 @@ L_PTRA   *pa_data;
             pix = pixClone(pixs);
         pixDestroy(&pixs);
         scaledres = (l_int32)(res * scalefactor);
-        if (type != 0) {
+        if (type != L_DEFAULT_ENCODE) {
             pagetype = type;
         } else if (selectDefaultPdfEncoding(pix, &pagetype) != 0) {
             L_ERROR("encoding type selection failed for pix[%d]\n",
@@ -1670,7 +1670,7 @@ L_PTRA   *pa_data;
             continue;
         }
         ba = l_byteaInitFromMem(imdata, imbytes);
-        if (imdata) FREE(imdata);
+        if (imdata) LEPT_FREE(imdata);
         ptraAdd(pa_data, ba);
     }
     ptraGetActualCount(pa_data, &n);
@@ -1877,7 +1877,7 @@ PIXA      *pixan;
         /* Determine the size of each row and of pixd */
     wd = tilewidth * ncols + spacing * (ncols + 1);
     nrows = (n + ncols - 1) / ncols;
-    if ((rowht = (l_int32 *)CALLOC(nrows, sizeof(l_int32))) == NULL)
+    if ((rowht = (l_int32 *)LEPT_CALLOC(nrows, sizeof(l_int32))) == NULL)
         return (PIX *)ERROR_PTR("rowht array not made", procName, NULL);
     maxht = 0;
     ninrow = 0;
@@ -1925,6 +1925,6 @@ PIXA      *pixan;
     }
 
     pixaDestroy(&pixan);
-    FREE(rowht);
+    LEPT_FREE(rowht);
     return pixd;
 }

@@ -467,7 +467,7 @@ l_int32      format, retval;
  *      (7) It is assumed that the page number is contained within
  *          the basename (the filename without directory or extension).
  *          @page_numpre is the number of characters in the page basename
- *          preceeding the actual page number; @mask_numpre is likewise for
+ *          preceding the actual page number; @mask_numpre is likewise for
  *          the mask basename; @numpost is the number of characters
  *          following the page number.  For example, for mask name
  *          mask_006.tif, mask_numpre = 5 ("mask_).
@@ -728,8 +728,8 @@ pixWriteMixedToPS(PIX         *pixb,
                   l_int32      pageno,
                   const char  *fileout)
 {
-const char   tnameb[] = "/tmp/lept/psio_mixed.tif";
-const char   tnamec[] = "/tmp/lept/psio_mixed.jpg";
+const char   tnameb[] = "/tmp/lept/psio/mixed.tif";
+const char   tnamec[] = "/tmp/lept/psio/mixed.jpg";
 const char  *op;
 l_int32      resb, resc, endpage, maskop, ret;
 
@@ -750,7 +750,7 @@ l_int32      resb, resc, endpage, maskop, ret;
     }
 
         /* Write the jpeg image first */
-    lept_mkdir("lept");
+    lept_mkdir("lept/psio");
     if (pixc) {
         pixWrite(tnamec, pixc, IFF_JFIF_JPEG);
         endpage = (pixb) ? FALSE : TRUE;
@@ -924,10 +924,10 @@ PIXCMAP  *cmap;
     n = pixaGetCount(pixa);
     firstfile = TRUE;
     index = 0;
-    lept_mkdir("compr");
-    g4_name = genTempFilename("/tmp/compr", "temp.tif", 0, 0);
-    jpeg_name = genTempFilename("/tmp/compr", "temp.jpg", 0, 0);
-    png_name = genTempFilename("/tmp/compr", "temp.png", 0, 0);
+    lept_mkdir("lept/comp");
+    g4_name = genTempFilename("/tmp/lept/comp", "temp.tif", 0, 0);
+    jpeg_name = genTempFilename("/tmp/lept/comp", "temp.jpg", 0, 0);
+    png_name = genTempFilename("/tmp/lept/comp", "temp.png", 0, 0);
     for (i = 0; i < n; i++) {
         writeout = TRUE;
         pix = pixaGetPix(pixa, i, L_CLONE);
@@ -975,9 +975,9 @@ PIXCMAP  *cmap;
                                          &firstfile, &index);
     }
 
-    FREE(g4_name);
-    FREE(jpeg_name);
-    FREE(png_name);
+    LEPT_FREE(g4_name);
+    LEPT_FREE(jpeg_name);
+    LEPT_FREE(png_name);
     return 0;
 }
 

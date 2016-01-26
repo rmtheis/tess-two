@@ -43,6 +43,10 @@
  *    pixWriteMemPng().
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config_auto.h"
+#endif  /* HAVE_CONFIG_H */
+
 #include <string.h>
 #include "allheaders.h"
 #include "bmp.h"
@@ -59,6 +63,11 @@ RGBA_QUAD   bwmap[2] = { {255,255,255,255}, {0,0,0,255} };
 
     /* Colormap size limit */
 static const l_int32  L_MAX_ALLOWED_NUM_COLORS = 256;
+
+    /* Image dimension limits */
+static const l_int32  L_MAX_ALLOWED_WIDTH = 1000000;
+static const l_int32  L_MAX_ALLOWED_HEIGHT = 1000000;
+static const l_int64  L_MAX_ALLOWED_AREA = 400000000LL;
 
 #ifndef  NO_CONSOLE_IO
 #define  DEBUG     0
@@ -85,11 +94,13 @@ l_int16    bfType, bfSize, bfFill1, bfReserved1, bfReserved2;
 l_int16    offset, bfFill2, biPlanes, depth, d;
 l_int32    biSize, width, height, xres, yres, compression;
 l_int32    imagebytes, biClrUsed, biClrImportant;
+size_t     filesize;
 l_uint8   *colormapBuf;
 l_int32    colormapEntries;
 l_int32    fileBpl, extrabytes;
 l_int32    pixWpl, pixBpl;
 l_int32    i, j, k;
+l_int64    area;
 l_uint8    pel[4];
 l_uint8   *data;
 l_uint32  *line, *pword;
@@ -166,43 +177,53 @@ PIXCMAP   *cmap;
         return (PIX *)ERROR_PTR("cannot read compressed BMP files",
                                 procName, NULL);
 
-        /* A little sanity checking.  It would be nice to check
-         * if the number of bytes in the file equals the offset to
-         * the data plus the imagedata, but this won't work when
-         * reading from memory, because fmemopen() doesn't implement
-         * ftell().  So we can't do that check.  The imagebytes for
-         * uncompressed images is either 0 or the size of the file data.
-         * (The fact that it can be 0 is perhaps some legacy glitch).  */
+        /* Some sanity checking.  We impose limits on the image
+         * dimensions and number of pixels.  We make sure the file
+         * is large enough to hold the amount of uncompressed data
+         * that is specified in the header.  The number of colormap
+         * entries is checked: it can be either 0 (no cmap) or some
+         * number between 2 and 256.
+         * Note that the imagebytes for uncompressed images is either
+         * 0 or the size of the file data.  (The fact that it can
+         * be 0 is perhaps some legacy glitch). */
     if (width < 1)
         return (PIX *)ERROR_PTR("width < 1", procName, NULL);
+    if (width > L_MAX_ALLOWED_WIDTH)
+        return (PIX *)ERROR_PTR("width too large", procName, NULL);
     if (height < 1)
         return (PIX *)ERROR_PTR("height < 1", procName, NULL);
+    if (height > L_MAX_ALLOWED_HEIGHT)
+        return (PIX *)ERROR_PTR("height too large", procName, NULL);
+    area = 1LL * width * height;
+    if (area > L_MAX_ALLOWED_AREA)
+        return (PIX *)ERROR_PTR("area too large", procName, NULL);
     if (depth != 1 && depth != 2 && depth != 4 && depth != 8 &&
         depth != 16 && depth != 24 && depth != 32)
         return (PIX *)ERROR_PTR("depth not in {1, 2, 4, 8, 16, 24, 32}",
                                 procName,NULL);
-    fileBpl = 4 * ((width * depth + 31)/32);
+    fileBpl = 4 * ((1LL * width * depth + 31)/32);
     if (imagebytes != 0 && imagebytes != fileBpl * height)
         return (PIX *)ERROR_PTR("invalid imagebytes", procName, NULL);
-    if (offset < BMP_FHBYTES + BMP_IHBYTES)
-        return (PIX *)ERROR_PTR("invalid offset: too small", procName, NULL);
-    if (offset > BMP_FHBYTES + BMP_IHBYTES + 4 * 256)
-        return (PIX *)ERROR_PTR("invalid offset: too large", procName, NULL);
+    colormapEntries = (offset - BMP_FHBYTES - BMP_IHBYTES) / sizeof(RGBA_QUAD);
+    if (colormapEntries < 0 || colormapEntries == 1)
+        return (PIX *)ERROR_PTR("invalid: cmap size < 0 or 1", procName, NULL);
+    if (colormapEntries > L_MAX_ALLOWED_NUM_COLORS)
+        return (PIX *)ERROR_PTR("invalid cmap: too large", procName,NULL);
+    filesize = fnbytesInFile(fp);
+    if (filesize < 1LL * fileBpl * height)
+        return (PIX *)ERROR_PTR("file too small to hold data", procName,NULL);
 
         /* Handle the colormap */
-    colormapEntries = (offset - BMP_FHBYTES - BMP_IHBYTES) / sizeof(RGBA_QUAD);
     colormapBuf = NULL;
-    if (colormapEntries > L_MAX_ALLOWED_NUM_COLORS)
-        return (PIX *)ERROR_PTR("colormap too large", procName,NULL);
     if (colormapEntries > 0) {
-        if ((colormapBuf = (l_uint8 *)CALLOC(colormapEntries,
+        if ((colormapBuf = (l_uint8 *)LEPT_CALLOC(colormapEntries,
                                              sizeof(RGBA_QUAD))) == NULL)
             return (PIX *)ERROR_PTR("colormapBuf alloc fail", procName, NULL );
 
             /* Read colormap */
         if (fread(colormapBuf, sizeof(RGBA_QUAD), colormapEntries, fp)
                  != colormapEntries) {
-            FREE(colormapBuf);
+            LEPT_FREE(colormapBuf);
             return (PIX *)ERROR_PTR( "colormap read fail", procName, NULL);
         }
     }
@@ -212,26 +233,25 @@ PIXCMAP   *cmap;
     if (depth == 24)
         d = 32;
     if ((pix = pixCreate(width, height, d)) == NULL) {
-        FREE(colormapBuf);
+        LEPT_FREE(colormapBuf);
         return (PIX *)ERROR_PTR( "pix not made", procName, NULL);
     }
     pixSetXRes(pix, (l_int32)((l_float32)xres / 39.37 + 0.5));  /* to ppi */
     pixSetYRes(pix, (l_int32)((l_float32)yres / 39.37 + 0.5));  /* to ppi */
+    pixSetInputFormat(pix, IFF_BMP);
     pixWpl = pixGetWpl(pix);
     pixBpl = 4 * pixWpl;
 
     cmap = NULL;
-    if (colormapEntries > 256)
-        L_WARNING("more than 256 colormap entries!\n", procName);
     if (colormapEntries > 0) {  /* import the colormap to the pix cmap */
         cmap = pixcmapCreate(L_MIN(d, 8));
-        FREE(cmap->array);  /* remove generated cmap array */
+        LEPT_FREE(cmap->array);  /* remove generated cmap array */
         cmap->array  = (void *)colormapBuf;  /* and replace */
         cmap->n = L_MIN(colormapEntries, 256);
     }
     pixSetColormap(pix, cmap);
 
-        /* Seek to the start of the bitmap in the file */
+        /* Seek to the start of the image data in the file */
     fseek(fp, offset, 0);
 
     if (depth != 24) {  /* typ. 1 or 8 bpp */
@@ -408,7 +428,7 @@ RGBA_QUAD  *pquad;
             cmaplen = ncolors * sizeof(RGBA_QUAD);
 
             heapcm = 1;
-            if ((cta = (l_uint8 *)CALLOC(cmaplen, 1)) == NULL)
+            if ((cta = (l_uint8 *)LEPT_CALLOC(cmaplen, 1)) == NULL)
                 return ERROR_INT("colormap alloc fail", procName, 1);
 
             stepsize = 255 / (ncolors - 1);
@@ -483,11 +503,11 @@ RGBA_QUAD  *pquad;
     if (ncolors > 0) {
         if (fwrite(cta, 1, cmaplen, fp) != cmaplen) {
             if (heapcm)
-                FREE(cta);
+                LEPT_FREE(cta);
             return ERROR_INT("colormap write fail", procName, 1);
         }
         if (heapcm)
-            FREE(cta);
+            LEPT_FREE(cta);
     }
 
         /* When you write a binary image with a colormap
@@ -549,10 +569,6 @@ RGBA_QUAD  *pquad;
 /*---------------------------------------------------------------------*
  *                         Read/write to memory                        *
  *---------------------------------------------------------------------*/
-#ifdef HAVE_CONFIG_H
-#include "config_auto.h"
-#endif  /* HAVE_CONFIG_H */
-
 #if HAVE_FMEMOPEN
 extern FILE *open_memstream(char **data, size_t *size);
 extern FILE *fmemopen(void *data, size_t size, const char *mode);
@@ -581,7 +597,7 @@ PIX   *pix;
         return (PIX *)ERROR_PTR("cdata not defined", procName, NULL);
 
 #if HAVE_FMEMOPEN
-    if ((fp = fmemopen((l_uint8 *)cdata, size, "r")) == NULL)
+    if ((fp = fmemopen((l_uint8 *)cdata, size, "rb")) == NULL)
         return (PIX *)ERROR_PTR("stream not opened", procName, NULL);
 #else
     L_WARNING("work-around: writing to a temp file\n", procName);

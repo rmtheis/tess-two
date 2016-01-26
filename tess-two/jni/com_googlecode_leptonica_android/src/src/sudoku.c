@@ -198,7 +198,7 @@ SARRAY   *saline, *sa1, *sa2;
         if (str[0] != '#')
             sarrayAddString(sa2, str, L_COPY);
     }
-    FREE(data);
+    LEPT_FREE(data);
     sarrayDestroy(&sa1);
     nlines = sarrayGetCount(sa2);
     if (nlines != 9) {
@@ -210,7 +210,7 @@ SARRAY   *saline, *sa1, *sa2;
         /* Read the data into the array, verifying that each data
          * line has 9 numbers. */
     error = FALSE;
-    array = (l_int32 *)CALLOC(81, sizeof(l_int32));
+    array = (l_int32 *)LEPT_CALLOC(81, sizeof(l_int32));
     for (i = 0, index = 0; i < 9; i++) {
         str = sarrayGetString(sa2, i, L_NOCOPY);
         saline = sarrayCreateWordsFromString(str);
@@ -232,7 +232,7 @@ SARRAY   *saline, *sa1, *sa2;
     sarrayDestroy(&sa2);
 
     if (error) {
-        FREE(array);
+        LEPT_FREE(array);
         return (l_int32 *)ERROR_PTR("invalid data", procName, NULL);
     }
 
@@ -262,7 +262,7 @@ l_int32  *array;
         return (l_int32 *)ERROR_PTR("str not defined", procName, NULL);
 
         /* Read in the initial solution */
-    array = (l_int32 *)CALLOC(81, sizeof(l_int32));
+    array = (l_int32 *)LEPT_CALLOC(81, sizeof(l_int32));
     for (i = 0; i < 81; i++) {
         if (sscanf(str + 2 * i, "%d ", &array[i]) != 1)
             return (l_int32 *)ERROR_PTR("invalid format", procName, NULL);
@@ -299,13 +299,13 @@ L_SUDOKU  *sud;
         return (L_SUDOKU *)ERROR_PTR("array not defined", procName, NULL);
 
     locs_index = 0;  /* into locs array */
-    if ((sud = (L_SUDOKU *)CALLOC(1, sizeof(L_SUDOKU))) == NULL)
+    if ((sud = (L_SUDOKU *)LEPT_CALLOC(1, sizeof(L_SUDOKU))) == NULL)
         return (L_SUDOKU *)ERROR_PTR("sud not made", procName, NULL);
-    if ((sud->locs = (l_int32 *)CALLOC(81, sizeof(l_int32))) == NULL)
+    if ((sud->locs = (l_int32 *)LEPT_CALLOC(81, sizeof(l_int32))) == NULL)
         return (L_SUDOKU *)ERROR_PTR("su state array not made", procName, NULL);
-    if ((sud->init = (l_int32 *)CALLOC(81, sizeof(l_int32))) == NULL)
+    if ((sud->init = (l_int32 *)LEPT_CALLOC(81, sizeof(l_int32))) == NULL)
         return (L_SUDOKU *)ERROR_PTR("su init array not made", procName, NULL);
-    if ((sud->state = (l_int32 *)CALLOC(81, sizeof(l_int32))) == NULL)
+    if ((sud->state = (l_int32 *)LEPT_CALLOC(81, sizeof(l_int32))) == NULL)
         return (L_SUDOKU *)ERROR_PTR("su state array not made", procName, NULL);
     for (i = 0; i < 81; i++) {
         val = array[i];
@@ -341,10 +341,10 @@ L_SUDOKU  *sud;
     if ((sud = *psud) == NULL)
         return;
 
-    FREE(sud->locs);
-    FREE(sud->init);
-    FREE(sud->state);
-    FREE(sud);
+    LEPT_FREE(sud->locs);
+    LEPT_FREE(sud->init);
+    LEPT_FREE(sud->state);
+    LEPT_FREE(sud);
 
     *psud = NULL;
     return;
@@ -583,9 +583,9 @@ L_SUDOKU  *sud, *sud1, *sud2, *sud3;
     sudokuDestroy(&sud1);
     sudokuDestroy(&sud2);
     sudokuDestroy(&sud3);
-    FREE(array1);
-    FREE(array2);
-    FREE(array3);
+    LEPT_FREE(array1);
+    LEPT_FREE(array2);
+    LEPT_FREE(array3);
     return 0;
 }
 
@@ -636,7 +636,7 @@ l_int32  *array;
         }
     }
     *psame = same;
-    FREE(array);
+    LEPT_FREE(array);
     return 0;
 }
 
@@ -662,7 +662,7 @@ l_int32  *rarray;
     if (quads < 1 || quads > 3)
         return (l_int32 *)ERROR_PTR("valid quads in {1,2,3}", procName, NULL);
 
-    rarray = (l_int32 *)CALLOC(81, sizeof(l_int32));
+    rarray = (l_int32 *)LEPT_CALLOC(81, sizeof(l_int32));
     if (quads == 1) {
         for (j = 0, dindex = 0; j < 9; j++) {
              for (i = 8; i >= 0; i--) {

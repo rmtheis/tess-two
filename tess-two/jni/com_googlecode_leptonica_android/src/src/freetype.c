@@ -38,7 +38,7 @@
 #include "allheaders.h"
 
 #include <ft2build.h>
-#include FT_FREETYPE_H
+#include FT_LEPT_FREETYPE_H
 #include FT_GLYPH_H
 
 #undef MAX
@@ -198,7 +198,7 @@ FT_LIBRARY *lib_ptr;
 
     err = FT_Init_FreeType(&lib_ptr->library);
     if (err) {
-        FREE(lib_ptr);
+        LEPT_FREE(lib_ptr);
         return NULL;
     }
     return lib_ptr;
@@ -210,7 +210,7 @@ ftShutdownLibrary(FT_LIBRARY  *lib_ptr)
 {
     if (lib_ptr) {
         FT_Done_FreeType(lib_ptr->library);
-        FREE(lib_ptr);
+        LEPT_FREE(lib_ptr);
     }
 }
 

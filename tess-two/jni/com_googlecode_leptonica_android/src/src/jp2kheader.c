@@ -262,7 +262,7 @@ l_float64  xres, yres;
     arrayFindSequence(data, nbytes, resc, 4, &loc, &found);
     if (!found) {
         L_WARNING("image resolution not found\n", procName);
-        FREE(data);
+        LEPT_FREE(data);
         return 1;
     }
 
@@ -287,7 +287,7 @@ l_float64  xres, yres;
     *pyres = (l_int32)(yres + 0.5);
     *pxres = (l_int32)(xres + 0.5);
 
-    FREE(data);
+    LEPT_FREE(data);
     return 0;
 }
 

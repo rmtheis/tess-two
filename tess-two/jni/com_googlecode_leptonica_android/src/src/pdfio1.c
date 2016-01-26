@@ -296,12 +296,12 @@ size_t    nbytes;
     ret = saConvertFilesToPdfData(sa, res, scalefactor, type, quality,
                                   title, &data, &nbytes);
     if (ret) {
-        if (data) FREE(data);
+        if (data) LEPT_FREE(data);
         return ERROR_INT("pdf data not made", procName, 1);
     }
 
     ret = l_binaryWrite(fileout, "w", data, nbytes);
-    FREE(data);
+    LEPT_FREE(data);
     if (ret)
         L_ERROR("pdf data not written to file\n", procName);
     return ret;
@@ -396,7 +396,7 @@ L_PTRA      *pa_data;
             continue;
         }
         ba = l_byteaInitFromMem(imdata, imbytes);
-        if (imdata) FREE(imdata);
+        if (imdata) LEPT_FREE(imdata);
         ptraAdd(pa_data, ba);
     }
     ptraGetActualCount(pa_data, &npages);
@@ -551,12 +551,12 @@ size_t    nbytes;
 
     ret = saConvertUnscaledFilesToPdfData(sa, title, &data, &nbytes);
     if (ret) {
-        if (data) FREE(data);
+        if (data) LEPT_FREE(data);
         return ERROR_INT("pdf data not made", procName, 1);
     }
 
     ret = l_binaryWrite(fileout, "w", data, nbytes);
-    FREE(data);
+    LEPT_FREE(data);
     if (ret)
         L_ERROR("pdf data not written to file\n", procName);
     return ret;
@@ -610,7 +610,7 @@ L_PTRA       *pa_data;
 
             /* ... and add it to the array of single page data */
         ba = l_byteaInitFromMem(imdata, imbytes);
-        if (imdata) FREE(imdata);
+        if (imdata) LEPT_FREE(imdata);
         ptraAdd(pa_data, ba);
     }
     ptraGetActualCount(pa_data, &npages);
@@ -696,7 +696,7 @@ L_COMP_DATA  *cid;
         /* Generate the pdf string for this page (image).  This destroys
          * the cid by attaching it to an lpd and destroying the lpd. */
     cidConvertToPdfData(cid, pdftitle, pdata, pnbytes);
-    FREE(tail);
+    LEPT_FREE(tail);
     return 0;
 }
 
@@ -749,12 +749,12 @@ size_t    nbytes;
     ret = pixaConvertToPdfData(pixa, res, scalefactor, type, quality,
                                title, &data, &nbytes);
     if (ret) {
-        FREE(data);
+        LEPT_FREE(data);
         return ERROR_INT("conversion to pdf failed", procName, 1);
     }
 
     ret = l_binaryWrite(fileout, "w", data, nbytes);
-    FREE(data);
+    LEPT_FREE(data);
     if (ret)
         L_ERROR("pdf data not written to file\n", procName);
     return ret;
@@ -842,7 +842,7 @@ L_PTRA   *pa_data;
             continue;
         }
         ba = l_byteaInitFromMem(imdata, imbytes);
-        if (imdata) FREE(imdata);
+        if (imdata) LEPT_FREE(imdata);
         ptraAdd(pa_data, ba);
     }
     ptraGetActualCount(pa_data, &n);
@@ -955,7 +955,7 @@ size_t    nbytes;
 
     if (!plpd || (position == L_LAST_IMAGE)) {
         ret = l_binaryWrite(fileout, "w", data, nbytes);
-        FREE(data);
+        LEPT_FREE(data);
         if (ret)
             return ERROR_INT("pdf data not written to file", procName, 1);
     }
@@ -1220,7 +1220,7 @@ size_t    nbytes;
 
     if (!plpd || (position == L_LAST_IMAGE)) {
         ret = l_binaryWrite(fileout, "w", data, nbytes);
-        FREE(data);
+        LEPT_FREE(data);
         if (ret)
             return ERROR_INT("pdf data not written to file", procName, 1);
     }
@@ -1265,7 +1265,7 @@ size_t    nbytes, nbytes_written;
         return ERROR_INT("pdf data not made", procName, 1);
 
     nbytes_written = fwrite(data, 1, nbytes, fp);
-    FREE(data);
+    LEPT_FREE(data);
     if (nbytes != nbytes_written)
         return ERROR_INT("failure writing pdf data to stream", procName, 1);
     return 0;
@@ -1433,7 +1433,7 @@ SARRAY   *sa;
             continue;
         }
         ba = l_byteaInitFromMem(imdata, imbytes);
-        if (imdata) FREE(imdata);
+        if (imdata) LEPT_FREE(imdata);
         ptraAdd(pa_data, ba);
     }
     sarrayDestroy(&sa);
@@ -1457,12 +1457,12 @@ SARRAY   *sa;
     ptraDestroy(&pa_data, FALSE, FALSE);
 
     if (ret) {
-        if (data) FREE(data);
+        if (data) LEPT_FREE(data);
         return ERROR_INT("pdf data not made", procName, 1);
     }
 
     ret = l_binaryWrite(fileout, "w", data, databytes);
-    FREE(data);
+    LEPT_FREE(data);
     if (ret)
         L_ERROR("pdf data not written to file\n", procName);
     return ret;
@@ -1686,7 +1686,7 @@ size_t    nbytes;
         return ERROR_INT("pdf generation failure", procName, 1);
 
     ret = l_binaryWrite(fileout, "w", data, nbytes);
-    if (data) FREE(data);
+    if (data) LEPT_FREE(data);
     return ret;
 }
 
@@ -1991,7 +1991,7 @@ size_t    nbytes;
     if (ret)
         return ERROR_INT("pdf data not made", procName, 1);
     ret = l_binaryWrite(fileout, "w", data, nbytes);
-    FREE(data);
+    LEPT_FREE(data);
     return ret;
 }
 
@@ -2025,7 +2025,7 @@ size_t    nbytes;
     if (ret)
         return ERROR_INT("pdf data not made", procName, 1);
     ret = l_binaryWrite(fileout, "w", data, nbytes);
-    FREE(data);
+    LEPT_FREE(data);
     return ret;
 }
 

@@ -82,10 +82,10 @@ L_STACK  *lstack;
     if (nalloc <= 0)
         nalloc = INITIAL_PTR_ARRAYSIZE;
 
-    if ((lstack = (L_STACK *)CALLOC(1, sizeof(L_STACK))) == NULL)
+    if ((lstack = (L_STACK *)LEPT_CALLOC(1, sizeof(L_STACK))) == NULL)
         return (L_STACK *)ERROR_PTR("lstack not made", procName, NULL);
 
-    if ((lstack->array = (void **)CALLOC(nalloc, sizeof(void *))) == NULL)
+    if ((lstack->array = (void **)LEPT_CALLOC(nalloc, sizeof(void *))) == NULL)
         return (L_STACK *)ERROR_PTR("lstack array not made", procName, NULL);
 
     lstack->nalloc = nalloc;
@@ -131,7 +131,7 @@ L_STACK  *lstack;
     if (freeflag) {
         while(lstack->n > 0) {
             item = lstackRemove(lstack);
-            FREE(item);
+            LEPT_FREE(item);
         }
     } else if (lstack->n > 0) {
         L_WARNING("memory leak of %d items in lstack\n", procName, lstack->n);
@@ -141,8 +141,8 @@ L_STACK  *lstack;
         lstackDestroy(&lstack->auxstack, freeflag);
 
     if (lstack->array)
-        FREE(lstack->array);
-    FREE(lstack);
+        LEPT_FREE(lstack->array);
+    LEPT_FREE(lstack);
     *plstack = NULL;
 }
 

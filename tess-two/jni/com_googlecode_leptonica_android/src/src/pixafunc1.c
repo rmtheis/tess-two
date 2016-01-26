@@ -44,6 +44,7 @@
  *           PIXA     *pixaSelectWithIndicator()
  *           l_int32   pixRemoveWithIndicator()
  *           l_int32   pixAddWithIndicator()
+ *           PIXA     *pixaSelectWithString()
  *           PIX      *pixaRenderComponent()
  *
  *      Sort functions
@@ -73,6 +74,7 @@
  *           l_int32   pixaGetDepthInfo()
  *           PIXA     *pixaConvertToSameDepth()
  *           l_int32   pixaEqual()
+ *           PIXA     *pixaRotateOrth()
  */
 
 #include <string.h>
@@ -1065,6 +1067,73 @@ PIX     *pix;
     }
 
     return 0;
+}
+
+
+/*!
+ *  pixaSelectWithString()
+ *
+ *      Input:  pixas
+ *              str (string of indices into pixa, giving the pix to be selected)
+ *              &error (<optional return> 1 if any indices are invalid;
+ *                      0 if all indices are valid)
+ *      Return: pixad, or null on error
+ *
+ *  Notes:
+ *      (1) Returns a pixa with copies of selected pix.
+ *      (2) Associated boxes are also copied, if fully populated.
+ */
+PIXA *
+pixaSelectWithString(PIXA        *pixas,
+                     const char  *str,
+                     l_int32     *perror)
+{
+l_int32    i, nval, npix, nbox, val, imaxval;
+l_float32  maxval;
+BOX       *box;
+NUMA      *na;
+PIX       *pix1;
+PIXA      *pixad;
+
+    PROCNAME("pixaSelectWithString");
+
+    if (perror) *perror = 0;
+    if (!pixas)
+        return (PIXA *)ERROR_PTR("pixas not defined", procName, NULL);
+    if (!str)
+        return (PIXA *)ERROR_PTR("str not defined", procName, NULL);
+
+    if ((na = numaCreateFromString(str)) == NULL)
+        return (PIXA *)ERROR_PTR("na not made", procName, NULL);
+    if ((nval = numaGetCount(na)) == 0) {
+        numaDestroy(&na);
+        return (PIXA *)ERROR_PTR("no indices found", procName, NULL);
+    }
+    numaGetMax(na, &maxval, NULL);
+    imaxval = (l_int32)(maxval + 0.1);
+    nbox = pixaGetBoxaCount(pixas);
+    npix = pixaGetCount(pixas);
+    if (imaxval >= npix) {
+        if (perror) *perror = 1;
+        L_ERROR("max index = %d, size of pixa = %d\n", procName, imaxval, npix);
+    }
+
+    pixad = pixaCreate(nval);
+    for (i = 0; i < nval; i++) {
+        numaGetIValue(na, i, &val);
+        if (val < 0 || val >= npix) {
+            L_ERROR("index %d out of range of pix\n", procName, val);
+            continue;
+        }
+        pix1 = pixaGetPix(pixas, val, L_COPY);
+        pixaAddPix(pixad, pix1, L_INSERT);
+        if (nbox == npix) {   /* fully populated boxa */
+            box = pixaGetBox(pixas, val, L_COPY);
+            pixaAddBox(pixad, box, L_INSERT);
+        }
+    }
+    numaDestroy(&na);
+    return pixad;
 }
 
 
@@ -2309,3 +2378,57 @@ PIX      *pix1, *pix2;
         numaDestroy(&na);
     return 0;
 }
+
+
+/*!
+ *  pixaRotateOrth()
+ *
+ *      Input:  pixas
+ *              rotation (0 = noop, 1 = 90 deg, 2 = 180 deg, 3 = 270 deg;
+ *                        all rotations are clockwise)
+ *      Return: pixad, or null on error
+ *
+ *  Notes:
+ *      (1) Rotates each pix in the pixa.  Rotates and saves the boxes in
+ *          the boxa if the boxa is full.
+ */
+PIXA *
+pixaRotateOrth(PIXA    *pixas,
+               l_int32  rotation)
+{
+l_int32  i, n, nb, w, h;
+BOX     *boxs, *boxd;
+PIX     *pixs, *pixd;
+PIXA    *pixad;
+
+    PROCNAME("pixaRotateOrth");
+
+    if (!pixas)
+        return (PIXA *)ERROR_PTR("pixas not defined", procName, NULL);
+    if (rotation < 0 || rotation > 3)
+        return (PIXA *)ERROR_PTR("rotation not in {0,1,2,3}", procName, NULL);
+    if (rotation == 0)
+        return pixaCopy(pixas, L_COPY);
+
+    n = pixaGetCount(pixas);
+    nb = pixaGetBoxaCount(pixas);
+    if ((pixad = pixaCreate(n)) == NULL)
+        return (PIXA *)ERROR_PTR("pixad not made", procName, NULL);
+    for (i = 0; i < n; i++) {
+        if ((pixs = pixaGetPix(pixas, i, L_CLONE)) == NULL)
+            return (PIXA *)ERROR_PTR("pixs not found", procName, NULL);
+        pixd = pixRotateOrth(pixs, rotation);
+        pixaAddPix(pixad, pixd, L_INSERT);
+        if (n == nb) {
+            boxs = pixaGetBox(pixas, i, L_COPY);
+            pixGetDimensions(pixs, &w, &h, NULL);
+            boxd = boxRotateOrth(boxs, w, h, rotation);
+            pixaAddBox(pixad, boxd, L_INSERT);
+            boxDestroy(&boxs);
+        }
+        pixDestroy(&pixs);
+    }
+
+    return pixad;
+}
+

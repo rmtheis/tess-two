@@ -1073,7 +1073,7 @@ L_STACK  *auxstack;
         if (lstackGetCount(auxstack) > 0) {
             fseg = (FILLSEG *)lstackRemove(auxstack);
         } else {
-            if ((fseg = (FILLSEG *)CALLOC(1, sizeof(FILLSEG))) == NULL) {
+            if ((fseg = (FILLSEG *)LEPT_CALLOC(1, sizeof(FILLSEG))) == NULL) {
                 L_ERROR("fillseg not made\n", procName);
                 return;
             }
@@ -1133,7 +1133,7 @@ L_STACK  *auxstack;
         if (lstackGetCount(auxstack) > 0) {
             fseg = (FILLSEG *)lstackRemove(auxstack);
         } else {
-            if ((fseg = (FILLSEG *)CALLOC(1, sizeof(FILLSEG))) == NULL) {
+            if ((fseg = (FILLSEG *)LEPT_CALLOC(1, sizeof(FILLSEG))) == NULL) {
                 L_ERROR("fillseg not made\n", procName);
                 return;
             }

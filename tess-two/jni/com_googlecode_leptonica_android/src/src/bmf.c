@@ -111,7 +111,7 @@ PIXA  *pixa;
     if (fontsize < 4 || fontsize > 20 || (fontsize % 2))
         return (L_BMF *)ERROR_PTR("fontsize must be in {4, 6, ..., 20}",
                                   procName, NULL);
-    if ((bmf = (L_BMF *)CALLOC(1, sizeof(L_BMF))) == NULL)
+    if ((bmf = (L_BMF *)LEPT_CALLOC(1, sizeof(L_BMF))) == NULL)
         return (L_BMF *)ERROR_PTR("bmf not made", procName, NULL);
 
     if (!dir) {  /* Generate from a string */
@@ -169,11 +169,11 @@ L_BMF  *bmf;
         return;
 
     pixaDestroy(&bmf->pixa);
-    FREE(bmf->directory);
-    FREE(bmf->fonttab);
-    FREE(bmf->baselinetab);
-    FREE(bmf->widthtab);
-    FREE(bmf);
+    LEPT_FREE(bmf->directory);
+    LEPT_FREE(bmf->fonttab);
+    LEPT_FREE(bmf->baselinetab);
+    LEPT_FREE(bmf->widthtab);
+    LEPT_FREE(bmf);
     *pbmf = NULL;
     return;
 }
@@ -331,7 +331,7 @@ PIXA     *pixa;
 
     pathname = genPathname(dir, outputfonts[fileno]);
     pixa = pixaRead(pathname);
-    FREE(pathname);
+    LEPT_FREE(pathname);
 
     if (!pixa)
         L_WARNING("pixa of char bitmaps not found\n", procName);
@@ -388,7 +388,7 @@ PIXA    *pixa;
     L_INFO("Baselines are at: %d, %d, %d\n", procName, bl1, bl2, bl3);
 #endif  /* DEBUG_FONT_GEN */
 
-    FREE(pathname);
+    LEPT_FREE(pathname);
     pixaDestroy(&pixa);
     return 0;
 }
@@ -445,7 +445,7 @@ PIXA    *pixa;
 
     pathname = genPathname(dir, inputfonts[fileno]);
     pix = pixRead(pathname);
-    FREE(pathname);
+    LEPT_FREE(pathname);
     if (!pix)
         return (PIXA *)ERROR_PTR("pix not all defined", procName, NULL);
 
@@ -510,7 +510,7 @@ PIXA     *pixa;
         return (PIXA *)ERROR_PTR("data not made", procName, NULL);
 
     pix = pixReadMem(data, nbytes);
-    FREE(data);
+    LEPT_FREE(data);
     if (!pix)
         return (PIXA *)ERROR_PTR("pix not made", procName, NULL);
 
@@ -580,7 +580,7 @@ NUMA     *na;
             boxaAddBox(boxar, box, L_INSERT);
         }
     }
-    FREE(ia);
+    LEPT_FREE(ia);
     numaDestroy(&na);
     nrows = boxaGetCount(boxar);
 #if  DEBUG_FONT_GEN
@@ -654,7 +654,7 @@ NUMA     *na;
         boxaDestroy(&boxac);
         boxaDestroy(&boxacs);
     }
-    FREE(tab);
+    LEPT_FREE(tab);
 
     nchars = pixaGetCount(pixa);
     if (nchars != 95)
@@ -741,7 +741,7 @@ NUMA     *na;
     *py = ymax;
 
     if (!tab8)
-        FREE(tab);
+        LEPT_FREE(tab);
     numaDestroy(&na);
     return 0;
 }
@@ -790,7 +790,7 @@ PIX      *pix;
         return ERROR_INT("bmf not defined", procName, 1);
 
         /* First get the fonttab; we use this later for the char widths */
-    if ((fonttab = (l_int32 *)CALLOC(128, sizeof(l_int32))) == NULL)
+    if ((fonttab = (l_int32 *)LEPT_CALLOC(128, sizeof(l_int32))) == NULL)
         return ERROR_INT("fonttab not made", procName, 1);
     bmf->fonttab = fonttab;
     for (i = 0; i < 128; i++)
@@ -798,7 +798,7 @@ PIX      *pix;
     for (i = 32; i < 127; i++)
         fonttab[i] = i - 32;
 
-    if ((baselinetab = (l_int32 *)CALLOC(128, sizeof(l_int32))) == NULL)
+    if ((baselinetab = (l_int32 *)LEPT_CALLOC(128, sizeof(l_int32))) == NULL)
         return ERROR_INT("baselinetab not made", procName, 1);
     bmf->baselinetab = baselinetab;
     for (i = 0; i < 128; i++)
@@ -812,7 +812,7 @@ PIX      *pix;
         baselinetab[i] = bmf->baseline3;
 
         /* Generate array of character widths; req's fonttab to exist */
-    if ((widthtab = (l_int32 *)CALLOC(128, sizeof(l_int32))) == NULL)
+    if ((widthtab = (l_int32 *)LEPT_CALLOC(128, sizeof(l_int32))) == NULL)
         return ERROR_INT("widthtab not made", procName, 1);
     bmf->widthtab = widthtab;
     for (i = 0; i < 128; i++)

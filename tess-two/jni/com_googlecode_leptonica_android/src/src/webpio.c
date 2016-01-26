@@ -41,11 +41,11 @@
  *          l_int32          pixWriteMemWebP()
  */
 
-#include "allheaders.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config_auto.h"
 #endif  /* HAVE_CONFIG_H */
+
+#include "allheaders.h"
 
 /* --------------------------------------------*/
 #if  HAVE_LIBWEBP   /* defined in environ.h */
@@ -80,7 +80,7 @@ PIX      *pix;
         return (PIX *)ERROR_PTR("filedata not read", procName, NULL);
 
     pix = pixReadMemWebP(filedata, filesize);
-    FREE(filedata);
+    LEPT_FREE(filedata);
     return pix;
 }
 
@@ -126,6 +126,7 @@ WebPBitstreamFeatures  features;
 
         /* Write from compressed Y,U,V arrays to pix raster data */
     pix = pixCreate(w, h, 32);
+    pixSetInputFormat(pix, IFF_WEBP);
     if (has_alpha) pixSetSpp(pix, 4);
     data = pixGetData(pix);
     wpl = pixGetWpl(pix);
@@ -279,7 +280,7 @@ FILE  *fp;
  *
  *  Notes:
  *      (1) See pixWriteMemWebP() for details.
- *      (2) Use 'free', and not leptonica's 'FREE', for all heap data
+ *      (2) Use 'free', and not leptonica's 'LEPT_FREE', for all heap data
  *          that is returned from the WebP library.
  */
 l_int32

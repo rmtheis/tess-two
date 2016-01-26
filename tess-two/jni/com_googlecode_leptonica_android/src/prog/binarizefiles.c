@@ -90,8 +90,8 @@ static char  mainName[] = "binarizefiles.c";
         splitPathAtDirectory(fname, NULL, &tail);
         splitPathAtExtension(tail, &basename, NULL);
         snprintf(buf, sizeof(buf), "%s/%s.tif", dirname, basename);
-        FREE(tail);
-        FREE(basename);
+        lept_free(tail);
+        lept_free(basename);
         fprintf(stderr, "fileout: %s\n", buf);
         if (scalefactor != 1.0)
             pix2 = pixScale(pix1, scalefactor, scalefactor);

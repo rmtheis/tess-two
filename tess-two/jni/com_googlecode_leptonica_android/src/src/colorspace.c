@@ -699,8 +699,8 @@ PIX       *pixt, *pixd;
 
         /* Set up LUTs for hue and saturation.  These have the value 1
          * within the specified intervals of hue and saturation. */
-    hlut = (l_int32 *)CALLOC(240, sizeof(l_int32));
-    slut = (l_int32 *)CALLOC(256, sizeof(l_int32));
+    hlut = (l_int32 *)LEPT_CALLOC(240, sizeof(l_int32));
+    slut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     sstart = L_MAX(0, satcenter - sathw);
     send = L_MIN(255, satcenter + sathw);
     for (i = sstart; i <= send; i++)
@@ -745,8 +745,8 @@ PIX       *pixt, *pixd;
         }
     }
 
-    FREE(hlut);
-    FREE(slut);
+    LEPT_FREE(hlut);
+    LEPT_FREE(slut);
     pixDestroy(&pixt);
     return pixd;
 }
@@ -796,8 +796,8 @@ PIX       *pixt, *pixd;
 
         /* Set up LUTs for hue and maximum intensity (val).  These have
          * the value 1 within the specified intervals of hue and value. */
-    hlut = (l_int32 *)CALLOC(240, sizeof(l_int32));
-    vlut = (l_int32 *)CALLOC(256, sizeof(l_int32));
+    hlut = (l_int32 *)LEPT_CALLOC(240, sizeof(l_int32));
+    vlut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     vstart = L_MAX(0, valcenter - valhw);
     vend = L_MIN(255, valcenter + valhw);
     for (i = vstart; i <= vend; i++)
@@ -842,8 +842,8 @@ PIX       *pixt, *pixd;
         }
     }
 
-    FREE(hlut);
-    FREE(vlut);
+    LEPT_FREE(hlut);
+    LEPT_FREE(vlut);
     pixDestroy(&pixt);
     return pixd;
 }
@@ -893,8 +893,8 @@ PIX       *pixt, *pixd;
         /* Set up LUTs for saturation and max intensity (val).
          * These have the value 1 within the specified intervals of
          * saturation and max intensity. */
-    slut = (l_int32 *)CALLOC(256, sizeof(l_int32));
-    vlut = (l_int32 *)CALLOC(256, sizeof(l_int32));
+    slut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
+    vlut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     sstart = L_MAX(0, satcenter - sathw);
     send = L_MIN(255, satcenter + sathw);
     vstart = L_MAX(0, valcenter - valhw);
@@ -932,8 +932,8 @@ PIX       *pixt, *pixd;
         }
     }
 
-    FREE(slut);
-    FREE(vlut);
+    LEPT_FREE(slut);
+    LEPT_FREE(vlut);
     pixDestroy(&pixt);
     return pixd;
 }
@@ -971,8 +971,6 @@ PIX       *pixt, *pixd;
 
     PROCNAME("pixMakeHistoHS");
 
-    if (!pnahue && !pnasat)
-        return (PIX *)ERROR_PTR("no return val requested", procName, NULL);
     if (pnahue) *pnahue = NULL;
     if (pnasat) *pnasat = NULL;
     if (!pixs || pixGetDepth(pixs) != 32)
@@ -1024,7 +1022,7 @@ PIX       *pixt, *pixd;
         }
     }
 
-    FREE(lined32);
+    LEPT_FREE(lined32);
     pixDestroy(&pixt);
     return pixd;
 }
@@ -1062,8 +1060,6 @@ PIX       *pixt, *pixd;
 
     PROCNAME("pixMakeHistoHV");
 
-    if (!pnahue && !pnaval)
-        return (PIX *)ERROR_PTR("no return val requested", procName, NULL);
     if (pnahue) *pnahue = NULL;
     if (pnaval) *pnaval = NULL;
     if (!pixs || pixGetDepth(pixs) != 32)
@@ -1107,7 +1103,7 @@ PIX       *pixt, *pixd;
         }
     }
 
-    FREE(lined32);
+    LEPT_FREE(lined32);
     pixDestroy(&pixt);
     return pixd;
 }
@@ -1145,8 +1141,6 @@ PIX       *pixt, *pixd;
 
     PROCNAME("pixMakeHistoSV");
 
-    if (!pnasat && !pnaval)
-        return (PIX *)ERROR_PTR("no return val requested", procName, NULL);
     if (pnasat) *pnasat = NULL;
     if (pnaval) *pnaval = NULL;
     if (!pixs || pixGetDepth(pixs) != 32)
@@ -1190,7 +1184,7 @@ PIX       *pixt, *pixd;
         }
     }
 
-    FREE(lined32);
+    LEPT_FREE(lined32);
     pixDestroy(&pixt);
     return pixd;
 }

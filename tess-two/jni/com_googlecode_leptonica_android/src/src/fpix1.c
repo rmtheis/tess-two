@@ -159,15 +159,15 @@ FPIX       *fpixd;
         return (FPIX *)ERROR_PTR("requested bytes >= 2^31", procName, NULL);
     }
 
-    if ((fpixd = (FPIX *)CALLOC(1, sizeof(FPIX))) == NULL)
-        return (FPIX *)ERROR_PTR("CALLOC fail for fpixd", procName, NULL);
+    if ((fpixd = (FPIX *)LEPT_CALLOC(1, sizeof(FPIX))) == NULL)
+        return (FPIX *)ERROR_PTR("LEPT_CALLOC fail for fpixd", procName, NULL);
     fpixSetDimensions(fpixd, width, height);
     fpixSetWpl(fpixd, width);  /* 4-byte words */
     fpixd->refcount = 1;
 
-    data = (l_float32 *)CALLOC(width * height, sizeof(l_float32));
+    data = (l_float32 *)LEPT_CALLOC(width * height, sizeof(l_float32));
     if (!data)
-        return (FPIX *)ERROR_PTR("CALLOC fail for data", procName, NULL);
+        return (FPIX *)ERROR_PTR("LEPT_CALLOC fail for data", procName, NULL);
     fpixSetData(fpixd, data);
 
     return fpixd;
@@ -328,9 +328,9 @@ l_float32  *data;
     fpixSetWpl(fpixd, ws);
     bytes = 4 * ws * hs;
     data = fpixGetData(fpixd);
-    if (data) FREE(data);
-    if ((data = (l_float32 *)MALLOC(bytes)) == NULL)
-        return ERROR_INT("MALLOC fail for data", procName, 1);
+    if (data) LEPT_FREE(data);
+    if ((data = (l_float32 *)LEPT_MALLOC(bytes)) == NULL)
+        return ERROR_INT("LEPT_MALLOC fail for data", procName, 1);
     fpixSetData(fpixd, data);
     return 0;
 }
@@ -366,8 +366,8 @@ FPIX       *fpix;
     fpixChangeRefcount(fpix, -1);
     if (fpixGetRefcount(fpix) <= 0) {
         if ((data = fpixGetData(fpix)) != NULL)
-            FREE(data);
-        FREE(fpix);
+            LEPT_FREE(data);
+        LEPT_FREE(fpix);
     }
 
     *pfpix = NULL;
@@ -634,13 +634,13 @@ FPIXA  *fpixa;
     if (n <= 0)
         n = INITIAL_PTR_ARRAYSIZE;
 
-    if ((fpixa = (FPIXA *)CALLOC(1, sizeof(FPIXA))) == NULL)
+    if ((fpixa = (FPIXA *)LEPT_CALLOC(1, sizeof(FPIXA))) == NULL)
         return (FPIXA *)ERROR_PTR("pixa not made", procName, NULL);
     fpixa->n = 0;
     fpixa->nalloc = n;
     fpixa->refcount = 1;
 
-    if ((fpixa->fpix = (FPIX **)CALLOC(n, sizeof(FPIX *))) == NULL)
+    if ((fpixa->fpix = (FPIX **)LEPT_CALLOC(n, sizeof(FPIX *))) == NULL)
         return (FPIXA *)ERROR_PTR("fpix ptrs not made", procName, NULL);
 
     return fpixa;
@@ -723,8 +723,8 @@ FPIXA   *fpixa;
     if (fpixa->refcount <= 0) {
         for (i = 0; i < fpixa->n; i++)
             fpixDestroy(&fpixa->fpix[i]);
-        FREE(fpixa->fpix);
-        FREE(fpixa);
+        LEPT_FREE(fpixa->fpix);
+        LEPT_FREE(fpixa);
     }
 
     *pfpixa = NULL;
@@ -1071,15 +1071,15 @@ DPIX       *dpix;
         return (DPIX *)ERROR_PTR("requested bytes >= 2^31", procName, NULL);
     }
 
-    if ((dpix = (DPIX *)CALLOC(1, sizeof(DPIX))) == NULL)
-        return (DPIX *)ERROR_PTR("CALLOC fail for dpix", procName, NULL);
+    if ((dpix = (DPIX *)LEPT_CALLOC(1, sizeof(DPIX))) == NULL)
+        return (DPIX *)ERROR_PTR("LEPT_CALLOC fail for dpix", procName, NULL);
     dpixSetDimensions(dpix, width, height);
     dpixSetWpl(dpix, width);  /* 8 byte words */
     dpix->refcount = 1;
 
-    data = (l_float64 *)CALLOC(width * height, sizeof(l_float64));
+    data = (l_float64 *)LEPT_CALLOC(width * height, sizeof(l_float64));
     if (!data)
-        return (DPIX *)ERROR_PTR("CALLOC fail for data", procName, NULL);
+        return (DPIX *)ERROR_PTR("LEPT_CALLOC fail for data", procName, NULL);
     dpixSetData(dpix, data);
 
     return dpix;
@@ -1234,9 +1234,9 @@ l_float64  *data;
     dpixSetWpl(dpixd, ws);  /* 8 byte words */
     bytes = 8 * ws * hs;
     data = dpixGetData(dpixd);
-    if (data) FREE(data);
-    if ((data = (l_float64 *)MALLOC(bytes)) == NULL)
-        return ERROR_INT("MALLOC fail for data", procName, 1);
+    if (data) LEPT_FREE(data);
+    if ((data = (l_float64 *)LEPT_MALLOC(bytes)) == NULL)
+        return ERROR_INT("LEPT_MALLOC fail for data", procName, 1);
     dpixSetData(dpixd, data);
     return 0;
 }
@@ -1272,8 +1272,8 @@ DPIX       *dpix;
     dpixChangeRefcount(dpix, -1);
     if (dpixGetRefcount(dpix) <= 0) {
         if ((data = dpixGetData(dpix)) != NULL)
-            FREE(data);
-        FREE(dpix);
+            LEPT_FREE(data);
+        LEPT_FREE(dpix);
     }
 
     *pdpix = NULL;

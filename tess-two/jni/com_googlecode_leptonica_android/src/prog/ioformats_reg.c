@@ -233,27 +233,27 @@ L_REGPARAMS  *rp;
         d = pixGetDepth(pix);
         fprintf(stderr, "%d bpp\n", d);
         if (i == 0) {   /* 1 bpp */
-            pixWrite("/tmp/regout/junkg3.tif", pix, IFF_TIFF_G3);
-            pixWrite("/tmp/regout/junkg4.tif", pix, IFF_TIFF_G4);
-            pixWrite("/tmp/regout/junkrle.tif", pix, IFF_TIFF_RLE);
-            pixWrite("/tmp/regout/junkpb.tif", pix, IFF_TIFF_PACKBITS);
-            if (testcomp("/tmp/regout/junkg3.tif", pix, IFF_TIFF_G3))
+            pixWrite("/tmp/lept/regout/junkg3.tif", pix, IFF_TIFF_G3);
+            pixWrite("/tmp/lept/regout/junkg4.tif", pix, IFF_TIFF_G4);
+            pixWrite("/tmp/lept/regout/junkrle.tif", pix, IFF_TIFF_RLE);
+            pixWrite("/tmp/lept/regout/junkpb.tif", pix, IFF_TIFF_PACKBITS);
+            if (testcomp("/tmp/lept/regout/junkg3.tif", pix, IFF_TIFF_G3))
                 success = FALSE;
-            if (testcomp("/tmp/regout/junkg4.tif", pix, IFF_TIFF_G4))
+            if (testcomp("/tmp/lept/regout/junkg4.tif", pix, IFF_TIFF_G4))
                 success = FALSE;
-            if (testcomp("/tmp/regout/junkrle.tif", pix, IFF_TIFF_RLE))
+            if (testcomp("/tmp/lept/regout/junkrle.tif", pix, IFF_TIFF_RLE))
                 success = FALSE;
-            if (testcomp("/tmp/regout/junkpb.tif", pix, IFF_TIFF_PACKBITS))
+            if (testcomp("/tmp/lept/regout/junkpb.tif", pix, IFF_TIFF_PACKBITS))
                 success = FALSE;
         }
-        pixWrite("/tmp/regout/junklzw.tif", pix, IFF_TIFF_LZW);
-        pixWrite("/tmp/regout/junkzip.tif", pix, IFF_TIFF_ZIP);
-        pixWrite("/tmp/regout/junknon.tif", pix, IFF_TIFF);
-        if (testcomp("/tmp/regout/junklzw.tif", pix, IFF_TIFF_LZW))
+        pixWrite("/tmp/lept/regout/junklzw.tif", pix, IFF_TIFF_LZW);
+        pixWrite("/tmp/lept/regout/junkzip.tif", pix, IFF_TIFF_ZIP);
+        pixWrite("/tmp/lept/regout/junknon.tif", pix, IFF_TIFF);
+        if (testcomp("/tmp/lept/regout/junklzw.tif", pix, IFF_TIFF_LZW))
             success = FALSE;
-        if (testcomp("/tmp/regout/junkzip.tif", pix, IFF_TIFF_ZIP))
+        if (testcomp("/tmp/lept/regout/junkzip.tif", pix, IFF_TIFF_ZIP))
             success = FALSE;
-        if (testcomp("/tmp/regout/junknon.tif", pix, IFF_TIFF))
+        if (testcomp("/tmp/lept/regout/junknon.tif", pix, IFF_TIFF))
             success = FALSE;
         pixDestroy(&pix);
     }
@@ -277,14 +277,14 @@ L_REGPARAMS  *rp;
         fprintf(stderr, "%d bpp\n", d);
         if (i == 0) {   /* 1 bpp */
             pixWriteMemTiff(&data, &size, pix, IFF_TIFF_G3);
-            nbytes = nbytesInFile("/tmp/regout/junkg3.tif");
+            nbytes = nbytesInFile("/tmp/lept/regout/junkg3.tif");
             fprintf(stderr, "nbytes = %lu, size = %lu\n",
                     (unsigned long)nbytes, (unsigned long)size);
             pixt = pixReadMemTiff(data, size, 0);
             if (testcomp_mem(pix, &pixt, i, IFF_TIFF_G3)) success = FALSE;
             lept_free(data);
             pixWriteMemTiff(&data, &size, pix, IFF_TIFF_G4);
-            nbytes = nbytesInFile("/tmp/regout/junkg4.tif");
+            nbytes = nbytesInFile("/tmp/lept/regout/junkg4.tif");
             fprintf(stderr, "nbytes = %lu, size = %lu\n",
                     (unsigned long)nbytes, (unsigned long)size);
             pixt = pixReadMemTiff(data, size, 0);
@@ -294,14 +294,14 @@ L_REGPARAMS  *rp;
             fprintf(stderr, "(w,h,bps,spp) = (%d,%d,%d,%d)\n", w, h, bps, spp);
             lept_free(data);
             pixWriteMemTiff(&data, &size, pix, IFF_TIFF_RLE);
-            nbytes = nbytesInFile("/tmp/regout/junkrle.tif");
+            nbytes = nbytesInFile("/tmp/lept/regout/junkrle.tif");
             fprintf(stderr, "nbytes = %lu, size = %lu\n",
                     (unsigned long)nbytes, (unsigned long)size);
             pixt = pixReadMemTiff(data, size, 0);
             if (testcomp_mem(pix, &pixt, i, IFF_TIFF_RLE)) success = FALSE;
             lept_free(data);
             pixWriteMemTiff(&data, &size, pix, IFF_TIFF_PACKBITS);
-            nbytes = nbytesInFile("/tmp/regout/junkpb.tif");
+            nbytes = nbytesInFile("/tmp/lept/regout/junkpb.tif");
             fprintf(stderr, "nbytes = %lu, size = %lu\n",
                     (unsigned long)nbytes, (unsigned long)size);
             pixt = pixReadMemTiff(data, size, 0);
@@ -342,11 +342,14 @@ L_REGPARAMS  *rp;
             continue;
         }
         d = pixGetDepth(pix);
-        sprintf(psname, "/tmp/regout/junkps.%d", d);
+        sprintf(psname, "/tmp/lept/regout/junkps.%d", d);
         fprintf(stderr, "%d bpp\n", d);
         if (test_writemem(pix, IFF_PNM, NULL)) success = FALSE;
         if (test_writemem(pix, IFF_PS, psname)) success = FALSE;
-        if (d == 16) continue;
+        if (d == 16) {
+          pixDestroy(&pix);
+          continue;
+        }
         if (test_writemem(pix, IFF_PNG, NULL)) success = FALSE;
         if (test_writemem(pix, IFF_BMP, NULL)) success = FALSE;
         if (d != 32)
@@ -376,14 +379,14 @@ L_REGPARAMS  *rp;
         if ((pixt = pixaGetPix(pixa, i, L_CLONE)) == NULL)
             continue;
         if (i == 0)
-            pixWriteTiff("/tmp/regout/junktiffmpage.tif", pixt,
+            pixWriteTiff("/tmp/lept/regout/junktiffmpage.tif", pixt,
                          IFF_TIFF_G4, "w");
         else
-            pixWriteTiff("/tmp/regout/junktiffmpage.tif", pixt,
+            pixWriteTiff("/tmp/lept/regout/junktiffmpage.tif", pixt,
                          IFF_TIFF_G4, "a");
         pixDestroy(&pixt);
     }
-    data = l_binaryRead("/tmp/regout/junktiffmpage.tif", &nbytes);
+    data = l_binaryRead("/tmp/lept/regout/junktiffmpage.tif", &nbytes);
     pixaDestroy(&pixa);
 
         /* Read the individual pages from memory to a pix */
@@ -432,10 +435,10 @@ part6:
     if ((pix = pixRead("marge.jpg")) == NULL)
         success = FALSE;
     pixt = make_24_bpp_pix(pix);
-    pixWrite("/tmp/regout/junk24.png", pixt, IFF_PNG);
-    pixWrite("/tmp/regout/junk24.jpg", pixt, IFF_JFIF_JPEG);
-    pixWrite("/tmp/regout/junk24.tif", pixt, IFF_TIFF);
-    pixd = pixRead("/tmp/regout/junk24.png");
+    pixWrite("/tmp/lept/regout/junk24.png", pixt, IFF_PNG);
+    pixWrite("/tmp/lept/regout/junk24.jpg", pixt, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/regout/junk24.tif", pixt, IFF_TIFF);
+    pixd = pixRead("/tmp/lept/regout/junk24.png");
     pixEqual(pix, pixd, &same);
     if (same) {
         fprintf(stderr, "    **** success writing 24 bpp png ****\n");
@@ -444,10 +447,10 @@ part6:
         success = FALSE;
     }
     pixDestroy(&pixd);
-    pixd = pixRead("/tmp/regout/junk24.jpg");
+    pixd = pixRead("/tmp/lept/regout/junk24.jpg");
     regTestCompareSimilarPix(rp, pix, pixd, 10, 0.0002, 0);
     pixDestroy(&pixd);
-    pixd = pixRead("/tmp/regout/junk24.tif");
+    pixd = pixRead("/tmp/lept/regout/junk24.tif");
     pixEqual(pix, pixd, &same);
     if (same) {
         fprintf(stderr, "    **** success writing 24 bpp tif ****\n");
@@ -482,14 +485,14 @@ part6:
     if (get_header_data(FILE_32BPP_ALPHA, IFF_PNG)) success = FALSE;
 
     pix = pixRead(FILE_8BPP_1);
-    tempname = genTempFilename((const char *)"/tmp/regout",
+    tempname = genTempFilename((const char *)"/tmp/lept/regout",
                                (const char *)".pnm", 1, 1);
     pixWrite(tempname, pix, IFF_PNM);
     if (get_header_data(tempname, IFF_PNM)) success = FALSE;
     pixDestroy(&pix);
     lept_free(tempname);
     pix = pixRead(FILE_1BPP);
-    tempname = genTempFilename((const char *)"/tmp/regout",
+    tempname = genTempFilename((const char *)"/tmp/lept/regout",
                                (const char *)".tif", 1, 1);
     pixWrite(tempname, pix, IFF_TIFF_G3);
     if (get_header_data(tempname, IFF_TIFF_G3)) success = FALSE;
@@ -563,7 +566,7 @@ PIX     *pixt;
     /* Returns 1 on error */
 static l_int32
 testcomp_mem(PIX     *pixs,
-             PIX    **ppixt,
+             PIX    **ppixt,  /* input; nulled on return */
              l_int32  index,
              l_int32  format)
 {
@@ -649,6 +652,7 @@ PIX       *pixd = NULL;
         } else {
             fprintf(stderr, "skipping: ds = %d, dd = %d, format = %d\n",
                     ds, dd, format);
+            lept_free(data);
             pixDestroy(&pixd);
             return 0;
         }

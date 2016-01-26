@@ -100,9 +100,7 @@ static const l_int32    LeftRightPadding = 32;
 
     /* Parameters for filtering and sorting connected components in splitter */
 static const l_float32  MaxAspectRatio = 6.0;
-static const l_float32  MinFillFactor = 0.25;
-static const l_float32  MaxPreFillFactor = 0.80;
-static const l_float32  MaxSplitFillFactor = 0.85;
+static const l_float32  MinFillFactor = 0.10;
 static const l_int32  MinOverlap1 = 6;  /* in pass 1 of boxaSort2d() */
 static const l_int32  MinOverlap2 = 6;  /* in pass 2 of boxaSort2d() */
 static const l_int32  MinHeightPass1 = 5;  /* min height to start pass 1 */
@@ -120,8 +118,7 @@ static L_RCH *rchCreate(l_int32 index, l_float32 score, char *text,
 static L_RCHA *rchaCreate();
 static l_int32 transferRchToRcha(L_RCH *rch, L_RCHA *rcha);
 static void l_showIndicatorSplitValues(NUMA *na1, NUMA *na2, NUMA *na3,
-                                       NUMA *na4, NUMA *na5, NUMA *na6,
-                                       NUMA *na7);
+                                       NUMA *na4, NUMA *na5, NUMA *na6);
 static l_int32 recogaSaveBestRcha(L_RECOGA *recoga, PIXA *pixa);
 static l_int32 recogaTransferRch(L_RECOGA *recoga, L_RECOG *recog,
                                  l_int32 index);
@@ -308,9 +305,9 @@ PIX     *pix, *pix1, *pix2;
          * closing, because it might join separate characters. */
     pix1 = pixMorphSequence(pixs, "c1.3", 0);
 
-        /* Filter out noise */
+        /* Carefully filter out noise */
     pix2 = recogPreSplittingFilter(recog, pix1, MaxAspectRatio,
-                                   MinFillFactor, MaxPreFillFactor, debug);
+                                   MinFillFactor, debug);
 
         /* Optionally, save a boxa of noise components, filtered
          * according to input parameters @minw and @minh */
@@ -514,7 +511,7 @@ l_int32    iter;
 
             /* This is a single component; if noise, remove it */
         recogSplittingFilter(recog, pixc, MaxAspectRatio, MinFillFactor,
-                             MaxSplitFillFactor, &remove, debug);
+                             &remove, debug);
         if (debug)
             fprintf(stderr, "iter = %d, removed = %d\n", iter, remove);
         if (remove) {
@@ -819,8 +816,8 @@ PIX        *pixt, *pixt1, *pixt2;
 
         /* Set up the arrays for area1 and ycent1.  We have to do this
          * for each template (pix2) because the window width is w2. */
-    area1 = (l_int32 *)CALLOC(nx, sizeof(l_int32));
-    ycent1 = (l_float32 *)CALLOC(nx, sizeof(l_int32));
+    area1 = (l_int32 *)LEPT_CALLOC(nx, sizeof(l_int32));
+    ycent1 = (l_float32 *)LEPT_CALLOC(nx, sizeof(l_int32));
     arraysum = numaGetIArray(nasum1);
     arraymoment = numaGetIArray(namoment1);
     for (i = 0, sum = 0, moment = 0; i < w2; i++) {
@@ -868,11 +865,11 @@ PIX        *pixt, *pixt1, *pixt2;
     }
 
     if (debugflag > 0) {
-        lept_mkdir("recog");
+        lept_mkdir("lept/recog");
         char  buf[128];
         pixt1 = fpixDisplayMaxDynamicRange(fpix);
         pixt2 = pixExpandReplicate(pixt1, 5);
-        snprintf(buf, sizeof(buf), "/tmp/recog/junkbs_%d.png", debugflag);
+        snprintf(buf, sizeof(buf), "/tmp/lept/recog/junkbs_%d.png", debugflag);
         pixWrite(buf, pixt2, IFF_PNG);
         pixDestroy(&pixt1);
         pixDestroy(&pixt2);
@@ -882,11 +879,11 @@ PIX        *pixt, *pixt1, *pixt2;
     if (pdelx) *pdelx = delx;
     if (pdely) *pdely = dely;
     if (pscore) *pscore = maxscore;
-    if (!tab8) FREE(tab);
-    FREE(area1);
-    FREE(ycent1);
-    FREE(arraysum);
-    FREE(arraymoment);
+    if (!tab8) LEPT_FREE(tab);
+    LEPT_FREE(area1);
+    LEPT_FREE(ycent1);
+    LEPT_FREE(arraysum);
+    LEPT_FREE(arraymoment);
     pixDestroy(&pixt);
     return 0;
 }
@@ -1036,7 +1033,7 @@ L_RCH     *rch;
         }
         rchExtract(rch, NULL, NULL, &text, NULL, NULL, NULL, NULL);
         pixSetText(pix1, text);
-        FREE(text);
+        LEPT_FREE(text);
         if (ppixdb && doit) {
             rchExtract(rch, &index, &score, NULL, NULL, NULL, NULL, NULL);
             pix3 = recogShowMatch(recog, pix2, NULL, NULL, index, score);
@@ -1069,8 +1066,10 @@ L_RCH     *rch;
  *
  *  Notes:
  *      (1) Basic recognition function for a single character.
- *      (2) If L_USE_AVERAGE, the matching is only to the averaged bitmaps,
- *          and the index of the sample is meaningless (0 is returned
+ *      (2) If L_USE_ALL, matching is attempted to every bitmap in the recog,
+ *          and the identify of the best match is returned.  However,
+ *          if L_USE_AVERAGE, the matching is only to the averaged bitmaps,
+ *          and the index of the bestsample is meaningless (0 is returned
  *          if requested).
  *      (3) The score is related to the confidence (probability of correct
  *          identification), in that a higher score is correlated with
@@ -1188,12 +1187,12 @@ PTA       *pta;
 
     if (ppixdb) {
         if (recog->templ_type == L_USE_AVERAGE) {
-            L_INFO("Best match: class %d; shifts (%d, %d)\n",
-                   procName, bestindex, bestdelx, bestdely);
+            L_INFO("Best match: str %s; class %d; shifts (%d, %d)\n",
+                   procName, text, bestindex, bestdelx, bestdely);
             pix2 = pixaGetPix(recog->pixa, bestindex, L_CLONE);
         } else {  /* L_USE_ALL */
-            L_INFO("Best match: sample %d in class %d\n",
-                   procName, bestsample, bestindex);
+            L_INFO("Best match: str %s; sample %d in class %d\n",
+                   procName, text, bestsample, bestindex);
             if (maxyshift > 0) {
                 L_INFO("  Best shift: (%d, %d)\n",
                        procName, bestdelx, bestdely);
@@ -1251,7 +1250,7 @@ rchaCreate()
 {
 L_RCHA  *rcha;
 
-    rcha = (L_RCHA *)CALLOC(1, sizeof(L_RCHA));
+    rcha = (L_RCHA *)LEPT_CALLOC(1, sizeof(L_RCHA));
     rcha->naindex = numaCreate(0);
     rcha->nascore = numaCreate(0);
     rcha->satext = sarrayCreate(0);
@@ -1290,7 +1289,7 @@ L_RCHA  *rcha;
     numaDestroy(&rcha->naxloc);
     numaDestroy(&rcha->nayloc);
     numaDestroy(&rcha->nawidth);
-    FREE(rcha);
+    LEPT_FREE(rcha);
     *prcha = NULL;
     return;
 }
@@ -1310,6 +1309,8 @@ L_RCHA  *rcha;
  *
  *  Notes:
  *      (1) Be sure to destroy any existing rch before assigning this.
+ *      (2) This stores the text string, not a copy of it, so the
+ *          caller must not destroy the string.
  */
 static L_RCH *
 rchCreate(l_int32    index,
@@ -1322,7 +1323,7 @@ rchCreate(l_int32    index,
 {
 L_RCH  *rch;
 
-    rch = (L_RCH *)CALLOC(1, sizeof(L_RCH));
+    rch = (L_RCH *)LEPT_CALLOC(1, sizeof(L_RCH));
     rch->index = index;
     rch->score = score;
     rch->text = text;
@@ -1353,8 +1354,8 @@ L_RCH  *rch;
     }
     if ((rch = *prch) == NULL)
         return;
-    FREE(rch->text);
-    FREE(rch);
+    LEPT_FREE(rch->text);
+    LEPT_FREE(rch);
     *prch = NULL;
     return;
 }
@@ -1677,7 +1678,6 @@ PIX     *pix1, *pix2, *pixd;
  *              pixs (1 bpp, single connected component)
  *              maxasp (maximum asperity ratio (width/height) to be retained)
  *              minaf (minimum area fraction (|fg|/(w*h)) to be retained)
- *              maxaf (maximum area fraction (|fg|/(w*h)) to be retained)
  *              debug (1 to output indicator arrays)
  *      Return: pixd (with filtered components removed) or null on error
  */
@@ -1686,12 +1686,11 @@ recogPreSplittingFilter(L_RECOG   *recog,
                         PIX       *pixs,
                         l_float32  maxasp,
                         l_float32  minaf,
-                        l_float32  maxaf,
                         l_int32    debug)
 {
 l_int32  scaling, minsplitw, minsplith, maxsplith;
 BOXA    *boxas;
-NUMA    *naw, *nah, *na1, *na1c, *na2, *na3, *na4, *na5, *na6, *na7, *na8, *na9;
+NUMA    *naw, *nah, *na1, *na1c, *na2, *na3, *na4, *na5, *na6, *na7;
 PIX     *pixd;
 PIXA    *pixas;
 
@@ -1713,8 +1712,7 @@ PIXA    *pixas;
          *    small stuff
          *    tall stuff
          *    components with large width/height ratio
-         *    components with small area fill fraction
-         *    components with large area fill fraction and w/h > 0.7  */
+         *    components with small area fill fraction  */
     boxas = pixConnComp(pixs, &pixas, 8);
     pixaFindDimensions(pixas, &naw, &nah);
     na1 = numaMakeThresholdIndicator(naw, minsplitw, L_SELECT_IF_LT);
@@ -1725,18 +1723,14 @@ PIXA    *pixas;
     na5 = numaMakeThresholdIndicator(na4, maxasp, L_SELECT_IF_GT);
     na6 = pixaFindAreaFraction(pixas);
     na7 = numaMakeThresholdIndicator(na6, minaf, L_SELECT_IF_LT);
-    na8 = numaMakeThresholdIndicator(na6, maxaf, L_SELECT_IF_GT);
-    na9 = numaMakeThresholdIndicator(na4, 0.7, L_SELECT_IF_GT);
     numaLogicalOp(na1, na1, na2, L_UNION);
     numaLogicalOp(na1, na1, na3, L_UNION);
     numaLogicalOp(na1, na1, na5, L_UNION);
     numaLogicalOp(na1, na1, na7, L_UNION);
-    numaLogicalOp(na8, na8, na9, L_INTERSECTION);  /* require both */
-    numaLogicalOp(na1, na1, na8, L_UNION);
     pixd = pixCopy(NULL, pixs);
     pixRemoveWithIndicator(pixd, pixas, na1);
     if (debug)
-        l_showIndicatorSplitValues(na1c, na2, na3, na5, na7, na8, na1);
+        l_showIndicatorSplitValues(na1c, na2, na3, na5, na7, na1);
     numaDestroy(&naw);
     numaDestroy(&nah);
     numaDestroy(&na1);
@@ -1747,8 +1741,6 @@ PIXA    *pixas;
     numaDestroy(&na5);
     numaDestroy(&na6);
     numaDestroy(&na7);
-    numaDestroy(&na8);
-    numaDestroy(&na9);
     boxaDestroy(&boxas);
     pixaDestroy(&pixas);
     return pixd;
@@ -1762,22 +1754,15 @@ PIXA    *pixas;
  *              pixs (1 bpp, single connected component)
  *              maxasp (maximum asperity ratio (width/height) to be retained)
  *              minaf (minimum area fraction (|fg|/(w*h)) to be retained)
- *              maxaf (maximum area fraction (|fg|/(w*h)) to be retained)
  *              &remove (<return> 0 to save, 1 to remove)
  *              debug (1 to output indicator arrays)
  *      Return: 0 if OK, 1 on error
- *
- *  Notes:
- *      (1) We don't want to eliminate sans serif characters like "1" or "l",
- *          so we use the filter condition requiring both a large area fill
- *          and a w/h ratio > 1.0.
  */
 l_int32
 recogSplittingFilter(L_RECOG   *recog,
                      PIX       *pixs,
                      l_float32  maxasp,
                      l_float32  minaf,
-                     l_float32  maxaf,
                      l_int32   *premove,
                      l_int32    debug)
 {
@@ -1797,8 +1782,7 @@ l_float32  aspratio, fract;
         /* Remove from further consideration:
          *    small stuff
          *    components with large width/height ratio
-         *    components with small area fill fraction
-         *    components with large area fill fraction and w/h > 1.0  */
+         *    components with small area fill fraction */
     pixGetDimensions(pixs, &w, &h, NULL);
     if (w < recog->min_splitw) {
         if (debug) L_INFO("w = %d < %d\n", procName, w, recog->min_splitw);
@@ -1820,12 +1804,6 @@ l_float32  aspratio, fract;
     if (fract < minaf) {
         if (debug) L_INFO("area fill fract %5.3f < %5.3f\n",
                           procName, fract, minaf);
-        *premove = 1;
-        return 0;
-    }
-    if (fract > maxaf && aspratio > 1.0) {
-        if (debug) L_INFO("area fill = %5.3f; aspect ratio = %5.3f\n",
-                          procName, fract, aspratio);
         *premove = 1;
         return 0;
     }
@@ -2054,7 +2032,7 @@ recogSetScaling(L_RECOG  *recog,
 /*!
  *  l_showIndicatorSplitValues()
  *
- *      Input:  7 indicator array
+ *      Input:  6 indicator array
  *
  *  Notes:
  *      (1) The values indicate that specific criteria has been met
@@ -2067,8 +2045,7 @@ l_showIndicatorSplitValues(NUMA  *na1,
                            NUMA  *na3,
                            NUMA  *na4,
                            NUMA  *na5,
-                           NUMA  *na6,
-                           NUMA  *na7)
+                           NUMA  *na6)
 {
 l_int32  i, n;
 
@@ -2089,12 +2066,9 @@ l_int32  i, n;
     fprintf(stderr, "\nlt minaf:   ");
     for (i = 0; i < n; i++)
         fprintf(stderr, "%4d ", (l_int32)na5->array[i]);
-    fprintf(stderr, "\ngt maxaf:   ");
-    for (i = 0; i < n; i++)
-        fprintf(stderr, "%4d ", (l_int32)na6->array[i]);
     fprintf(stderr, "\n------------------------------------------------");
     fprintf(stderr, "\nresult:     ");
     for (i = 0; i < n; i++)
-        fprintf(stderr, "%4d ", (l_int32)na7->array[i]);
+        fprintf(stderr, "%4d ", (l_int32)na6->array[i]);
     fprintf(stderr, "\n================================================\n");
 }

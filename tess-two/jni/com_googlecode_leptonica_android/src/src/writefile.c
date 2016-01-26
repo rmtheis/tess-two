@@ -250,7 +250,7 @@ FILE  *fp;
 #if  WRITE_AS_NAMED  /* Default */
 
     if ((fp = fopenWriteStream(fname, "wb+")) == NULL) {
-        FREE(fname);
+        LEPT_FREE(fname);
         return ERROR_INT("stream not opened", procName, 1);
     }
 
@@ -260,15 +260,15 @@ FILE  *fp;
      char    *extension, *filebuf;
         splitPathAtExtension(fname, NULL, &extension);
         extlen = strlen(extension);
-        FREE(extension);
+        LEPT_FREE(extension);
         if (extlen == 0) {
             if (format == IFF_DEFAULT || format == IFF_UNKNOWN)
                 format = pixChooseOutputFormat(pix);
 
-            filebuf = (char *)CALLOC(strlen(fname) + 10, sizeof(char));
+            filebuf = (char *)LEPT_CALLOC(strlen(fname) + 10, sizeof(char));
             if (!filebuf) {
                 return ERROR_INT("filebuf not made", procName, 1);
-                FREE(fname);
+                LEPT_FREE(fname);
             }
             strncpy(filebuf, fname, strlen(fname));
             strcat(filebuf, ".");
@@ -279,16 +279,16 @@ FILE  *fp;
 
         fp = fopenWriteStream(filebuf, "wb+");
         if (filebuf != fname)
-            FREE(filebuf);
+            LEPT_FREE(filebuf);
         if (fp == NULL) {
-            FREE(fname);
+            LEPT_FREE(fname);
             return ERROR_INT("stream not opened", procName, 1);
         }
     }
 
 #endif  /* WRITE_AS_NAMED */
 
-    FREE(fname);
+    LEPT_FREE(fname);
     if (pixWriteStream(fp, pix, format)) {
         fclose(fp);
         return ERROR_INT("pix not written to stream", procName, 1);
@@ -385,7 +385,7 @@ pixWriteStream(FILE    *fp,
         break;
 
     case IFF_JP2:
-        return pixWriteStreamJp2k(fp, pix, 34, 0, 0, 0);
+        return pixWriteStreamJp2k(fp, pix, 34, 4, 0, 0);
         break;
 
     case IFF_WEBP:
@@ -514,7 +514,7 @@ l_int32  ret;
     if (pfilename)
         *pfilename = filename;
     else
-        FREE(filename);
+        LEPT_FREE(filename);
 
     return ret;
 }
@@ -586,7 +586,7 @@ l_int32  format = IFF_UNKNOWN;
         }
     }
 
-    FREE(extension);
+    LEPT_FREE(extension);
     return format;
 }
 
@@ -776,12 +776,12 @@ l_int32  ret;
  *          Default on Unix is xzgv.
  *      (2) Images with dimensions larger than MAX_DISPLAY_WIDTH or
  *          MAX_DISPLAY_HEIGHT are downscaled to fit those constraints.
- *          This is particulary important for displaying 1 bpp images
+ *          This is particularly important for displaying 1 bpp images
  *          with xv, because xv automatically downscales large images
  *          by subsampling, which looks poor.  For 1 bpp, we use
  *          scale-to-gray to get decent-looking anti-aliased images.
- *          In all cases, we write a temporary file to /tmp, that is
- *          read by the display program.
+ *          In all cases, we write a temporary file to /tmp/lept/disp,
+ *          that is read by the display program.
  *      (3) For spp == 4, we call pixDisplayLayersRGBA() to show 3
  *          versions of the image: the image with a fully opaque
  *          alpha, the alpha, and the image as it would appear with
@@ -894,17 +894,17 @@ char            fullpath[_MAX_PATH];
         pix2 = pixClone(pix1);
 
     if (index == 0) {
-        lept_rmdir("disp");
-        lept_mkdir("disp");
+        lept_rmdir("lept/disp");
+        lept_mkdir("lept/disp");
     }
 
     index++;
     if (pixGetDepth(pix2) < 8 ||
         (w < MAX_SIZE_FOR_PNG && h < MAX_SIZE_FOR_PNG)) {
-        snprintf(buffer, L_BUF_SIZE, "/tmp/disp/write.%03d.png", index);
+        snprintf(buffer, L_BUF_SIZE, "/tmp/lept/disp/write.%03d.png", index);
         pixWrite(buffer, pix2, IFF_PNG);
     } else {
-        snprintf(buffer, L_BUF_SIZE, "/tmp/disp/write.%03d.jpg", index);
+        snprintf(buffer, L_BUF_SIZE, "/tmp/lept/disp/write.%03d.jpg", index);
         pixWrite(buffer, pix2, IFF_JFIF_JPEG);
     }
     tempname = genPathname(buffer, NULL);
@@ -956,13 +956,13 @@ char            fullpath[_MAX_PATH];
                  fullpath, x, y);
     }
     ignore = system(buffer);
-    FREE(pathname);
+    LEPT_FREE(pathname);
 
 #endif  /* _WIN32 */
 
     pixDestroy(&pix1);
     pixDestroy(&pix2);
-    FREE(tempname);
+    LEPT_FREE(tempname);
     return 0;
 }
 
@@ -1005,9 +1005,9 @@ char     fullpath[_MAX_PATH];
 
     snprintf(buffer, L_BUF_SIZE,
              "i_view32.exe \"%s\" /filepattern=\"%s\" /thumbs", fullpath, tail);
-    FREE(pathname);
-    FREE(dir);
-    FREE(tail);
+    LEPT_FREE(pathname);
+    LEPT_FREE(dir);
+    LEPT_FREE(tail);
 #endif  /* _WIN32 */
 
     ignore = system(buffer);  /* gthumb || i_view32.exe */
@@ -1048,7 +1048,7 @@ pixDisplayWrite(PIX     *pixs,
  *
  *  Notes:
  *      (1) This writes files if reduction > 0.  These can be displayed using
- *            pixDisplayMultiple("/tmp/display/file*");
+ *            pixDisplayMultiple("/tmp/lept/display/file*");
  *      (2) All previously written files can be erased by calling with
  *          reduction < 0; the value of pixs is ignored.
  *      (3) If reduction > 1 and depth == 1, this does a scale-to-gray
@@ -1094,8 +1094,8 @@ static l_int32  index = 0;  /* caution: not .so or thread safe */
         return ERROR_INT("pixs not defined", procName, 1);
 
     if (index == 0) {
-        lept_rmdir("display");
-        lept_mkdir("display");
+        lept_rmdir("lept/display");
+        lept_mkdir("lept/display");
     }
     index++;
 
@@ -1112,20 +1112,20 @@ static l_int32  index = 0;  /* caution: not .so or thread safe */
     if (pixGetDepth(pixt) == 16) {
         pix8 = pixMaxDynamicRange(pixt, L_LOG_SCALE);
         snprintf(buf, L_BUF_SIZE, "file.%03d.png", index);
-        fname = genPathname("/tmp/display", buf);
+        fname = genPathname("/tmp/lept/display", buf);
         pixWrite(fname, pix8, IFF_PNG);
         pixDestroy(&pix8);
     } else if (pixGetDepth(pixt) < 8 || pixGetColormap(pixt) ||
              format == IFF_PNG) {
         snprintf(buf, L_BUF_SIZE, "file.%03d.png", index);
-        fname = genPathname("/tmp/display", buf);
+        fname = genPathname("/tmp/lept/display", buf);
         pixWrite(fname, pixt, IFF_PNG);
     } else {
         snprintf(buf, L_BUF_SIZE, "file.%03d.jpg", index);
-        fname = genPathname("/tmp/display", buf);
+        fname = genPathname("/tmp/lept/display", buf);
         pixWrite(fname, pixt, format);
     }
-    FREE(fname);
+    LEPT_FREE(fname);
     pixDestroy(&pixt);
 
     return 0;

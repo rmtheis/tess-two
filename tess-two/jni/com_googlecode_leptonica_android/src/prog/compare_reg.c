@@ -81,8 +81,8 @@ L_REGPARAMS  *rp;
             delx, dely, score);
     regTestCompareValues(rp, 32, delx, 0);   /* 0 */
     regTestCompareValues(rp, 12, dely, 0);   /* 1 */
-    lept_mv("/tmp/lept/correl_5.png", "regout", NULL, NULL);
-    regTestCheckFile(rp, "/tmp/regout/correl_5.png");   /* 2 */
+    lept_mv("/tmp/lept/comp/correl_5.png", "lept/regout", NULL, NULL);
+    regTestCheckFile(rp, "/tmp/lept/regout/correl_5.png");   /* 2 */
     lept_free(stab);
     lept_free(ctab);
     pixDestroy(&pix0);
@@ -103,10 +103,10 @@ L_REGPARAMS  *rp;
     fprintf(stderr, "delx = %d, dely = %d\n", delx, dely);
     regTestCompareValues(rp, 45, delx, 0);   /* 3 */
     regTestCompareValues(rp, -25, dely, 0);   /* 4 */
-    lept_mv("/tmp/lept/correl.pdf", "regout", NULL, NULL);
-    lept_mv("/tmp/lept/compare.pdf", "regout", NULL, NULL);
-    regTestCheckFile(rp, "/tmp/regout/compare.pdf");   /* 5 */
-    regTestCheckFile(rp, "/tmp/regout/correl.pdf");  /* 6 */
+    lept_mv("/tmp/lept/comp/correl.pdf", "lept/regout", NULL, NULL);
+    lept_mv("/tmp/lept/comp/compare.pdf", "lept/regout", NULL, NULL);
+    regTestCheckFile(rp, "/tmp/lept/regout/compare.pdf");   /* 5 */
+    regTestCheckFile(rp, "/tmp/lept/regout/correl.pdf");  /* 6 */
 
     /* ------------ Test of pixGetPerceptualDiff() --------------- */
     pix0 = pixRead("greencover.jpg");

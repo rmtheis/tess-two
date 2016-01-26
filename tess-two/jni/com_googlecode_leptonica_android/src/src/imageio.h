@@ -119,12 +119,13 @@ enum {
 };
 
 
-/* ------------------ Pdf formated encoding types --------------- */
+/* ------------------ Pdf formatted encoding types -------------- */
 enum {
-    L_JPEG_ENCODE   = 1,    /* use dct encoding: 8 and 32 bpp, no cmap     */
-    L_G4_ENCODE     = 2,    /* use ccitt g4 fax encoding: 1 bpp            */
-    L_FLATE_ENCODE  = 3,    /* use flate encoding: any depth, cmap ok      */
-    L_JP2K_ENCODE  = 4      /* use jp2k encoding: 8 and 32 bpp, no cmap    */
+    L_DEFAULT_ENCODE  = 0,  /* use default encoding based on image        */
+    L_JPEG_ENCODE     = 1,  /* use dct encoding: 8 and 32 bpp, no cmap    */
+    L_G4_ENCODE       = 2,  /* use ccitt g4 fax encoding: 1 bpp           */
+    L_FLATE_ENCODE    = 3,  /* use flate encoding: any depth, cmap ok     */
+    L_JP2K_ENCODE     = 4   /* use jp2k encoding: 8 and 32 bpp, no cmap   */
 };
 
 
@@ -141,7 +142,7 @@ enum {
  */
 struct L_Compressed_Data
 {
-    l_int32            type;         /* encoding type: L_JPEG_ENCODE, etc  */
+    l_int32            type;         /* encoding type: L_JPEG_ENCODE, etc   */
     l_uint8           *datacomp;     /* gzipped raster data                 */
     size_t             nbytescomp;   /* number of compressed bytes          */
     char              *data85;       /* ascii85-encoded gzipped raster data */

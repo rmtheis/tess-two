@@ -938,6 +938,8 @@ PIX       *pixd;
         return (PIX *)ERROR_PTR("pix not 2, 4 or 8 bpp", procName, NULL);
 
     pixd = pixCreate(w, h, 1);
+    pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
     datas = pixGetData(pixs);
     datad = pixGetData(pixd);
     wpls = pixGetWpl(pixs);
@@ -1033,11 +1035,11 @@ PIX  *pixg, *pixm, *pixt, *pixd;
         /* Make a mask from the alpha component with ON pixels
          * wherever the alpha component is fully transparent (0).
          * The hard way:
-         *     l_int32 *lut = (l_int32 *)CALLOC(256, sizeof(l_int32));
+         *     l_int32 *lut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
          *     lut[0] = 1;
          *     pixg = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
          *     pixm = pixMakeMaskFromLUT(pixg, lut);
-         *     FREE(lut);
+         *     LEPT_FREE(lut);
          * But there's an easier way to set pixels in a mask where
          * the alpha component is 0 ...  */
     pixg = pixGetRGBComponent(pixs, L_ALPHA_CHANNEL);
@@ -1661,7 +1663,7 @@ PIX      *pix;
         pixDestroy(&pix);
     }
 
-    FREE(tab);
+    LEPT_FREE(tab);
     return na;
 }
 
@@ -1729,7 +1731,7 @@ l_uint32  *data;
     *pcount = sum;
 
     if (!tab8)
-        FREE(tab);
+        LEPT_FREE(tab);
     return 0;
 }
 
@@ -1867,7 +1869,7 @@ NUMA     *na;
         numaAddNumber(na, count);
     }
 
-    if (!tab8) FREE(tab);
+    if (!tab8) LEPT_FREE(tab);
     return na;
 }
 
@@ -1975,7 +1977,7 @@ l_uint32  *line;
     *pcount = sum;
 
     if (!tab8)
-        FREE(tab);
+        LEPT_FREE(tab);
     return 0;
 }
 
@@ -2099,13 +2101,13 @@ l_uint32  *line, *data;
         if (sum > thresh) {
             *pabove = 1;
             if (!tab8)
-                FREE(tab);
+                LEPT_FREE(tab);
             return 0;
         }
     }
 
     if (!tab8)
-        FREE(tab);
+        LEPT_FREE(tab);
     return 0;
 }
 
@@ -2129,7 +2131,7 @@ l_int32  *tab;
 
     PROCNAME("makePixelSumTab8");
 
-    if ((tab = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return (l_int32 *)ERROR_PTR("tab not made", procName, NULL);
 
     for (i = 0; i < 256; i++) {
@@ -2172,7 +2174,7 @@ l_int32  *tab;
 
     PROCNAME("makePixelCentroidTab8");
 
-    if ((tab = (l_int32 *)CALLOC(256, sizeof(l_int32))) == NULL)
+    if ((tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
         return (l_int32 *)ERROR_PTR("tab not made", procName, NULL);
 
     tab[0] = 0;

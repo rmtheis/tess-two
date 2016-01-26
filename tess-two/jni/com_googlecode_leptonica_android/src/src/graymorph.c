@@ -210,10 +210,11 @@ PIX       *pixb, *pixt, *pixd;
     wplb = pixGetWpl(pixb);
     wplt = pixGetWpl(pixt);
 
-    if ((buffer = (l_uint8 *)CALLOC(L_MAX(w, h), sizeof(l_uint8))) == NULL)
+    if ((buffer = (l_uint8 *)LEPT_CALLOC(L_MAX(w, h), sizeof(l_uint8))) == NULL)
         return (PIX *)ERROR_PTR("buffer not made", procName, NULL);
     maxsize = L_MAX(hsize, vsize);
-    if ((minarray = (l_uint8 *)CALLOC(2 * maxsize, sizeof(l_uint8))) == NULL)
+    if ((minarray = (l_uint8 *)LEPT_CALLOC(2 * maxsize, sizeof(l_uint8)))
+        == NULL)
         return (PIX *)ERROR_PTR("minarray not made", procName, NULL);
 
     if (vsize == 1) {
@@ -237,8 +238,8 @@ PIX       *pixb, *pixt, *pixd;
                 leftpix, rightpix, toppix, bottompix)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
 
-    FREE(buffer);
-    FREE(minarray);
+    LEPT_FREE(buffer);
+    LEPT_FREE(minarray);
     pixDestroy(&pixb);
     pixDestroy(&pixt);
     return pixd;
@@ -317,10 +318,11 @@ PIX       *pixb, *pixt, *pixd;
     wplb = pixGetWpl(pixb);
     wplt = pixGetWpl(pixt);
 
-    if ((buffer = (l_uint8 *)CALLOC(L_MAX(w, h), sizeof(l_uint8))) == NULL)
+    if ((buffer = (l_uint8 *)LEPT_CALLOC(L_MAX(w, h), sizeof(l_uint8))) == NULL)
         return (PIX *)ERROR_PTR("buffer not made", procName, NULL);
     maxsize = L_MAX(hsize, vsize);
-    if ((maxarray = (l_uint8 *)CALLOC(2 * maxsize, sizeof(l_uint8))) == NULL)
+    if ((maxarray = (l_uint8 *)LEPT_CALLOC(2 * maxsize, sizeof(l_uint8)))
+        == NULL)
         return (PIX *)ERROR_PTR("buffer not made", procName, NULL);
 
     if (vsize == 1) {
@@ -344,8 +346,8 @@ PIX       *pixb, *pixt, *pixd;
                 leftpix, rightpix, toppix, bottompix)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
 
-    FREE(buffer);
-    FREE(maxarray);
+    LEPT_FREE(buffer);
+    LEPT_FREE(maxarray);
     pixDestroy(&pixb);
     pixDestroy(&pixt);
     return pixd;
@@ -425,10 +427,10 @@ PIX       *pixb, *pixt, *pixd;
     wplb = pixGetWpl(pixb);
     wplt = pixGetWpl(pixt);
 
-    if ((buffer = (l_uint8 *)CALLOC(L_MAX(w, h), sizeof(l_uint8))) == NULL)
+    if ((buffer = (l_uint8 *)LEPT_CALLOC(L_MAX(w, h), sizeof(l_uint8))) == NULL)
         return (PIX *)ERROR_PTR("buffer not made", procName, NULL);
     maxsize = L_MAX(hsize, vsize);
-    if ((array = (l_uint8 *)CALLOC(2 * maxsize, sizeof(l_uint8))) == NULL)
+    if ((array = (l_uint8 *)LEPT_CALLOC(2 * maxsize, sizeof(l_uint8))) == NULL)
         return (PIX *)ERROR_PTR("array not made", procName, NULL);
 
     if (vsize == 1) {
@@ -467,8 +469,8 @@ PIX       *pixb, *pixt, *pixd;
                 leftpix, rightpix, toppix, bottompix)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
 
-    FREE(buffer);
-    FREE(array);
+    LEPT_FREE(buffer);
+    LEPT_FREE(array);
     pixDestroy(&pixb);
     pixDestroy(&pixt);
     return pixd;
@@ -548,10 +550,10 @@ PIX       *pixb, *pixt, *pixd;
     wplb = pixGetWpl(pixb);
     wplt = pixGetWpl(pixt);
 
-    if ((buffer = (l_uint8 *)CALLOC(L_MAX(w, h), sizeof(l_uint8))) == NULL)
+    if ((buffer = (l_uint8 *)LEPT_CALLOC(L_MAX(w, h), sizeof(l_uint8))) == NULL)
         return (PIX *)ERROR_PTR("buffer not made", procName, NULL);
     maxsize = L_MAX(hsize, vsize);
-    if ((array = (l_uint8 *)CALLOC(2 * maxsize, sizeof(l_uint8))) == NULL)
+    if ((array = (l_uint8 *)LEPT_CALLOC(2 * maxsize, sizeof(l_uint8))) == NULL)
         return (PIX *)ERROR_PTR("array not made", procName, NULL);
 
     if (vsize == 1) {
@@ -589,8 +591,8 @@ PIX       *pixb, *pixt, *pixd;
                 leftpix, rightpix, toppix, bottompix)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
 
-    FREE(buffer);
-    FREE(array);
+    LEPT_FREE(buffer);
+    LEPT_FREE(array);
     pixDestroy(&pixb);
     pixDestroy(&pixt);
     return pixd;

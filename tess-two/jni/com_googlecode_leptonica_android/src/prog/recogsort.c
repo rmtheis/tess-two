@@ -48,10 +48,16 @@ SARRAY    *sa1;
 
     /* ----- Example identifying samples using training data ----- */
 #if 1
+
+    lept_mkdir("lept");
+
         /* Read the training data */
     pixat = pixaRead("recog/sets/train06.pa");
     recog = recogCreateFromPixa(pixat, 0, 0, L_USE_ALL, 128, 1);
     recoga = recogaCreateFromRecog(recog);
+    pix1 = pixaDisplayTiledWithText(pixat, 1500, 1.0, 10, 1, 8, 0xff000000);
+    pixDisplay(pix1, 0, 0);
+    pixDestroy(&pix1);
     pixaDestroy(&pixat);
 
         /* Read the data from all samples */
@@ -67,6 +73,7 @@ SARRAY    *sa1;
     for (i = 0; i < 9; i++) {
 /*        if (i != 4) continue; */  /* dots form separate boxa */
 /*        if (i != 8) continue; */  /* broken 2 in '24' */
+        if (i != 8) continue;
         pix1 = pixaGetPix(pixa1, i, L_CLONE);
 
             /* Show the 2d box data in the sample */
@@ -86,6 +93,7 @@ SARRAY    *sa1;
         pixaAddPix(pixa2, pixdb, L_INSERT);
 /*        pixaWrite("/tmp/pixa.pa", pixa2); */
         pixDestroy(&pix1);
+        boxaWriteStream(stderr, boxa3);
         boxaDestroy(&boxa3);
         boxaaDestroy(&baa1);
         numaaDestroy(&naa1);
@@ -93,10 +101,10 @@ SARRAY    *sa1;
     }
 
     pix3 = pixaDisplayLinearly(pixa2, L_VERT, 1.0, 0, 20, 1, NULL);
-    pixWrite("/tmp/pix3.png", pix3, IFF_PNG);
+    pixWrite("/tmp/lept/pix3.png", pix3, IFF_PNG);
     pix4 = pixaDisplayTiledInRows(pixa3, 32, 1500, 1.0, 0, 20, 2);
     pixDisplay(pix4, 500, 0);
-    pixWrite("/tmp/pix4.png", pix4, IFF_PNG);
+    pixWrite("/tmp/lept/pix4.png", pix4, IFF_PNG);
     pixaDestroy(&pixa2);
     pixaDestroy(&pixa3);
     pixDestroy(&pix1);
@@ -105,6 +113,7 @@ SARRAY    *sa1;
     pixaDestroy(&pixa1);
     boxaDestroy(&boxa1);
     recogaDestroy(&recoga);
+
 #endif
 
     return 0;

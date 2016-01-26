@@ -216,7 +216,7 @@ L_WSHED  *wshed;
     if (pixGetWidth(pixm) != w || pixGetHeight(pixm) != h)
         return (L_WSHED *)ERROR_PTR("pixs/m sizes are unequal", procName, NULL);
 
-    if ((wshed = (L_WSHED *)CALLOC(1, sizeof(L_WSHED))) == NULL)
+    if ((wshed = (L_WSHED *)LEPT_CALLOC(1, sizeof(L_WSHED))) == NULL)
         return (L_WSHED *)ERROR_PTR("wshed not made", procName, NULL);
 
     wshed->pixs = pixClone(pixs);
@@ -260,10 +260,10 @@ L_WSHED  *wshed;
     pixDestroy(&wshed->pixm);
     pixDestroy(&wshed->pixlab);
     pixDestroy(&wshed->pixt);
-    if (wshed->lines8) FREE(wshed->lines8);
-    if (wshed->linem1) FREE(wshed->linem1);
-    if (wshed->linelab32) FREE(wshed->linelab32);
-    if (wshed->linet1) FREE(wshed->linet1);
+    if (wshed->lines8) LEPT_FREE(wshed->lines8);
+    if (wshed->linem1) LEPT_FREE(wshed->linem1);
+    if (wshed->linelab32) LEPT_FREE(wshed->linelab32);
+    if (wshed->linet1) LEPT_FREE(wshed->linet1);
     pixaDestroy(&wshed->pixad);
     ptaDestroy(&wshed->ptas);
     numaDestroy(&wshed->nash);
@@ -271,13 +271,13 @@ L_WSHED  *wshed;
     numaDestroy(&wshed->namh);
     numaDestroy(&wshed->nalevels);
     if (wshed->lut)
-         FREE(wshed->lut);
+         LEPT_FREE(wshed->lut);
     if (wshed->links) {
         for (i = 0; i < wshed->arraysize; i++)
             numaDestroy(&wshed->links[i]);
-        FREE(wshed->links);
+        LEPT_FREE(wshed->links);
     }
-    FREE(wshed);
+    LEPT_FREE(wshed);
     *pwshed = NULL;
     return;
 }
@@ -383,7 +383,7 @@ PTA      *ptas, *ptao;
     nalut = numaMakeSequence(0, 1, arraysize);
     lut = numaGetIArray(nalut);
     wshed->lut = lut;  /* wshed owns this */
-    links = (NUMA **)CALLOC(arraysize, sizeof(NUMA *));
+    links = (NUMA **)LEPT_CALLOC(arraysize, sizeof(NUMA *));
     wshed->links = links;  /* wshed owns this */
     nindex = nseeds + nother;  /* the next unused index value */
 
@@ -827,7 +827,7 @@ L_NEWPIXEL  *np;
     if (lstackGetCount(lq->stack) > 0)
         np = (L_NEWPIXEL *)lstackRemove(lq->stack);
     else
-        np = (L_NEWPIXEL *)CALLOC(1, sizeof(L_NEWPIXEL));
+        np = (L_NEWPIXEL *)LEPT_CALLOC(1, sizeof(L_NEWPIXEL));
 
     np->x = x;
     np->y = y;
@@ -910,7 +910,7 @@ L_WSPIXEL  *wsp;
     if (lstackGetCount(stack) > 0)
         wsp = (L_WSPIXEL *)lstackRemove(stack);
     else
-        wsp = (L_WSPIXEL *)CALLOC(1, sizeof(L_WSPIXEL));
+        wsp = (L_WSPIXEL *)LEPT_CALLOC(1, sizeof(L_WSPIXEL));
 
     wsp->val = (l_float32)val;
     wsp->x = x;

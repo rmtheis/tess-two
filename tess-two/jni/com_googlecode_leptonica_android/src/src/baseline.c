@@ -194,7 +194,7 @@ PTA       *pta;
         numaAddNumber(naval, max);
         numaAddNumber(naloc, maxloc);
     }
-    FREE(array);
+    LEPT_FREE(array);
 
     if (debug) {  /* show the raster locations for the peaks */
         gplot = gplotCreate("junkloc", GPLOT_X11, "Peak locations",
@@ -282,7 +282,7 @@ PTA       *pta;
  *  Notes:
  *      (1) This function allows deskew of a page whose skew changes
  *          approximately linearly with vertical position.  It uses
- *          a projective tranform that in effect does a differential
+ *          a projective transform that in effect does a differential
  *          shear about the LHS of the page, and makes all text lines
  *          horizontal.
  *      (2) The origin of the keystoning can be either a cheap document

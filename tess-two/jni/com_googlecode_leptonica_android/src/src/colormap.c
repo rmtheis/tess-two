@@ -112,11 +112,12 @@ PIXCMAP    *cmap;
     if (depth != 1 && depth != 2 && depth !=4 && depth != 8)
         return (PIXCMAP *)ERROR_PTR("depth not in {1,2,4,8}", procName, NULL);
 
-    if ((cmap = (PIXCMAP *)CALLOC(1, sizeof(PIXCMAP))) == NULL)
+    if ((cmap = (PIXCMAP *)LEPT_CALLOC(1, sizeof(PIXCMAP))) == NULL)
         return (PIXCMAP *)ERROR_PTR("cmap not made", procName, NULL);
     cmap->depth = depth;
     cmap->nalloc = 1 << depth;
-    if ((cta = (RGBA_QUAD *)CALLOC(cmap->nalloc, sizeof(RGBA_QUAD))) == NULL)
+    if ((cta = (RGBA_QUAD *)LEPT_CALLOC(cmap->nalloc, sizeof(RGBA_QUAD)))
+        == NULL)
         return (PIXCMAP *)ERROR_PTR("cta not made", procName, NULL);
     cmap->array = cta;
     cmap->n = 0;
@@ -233,11 +234,13 @@ PIXCMAP  *cmapd;
 
     if (!cmaps)
         return (PIXCMAP *)ERROR_PTR("cmaps not defined", procName, NULL);
+    if (cmaps->nalloc > 256)
+        return (PIXCMAP *)ERROR_PTR("nalloc > 256", procName, NULL);
 
-    if ((cmapd = (PIXCMAP *)CALLOC(1, sizeof(PIXCMAP))) == NULL)
+    if ((cmapd = (PIXCMAP *)LEPT_CALLOC(1, sizeof(PIXCMAP))) == NULL)
         return (PIXCMAP *)ERROR_PTR("cmapd not made", procName, NULL);
     nbytes = cmaps->nalloc * sizeof(RGBA_QUAD);
-    if ((cmapd->array = (void *)CALLOC(1, nbytes)) == NULL)
+    if ((cmapd->array = (void *)LEPT_CALLOC(1, nbytes)) == NULL)
         return (PIXCMAP *)ERROR_PTR("cmap array not made", procName, NULL);
     memcpy(cmapd->array, cmaps->array, nbytes);
     cmapd->n = cmaps->n;
@@ -268,8 +271,8 @@ PIXCMAP  *cmap;
     if ((cmap = *pcmap) == NULL)
         return;
 
-    FREE(cmap->array);
-    FREE(cmap);
+    LEPT_FREE(cmap->array);
+    LEPT_FREE(cmap);
     *pcmap = NULL;
     return;
 }
@@ -680,7 +683,7 @@ pixcmapClear(PIXCMAP  *cmap)
  *      Input:  cmap
  *              index
  *              &rval, &gval, &bval (<return> each color value)
- *      Return: 0 if OK, 1 if not accessable (caller should check)
+ *      Return: 0 if OK, 1 if not accessible (caller should check)
  */
 l_int32
 pixcmapGetColor(PIXCMAP  *cmap,
@@ -715,7 +718,7 @@ RGBA_QUAD  *cta;
  *      Input:  cmap
  *              index
  *              &val32 (<return> 32-bit rgb color value)
- *      Return: 0 if OK, 1 if not accessable (caller should check)
+ *      Return: 0 if OK, 1 if not accessible (caller should check)
  *
  *  Notes:
  *      (1) The returned alpha channel value is 255.
@@ -746,7 +749,7 @@ l_int32  rval, gval, bval;
  *      Input:  cmap
  *              index
  *              &rval, &gval, &bval, &aval (<return> each color value)
- *      Return: 0 if OK, 1 if not accessable (caller should check)
+ *      Return: 0 if OK, 1 if not accessible (caller should check)
  */
 l_int32
 pixcmapGetRGBA(PIXCMAP  *cmap,
@@ -784,7 +787,7 @@ RGBA_QUAD  *cta;
  *      Input:  cmap
  *              index
  *              &val32 (<return> 32-bit rgba color value)
- *      Return: 0 if OK, 1 if not accessable (caller should check)
+ *      Return: 0 if OK, 1 if not accessible (caller should check)
  */
 l_int32
 pixcmapGetRGBA32(PIXCMAP   *cmap,
@@ -813,7 +816,7 @@ l_int32  rval, gval, bval, aval;
  *              index
  *              rval, gval, bval (colormap entry to be reset; each number
  *                                is in range [0, ... 255])
- *      Return: 0 if OK, 1 if not accessable (caller should check)
+ *      Return: 0 if OK, 1 if not accessible (caller should check)
  *
  *  Notes:
  *      (1) This resets sets the color of an entry that has already
@@ -952,9 +955,9 @@ l_int32  *rmap, *gmap, *bmap;
         }
     }
 
-    FREE(rmap);
-    FREE(gmap);
-    FREE(bmap);
+    LEPT_FREE(rmap);
+    LEPT_FREE(gmap);
+    LEPT_FREE(bmap);
     return 0;
 }
 
@@ -1055,7 +1058,7 @@ l_int32  *array;
     if (!cmap)
         return ERROR_INT("cmap not defined", procName, 1);
 
-    array = (l_int32 *)CALLOC(256, sizeof(l_int32));
+    array = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     n = pixcmapGetCount(cmap);
     count = 0;
     for (i = 0; i < n; i++) {
@@ -1066,7 +1069,7 @@ l_int32  *array;
         }
     }
 
-    FREE(array);
+    LEPT_FREE(array);
     *pngray = count;
     return 0;
 }
@@ -1558,10 +1561,10 @@ l_int32   i;
                 i, rmap[i], gmap[i], bmap[i], amap[i]);
     fprintf(fp, "\n");
 
-    FREE(rmap);
-    FREE(gmap);
-    FREE(bmap);
-    FREE(amap);
+    LEPT_FREE(rmap);
+    LEPT_FREE(gmap);
+    LEPT_FREE(bmap);
+    LEPT_FREE(amap);
     return 0;
 }
 
@@ -1598,15 +1601,15 @@ RGBA_QUAD  *cta;
         return ERROR_INT("cmap not defined", procName, 1);
 
     ncolors = pixcmapGetCount(cmap);
-    if (((rmap = (l_int32 *)CALLOC(ncolors, sizeof(l_int32))) == NULL) ||
-        ((gmap = (l_int32 *)CALLOC(ncolors, sizeof(l_int32))) == NULL) ||
-        ((bmap = (l_int32 *)CALLOC(ncolors, sizeof(l_int32))) == NULL))
+    if (((rmap = (l_int32 *)LEPT_CALLOC(ncolors, sizeof(l_int32))) == NULL) ||
+        ((gmap = (l_int32 *)LEPT_CALLOC(ncolors, sizeof(l_int32))) == NULL) ||
+        ((bmap = (l_int32 *)LEPT_CALLOC(ncolors, sizeof(l_int32))) == NULL))
             return ERROR_INT("calloc fail for *map", procName, 1);
     *prmap = rmap;
     *pgmap = gmap;
     *pbmap = bmap;
     if (pamap) {
-        amap = (l_int32 *)CALLOC(ncolors, sizeof(l_int32));
+        amap = (l_int32 *)LEPT_CALLOC(ncolors, sizeof(l_int32));
         *pamap = amap;
     }
 
@@ -1650,7 +1653,7 @@ l_uint32  *tab;
     ncolors = pixcmapGetCount(cmap);
     if (pncolors)
         *pncolors = ncolors;
-    if ((tab = (l_uint32 *)CALLOC(ncolors, sizeof(l_uint32))) == NULL)
+    if ((tab = (l_uint32 *)LEPT_CALLOC(ncolors, sizeof(l_uint32))) == NULL)
         return ERROR_INT("tab not made", procName, 1);
     *ptab = tab;
 
@@ -1698,7 +1701,7 @@ l_uint8  *data;
 
     ncolors = pixcmapGetCount(cmap);
     *pncolors = ncolors;
-    if ((data = (l_uint8 *)CALLOC(cpc * ncolors, sizeof(l_uint8))) == NULL)
+    if ((data = (l_uint8 *)LEPT_CALLOC(cpc * ncolors, sizeof(l_uint8))) == NULL)
         return ERROR_INT("data not made", procName, 1);
     *pdata = data;
 
@@ -1797,7 +1800,7 @@ char     buf[4];
         return (char *)ERROR_PTR("no colors", procName, NULL);
 
     hexbytes = 2 + (2 * 3 + 1) * ncolors + 2;
-    hexdata = (char *)CALLOC(hexbytes, sizeof(char));
+    hexdata = (char *)LEPT_CALLOC(hexbytes, sizeof(char));
     hexdata[0] = '<';
     hexdata[1] = ' ';
 

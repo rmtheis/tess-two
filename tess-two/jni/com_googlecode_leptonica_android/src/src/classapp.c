@@ -136,7 +136,7 @@ SARRAY     *safiles;
                     numpages, nfiles);
         for (i = 0; i < numpages; i++) {
             pix = pixaGetPix(pixa, i, L_CLONE);
-            snprintf(filename, L_BUF_SIZE, "%s.%05d", rootname, i);
+            snprintf(filename, L_BUF_SIZE, "%s.%04d", rootname, i);
             fprintf(stderr, "filename: %s\n", filename);
             pixWrite(filename, pix, IFF_PNG);
             pixDestroy(&pix);
@@ -216,7 +216,7 @@ SARRAY     *safiles;
                     numpages, nfiles);
         for (i = 0; i < numpages; i++) {
             pix = pixaGetPix(pixa, i, L_CLONE);
-            snprintf(filename, L_BUF_SIZE, "%s.%05d", rootname, i);
+            snprintf(filename, L_BUF_SIZE, "%s.%04d", rootname, i);
             fprintf(stderr, "filename: %s\n", filename);
             pixWrite(filename, pix, IFF_PNG);
             pixDestroy(&pix);
@@ -297,7 +297,7 @@ SARRAY     *safiles;
     natl = numaCreate(0);
     *pnatl = natl;
     for (i = 0; i < nfiles; i++) {
-        fname = sarrayGetString(safiles, i, 0);
+        fname = sarrayGetString(safiles, i, L_NOCOPY);
         if ((pix = pixRead(fname)) == NULL) {
             L_WARNING("image file %d not read\n", procName, i);
             continue;
@@ -663,12 +663,12 @@ NUMA     *na1, *na2, *nai1, *nai2, *nasx, *nasy;
         /* Find the lines in naa1 and naa2 with sufficient boxes.
          * Also, find the y-values for each of the lines, and the
          * LH x-values of the first box in each line. */
-    line1 = (l_int32 *)CALLOC(n1, sizeof(l_int32));
-    line2 = (l_int32 *)CALLOC(n2, sizeof(l_int32));
-    yloc1 = (l_int32 *)CALLOC(n1, sizeof(l_int32));
-    yloc2 = (l_int32 *)CALLOC(n2, sizeof(l_int32));
-    xleft1 = (l_int32 *)CALLOC(n1, sizeof(l_int32));
-    xleft2 = (l_int32 *)CALLOC(n2, sizeof(l_int32));
+    line1 = (l_int32 *)LEPT_CALLOC(n1, sizeof(l_int32));
+    line2 = (l_int32 *)LEPT_CALLOC(n2, sizeof(l_int32));
+    yloc1 = (l_int32 *)LEPT_CALLOC(n1, sizeof(l_int32));
+    yloc2 = (l_int32 *)LEPT_CALLOC(n2, sizeof(l_int32));
+    xleft1 = (l_int32 *)LEPT_CALLOC(n1, sizeof(l_int32));
+    xleft2 = (l_int32 *)LEPT_CALLOC(n2, sizeof(l_int32));
     for (i = 0; i < n1; i++) {
         na1 = numaaGetNuma(naa1, i, L_CLONE);
         numaGetIValue(na1, 0, yloc1 + i);
@@ -734,12 +734,12 @@ NUMA     *na1, *na2, *nai1, *nai2, *nasx, *nasy;
     countAlignedMatches(nai1, nai2, nasx, nasy, n1, n2, delx, dely,
                         nreq, psame, debugflag);
 
-    FREE(line1);
-    FREE(line2);
-    FREE(yloc1);
-    FREE(yloc2);
-    FREE(xleft1);
-    FREE(xleft2);
+    LEPT_FREE(line1);
+    LEPT_FREE(line2);
+    LEPT_FREE(yloc1);
+    LEPT_FREE(yloc2);
+    LEPT_FREE(xleft1);
+    LEPT_FREE(xleft2);
     numaDestroy(&nai1);
     numaDestroy(&nai2);
     numaDestroy(&nasx);
@@ -834,8 +834,8 @@ l_int32  *ia1, *ia2, *iasx, *iasy, *index1, *index2;
     ia2 = numaGetIArray(nai2);
     iasx = numaGetIArray(nasx);
     iasy = numaGetIArray(nasy);
-    index1 = (l_int32 *)CALLOC(n1, sizeof(l_int32));  /* keep track of rows */
-    index2 = (l_int32 *)CALLOC(n2, sizeof(l_int32));
+    index1 = (l_int32 *)LEPT_CALLOC(n1, sizeof(l_int32));  /* keep track of rows */
+    index2 = (l_int32 *)LEPT_CALLOC(n2, sizeof(l_int32));
     for (i = 0; i < nm; i++) {
         if (*psame == 1)
             break;
@@ -873,12 +873,12 @@ l_int32  *ia1, *ia2, *iasx, *iasy, *index1, *index2;
         }
     }
 
-    FREE(ia1);
-    FREE(ia2);
-    FREE(iasx);
-    FREE(iasy);
-    FREE(index1);
-    FREE(index2);
+    LEPT_FREE(ia1);
+    LEPT_FREE(ia2);
+    LEPT_FREE(iasx);
+    LEPT_FREE(iasy);
+    LEPT_FREE(index1);
+    LEPT_FREE(index2);
     return 0;
 }
 
