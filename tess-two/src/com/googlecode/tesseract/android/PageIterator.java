@@ -22,7 +22,6 @@ import com.googlecode.tesseract.android.TessBaseAPI.PageIteratorLevel;
 
 public class PageIterator {
     static {
-        System.loadLibrary("pngt");
         System.loadLibrary("lept");
         System.loadLibrary("tess");
     }

@@ -23,7 +23,6 @@ package com.googlecode.leptonica.android;
  */
 public class Enhance {
     static {
-        System.loadLibrary("pngt");
         System.loadLibrary("lept");
     }
 
