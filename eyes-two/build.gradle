@@ -30,7 +30,8 @@ android {
     // Call external ndk-build(.cmd) script to build the native code
     task ndkBuild(type: Exec) {
         def ndkBuildExt = Os.isFamily(Os.FAMILY_WINDOWS) ? ".cmd" : ""
-        commandLine "ndk-build${ndkBuildExt}", '-C', file('src/main').absolutePath,
+        commandLine "${android.ndkDirectory}/ndk-build${ndkBuildExt}",
+                '-C', file('src/main').absolutePath,
                 '-j', Runtime.runtime.availableProcessors()
     }
 
@@ -41,7 +42,8 @@ android {
     // Cleanup task to remove previously generated binaries
     task ndkClean(type: Exec) {
         def ndkBuildExt = Os.isFamily(Os.FAMILY_WINDOWS) ? ".cmd" : ""
-        commandLine "ndk-build${ndkBuildExt}", '-C', file('src/main').absolutePath, 'clean'
+        commandLine "${android.ndkDirectory}/ndk-build${ndkBuildExt}",
+                '-C', file('src/main').absolutePath, 'clean'
     }
 
     tasks.withType(Delete) {
