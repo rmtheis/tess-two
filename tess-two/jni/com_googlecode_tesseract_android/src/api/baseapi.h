@@ -583,14 +583,16 @@ class TESS_API TessBaseAPI {
    * The recognized text is returned as a char* which is coded
    * as UTF8 and must be freed with the delete [] operator.
    */
-  char* GetUTF8Text(ETEXT_DESC* monitor);
+  char* GetUTF8Text();
 
   /**
    * Make a HTML-formatted string with hOCR markup from the internal
    * data structures.
    * page_number is 0-based but will appear in the output as 1-based.
    */
-  char* GetHOCRText(int page_number, ETEXT_DESC* monitor);
+  char* GetHOCRText(int page_number);
+
+  char* GetHOCRText(struct ETEXT_DESC* monitor, int page_number);
 
   /**
    * The recognized text is returned as a char* which is coded in the same

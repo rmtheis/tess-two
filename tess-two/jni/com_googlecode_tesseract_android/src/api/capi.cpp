@@ -451,12 +451,12 @@ TESS_API TessMutableIterator* TESS_CALL TessBaseAPIGetMutableIterator(TessBaseAP
 
 TESS_API char* TESS_CALL TessBaseAPIGetUTF8Text(TessBaseAPI* handle)
 {
-    return handle->GetUTF8Text(NULL);
+    return handle->GetUTF8Text();
 }
 
 TESS_API char* TESS_CALL TessBaseAPIGetHOCRText(TessBaseAPI* handle, int page_number)
 {
-    return handle->GetHOCRText(page_number, NULL);
+    return handle->GetHOCRText(NULL, page_number);
 }
 
 TESS_API char* TESS_CALL TessBaseAPIGetBoxText(TessBaseAPI* handle, int page_number)

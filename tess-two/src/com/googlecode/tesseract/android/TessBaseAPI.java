@@ -153,6 +153,8 @@ public class TessBaseAPI {
     /**
      * Interface that may be implemented by calling object in order to receive 
      * progress callbacks during OCR.
+     *
+     * Progress callbacks are available when {@link #getHOCRText(int)} is used.
      */
     public interface ProgressNotifier {
         void onProgressValues(ProgressValues progressValues);

@@ -106,7 +106,7 @@ TessTextRenderer::TessTextRenderer(const char *outputbase)
 }
 
 bool TessTextRenderer::AddImageHandler(TessBaseAPI* api) {
-  char* utf8 = api->GetUTF8Text(NULL);
+  char* utf8 = api->GetUTF8Text();
   if (utf8 == NULL) {
     return false;
   }
@@ -170,7 +170,7 @@ bool TessHOcrRenderer::EndDocumentHandler() {
 }
 
 bool TessHOcrRenderer::AddImageHandler(TessBaseAPI* api) {
-  char* hocr = api->GetHOCRText(imagenum(), NULL);
+  char* hocr = api->GetHOCRText(NULL, imagenum());
   if (hocr == NULL) return false;
 
   AppendString(hocr);

@@ -300,7 +300,7 @@ jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetUTF8Text(JNIE
   monitor.cancel_this = nat;
   monitor.progress_this = nat;
 
-  char *text = nat->api.GetUTF8Text(&monitor);
+  char *text = nat->api.GetUTF8Text();
 
   jstring result = env->NewStringUTF(text);
 
@@ -538,7 +538,7 @@ jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetHOCRText(JNIE
   monitor.cancel_this = nat;
   monitor.progress_this = nat;
 
-  char *text = nat->api.GetHOCRText(page, &monitor);
+  char *text = nat->api.GetHOCRText(&monitor, page);
 
   jstring result = env->NewStringUTF(text);
 
