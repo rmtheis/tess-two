@@ -46,7 +46,7 @@ LOCAL_LDLIBS += \
   -llog
 
 # common
-LOCAL_SHARED_LIBRARIES:= libjpgt libpngt
+LOCAL_SHARED_LIBRARIES:= libjpeg libpng
 
 LOCAL_PRELINK_MODULE:= false
 
