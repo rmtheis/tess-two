@@ -179,36 +179,36 @@ public class PixaTest extends TestCase {
 //        pixa.recycle();
 //    }
 
-//    @SmallTest
-//    public void testPixaMergeAndReplacePix() {
-//        Pixa pixa = Pixa.createPixa(0, 640, 480);
-//
-//        // Populate the Pixa.
-//        addBlockToPixa(pixa, 0, 0, 320, 240, 8);
-//        addBlockToPixa(pixa, 320, 240, 320, 240, 8);
-//
-//        // Merge both Pix, removing the second Pix.
-//        pixa.mergeAndReplacePix(0, 1);
-//
-//        // Ensure the merge was successful.
-//        Pix pix = pixa.getPix(0);
-//        Box box = pixa.getBox(0);
-//
-//        assertEquals(pixa.size(), 1);
-//
-//        assertEquals(pix.getWidth(), 640);
-//        assertEquals(pix.getHeight(), 480);
-//        assertEquals(pix.getDepth(), 8);
-//
-//        assertEquals(box.getX(), 0);
-//        assertEquals(box.getY(), 0);
-//        assertEquals(box.getWidth(), 640);
-//        assertEquals(box.getHeight(), 480);
-//
-//        pix.recycle();
-//        box.recycle();
-//        pixa.recycle();
-//    }
+    @SmallTest
+    public void testPixaMergeAndReplacePix() {
+        Pixa pixa = Pixa.createPixa(0, 640, 480);
+
+        // Populate the Pixa.
+        addBlockToPixa(pixa, 0, 0, 320, 240, 8);
+        addBlockToPixa(pixa, 320, 240, 320, 240, 8);
+
+        // Merge both Pix, removing the second Pix.
+        pixa.mergeAndReplacePix(0, 1);
+
+        // Ensure the merge was successful.
+        Pix pix = pixa.getPix(0);
+        Box box = pixa.getBox(0);
+
+        assertEquals(pixa.size(), 1);
+
+        assertEquals(pix.getWidth(), 640);
+        assertEquals(pix.getHeight(), 480);
+        assertEquals(pix.getDepth(), 8);
+
+        assertEquals(box.getX(), 0);
+        assertEquals(box.getY(), 0);
+        assertEquals(box.getWidth(), 640);
+        assertEquals(box.getHeight(), 480);
+
+        pix.recycle();
+        box.recycle();
+        pixa.recycle();
+    }
 
     /**
      * Adds a block to the specified Pixa.
