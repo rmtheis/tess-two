@@ -54,4 +54,9 @@ LOCAL_SRC_FILES := \
         jmemmgr.c \
         jmemname.c
 
+LOCAL_CFLAGS := \
+  -include stdlib.h \
+  -Wno-pointer-sign \
+  -Wno-implicit-function-declaration
+
 include $(BUILD_SHARED_LIBRARY)

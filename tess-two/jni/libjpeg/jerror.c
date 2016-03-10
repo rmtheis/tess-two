@@ -19,8 +19,6 @@
  * These routines are used by both the compression and decompression code.
  */
 
-#include <stdlib.h>
-
 #ifdef USE_WINDOWS_MESSAGEBOX
 #include <windows.h>
 #endif
