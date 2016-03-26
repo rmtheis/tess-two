@@ -5,9 +5,12 @@ AAR as an external dependency in your app project. To start the build, import
 the root directory of this project into Android Studio as an existing Android
 Studio project, or follow the instructions below to build on the command line.
 
+Note: When building from Android Studio, you may need to set the path to your
+NDK installation in the Project Structure dialog (File->Project Structure).
+
 ##_Android Studio and Gradle_
 
-The Gradle build uses the gradle-stable plugin and the "bundled" Android NDK to
+The Gradle build uses the gradle-stable plugin and the Android NDK to
 build the Tesseract and Leptonica native C/C++ code through a call to
 `ndk-build` in `build.gradle`. After building, the AAR file that is generated
 may be [imported][aar-import] into your app project as a dependency on a local
@@ -19,6 +22,7 @@ command line:
 _On Mac/Linux:_
 	
     export ANDROID_HOME=/path/to/your/android-sdk
+    export ANDROID_NDK_HOME=/path/to/your/android-ndk
     git clone git://github.com/rmtheis/tess-two tess
     cd tess
     android update project --path tess-two
@@ -28,6 +32,7 @@ _On Mac/Linux:_
 _On Windows:_
 		
     set ANDROID_HOME=C:\\path\\to\\your\\android-sdk
+    set ANDROID_NDK_HOME=C:\\path\\to\\your\\android-ndk
     git clone git://github.com/rmtheis/tess-two tess
     cd tess
     android update project --path tess-two
