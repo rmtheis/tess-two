@@ -54,6 +54,7 @@ LOCAL_CFLAGS := \
   -include unistd.h \
   -fpermissive \
   -Wno-deprecated \
+  -Wno-shift-negative-value \
   -D_GLIBCXX_PERMIT_BACKWARD_HASH   # fix for android-ndk-r8e/sources/cxx-stl/gnu-libstdc++/4.6/include/ext/hash_map:61:30: fatal error: backward_warning.h: No such file or directory
 
 # jni
