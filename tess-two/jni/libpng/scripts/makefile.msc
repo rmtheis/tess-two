@@ -16,7 +16,12 @@ CFLAGS=-Oait -Gs -nologo -W3 -A$(MODEL)
 CC=cl
 LD=link
 LDFLAGS=/e/st:0x1500/noe
+CP=copy
 O=.obj
+
+# Pre-built configuration
+# See scripts\pnglibconf.mak for more options
+PNGLIBCONF_H_PREBUILT = scripts\pnglibconf.h.prebuilt
 
 #uncomment next to put error messages in a file
 ERRFILE= >> pngerrs
@@ -28,12 +33,11 @@ OBJS3 = pngrtran$(O) pngwtran$(O) pngrio$(O) pngwio$(O)
 
 all: libpng.lib
 
-# see scripts/pnglibconf.mak for more options
-pnglibconf.h: scripts/pnglibconf.h.prebuilt
-	cp scripts/pnglibconf.h.prebuilt $@
+pnglibconf.h: $(PNGLIBCONF_H_PREBUILT)
+	$(CP) $(PNGLIBCONF_H_PREBUILT) $@
 
 png$(O): png.h pngconf.h pnglibconf.h pngpriv.h pngstruct.h pnginfo.h pngdebug.h
-		  $(CC) -c $(CPPFLAGS) $(CFLAGS) $*.c $(ERRFILE)
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $*.c $(ERRFILE)
 
 pngset$(O): png.h pngconf.h pnglibconf.h pngpriv.h pngstruct.h pnginfo.h pngdebug.h
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $*.c $(ERRFILE)

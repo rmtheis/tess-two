@@ -32,6 +32,7 @@ AR_RC = ar rc
 MKDIR_P = mkdir
 LN_SF = ln -sf
 RANLIB = ranlib
+CP = cp
 RM_F = rm -f
 AWK = awk
 SED = sed
@@ -43,6 +44,10 @@ DFA_EXTRA = # extra files that can be used to control configuration
 CPPFLAGS = -I$(ZLIBINC) # -DPNG_DEBUG=5
 CFLAGS = -O # -g
 LDFLAGS = -L. -L$(ZLIBLIB) -lpng -lz -lm
+
+# Pre-built configuration
+# See scripts/pnglibconf.mak for more options
+PNGLIBCONF_H_PREBUILT = scripts/pnglibconf.h.prebuilt
 
 OBJS = png.o pngset.o pngget.o pngrutil.o pngtrans.o pngwutil.o \
 	pngread.o pngrio.o pngwio.o pngwrite.o pngrtran.o \
@@ -101,7 +106,8 @@ install: libpng.a pnglibconf.h
 	chmod 644 $(DESTDIR)$(LIBPATH)/libpng.a
 
 clean:
-	$(RM_F) *.o libpng.a pngtest pngout.png pnglibconf.*
+	$(RM_F) *.o libpng.a pngtest pngout.png pnglibconf.h pnglibconf.c \
+	pnglibconf.out
 
 DOCS = ANNOUNCE CHANGES INSTALL KNOWNBUG LICENSE README TODO Y2KINFO
 writelock:

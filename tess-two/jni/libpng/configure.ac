@@ -18,7 +18,7 @@ AC_PREREQ([2.68])
 
 dnl Version number stuff here:
 
-AC_INIT([libpng],[1.6.10],[png-mng-implement@lists.sourceforge.net])
+AC_INIT([libpng],[1.6.20],[png-mng-implement@lists.sourceforge.net])
 AC_CONFIG_MACRO_DIR([scripts])
 
 # libpng does not follow GNU file name conventions (hence 'foreign')
@@ -39,10 +39,10 @@ dnl automake, so the following is not necessary (and is not defined anyway):
 dnl AM_PREREQ([1.11.2])
 dnl stop configure from automagically running automake
 
-PNGLIB_VERSION=1.6.10
+PNGLIB_VERSION=1.6.20
 PNGLIB_MAJOR=1
 PNGLIB_MINOR=6
-PNGLIB_RELEASE=10
+PNGLIB_RELEASE=20
 
 dnl End of version number stuff
 
@@ -314,7 +314,7 @@ AC_ARG_ENABLE([arm-neon],
 AM_CONDITIONAL([PNG_ARM_NEON],
    [test "$enable_arm_neon" != 'no' &&
     case "$host_cpu" in
-      arm*) :;;
+      arm*|aarch64*) :;;
       *)    test "$enable_arm_neon" != '';;
     esac])
 

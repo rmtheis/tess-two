@@ -29,6 +29,10 @@ LIBPATH=$(prefix)/lib
 # you execute make install.
 DESTDIR=
 
+# Pre-built configuration
+# See scripts/pnglibconf.mak for more options
+PNGLIBCONF_H_PREBUILT = scripts/pnglibconf.h.prebuilt
+
 OBJS = $(LBR)(png.o) $(LBR)(pngset.o) $(LBR)(pngget.o) $(LBR)(pngrutil.o)\
 	$(LBR)(pngtrans.o) $(LBR)(pngwutil.o)\
 	$(LBR)(pngread.o) $(LBR)(pngerror.o) $(LBR)(pngwrite.o)\
@@ -44,8 +48,8 @@ $(LBR): $(OBJS)
 
 $(OBJS): pngpriv.h png.h pngconf.h pnglibconf.h pnginfo.h pngstruct.h pngdebug.h
 
-pnglibconf.h: scripts/pnglibconf.h.prebuilt
-	cp scripts/pnglibconf.h.prebuilt pnglibconf.h
+pnglibconf.h: $(PNGLIBCONF_H_PREBUILT)
+	cp $(PNGLIBCONF_H_PREBUILT) $@
 
 pngtest.ttp: pngtest.o $(LBR)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o$@ pngtest.o

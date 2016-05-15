@@ -26,6 +26,7 @@ AR_RC=ar rc
 MKDIR_P=mkdir -p
 LN_SF=ln -f -s
 RANLIB=echo
+CP=cp
 RM_F=/bin/rm -f
 
 # Where make install puts libpng.a, $(OLDSO)*, and png.h
@@ -71,6 +72,10 @@ DI=$(DESTDIR)$(INCPATH)
 DL=$(DESTDIR)$(LIBPATH)
 DM=$(DESTDIR)$(MANPATH)
 
+# Pre-built configuration
+# See scripts/pnglibconf.mak for more options
+PNGLIBCONF_H_PREBUILT = scripts/pnglibconf.h.prebuilt
+
 OBJS = png.o pngset.o pngget.o pngrutil.o pngtrans.o pngwutil.o \
 	pngread.o pngrio.o pngwio.o pngwrite.o pngrtran.o \
 	pngwtran.o pngmem.o pngerror.o pngpread.o
@@ -87,9 +92,8 @@ OBJSDLL = $(OBJS:.o=.pic.o)
 
 all: libpng.a $(LIBSO) pngtest libpng.pc libpng-config
 
-# see scripts/pnglibconf.mak for more options
-pnglibconf.h: scripts/pnglibconf.h.prebuilt
-	cp scripts/pnglibconf.h.prebuilt $@
+pnglibconf.h: $(PNGLIBCONF_H_PREBUILT)
+	$(CP) $(PNGLIBCONF_H_PREBUILT) $@
 
 libpng.a: $(OBJS)
 	$(AR_RC) $@ $(OBJS)

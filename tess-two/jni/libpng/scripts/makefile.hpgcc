@@ -25,6 +25,7 @@ AR_RC=ar rc
 MKDIR_P=mkdir -p
 LN_SF=ln -sf
 RANLIB=ranlib
+CP=cp
 RM_F=/bin/rm -f
 
 # where "make install" puts libpng.a, $(OLDSO)*, png.h, pngconf.h

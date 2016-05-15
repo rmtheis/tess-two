@@ -37,11 +37,16 @@ AR_RC=ar rc
 MKDIR_P=mkdir -p
 LN_SF=ln -f -s
 RANLIB=ranlib
+CP=cp
 RM_F=/bin/rm -f
 
 CPPFLAGS=-I$(ZLIBINC) # -DPNG_DEBUG=5
 CFLAGS=-O # $(WARNMORE)
 LDFLAGS=-L. -L$(ZLIBLIB) -lpng -lz -lm
+
+# Pre-built configuration
+# See scripts/pnglibconf.mak for more options
+PNGLIBCONF_H_PREBUILT = scripts/pnglibconf.h.prebuilt
 
 OBJS = png.o pngset.o pngget.o pngrutil.o pngtrans.o pngwutil.o \
 	pngread.o pngrio.o pngwio.o pngwrite.o pngrtran.o \
@@ -52,9 +57,8 @@ OBJS = png.o pngset.o pngget.o pngrutil.o pngtrans.o pngwutil.o \
 
 all: libpng.a pngtest
 
-# see scripts/pnglibconf.mak for more options
-pnglibconf.h: scripts/pnglibconf.h.prebuilt
-	cp scripts/pnglibconf.h.prebuilt $@
+pnglibconf.h: $(PNGLIBCONF_H_PREBUILT)
+	$(CP) $(PNGLIBCONF_H_PREBUILT) $@
 
 libpng.a: $(OBJS)
 	$(AR_RC) $@  $(OBJS)

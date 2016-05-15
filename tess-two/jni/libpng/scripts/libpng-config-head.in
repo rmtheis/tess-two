@@ -11,7 +11,7 @@
 
 # Modeled after libxml-config.
 
-version=1.6.10
+version=1.6.20
 prefix=""
 libdir=""
 libs=""

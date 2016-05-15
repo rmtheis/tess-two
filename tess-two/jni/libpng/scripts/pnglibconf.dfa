@@ -8,7 +8,7 @@ com pnglibconf.h - library build configuration
 com
 version
 com
-com Copyright (c) 1998-2012 Glenn Randers-Pehrson
+com Copyright (c) 1998-2014 Glenn Randers-Pehrson
 com
 com This code is released under the libpng license.
 com For conditions of distribution and use, see the disclaimer
@@ -114,6 +114,13 @@ file pnglibconf.h scripts/pnglibconf.dfa PNGLCONF_H
 
 logunsupported = 1
 
+# The following allows the output from configure to modify the contents of
+# pnglibconf.h
+
+@#ifdef HAVE_CONFIG_H
+@#  include "config.h"
+@#endif
+
 # PNG_USER_CONFIG has to be defined on the compiler command line
 # to cause pngusr.h to be read while constructing pnglibconf.h
 #
@@ -189,10 +196,6 @@ setting API_RULE default 0
 
 setting PREFIX
 
-# Default to using the read macros
-
-setting DEFAULT_READ_MACROS default 1
-
 # Implementation specific control of the optimizations, enabled by those
 # hardware or software options that need it (typically when run-time choices
 # must be made by the user)
@@ -218,8 +221,8 @@ option SET_OPTION disabled
 # ARM_NEON_API:   (PNG_ARM_NEON == 1) allow the optimization to be switched on
 #                 with png_set_option
 # ARM_NEON_CHECK: (PNG_ARM_NEON == 1) compile a run-time check to see if Neon
-#                 extensions are supported, this is poorly supported and
-#                 deprectated - use the png_set_option API.
+#                 extensions are supported. This is poorly supported and
+#                 deprecated - use the png_set_option API.
 setting ARM_NEON_OPT
 option ARM_NEON_API disabled requires ALIGNED_MEMORY enables SET_OPTION,
    sets ARM_NEON_OPT 1
@@ -227,25 +230,42 @@ option ARM_NEON_CHECK disabled requires ALIGNED_MEMORY,
    sets ARM_NEON_OPT 1
 
 # These settings configure the default compression level (0-9) and 'strategy';
-# strategy is as defined by the implementors of zlib, it describes the input
+# strategy is as defined by the implementors of zlib. It describes the input
 # data and modifies the zlib parameters in an attempt to optimize the balance
 # between search and huffman encoding in the zlib algorithms.  The defaults are
 # the zlib.h defaults - the apparently recursive definition does not arise
 # because the name of the setting is prefixed by PNG_
 #
 # The TEXT values are the defaults when writing compressed text (all forms)
-#
-# Include the zlib header too, so that the defaults below are known
+
+# Include the zlib header so that the defaults below are known
 @#  include <zlib.h>
 
 # The '@' here means to substitute the value when pnglibconf.h is built
 setting Z_DEFAULT_COMPRESSION default @Z_DEFAULT_COMPRESSION
+# TODO: why aren't these Z_RLE; zlib.h says that Z_RLE, specifically, is
+# appropriate for PNG images, maybe it doesn't exist in all versions?
 setting Z_DEFAULT_STRATEGY default @Z_FILTERED
 setting Z_DEFAULT_NOFILTER_STRATEGY default @Z_DEFAULT_STRATEGY
 setting ZLIB_VERNUM default @ZLIB_VERNUM
 
+# Linkage of:
+#
+#  API:      libpng API functions
+#  CALLBACK: internal non-file-local callbacks
+#  FUNCTION: internal non-file-local functions
+#  DATA:     internal non-file-local (const) data
+setting LINKAGE_API default extern
+setting LINKAGE_CALLBACK default extern
+setting LINKAGE_FUNCTION default extern
+setting LINKAGE_DATA default extern
+
 setting TEXT_Z_DEFAULT_COMPRESSION default @Z_DEFAULT_COMPRESSION
 setting TEXT_Z_DEFAULT_STRATEGY default @Z_DEFAULT_STRATEGY
+
+# Default to using the read macros
+
+setting DEFAULT_READ_MACROS default 1
 
 # The alternative is to call functions to read PNG values, if
 # the functions are turned *off* the read macros must always
@@ -294,7 +314,7 @@ option BENIGN_READ_ERRORS requires BENIGN_ERRORS
 option MNG_FEATURES
 
 # Arithmetic options, the first is the big switch that chooses between internal
-# floating and fixed point arithmetic implementations - it does not affect an
+# floating and fixed point arithmetic implementations - it does not affect any
 # APIs.  The second two (the _POINT settings) switch off individual APIs.
 #
 # Prior to libpng 1.6.8 one of the API (_POINT) variants had to be selected.  At
@@ -304,10 +324,6 @@ option MNG_FEATURES
 option FLOATING_ARITHMETIC
 option FLOATING_POINT
 option FIXED_POINT
-
-# The following is always on (defined empty)
-
-setting CALLOC_SUPPORTED default
 
 # This protects us against compilers that run on a windowing system
 # and thus don't have or would rather us not use the stdio types:
@@ -345,47 +361,35 @@ option USER_MEM
 
 option IO_STATE
 
-# This is only for PowerPC big-endian and 680x0 systems
-# some testing, not enabled by default.
-# NO LONGER USED
-
-#option READ_BIG_ENDIAN disabled
-
-# Allow users to control limits on what the READ code will
-# read:
-
-# Added at libpng-1.2.43; adds limit fields to png_struct,
-# allows some usages of these fields
-
-option USER_LIMITS
-
-# Added at libpng-1.2.6; adds setting APIs, allows additional
-# usage of this field (UTSL)
-
-option SET_USER_LIMITS requires USER_LIMITS
-
-# Feature added at libpng-1.4.0, this flag added at 1.4.1
-option SET_USER_LIMITS enables SET_CHUNK_CACHE_LIMIT
-# Feature added at libpng-1.4.1, this flag added at 1.4.1
-
-option SET_USER_LIMITS enables SET_CHUNK_MALLOC_LIMIT
-
-# Libpng limits.
+# Libpng limits: limit the size of images and data on read.
 #
-# If these settings are *not* set libpng will not limit the size of
-# images or the size of data in ancilliary chunks.  This does lead to
-# security issues if PNG files come from untrusted sources.
-setting USER_WIDTH_MAX
-setting USER_HEIGHT_MAX
-setting USER_CHUNK_CACHE_MAX
-setting USER_CHUNK_MALLOC_MAX
+# If this option is disabled all the limit checking code will be disabled:
 
-# To default all these settings to values that are large but probably
-# safe turn the SAFE_LIMITS option on; this will cause the value in
-# pngpriv.h to be used.  Individual values can also be set, simply set
-# them in pngusr.dfa with '@#define PNG_setting value' lines.
-option SAFE_LIMITS enables USER_LIMITS disabled
-= SAFE_LIMITS SAFE_LIMITS
+option USER_LIMITS requires READ
+
+# The default settings given below for the limits mean that libpng will
+# limit the size of images or the size of data in ancilliary chunks to less
+# than the specification or implementation limits. Settings have the
+# following interpretations:
+#
+# USER_WIDTH_MAX: maximum width of an image that will be read
+# USER_HEIGHT_MAX: maximum height
+# USER_CHUNK_MALLOC_MAX: maximum in-memory (decompressed) size of a single chunk
+# USER_CHUNK_CACHE_MAX: maximum number of chunks to be cached
+#
+# Only chunks that are variable in number are counted towards the
+
+# Use 0x7fffffff for unlimited
+setting USER_WIDTH_MAX default        1000000
+setting USER_HEIGHT_MAX default       1000000
+
+# Use 0 for unlimited
+setting USER_CHUNK_CACHE_MAX default     1000
+setting USER_CHUNK_MALLOC_MAX default 8000000
+
+# If this option is enabled APIs to set the above limits at run time are added;
+# without this the hardwired (compile time) limits will be used.
+option SET_USER_LIMITS requires USER_LIMITS
 
 # All of the following options relate to code capabilities for
 # processing image data before creating a PNG or after reading one.
@@ -511,9 +515,7 @@ option WRITE_USER_TRANSFORM requires WRITE_TRANSFORMS
 
 option WRITE_INTERLACING requires WRITE
 
-# The following depends, internally, on WEIGHT_SHIFT and COST_SHIFT
-# where are set below.
-
+# Deprecated, will be removed.
 option WRITE_WEIGHTED_FILTER requires WRITE
 
 option WRITE_FLUSH requires WRITE
@@ -527,6 +529,7 @@ option USER_TRANSFORM_INFO if READ_USER_TRANSFORM, WRITE_USER_TRANSFORM
 # non-IDAT chunks (zTXt, iTXt, iCCP, and unknown chunks).  This feature
 # was added at libpng-1.5.3.
 option WRITE_CUSTOMIZE_ZTXT_COMPRESSION requires WRITE
+option WRITE_CUSTOMIZE_COMPRESSION requires WRITE
 
 # Any chunks you are not interested in, you can undef here.  The
 # ones that allocate memory may be expecially important (hIST,
@@ -582,19 +585,21 @@ option COLORSPACE enables GAMMA disabled
 # PNG_sRGB_PROFILE_CHECKS setting controls how much work is done during the
 # check:
 #
-# 0: Just validate the profile MD5 signature if present, otherwise use
-#    the checks in option 1.
+# -1: Don't do any sRGB profile checking.
 #
-# 1: Additionally check the length, intent and adler32 checksum of the
-#    actual data.   If enabled this will reject known profiles that have
-#    had the rendering intent in the header changed as well as other edits
-#    done without updating the checksum.  See the discussion below.
+#  0: Just validate the profile MD5 signature if present, otherwise use
+#     the checks in option 1.
 #
-# 2: Additionally checksum all the data using the ethernet CRC32 algorithm.
-#    This makes it more difficult to fake profiles and makes it less likely
-#    to get a false positive on profiles with no signature, but is probably
-#    just a waste of time since all currently approved ICC sRGB profiles have
-#    a secure MD5 signature.
+#  1: Additionally check the length, intent and adler32 checksum of the
+#     actual data.   If enabled this will reject known profiles that have
+#     had the rendering intent in the header changed as well as other edits
+#     done without updating the checksum.  See the discussion below.
+#
+#  2: Additionally checksum all the data using the ethernet CRC32 algorithm.
+#     This makes it more difficult to fake profiles and makes it less likely
+#     to get a false positive on profiles with no signature, but is probably
+#     just a waste of time since all currently approved ICC sRGB profiles have
+#     a secure MD5 signature.
 #
 # The rendering intent.  An ICC profile stores an intended rendering intent,
 # but does not include the value in the signature.  The intent is documented
@@ -650,7 +655,7 @@ setting QUANTIZE_BLUE_BITS default 5
 # are only interested in 8 bits anyway.  Increasing this value
 # results in more memory being used, and more pow() functions
 # being called to fill in the gamma tables.  Don't set this value
-# less then 8, and even that may not work (I haven't tested it).
+# less than 8, and even that may not work (I haven't tested it).
 
 setting MAX_GAMMA_8 default 11
 
@@ -660,11 +665,6 @@ setting MAX_GAMMA_8 default 11
 # the range 0.95 to 1.05
 
 setting GAMMA_THRESHOLD_FIXED default 5000
-
-# Scaling factor for filter heuristic weighting calculations
-
-setting WEIGHT_SHIFT default 8
-setting COST_SHIFT default 3
 
 # Precision to use when converting a floating point value to a PNG
 # extension format string in an sCAL chunk (only relevant if the
@@ -716,18 +716,18 @@ chunk cHRM enables COLORSPACE
 chunk gAMA enables GAMMA
 chunk hIST
 chunk iCCP enables COLORSPACE, GAMMA
-chunk iTXt
+chunk iTXt enables TEXT
 chunk oFFs
 chunk pCAL
 chunk pHYs
 chunk sBIT
 chunk sCAL
 chunk sPLT
-chunk sRGB enables COLORSPACE, GAMMA
+chunk sRGB enables COLORSPACE, GAMMA, SET_OPTION
 chunk tEXt requires TEXT
 chunk tIME
 chunk tRNS
-chunk zTXt
+chunk zTXt enables TEXT
 
 # This only affects support of the optional PLTE chunk in RGB and RGBA
 # images.  Notice that READ_ANCILLARY_CHUNKS therefore disables part
@@ -811,9 +811,9 @@ option SAVE_INT_32 disabled
 option WRITE_OPTIMIZE_CMF requires WRITE
 
 option READ_COMPRESSED_TEXT disabled
+option READ_iCCP enables READ_COMPRESSED_TEXT
 option READ_iTXt enables READ_COMPRESSED_TEXT
 option READ_zTXt enables READ_COMPRESSED_TEXT
-option READ_COMPRESSED_TEXT enables READ_TEXT
 
 option WRITE_oFFs enables SAVE_INT_32
 option WRITE_pCAL enables SAVE_INT_32
@@ -823,7 +823,6 @@ option WRITE_COMPRESSED_TEXT disabled
 option WRITE_iCCP enables WRITE_COMPRESSED_TEXT
 option WRITE_iTXt enables WRITE_COMPRESSED_TEXT
 option WRITE_zTXt enables WRITE_COMPRESSED_TEXT
-option WRITE_COMPRESSED_TEXT enables WRITE_TEXT
 
 # Turn this off to disable png_read_png() and png_write_png() and
 # leave the row_pointers member out of the info structure.

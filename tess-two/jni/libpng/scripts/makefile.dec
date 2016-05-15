@@ -22,6 +22,7 @@ CC=cc
 MKDIR_P=mkdir
 LN_SF=ln -f -s
 RANLIB=ranlib
+CP=cp
 RM_F=/bin/rm -f
 
 # where make install puts libpng.a and png.h
@@ -57,6 +58,10 @@ CPPFLAGS=-I$(ZLIBINC) # -DPNG_DEBUG=5
 CFLAGS=-std -w1 -O # -g
 LDFLAGS=-L$(ZLIBLIB) -rpath $(ZLIBLIB) libpng.a -lz -lm
 
+# Pre-built configuration
+# See scripts/pnglibconf.mak for more options
+PNGLIBCONF_H_PREBUILT = scripts/pnglibconf.h.prebuilt
+
 OBJS = png.o pngset.o pngget.o pngrutil.o pngtrans.o pngwutil.o \
 	pngread.o pngrio.o pngwio.o pngwrite.o pngrtran.o \
 	pngwtran.o pngmem.o pngerror.o pngpread.o
@@ -66,9 +71,8 @@ OBJS = png.o pngset.o pngget.o pngrutil.o pngtrans.o pngwutil.o \
 
 all: $(LIBSO) libpng.a pngtest libpng.pc libpng-config
 
-# see scripts/pnglibconf.mak for more options
-pnglibconf.h: scripts/pnglibconf.h.prebuilt
-	cp scripts/pnglibconf.h.prebuilt $@
+pnglibconf.h: $(PNGLIBCONF_H_PREBUILT)
+	$(CP) $(PNGLIBCONF_H_PREBUILT) $@
 
 libpng.a: $(OBJS)
 	$(AR_RC) $@  $(OBJS)
@@ -181,7 +185,7 @@ test-installed:
 	./pngtesti pngtest.png
 
 clean:
-	/bin/rm -f *.o libpng.a pngtest pngtesti pngout.png \
+	$(RM_F) *.o libpng.a pngtest pngtesti pngout.png \
 	libpng-config $(LIBSO) $(LIBSOMAJ)* \
 	libpng.pc pnglibconf.h
 

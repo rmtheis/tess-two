@@ -363,7 +363,7 @@ ancillary(const char *name)
    return PNG_CHUNK_ANCILLARY(PNG_U32(name[0], name[1], name[2], name[3]));
 }
 
-#ifdef PNG_STORE_UNKNOWN_CHUNKS_SUPPORTED
+#ifdef PNG_SAVE_UNKNOWN_CHUNKS_SUPPORTED
 static int
 ancillaryb(const png_byte *name)
 {
@@ -554,7 +554,7 @@ read_callback(png_structp pp, png_unknown_chunkp pc)
    /* However if there is no support to store unknown chunks don't ask libpng to
     * do it; there will be an png_error.
     */
-#  ifdef PNG_STORE_UNKNOWN_CHUNKS_SUPPORTED
+#  ifdef PNG_SAVE_UNKNOWN_CHUNKS_SUPPORTED
       return discard;
 #  else
       return 1; /*handled; discard*/
@@ -562,7 +562,7 @@ read_callback(png_structp pp, png_unknown_chunkp pc)
 }
 #endif /* READ_USER_CHUNKS_SUPPORTED */
 
-#ifdef PNG_STORE_UNKNOWN_CHUNKS_SUPPORTED
+#ifdef PNG_SAVE_UNKNOWN_CHUNKS_SUPPORTED
 static png_uint_32
 get_unknown(display *d, png_infop info_ptr, int after_IDAT)
 {
@@ -722,11 +722,17 @@ check(FILE *fp, int argc, const char **argv, png_uint_32p flags/*out*/,
                    * in this case, so we just check the arguments!  This could
                    * be improved in the future by using the read callback.
                    */
-                  png_byte name[5];
+#                 if PNG_LIBPNG_VER >= 10700 &&\
+                     !defined(PNG_SAVE_UNKNOWN_CHUNKS_SUPPORTED)
+                     if (option < PNG_HANDLE_CHUNK_IF_SAFE)
+#                 endif /* 1.7+ SAVE_UNKNOWN_CHUNKS */
+                  {
+                     png_byte name[5];
 
-                  memcpy(name, chunk_info[chunk].name, 5);
-                  png_set_keep_unknown_chunks(d->png_ptr, option, name, 1);
-                  chunk_info[chunk].keep = option;
+                     memcpy(name, chunk_info[chunk].name, 5);
+                     png_set_keep_unknown_chunks(d->png_ptr, option, name, 1);
+                     chunk_info[chunk].keep = option;
+                  }
                   continue;
                }
 
@@ -735,7 +741,12 @@ check(FILE *fp, int argc, const char **argv, png_uint_32p flags/*out*/,
             case 7: /* default */
                if (memcmp(argv[i], "default", 7) == 0)
                {
-                  png_set_keep_unknown_chunks(d->png_ptr, option, NULL, 0);
+#                 if PNG_LIBPNG_VER >= 10700 &&\
+                     !defined(PNG_SAVE_UNKNOWN_CHUNKS_SUPPORTED)
+                     if (option < PNG_HANDLE_CHUNK_IF_SAFE)
+#                 endif /* 1.7+ SAVE_UNKNOWN_CHUNKS */
+                     png_set_keep_unknown_chunks(d->png_ptr, option, NULL, 0);
+
                   d->keep = option;
                   continue;
                }
@@ -745,7 +756,12 @@ check(FILE *fp, int argc, const char **argv, png_uint_32p flags/*out*/,
             case 3: /* all */
                if (memcmp(argv[i], "all", 3) == 0)
                {
-                  png_set_keep_unknown_chunks(d->png_ptr, option, NULL, -1);
+#                 if PNG_LIBPNG_VER >= 10700 &&\
+                     !defined(PNG_SAVE_UNKNOWN_CHUNKS_SUPPORTED)
+                     if (option < PNG_HANDLE_CHUNK_IF_SAFE)
+#                 endif /* 1.7+ SAVE_UNKNOWN_CHUNKS */
+                     png_set_keep_unknown_chunks(d->png_ptr, option, NULL, -1);
+
                   d->keep = option;
 
                   for (chunk = 0; chunk < NINFO; ++chunk)

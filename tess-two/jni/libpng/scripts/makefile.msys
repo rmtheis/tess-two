@@ -18,7 +18,7 @@ exec_prefix=$(prefix)
 # Library name:
 LIBNAME = libpng16
 PNGMAJ = 16
-RELEASE = 10
+RELEASE = 20
 
 # Shared library names:
 LIBSO=$(LIBNAME).dll
@@ -37,6 +37,7 @@ CC = gcc
 LD = $(CC)
 AR_RC = ar rcs
 RANLIB = ranlib
+CP = cp
 RM_F = rm -rf
 MKDIR_P=mkdir -p
 LN_SF=ln -sf
@@ -73,6 +74,10 @@ DI=$(DESTDIR)$(INCPATH)
 DL=$(DESTDIR)$(LIBPATH)
 DM=$(DESTDIR)$(MANPATH)
 
+# Pre-built configuration
+# See scripts/pnglibconf.mak for more options
+PNGLIBCONF_H_PREBUILT = scripts/pnglibconf.h.prebuilt
+
 # Variables
 OBJS =  png.o pngerror.o pngget.o pngmem.o pngpread.o \
 	pngread.o pngrio.o pngrtran.o pngrutil.o pngset.o \
@@ -81,9 +86,8 @@ OBJS =  png.o pngerror.o pngget.o pngmem.o pngpread.o \
 # Targets
 all: static shared
 
-# see scripts/pnglibconf.mak for more options
-pnglibconf.h: scripts/pnglibconf.h.prebuilt
-	cp scripts/pnglibconf.h.prebuilt $@
+pnglibconf.h: $(PNGLIBCONF_H_PREBUILT)
+	$(CP) $(PNGLIBCONF_H_PREBUILT) $@
 
 .c.o:
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $<

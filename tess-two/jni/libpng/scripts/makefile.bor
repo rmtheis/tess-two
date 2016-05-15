@@ -12,10 +12,11 @@
 ## Where zlib.h, zconf.h and zlib_MODEL.lib are
 ZLIB_DIR=..\zlib
 
-## Compiler, linker and lib stuff
+## Compiler, linker, librarian and other tools
 CC=bcc
 LD=bcc
 LIB=tlib
+CP=copy
 
 !ifndef MODEL
 MODEL=l
@@ -56,6 +57,12 @@ CFLAGS=-O2 -Z -X- -w -$(TARGET_CPU) $(MODEL_ARG) $(CDEBUG)
 
 # -M  generate map file
 LDFLAGS=-M -L$(ZLIB_DIR) $(MODEL_ARG) $(LDEBUG)
+
+# Pre-built configuration
+# See scripts\pnglibconf.mak for more options
+!ifndef PNGLIBCONF_H_PREBUILT
+PNGLIBCONF_H_PREBUILT = scripts\pnglibconf.h.prebuilt
+!endif
 
 ## Variables
 
@@ -110,9 +117,9 @@ LIBNAME=libpng$(MODEL).lib
 
 all: libpng pngtest
 
-# try !inlude scripts\pnglibconf.mak for more options
-pnglibconf.h: scripts\pnglibconf.h.prebuilt
-	copy scripts\pnglibconf.h.prebuilt $@
+# try !include scripts\pnglibconf.mak for more options
+pnglibconf.h: $(PNGLIBCONF_H_PREBUILT)
+	$(CP) $(PNGLIBCONF_H_PREBUILT) $@
 
 libpng: $(LIBNAME)
 

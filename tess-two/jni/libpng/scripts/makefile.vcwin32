@@ -9,17 +9,22 @@
 # Assumes that zlib.lib, zconf.h, and zlib.h have been copied to ..\zlib
 # To use, do "nmake /f scripts\makefile.vcwin32"
 
-# -------- Microsoft Visual C++ 2.0 and later, no assembler code --------
+# -------- Microsoft Visual C++ 2.0 and later --------
 
-# Compiler, linker, librarian, and other tools
+# Compiler, linker, librarian and other tools
 CC = cl
 LD = link
 AR = lib
 CPPFLAGS = -I..\zlib
-CFLAGS  = -nologo -D_CRT_SECURE_NO_DEPRECATE -MD -O2 -W3
+CFLAGS  = -nologo -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -MD -O2 -W3
 LDFLAGS = -nologo
 ARFLAGS = -nologo
+CP = copy
 RM = del
+
+# Pre-built configuration
+# See scripts\pnglibconf.mak for more options
+PNGLIBCONF_H_PREBUILT = scripts\pnglibconf.h.prebuilt
 
 # File extensions
 O=.obj
@@ -36,9 +41,8 @@ OBJS  = $(OBJS1) $(OBJS2) $(OBJS3)
 # Targets
 all: libpng.lib
 
-# see scripts/pnglibconf.mak for more options
-pnglibconf.h: scripts\pnglibconf.h.prebuilt
-       copy scripts\pnglibconf.h.prebuilt $@
+pnglibconf.h: $(PNGLIBCONF_H_PREBUILT)
+	$(CP) $(PNGLIBCONF_H_PREBUILT) $@
 
 png$(O): png.h pngconf.h pnglibconf.h pngpriv.h pngstruct.h pnginfo.h pngdebug.h
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $*.c $(ERRFILE)

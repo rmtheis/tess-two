@@ -100,7 +100,8 @@ int readpng_init(FILE *infile, ulg *pWidth, ulg *pHeight)
 
     /* could pass pointers to user-defined error handlers instead of NULLs: */
 
-    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_ptr = png_create_read_struct(png_get_libpng_ver(NULL), NULL, NULL,
+        NULL);
     if (!png_ptr)
         return 4;   /* out of memory */
 

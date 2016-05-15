@@ -1,8 +1,8 @@
 /* pngimage.c
  *
- * Copyright (c) 2014 John Cunningham Bowler
+ * Copyright (c) 2015 John Cunningham Bowler
  *
- * Last changed in libpng 1.6.10 [March 6, 2014]
+ * Last changed in libpng 1.6.20 [December 3, 2015]
  *
  * This code is released under the libpng license.
  * For conditions of distribution and use, see the disclaimer
@@ -36,7 +36,8 @@
 #  include <setjmp.h> /* because png.h did *not* include this */
 #endif
 
-#if defined(PNG_INFO_IMAGE_SUPPORTED) && defined(PNG_SEQUENTIAL_READ_SUPPORTED)
+#if defined(PNG_INFO_IMAGE_SUPPORTED) && defined(PNG_SEQUENTIAL_READ_SUPPORTED)\
+    && (defined(PNG_READ_PNG_SUPPORTED) || PNG_LIBPNG_VER < 10700)
 /* If a transform is valid on both read and write this implies that if the
  * transform is applied to read it must also be applied on write to produce
  * meaningful data.  This is because these transforms when performed on read
@@ -236,9 +237,11 @@ static struct transform_info
        */
 #endif
 #ifdef PNG_READ_SCALE_16_TO_8_SUPPORTED
-   T(SCALE_16,            NONE, X,   X,   16,  R)
+   T(SCALE_16,            NONE, X,   X,   16,  R),
       /* scales 16-bit components to 8-bits. */
 #endif
+
+   { NULL /*name*/, 0, 0, 0, 0, 0, 0, 0/*!tested*/ }
 
 #undef T
 };
@@ -294,7 +297,7 @@ transform_name(int t)
 
    t &= -t; /* first set bit */
 
-   for (i=0; i<TTABLE_SIZE; ++i)
+   for (i=0; i<TTABLE_SIZE; ++i) if (transform_info[i].name != NULL)
    {
       if ((transform_info[i].transform & t) != 0)
          return transform_info[i].name;
@@ -315,7 +318,7 @@ validate_T(void)
 {
    unsigned int i;
 
-   for (i=0; i<TTABLE_SIZE; ++i)
+   for (i=0; i<TTABLE_SIZE; ++i) if (transform_info[i].name != NULL)
    {
       if (transform_info[i].when & TRANSFORM_R)
          read_transforms |= transform_info[i].transform;
@@ -337,6 +340,9 @@ validate_T(void)
  *    In both cases the file data is held in a linked list of buffers - not all
  *    of these are in use at any time.
  */
+#define NEW(type) ((type *)malloc(sizeof (type)))
+#define DELETE(ptr) (free(ptr))
+
 struct buffer_list
 {
    struct buffer_list *next;         /* next buffer in list */
@@ -359,6 +365,25 @@ buffer_init(struct buffer *buffer)
    buffer->first.next = NULL;
    buffer->last = NULL;
    buffer->current = NULL;
+}
+
+static void
+buffer_destroy_list(struct buffer_list *list)
+{
+   if (list != NULL)
+   {
+      struct buffer_list *next = list->next;
+      DELETE(list);
+      buffer_destroy_list(next);
+   }
+}
+
+static void
+buffer_destroy(struct buffer *buffer)
+{
+   struct buffer_list *list = buffer->first.next;
+   buffer_init(buffer);
+   buffer_destroy_list(list);
 }
 
 #ifdef PNG_WRITE_SUPPORTED
@@ -389,8 +414,6 @@ get_buffer(png_structp pp)
 {
    return (struct buffer*)png_get_io_ptr(pp);
 }
-
-#define NEW(type) ((type *)malloc(sizeof (type)))
 
 static struct buffer_list *
 buffer_extend(struct buffer_list *current)
@@ -485,6 +508,7 @@ typedef enum
 #define SKIP_BUGS       0x100 /* Skip over known bugs */
 #define LOG_SKIPPED     0x200 /* Log skipped bugs */
 #define FIND_BAD_COMBOS 0x400 /* Attempt to deduce bad combos */
+#define LIST_COMBOS     0x800 /* List combos by name */
 
 /* Result masks apply to the result bits in the 'results' field below; these
  * bits are simple 1U<<error_level.  A pass requires either nothing worse than
@@ -598,6 +622,17 @@ display_clean(struct display *dp)
    dp->results = 0; /* reset for next time */
 }
 
+static void
+display_destroy(struct display *dp)
+{
+    /* Release any memory held in the display. */
+#  ifdef PNG_WRITE_SUPPORTED
+      buffer_destroy(&dp->written_file);
+#  endif
+
+   buffer_destroy(&dp->original_file);
+}
+
 static struct display *
 get_dp(png_structp pp)
    /* The display pointer is always stored in the png_struct error pointer */
@@ -659,7 +694,35 @@ display_log(struct display *dp, error_level level, const char *fmt, ...)
          int tr = dp->transforms;
 
          if (is_combo(tr))
-            fprintf(stderr, "(0x%x)", tr);
+         {
+            if (dp->options & LIST_COMBOS)
+            {
+               int trx = tr;
+
+               fprintf(stderr, "(");
+               if (trx)
+               {
+                  int start = 0;
+
+                  while (trx)
+                  {
+                     int trz = trx & -trx;
+
+                     if (start) fprintf(stderr, "+");
+                     fprintf(stderr, "%s", transform_name(trz));
+                     start = 1;
+                     trx &= ~trz;
+                  }
+               }
+
+               else
+                  fprintf(stderr, "-");
+               fprintf(stderr, ")");
+            }
+
+            else
+               fprintf(stderr, "(0x%x)", tr);
+         }
 
          else
             fprintf(stderr, "(%s)", transform_name(tr));
@@ -879,13 +942,13 @@ update_display(struct display *dp)
       int bd = dp->bit_depth;
       unsigned int i;
 
-      for (i=0; i<TTABLE_SIZE; ++i)
+      for (i=0; i<TTABLE_SIZE; ++i) if (transform_info[i].name != NULL)
       {
          int transform = transform_info[i].transform;
 
          if ((transform_info[i].valid_chunks == 0 ||
                (transform_info[i].valid_chunks & chunks) != 0) &&
-            (transform_info[i].color_mask_required & ct) == 
+            (transform_info[i].color_mask_required & ct) ==
                transform_info[i].color_mask_required &&
             (transform_info[i].color_mask_absent & ct) == 0 &&
             (transform_info[i].bit_depths & bd) != 0 &&
@@ -904,9 +967,6 @@ update_display(struct display *dp)
 
       dp->active_transforms = active;
       dp->ignored_transforms = inactive; /* excluding write-only transforms */
-
-      if (active == 0)
-         display_log(dp, INTERNAL_ERROR, "bad transform table");
    }
 }
 
@@ -946,7 +1006,7 @@ compare_read(struct display *dp, int applied_transforms)
    {
       unsigned long chunks =
          png_get_valid(dp->read_pp, dp->read_ip, 0xffffffff);
-      
+
       if (chunks != dp->chunks)
          display_log(dp, APP_FAIL, "PNG chunks changed from 0x%lx to 0x%lx",
             (unsigned long)dp->chunks, chunks);
@@ -1089,8 +1149,8 @@ compare_read(struct display *dp, int applied_transforms)
          {
             int b;
 
-            case 16: /* Two bytes per component, bit-endian */
-               for (b = (bpp >> 4); b > 0; )
+            case 16: /* Two bytes per component, big-endian */
+               for (b = (bpp >> 4); b > 0; --b)
                {
                   unsigned int sig = (unsigned int)(0xffff0000 >> sig_bits[b]);
 
@@ -1557,6 +1617,12 @@ main(const int argc, const char * const * const argv)
       else if (strcmp(name, "--nofind-bad-combos") == 0)
          d.options &= ~FIND_BAD_COMBOS;
 
+      else if (strcmp(name, "--list-combos") == 0)
+         d.options |= LIST_COMBOS;
+
+      else if (strcmp(name, "--nolist-combos") == 0)
+         d.options &= ~LIST_COMBOS;
+
       else if (name[0] == '-' && name[1] == '-')
       {
          fprintf(stderr, "pngimage: %s: unknown option\n", name);
@@ -1605,10 +1671,13 @@ main(const int argc, const char * const * const argv)
          display_clean(&d);
       }
 
+      /* Release allocated memory */
+      display_destroy(&d);
+
       return errors != 0;
    }
 }
-#else /* !PNG_INFO_IMAGE_SUPPORTED || !PNG_READ_SUPPORTED */
+#else /* !INFO_IMAGE || !SEQUENTIAL_READ || !READ_PNG*/
 int
 main(void)
 {

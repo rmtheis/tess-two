@@ -4,7 +4,7 @@
 
   ---------------------------------------------------------------------------
 
-      Copyright (c) 1998-2007 Greg Roelofs.  All rights reserved.
+      Copyright (c) 1998-2015 Greg Roelofs.  All rights reserved.
 
       This software is provided "as is," without warranty of any kind,
       express or implied.  In no event shall the author or contributors
@@ -50,6 +50,11 @@
       You should have received a copy of the GNU General Public License
       along with this program; if not, write to the Free Software Foundation,
       Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+  ---------------------------------------------------------------------------
+
+   Changelog:
+     %RDATE% - Check return value of png_get_bKGD() (Glenn R-P)
 
   ---------------------------------------------------------------------------*/
 
@@ -104,7 +109,7 @@ int readpng2_init(mainprog_info *mainprog_ptr)
 
     /* could also replace libpng warning-handler (final NULL), but no need: */
 
-    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, mainprog_ptr,
+    png_ptr = png_create_read_struct(png_get_libpng_ver(NULL), mainprog_ptr,
       readpng2_error_handler, readpng2_warning_handler);
     if (!png_ptr)
         return 4;   /* out of memory */
@@ -261,36 +266,38 @@ static void readpng2_info_callback(png_structp png_ptr, png_infop info_ptr)
     /* since we know we've read all of the PNG file's "header" (i.e., up
      * to IDAT), we can check for a background color here */
 
-    if (mainprog_ptr->need_bgcolor &&
-        png_get_valid(png_ptr, info_ptr, PNG_INFO_bKGD))
+    if (mainprog_ptr->need_bgcolor)
     {
         png_color_16p pBackground;
 
         /* it is not obvious from the libpng documentation, but this function
          * takes a pointer to a pointer, and it always returns valid red,
          * green and blue values, regardless of color_type: */
-        png_get_bKGD(png_ptr, info_ptr, &pBackground);
+        if (png_get_bKGD(png_ptr, info_ptr, &pBackground))
+        {
 
-        /* however, it always returns the raw bKGD data, regardless of any
-         * bit-depth transformations, so check depth and adjust if necessary */
-        if (bit_depth == 16) {
-            mainprog_ptr->bg_red   = pBackground->red   >> 8;
-            mainprog_ptr->bg_green = pBackground->green >> 8;
-            mainprog_ptr->bg_blue  = pBackground->blue  >> 8;
-        } else if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) {
-            if (bit_depth == 1)
-                mainprog_ptr->bg_red = mainprog_ptr->bg_green =
-                  mainprog_ptr->bg_blue = pBackground->gray? 255 : 0;
-            else if (bit_depth == 2)
-                mainprog_ptr->bg_red = mainprog_ptr->bg_green =
-                  mainprog_ptr->bg_blue = (255/3) * pBackground->gray;
-            else /* bit_depth == 4 */
-                mainprog_ptr->bg_red = mainprog_ptr->bg_green =
-                  mainprog_ptr->bg_blue = (255/15) * pBackground->gray;
-        } else {
-            mainprog_ptr->bg_red   = (uch)pBackground->red;
-            mainprog_ptr->bg_green = (uch)pBackground->green;
-            mainprog_ptr->bg_blue  = (uch)pBackground->blue;
+           /* however, it always returns the raw bKGD data, regardless of any
+            * bit-depth transformations, so check depth and adjust if necessary
+            */
+           if (bit_depth == 16) {
+               mainprog_ptr->bg_red   = pBackground->red   >> 8;
+               mainprog_ptr->bg_green = pBackground->green >> 8;
+               mainprog_ptr->bg_blue  = pBackground->blue  >> 8;
+           } else if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) {
+               if (bit_depth == 1)
+                   mainprog_ptr->bg_red = mainprog_ptr->bg_green =
+                     mainprog_ptr->bg_blue = pBackground->gray? 255 : 0;
+               else if (bit_depth == 2)
+                   mainprog_ptr->bg_red = mainprog_ptr->bg_green =
+                     mainprog_ptr->bg_blue = (255/3) * pBackground->gray;
+               else /* bit_depth == 4 */
+                   mainprog_ptr->bg_red = mainprog_ptr->bg_green =
+                     mainprog_ptr->bg_blue = (255/15) * pBackground->gray;
+           } else {
+               mainprog_ptr->bg_red   = (uch)pBackground->red;
+               mainprog_ptr->bg_green = (uch)pBackground->green;
+               mainprog_ptr->bg_blue  = (uch)pBackground->blue;
+           }
         }
     }
 
@@ -448,6 +455,8 @@ static void readpng2_end_callback(png_structp png_ptr, png_infop info_ptr)
 
     /* all done */
 
+    (void)info_ptr; /* Unused */
+
     return;
 }
 
@@ -472,6 +481,7 @@ static void readpng2_warning_handler(png_structp png_ptr, png_const_charp msg)
 {
     fprintf(stderr, "readpng2 libpng warning: %s\n", msg);
     fflush(stderr);
+    (void)png_ptr; /* Unused */
 }
 
 

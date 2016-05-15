@@ -107,8 +107,8 @@ libpng-config:
 	echo I_opts=\"-I$(INCPATH)/$(LIBNAME)\"; \
 	echo L_opts=\"-L$(LIBPATH)\"; \
 	echo R_opts=\"-R$(LIBPATH)\"; \
-	echo ccopts=\"-xtarget=ultra\"; \
-	echo ldopts=\"-xtarget=ultra\"; \
+	echo ccopts=\"-fast -xtarget=ultra\"; \
+	echo ldopts=\"-fast -xtarget=ultra\"; \
 	echo libs=\"-lpng16 -lz -lm\"; \
 	cat scripts/libpng-config-body.in ) > libpng-config
 	chmod +x libpng-config
