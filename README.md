@@ -79,7 +79,7 @@ submitting a pull request through GitHub.
 
 [tesseract-android-tools]: https://github.com/alanv/tesseract-android-tools
 [tesseract-ocr]: https://github.com/tesseract-ocr/tesseract
-[leptonica]: http://www.leptonica.com/
+[leptonica]: https://github.com/DanBloomberg/leptonica
 [eyes-free]: https://code.google.com/p/eyes-free/
 [tessdata]: https://github.com/tesseract-ocr/tessdata
 [javadoc]: https://rmtheis.github.io/tess-two/javadoc/index.html
