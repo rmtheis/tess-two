@@ -562,6 +562,15 @@ jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetBoxText(JNIEn
   return result;
 }
 
+jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetVersion(JNIEnv *env,
+                                                                           jobject thiz) {
+
+  native_data_t *nat = get_native_data(env, thiz);
+  const char *text = nat->api.Version();
+  jstring result = env->NewStringUTF(text);
+  return result;
+}
+
 void Java_com_googlecode_tesseract_android_TessBaseAPI_nativeSetInputName(JNIEnv *env,
                                                                           jobject thiz,
                                                                           jstring name) {

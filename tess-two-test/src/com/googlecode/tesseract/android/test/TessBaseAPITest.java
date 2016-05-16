@@ -750,4 +750,16 @@ public class TessBaseAPITest extends TestCase {
         baseApi.end();
         bmp.recycle();
     }
+
+    @SmallTest
+    public void testGetVersion() {
+        // Attempt to initialize the API.
+        final TessBaseAPI baseApi = new TessBaseAPI();
+
+        String version = baseApi.getVersion();
+        assertNotNull("Version returned null", version);
+
+        // Attempt to shut down the API.
+        baseApi.end();
+    }
 }

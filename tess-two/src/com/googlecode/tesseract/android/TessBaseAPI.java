@@ -777,6 +777,13 @@ public class TessBaseAPI {
     }
 
     /**
+     * Returns the version identifier as a string.
+     */
+    public String getVersion() {
+        return nativeGetVersion();
+    }
+
+    /**
      * Cancel any recognition in progress.
      */
     public void stop() {
@@ -932,6 +939,8 @@ public class TessBaseAPI {
     private native void nativeSetOutputName(String name);
 
     private native void nativeReadConfigFile(String fileName);
+
+    private native String nativeGetVersion();
 
     private native void nativeStop();
 
