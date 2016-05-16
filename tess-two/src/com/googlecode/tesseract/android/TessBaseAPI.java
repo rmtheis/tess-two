@@ -196,46 +196,6 @@ public class TessBaseAPI {
         }
 
         /**
-         * Return the left bound of the word currently being recognized.
-         * Uses Tesseract coordinate system, with origin in the bottom left. 
-         * @deprecated Use {@link #getCurrentWordRect()} instead.
-         */
-        @Deprecated
-        public int getBoundingBoxLeft() {
-            return wordRect.left;
-        }
-
-        /**
-         * Return the right bound of the word currently being recognized.
-         * Uses Tesseract coordinate system, with origin in the bottom left. 
-         * @deprecated Use {@link #getCurrentWordRect()} instead.
-         */
-        @Deprecated
-        public int getBoundingBoxRight() { 
-            return wordRect.right;
-        }
-
-        /**
-         * Return the top bound of the word currently being recognized.
-         * Uses Tesseract coordinate system, with origin in the bottom left. 
-         * @deprecated Use {@link #getCurrentWordRect()} instead.
-         */
-        @Deprecated
-        public int getBoundingBoxTop() {
-            return textRect.bottom - wordRect.top;
-        }
-
-        /**
-         * Return the bottom bound of the word currently being recognized.
-         * Uses Tesseract coordinate system, with origin in the bottom left. 
-         * @deprecated Use {@link #getCurrentWordRect()} instead.
-         */
-        @Deprecated
-        public int getBoundingBoxBottom() {
-            return textRect.bottom - wordRect.bottom;
-        }
-
-        /**
          * Return the bounds of the current recognition region. May match the 
          * bounds of the entire image or a sub-rectangle of the entire image.
          * 
@@ -799,11 +759,6 @@ public class TessBaseAPI {
             throw new IllegalStateException();
 
         nativeReadConfigFile(filename);
-    }
-
-    /** @deprecated use {@link #readConfigFile(String)} instead. */
-    @Deprecated public void ReadConfigFile(String filename) {
-        readConfigFile(filename);
     }
 
     /**
