@@ -273,7 +273,7 @@ public class Pixa implements Iterable<Pix> {
         if (mRecycled)
             throw new IllegalStateException();
 
-        int nativePix = nativeGetPix(mNativePixa, index);
+        long nativePix = nativeGetPix(mNativePixa, index);
 
         if (nativePix == 0) {
             return null;
@@ -508,7 +508,7 @@ public class Pixa implements Iterable<Pix> {
 
     private static native long nativeGetBox(long nativePix, int index);
 
-    private static native int nativeGetPix(long nativePix, int index);
+    private static native long nativeGetPix(long nativePix, int index);
 
     private static native boolean nativeGetBoxGeometry(long nativePixa, int index, int[] dimensions);
 }

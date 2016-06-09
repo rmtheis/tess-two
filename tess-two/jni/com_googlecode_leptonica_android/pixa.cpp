@@ -172,7 +172,7 @@ jboolean Java_com_googlecode_leptonica_android_Pixa_nativeWriteToFileRandomCmap(
   return JNI_TRUE;
 }
 
-jint Java_com_googlecode_leptonica_android_Pixa_nativeGetPix(JNIEnv *env, jclass clazz,
+jlong Java_com_googlecode_leptonica_android_Pixa_nativeGetPix(JNIEnv *env, jclass clazz,
                                                              jlong nativePixa, jint index) {
   PIXA *pixa = (PIXA *) nativePixa;
   PIX *pix = pixaGetPix(pixa, (l_int32) index, L_CLONE);
