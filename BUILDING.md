@@ -55,9 +55,8 @@ Some tests will fail due to existing issues.
 
 ## _Eclipse and Ant_
 
-Versions up to 5.4.0 may be built as a library project using the standalone
-Android NDK and imported into Eclipse using File->Import->Existing Projects into
-Workspace.
+Versions up to 5.4.1 may be built as a library project using Android NDK r10e
+and imported into Eclipse using File->Import->Existing Projects into Workspace.
 
 On 64-bit Ubuntu, you may need to install the `ia32-libs` 32-bit compatibility 
 library.
@@ -66,7 +65,7 @@ To build tess-two, run the following commands in the terminal:
 
     git clone git://github.com/rmtheis/tess-two tess
     cd tess
-    git checkout tags/5.4.0
+    git checkout tags/5.4.1
     cd tess-two
     ndk-build
     android update project --path .
