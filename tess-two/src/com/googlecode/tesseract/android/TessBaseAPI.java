@@ -514,6 +514,8 @@ public class TessBaseAPI {
         }
 
         nativeSetImagePix(image.getNativePix());
+        
+        image.recycle();
     }
 
     /**
