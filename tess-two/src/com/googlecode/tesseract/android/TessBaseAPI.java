@@ -772,6 +772,7 @@ public class TessBaseAPI {
      * Constructs coordinates in the original image - not just the rectangle.
      * 
      * @param page a 0-based page index that will appear in the box file.
+     * @return the recognized text
      */
     public String getBoxText(int page){
         if (mRecycled)
@@ -782,6 +783,8 @@ public class TessBaseAPI {
 
     /**
      * Returns the version identifier as a string.
+     *
+     * @return the version identifier
      */
     public String getVersion() {
         return nativeGetVersion();
@@ -828,6 +831,7 @@ public class TessBaseAPI {
      * 
      * Caller is responsible for escaping the provided title.
      *
+     * @param tessPdfRenderer the renderer instance to use
      * @param title a title to be used in the document metadata
      * @return {@code true} on success. {@code false} on failure
      */
@@ -839,6 +843,7 @@ public class TessBaseAPI {
     /**
      * Starts a new document with no title.
      * 
+     * @param tessPdfRenderer the renderer instance to use
      * @return {@code true} on success. {@code false} on failure
      * @see #beginDocument(TessPdfRenderer, String)
      */
@@ -850,6 +855,7 @@ public class TessBaseAPI {
      * Finishes the document and finalizes the output data.
      * Invalid if beginDocument not yet called.
      *
+     * @param tessPdfRenderer the renderer instance to use
      * @return {@code true} on success. {@code false} on failure
      */
     public boolean endDocument(TessPdfRenderer tessPdfRenderer) {
@@ -861,6 +867,7 @@ public class TessBaseAPI {
      * 
      * @param imageToProcess image to be used for OCR
      * @param imageToWrite path to image to be written into resulting document
+     * @param tessPdfRenderer the renderer instance to use
      *
      * @return {@code true} on success. {@code false} on failure
      */

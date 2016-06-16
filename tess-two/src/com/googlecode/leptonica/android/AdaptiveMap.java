@@ -158,6 +158,7 @@ public class AdaptiveMap {
      * arrays
      * @param smoothY Half-height of convolution kernel applied to min and max
      * arrays
+     * @return a new image with expanded contrast range
      */
     public static Pix pixContrastNorm(
             Pix pixs, int sizeX, int sizeY, int minDiff, int smoothX, int smoothY) {
