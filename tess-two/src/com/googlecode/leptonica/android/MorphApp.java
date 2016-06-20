@@ -19,6 +19,7 @@ package com.googlecode.leptonica.android;
 /**
  * Composite image processing operations.
  */
+@SuppressWarnings("WeakerAccess")
 public class MorphApp {
     static {
         System.loadLibrary("lept");

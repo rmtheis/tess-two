@@ -24,6 +24,7 @@ import android.util.Log;
  *
  * @author alanv@google.com (Alan Viverette)
  */
+@SuppressWarnings("WeakerAccess")
 public class Box {
     static {
         System.loadLibrary("lept");

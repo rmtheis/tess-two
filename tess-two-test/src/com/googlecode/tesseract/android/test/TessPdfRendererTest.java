@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 
 import junit.framework.TestCase;
+
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -36,6 +38,7 @@ import com.googlecode.tesseract.android.TessPdfRenderer;
 
 public class TessPdfRendererTest extends TestCase {
 
+    @SuppressLint("SdCardPath")
     private final static String OUTPUT_PATH = "/mnt/sdcard/";
 
     @SmallTest

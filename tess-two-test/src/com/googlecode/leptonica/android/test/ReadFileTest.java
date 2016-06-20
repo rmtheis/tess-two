@@ -25,7 +25,6 @@ import junit.framework.TestCase;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.test.suitebuilder.annotation.SmallTest;
-import android.util.Log;
 
 import com.googlecode.leptonica.android.Pix;
 import com.googlecode.leptonica.android.ReadFile;
@@ -151,6 +150,7 @@ public class ReadFileTest extends TestCase {
 
         byteStream.close();
         bmp.recycle();
+        //noinspection UnusedAssignment
         encodedData = null;
         pix.recycle();
     }
@@ -174,6 +174,7 @@ public class ReadFileTest extends TestCase {
 
         byteStream.close();
         bmp.recycle();
+        //noinspection UnusedAssignment
         encodedData = null;
         pix.recycle();
     }

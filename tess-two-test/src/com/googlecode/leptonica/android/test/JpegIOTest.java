@@ -44,6 +44,7 @@ public class JpegIOTest extends TestCase {
         
         bmps.recycle();
         pixs.recycle();
+        //noinspection UnusedAssignment
         encodedBytes = null;
         bmpd.recycle();
     }

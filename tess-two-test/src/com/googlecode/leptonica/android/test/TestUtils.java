@@ -31,6 +31,7 @@ import com.googlecode.leptonica.android.ReadFile;
  *
  * @author alanv@google.com (Alan Viverette)
  */
+@SuppressWarnings("WeakerAccess")
 public class TestUtils {
     public static float compareBitmaps(Bitmap a, Bitmap b) {
         int found = 0;

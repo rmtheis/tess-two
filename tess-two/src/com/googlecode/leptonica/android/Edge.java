@@ -19,6 +19,7 @@ package com.googlecode.leptonica.android;
 /**
  * Edge detection.
  */
+@SuppressWarnings("WeakerAccess")
 public class Edge {
     static {
         System.loadLibrary("lept");

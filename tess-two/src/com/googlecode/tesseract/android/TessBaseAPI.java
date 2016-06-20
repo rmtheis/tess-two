@@ -33,7 +33,7 @@ import com.googlecode.leptonica.android.ReadFile;
  * 
  * @author alanv@google.com (Alan Viverette)
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class TessBaseAPI {
     /**
      * Used by the native implementation of the class.
@@ -306,6 +306,7 @@ public class TessBaseAPI {
         if (!tessdata.exists() || !tessdata.isDirectory())
             throw new IllegalArgumentException("Data path must contain subfolder tessdata!");
 
+        //noinspection deprecation
         if (ocrEngineMode != OEM_CUBE_ONLY) {
             for (String languageCode : language.split("\\+")) {
                 if (!languageCode.startsWith("~")) {

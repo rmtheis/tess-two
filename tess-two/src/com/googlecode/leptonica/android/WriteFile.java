@@ -23,6 +23,7 @@ import java.io.File;
 /**
  * @author alanv@google.com (Alan Viverette)
  */
+@SuppressWarnings("WeakerAccess")
 public class WriteFile {
     static {
         System.loadLibrary("lept");
@@ -60,6 +61,7 @@ public class WriteFile {
      * @param data A byte array large enough to hold the pixels of pixs.
      * @return the number of bytes written to data
      */
+    @SuppressWarnings("UnusedReturnValue")
     public static int writeBytes8(Pix pixs, byte[] data) {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");

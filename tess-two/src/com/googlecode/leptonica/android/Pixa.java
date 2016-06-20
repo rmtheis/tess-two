@@ -29,6 +29,7 @@ import java.util.Iterator;
  *
  * @author alanv@google.com (Alan Viverette)
  */
+@SuppressWarnings("WeakerAccess")
 public class Pixa implements Iterable<Pix> {
     static {
         System.loadLibrary("lept");

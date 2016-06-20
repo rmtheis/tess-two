@@ -19,6 +19,7 @@ package com.googlecode.leptonica.android;
 /**
  * @author alanv@google.com (Alan Viverette)
  */
+@SuppressWarnings("WeakerAccess")
 public class Rotate {
     static {
         System.loadLibrary("lept");

@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.List;
 
 import junit.framework.TestCase;
+
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Canvas;
@@ -43,10 +45,11 @@ import com.googlecode.tesseract.android.TessBaseAPI.ProgressNotifier;
 import com.googlecode.tesseract.android.TessBaseAPI.ProgressValues;
 
 public class TessBaseAPITest extends TestCase {
+    @SuppressLint("SdCardPath")
     static final String TESSBASE_PATH = "/mnt/sdcard/tesseract/";
     static final String DEFAULT_LANGUAGE = "eng";
-    static final String TESSDATA_PATH = TESSBASE_PATH + "tessdata/";
-    static final String[] EXPECTED_CUBE_DATA_FILES_ENG = {
+    private static final String TESSDATA_PATH = TESSBASE_PATH + "tessdata/";
+    private static final String[] EXPECTED_CUBE_DATA_FILES_ENG = {
         "eng.cube.bigrams",
         "eng.cube.fold",
         "eng.cube.lm",
@@ -229,7 +232,7 @@ public class TessBaseAPITest extends TestCase {
 
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
-        boolean success = baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        boolean success = baseApi.init(TESSBASE_PATH, language, ocrEngineMode);
         assertTrue(success);
 
         baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);

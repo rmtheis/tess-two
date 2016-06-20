@@ -27,6 +27,7 @@ import java.io.IOException;
  *
  * @author alanv@google.com (Alan Viverette)
  */
+@SuppressWarnings("WeakerAccess")
 public class JpegIO {
     static {
         System.loadLibrary("lept");

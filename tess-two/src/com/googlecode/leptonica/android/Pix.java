@@ -23,6 +23,7 @@ import android.graphics.Rect;
  *
  * @author alanv@google.com (Alan Viverette)
  */
+@SuppressWarnings("WeakerAccess")
 public class Pix {
     static {
         System.loadLibrary("lept");

@@ -89,7 +89,7 @@ public class ResultIterator extends PageIterator {
             int separatorPosition = nativeChoice.lastIndexOf('|');
 
             // Create a pair with the choices
-            String utfString = "";
+            String utfString;
             Double confidenceLevel = (double) 0;
             if (separatorPosition > 0) {
 
