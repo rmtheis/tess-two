@@ -113,34 +113,36 @@ void Java_com_googlecode_leptonica_android_Pixa_nativeMergeAndReplacePix(JNIEnv 
   PIXA *pixa = (PIXA *) nativePixa;
 
   l_int32 op;
+  l_int32 depth;
   l_int32 x, y, w, h;
   l_int32 dx, dy, dw, dh;
-  PIX *pixs, *pixd;
+  PIX *pixA, *pixB, *pixd;
   BOX *boxA, *boxB, *boxd;
 
+  pixA = pixaGetPix(pixa, indexA, L_CLONE);
+  pixB = pixaGetPix(pixa, indexB, L_CLONE);
   boxA = pixaGetBox(pixa, indexA, L_CLONE);
   boxB = pixaGetBox(pixa, indexB, L_CLONE);
   boxd = boxBoundingRegion(boxA, boxB);
 
+  depth = pixGetDepth(pixA);
   boxGetGeometry(boxd, &x, &y, &w, &h);
-  pixd = pixCreate(w, h, 1);
+  pixd = pixCreate(w, h, depth);
 
   op = PIX_SRC | PIX_DST;
 
-  pixs = pixaGetPix(pixa, indexA, L_CLONE);
   boxGetGeometry(boxA, &dx, &dy, &dw, &dh);
-  pixRasterop(pixd, dx - x, dy - y, dw, dh, op, pixs, 0, 0);
-  pixDestroy(&pixs);
+  pixRasterop(pixd, dx - x, dy - y, dw, dh, op, pixA, 0, 0);
+  pixDestroy(&pixA);
   boxDestroy(&boxA);
 
-  pixs = pixaGetPix(pixa, indexB, L_CLONE);
   boxGetGeometry(boxB, &dx, &dy, &dw, &dh);
-  pixRasterop(pixd, dx - x, dy - y, dw, dh, op, pixs, 0, 0);
-  pixDestroy(&pixs);
+  pixRasterop(pixd, dx - x, dy - y, dw, dh, op, pixB, 0, 0);
+  pixDestroy(&pixB);
   boxDestroy(&boxB);
 
   pixaReplacePix(pixa, indexA, pixd, boxd);
-
+  pixaRemovePix(pixa, indexB);
 }
 
 jboolean Java_com_googlecode_leptonica_android_Pixa_nativeWriteToFileRandomCmap(JNIEnv *env,
