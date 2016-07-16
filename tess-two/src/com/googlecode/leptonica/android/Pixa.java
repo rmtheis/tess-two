@@ -32,6 +32,8 @@ import java.util.Iterator;
 @SuppressWarnings("WeakerAccess")
 public class Pixa implements Iterable<Pix> {
     static {
+        System.loadLibrary("jpgt");
+        System.loadLibrary("pngt");
         System.loadLibrary("lept");
     }
 

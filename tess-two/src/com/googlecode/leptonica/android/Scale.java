@@ -23,6 +23,8 @@ package com.googlecode.leptonica.android;
  */
 public class Scale {
     static {
+        System.loadLibrary("jpgt");
+        System.loadLibrary("pngt");
         System.loadLibrary("lept");
     }
 

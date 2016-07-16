@@ -22,6 +22,8 @@ package com.googlecode.leptonica.android;
 @SuppressWarnings("WeakerAccess")
 public class Edge {
     static {
+        System.loadLibrary("jpgt");
+        System.loadLibrary("pngt");
         System.loadLibrary("lept");
     }
 

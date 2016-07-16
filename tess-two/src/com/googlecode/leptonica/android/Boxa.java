@@ -27,6 +27,8 @@ import android.util.Log;
 @SuppressWarnings("WeakerAccess")
 public class Boxa {
     static {
+        System.loadLibrary("jpgt");
+        System.loadLibrary("pngt");
         System.loadLibrary("lept");
     }
 

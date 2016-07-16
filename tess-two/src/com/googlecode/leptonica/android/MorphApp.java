@@ -22,6 +22,8 @@ package com.googlecode.leptonica.android;
 @SuppressWarnings("WeakerAccess")
 public class MorphApp {
     static {
+        System.loadLibrary("jpgt");
+        System.loadLibrary("pngt");
         System.loadLibrary("lept");
     }
 

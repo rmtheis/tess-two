@@ -24,6 +24,8 @@ package com.googlecode.leptonica.android;
 @SuppressWarnings("WeakerAccess")
 public class Binarize {
     static {
+        System.loadLibrary("jpgt");
+        System.loadLibrary("pngt");
         System.loadLibrary("lept");
     }
 
