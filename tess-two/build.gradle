@@ -16,13 +16,8 @@ android {
         targetSdkVersion 22
         versionCode 1
         versionName "1.0"
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
+        proguardFiles 'proguard-rules.pro'
+        consumerProguardFiles 'proguard-rules.pro'
     }
 
     sourceSets {
