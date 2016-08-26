@@ -14,7 +14,6 @@ android {
         targetSdkVersion 9
         versionCode 1
         versionName "1.0"
-        proguardFiles 'proguard-rules.pro'
         consumerProguardFiles 'proguard-rules.pro'
     }
 
@@ -52,7 +51,7 @@ android {
 
     tasks.withType(Delete) {
         cleanTask -> cleanTask.dependsOn ndkClean
-    } 
+    }
 
     lintOptions {
         abortOnError false
