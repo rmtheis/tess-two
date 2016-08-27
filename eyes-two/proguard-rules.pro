@@ -64,6 +64,3 @@
 # -keep public interface mypackage.MyInterface
 # -keep public class * implements mypackage.MyInterface
 
--keep class com.googlecode.eyesfree.textdetect.HydrogenTextDetector {
-    private long mNative;
-}

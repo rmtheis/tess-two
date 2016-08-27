@@ -46,7 +46,7 @@ public class TessPdfRenderer {
      *         including the ".pdf" extension 
      */
     public TessPdfRenderer(TessBaseAPI baseApi, String outputPath) {        
-        this.mNativePdfRenderer = nativeCreate(baseApi, outputPath);
+        this.mNativePdfRenderer = nativeCreate(baseApi.getNativeData(), outputPath);
         mRecycled = false;
     }
 
@@ -69,7 +69,7 @@ public class TessPdfRenderer {
         mRecycled = true;
     }
 
-    private static native long nativeCreate(TessBaseAPI tessBaseAPI, String outputPath);
+    private static native long nativeCreate(long tessBaseAPINativeData, String outputPath);
 
     private static native void nativeRecycle(long nativePointer);
 

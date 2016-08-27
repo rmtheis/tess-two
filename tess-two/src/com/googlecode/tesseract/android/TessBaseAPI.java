@@ -218,7 +218,10 @@ public class TessBaseAPI {
      * method must be invoked to dispose of it.
      */
     public TessBaseAPI() {
-        nativeConstruct();
+        mNativeData = nativeConstruct();
+        if (mNativeData == 0) {
+            throw new RuntimeException("Can't create TessBaseApi object");
+        }
         mRecycled = false;
     }
 
@@ -232,9 +235,8 @@ public class TessBaseAPI {
      * @param progressNotifier Callback to receive progress notifications
      */
     public TessBaseAPI(ProgressNotifier progressNotifier) {
+        this();
         this.progressNotifier = progressNotifier;
-        nativeConstruct();
-        mRecycled = false;
     }
 
     /**
@@ -320,7 +322,7 @@ public class TessBaseAPI {
             }
         }
 
-        boolean success = nativeInitOem(datapath, language, ocrEngineMode);
+        boolean success = nativeInitOem(mNativeData, datapath, language, ocrEngineMode);
 
         if (success) {
             mRecycled = false;
@@ -341,7 +343,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return nativeGetInitLanguagesAsString();
+        return nativeGetInitLanguagesAsString(mNativeData);
     }
 
     /**
@@ -354,7 +356,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeClear();
+        nativeClear(mNativeData);
     }
 
     /**
@@ -366,7 +368,7 @@ public class TessBaseAPI {
      */
     public void end() {
         if (!mRecycled) {
-            nativeEnd();
+            nativeEnd(mNativeData);
 
             mRecycled = true;
         }
@@ -399,7 +401,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return nativeSetVariable(var, value);
+        return nativeSetVariable(mNativeData, var, value);
     }
 
     /**
@@ -411,7 +413,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return nativeGetPageSegMode();
+        return nativeGetPageSegMode(mNativeData);
     }
 
     /**
@@ -428,7 +430,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeSetPageSegMode(mode);
+        nativeSetPageSegMode(mNativeData, mode);
     }
 
     /**
@@ -441,7 +443,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeSetDebug(enabled);
+        nativeSetDebug(mNativeData, enabled);
     }
 
     /**
@@ -472,7 +474,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeSetRectangle(left, top, width, height);
+        nativeSetRectangle(mNativeData, left, top, width, height);
     }
 
     /**
@@ -494,7 +496,7 @@ public class TessBaseAPI {
             throw new RuntimeException("Failed to read image file");
         }
 
-        nativeSetImagePix(image.getNativePix());
+        nativeSetImagePix(mNativeData, image.getNativePix());
 
         image.recycle();
     }
@@ -518,7 +520,7 @@ public class TessBaseAPI {
             throw new RuntimeException("Failed to read bitmap");
         }
 
-        nativeSetImagePix(image.getNativePix());
+        nativeSetImagePix(mNativeData, image.getNativePix());
         
         image.recycle();
     }
@@ -534,7 +536,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeSetImagePix(image.getNativePix());
+        nativeSetImagePix(mNativeData, image.getNativePix());
     }
 
     /**
@@ -554,7 +556,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeSetImageBytes(imagedata, width, height, bpp, bpl);
+        nativeSetImageBytes(mNativeData, imagedata, width, height, bpp, bpl);
     }
 
     /**
@@ -567,7 +569,7 @@ public class TessBaseAPI {
             throw new IllegalStateException();
 
         // Trim because the text will have extra line breaks at the end
-        String text = nativeGetUTF8Text();
+        String text = nativeGetUTF8Text(mNativeData);
 
         return text != null ? text.trim() : null;
     }
@@ -581,7 +583,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return nativeMeanConfidence();
+        return nativeMeanConfidence(mNativeData);
     }
 
     /**
@@ -596,7 +598,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        int[] conf = nativeWordConfidences();
+        int[] conf = nativeWordConfidences(mNativeData);
 
         // We shouldn't return null confidences
         if (conf == null)
@@ -617,7 +619,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return new Pix(nativeGetThresholdedImage());
+        return new Pix(nativeGetThresholdedImage(mNativeData));
     }
 
     /**
@@ -631,7 +633,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return new Pixa(nativeGetRegions(), 0, 0);
+        return new Pixa(nativeGetRegions(mNativeData), 0, 0);
     }
 
     /**
@@ -647,7 +649,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return new Pixa(nativeGetTextlines(), 0, 0);
+        return new Pixa(nativeGetTextlines(mNativeData), 0, 0);
     }
 
     /**
@@ -662,7 +664,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return new Pixa(nativeGetStrips(), 0, 0);
+        return new Pixa(nativeGetStrips(mNativeData), 0, 0);
     }    
 
     /**
@@ -676,7 +678,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return new Pixa(nativeGetWords(), 0, 0);
+        return new Pixa(nativeGetWords(mNativeData), 0, 0);
     }
 
     /**
@@ -692,7 +694,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return new Pixa(nativeGetConnectedComponents(), 0, 0);
+        return new Pixa(nativeGetConnectedComponents(mNativeData), 0, 0);
     }
 
     /**
@@ -705,7 +707,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        long nativeResultIterator = nativeGetResultIterator();
+        long nativeResultIterator = nativeGetResultIterator(mNativeData);
 
         if (nativeResultIterator == 0) {
             return null;
@@ -725,7 +727,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return nativeGetHOCRText(page);
+        return nativeGetHOCRText(mNativeData, page);
     }
 
     /**
@@ -738,7 +740,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeSetInputName(name);
+        nativeSetInputName(mNativeData, name);
     } 
 
     /**
@@ -750,7 +752,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeSetOutputName(name);
+        nativeSetOutputName(mNativeData, name);
     } 
 
     /**
@@ -765,7 +767,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeReadConfigFile(filename);
+        nativeReadConfigFile(mNativeData, filename);
     }
 
     /**
@@ -781,7 +783,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        return nativeGetBoxText(page);
+        return nativeGetBoxText(mNativeData, page);
     }
 
     /**
@@ -790,7 +792,7 @@ public class TessBaseAPI {
      * @return the version identifier
      */
     public String getVersion() {
-        return nativeGetVersion();
+        return nativeGetVersion(mNativeData);
     }
 
     /**
@@ -800,7 +802,7 @@ public class TessBaseAPI {
         if (mRecycled)
             throw new IllegalStateException();
 
-        nativeStop();
+        nativeStop(mNativeData);
     }
 
     /**
@@ -839,7 +841,7 @@ public class TessBaseAPI {
      * @return {@code true} on success. {@code false} on failure
      */
     public boolean beginDocument(TessPdfRenderer tessPdfRenderer, String title) {
-        return nativeBeginDocument(tessPdfRenderer.getNativePdfRenderer(), 
+        return nativeBeginDocument(tessPdfRenderer.getNativePdfRenderer(),
                 title);
     }
 
@@ -876,10 +878,13 @@ public class TessBaseAPI {
      */
     public boolean addPageToDocument(Pix imageToProcess, String imageToWrite,
             TessPdfRenderer tessPdfRenderer) {
-        return nativeAddPageToDocument(imageToProcess.getNativePix(), 
+        return nativeAddPageToDocument(mNativeData, imageToProcess.getNativePix(),
                 imageToWrite, tessPdfRenderer.getNativePdfRenderer());
     }
 
+    /*package*/ long getNativeData() {
+        return mNativeData;
+    }
 
     // ******************
     // * Native methods *
@@ -893,74 +898,74 @@ public class TessBaseAPI {
     /**
      * Initializes native data. Must be called on object construction.
      */
-    private native void nativeConstruct();
+    private native long nativeConstruct();
 
     /**
      * Calls End() and finalizes native data. Must be called on object 
      * destruction.
      */
-    private native void nativeEnd();
+    private native void nativeEnd(long mNativeData);
 
-    private native boolean nativeInit(String datapath, String language);
+    private native boolean nativeInit(long mNativeData, String datapath, String language);
 
-    private native boolean nativeInitOem(String datapath, String language, int mode);
+    private native boolean nativeInitOem(long mNativeData, String datapath, String language, int mode);
 
-    private native String nativeGetInitLanguagesAsString();
+    private native String nativeGetInitLanguagesAsString(long mNativeData);
 
-    private native void nativeClear();
+    private native void nativeClear(long mNativeData);
 
     private native void nativeSetImageBytes(
-            byte[] imagedata, int width, int height, int bpp, int bpl);
+            long mNativeData,   byte[] imagedata, int width, int height, int bpp, int bpl);
 
-    private native void nativeSetImagePix(long nativePix);
+    private native void nativeSetImagePix(long mNativeData, long nativePix);
 
-    private native void nativeSetRectangle(int left, int top, int width, int height);
+    private native void nativeSetRectangle(long mNativeData, int left, int top, int width, int height);
 
-    private native String nativeGetUTF8Text();
+    private native String nativeGetUTF8Text(long mNativeData);
 
-    private native int nativeMeanConfidence();
+    private native int nativeMeanConfidence(long mNativeData);
 
-    private native int[] nativeWordConfidences();
+    private native int[] nativeWordConfidences(long mNativeData);
 
-    private native boolean nativeSetVariable(String var, String value);
+    private native boolean nativeSetVariable(long mNativeData, String var, String value);
 
-    private native void nativeSetDebug(boolean debug);
+    private native void nativeSetDebug(long mNativeData, boolean debug);
 
-    private native int nativeGetPageSegMode();
+    private native int nativeGetPageSegMode(long mNativeData);
 
-    private native void nativeSetPageSegMode(int mode);
+    private native void nativeSetPageSegMode(long mNativeData, int mode);
 
-    private native long nativeGetThresholdedImage();
+    private native long nativeGetThresholdedImage(long mNativeData);
 
-    private native long nativeGetRegions();
+    private native long nativeGetRegions(long mNativeData);
 
-    private native long nativeGetTextlines();
+    private native long nativeGetTextlines(long mNativeData);
 
-    private native long nativeGetStrips();
+    private native long nativeGetStrips(long mNativeData);
 
-    private native long nativeGetWords();
+    private native long nativeGetWords(long mNativeData);
 
-    private native long nativeGetConnectedComponents();
+    private native long nativeGetConnectedComponents(long mNativeData);
 
-    private native long nativeGetResultIterator();
+    private native long nativeGetResultIterator(long mNativeData);
 
-    private native String nativeGetBoxText(int page_number);
+    private native String nativeGetBoxText(long mNativeData, int page_number);
 
-    private native String nativeGetHOCRText(int page_number);
+    private native String nativeGetHOCRText(long mNativeData, int page_number);
 
-    private native void nativeSetInputName(String name);
+    private native void nativeSetInputName(long mNativeData, String name);
 
-    private native void nativeSetOutputName(String name);
+    private native void nativeSetOutputName(long mNativeData, String name);
 
-    private native void nativeReadConfigFile(String fileName);
+    private native void nativeReadConfigFile(long mNativeData, String fileName);
 
-    private native String nativeGetVersion();
+    private native String nativeGetVersion(long mNativeData);
 
-    private native void nativeStop();
+    private native void nativeStop(long mNativeData);
 
     private native boolean nativeBeginDocument(long rendererPointer, String title);
 
     private native boolean nativeEndDocument(long rendererPointer);
 
-    private native boolean nativeAddPageToDocument(long nativePix, String imagePath, long rendererPointer);
+    private native boolean nativeAddPageToDocument(long mNativeData, long nativePix, String imagePath, long rendererPointer);
 }
