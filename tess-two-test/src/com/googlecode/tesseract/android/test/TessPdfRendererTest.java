@@ -39,7 +39,7 @@ import com.googlecode.tesseract.android.TessPdfRenderer;
 public class TessPdfRendererTest extends TestCase {
 
     @SuppressLint("SdCardPath")
-    private final static String OUTPUT_PATH = "/mnt/sdcard/";
+    private final static String OUTPUT_PATH = "/sdcard/";
 
     @SmallTest
     public void testCreate() {

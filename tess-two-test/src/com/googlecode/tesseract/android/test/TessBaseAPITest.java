@@ -46,7 +46,7 @@ import com.googlecode.tesseract.android.TessBaseAPI.ProgressValues;
 
 public class TessBaseAPITest extends TestCase {
     @SuppressLint("SdCardPath")
-    static final String TESSBASE_PATH = "/mnt/sdcard/tesseract/";
+    static final String TESSBASE_PATH = "/sdcard/tesseract/";
     static final String DEFAULT_LANGUAGE = "eng";
     private static final String TESSDATA_PATH = TESSBASE_PATH + "tessdata/";
     private static final String[] EXPECTED_CUBE_DATA_FILES_ENG = {
