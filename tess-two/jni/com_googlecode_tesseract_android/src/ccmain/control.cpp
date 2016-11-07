@@ -216,20 +216,14 @@ bool Tesseract::RecogAllWordsPassN(int pass_n, ETEXT_DESC* monitor,
     if (w > 0) word->prev_word = &(*words)[w - 1];
     if (monitor != NULL) {
       monitor->ocr_alive = TRUE;
-      if (pass_n == 1) {
+      if (pass_n == 1)
         monitor->progress = 70 * w / words->size();
-        if (monitor->progress_callback != NULL) {
-            TBOX box = pr_it->word()->word->bounding_box();
-            (*monitor->progress_callback)(monitor->progress,
-                                          box.left(), box.right(),
-                                          box.top(), box.bottom());
-        }
-      } else {
+      else
         monitor->progress = 70 + 30 * w / words->size();
-        if (monitor->progress_callback!=NULL) {
-                      (*monitor->progress_callback)(monitor->progress,
-                                                    0, 0, 0, 0);
-        }
+      if (monitor->progress_callback != NULL) {
+        TBOX box = word->word->word->bounding_box();
+        (*monitor->progress_callback)(monitor->progress_this, monitor->progress,
+                box.left(), box.right(), box.top(), box.bottom());
       }
       if (monitor->deadline_exceeded() ||
           (monitor->cancel != NULL && (*monitor->cancel)(monitor->cancel_this,
