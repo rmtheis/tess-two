@@ -46,11 +46,15 @@ set(VERSION_PLAIN ${VERSION_MAJOR}.${VERSION_MINOR})
 
 set(MINIMUM_LEPTONICA_VERSION 1.71)
 
-if (NOT Leptonica_BUILD_DIR)
-find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} REQUIRED)
+if(NOT EXISTS ${PROJECT_SOURCE_DIR}/cppan)
+    if (NOT Leptonica_DIR AND NOT MSVC)
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(Leptonica REQUIRED lept)
+    else()
+        find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} REQUIRED CONFIG)
+    endif()
 else()
-set(Leptonica_DIR ${Leptonica_BUILD_DIR})
-find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} REQUIRED CONFIG)
+    add_subdirectory(cppan)
 endif()
 
 find_package(OpenCL QUIET)
@@ -70,10 +74,10 @@ endif()
 if (WIN32)
     if (MSVC)
         add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-        
+
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
     endif()
-    
+
     set(LIB_Ws2_32 Ws2_32)
 endif()
 
@@ -83,7 +87,7 @@ endif()
 
 if (UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
-    
+
     set(LIB_pthread pthread)
 endif()
 
@@ -100,14 +104,19 @@ include(Configure)
 
 configure_file(${AUTOCONFIG_SRC} ${AUTOCONFIG} @ONLY)
 
-set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/api)
+set(INCLUDE_DIR
+    ${CMAKE_SOURCE_DIR}/api
+    ${CMAKE_SOURCE_DIR}/ccmain
+    ${CMAKE_SOURCE_DIR}/ccstruct
+    ${CMAKE_SOURCE_DIR}/ccutil
+)
 
 configure_file(
     ${CMAKE_SOURCE_DIR}/cmake/templates/TesseractConfig-version.cmake.in
     ${CMAKE_BINARY_DIR}/TesseractConfig-version.cmake @ONLY)
 configure_file(
     ${CMAKE_SOURCE_DIR}/cmake/templates/TesseractConfig.cmake.in
-    ${CMAKE_BINARY_DIR}/TesseractConfig.cmake @ONLY) 
+    ${CMAKE_BINARY_DIR}/TesseractConfig.cmake @ONLY)
 
 ###############################################################################
 #
@@ -150,33 +159,33 @@ string(SUBSTRING ${VERSION_MINOR} 0 1 VERSION_MINOR_0)
 string(SUBSTRING ${VERSION_MINOR} 1 1 VERSION_MINOR_1)
 
 file(GLOB tesseract_src
-    "ccmain/*.cpp"
-    "ccstruct/*.cpp"
-    "ccutil/*.cpp"
-    "classify/*.cpp"
-    "cube/*.cpp"
-    "cutil/*.cpp"
-    "dict/*.cpp"
-    "neural_networks/runtime/*.cpp"
-    "opencl/*.cpp"
-    "textord/*.cpp"
-    "viewer/*.cpp"
-    "wordrec/*.cpp"
+    ccmain/*.cpp
+    ccstruct/*.cpp
+    ccutil/*.cpp
+    classify/*.cpp
+    cube/*.cpp
+    cutil/*.cpp
+    dict/*.cpp
+    neural_networks/runtime/*.cpp
+    opencl/*.cpp
+    textord/*.cpp
+    viewer/*.cpp
+    wordrec/*.cpp
 )
 file(GLOB tesseract_hdr
-    "api/*.h"
-    "ccmain/*.h"
-    "ccstruct/*.h"
-    "ccutil/*.h"
-    "classify/*.h"
-    "cube/*.h"
-    "cutil/*.h"
-    "dict/*.h"
-    "neural_networks/runtime/*.h"
-    "opencl/*.h"
-    "textord/*.h"
-    "viewer/*.h"
-    "wordrec/*.h"
+    api/*.h
+    ccmain/*.h
+    ccstruct/*.h
+    ccutil/*.h
+    classify/*.h
+    cube/*.h
+    cutil/*.h
+    dict/*.h
+    neural_networks/runtime/*.h
+    opencl/*.h
+    textord/*.h
+    viewer/*.h
+    wordrec/*.h
 )
 if (WIN32)
     file(GLOB tesseract_win32_src "vs2010/port/*.cpp")
@@ -196,15 +205,22 @@ add_library                     (tesseract ${LIBRARY_TYPE} ${tesseract_src} ${te
 if (NOT STATIC)
 target_compile_definitions      (tesseract PUBLIC -DTESS_EXPORTS)
 endif()
-target_link_libraries           (tesseract ${Leptonica_LIBRARIES} ${LIB_Ws2_32} ${LIB_pthread})
+target_link_libraries           (tesseract ${LIB_Ws2_32} ${LIB_pthread})
 set_target_properties           (tesseract PROPERTIES VERSION ${VERSION_MAJOR}.${VERSION_MINOR_0}.${VERSION_MINOR_1})
 set_target_properties           (tesseract PROPERTIES SOVERSION ${VERSION_MAJOR}.${VERSION_MINOR_0}.${VERSION_MINOR_1})
 if (WIN32)
 set_target_properties           (tesseract PROPERTIES OUTPUT_NAME tesseract${VERSION_MAJOR}${VERSION_MINOR})
 set_target_properties           (tesseract PROPERTIES DEBUG_OUTPUT_NAME tesseract${VERSION_MAJOR}${VERSION_MINOR}d)
 endif()
-export(TARGETS tesseract FILE ${CMAKE_BINARY_DIR}/TesseractTargets.cmake)
 
+if (NOT CPPAN_BUILD)
+    target_link_libraries       (tesseract ${Leptonica_LIBRARIES})
+    export(TARGETS tesseract FILE ${CMAKE_BINARY_DIR}/TesseractTargets.cmake)
+else()
+    target_link_libraries       (tesseract cppan)
+    file(WRITE ${CMAKE_BINARY_DIR}/TesseractTargets.cmake "include(${CMAKE_BINARY_DIR}/cppan.cmake)\n")
+    export(TARGETS tesseract APPEND FILE ${CMAKE_BINARY_DIR}/TesseractTargets.cmake)
+endif()
 
 ########################################
 # EXECUTABLE tesseractmain

@@ -19,6 +19,22 @@
 #include <stdio.h>
 #include <mach/mach_time.h>
 #endif
+
+/*
+    Convenience macro to test the version of Leptonica.
+*/
+#if defined(LIBLEPT_MAJOR_VERSION) && defined(LIBLEPT_MINOR_VERSION)
+#   define TESSERACT_LIBLEPT_PREREQ(maj, min) \
+        ((LIBLEPT_MAJOR_VERSION) > (maj) || ((LIBLEPT_MAJOR_VERSION) == (maj) && (LIBLEPT_MINOR_VERSION) >= (min)))
+#else
+#   define TESSERACT_LIBLEPT_PREREQ(maj, min) 0
+#endif
+
+#if TESSERACT_LIBLEPT_PREREQ(1,73)
+#   define CALLOC LEPT_CALLOC
+#   define FREE LEPT_FREE
+#endif
+
 #ifdef USE_OPENCL
 
 #include "opencl_device_selection.h"
@@ -30,6 +46,30 @@ ds_device OpenclDevice::selectedDevice;
 
 
 int OpenclDevice::isInited = 0;
+
+static l_int32 MORPH_BC = ASYMMETRIC_MORPH_BC;
+
+static const l_uint32 lmask32[] = {
+    0x80000000, 0xc0000000, 0xe0000000, 0xf0000000,
+    0xf8000000, 0xfc000000, 0xfe000000, 0xff000000,
+    0xff800000, 0xffc00000, 0xffe00000, 0xfff00000,
+    0xfff80000, 0xfffc0000, 0xfffe0000, 0xffff0000,
+    0xffff8000, 0xffffc000, 0xffffe000, 0xfffff000,
+    0xfffff800, 0xfffffc00, 0xfffffe00, 0xffffff00,
+    0xffffff80, 0xffffffc0, 0xffffffe0, 0xfffffff0,
+    0xfffffff8, 0xfffffffc, 0xfffffffe, 0xffffffff
+};
+
+static const l_uint32 rmask32[] = {
+    0x00000001, 0x00000003, 0x00000007, 0x0000000f,
+    0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff,
+    0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff,
+    0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff,
+    0x0001ffff, 0x0003ffff, 0x0007ffff, 0x000fffff,
+    0x001fffff, 0x003fffff, 0x007fffff, 0x00ffffff,
+    0x01ffffff, 0x03ffffff, 0x07ffffff, 0x0fffffff,
+    0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff
+};
 
 struct tiff_transform {
     int vflip;    /* if non-zero, image needs a vertical fip */
@@ -65,7 +105,7 @@ void legalizeFileName( char *fileName) {
     for (int i = 0; i < strlen(invalidChars); i++) {
         char invalidStr[4];
         invalidStr[0] = invalidChars[i];
-        invalidStr[1] = NULL;
+        invalidStr[1] = '\0';
         //printf("eliminating %s\n", invalidStr);
         //char *pos = strstr(fileName, invalidStr);
         // initial ./ is valid for present directory
@@ -212,6 +252,7 @@ void OpenclDevice::releaseMorphCLBuffers()
         clReleaseMemObject(pixdCLBuffer);
     if (pixThBuffer != NULL)
         clReleaseMemObject(pixThBuffer);
+	pixdCLIntermediate = pixsCLBuffer = pixdCLBuffer = pixThBuffer = NULL;
 }
 
 int OpenclDevice::initMorphCLAllocations(l_int32 wpl, l_int32 h, PIX* pixs)
@@ -358,7 +399,7 @@ int OpenclDevice::ReleaseOpenclEnv( GPUEnv *gpuInfo )
     }
     isInited = 0;
     gpuInfo->mnIsUserCreated = 0;
-    free( gpuInfo->mpArryDevsID );
+    delete[] gpuInfo->mpArryDevsID;
     return 1;
 }
 int OpenclDevice::BinaryGenerated( const char * clFileName, FILE ** fhandle )
@@ -1118,7 +1159,7 @@ OpenclDevice::pixReadMemTiffCl(const l_uint8 *data,size_t size,l_int32  n)
 	}
 
 	if (pagefound == FALSE) {
-		L_WARNING("tiff page %d not found", procName);
+		L_WARNING("tiff page %d not found", procName, i);
 		TIFFCleanup(tif);
 		return NULL;
 	}
@@ -1457,8 +1498,8 @@ pixErodeCL_55(l_int32  wpl, l_int32  h)
     l_uint32 fwmask, lwmask;
     size_t localThreads[2];
 
-    lwmask = lmask32[32 - 2];
-    fwmask = rmask32[32 - 2];
+    lwmask = lmask32[31 - 2];
+    fwmask = rmask32[31 - 2];
 
     //Horizontal pass
     gsize = (wpl*h + GROUPSIZE_HMORX - 1)/ GROUPSIZE_HMORX * GROUPSIZE_HMORX;
@@ -1748,8 +1789,8 @@ pixErodeCL(l_int32  hsize, l_int32  vsize, l_uint32 wpl, l_uint32 h)
         return status;
     }
 
-    rwmask = rmask32[32 - (xp & 31)];
-    lwmask = lmask32[32 - (xn & 31)];
+    lwmask = lmask32[31 - (xn & 31)];
+    rwmask = rmask32[31 - (xp & 31)];
 
     //global and local work dimensions for Horizontal pass
     gsize = (wpl + GROUPSIZE_X - 1)/ GROUPSIZE_X * GROUPSIZE_X;
@@ -3150,7 +3191,7 @@ ds_status deserializeScore( ds_device* device, const unsigned char* serializedSc
 }
 
 ds_status releaseScore( void* score ) {
-  delete[] score;
+  delete (TessDeviceScore *)score;
   return DS_SUCCESS;
 }
 
@@ -3226,7 +3267,7 @@ PERF_COUNT_START("getDeviceSelection")
     status = initDSProfile( &profile, "v0.1" );
 PERF_COUNT_SUB("initDSProfile")
     // try reading scores from file
-    char *fileName = "tesseract_opencl_profile_devices.dat";
+    const char *fileName = "tesseract_opencl_profile_devices.dat";
     status = readProfileFromFile( profile, deserializeScore, fileName);
     if (status != DS_SUCCESS) {
       // need to run evaluation
