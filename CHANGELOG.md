@@ -2,7 +2,23 @@
 
 ## [Unreleased](https://github.com/rmtheis/tess-two/tree/HEAD)
 
-[Full Changelog](https://github.com/rmtheis/tess-two/compare/6.0.4...HEAD)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/6.1.0...HEAD)
+ 
+## [6.1.0](https://github.com/rmtheis/tess-two/tree/6.1.0) (2016-11-22)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/6.0.4...6.1.0)
+
+**Updates:**
+
+- Tesseract code updated, version 3.05.00dev
+
+**Closed issues:**
+ 
+- Tests doesn't work on devices without sdcard [\#171](https://github.com/rmtheis/tess-two/issues/171)
+- no field with name='mNativeData' signature='J' in class Lcom/googlecode/tesseract/android/TessBaseAPI; [\#166](https://github.com/rmtheis/tess-two/issues/166)
+ 
+**Merged pull requests:**
+ 
+- Pass native pointer as parameter [\#172](https://github.com/rmtheis/tess-two/pull/172) ([jereksel](https://github.com/jereksel))
 
 ## [6.0.4](https://github.com/rmtheis/tess-two/tree/6.0.4) (2016-08-21)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/6.0.3...6.0.4)
