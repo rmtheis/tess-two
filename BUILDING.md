@@ -16,13 +16,17 @@ build the Tesseract and Leptonica native C/C++ code through a call to
 may be [imported][aar-import] into your app project as a dependency on a local
 binary package.
 
-Type the following commands in a terminal window to build the project from the 
-command line:
+To build the project from the command line:
 
 _On Mac/Linux:_
-	
+
+Edit your local.properties file to include the path to your NDK directory:
+
+    ndk.dir=/path/to/your/android-ndk
+
+Run the following commands:
+
     export ANDROID_HOME=/path/to/your/android-sdk
-    export ANDROID_NDK_HOME=/path/to/your/android-ndk
     git clone git://github.com/rmtheis/tess-two tess
     cd tess
     android update project --path tess-two
@@ -30,9 +34,14 @@ _On Mac/Linux:_
     ./gradlew assemble
 		
 _On Windows:_
-		
+
+Edit your local.properties file to include the path to your NDK directory:
+
+    ndk.dir=C:\:\\path\\to\\your\\android-ndk
+
+Run the following commands:
+
     set ANDROID_HOME=C:\\path\\to\\your\\android-sdk
-    set ANDROID_NDK_HOME=C:\\path\\to\\your\\android-ndk
     git clone git://github.com/rmtheis/tess-two tess
     cd tess
     android update project --path tess-two

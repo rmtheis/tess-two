@@ -48,9 +48,10 @@
 
 **API-breaking changes:** 
 
-- Progress values no longer available when using GetHOCRText. Use GetUTF8Text instead.
+- Progress values no longer available when using getUTF8Text. Use getHOCRText instead.
 - Android 2.2 (API level 8) no longer supported
-- Eyes-two project refactored
+- Eyes-two project refactored. Code similar to what was removed is available from the [Google Mobile Vision API](https://developers.google.com/vision/).
+- Tess-two deprecated methods removed
 
 **Updates:**
 

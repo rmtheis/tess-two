@@ -50,6 +50,8 @@ Release points are tagged with [version numbers][semantic-versioning]. A change
 to the major version number indicates an API change making that version 
 incompatible with previous versions.
 
+The [Change log](CHANGELOG.md) shows what's new in each version.
+
 ## Support
 
 * Stack Overflow: https://stackoverflow.com/questions/tagged/tess-two
