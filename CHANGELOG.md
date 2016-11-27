@@ -2,7 +2,12 @@
 
 ## [Unreleased](https://github.com/rmtheis/tess-two/tree/HEAD)
 
-[Full Changelog](https://github.com/rmtheis/tess-two/compare/6.1.0...HEAD)
+## [6.1.1](https://github.com/rmtheis/tess-two/tree/6.1.1) (2016-11-27)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/6.1.0...6.1.1)
+
+**Updates:**
+
+- Changed ProGuard settings
  
 ## [6.1.0](https://github.com/rmtheis/tess-two/tree/6.1.0) (2016-11-22)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/6.0.4...6.1.0)
