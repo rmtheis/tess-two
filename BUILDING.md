@@ -37,7 +37,7 @@ _On Windows:_
 
 Edit your local.properties file to include the path to your NDK directory:
 
-    ndk.dir=C:\:\\path\\to\\your\\android-ndk
+    ndk.dir=C\:\\path\\to\\your\\android-ndk
 
 Run the following commands:
 
