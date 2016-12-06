@@ -44,6 +44,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class TessBaseAPITest extends TestCase {
     @SuppressLint("SdCardPath")
@@ -725,7 +726,7 @@ public class TessBaseAPITest extends TestCase {
         }
         final Bitmap bmp = getTextImage(inputTextBuilder.toString(), 640, 4000);
 
-        final Object progressLock = new Object();
+        final Semaphore progressSem = new Semaphore(0);
         final TessBaseAPI baseApi = new TessBaseAPI(new ProgressNotifier() {
             @Override
             public void onProgressValues(ProgressValues progressValues) {
@@ -733,9 +734,7 @@ public class TessBaseAPITest extends TestCase {
                     fail("OCR recognition was too fast, try to increase the image size and amount of text?");
                 }
                 if (progressValues.getPercent() > 1){
-                    synchronized (progressLock){
-                        progressLock.notify();
-                    }
+                    progressSem.release();
                 }
             }
         });
@@ -744,9 +743,7 @@ public class TessBaseAPITest extends TestCase {
             @Override
             protected Void doInBackground(Void... params) {
                 baseApi.getHOCRText(0);
-                synchronized (progressLock){
-                    progressLock.notify();
-                }
+                progressSem.release();
                 return null;
             }
         }
@@ -759,17 +756,13 @@ public class TessBaseAPITest extends TestCase {
         task.execute();
 
         // Wait for recognition to start
-        synchronized (progressLock){
-            progressLock.wait();
-        }
+        progressSem.acquire();
 
         baseApi.stop();
 
         // Wait for getHOCRText() to complete, otherwise we may end() and recycle baseApi before
         // getHOCRText() finishes execution on the AsyncTask thread and cause an exception
-        synchronized (progressLock){
-            progressLock.wait();
-        }
+        progressSem.acquire();
 
         baseApi.end();
         bmp.recycle();
