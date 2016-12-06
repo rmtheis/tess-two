@@ -561,6 +561,9 @@ public class TessBaseAPI {
 
     /**
      * The recognized text is returned as a String which is coded as UTF8.
+     * This is a blocking operation that will not work with {@link #stop()}.
+     * Call {@link #getHOCRText(int)} before calling this function to
+     * interrupt a recognition task with {@link #stop()}
      *
      * @return the recognized text
      */
@@ -718,7 +721,7 @@ public class TessBaseAPI {
 
     /**
      * Make a HTML-formatted string with hOCR markup from the internal data
-     * structures.  
+     * structures. Interruptible by {@link #stop()}.
      * 
      * @param page is 0-based but will appear in the output as 1-based. 
      * @return HTML-formatted string with hOCR markup
@@ -796,7 +799,7 @@ public class TessBaseAPI {
     }
 
     /**
-     * Cancel any recognition in progress.
+     * Cancel recognition started by {@link #getHOCRText(int)}.
      */
     public void stop() {
         if (mRecycled)

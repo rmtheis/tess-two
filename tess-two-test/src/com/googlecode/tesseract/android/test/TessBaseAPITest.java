@@ -16,13 +16,6 @@
 
 package com.googlecode.tesseract.android.test;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.List;
-
-import junit.framework.TestCase;
-
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
@@ -32,8 +25,10 @@ import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
 import android.graphics.Rect;
+import android.os.AsyncTask;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.text.Html;
+import android.util.Log;
 import android.util.Pair;
 
 import com.googlecode.leptonica.android.Pix;
@@ -43,6 +38,13 @@ import com.googlecode.tesseract.android.TessBaseAPI;
 import com.googlecode.tesseract.android.TessBaseAPI.PageIteratorLevel;
 import com.googlecode.tesseract.android.TessBaseAPI.ProgressNotifier;
 import com.googlecode.tesseract.android.TessBaseAPI.ProgressValues;
+
+import junit.framework.TestCase;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
 
 public class TessBaseAPITest extends TestCase {
     @SuppressLint("SdCardPath")
@@ -131,19 +133,47 @@ public class TessBaseAPITest extends TestCase {
 
     private static Bitmap getTextImage(String text, int width, int height) {
         final Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        final Paint paint = new Paint();
+
         final Canvas canvas = new Canvas(bmp);
-
         canvas.drawColor(Color.WHITE);
+        drawTextNewLines(text, canvas);
 
+        return bmp;
+    }
+
+    /**
+     * Draws text (with newlines) centered onto the canvas. If the text does not fit horizontally,
+     * it will be cut off. If the text does not fit vertically, the start of the text will be at
+     * the top of the image and whatever not fitting onto the image being cut off. If the text
+     * fits vertically it will be centered vertically.
+     *
+     * @param text String to draw onto the canvas
+     * @param canvas Canvas to draw text onto
+     */
+    private static void drawTextNewLines(String text,  Canvas canvas){
+        final Paint paint = new Paint();
         paint.setColor(Color.BLACK);
         paint.setStyle(Style.FILL);
         paint.setAntiAlias(true);
         paint.setTextAlign(Align.CENTER);
         paint.setTextSize(24.0f);
-        canvas.drawText(text, width / 2, height / 2, paint);
 
-        return bmp;
+        String[] textArray = text.split("\n");
+        int width = canvas.getWidth();
+        int height = canvas.getHeight();
+        int count = textArray.length;
+        int lineSize = (int) (paint.descent() - paint.ascent());
+        int maxLinesToPushUp = height / lineSize;
+        maxLinesToPushUp = count < maxLinesToPushUp ? count : maxLinesToPushUp;
+        int pixelsToPushUp = (maxLinesToPushUp - 1) / 2 * lineSize;
+
+        int x = width / 2;
+        int y = (height / 2) - pixelsToPushUp;
+
+        for (String line : textArray){
+            canvas.drawText(line, x, y, paint);
+            y += lineSize;
+        }
     }
 
     @SmallTest
@@ -687,36 +717,52 @@ public class TessBaseAPITest extends TestCase {
         bmp.recycle();
     }
 
-    //    @SmallTest
-    //    public void testStop() throws InterruptedException {
-    //        final TessBaseAPI baseApi = new TessBaseAPI();
-    //        final String inputText = "The quick brown fox jumps over the lazy dog.";
-    //        final Bitmap bmp = getTextImage(inputText, 640, 480);
-    //
-    //        boolean success = baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
-    //        assertTrue(success);
-    //
-    //        baseApi.setImage(bmp);
-    //
-    //        class LoopingRecognitionTask extends AsyncTask<Void, Void, Void> {
-    //
-    //            @Override
-    //            protected Void doInBackground(Void... params) {
-    //                while (true)
-    //                    baseApi.getUTF8Text();
-    //            }
-    //        }
-    //
-    //        LoopingRecognitionTask task = new LoopingRecognitionTask();
-    //        task.execute();
-    //
-    //        Thread.sleep(200);
-    //
-    //        baseApi.stop();
-    //
-    //        baseApi.end();
-    //        bmp.recycle();
-    //    }
+    @SmallTest
+    public void testStop() throws InterruptedException {
+
+        StringBuilder inputTextBuilder = new StringBuilder();
+        for (int i = 0; i < 200; i++){
+            inputTextBuilder.append("The quick brown fox jumps over the lazy dog.\n");
+        }
+        final Bitmap bmp = getTextImage(inputTextBuilder.toString(), 640, 4000);
+
+        final Object progressLock = new Object();
+
+        final TessBaseAPI baseApi = new TessBaseAPI(new ProgressNotifier() {
+            @Override
+            public void onProgressValues(ProgressValues progressValues) {
+                Log.d("TEST", "Progress: " + progressValues.getPercent());
+                if (progressValues.getPercent() > 1){
+                    synchronized (progressLock){
+                        progressLock.notify();
+                    }
+                }
+            }
+        });
+
+        class LongRecognitionTask extends AsyncTask<Void, Void, Void> {
+            @Override
+            protected Void doInBackground(Void... params) {
+                baseApi.getHOCRText(0);
+                return null;
+            }
+        }
+
+        boolean success = baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        assertTrue(success);
+        baseApi.setImage(bmp);
+
+        LongRecognitionTask task = new LongRecognitionTask();
+        task.execute();
+
+        synchronized (progressLock){
+            progressLock.wait();
+        }
+
+        baseApi.stop();
+        baseApi.end();
+        bmp.recycle();
+    }
 
     @SmallTest
     public void testWordConfidences() {
