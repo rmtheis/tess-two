@@ -28,7 +28,6 @@ import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.text.Html;
-import android.util.Log;
 import android.util.Pair;
 
 import com.googlecode.leptonica.android.Pix;
@@ -727,11 +726,9 @@ public class TessBaseAPITest extends TestCase {
         final Bitmap bmp = getTextImage(inputTextBuilder.toString(), 640, 4000);
 
         final Object progressLock = new Object();
-
         final TessBaseAPI baseApi = new TessBaseAPI(new ProgressNotifier() {
             @Override
             public void onProgressValues(ProgressValues progressValues) {
-                Log.d("TEST", "Progress: " + progressValues.getPercent());
                 if (progressValues.getPercent() > 1){
                     synchronized (progressLock){
                         progressLock.notify();
@@ -744,6 +741,9 @@ public class TessBaseAPITest extends TestCase {
             @Override
             protected Void doInBackground(Void... params) {
                 baseApi.getHOCRText(0);
+                synchronized (progressLock){
+                    progressLock.notify();
+                }
                 return null;
             }
         }
@@ -755,11 +755,20 @@ public class TessBaseAPITest extends TestCase {
         LongRecognitionTask task = new LongRecognitionTask();
         task.execute();
 
+        // Wait for recognition to start
         synchronized (progressLock){
             progressLock.wait();
         }
 
         baseApi.stop();
+
+        // Wait for getHOCRText() to complete (it will return recognition done up to that point),
+        // otherwise we may end() and recycle baseApi before getHOCRText() finishes returning the
+        // data and cause an exception
+        synchronized (progressLock){
+            progressLock.wait();
+        }
+
         baseApi.end();
         bmp.recycle();
     }
