@@ -296,12 +296,6 @@ jstring Java_com_googlecode_tesseract_android_TessBaseAPI_nativeGetUTF8Text(JNIE
   native_data_t *nat = (native_data_t*) mNativeData;
   nat->initStateVariables(env, &thiz);
 
-  ETEXT_DESC monitor;
-  monitor.progress_callback = progressJavaCallback;
-  monitor.cancel = cancelFunc;
-  monitor.cancel_this = nat;
-  monitor.progress_this = nat;
-
   char *text = nat->api.GetUTF8Text();
 
   jstring result = env->NewStringUTF(text);
