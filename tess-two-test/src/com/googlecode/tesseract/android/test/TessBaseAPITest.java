@@ -729,6 +729,9 @@ public class TessBaseAPITest extends TestCase {
         final TessBaseAPI baseApi = new TessBaseAPI(new ProgressNotifier() {
             @Override
             public void onProgressValues(ProgressValues progressValues) {
+                if (progressValues.getPercent() > 50){
+                    fail("OCR recognition was too fast, try to increase the image size and amount of text?");
+                }
                 if (progressValues.getPercent() > 1){
                     synchronized (progressLock){
                         progressLock.notify();
@@ -762,9 +765,8 @@ public class TessBaseAPITest extends TestCase {
 
         baseApi.stop();
 
-        // Wait for getHOCRText() to complete (it will return recognition done up to that point),
-        // otherwise we may end() and recycle baseApi before getHOCRText() finishes returning the
-        // data and cause an exception
+        // Wait for getHOCRText() to complete, otherwise we may end() and recycle baseApi before
+        // getHOCRText() finishes execution on the AsyncTask thread and cause an exception
         synchronized (progressLock){
             progressLock.wait();
         }
