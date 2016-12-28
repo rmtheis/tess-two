@@ -24,7 +24,7 @@ The `tess-two-test` module contains instrumented unit tests for tess-two.
 ## Pre-requisites
 
 * Android 2.3 or higher
-* A v3.02+ [trained data file][tessdata] for a language. Data files must be 
+* A v3.04 [trained data file][tessdata] for a language. Data files must be 
 extracted to the Android device in a subdirectory named `tessdata`.
 
 ## Usage
@@ -83,7 +83,7 @@ submitting a pull request through GitHub.
 [tesseract-ocr]: https://github.com/tesseract-ocr/tesseract
 [leptonica]: https://github.com/DanBloomberg/leptonica
 [eyes-free]: https://github.com/rmtheis/eyes-free
-[tessdata]: https://github.com/tesseract-ocr/tessdata
+[tessdata]: https://github.com/tesseract-ocr/tessdata/tree/3.04.00
 [javadoc]: https://rmtheis.github.io/tess-two/javadoc/index.html
 [semantic-versioning]: http://semver.org
 [stackoverflow]: https://stackoverflow.com/
