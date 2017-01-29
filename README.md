@@ -25,7 +25,7 @@ The `tess-two-test` module contains instrumented unit tests for tess-two.
 
 * Android 2.3 or higher
 * A v3.04 [trained data file][tessdata] for a language. Data files must be 
-extracted to the Android device in a subdirectory named `tessdata`.
+copied to the Android device in a subdirectory named `tessdata`.
 
 ## Usage
 
