@@ -104,7 +104,11 @@ void STRING::FixHeader() const {
 
 STRING::STRING() {
   // Empty STRINGs contain just the "\0".
-  memcpy(AllocData(1, kMinCapacity), "", 1);
+  //memcpy(AllocData(1, kMinCapacity), "", 1);
+
+  // Avoid a suble string corruption... hopefully (detected/verified with Valgrind)
+  AllocData(1, kMinCapacity);
+  memset(GetCStr(), 0, kMinCapacity);
 }
 
 STRING::STRING(const STRING& str) {
