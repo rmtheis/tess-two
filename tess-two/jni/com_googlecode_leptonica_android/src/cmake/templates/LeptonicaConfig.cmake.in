@@ -16,6 +16,7 @@
 #      - Leptonica_VERSION               : The version of this Leptonica build: "@VERSION_PLAIN@"
 #      - Leptonica_VERSION_MAJOR         : Major version part of Leptonica_VERSION: "@VERSION_MAJOR@"
 #      - Leptonica_VERSION_MINOR         : Minor version part of Leptonica_VERSION: "@VERSION_MINOR@"
+#      - Leptonica_VERSION_PATCH         : Patch version part of Leptonica_VERSION: "@VERSION_PATCH@"
 #
 # ===================================================================================
 
@@ -28,6 +29,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/LeptonicaTargets.cmake)
 SET(Leptonica_VERSION           @VERSION_PLAIN@)
 SET(Leptonica_VERSION_MAJOR     @VERSION_MAJOR@)
 SET(Leptonica_VERSION_MINOR     @VERSION_MINOR@)
+SET(Leptonica_VERSION_PATCH     @VERSION_PATCH@)
 
 # ======================================================
 # Include directories to add to the user project:

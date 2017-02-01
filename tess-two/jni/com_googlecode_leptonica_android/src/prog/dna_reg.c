@@ -31,13 +31,7 @@
  */
 
 #include <math.h>
-#ifndef  _WIN32
-#include <unistd.h>
-#else
-#include <windows.h>   /* for Sleep() */
-#endif  /* _WIN32 */
 #include "allheaders.h"
-
 
 int main(int    argc,
          char **argv)
@@ -95,11 +89,6 @@ L_REGPARAMS  *rp;
                         "Histo example", "i", "histo[i]");
     gplotAddPlot(gplot, nax, nahisto, GPLOT_LINES, "sine");
     gplotMakeOutput(gplot);
-#ifndef  _WIN32
-    sleep(1);
-#else
-    Sleep(1000);
-#endif  /* _WIN32 */
     regTestCheckFile(rp, "/tmp/lept/regout/historoot.png");  /* 7 */
     gplotDestroy(&gplot);
     numaDestroy(&na);

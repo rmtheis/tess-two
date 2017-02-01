@@ -25,8 +25,9 @@
  *====================================================================*/
 
 
-/*
- *  rotate.c
+/*!
+ * \file rotate.c
+ * <pre>
  *
  *     General rotation about image center
  *              PIX     *pixRotate()
@@ -49,6 +50,7 @@
  *     If requested, it expands the output image so that no pixels are lost
  *     in the rotation, and this can be done on multiple successive shears
  *     without expanding beyond the maximum necessary size.
+ * </pre>
  */
 
 #include <math.h>
@@ -64,17 +66,18 @@ static const l_float32  LIMIT_SHEAR_ANGLE = 0.35;     /* radians; ~20 deg   */
  *                  General rotation about the center               *
  *------------------------------------------------------------------*/
 /*!
- *  pixRotate()
+ * \brief   pixRotate()
  *
- *      Input:  pixs (1, 2, 4, 8, 32 bpp rgb)
- *              angle (radians; clockwise is positive)
- *              type (L_ROTATE_AREA_MAP, L_ROTATE_SHEAR, L_ROTATE_SAMPLING)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *              width (original width; use 0 to avoid embedding)
- *              height (original height; use 0 to avoid embedding)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1, 2, 4, 8, 32 bpp rgb
+ * \param[in]    angle radians; clockwise is positive
+ * \param[in]    type L_ROTATE_AREA_MAP, L_ROTATE_SHEAR, L_ROTATE_SAMPLING
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \param[in]    width original width; use 0 to avoid embedding
+ * \param[in]    height original height; use 0 to avoid embedding
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a high-level, simple interface for rotating images
  *          about their center.
  *      (2) For very small rotations, just return a clone.
@@ -92,6 +95,7 @@ static const l_float32  LIMIT_SHEAR_ANGLE = 0.35;     /* radians; ~20 deg   */
  *          with side = sqrt(w*w + h*h).
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
+ * </pre>
  */
 PIX *
 pixRotate(PIX       *pixs,
@@ -148,7 +152,7 @@ PIXCMAP   *cmap;
 
         /* Otherwise, if there is a colormap and we're not embedding,
          * add white color if it doesn't exist. */
-    if (cmap && width == 0) {  /* no embedding; generate @incolor */
+    if (cmap && width == 0) {  /* no embedding; generate %incolor */
         if (incolor == L_BRING_IN_BLACK)
             pixcmapAddBlackOrWhite(cmap, 0, NULL);
         else  /* L_BRING_IN_WHITE */
@@ -194,16 +198,17 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  pixEmbedForRotation()
+ * \brief   pixEmbedForRotation()
  *
- *      Input:  pixs (1, 2, 4, 8, 32 bpp rgb)
- *              angle (radians; clockwise is positive)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *              width (original width; use 0 to avoid embedding)
- *              height (original height; use 0 to avoid embedding)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1, 2, 4, 8, 32 bpp rgb
+ * \param[in]    angle radians; clockwise is positive
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \param[in]    width original width; use 0 to avoid embedding
+ * \param[in]    height original height; use 0 to avoid embedding
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For very small rotations, just return a clone.
  *      (2) Generate larger image to embed pixs if necessary, and
  *          place the center of the input image in the center.
@@ -232,6 +237,7 @@ PIXCMAP   *cmap;
  *          For the UL corner, replace a by (pi - a), and you have
  *          sin(pi - a) = h/d, cos(pi - a) = -w/d.  The equations
  *          given below follow directly.
+ * </pre>
  */
 PIX *
 pixEmbedForRotation(PIX       *pixs,
@@ -297,20 +303,22 @@ PIX       *pixd;
  *                    General rotation by sampling                  *
  *------------------------------------------------------------------*/
 /*!
- *  pixRotateBySampling()
+ * \brief   pixRotateBySampling()
  *
- *      Input:  pixs (1, 2, 4, 8, 16, 32 bpp rgb; can be cmapped)
- *              xcen (x value of center of rotation)
- *              ycen (y value of center of rotation)
- *              angle (radians; clockwise is positive)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1, 2, 4, 8, 16, 32 bpp rgb; can be cmapped
+ * \param[in]    xcen x value of center of rotation
+ * \param[in]    ycen y value of center of rotation
+ * \param[in]    angle radians; clockwise is positive
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For very small rotations, just return a clone.
  *      (2) Rotation brings either white or black pixels in
  *          from outside the image.
  *      (3) Colormaps are retained.
+ * </pre>
  */
 PIX *
 pixRotateBySampling(PIX       *pixs,
@@ -421,14 +429,15 @@ PIX       *pixd;
  *                 Nice (slow) rotation of 1 bpp image              *
  *------------------------------------------------------------------*/
 /*!
- *  pixRotateBinaryNice()
+ * \brief   pixRotateBinaryNice()
  *
- *      Input:  pixs (1 bpp)
- *              angle (radians; clockwise is positive; about the center)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    angle radians; clockwise is positive; about the center
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For very small rotations, just return a clone.
  *      (2) This does a computationally expensive rotation of 1 bpp images.
  *          The fastest rotators (using shears or subsampling) leave
@@ -442,6 +451,7 @@ PIX       *pixd;
  *          blur, and threshold back to binary.  The shear lines
  *          are magically removed.
  *      (3) This operation is about 5x slower than rotation by sampling.
+ * </pre>
  */
 PIX *
 pixRotateBinaryNice(PIX       *pixs,
@@ -474,16 +484,17 @@ PIX  *pixt1, *pixt2, *pixt3, *pixt4, *pixd;
  *             Rotation including alpha (blend) component           *
  *------------------------------------------------------------------*/
 /*!
- *  pixRotateWithAlpha()
+ * \brief   pixRotateWithAlpha()
  *
- *      Input:  pixs (32 bpp rgb or cmapped)
- *              angle (radians; clockwise is positive)
- *              pixg (<optional> 8 bpp, can be null)
- *              fract (between 0.0 and 1.0, with 0.0 fully transparent
- *                     and 1.0 fully opaque)
- *      Return: pixd (32 bpp rgba), or null on error
+ * \param[in]    pixs 32 bpp rgb or cmapped
+ * \param[in]    angle radians; clockwise is positive
+ * \param[in]    pixg [optional] 8 bpp, can be null
+ * \param[in]    fract between 0.0 and 1.0, with 0.0 fully transparent
+ *                     and 1.0 fully opaque
+ * \return  pixd 32 bpp rgba, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The alpha channel is transformed separately from pixs,
  *          and aligns with it, being fully transparent outside the
  *          boundary of the transformed pixs.  For pixels that are fully
@@ -496,8 +507,8 @@ PIX  *pixt1, *pixt2, *pixt3, *pixt4, *pixd;
  *          color is brought in because the alpha channel will
  *          be transparent (black) there.
  *      (4) If pixg is NULL, it is generated as an alpha layer that is
- *          partially opaque, using @fract.  Otherwise, it is cropped
- *          to pixs if required and @fract is ignored.  The alpha
+ *          partially opaque, using %fract.  Otherwise, it is cropped
+ *          to pixs if required and %fract is ignored.  The alpha
  *          channel in pixs is never used.
  *      (4) Colormaps are removed to 32 bpp.
  *      (5) The default setting for the border values in the alpha channel
@@ -515,11 +526,12 @@ PIX  *pixt1, *pixt2, *pixt3, *pixt4, *pixd;
  *              pixt = pixGammaTRCWithAlpha(NULL, pixs, 1.0 / gamma, 0, 255);
  *              pixd = pixRotateWithAlpha(pixt, angle, NULL, fract);
  *              pixGammaTRCWithAlpha(pixd, pixd, gamma, 0, 255);
- *              pixDestroy(&pixt);
+ *              pixDestroy(\&pixt);
  *          This has the side-effect of producing artifacts in the very
  *          dark regions.
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
+ * </pre>
  */
 PIX *
 pixRotateWithAlpha(PIX       *pixs,
@@ -538,7 +550,8 @@ PIX     *pixd, *pix32, *pixg2, *pixgr;
     if (d != 32 && pixGetColormap(pixs) == NULL)
         return (PIX *)ERROR_PTR("pixs not cmapped or 32 bpp", procName, NULL);
     if (pixg && pixGetDepth(pixg) != 8) {
-        L_WARNING("pixg not 8 bpp; using @fract transparent alpha\n", procName);
+        L_WARNING("pixg not 8 bpp; using 'fract' transparent alpha\n",
+                  procName);
         pixg = NULL;
     }
     if (!pixg && (fract < 0.0 || fract > 1.0)) {
@@ -585,4 +598,3 @@ PIX     *pixd, *pix32, *pixg2, *pixgr;
     pixDestroy(&pixgr);
     return pixd;
 }
-

@@ -85,7 +85,8 @@ SARRAY    *sa1;
         boxaDestroy(&boxa2);
 
             /* Get the numbers in the sample */
-        recogaIdentifyMultiple(recoga, pix1, 0, 5, 3, &boxa3, NULL, &pixdb, 0);
+        recogaIdentifyMultiple(recoga, pix1, 0, 5, 3, 0,
+                               &boxa3, NULL, &pixdb, 0);
         sa1 = recogaExtractNumbers(recoga, boxa3, 0.7, -1, &baa1, &naa1);
         sarrayWriteStream(stderr, sa1);
         boxaaWriteStream(stderr, baa1);

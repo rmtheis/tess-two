@@ -24,10 +24,12 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  pngiostub.c
+/*!
+ * \file pngiostub.c
+ * <pre>
  *
  *     Stubs for pngio.c functions
+ * </pre>
  */
 
 #ifdef HAVE_CONFIG_H

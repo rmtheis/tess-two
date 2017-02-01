@@ -28,8 +28,6 @@
  * string_reg.c
  *
  *    This tests several sarray functions.
- *
- *    N.B.  This requires 'diff' for testing.
  */
 
 #include <string.h>
@@ -38,7 +36,7 @@
 int main(int    argc,
          char **argv)
 {
-l_int32      ignore;
+l_int32      same;
 size_t       nbytesin, nbytesout;
 char        *infile, *instring, *outstring;
 SARRAY      *sa1, *sa2, *sa3, *sa4, *sa5;
@@ -54,49 +52,55 @@ static char  mainName[] = "string_reg";
     if (!instring)
         return ERROR_INT("file not read", mainName, 1);
 
+    lept_mkdir("lept/string");
+
     sa1 = sarrayCreateWordsFromString(instring);
     sa2 = sarrayCreateLinesFromString(instring, 0);
     sa3 = sarrayCreateLinesFromString(instring, 1);
 
     outstring = sarrayToString(sa1, 0);
     nbytesout = strlen(outstring);
-    l_binaryWrite("/tmp/junk1.txt", "w", outstring, nbytesout);
+    l_binaryWrite("/tmp/lept/string/test1.txt", "w", outstring, nbytesout);
     lept_free(outstring);
 
     outstring = sarrayToString(sa1, 1);
     nbytesout = strlen(outstring);
-    l_binaryWrite("/tmp/junk2.txt", "w", outstring, nbytesout);
+    l_binaryWrite("/tmp/lept/string/test2.txt", "w", outstring, nbytesout);
     lept_free(outstring);
 
     outstring = sarrayToString(sa2, 0);
     nbytesout = strlen(outstring);
-    l_binaryWrite("/tmp/junk3.txt", "w", outstring, nbytesout);
+    l_binaryWrite("/tmp/lept/string/test3.txt", "w", outstring, nbytesout);
     lept_free(outstring);
 
     outstring = sarrayToString(sa2, 1);
     nbytesout = strlen(outstring);
-    l_binaryWrite("/tmp/junk4.txt", "w", outstring, nbytesout);
+    l_binaryWrite("/tmp/lept/string/test4.txt", "w", outstring, nbytesout);
     lept_free(outstring);
 
     outstring = sarrayToString(sa3, 0);
     nbytesout = strlen(outstring);
-    l_binaryWrite("/tmp/junk5.txt", "w", outstring, nbytesout);
+    l_binaryWrite("/tmp/lept/string/test5.txt", "w", outstring, nbytesout);
     lept_free(outstring);
 
     outstring = sarrayToString(sa3, 1);
     nbytesout = strlen(outstring);
-    l_binaryWrite("/tmp/junk6.txt", "w", outstring, nbytesout);
+    l_binaryWrite("/tmp/lept/string/test6.txt", "w", outstring, nbytesout);
     lept_free(outstring);
-    sprintf(buf, "diff -s /tmp/junk6.txt %s", infile);
-    ignore = system(buf);  /* diff */
+    filesAreIdentical("/tmp/lept/string/test6.txt", infile, &same);
+    if (!same)
+        fprintf(stderr, "Bad1: files differ!\n");
 
-        /* write/read/write; compare /tmp/junkout5 with /tmp/junkout6 */
-    sarrayWrite("/tmp/junk7.txt", sa2);
-    sarrayWrite("/tmp/junk8.txt", sa3);
-    sa4 = sarrayRead("/tmp/junk8.txt");
-    sarrayWrite("/tmp/junk9.txt", sa4);
-    sa5 = sarrayRead("/tmp/junk9.txt");
-    ignore = system("diff -s /tmp/junk8.txt /tmp/junk9.txt");
+        /* Test sarray serialization */
+    sarrayWrite("/tmp/lept/string/test7.txt", sa2);
+    sarrayWrite("/tmp/lept/string/test8.txt", sa3);
+    sa4 = sarrayRead("/tmp/lept/string/test8.txt");
+    sarrayWrite("/tmp/lept/string/test9.txt", sa4);
+    sa5 = sarrayRead("/tmp/lept/string/test9.txt");
+    filesAreIdentical("/tmp/lept/string/test8.txt",
+                      "/tmp/lept/string/test9.txt", &same);
+    if (!same)
+        fprintf(stderr, "Bad2: files differ!\n");
 
     sarrayDestroy(&sa1);
     sarrayDestroy(&sa2);

@@ -83,10 +83,10 @@ L_REGPARAMS  *rp;
     DoWebpTest1(rp, "karen8.jpg");
     DoWebpTest1(rp, "test24.jpg");
 
-    DoWebpTest2(rp, "test24.jpg", 50, 0, 43.50, 0.5);
-    DoWebpTest2(rp, "test24.jpg", 75, 0, 46.07, 0.5);
-    DoWebpTest2(rp, "test24.jpg", 90, 0, 52.39, 0.5);
-    DoWebpTest2(rp, "test24.jpg", 100, 0, 58.112, 0.5);
+    DoWebpTest2(rp, "test24.jpg", 50, 0, 43.50, 1.0);
+    DoWebpTest2(rp, "test24.jpg", 75, 0, 46.07, 1.0);
+    DoWebpTest2(rp, "test24.jpg", 90, 0, 51.09, 2.0);
+    DoWebpTest2(rp, "test24.jpg", 100, 0, 54.979, 5.0);
     DoWebpTest2(rp, "test24.jpg", 0, 1, 1000.0, 0.1);
 
     return regTestCleanup(rp);
@@ -97,7 +97,7 @@ void DoWebpTest1(L_REGPARAMS  *rp,
                  const char   *fname)
 {
 char  buf[256];
-PIX  *pixs, *pix1;
+PIX  *pixs, *pix1, *pix2;
 
     startTimer();
     pixs = pixRead(fname);
@@ -110,9 +110,12 @@ PIX  *pixs, *pix1;
     startTimer();
     pix1 = pixRead(buf);
     fprintf(stderr, "Time to read webp: %7.3f\n", stopTimer());
+    pix2 = pixConvertTo32(pixs);
+    regTestCompareSimilarPix(rp, pix1, pix2, 20, 0.1, 0);
     pixDisplayWithTitle(pix1, 100, 100, "pix1", rp->display);
     pixDestroy(&pixs);
     pixDestroy(&pix1);
+    pixDestroy(&pix2);
     return;
 }
 

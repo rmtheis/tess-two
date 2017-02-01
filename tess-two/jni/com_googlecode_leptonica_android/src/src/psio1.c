@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  psio1.c
+/*!
+ * \file psio1.c
+ * <pre>
  *
  *    |=============================================================|
  *    |                         Important note                      |
@@ -96,6 +97,7 @@
  *  functions such as convertFilesToPS(), convertFilesFittedToPS()
  *  and convertSegmentedPagesToPS().  The function l_psWriteBoundingBox()
  *  sets a flag to give low-level control over this.
+ * </pre>
  */
 
 #include <string.h>
@@ -250,7 +252,7 @@ l_int32  i, nfiles, index, firstfile, ret, format;
  *          size in printer points.  Use 0.0 for xpts or ypts to get
  *          the default value, which is 612.0 or 792.0, rsp.
  *      (5) The size of the PostScript file is independent of the resolution,
- *          because the entire file is encoded.  The @xpts and @ypts
+ *          because the entire file is encoded.  The %xpts and %ypts
  *          parameter tells the PS decomposer how to render the page.
  */
 l_int32
@@ -367,9 +369,9 @@ l_int32  ret, i, w, h, nfiles, index, firstfile, format, res;
  *             * if in tiffg4  -->  use ccittg4
  *             * if in jpeg    -->  use dct
  *             * all others    -->  use flate
- *      (3) Before the first call, set @firstpage = 1.  After writing
+ *      (3) Before the first call, set %firstpage = 1.  After writing
  *          the first page, it will be set to 0.
- *      (4) @index is incremented if the page is successfully written.
+ *      (4) %index is incremented if the page is successfully written.
  */
 l_int32
 writeImageCompressedToPSFile(const char  *filein,
@@ -459,16 +461,16 @@ l_int32      format, retval;
  *          compressed as G4 (i.e., tiff g4), and rendered by painting
  *          black through the resulting text mask.
  *      (4) The scaling is typically 2x down for the DCT component
- *          (@imagescale = 0.5) and 2x up for the G4 component
- *          (@textscale = 2.0).
+ *          (%imagescale = 0.5) and 2x up for the G4 component
+ *          (%textscale = 2.0).
  *      (5) The resolution is automatically set to fit to a
  *          letter-size (8.5 x 11 inch) page.
  *      (6) Both the DCT and the G4 encoding are PostScript level 2.
  *      (7) It is assumed that the page number is contained within
  *          the basename (the filename without directory or extension).
- *          @page_numpre is the number of characters in the page basename
- *          preceding the actual page number; @mask_numpre is likewise for
- *          the mask basename; @numpost is the number of characters
+ *          %page_numpre is the number of characters in the page basename
+ *          preceding the actual page number; %mask_numpre is likewise for
+ *          the mask basename; %numpost is the number of characters
  *          following the page number.  For example, for mask name
  *          mask_006.tif, mask_numpre = 5 ("mask_).
  *      (8) To render a page as is -- that is, with no thresholding
@@ -552,7 +554,7 @@ SARRAY  *sapage, *samask;
  *
  *  Notes:
  *      (1) This generates the PS string for a mixed text/image page,
- *          and adds it to an existing file if @pageno > 1.
+ *          and adds it to an existing file if %pageno > 1.
  *          The PS output is determined by fitting the result to
  *          a letter-size (8.5 x 11 inch) page.
  *      (2) The two images (pixs and pixm) are at the same resolution
@@ -561,16 +563,16 @@ SARRAY  *sapage, *samask;
  *          PS file.
  *      (3) pixb is the text component.  In the PostScript world, we think of
  *          it as a mask through which we paint black.  It is produced by
- *          scaling pixs by @textscale, and thresholding to 1 bpp.
+ *          scaling pixs by %textscale, and thresholding to 1 bpp.
  *      (4) pixc is the image component, which is that part of pixs under
- *          the mask pixm.  It is scaled from pixs by @imagescale.
+ *          the mask pixm.  It is scaled from pixs by %imagescale.
  *      (5) Typical values are textscale = 2.0 and imagescale = 0.5.
  *      (6) If pixm == NULL, the page has only text.  If it is all black,
  *          the page is all image and has no text.
  *      (7) This can be used to write a multi-page PS file, by using
  *          sequential page numbers with the same output file.  It can
  *          also be used to write separate PS files for each page,
- *          by using different output files with @pageno = 0 or 1.
+ *          by using different output files with %pageno = 0 or 1.
  */
 l_int32
 pixWriteSegmentedPageToPS(PIX         *pixs,
@@ -619,7 +621,7 @@ PIX       *pixmi, *pixmis, *pixt, *pixg, *pixsc, *pixb, *pixc;
         pixb = pixClone(pixs);
         pixc = NULL;
     } else {
-        pixt = pixConvertTo8Or32(pixs, 0, 0);  /* this can be a clone of pixs */
+        pixt = pixConvertTo8Or32(pixs, L_CLONE, 0);  /* clone if possible */
 
             /* Get the binary text mask.  Note that pixg cannot be a
              * clone of pixs, because it may be altered by pixSetMasked(). */
@@ -700,7 +702,7 @@ PIX       *pixmi, *pixmis, *pixt, *pixg, *pixsc, *pixb, *pixc;
  *  Notes:
  *      (1) This low level function generates the PS string for a mixed
  *          text/image page, and adds it to an existing file if
- *          @pageno > 1.
+ *          %pageno > 1.
  *      (2) The two images (pixb and pixc) are typically generated at the
  *          resolution that they will be rendered in the PS file.
  *      (3) pixb is the text component.  In the PostScript world, we think of
@@ -709,10 +711,10 @@ PIX       *pixmi, *pixmis, *pixt, *pixg, *pixsc, *pixb, *pixc;
  *          white in the rest of the page.  To minimize the size of the
  *          PS file, it should be rendered at a resolution that is at
  *          least equal to its actual resolution.
- *      (5) @scale gives the ratio of resolution of pixb to pixc.
+ *      (5) %scale gives the ratio of resolution of pixb to pixc.
  *          Typical resolutions are: 600 ppi for pixb, 150 ppi for pixc;
- *          so @scale = 4.0.  If one of the images is not defined,
- *          the value of @scale is ignored.
+ *          so %scale = 4.0.  If one of the images is not defined,
+ *          the value of %scale is ignored.
  *      (6) We write pixc with DCT compression (jpeg).  This is followed
  *          by painting the text as black through the mask pixb.  If
  *          pixc doesn't exist (alltext), we write the text with the
@@ -728,8 +730,7 @@ pixWriteMixedToPS(PIX         *pixb,
                   l_int32      pageno,
                   const char  *fileout)
 {
-const char   tnameb[] = "/tmp/lept/psio/mixed.tif";
-const char   tnamec[] = "/tmp/lept/psio/mixed.jpg";
+char        *tname;
 const char  *op;
 l_int32      resb, resc, endpage, maskop, ret;
 
@@ -750,13 +751,15 @@ l_int32      resb, resc, endpage, maskop, ret;
     }
 
         /* Write the jpeg image first */
-    lept_mkdir("lept/psio");
     if (pixc) {
-        pixWrite(tnamec, pixc, IFF_JFIF_JPEG);
+        tname = l_makeTempFilename();
+        pixWrite(tname, pixc, IFF_JFIF_JPEG);
         endpage = (pixb) ? FALSE : TRUE;
         op = (pageno <= 1) ? "w" : "a";
-        ret = convertJpegToPS(tnamec, fileout, op, 0, 0, resc, 1.0,
+        ret = convertJpegToPS(tname, fileout, op, 0, 0, resc, 1.0,
                               pageno, endpage);
+        lept_rmfile(tname);
+        LEPT_FREE(tname);
         if (ret)
             return ERROR_INT("jpeg data not written", procName, 1);
     }
@@ -764,11 +767,14 @@ l_int32      resb, resc, endpage, maskop, ret;
         /* Write the binary data, either directly or, if there is
          * a jpeg image on the page, through the mask. */
     if (pixb) {
-        pixWrite(tnameb, pixb, IFF_TIFF_G4);
+        tname = l_makeTempFilename();
+        pixWrite(tname, pixb, IFF_TIFF_G4);
         op = (pageno <= 1 && !pixc) ? "w" : "a";
         maskop = (pixc) ? 1 : 0;
-        ret = convertG4ToPS(tnameb, fileout, op, 0, 0, resb, 1.0,
+        ret = convertG4ToPS(tname, fileout, op, 0, 0, resb, 1.0,
                             pageno, maskop, 1);
+        lept_rmfile(tname);
+        LEPT_FREE(tname);
         if (ret)
             return ERROR_INT("tiff data not written", procName, 1);
     }
@@ -792,9 +798,9 @@ l_int32      resb, resc, endpage, maskop, ret;
  *      (1) This is a wrapper function that generates a PS file with
  *          a bounding box, from any input image file.
  *      (2) Do the best job of compression given the specified level.
- *          @level=3 does flate compression on anything that is not
+ *          %level=3 does flate compression on anything that is not
  *          tiffg4 (1 bpp) or jpeg (8 bpp or rgb).
- *      (3) If @level=2 and the file is not tiffg4 or jpeg, it will
+ *      (3) If %level=2 and the file is not tiffg4 or jpeg, it will
  *          first be written to file as jpeg with quality = 75.
  *          This will remove the colormap and cause some degradation
  *          in the image.
@@ -807,10 +813,9 @@ convertToPSEmbed(const char  *filein,
                  const char  *fileout,
                  l_int32      level)
 {
-const char  nametif[] = "/tmp/junk_convert_ps_embed.tif";
-const char  namejpg[] = "/tmp/junk_convert_ps_embed.jpg";
-l_int32     d, format;
-PIX        *pix, *pixs;
+char    *tname;
+l_int32  d, format;
+PIX     *pix, *pixs;
 
     PROCNAME("convertToPSEmbed");
 
@@ -859,14 +864,17 @@ PIX        *pix, *pixs;
         pix = pixRemoveColormap(pixs, REMOVE_CMAP_BASED_ON_SRC);
 
     d = pixGetDepth(pix);
+    tname = l_makeTempFilename();
     if (d == 1) {
-        pixWrite(nametif, pix, IFF_TIFF_G4);
-        convertG4ToPSEmbed(nametif, fileout);
+        pixWrite(tname, pix, IFF_TIFF_G4);
+        convertG4ToPSEmbed(tname, fileout);
     } else {
-        pixWrite(namejpg, pix, IFF_JFIF_JPEG);
-        convertJpegToPSEmbed(namejpg, fileout);
+        pixWrite(tname, pix, IFF_JFIF_JPEG);
+        convertJpegToPSEmbed(tname, fileout);
     }
 
+    lept_rmfile(tname);
+    LEPT_FREE(tname);
     pixDestroy(&pix);
     pixDestroy(&pixs);
     return 0;
@@ -905,7 +913,7 @@ pixaWriteCompressedToPS(PIXA        *pixa,
                         l_int32      res,
                         l_int32      level)
 {
-char     *tname, *g4_name, *jpeg_name, *png_name;
+char     *tname;
 l_int32   i, n, firstfile, index, writeout, d;
 PIX      *pix, *pixt;
 PIXCMAP  *cmap;
@@ -924,45 +932,35 @@ PIXCMAP  *cmap;
     n = pixaGetCount(pixa);
     firstfile = TRUE;
     index = 0;
-    lept_mkdir("lept/comp");
-    g4_name = genTempFilename("/tmp/lept/comp", "temp.tif", 0, 0);
-    jpeg_name = genTempFilename("/tmp/lept/comp", "temp.jpg", 0, 0);
-    png_name = genTempFilename("/tmp/lept/comp", "temp.png", 0, 0);
+    tname = l_makeTempFilename();
     for (i = 0; i < n; i++) {
         writeout = TRUE;
         pix = pixaGetPix(pixa, i, L_CLONE);
         d = pixGetDepth(pix);
         cmap = pixGetColormap(pix);
         if (d == 1) {
-            tname = g4_name;
             pixWrite(tname, pix, IFF_TIFF_G4);
         } else if (cmap) {
             if (level == 2) {
                 pixt = pixConvertForPSWrap(pix);
-                tname = jpeg_name;
                 pixWrite(tname, pixt, IFF_JFIF_JPEG);
                 pixDestroy(&pixt);
             } else {  /* level == 3 */
-                tname = png_name;
                 pixWrite(tname, pix, IFF_PNG);
             }
         } else if (d == 16) {
             if (level == 2)
                 L_WARNING("d = 16; must write out flate\n", procName);
-            tname = png_name;
             pixWrite(tname, pix, IFF_PNG);
         } else if (d == 2 || d == 4) {
             if (level == 2) {
                 pixt = pixConvertTo8(pix, 0);
-                tname = jpeg_name;
                 pixWrite(tname, pixt, IFF_JFIF_JPEG);
                 pixDestroy(&pixt);
             } else {  /* level == 3 */
-                tname = png_name;
                 pixWrite(tname, pix, IFF_PNG);
             }
         } else if (d == 8 || d == 32) {
-            tname = jpeg_name;
             pixWrite(tname, pix, IFF_JFIF_JPEG);
         } else {  /* shouldn't happen */
             L_ERROR("invalid depth: %d\n", procName, d);
@@ -975,9 +973,8 @@ PIXCMAP  *cmap;
                                          &firstfile, &index);
     }
 
-    LEPT_FREE(g4_name);
-    LEPT_FREE(jpeg_name);
-    LEPT_FREE(png_name);
+    lept_rmfile(tname);
+    LEPT_FREE(tname);
     return 0;
 }
 

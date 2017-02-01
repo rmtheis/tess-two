@@ -61,7 +61,7 @@ static char     mainName[] = "printtiff";
 
     lept_rm(NULL, TEMP_PS);
     tempfile = genPathname("/tmp", TEMP_PS);
-    convertTiffMultipageToPS(filein, tempfile, NULL, FILL_FACTOR);
+    convertTiffMultipageToPS(filein, tempfile, FILL_FACTOR);
 
     if (argc == 3) {
         sprintf(buf, "lpr -P%s %s &", printer, tempfile);

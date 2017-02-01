@@ -25,8 +25,9 @@
  *====================================================================*/
 
 
-/*
- *  shear.c
+/*!
+ * \file shear.c
+ * <pre>
  *
  *    About arbitrary lines
  *           PIX      *pixHShear()
@@ -48,6 +49,7 @@
  *
  *    Static helper
  *      static l_float32  normalizeAngleForShear()
+ * </pre>
  */
 
 #include <string.h>
@@ -69,17 +71,18 @@ static l_float32 normalizeAngleForShear(l_float32 radang, l_float32 mindif);
  *                    About arbitrary lines                    *
  *-------------------------------------------------------------*/
 /*!
- *  pixHShear()
+ * \brief   pixHShear()
  *
- *      Input:  pixd (<optional>, this can be null, equal to pixs,
- *                    or different from pixs)
- *              pixs (no restrictions on depth)
- *              yloc (location of horizontal line, measured from origin)
- *              angle (in radians)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
- *      Return: pixd, always
+ * \param[in]    pixd [optional], this can be null, equal to pixs,
+ *                    or different from pixs
+ * \param[in]    pixs no restrictions on depth
+ * \param[in]    yloc location of horizontal line, measured from origin
+ * \param[in]    radang  angle in radians
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK;
+ * \return  pixd, always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) There are 3 cases:
  *            (a) pixd == null (make a new pixd)
  *            (b) pixd == pixs (in-place)
@@ -104,6 +107,7 @@ static l_float32 normalizeAngleForShear(l_float32 radang, l_float32 mindif);
  *      (8) The angle is brought into the range [-pi, -pi].  It is
  *          not permitted to be within MIN_DIFF_FROM_HALF_PI radians
  *          from either -pi/2 or pi/2.
+ * </pre>
  */
 PIX *
 pixHShear(PIX       *pixd,
@@ -184,17 +188,18 @@ l_float32  tanangle, invangle;
 
 
 /*!
- *  pixVShear()
+ * \brief   pixVShear()
  *
- *      Input:  pixd (<optional>, this can be null, equal to pixs,
- *                    or different from pixs)
- *              pixs (no restrictions on depth)
- *              xloc (location of vertical line, measured from origin)
- *              angle (in radians; not too close to +-(pi / 2))
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
- *      Return: pixd, or null on error
+ * \param[in]    pixd [optional], this can be null, equal to pixs,
+ *                    or different from pixs
+ * \param[in]    pixs no restrictions on depth
+ * \param[in]    xloc location of vertical line, measured from origin
+ * \param[in]    radang  angle in radians; not too close to +-(pi / 2)
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK;
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) There are 3 cases:
  *            (a) pixd == null (make a new pixd)
  *            (b) pixd == pixs (in-place)
@@ -219,6 +224,7 @@ l_float32  tanangle, invangle;
  *      (8) The angle is brought into the range [-pi, -pi].  It is
  *          not permitted to be within MIN_DIFF_FROM_HALF_PI radians
  *          from either -pi/2 or pi/2.
+ * </pre>
  */
 PIX *
 pixVShear(PIX       *pixd,
@@ -303,18 +309,20 @@ l_float32  tanangle, invangle;
  *             Shears about UL corner and center               *
  *-------------------------------------------------------------*/
 /*!
- *  pixHShearCorner()
+ * \brief   pixHShearCorner()
  *
- *      Input:  pixd (<optional>, if not null, must be equal to pixs)
- *              pixs
- *              angle (in radians)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
- *      Return: pixd, or null on error.
+ * \param[in]    pixd [optional], if not null, must be equal to pixs
+ * \param[in]    pixs
+ * \param[in]    radang  angle in radians
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK;
+ * \return  pixd, or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixHShear() for usage.
  *      (2) This does a horizontal shear about the UL corner, with (+) shear
  *          pushing increasingly leftward (-x) with increasing y.
+ * </pre>
  */
 PIX *
 pixHShearCorner(PIX       *pixd,
@@ -332,18 +340,20 @@ pixHShearCorner(PIX       *pixd,
 
 
 /*!
- *  pixVShearCorner()
+ * \brief   pixVShearCorner()
  *
- *      Input:  pixd (<optional>, if not null, must be equal to pixs)
- *              pixs
- *              angle (in radians)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
- *      Return: pixd, or null on error.
+ * \param[in]    pixd [optional], if not null, must be equal to pixs
+ * \param[in]    pixs
+ * \param[in]    radang  angle in radians
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK;
+ * \return  pixd, or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixVShear() for usage.
  *      (2) This does a vertical shear about the UL corner, with (+) shear
  *          pushing increasingly downward (+y) with increasing x.
+ * </pre>
  */
 PIX *
 pixVShearCorner(PIX       *pixd,
@@ -361,18 +371,20 @@ pixVShearCorner(PIX       *pixd,
 
 
 /*!
- *  pixHShearCenter()
+ * \brief   pixHShearCenter()
  *
- *      Input:  pixd (<optional>, if not null, must be equal to pixs)
- *              pixs
- *              angle (in radians)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
- *      Return: pixd, or null on error.
+ * \param[in]    pixd [optional], if not null, must be equal to pixs
+ * \param[in]    pixs
+ * \param[in]    radang  angle in radians
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK;
+ * \return  pixd, or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixHShear() for usage.
  *      (2) This does a horizontal shear about the center, with (+) shear
  *          pushing increasingly leftward (-x) with increasing y.
+ * </pre>
  */
 PIX *
 pixHShearCenter(PIX       *pixd,
@@ -390,18 +402,20 @@ pixHShearCenter(PIX       *pixd,
 
 
 /*!
- *  pixVShearCenter()
+ * \brief   pixVShearCenter()
  *
- *      Input:  pixd (<optional>, if not null, must be equal to pixs)
- *              pixs
- *              angle (in radians)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
- *      Return: pixd, or null on error.
+ * \param[in]    pixd [optional], if not null, must be equal to pixs
+ * \param[in]    pixs
+ * \param[in]    radang  angle in radians
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK;
+ * \return  pixd, or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixVShear() for usage.
  *      (2) This does a vertical shear about the center, with (+) shear
  *          pushing increasingly downward (+y) with increasing x.
+ * </pre>
  */
 PIX *
 pixVShearCenter(PIX       *pixd,
@@ -423,21 +437,23 @@ pixVShearCenter(PIX       *pixd,
  *                       In place about arbitrary lines                     *
  *--------------------------------------------------------------------------*/
 /*!
- *  pixHShearIP()
+ * \brief   pixHShearIP()
  *
- *      Input:  pixs
- *              yloc (location of horizontal line, measured from origin)
- *              angle (in radians)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixs
+ * \param[in]    yloc location of horizontal line, measured from origin
+ * \param[in]    radang  angle in radians
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK;
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an in-place version of pixHShear(); see comments there.
  *      (2) This brings in 'incolor' pixels from outside the image.
  *      (3) pixs cannot be colormapped, because the in-place operation
  *          only blits in 0 or 1 bits, not an arbitrary colormap index.
  *      (4) Does a horizontal full-band shear about the line with (+) shear
  *          pushing increasingly leftward (-x) with increasing y.
+ * </pre>
  */
 l_int32
 pixHShearIP(PIX       *pixs,
@@ -496,21 +512,23 @@ l_float32  tanangle, invangle;
 
 
 /*!
- *  pixVShearIP()
+ * \brief   pixVShearIP()
  *
- *      Input:  pixs (all depths; not colormapped)
- *              xloc  (location of vertical line, measured from origin)
- *              angle (in radians)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixs all depths; not colormapped
+ * \param[in]    xloc  location of vertical line, measured from origin
+ * \param[in]    radang  angle in radians
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK;
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an in-place version of pixVShear(); see comments there.
  *      (2) This brings in 'incolor' pixels from outside the image.
  *      (3) pixs cannot be colormapped, because the in-place operation
  *          only blits in 0 or 1 bits, not an arbitrary colormap index.
  *      (4) Does a vertical full-band shear about the line with (+) shear
  *          pushing increasingly downward (+y) with increasing x.
+ * </pre>
  */
 l_int32
 pixVShearIP(PIX       *pixs,
@@ -572,15 +590,16 @@ l_float32  tanangle, invangle;
  *              Linear interpolated shear about arbitrary lines            *
  *-------------------------------------------------------------------------*/
 /*!
- *  pixHShearLI()
+ * \brief   pixHShearLI()
  *
- *      Input:  pixs (8 bpp or 32 bpp, or colormapped)
- *              yloc (location of horizontal line, measured from origin)
- *              angle (in radians, in range (-pi/2 ... pi/2))
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
- *      Return: pixd (sheared), or null on error
+ * \param[in]    pixs 8 bpp or 32 bpp, or colormapped
+ * \param[in]    yloc location of horizontal line, measured from origin
+ * \param[in]    radang  angle in radians, in range (-pi/2 ... pi/2)
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK;
+ * \return  pixd sheared, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does horizontal shear with linear interpolation for
  *          accurate results on 8 bpp gray, 32 bpp rgb, or cmapped images.
  *          It is relatively slow compared to the sampled version
@@ -592,6 +611,7 @@ l_float32  tanangle, invangle;
  *      (3) Any colormap is removed.
  *      (4) The angle is brought into the range [-pi/2 + del, pi/2 - del],
  *          where del == MIN_DIFF_FROM_HALF_PI.
+ * </pre>
  */
 PIX *
 pixHShearLI(PIX       *pixs,
@@ -682,15 +702,16 @@ PIX       *pix, *pixd;
 
 
 /*!
- *  pixVShearLI()
+ * \brief   pixVShearLI()
  *
- *      Input:  pixs (8 bpp or 32 bpp, or colormapped)
- *              xloc  (location of vertical line, measured from origin)
- *              angle (in radians, in range (-pi/2 ... pi/2))
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK);
- *      Return: pixd (sheared), or null on error
+ * \param[in]    pixs 8 bpp or 32 bpp, or colormapped
+ * \param[in]    xloc  location of vertical line, measured from origin
+ * \param[in]    radang  angle in radians, in range (-pi/2 ... pi/2)
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK;
+ * \return  pixd sheared, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does vertical shear with linear interpolation for
  *          accurate results on 8 bpp gray, 32 bpp rgb, or cmapped images.
  *          It is relatively slow compared to the sampled version
@@ -702,6 +723,7 @@ PIX       *pix, *pixd;
  *      (3) Any colormap is removed.
  *      (4) The angle is brought into the range [-pi/2 + del, pi/2 - del],
  *          where del == MIN_DIFF_FROM_HALF_PI.
+ * </pre>
  */
 PIX *
 pixVShearLI(PIX       *pixs,

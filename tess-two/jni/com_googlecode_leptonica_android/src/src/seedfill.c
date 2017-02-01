@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  seedfill.c
+/*!
+ * \file seedfill.c
+ * <pre>
  *
  *      Binary seedfill (source: Luc Vincent)
  *               PIX      *pixSeedfillBinary()
@@ -102,16 +103,16 @@
  *      Note carefully that the mask we use delineates which pixels
  *      are allowed to be ON as the seed is filled.  We will call this
  *      a "filling mask".  As the seed expands, it is repeatedly
- *      ANDed with the filling mask: s & fm.  The process can equivalently
+ *      ANDed with the filling mask: s \& fm.  The process can equivalently
  *      be formulated using the inverse of the filling mask, which
  *      we will call a "blocking mask": bm = ~fm.   As the seed
  *      expands, the blocking mask is repeatedly used to prevent
  *      the seed from expanding into the blocking mask.  This is done
  *      by set subtracting the blocking mask from the expanded seed:
  *      s - bm.  Set subtraction of the blocking mask is equivalent
- *      to ANDing with the inverse of the blocking mask: s & (~bm).
+ *      to ANDing with the inverse of the blocking mask: s \& (~bm).
  *      But from the inverse relation between blocking and filling
- *      masks, this is equal to s & fm, which proves the equivalence.
+ *      masks, this is equal to s \& fm, which proves the equivalence.
  *
  *      For efficiency, the pixels can be taken in larger units
  *      for processing, but still in raster order.  It is natural
@@ -124,9 +125,9 @@
  *      in the line above be wa, and the previous word in the
  *      current line be wp.   Let t be a temporary word that
  *      is used in computation.  Note that masking is performed by
- *      w & m.  (If we had instead used a "blocking" mask, we
+ *      w \& m.  (If we had instead used a "blocking" mask, we
  *      would perform masking by the set subtraction operation,
- *      w - m, which is defined to be w & ~m.)
+ *      w - m, which is defined to be w \& ~m.)
  *
  *      The entire operation can be implemented with shifts,
  *      logical operations and tests.  For each word in the seed image
@@ -135,13 +136,13 @@
  *      Because wp is shifted one pixel to its right, "x" is ORed
  *      to the leftmost pixel of w.  We then clip to the ON pixels in
  *      the mask.  The result is
- *               t  <--  (w | wa | x000... ) & m
+ *               t  \<--  (w | wa | x000... ) \& m
  *      We've now finished taking data from above and to the left.
  *      The second step is to allow filling to propagate horizontally
  *      in t, always making sure that it is properly masked at each
  *      step.  So if filling can be done (i.e., t is neither all 0s
  *      nor all 1s), iteratively take:
- *           t  <--  (t | (t >> 1) | (t << 1)) & m
+ *           t  \<--  (t | (t \>\> 1) | (t \<\< 1)) \& m
  *      until t stops changing.  Then write t back into w.
  *
  *      Finally, the boundary conditions require we note that in doing
@@ -152,6 +153,7 @@
  *              pixels don't propagate beyond the right edge of the
  *              actual image.  (This is easily accomplished by
  *              setting the out-of-bound pixels in m to OFF.)
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -171,16 +173,17 @@ static l_int32 pixQualifyLocalMinima(PIX *pixs, PIX *pixm, l_int32 maxval);
  *              Vincent's Iterative Binary Seedfill method               *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixSeedfillBinary()
+ * \brief   pixSeedfillBinary()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs; 1 bpp)
- *              pixs  (1 bpp seed)
- *              pixm  (1 bpp filling mask)
- *              connectivity  (4 or 8)
- *      Return: pixd always
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs; 1 bpp
+ * \param[in]    pixs  1 bpp seed
+ * \param[in]    pixm  1 bpp filling mask
+ * \param[in]    connectivity  4 or 8
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is for binary seedfill (aka "binary reconstruction").
  *      (2) There are 3 cases:
  *            (a) pixd == null (make a new pixd)
@@ -198,6 +201,7 @@ static l_int32 pixQualifyLocalMinima(PIX *pixs, PIX *pixm, l_int32 maxval);
  *          a few pixels in each direction.  If the sizes differ,
  *          the clipping is handled by the low-level function
  *          seedfillBinaryLow().
+ * </pre>
  */
 PIX *
 pixSeedfillBinary(PIX     *pixd,
@@ -254,26 +258,27 @@ PIX       *pixt;
 
 
 /*!
- *  pixSeedfillBinaryRestricted()
+ * \brief   pixSeedfillBinaryRestricted()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs; 1 bpp)
- *              pixs  (1 bpp seed)
- *              pixm  (1 bpp filling mask)
- *              connectivity  (4 or 8)
- *              xmax (max distance in x direction of fill into the mask)
- *              ymax (max distance in y direction of fill into the mask)
- *      Return: pixd always
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs; 1 bpp
+ * \param[in]    pixs  1 bpp seed
+ * \param[in]    pixm  1 bpp filling mask
+ * \param[in]    connectivity  4 or 8
+ * \param[in]    xmax max distance in x direction of fill into the mask
+ * \param[in]    ymax max distance in y direction of fill into the mask
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See usage for pixSeedfillBinary(), which has unrestricted fill.
  *          In pixSeedfillBinary(), the filling distance is unrestricted
  *          and can be larger than pixs, depending on the topology of
  *          th mask.
  *      (2) There are occasions where it is useful not to permit the
  *          fill to go more than a certain distance into the mask.
- *          @xmax specifies the maximum horizontal distance allowed
- *          in the fill; @ymax does likewise in the vertical direction.
+ *          %xmax specifies the maximum horizontal distance allowed
+ *          in the fill; %ymax does likewise in the vertical direction.
  *      (3) Operationally, the max "distance" allowed for the fill
  *          is a linear distance from the original seed, independent
  *          of the actual mask topology.
@@ -283,6 +288,7 @@ PIX       *pixt;
  *          boundaries and working outward where the mask fg allows.
  *          How this might use the constraints of separate xmax and ymax
  *          is not clear.
+ * </pre>
  */
 PIX *
 pixSeedfillBinaryRestricted(PIX     *pixd,
@@ -341,24 +347,26 @@ PIX     *pix1, *pix2;
 
 
 /*!
- *  pixHolesByFilling()
+ * \brief   pixHolesByFilling()
  *
- *      Input:  pixs (1 bpp)
- *              connectivity (4 or 8)
- *      Return: pixd  (inverted image of all holes), or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    connectivity 4 or 8
+ * \return  pixd  inverted image of all holes, or NULL on error
  *
  * Action:
- *     (1) Start with 1-pixel black border on otherwise white pixd
- *     (2) Use the inverted pixs as the filling mask to fill in
+ *     1 Start with 1-pixel black border on otherwise white pixd
+ *     2 Use the inverted pixs as the filling mask to fill in
  *         all the pixels from the border to the pixs foreground
- *     (3) OR the result with pixs to have an image with all
+ *     3 OR the result with pixs to have an image with all
  *         ON pixels except for the holes.
- *     (4) Invert the result to get the holes as foreground
+ *     4 Invert the result to get the holes as foreground
  *
+ * <pre>
  * Notes:
  *     (1) To get 4-c.c. holes of the 8-c.c. as foreground, use
  *         4-connected filling; to get 8-c.c. holes of the 4-c.c.
  *         as foreground, use 8-connected filling.
+ * </pre>
  */
 PIX *
 pixHolesByFilling(PIX     *pixs,
@@ -389,14 +397,15 @@ PIX  *pixsi, *pixd;
 
 
 /*!
- *  pixFillClosedBorders()
+ * \brief   pixFillClosedBorders()
  *
- *      Input:  pixs (1 bpp)
- *              filling connectivity (4 or 8)
- *      Return: pixd  (all topologically outer closed borders are filled
- *                     as connected comonents), or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    connectivity filling connectivity 4 or 8
+ * \return  pixd  all topologically outer closed borders are filled
+ *                     as connected comonents, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Start with 1-pixel black border on otherwise white pixd
  *      (2) Subtract input pixs to remove border pixels that were
  *          also on the closed border
@@ -407,6 +416,7 @@ PIX  *pixsi, *pixd;
  *          the input border
  *      (5) If the borders are 4-c.c., use 8-c.c. filling, and v.v.
  *      (6) Closed borders within c.c. that represent holes, etc., are filled.
+ * </pre>
  */
 PIX *
 pixFillClosedBorders(PIX     *pixs,
@@ -437,12 +447,12 @@ PIX  *pixsi, *pixd;
 
 
 /*!
- *  pixExtractBorderConnComps()
+ * \brief   pixExtractBorderConnComps()
  *
- *      Input:  pixs (1 bpp)
- *              filling connectivity (4 or 8)
- *      Return: pixd  (all pixels in the src that are in connected
- *                     components touching the border), or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    connectivity filling connectivity 4 or 8
+ * \return  pixd  all pixels in the src that are in connected
+ *                components touching the border, or NULL on error
  */
 PIX *
 pixExtractBorderConnComps(PIX     *pixs,
@@ -471,15 +481,17 @@ PIX  *pixd;
 
 
 /*!
- *  pixRemoveBorderConnComps()
+ * \brief   pixRemoveBorderConnComps()
  *
- *      Input:  pixs (1 bpp)
- *              filling connectivity (4 or 8)
- *      Return: pixd  (all pixels in the src that are not touching the
- *                     border) or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    connectivity filling connectivity 4 or 8
+ * \return  pixd  all pixels in the src that are not touching the
+ *                border or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This removes all fg components touching the border.
+ * </pre>
  */
 PIX *
 pixRemoveBorderConnComps(PIX     *pixs,
@@ -505,20 +517,22 @@ PIX  *pixd;
 
 
 /*!
- *  pixFillBgFromBorder()
+ * \brief   pixFillBgFromBorder()
  *
- *      Input:  pixs (1 bpp)
- *              filling connectivity (4 or 8)
- *      Return: pixd (with the background c.c. touching the border
- *                    filled to foreground), or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    connectivity filling connectivity 4 or 8
+ * \return  pixd with the background c.c. touching the border
+ *               filled to foreground, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This fills all bg components touching the border to fg.
  *          It is the photometric inverse of pixRemoveBorderConnComps().
  *      (2) Invert the result to get the "holes" left after this fill.
  *          This can be done multiple times, extracting holes within
  *          holes after each pair of fillings.  Specifically, this code
  *          peels away n successive embeddings of components:
+ * \code
  *              pix1 = <initial image>
  *              for (i = 0; i < 2 * n; i++) {
  *                   pix2 = pixFillBgFromBorder(pix1, 8);
@@ -526,7 +540,8 @@ PIX  *pixd;
  *                   pixDestroy(&pix1);
  *                   pix1 = pix2;
  *              }
-
+ * \endcode
+ * </pre>
  */
 PIX *
 pixFillBgFromBorder(PIX     *pixs,
@@ -557,17 +572,18 @@ PIX  *pixd;
  *            Hole-filling of components to bounding rectangle           *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixFillHolesToBoundingRect()
+ * \brief   pixFillHolesToBoundingRect()
  *
- *      Input:  pixs (1 bpp)
- *              minsize (min number of pixels in the hole)
- *              maxhfract (max hole area as fraction of fg pixels in the cc)
- *              minfgfract (min fg area as fraction of bounding rectangle)
- *      Return: pixd (pixs, with some holes possibly filled and some c.c.
- *                    possibly expanded to their bounding rects),
- *                    or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    minsize min number of pixels in the hole
+ * \param[in]    maxhfract max hole area as fraction of fg pixels in the cc
+ * \param[in]    minfgfract min fg area as fraction of bounding rectangle
+ * \return  pixd pixs, with some holes possibly filled and some c.c.
+ *                    possibly expanded to their bounding rects,
+ *                    or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does not fill holes that are smaller in area than 'minsize'.
  *      (2) This does not fill holes with an area larger than
  *          'maxhfract' times the fg area of the c.c.
@@ -575,15 +591,16 @@ PIX  *pixd;
  *          the fg area is less than 'minfgfract' times the area of the
  *          bounding rect.
  *      (4) The decisions are made as follows:
- *           - Decide if we are filling the holes; if so, when using
+ *           ~ Decide if we are filling the holes; if so, when using
  *             the fg area, include the filled holes.
- *           - Decide based on the fg area if we are filling to a bounding rect.
+ *           ~ Decide based on the fg area if we are filling to a bounding rect.
  *             If so, do it.
  *             If not, fill the holes if the condition is satisfied.
  *      (5) The choice of minsize depends on the resolution.
  *      (6) For solidifying image mask regions on printed materials,
  *          which tend to be rectangular, values for maxhfract
  *          and minfgfract around 0.5 are reasonable.
+ * </pre>
  */
 PIX *
 pixFillHolesToBoundingRect(PIX       *pixs,
@@ -643,14 +660,15 @@ PIXA      *pixa;
  *             Vincent's hybrid Grayscale Seedfill method             *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixSeedfillGray()
+ * \brief   pixSeedfillGray()
  *
- *      Input:  pixs  (8 bpp seed; filled in place)
- *              pixm  (8 bpp filling mask)
- *              connectivity  (4 or 8)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs  8 bpp seed; filled in place
+ * \param[in]    pixm  8 bpp filling mask
+ * \param[in]    connectivity  4 or 8
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an in-place filling operation on the seed, pixs,
  *          where the clipping mask is always above or at the level
  *          of the seed as it is filled.
@@ -663,6 +681,7 @@ PIXA      *pixa;
  *            L. Vincent, Morphological grayscale reconstruction in image
  *            analysis: applications and efficient algorithms, IEEE Transactions
  *            on  Image Processing, vol. 2, no. 2, pp. 176-201, 1993.
+ * </pre>
  */
 l_int32
 pixSeedfillGray(PIX     *pixs,
@@ -697,14 +716,15 @@ l_uint32  *datas, *datam;
 
 
 /*!
- *  pixSeedfillGrayInv()
+ * \brief   pixSeedfillGrayInv()
  *
- *      Input:  pixs  (8 bpp seed; filled in place)
- *              pixm  (8 bpp filling mask)
- *              connectivity  (4 or 8)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs  8 bpp seed; filled in place
+ * \param[in]    pixm  8 bpp filling mask
+ * \param[in]    connectivity  4 or 8
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an in-place filling operation on the seed, pixs,
  *          where the clipping mask is always below or at the level
  *          of the seed as it is filled.  Think of filling up a basin
@@ -720,6 +740,7 @@ l_uint32  *datas, *datam;
  *          where the seed pixel values are generated from the mask,
  *          and where the implementation uses pixSeedfillGray() by
  *          inverting both the seed and mask.
+ * </pre>
  */
 l_int32
 pixSeedfillGrayInv(PIX     *pixs,
@@ -756,14 +777,15 @@ l_uint32  *datas, *datam;
  *             Vincent's Iterative Grayscale Seedfill method             *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixSeedfillGraySimple()
+ * \brief   pixSeedfillGraySimple()
  *
- *      Input:  pixs  (8 bpp seed; filled in place)
- *              pixm  (8 bpp filling mask)
- *              connectivity  (4 or 8)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs  8 bpp seed; filled in place
+ * \param[in]    pixm  8 bpp filling mask
+ * \param[in]    connectivity  4 or 8
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an in-place filling operation on the seed, pixs,
  *          where the clipping mask is always above or at the level
  *          of the seed as it is filled.
@@ -776,6 +798,7 @@ l_uint32  *datas, *datam;
  *            L. Vincent, Morphological grayscale reconstruction in image
  *            analysis: applications and efficient algorithms, IEEE Transactions
  *            on  Image Processing, vol. 2, no. 2, pp. 176-201, 1993.
+ * </pre>
  */
 l_int32
 pixSeedfillGraySimple(PIX     *pixs,
@@ -826,14 +849,15 @@ PIX       *pixt;
 
 
 /*!
- *  pixSeedfillGrayInvSimple()
+ * \brief   pixSeedfillGrayInvSimple()
  *
- *      Input:  pixs  (8 bpp seed; filled in place)
- *              pixm  (8 bpp filling mask)
- *              connectivity  (4 or 8)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs  8 bpp seed; filled in place
+ * \param[in]    pixm  8 bpp filling mask
+ * \param[in]    connectivity  4 or 8
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an in-place filling operation on the seed, pixs,
  *          where the clipping mask is always below or at the level
  *          of the seed as it is filled.  Think of filling up a basin
@@ -845,6 +869,7 @@ PIX       *pixt;
  *          of its use is the hdome fill, where the seed is an image
  *          where each pixel is a fixed amount smaller than the
  *          corresponding mask pixel.
+ * </pre>
  */
 l_int32
 pixSeedfillGrayInvSimple(PIX     *pixs,
@@ -898,15 +923,16 @@ PIX       *pixt;
  *                         Gray seedfill variations                      *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixSeedfillGrayBasin()
+ * \brief   pixSeedfillGrayBasin()
  *
- *      Input:  pixb  (binary mask giving seed locations)
- *              pixm  (8 bpp basin-type filling mask)
- *              delta (amount of seed value above mask)
- *              connectivity  (4 or 8)
- *      Return: pixd (filled seed) if OK, null on error
+ * \param[in]    pixb  binary mask giving seed locations
+ * \param[in]    pixm  8 bpp basin-type filling mask
+ * \param[in]    delta amount of seed value above mask
+ * \param[in]    connectivity  4 or 8
+ * \return  pixd filled seed if OK, NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This fills from a seed within basins defined by a filling mask.
  *          The seed value(s) are greater than the corresponding
  *          filling mask value, and the result has the bottoms of
@@ -914,7 +940,7 @@ PIX       *pixt;
  *      (2) The seed has value 255 except where pixb has fg (1), which
  *          are the seed 'locations'.  At the seed locations, the seed
  *          value is the corresponding value of the mask pixel in pixm
- *          plus @delta.  If @delta == 0, we return a copy of pixm.
+ *          plus %delta.  If %delta == 0, we return a copy of pixm.
  *      (3) The actual filling is done using the standard grayscale filling
  *          operation on the inverse of the mask and using the inverse
  *          of the seed image.  After filling, we return the inverse of
@@ -924,7 +950,8 @@ PIX       *pixt;
  *          low values; pixb can identify the local minima in pixm (say, at
  *          the bottom of the basins); and delta is the amount that we wish
  *          to raise (lighten) the basins.  We construct the seed
- *          (a.k.a marker) image from pixb, pixm and @delta.
+ *          (a.k.a marker) image from pixb, pixm and %delta.
+ * </pre>
  */
 PIX *
 pixSeedfillGrayBasin(PIX     *pixb,
@@ -975,15 +1002,16 @@ PIX  *pixbi, *pixmi, *pixsd;
  *                   Vincent's Distance Function method                  *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixDistanceFunction()
+ * \brief   pixDistanceFunction()
  *
- *      Input:  pixs  (1 bpp source)
- *              connectivity  (4 or 8)
- *              outdepth (8 or 16 bits for pixd)
- *              boundcond (L_BOUNDARY_BG, L_BOUNDARY_FG)
- *      Return: pixd, or null on error
+ * \param[in]    pixs  1 bpp source
+ * \param[in]    connectivity  4 or 8
+ * \param[in]    outdepth 8 or 16 bits for pixd
+ * \param[in]    boundcond L_BOUNDARY_BG, L_BOUNDARY_FG
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This computes the distance of each pixel from the nearest
  *          background pixel.  All bg pixels therefore have a distance of 0,
  *          and the fg pixel distances increase linearly from 1 at the
@@ -1014,6 +1042,7 @@ PIX  *pixbi, *pixmi, *pixsd;
  *          1-boundary pixels, and go all the way to the right
  *          and bottom; then coming back reset left and top.  But we
  *          instead use a method that works for both 4- and 8-connected.
+ * </pre>
  */
 PIX *
 pixDistanceFunction(PIX     *pixs,
@@ -1067,13 +1096,14 @@ PIX       *pixd;
  *                Seed spread (based on distance function)               *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixSeedspread()
+ * \brief   pixSeedspread()
  *
- *      Input:  pixs  (8 bpp source)
- *              connectivity  (4 or 8)
- *      Return: pixd, or null on error
+ * \param[in]    pixs  8 bpp source
+ * \param[in]    connectivity  4 or 8
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The raster/anti-raster method for implementing this filling
  *          operation was suggested by Ray Smith.
  *      (2) This takes an arbitrary set of nonzero pixels in pixs, which
@@ -1103,6 +1133,7 @@ PIX       *pixd;
  *          This can give rise to strange-looking results, particularly
  *          for 4-connectivity where the L1 distance is computed from
  *          steps in N,S,E and W directions (no diagonals).
+ * </pre>
  */
 PIX *
 pixSeedspread(PIX     *pixs,
@@ -1158,24 +1189,25 @@ PIX       *pixm, *pixt, *pixg, *pixd;
  *                              Local extrema                            *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixLocalExtrema()
+ * \brief   pixLocalExtrema()
  *
- *      Input:  pixs  (8 bpp)
- *              maxmin (max allowed for the min in a 3x3 neighborhood;
- *                      use 0 for default which is to have no upper bound)
- *              minmax (min allowed for the max in a 3x3 neighborhood;
- *                      use 0 for default which is to have no lower bound)
- *              &ppixmin (<optional return> mask of local minima)
- *              &ppixmax (<optional return> mask of local maxima)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs  8 bpp
+ * \param[in]    maxmin max allowed for the min in a 3x3 neighborhood;
+ *                      use 0 for default which is to have no upper bound
+ * \param[in]    minmax min allowed for the max in a 3x3 neighborhood;
+ *                      use 0 for default which is to have no lower bound
+ * \param[out]   ppixmin [optional] mask of local minima
+ * \param[out]   ppixmax [optional] mask of local maxima
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This gives the actual local minima and maxima.
  *          A local minimum is a pixel whose surrounding pixels all
  *          have values at least as large, and likewise for a local
- *          maximum.  For the local minima, @maxmin is the upper
+ *          maximum.  For the local minima, %maxmin is the upper
  *          bound for the value of pixs.  Likewise, for the local maxima,
- *          @minmax is the lower bound for the value of pixs.
+ *          %minmax is the lower bound for the value of pixs.
  *      (2) The minima are found by starting with the erosion-and-equality
  *          approach of pixSelectedLocalExtrema().  This is followed
  *          by a qualification step, where each c.c. in the resulting
@@ -1191,6 +1223,7 @@ PIX       *pixm, *pixt, *pixg, *pixd;
  *          for the minima there.
  *      (4) The generated masks can be used as markers for
  *          further operations.
+ * </pre>
  */
 l_int32
 pixLocalExtrema(PIX     *pixs,
@@ -1233,15 +1266,16 @@ PIX  *pixmin, *pixmax, *pixt1, *pixt2;
 
 
 /*!
- *  pixQualifyLocalMinima()
+ * \brief   pixQualifyLocalMinima()
  *
- *      Input:  pixs  (8 bpp image from which pixm has been extracted)
- *              pixm  (1 bpp mask of values equal to min in 3x3 neighborhood)
- *              maxval (max allowed for the min in a 3x3 neighborhood;
- *                      use 0 for default which is to have no upper bound)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs  8 bpp image from which pixm has been extracted
+ * \param[in]    pixm  1 bpp mask of values equal to min in 3x3 neighborhood
+ * \param[in]    maxval max allowed for the min in a 3x3 neighborhood;
+ *                      use 0 for default which is to have no upper bound
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function acts in-place to remove all c.c. in pixm
  *          that are not true local minima in pixs.  As seen in
  *          pixLocalExtrema(), the input pixm are found by selecting those
@@ -1251,8 +1285,9 @@ PIX  *pixmin, *pixmax, *pixt1, *pixt2;
  *          boundary pixels of the c.c. have values that are greater
  *          than the value within the c.c.
  *      (2) The maximum allowed value for each local minimum can be
- *          bounded with @maxval.  Use 0 for default, which is to have
+ *          bounded with %maxval.  Use 0 for default, which is to have
  *          no upper bound (equivalent to maxval == 254).
+ * </pre>
  */
 static l_int32
 pixQualifyLocalMinima(PIX     *pixs,
@@ -1331,15 +1366,16 @@ PIXA      *pixa;
 
 
 /*!
- *  pixSelectedLocalExtrema()
+ * \brief   pixSelectedLocalExtrema()
  *
- *      Input:  pixs  (8 bpp)
- *              mindist (-1 for keeping all pixels; >= 0 specifies distance)
- *              &ppixmin (<return> mask of local minima)
- *              &ppixmax (<return> mask of local maxima)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs  8 bpp
+ * \param[in]    mindist -1 for keeping all pixels; >= 0 specifies distance
+ * \param[out]   ppixmin mask of local minima
+ * \param[out]   ppixmax mask of local maxima
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This selects those local 3x3 minima that are at least a
  *          specified distance from the nearest local 3x3 maxima, and v.v.
  *          for the selected set of local 3x3 maxima.
@@ -1359,6 +1395,7 @@ PIXA      *pixa;
  *          on each side, such that no local 3x3 maximum pixel is within
  *          that square; and v.v.
  *      (3) The generated masks can be used as markers for further operations.
+ * </pre>
  */
 l_int32
 pixSelectedLocalExtrema(PIX     *pixs,
@@ -1407,16 +1444,18 @@ PIX  *pixmin, *pixmax, *pixt, *pixtmin, *pixtmax;
 
 
 /*!
- *  pixFindEqualValues()
+ * \brief   pixFindEqualValues()
  *
- *      Input:  pixs1 (8 bpp)
- *              pixs2 (8 bpp)
- *      Return: pixd (1 bpp mask), or null on error
+ * \param[in]    pixs1 8 bpp
+ * \param[in]    pixs2 8 bpp
+ * \return  pixd 1 bpp mask, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The two images are aligned at the UL corner, and the returned
  *          image has ON pixels where the pixels in pixs1 and pixs2
  *          have equal values.
+ * </pre>
  */
 PIX *
 pixFindEqualValues(PIX  *pixs1,
@@ -1465,15 +1504,16 @@ PIX       *pixd;
  *             Selection of minima in mask connected components          *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixSelectMinInConnComp()
+ * \brief   pixSelectMinInConnComp()
  *
- *      Input:  pixs (8 bpp)
- *              pixm (1 bpp)
- *              &pta (<return> pta of min pixel locations)
- *              &nav (<optional return> numa of minima values)
- *      Return: 0 if OK, 1 on error.
+ * \param[in]    pixs 8 bpp
+ * \param[in]    pixm 1 bpp
+ * \param[out]   ppta pta of min pixel locations
+ * \param[out]   pnav [optional] numa of minima values
+ * \return  0 if OK, 1 on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For each 8 connected component in pixm, this finds
  *          a pixel in pixs that has the lowest value, and saves
  *          it in a Pta.  If several pixels in pixs have the same
@@ -1482,6 +1522,7 @@ PIX       *pixd;
  *          connected component have the same value in pixs, so it is
  *          fastest to select one of them using a special seedfill
  *          operation.  Not yet implemented.
+ * </pre>
  */
 l_int32
 pixSelectMinInConnComp(PIX    *pixs,
@@ -1574,25 +1615,27 @@ PTA       *pta;
  *            Removal of seeded connected components from a mask         *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixRemoveSeededComponents()
+ * \brief   pixRemoveSeededComponents()
  *
- *      Input:  pixd  (<optional>; this can be null or equal to pixm; 1 bpp)
- *              pixs  (1 bpp seed)
- *              pixm  (1 bpp filling mask)
- *              connectivity  (4 or 8)
- *              bordersize (amount of border clearing)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; this can be null or equal to pixm; 1 bpp
+ * \param[in]    pixs  1 bpp seed
+ * \param[in]    pixm  1 bpp filling mask
+ * \param[in]    connectivity  4 or 8
+ * \param[in]    bordersize amount of border clearing
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This removes each component in pixm for which there is
  *          at least one seed in pixs.  If pixd == NULL, this returns
  *          the result in a new pixd.  Otherwise, it is an in-place
  *          operation on pixm.  In no situation is pixs altered,
  *          because we do the filling with a copy of pixs.
- *      (2) If bordersize > 0, it also clears all pixels within a
- *          distance @bordersize of the edge of pixd.  This is here
+ *      (2) If bordersize \> 0, it also clears all pixels within a
+ *          distance %bordersize of the edge of pixd.  This is here
  *          because pixLocalExtrema() typically finds local minima
- *          at the border.  Use @bordersize >= 2 to remove these.
+ *          at the border.  Use %bordersize \>= 2 to remove these.
+ * </pre>
  */
 PIX *
 pixRemoveSeededComponents(PIX     *pixd,

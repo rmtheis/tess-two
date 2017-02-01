@@ -24,11 +24,13 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  scale.c
+/*!
+ * \file scale.c
+ * <pre>
  *
  *         Top-level scaling
  *               PIX      *pixScale()     ***
+ *               PIX      *pixScaleToSizeRel()     ***
  *               PIX      *pixScaleToSize()     ***
  *               PIX      *pixScaleGeneral()     ***
  *
@@ -107,6 +109,7 @@
  *
  *  *** Note: these functions make an implicit assumption about RGB
  *            component ordering.
+ * </pre>
  */
 
 #include <string.h>
@@ -119,11 +122,11 @@ extern l_float32  AlphaMaskBorderVals[2];
  *                    Top level scaling dispatcher                  *
  *------------------------------------------------------------------*/
 /*!
- *  pixScale()
+ * \brief   pixScale()
  *
- *      Input:  pixs (1, 2, 4, 8, 16 and 32 bpp)
- *              scalex, scaley
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1, 2, 4, 8, 16 and 32 bpp
+ * \param[in]    scalex, scaley
+ * \return  pixd, or NULL on error
  *
  *  This function scales 32 bpp RGB; 2, 4 or 8 bpp palette color;
  *  2, 4, 8 or 16 bpp gray; and binary images.
@@ -133,19 +136,19 @@ extern l_float32  AlphaMaskBorderVals[2];
  *  the colormap has color entries.  Images with 2, 4 or 16 bpp are
  *  converted to 8 bpp.
  *
- *  Because pixScale() is meant to be a very simple interface to a
+ *  Because pixScale is meant to be a very simple interface to a
  *  number of scaling functions, including the use of unsharp masking,
  *  the type of scaling and the sharpening parameters are chosen
  *  by default.  Grayscale and color images are scaled using one
  *  of four methods, depending on the scale factors:
- *   (1) antialiased subsampling (lowpass filtering followed by
+ *   1 antialiased subsampling (lowpass filtering followed by
  *       subsampling, implemented here by area mapping), for scale factors
  *       less than 0.2
- *   (2) antialiased subsampling with sharpening, for scale factors
+ *   2 antialiased subsampling with sharpening, for scale factors
  *       between 0.2 and 0.7
- *   (3) linear interpolation with sharpening, for scale factors between
+ *   3 linear interpolation with sharpening, for scale factors between
  *       0.7 and 1.4
- *   (4) linear interpolation without sharpening, for scale factors >= 1.4.
+ *   4 linear interpolation without sharpening, for scale factors >= 1.4.
  *
  *  One could use subsampling for scale factors very close to 1.0,
  *  because it preserves sharp edges.  Linear interpolation blurs
@@ -160,7 +163,7 @@ extern l_float32  AlphaMaskBorderVals[2];
  *
  *  For images with sharp edges, sharpening substantially improves the
  *  image quality for scale factors between about 0.2 and about 2.0.
- *  pixScale() uses a small amount of sharpening by default because
+ *  pixScale uses a small amount of sharpening by default because
  *  it strengthens edge pixels that are weak due to anti-aliasing.
  *  The default sharpening factors are:
  *      * for scaling factors < 0.7:   sharpfract = 0.2    sharpwidth = 1
@@ -178,18 +181,18 @@ extern l_float32  AlphaMaskBorderVals[2];
  *  which is proportional to image area, is very large compared to the
  *  incremental quality improvement, so we cut off the default use of
  *  sharpening at 1.4.  Thus, for scale factors greater than 1.4,
- *  pixScale() only does linear interpolation.
+ *  pixScale only does linear interpolation.
  *
  *  In many situations you will get a satisfactory result by scaling
- *  without sharpening: call pixScaleGeneral() with @sharpfract = 0.0.
+ *  without sharpening: call pixScaleGeneral with %sharpfract = 0.0.
  *  Alternatively, if you wish to sharpen but not use the default
- *  value, first call pixScaleGeneral() with @sharpfract = 0.0, and
- *  then sharpen explicitly using pixUnsharpMasking().
+ *  value, first call pixScaleGeneral with %sharpfract = 0.0, and
+ *  then sharpen explicitly using pixUnsharpMasking.
  *
  *  Binary images are scaled to binary by sampling the closest pixel,
- *  without any low-pass filtering (averaging of neighboring pixels).
+ *  without any low-pass filtering averaging of neighboring pixels.
  *  This will introduce aliasing for reductions.  Aliasing can be
- *  prevented by using pixScaleToGray() instead.
+ *  prevented by using pixScaleToGray instead.
  *
  *  *** Warning: implicit assumption about RGB component order
  *               for LI color scaling
@@ -217,21 +220,56 @@ l_float32  maxscale, sharpfract;
 
 
 /*!
- *  pixScaleToSize()
+ * \brief   pixScaleToSizeRel()
  *
- *      Input:  pixs (1, 2, 4, 8, 16 and 32 bpp)
- *              wd  (target width; use 0 if using height as target)
- *              hd  (target height; use 0 if using width as target)
- *      Return: pixd, or null on error
+ * \param[in]    pixs
+ * \param[in]    delw  change in width, in pixels; 0 means no change
+ * \param[in]    delh  change in height, in pixels; 0 means no change
+ * \return  pixd, or NULL on error
+ */
+PIX *
+pixScaleToSizeRel(PIX     *pixs,
+                  l_int32  delw,
+                  l_int32  delh)
+{
+l_int32  w, h, wd, hd;
+
+    PROCNAME("pixScaleToSizeRel");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+
+    if (delw == 0 && delh == 0)
+        return pixCopy(NULL, pixs);
+
+    pixGetDimensions(pixs, &w, &h, NULL);
+    wd = w + delw;
+    hd = h + delh;
+    if (wd <= 0 || hd <= 0)
+        return (PIX *)ERROR_PTR("pix dimension reduced to 0", procName, NULL);
+
+    return pixScaleToSize(pixs, wd, hd);
+}
+
+
+/*!
+ * \brief   pixScaleToSize()
  *
- *  Notes:
+ * \param[in]    pixs 1, 2, 4, 8, 16 and 32 bpp
+ * \param[in]    wd  target width; use 0 if using height as target
+ * \param[in]    hd  target height; use 0 if using width as target
+ * \return  pixd, or NULL on error
+ *
+ * <pre>
+ * Notes:
  *      (1) This guarantees that the output scaled image has the
  *          dimension(s) you specify.
- *           - To specify the width with isotropic scaling, set @hd = 0.
- *           - To specify the height with isotropic scaling, set @wd = 0.
- *           - If both @wd and @hd are specified, the image is scaled
+ *           ~ To specify the width with isotropic scaling, set %hd = 0.
+ *           ~ To specify the height with isotropic scaling, set %wd = 0.
+ *           ~ If both %wd and %hd are specified, the image is scaled
  *             (in general, anisotropically) to that size.
- *           - It is an error to set both @wd and @hd to 0.
+ *           ~ It is an error to set both %wd and %hd to 0.
+ * </pre>
  */
 PIX *
 pixScaleToSize(PIX     *pixs,
@@ -265,15 +303,16 @@ l_float32  scalex, scaley;
 
 
 /*!
- *  pixScaleGeneral()
+ * \brief   pixScaleGeneral()
  *
- *      Input:  pixs (1, 2, 4, 8, 16 and 32 bpp)
- *              scalex, scaley (both > 0.0)
- *              sharpfract (use 0.0 to skip sharpening)
- *              sharpwidth (halfwidth of low-pass filter; typ. 1 or 2)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1, 2, 4, 8, 16 and 32 bpp
+ * \param[in]    scalex, scaley both > 0.0
+ * \param[in]    sharpfract use 0.0 to skip sharpening
+ * \param[in]    sharpwidth halfwidth of low-pass filter; typ. 1 or 2
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixScale() for usage.
  *      (2) This interface may change in the future, as other special
  *          cases are added.
@@ -284,10 +323,11 @@ l_float32  scalex, scaley;
  *            maxscale >= 1.4:        no sharpening
  *      (4) To avoid sharpening for grayscale and color images with
  *          scaling factors between 0.2 and 1.4, call this function
- *          with @sharpfract == 0.0.
+ *          with %sharpfract == 0.0.
  *      (5) To use arbitrary sharpening in conjunction with scaling,
- *          call this function with @sharpfract = 0.0, and follow this
+ *          call this function with %sharpfract = 0.0, and follow this
  *          with a call to pixUnsharpMasking() with your chosen parameters.
+ * </pre>
  */
 PIX *
 pixScaleGeneral(PIX       *pixs,
@@ -316,7 +356,7 @@ PIX       *pixt, *pixt2, *pixd;
         return pixScaleBinary(pixs, scalex, scaley);
 
         /* Remove colormap; clone if possible; result is either 8 or 32 bpp */
-    if ((pixt = pixConvertTo8Or32(pixs, 0, 1)) == NULL)
+    if ((pixt = pixConvertTo8Or32(pixs, L_CLONE, 0)) == NULL)
         return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
 
         /* Scale (up or down) */
@@ -341,6 +381,7 @@ PIX       *pixt, *pixt2, *pixd;
 
     pixDestroy(&pixt);
     pixDestroy(&pixt2);
+    pixCopyText(pixd, pixs);
     pixCopyInputFormat(pixd, pixs);
     return pixd;
 }
@@ -350,13 +391,14 @@ PIX       *pixt, *pixt2, *pixd;
  *                  Scaling by linear interpolation                 *
  *------------------------------------------------------------------*/
 /*!
- *  pixScaleLI()
+ * \brief   pixScaleLI()
  *
- *      Input:  pixs (2, 4, 8 or 32 bpp; with or without colormap)
- *              scalex, scaley (must both be >= 0.7)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 2, 4, 8 or 32 bpp; with or without colormap
+ * \param[in]    scalex, scaley must both be >= 0.7
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function should only be used when the scale factors are
  *          greater than or equal to 0.7, and typically greater than 1.
  *          If either scale factor is smaller than 0.7, we issue a warning
@@ -370,6 +412,7 @@ PIX       *pixt, *pixt2, *pixd;
  *          the special cases of 2x and 4x expansion.
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
+ * </pre>
  */
 PIX *
 pixScaleLI(PIX       *pixs,
@@ -394,13 +437,13 @@ PIX       *pixt, *pixd;
         return (PIX *)ERROR_PTR("pixs not {2,4,8,16,32} bpp", procName, NULL);
 
         /* Remove colormap; clone if possible; result is either 8 or 32 bpp */
-    if ((pixt = pixConvertTo8Or32(pixs, 0, 1)) == NULL)
+    if ((pixt = pixConvertTo8Or32(pixs, L_CLONE, 0)) == NULL)
         return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
 
     d = pixGetDepth(pixt);
     if (d == 8)
         pixd = pixScaleGrayLI(pixt, scalex, scaley);
-    else if (d == 32)
+    else  /* d == 32 */
         pixd = pixScaleColorLI(pixt, scalex, scaley);
 
     pixDestroy(&pixt);
@@ -410,13 +453,14 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixScaleColorLI()
+ * \brief   pixScaleColorLI()
  *
- *      Input:  pixs  (32 bpp, representing rgb)
- *              scalex, scaley (must both be >= 0.7)
- *      Return: pixd, or null on error
+ * \param[in]    pixs  32 bpp, representing rgb
+ * \param[in]    scalex, scaley must both be >= 0.7
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If this is used for scale factors less than 0.7,
  *          it will suffer from antialiasing.  A warning is issued.
  *          Particularly for document images with sharp edges,
@@ -429,6 +473,7 @@ PIX       *pixt, *pixd;
  *      (3) The speed on intel hardware for the general case (not 2x)
  *          is about 10 * 10^6 dest-pixels/sec/GHz.  (The special 2x
  *          case runs at about 80 * 10^6 dest-pixels/sec/GHz.)
+ * </pre>
  */
 PIX *
 pixScaleColorLI(PIX      *pixs,
@@ -480,12 +525,13 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleColor2xLI()
+ * \brief   pixScaleColor2xLI()
  *
- *      Input:  pixs  (32 bpp, representing rgb)
- *      Return: pixd, or null on error
+ * \param[in]    pixs  32 bpp, representing rgb
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a special case of linear interpolated scaling,
  *          for 2x upscaling.  It is about 8x faster than using
  *          the generic pixScaleColorLI(), and about 4x faster than
@@ -495,6 +541,7 @@ PIX       *pixd;
  *          80 * 10^6 dest-pixels/sec/GHz.
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
+ * </pre>
  */
 PIX *
 pixScaleColor2xLI(PIX  *pixs)
@@ -527,12 +574,13 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleColor4xLI()
+ * \brief   pixScaleColor4xLI()
  *
- *      Input:  pixs  (32 bpp, representing rgb)
- *      Return: pixd, or null on error
+ * \param[in]    pixs  32 bpp, representing rgb
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a special case of color linear interpolated scaling,
  *          for 4x upscaling.  It is about 3x faster than using
  *          the generic pixScaleColorLI().
@@ -542,6 +590,7 @@ PIX       *pixd;
  *          It would be about 4x faster to inline the color code properly,
  *          in analogy to scaleColor4xLILow(), and I leave this as
  *          an exercise for someone who really needs it.
+ * </pre>
  */
 PIX *
 pixScaleColor4xLI(PIX  *pixs)
@@ -565,11 +614,13 @@ PIX  *pixd;
     pixbs = pixScaleGray4xLI(pixb);
     pixDestroy(&pixb);
 
-    if ((pixd = pixCreateRGBImage(pixrs, pixgs, pixbs)) == NULL)
-        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
-    if (pixGetSpp(pixs) == 4)
-        pixScaleAndTransferAlpha(pixd, pixs, 4.0, 4.0);
-    pixCopyInputFormat(pixd, pixs);
+    if ((pixd = pixCreateRGBImage(pixrs, pixgs, pixbs)) == NULL) {
+        L_ERROR("pixd not made\n", procName);
+    } else {
+        if (pixGetSpp(pixs) == 4)
+            pixScaleAndTransferAlpha(pixd, pixs, 4.0, 4.0);
+        pixCopyInputFormat(pixd, pixs);
+    }
 
     pixDestroy(&pixrs);
     pixDestroy(&pixgs);
@@ -579,16 +630,16 @@ PIX  *pixd;
 
 
 /*!
- *  pixScaleGrayLI()
+ * \brief   pixScaleGrayLI()
  *
- *      Input:  pixs (8 bpp grayscale, no cmap)
- *              scalex, scaley (must both be >= 0.7)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 bpp grayscale, no cmap
+ * \param[in]    scalex, scaley must both be >= 0.7
+ * \return  pixd, or NULL on error
  *
  *  This function is appropriate for upscaling
- *  (magnification: scale factors > 1), and for a
- *  small amount of downscaling (reduction: scale
- *  factors > 0.5).   For scale factors less than 0.5,
+ *  magnification: scale factors > 1, and for a
+ *  small amount of downscaling reduction: scale
+ *  factors > 0.5.   For scale factors less than 0.5,
  *  the best result is obtained by area mapping,
  *  but this is very expensive.  So for such large
  *  reductions, it is more appropriate to do low pass
@@ -631,26 +682,26 @@ PIX  *pixd;
  *  degenerates asymptotically to subsampling.  But
  *  subsampling without a low-pass pre-filter causes
  *  aliasing by the nyquist theorem.  To avoid aliasing,
- *  a low-pass filter (e.g., an averaging filter) of
- *  size roughly equal to the dest pixel (i.e., the
- *  reduction factor) should be applied to the src before
+ *  a low-pass filter e.g., an averaging filter of
+ *  size roughly equal to the dest pixel i.e., the
+ *  reduction factor should be applied to the src before
  *  subsampling.
  *
  *  As an alternative to low-pass filtering and subsampling
  *  for large reduction factors, linear interpolation can
- *  also be done between the (widely separated) src pixels in
+ *  also be done between the widely separated src pixels in
  *  which the corners of the dest pixel lie.  This also is
  *  not optimal, as it samples src pixels only near the
  *  corners of the dest pixel, and it is not implemented.
  *
  *  Summary:
- *    (1) If this is used for scale factors less than 0.7,
+ *    1 If this is used for scale factors less than 0.7,
  *        it will suffer from antialiasing.  A warning is issued.
  *        Particularly for document images with sharp edges,
- *        use pixScaleSmooth() or pixScaleAreaMap() instead.
- *    (2) The speed on intel hardware for the general case (not 2x)
- *        is about 13 * 10^6 dest-pixels/sec/GHz.  (The special 2x
- *        case runs at about 100 * 10^6 dest-pixels/sec/GHz.)
+ *        use pixScaleSmooth) or pixScaleAreaMap( instead.
+ *    2) The speed on intel hardware for the general case (not 2x
+ *        is about 13 * 10^6 dest-pixels/sec/GHz.  The special 2x
+ *        case runs at about 100 * 10^6 dest-pixels/sec/GHz.
  */
 PIX *
 pixScaleGrayLI(PIX       *pixs,
@@ -701,17 +752,19 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleGray2xLI()
+ * \brief   pixScaleGray2xLI()
  *
- *      Input:  pixs (8 bpp grayscale, not cmapped)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 bpp grayscale, not cmapped
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a special case of gray linear interpolated scaling,
  *          for 2x upscaling.  It is about 6x faster than using
  *          the generic pixScaleGrayLI().
  *      (2) The speed on intel hardware is about
  *          100 * 10^6 dest-pixels/sec/GHz
+ * </pre>
  */
 PIX *
 pixScaleGray2xLI(PIX  *pixs)
@@ -742,17 +795,19 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleGray4xLI()
+ * \brief   pixScaleGray4xLI()
  *
- *      Input:  pixs (8 bpp grayscale, not cmapped)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 bpp grayscale, not cmapped
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a special case of gray linear interpolated scaling,
  *          for 4x upscaling.  It is about 12x faster than using
  *          the generic pixScaleGrayLI().
  *      (2) The speed on intel hardware is about
  *          160 * 10^6 dest-pixels/sec/GHz.
+ * </pre>
  */
 PIX *
 pixScaleGray4xLI(PIX  *pixs)
@@ -787,17 +842,19 @@ PIX       *pixd;
  *                  Scaling by closest pixel sampling               *
  *------------------------------------------------------------------*/
 /*!
- *  pixScaleBySampling()
+ * \brief   pixScaleBySampling()
  *
- *      Input:  pixs (1, 2, 4, 8, 16, 32 bpp)
- *              scalex, scaley (both > 0.0)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1, 2, 4, 8, 16, 32 bpp
+ * \param[in]    scalex, scaley both > 0.0
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function samples from the source without
  *          filtering.  As a result, aliasing will occur for
- *          subsampling (@scalex and/or @scaley < 1.0).
- *      (2) If @scalex == 1.0 and @scaley == 1.0, returns a copy.
+ *          subsampling (%scalex and/or %scaley < 1.0).
+ *      (2) If %scalex == 1.0 and %scaley == 1.0, returns a copy.
+ * </pre>
  */
 PIX *
 pixScaleBySampling(PIX       *pixs,
@@ -843,21 +900,23 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleBySamplingToSize()
+ * \brief   pixScaleBySamplingToSize()
  *
- *      Input:  pixs (1, 2, 4, 8, 16 and 32 bpp)
- *              wd  (target width; use 0 if using height as target)
- *              hd  (target height; use 0 if using width as target)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1, 2, 4, 8, 16 and 32 bpp
+ * \param[in]    wd  target width; use 0 if using height as target
+ * \param[in]    hd  target height; use 0 if using width as target
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This guarantees that the output scaled image has the
  *          dimension(s) you specify.
- *           - To specify the width with isotropic scaling, set @hd = 0.
- *           - To specify the height with isotropic scaling, set @wd = 0.
- *           - If both @wd and @hd are specified, the image is scaled
+ *           ~ To specify the width with isotropic scaling, set %hd = 0.
+ *           ~ To specify the height with isotropic scaling, set %wd = 0.
+ *           ~ If both %wd and %hd are specified, the image is scaled
  *             (in general, anisotropically) to that size.
- *           - It is an error to set both @wd and @hd to 0.
+ *           ~ It is an error to set both %wd and %hd to 0.
+ * </pre>
  */
 PIX *
 pixScaleBySamplingToSize(PIX     *pixs,
@@ -891,16 +950,18 @@ l_float32  scalex, scaley;
 
 
 /*!
- *  pixScaleByIntSampling()
+ * \brief   pixScaleByIntSampling()
  *
- *      Input:  pixs (1, 2, 4, 8, 16, 32 bpp)
- *              factor (integer subsampling)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1, 2, 4, 8, 16, 32 bpp
+ * \param[in]    factor integer subsampling
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Simple interface to pixScaleBySampling(), for
  *          isotropic integer reduction.
- *      (2) If @factor == 1, returns a copy.
+ *      (2) If %factor == 1, returns a copy.
+ * </pre>
  */
 PIX *
 pixScaleByIntSampling(PIX     *pixs,
@@ -927,20 +988,22 @@ l_float32  scale;
  *            Fast integer factor subsampling RGB to gray           *
  *------------------------------------------------------------------*/
 /*!
- *  pixScaleRGBToGrayFast()
+ * \brief   pixScaleRGBToGrayFast()
  *
- *      Input:  pixs (32 bpp rgb)
- *              factor (integer reduction factor >= 1)
- *              color (one of COLOR_RED, COLOR_GREEN, COLOR_BLUE)
- *      Return: pixd (8 bpp), or null on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    factor integer reduction factor >= 1
+ * \param[in]    color one of COLOR_RED, COLOR_GREEN, COLOR_BLUE
+ * \return  pixd 8 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does simultaneous subsampling by an integer factor and
  *          extraction of the color from the RGB pix.
  *      (2) It is designed for maximum speed, and is used for quickly
  *          generating a downsized grayscale image from a higher resolution
  *          RGB image.  This would typically be used for image analysis.
  *      (3) The standard color byte order (RGBA) is assumed.
+ * </pre>
  */
 PIX *
 pixScaleRGBToGrayFast(PIX     *pixs,
@@ -1000,20 +1063,22 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleRGBToBinaryFast()
+ * \brief   pixScaleRGBToBinaryFast()
  *
- *      Input:  pixs (32 bpp RGB)
- *              factor (integer reduction factor >= 1)
- *              thresh (binarization threshold)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 32 bpp RGB
+ * \param[in]    factor integer reduction factor >= 1
+ * \param[in]    thresh binarization threshold
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does simultaneous subsampling by an integer factor and
  *          conversion from RGB to gray to binary.
  *      (2) It is designed for maximum speed, and is used for quickly
  *          generating a downsized binary image from a higher resolution
  *          RGB image.  This would typically be used for image analysis.
  *      (3) It uses the green channel to represent the RGB pixel intensity.
+ * </pre>
  */
 PIX *
 pixScaleRGBToBinaryFast(PIX     *pixs,
@@ -1065,19 +1130,21 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleGrayToBinaryFast()
+ * \brief   pixScaleGrayToBinaryFast()
  *
- *      Input:  pixs (8 bpp grayscale)
- *              factor (integer reduction factor >= 1)
- *              thresh (binarization threshold)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 8 bpp grayscale
+ * \param[in]    factor integer reduction factor >= 1
+ * \param[in]    thresh binarization threshold
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does simultaneous subsampling by an integer factor and
  *          thresholding from gray to binary.
  *      (2) It is designed for maximum speed, and is used for quickly
  *          generating a downsized binary image from a higher resolution
  *          gray image.  This would typically be used for image analysis.
+ * </pre>
  */
 PIX *
 pixScaleGrayToBinaryFast(PIX     *pixs,
@@ -1132,13 +1199,14 @@ PIX       *pixd;
  *               Downscaling with (antialias) smoothing             *
  *------------------------------------------------------------------*/
 /*!
- *  pixScaleSmooth()
+ * \brief   pixScaleSmooth()
  *
- *      Input:  pixs (2, 4, 8 or 32 bpp; and 2, 4, 8 bpp with colormap)
- *              scalex, scaley (must both be < 0.7)
- *      Return: pixd, or null on error
+ * \param[in]    pix 2, 4, 8 or 32 bpp; and 2, 4, 8 bpp with colormap
+ * \param[in]    scalex, scaley must both be < 0.7
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function should only be used when the scale factors are less
  *          than or equal to 0.7 (i.e., more than about 1.42x reduction).
  *          If either scale factor is larger than 0.7, we issue a warning
@@ -1160,6 +1228,7 @@ PIX       *pixd;
  *          so that each source pixel is summed approximately once.
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
+ * </pre>
  */
 PIX *
 pixScaleSmooth(PIX       *pix,
@@ -1239,11 +1308,11 @@ PIX       *pixs, *pixd;
 
 
 /*!
- *  pixScaleRGBToGray2()
+ * \brief   pixScaleRGBToGray2()
  *
- *      Input:  pixs (32 bpp rgb)
- *              rwt, gwt, bwt (must sum to 1.0)
- *      Return: pixd, (8 bpp, 2x reduced), or null on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    rwt, gwt, bwt must sum to 1.0
+ * \return  pixd, 8 bpp, 2x reduced, or NULL on error
  */
 PIX *
 pixScaleRGBToGray2(PIX       *pixs,
@@ -1284,13 +1353,14 @@ PIX       *pixd;
  *             Downscaling with (antialias) area mapping            *
  *------------------------------------------------------------------*/
 /*!
- *  pixScaleAreaMap()
+ * \brief   pixScaleAreaMap()
  *
- *      Input:  pixs (2, 4, 8 or 32 bpp; and 2, 4, 8 bpp with colormap)
- *              scalex, scaley (must both be <= 0.7)
- *      Return: pixd, or null on error
+ * \param[in]    pix 2, 4, 8 or 32 bpp; and 2, 4, 8 bpp with colormap
+ * \param[in]    scalex, scaley must both be <= 0.7
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function should only be used when the scale factors are less
  *          than or equal to 0.7 (i.e., more than about 1.42x reduction).
  *          If either scale factor is larger than 0.7, we issue a warning
@@ -1309,6 +1379,7 @@ PIX       *pixd;
  *          than 0.5.
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
+ * </pre>
  */
 PIX *
 pixScaleAreaMap(PIX       *pix,
@@ -1406,12 +1477,13 @@ PIX       *pixs, *pixd, *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  pixScaleAreaMap2()
+ * \brief   pixScaleAreaMap2()
  *
- *      Input:  pixs (2, 4, 8 or 32 bpp; and 2, 4, 8 bpp with colormap)
- *      Return: pixd, or null on error
+ * \param[in]    pix 2, 4, 8 or 32 bpp; and 2, 4, 8 bpp with colormap
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function does an area mapping (average) for 2x
  *          reduction.
  *      (2) This works only on 2, 4, 8 and 32 bpp images.  If there is
@@ -1427,6 +1499,7 @@ PIX       *pixs, *pixd, *pixt1, *pixt2, *pixt3;
  *      (5) Consequently, pixScaleAreaMap2() is incorporated into the
  *          general area map scaling function, for the special cases
  *          of 2x, 4x, 8x and 16x reduction.
+ * </pre>
  */
 PIX *
 pixScaleAreaMap2(PIX  *pix)
@@ -1478,16 +1551,18 @@ PIX       *pixs, *pixd;
  *               Binary scaling by closest pixel sampling           *
  *------------------------------------------------------------------*/
 /*!
- *  pixScaleBinary()
+ * \brief   pixScaleBinary()
  *
- *      Input:  pixs (1 bpp)
- *              scalex, scaley (both > 0.0)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    scalex, scaley both > 0.0
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function samples from the source without
  *          filtering.  As a result, aliasing will occur for
  *          subsampling (scalex and scaley < 1.0).
+ * </pre>
  */
 PIX *
 pixScaleBinary(PIX       *pixs,
@@ -1533,14 +1608,15 @@ PIX       *pixd;
  *      Scale-to-gray (1 bpp --> 8 bpp; arbitrary downscaling)      *
  *------------------------------------------------------------------*/
 /*!
- *  pixScaleToGray()
+ * \brief   pixScaleToGray()
  *
- *      Input:  pixs (1 bpp)
- *              scalefactor (reduction: must be > 0.0 and < 1.0)
- *      Return: pixd (8 bpp), scaled down by scalefactor in each direction,
+ * \param[in]    pixs 1 bpp
+ * \param[in]    scalefactor reduction: must be > 0.0 and < 1.0
+ * \return  pixd 8 bpp, scaled down by scalefactor in each direction,
  *              or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *
  *  For faster scaling in the range of scalefactors from 0.0625 to 0.5,
  *  with very little difference in quality, use pixScaleToGrayFast().
@@ -1595,6 +1671,7 @@ PIX       *pixd;
  *          a reasonable option.
  *      (7) For reductions greater than 16x, it's reasonable to use
  *          scaleToGray16() followed by further grayscale downscaling.
+ * </pre>
  */
 PIX *
 pixScaleToGray(PIX       *pixs,
@@ -1686,14 +1763,15 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixScaleToGrayFast()
+ * \brief   pixScaleToGrayFast()
  *
- *      Input:  pixs (1 bpp)
- *              scalefactor (reduction: must be > 0.0 and < 1.0)
- *      Return: pixd (8 bpp), scaled down by scalefactor in each direction,
+ * \param[in]    pixs 1 bpp
+ * \param[in]    scalefactor reduction: must be > 0.0 and < 1.0
+ * \return  pixd 8 bpp, scaled down by scalefactor in each direction,
  *              or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See notes in pixScaleToGray() for the basic approach.
  *      (2) This function is considerably less expensive than pixScaleToGray()
  *          for scalefactor in the range (0.0625 ... 0.5), and the
@@ -1704,6 +1782,7 @@ PIX       *pixt, *pixd;
  *          then does a 2x scale-to-gray as the final step.  For
  *          scale factors < 0.0625, both do a 16x scale-to-gray, followed
  *          by further grayscale reduction.
+ * </pre>
  */
 PIX *
 pixScaleToGrayFast(PIX       *pixs,
@@ -1770,11 +1849,11 @@ PIX       *pixt, *pixd;
  *          Scale-to-gray (1 bpp --> 8 bpp; integer downscaling)         *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixScaleToGray2()
+ * \brief   pixScaleToGray2()
  *
- *      Input:  pixs (1 bpp)
- *      Return: pixd (8 bpp), scaled down by 2x in each direction,
- *              or null on error.
+ * \param[in]    pixs 1 bpp
+ * \return  pixd 8 bpp, scaled down by 2x in each direction,
+ *              or NULL on error.
  */
 PIX *
 pixScaleToGray2(PIX  *pixs)
@@ -1809,13 +1888,9 @@ PIX       *pixd;
     wpls = pixGetWpl(pixs);
     wpld = pixGetWpl(pixd);
 
-    if ((sumtab = makeSumTabSG2()) == NULL)
-        return (PIX *)ERROR_PTR("sumtab not made", procName, NULL);
-    if ((valtab = makeValTabSG2()) == NULL)
-        return (PIX *)ERROR_PTR("valtab not made", procName, NULL);
-
+    sumtab = makeSumTabSG2();
+    valtab = makeValTabSG2();
     scaleToGray2Low(datad, wd, hd, wpld, datas, wpls, sumtab, valtab);
-
     LEPT_FREE(sumtab);
     LEPT_FREE(valtab);
     return pixd;
@@ -1823,17 +1898,19 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleToGray3()
+ * \brief   pixScaleToGray3()
  *
- *      Input:  pixs (1 bpp)
- *      Return: pixd (8 bpp), scaled down by 3x in each direction,
- *              or null on error.
+ * \param[in]    pixs 1 bpp
+ * \return  pixd 8 bpp, scaled down by 3x in each direction,
+ *              or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Speed is about 100 x 10^6 src-pixels/sec/GHz.
  *          Another way to express this is it processes 1 src pixel
  *          in about 10 cycles.
  *      (2) The width of pixd is truncated is truncated to a factor of 8.
+ * </pre>
  */
 PIX *
 pixScaleToGray3(PIX  *pixs)
@@ -1868,13 +1945,9 @@ PIX       *pixd;
     wpls = pixGetWpl(pixs);
     wpld = pixGetWpl(pixd);
 
-    if ((sumtab = makeSumTabSG3()) == NULL)
-        return (PIX *)ERROR_PTR("sumtab not made", procName, NULL);
-    if ((valtab = makeValTabSG3()) == NULL)
-        return (PIX *)ERROR_PTR("valtab not made", procName, NULL);
-
+    sumtab = makeSumTabSG3();
+    valtab = makeValTabSG3();
     scaleToGray3Low(datad, wd, hd, wpld, datas, wpls, sumtab, valtab);
-
     LEPT_FREE(sumtab);
     LEPT_FREE(valtab);
     return pixd;
@@ -1882,14 +1955,16 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleToGray4()
+ * \brief   pixScaleToGray4()
  *
- *      Input:  pixs (1 bpp)
- *      Return: pixd (8 bpp), scaled down by 4x in each direction,
- *              or null on error.
+ * \param[in]    pixs 1 bpp
+ * \return  pixd 8 bpp, scaled down by 4x in each direction,
+ *              or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The width of pixd is truncated is truncated to a factor of 2.
+ * </pre>
  */
 PIX *
 pixScaleToGray4(PIX  *pixs)
@@ -1924,13 +1999,9 @@ PIX       *pixd;
     wpls = pixGetWpl(pixs);
     wpld = pixGetWpl(pixd);
 
-    if ((sumtab = makeSumTabSG4()) == NULL)
-        return (PIX *)ERROR_PTR("sumtab not made", procName, NULL);
-    if ((valtab = makeValTabSG4()) == NULL)
-        return (PIX *)ERROR_PTR("valtab not made", procName, NULL);
-
+    sumtab = makeSumTabSG4();
+    valtab = makeValTabSG4();
     scaleToGray4Low(datad, wd, hd, wpld, datas, wpls, sumtab, valtab);
-
     LEPT_FREE(sumtab);
     LEPT_FREE(valtab);
     return pixd;
@@ -1939,14 +2010,16 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleToGray6()
+ * \brief   pixScaleToGray6()
  *
- *      Input:  pixs (1 bpp)
- *      Return: pixd (8 bpp), scaled down by 6x in each direction,
- *              or null on error.
+ * \param[in]    pixs 1 bpp
+ * \return  pixd 8 bpp, scaled down by 6x in each direction,
+ *              or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The width of pixd is truncated is truncated to a factor of 8.
+ * </pre>
  */
 PIX *
 pixScaleToGray6(PIX  *pixs)
@@ -1980,13 +2053,9 @@ PIX       *pixd;
     wpls = pixGetWpl(pixs);
     wpld = pixGetWpl(pixd);
 
-    if ((tab8 = makePixelSumTab8()) == NULL)
-        return (PIX *)ERROR_PTR("tab8 not made", procName, NULL);
-    if ((valtab = makeValTabSG6()) == NULL)
-        return (PIX *)ERROR_PTR("valtab not made", procName, NULL);
-
+    tab8 = makePixelSumTab8();
+    valtab = makeValTabSG6();
     scaleToGray6Low(datad, wd, hd, wpld, datas, wpls, tab8, valtab);
-
     LEPT_FREE(tab8);
     LEPT_FREE(valtab);
     return pixd;
@@ -1994,11 +2063,11 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleToGray8()
+ * \brief   pixScaleToGray8()
  *
- *      Input:  pixs (1 bpp)
- *      Return: pixd (8 bpp), scaled down by 8x in each direction,
- *              or null on error
+ * \param[in]    pixs 1 bpp
+ * \return  pixd 8 bpp, scaled down by 8x in each direction,
+ *              or NULL on error
  */
 PIX *
 pixScaleToGray8(PIX  *pixs)
@@ -2033,13 +2102,9 @@ PIX       *pixd;
     wpls = pixGetWpl(pixs);
     wpld = pixGetWpl(pixd);
 
-    if ((tab8 = makePixelSumTab8()) == NULL)
-        return (PIX *)ERROR_PTR("tab8 not made", procName, NULL);
-    if ((valtab = makeValTabSG8()) == NULL)
-        return (PIX *)ERROR_PTR("valtab not made", procName, NULL);
-
+    tab8 = makePixelSumTab8();
+    valtab = makeValTabSG8();
     scaleToGray8Low(datad, wd, hd, wpld, datas, wpls, tab8, valtab);
-
     LEPT_FREE(tab8);
     LEPT_FREE(valtab);
     return pixd;
@@ -2047,11 +2112,11 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleToGray16()
+ * \brief   pixScaleToGray16()
  *
- *      Input:  pixs (1 bpp)
- *      Return: pixd (8 bpp), scaled down by 16x in each direction,
- *              or null on error.
+ * \param[in]    pixs 1 bpp
+ * \return  pixd 8 bpp, scaled down by 16x in each direction,
+ *              or NULL on error.
  */
 PIX *
 pixScaleToGray16(PIX  *pixs)
@@ -2085,11 +2150,8 @@ PIX       *pixd;
     wpls = pixGetWpl(pixs);
     wpld = pixGetWpl(pixd);
 
-    if ((tab8 = makePixelSumTab8()) == NULL)
-        return (PIX *)ERROR_PTR("tab8 not made", procName, NULL);
-
+    tab8 = makePixelSumTab8();
     scaleToGray16Low(datad, wd, hd, wpld, datas, wpls, tab8);
-
     LEPT_FREE(tab8);
     return pixd;
 }
@@ -2099,14 +2161,15 @@ PIX       *pixd;
  *    Scale-to-gray mipmap(1 bpp --> 8 bpp, arbitrary reduction)    *
  *------------------------------------------------------------------*/
 /*!
- *  pixScaleToGrayMipmap()
+ * \brief   pixScaleToGrayMipmap()
  *
- *      Input:  pixs (1 bpp)
- *              scalefactor (reduction: must be > 0.0 and < 1.0)
- *      Return: pixd (8 bpp), scaled down by scalefactor in each direction,
+ * \param[in]    pixs 1 bpp
+ * \param[in]    scalefactor reduction: must be > 0.0 and < 1.0
+ * \return  pixd 8 bpp, scaled down by scalefactor in each direction,
  *              or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *
  *  This function is here mainly for pedagogical reasons.
  *  Mip-mapping is widely used in graphics for texture mapping, because
@@ -2126,6 +2189,7 @@ PIX       *pixd;
  *  either subsampling off the higher-res grayscale image or oversampling
  *  on the lower-res image.  Consequently, this method should NOT be used
  *  for generating reduced images, scale-to-gray or otherwise.
+ * </pre>
  */
 PIX *
 pixScaleToGrayMipmap(PIX       *pixs,
@@ -2200,18 +2264,20 @@ PIX       *pixs1, *pixs2, *pixt, *pixd;
  *                  Grayscale scaling using mipmap                  *
  *------------------------------------------------------------------*/
 /*!
- *  pixScaleMipmap()
+ * \brief   pixScaleMipmap()
  *
- *      Input:  pixs1 (high res 8 bpp, no cmap)
- *              pixs2 (low res -- 2x reduced -- 8 bpp, no cmap)
- *              scale (reduction with respect to high res image, > 0.5)
- *      Return: 8 bpp pix, scaled down by reduction in each direction,
+ * \param[in]    pixs1 high res 8 bpp, no cmap
+ * \param[in]    pixs2 low res -- 2x reduced -- 8 bpp, no cmap
+ * \param[in]    scale reduction with respect to high res image, > 0.5
+ * \return  8 bpp pix, scaled down by reduction in each direction,
  *              or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See notes in pixScaleToGrayMipmap().
  *      (2) This function suffers from aliasing effects that are
  *          easily seen in document images.
+ * </pre>
  */
 PIX *
 pixScaleMipmap(PIX       *pixs1,
@@ -2264,11 +2330,11 @@ PIX       *pixd;
  *                  Replicated (integer) expansion                  *
  *------------------------------------------------------------------*/
 /*!
- *  pixExpandReplicate()
+ * \brief   pixExpandReplicate()
  *
- *      Input:  pixs (1, 2, 4, 8, 16, 32 bpp)
- *              factor (integer scale factor for replicative expansion)
- *      Return: pixd (scaled up), or null on error.
+ * \param[in]    pixs 1, 2, 4, 8, 16, 32 bpp
+ * \param[in]    factor integer scale factor for replicative expansion
+ * \return  pixd scaled up, or NULL on error.
  */
 PIX *
 pixExpandReplicate(PIX     *pixs,
@@ -2294,7 +2360,7 @@ PIX       *pixd;
         return pixCopy(NULL, pixs);
 
     if (d == 1)
-        return pixExpandBinaryReplicate(pixs, factor);
+        return pixExpandBinaryReplicate(pixs, factor, factor);
 
     wd = factor * w;
     hd = factor * h;
@@ -2395,16 +2461,18 @@ PIX       *pixd;
  *                Scale 2x followed by binarization                 *
  *------------------------------------------------------------------*/
 /*!
- *  pixScaleGray2xLIThresh()
+ * \brief   pixScaleGray2xLIThresh()
  *
- *      Input:  pixs (8 bpp, not cmapped)
- *              thresh  (between 0 and 256)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 8 bpp, not cmapped
+ * \param[in]    thresh  between 0 and 256
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does 2x upscale on pixs, using linear interpolation,
  *          followed by thresholding to binary.
  *      (2) Buffers are used to avoid making a large grayscale image.
+ * </pre>
  */
 PIX *
 pixScaleGray2xLIThresh(PIX     *pixs,
@@ -2436,8 +2504,10 @@ PIX       *pixd;
         return (PIX *)ERROR_PTR("lineb not made", procName, NULL);
 
         /* Make dest binary image */
-    if ((pixd = pixCreate(wd, hd, 1)) == NULL)
+    if ((pixd = pixCreate(wd, hd, 1)) == NULL) {
+        LEPT_FREE(lineb);
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    }
     pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 2.0, 2.0);
@@ -2466,20 +2536,22 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleGray2xLIDither()
+ * \brief   pixScaleGray2xLIDither()
  *
- *      Input:  pixs (8 bpp, not cmapped)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 8 bpp, not cmapped
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does 2x upscale on pixs, using linear interpolation,
  *          followed by Floyd-Steinberg dithering to binary.
  *      (2) Buffers are used to avoid making a large grayscale image.
- *          - Two line buffers are used for the src, required for the 2x
+ *          ~ Two line buffers are used for the src, required for the 2x
  *            LI upscale.
- *          - Three line buffers are used for the intermediate image.
+ *          ~ Three line buffers are used for the intermediate image.
  *            Two are filled with each 2xLI row operation; the third is
  *            needed because the upscale and dithering ops are out of sync.
+ * </pre>
  */
 PIX *
 pixScaleGray2xLIDither(PIX  *pixs)
@@ -2487,10 +2559,10 @@ pixScaleGray2xLIDither(PIX  *pixs)
 l_int32    i, ws, hs, hsm, wd, hd, wpls, wplb, wpld;
 l_uint32  *datas, *datad;
 l_uint32  *lined;
-l_uint32  *lineb;   /* 2 intermediate buffer lines */
-l_uint32  *linebp;  /* 1 intermediate buffer line */
-l_uint32  *bufs;    /* 2 source buffer lines */
-PIX       *pixd;
+l_uint32  *lineb = NULL;   /* 2 intermediate buffer lines */
+l_uint32  *linebp = NULL;  /* 1 intermediate buffer line */
+l_uint32  *bufs = NULL;    /* 2 source buffer lines */
+PIX       *pixd = NULL;
 
     PROCNAME("pixScaleGray2xLIDither");
 
@@ -2511,16 +2583,22 @@ PIX       *pixd;
 
         /* Make line buffer for 2 lines of virtual intermediate image */
     wplb = (wd + 3) / 4;
-    if ((lineb = (l_uint32 *)LEPT_CALLOC(2 * wplb, sizeof(l_uint32))) == NULL)
-        return (PIX *)ERROR_PTR("lineb not made", procName, NULL);
+    if ((lineb = (l_uint32 *)LEPT_CALLOC(2 * wplb, sizeof(l_uint32))) == NULL) {
+        L_ERROR("lineb not made\n", procName);
+        goto cleanup;
+    }
 
         /* Make line buffer for 1 line of virtual intermediate image */
-    if ((linebp = (l_uint32 *)LEPT_CALLOC(wplb, sizeof(l_uint32))) == NULL)
-        return (PIX *)ERROR_PTR("linebp not made", procName, NULL);
+    if ((linebp = (l_uint32 *)LEPT_CALLOC(wplb, sizeof(l_uint32))) == NULL) {
+        L_ERROR("linebp not made\n", procName);
+        goto cleanup;
+    }
 
         /* Make dest binary image */
-    if ((pixd = pixCreate(wd, hd, 1)) == NULL)
-        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    if ((pixd = pixCreate(wd, hd, 1)) == NULL) {
+        L_ERROR("pixd not made\n", procName);
+        goto cleanup;
+    }
     pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 2.0, 2.0);
@@ -2565,6 +2643,7 @@ PIX       *pixd;
                           DEFAULT_CLIP_LOWER_1, DEFAULT_CLIP_UPPER_1, 1);
                                                    /* last dest line */
 
+cleanup:
     LEPT_FREE(bufs);
     LEPT_FREE(lineb);
     LEPT_FREE(linebp);
@@ -2576,13 +2655,14 @@ PIX       *pixd;
  *                Scale 4x followed by binarization                 *
  *------------------------------------------------------------------*/
 /*!
- *  pixScaleGray4xLIThresh()
+ * \brief   pixScaleGray4xLIThresh()
  *
- *      Input:  pixs (8 bpp)
- *              thresh  (between 0 and 256)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    thresh  between 0 and 256
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does 4x upscale on pixs, using linear interpolation,
  *          followed by thresholding to binary.
  *      (2) Buffers are used to avoid making a large grayscale image.
@@ -2590,6 +2670,7 @@ PIX       *pixd;
  *          this function is only about 10% faster than separately doing
  *          a linear interpolation to a large grayscale image, followed
  *          by thresholding to binary.
+ * </pre>
  */
 PIX *
 pixScaleGray4xLIThresh(PIX     *pixs,
@@ -2621,8 +2702,10 @@ PIX       *pixd;
         return (PIX *)ERROR_PTR("lineb not made", procName, NULL);
 
         /* Make dest binary image */
-    if ((pixd = pixCreate(wd, hd, 1)) == NULL)
+    if ((pixd = pixCreate(wd, hd, 1)) == NULL) {
+        LEPT_FREE(lineb);
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    }
     pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 4.0, 4.0);
@@ -2655,18 +2738,19 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleGray4xLIDither()
+ * \brief   pixScaleGray4xLIDither()
  *
- *      Input:  pixs (8 bpp, not cmapped)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 8 bpp, not cmapped
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does 4x upscale on pixs, using linear interpolation,
  *          followed by Floyd-Steinberg dithering to binary.
  *      (2) Buffers are used to avoid making a large grayscale image.
- *          - Two line buffers are used for the src, required for the
+ *          ~ Two line buffers are used for the src, required for the
  *            4xLI upscale.
- *          - Five line buffers are used for the intermediate image.
+ *          ~ Five line buffers are used for the intermediate image.
  *            Four are filled with each 4xLI row operation; the fifth
  *            is needed because the upscale and dithering ops are
  *            out of sync.
@@ -2674,6 +2758,7 @@ PIX       *pixd;
  *          this function is only about 5% faster than separately doing
  *          a linear interpolation to a large grayscale image, followed
  *          by error-diffusion dithering to binary.
+ * </pre>
  */
 PIX *
 pixScaleGray4xLIDither(PIX  *pixs)
@@ -2681,10 +2766,10 @@ pixScaleGray4xLIDither(PIX  *pixs)
 l_int32    i, j, ws, hs, hsm, wd, hd, wpls, wplb, wpld;
 l_uint32  *datas, *datad;
 l_uint32  *lined;
-l_uint32  *lineb;   /* 4 intermediate buffer lines */
-l_uint32  *linebp;  /* 1 intermediate buffer line */
-l_uint32  *bufs;    /* 2 source buffer lines */
-PIX       *pixd;
+l_uint32  *lineb = NULL;   /* 4 intermediate buffer lines */
+l_uint32  *linebp = NULL;  /* 1 intermediate buffer line */
+l_uint32  *bufs = NULL;    /* 2 source buffer lines */
+PIX       *pixd = NULL;
 
     PROCNAME("pixScaleGray4xLIDither");
 
@@ -2705,16 +2790,22 @@ PIX       *pixd;
 
         /* Make line buffer for 4 lines of virtual intermediate image */
     wplb = (wd + 3) / 4;
-    if ((lineb = (l_uint32 *)LEPT_CALLOC(4 * wplb, sizeof(l_uint32))) == NULL)
-        return (PIX *)ERROR_PTR("lineb not made", procName, NULL);
+    if ((lineb = (l_uint32 *)LEPT_CALLOC(4 * wplb, sizeof(l_uint32))) == NULL) {
+        L_ERROR("lineb not made\n", procName);
+        goto cleanup;
+    }
 
         /* Make line buffer for 1 line of virtual intermediate image */
-    if ((linebp = (l_uint32 *)LEPT_CALLOC(wplb, sizeof(l_uint32))) == NULL)
-        return (PIX *)ERROR_PTR("linebp not made", procName, NULL);
+    if ((linebp = (l_uint32 *)LEPT_CALLOC(wplb, sizeof(l_uint32))) == NULL) {
+        L_ERROR("linebp not made\n", procName);
+        goto cleanup;
+    }
 
         /* Make dest binary image */
-    if ((pixd = pixCreate(wd, hd, 1)) == NULL)
-        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    if ((pixd = pixCreate(wd, hd, 1)) == NULL) {
+        L_ERROR("pixd not made\n", procName);
+        goto cleanup;
+    }
     pixCopyInputFormat(pixd, pixs);
     pixCopyResolution(pixd, pixs);
     pixScaleResolution(pixd, 4.0, 4.0);
@@ -2766,6 +2857,7 @@ PIX       *pixd;
     ditherToBinaryLineLow(lined + 3 * wpld, wd, lineb + 3 * wplb, NULL,
                               DEFAULT_CLIP_LOWER_1, DEFAULT_CLIP_UPPER_1, 1);
 
+cleanup:
     LEPT_FREE(bufs);
     LEPT_FREE(lineb);
     LEPT_FREE(linebp);
@@ -2777,25 +2869,27 @@ PIX       *pixd;
  *                    Downscaling using min or max                       *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixScaleGrayMinMax()
+ * \brief   pixScaleGrayMinMax()
  *
- *      Input:  pixs (8 bpp, not cmapped)
- *              xfact (x downscaling factor; integer)
- *              yfact (y downscaling factor; integer)
- *              type (L_CHOOSE_MIN, L_CHOOSE_MAX, L_CHOOSE_MAX_MIN_DIFF)
- *      Return: pixd (8 bpp)
+ * \param[in]    pixs 8 bpp, not cmapped
+ * \param[in]    xfact x downscaling factor; integer
+ * \param[in]    yfact y downscaling factor; integer
+ * \param[in]    type L_CHOOSE_MIN, L_CHOOSE_MAX, L_CHOOSE_MAXDIFF
+ * \return  pixd 8 bpp
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The downscaled pixels in pixd are the min, max or (max - min)
  *          of the corresponding set of xfact * yfact pixels in pixs.
  *      (2) Using L_CHOOSE_MIN is equivalent to a grayscale erosion,
  *          using a brick Sel of size (xfact * yfact), followed by
  *          subsampling within each (xfact * yfact) cell.  Using
  *          L_CHOOSE_MAX is equivalent to the corresponding dilation.
- *      (3) Using L_CHOOSE_MAX_MIN_DIFF finds the difference between max
+ *      (3) Using L_CHOOSE_MAXDIFF finds the difference between max
  *          and min values in each cell.
  *      (4) For the special case of downscaling by 2x in both directions,
  *          pixScaleGrayMinMax2() is about 2x more efficient.
+ * </pre>
  */
 PIX *
 pixScaleGrayMinMax(PIX     *pixs,
@@ -2815,7 +2909,7 @@ PIX       *pixd;
                                 procName, NULL);
     pixGetDimensions(pixs, &ws, &hs, NULL);
     if (type != L_CHOOSE_MIN && type != L_CHOOSE_MAX &&
-        type != L_CHOOSE_MAX_MIN_DIFF)
+        type != L_CHOOSE_MAXDIFF)
         return (PIX *)ERROR_PTR("invalid type", procName, NULL);
     if (xfact < 1 || yfact < 1)
         return (PIX *)ERROR_PTR("xfact and yfact must be >= 1", procName, NULL);
@@ -2843,7 +2937,7 @@ PIX       *pixd;
     for (i = 0; i < hd; i++) {
         lined = datad + i * wpld;
         for (j = 0; j < wd; j++) {
-            if (type == L_CHOOSE_MIN || type == L_CHOOSE_MAX_MIN_DIFF) {
+            if (type == L_CHOOSE_MIN || type == L_CHOOSE_MAXDIFF) {
                 minval = 255;
                 for (k = 0; k < yfact; k++) {
                     lines = datas + (yfact * i + k) * wpls;
@@ -2854,7 +2948,7 @@ PIX       *pixd;
                     }
                 }
             }
-            if (type == L_CHOOSE_MAX || type == L_CHOOSE_MAX_MIN_DIFF) {
+            if (type == L_CHOOSE_MAX || type == L_CHOOSE_MAXDIFF) {
                 maxval = 0;
                 for (k = 0; k < yfact; k++) {
                     lines = datas + (yfact * i + k) * wpls;
@@ -2869,7 +2963,7 @@ PIX       *pixd;
                 SET_DATA_BYTE(lined, j, minval);
             else if (type == L_CHOOSE_MAX)
                 SET_DATA_BYTE(lined, j, maxval);
-            else  /* type == L_CHOOSE_MAX_MIN_DIFF */
+            else  /* type == L_CHOOSE_MAXDIFF */
                 SET_DATA_BYTE(lined, j, maxval - minval);
         }
     }
@@ -2879,13 +2973,14 @@ PIX       *pixd;
 
 
 /*!
- *  pixScaleGrayMinMax2()
+ * \brief   pixScaleGrayMinMax2()
  *
- *      Input:  pixs (8 bpp, not cmapped)
- *              type (L_CHOOSE_MIN, L_CHOOSE_MAX, L_CHOOSE_MAX_MIN_DIFF)
- *      Return: pixd (8 bpp downscaled by 2x)
+ * \param[in]    pixs 8 bpp, not cmapped
+ * \param[in]    type L_CHOOSE_MIN, L_CHOOSE_MAX, L_CHOOSE_MAXDIFF
+ * \return  pixd 8 bpp downscaled by 2x
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Special version for 2x reduction.  The downscaled pixels
  *          in pixd are the min, max or (max - min) of the corresponding
  *          set of 4 pixels in pixs.
@@ -2901,6 +2996,7 @@ PIX       *pixd;
  *          reduction, use pixScaleGrayRank2().
  *      (4) This runs at about 70 MPix/sec/GHz of source data for
  *          erosion and dilation.
+ * </pre>
  */
 PIX *
 pixScaleGrayMinMax2(PIX     *pixs,
@@ -2921,7 +3017,7 @@ PIX       *pixd;
     if (ws < 2 || hs < 2)
         return (PIX *)ERROR_PTR("too small: ws < 2 or hs < 2", procName, NULL);
     if (type != L_CHOOSE_MIN && type != L_CHOOSE_MAX &&
-        type != L_CHOOSE_MAX_MIN_DIFF)
+        type != L_CHOOSE_MAXDIFF)
         return (PIX *)ERROR_PTR("invalid type", procName, NULL);
 
     wd = ws / 2;
@@ -2941,14 +3037,14 @@ PIX       *pixd;
             val[1] = GET_DATA_BYTE(lines, 2 * j + 1);
             val[2] = GET_DATA_BYTE(lines + wpls, 2 * j);
             val[3] = GET_DATA_BYTE(lines + wpls, 2 * j + 1);
-            if (type == L_CHOOSE_MIN || type == L_CHOOSE_MAX_MIN_DIFF) {
+            if (type == L_CHOOSE_MIN || type == L_CHOOSE_MAXDIFF) {
                 minval = 255;
                 for (k = 0; k < 4; k++) {
                     if (val[k] < minval)
                         minval = val[k];
                 }
             }
-            if (type == L_CHOOSE_MAX || type == L_CHOOSE_MAX_MIN_DIFF) {
+            if (type == L_CHOOSE_MAX || type == L_CHOOSE_MAXDIFF) {
                 maxval = 0;
                 for (k = 0; k < 4; k++) {
                     if (val[k] > maxval)
@@ -2959,7 +3055,7 @@ PIX       *pixd;
                 SET_DATA_BYTE(lined, j, minval);
             else if (type == L_CHOOSE_MAX)
                 SET_DATA_BYTE(lined, j, maxval);
-            else  /* type == L_CHOOSE_MAX_MIN_DIFF */
+            else  /* type == L_CHOOSE_MAXDIFF */
                 SET_DATA_BYTE(lined, j, maxval - minval);
         }
     }
@@ -2972,15 +3068,17 @@ PIX       *pixd;
  *                  Grayscale downscaling using rank value               *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixScaleGrayRankCascade()
+ * \brief   pixScaleGrayRankCascade()
  *
- *      Input:  pixs (8 bpp, not cmapped)
- *              level1, ... level4 (rank thresholds, in set {0, 1, 2, 3, 4})
- *      Return: pixd (8 bpp, downscaled by up to 16x)
+ * \param[in]    pixs 8 bpp, not cmapped
+ * \param[in]    level1, ... level4 rank thresholds, in set {0, 1, 2, 3, 4}
+ * \return  pixd 8 bpp, downscaled by up to 16x
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This performs up to four cascaded 2x rank reductions.
  *      (2) Use level = 0 to truncate the cascade.
+ * </pre>
  */
 PIX *
 pixScaleGrayRankCascade(PIX     *pixs,
@@ -3025,13 +3123,14 @@ PIX  *pixt1, *pixt2, *pixt3, *pixt4;
 
 
 /*!
- *  pixScaleGrayRank2()
+ * \brief   pixScaleGrayRank2()
  *
- *      Input:  pixs (8 bpp, no cmap)
- *              rank (1 (darkest), 2, 3, 4 (lightest))
- *      Return: pixd (8 bpp, downscaled by 2x)
+ * \param[in]    pixs 8 bpp, no cmap
+ * \param[in]    rank 1 (darkest), 2, 3, 4 (lightest)
+ * \return  pixd 8 bpp, downscaled by 2x
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Rank 2x reduction.  If rank == 1(4), the downscaled pixels
  *          in pixd are the min(max) of the corresponding set of
  *          4 pixels in pixs.  Values 2 and 3 are intermediate.
@@ -3043,6 +3142,7 @@ PIX  *pixt1, *pixt2, *pixt3, *pixt4;
  *      (3) For rank = 1 and 4, this calls pixScaleGrayMinMax2(),
  *          which runs at about 70 MPix/sec/GHz of source data.
  *          For rank 2 and 3, this runs 3x slower, at about 25 MPix/sec/GHz.
+ * </pre>
  */
 PIX *
 pixScaleGrayRank2(PIX     *pixs,
@@ -3122,15 +3222,17 @@ PIX       *pixd;
  *           Helper function for transferring alpha with scaling          *
  *------------------------------------------------------------------------*/
 /*!
- *  pixScaleAndTransferAlpha()
+ * \brief   pixScaleAndTransferAlpha()
  *
- *      Input:  pixd  (32 bpp, scaled image)
- *              pixs  (32 bpp, original unscaled image)
- *              scalex, scaley (both > 0.0)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixd  32 bpp, scaled image
+ * \param[in]    pixs  32 bpp, original unscaled image
+ * \param[in]    scalex, scaley both > 0.0
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This scales the alpha component of pixs and inserts into pixd.
+ * </pre>
  */
 l_int32
 pixScaleAndTransferAlpha(PIX       *pixd,
@@ -3167,16 +3269,17 @@ PIX  *pix1, *pix2;
  *    RGB scaling including alpha (blend) component and gamma transform   *
  *------------------------------------------------------------------------*/
 /*!
- *  pixScaleWithAlpha()
+ * \brief   pixScaleWithAlpha()
  *
- *      Input:  pixs (32 bpp rgb or cmapped)
- *              scalex, scaley (must be > 0.0)
- *              pixg (<optional> 8 bpp, can be null)
- *              fract (between 0.0 and 1.0, with 0.0 fully transparent
- *                     and 1.0 fully opaque)
- *      Return: pixd (32 bpp rgba), or null on error
+ * \param[in]    pixs 32 bpp rgb or cmapped
+ * \param[in]    scalex, scaley must be > 0.0
+ * \param[in]    pixg [optional] 8 bpp, can be null
+ * \param[in]    fract between 0.0 and 1.0, with 0.0 fully transparent
+ *                     and 1.0 fully opaque
+ * \return  pixd 32 bpp rgba, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The alpha channel is transformed separately from pixs,
  *          and aligns with it, being fully transparent outside the
  *          boundary of the transformed pixs.  For pixels that are fully
@@ -3185,8 +3288,8 @@ PIX  *pix1, *pix2;
  *      (2) Scaling is done with area mapping or linear interpolation,
  *          depending on the scale factors.  Default sharpening is done.
  *      (3) If pixg is NULL, it is generated as an alpha layer that is
- *          partially opaque, using @fract.  Otherwise, it is cropped
- *          to pixs if required, and @fract is ignored.  The alpha
+ *          partially opaque, using %fract.  Otherwise, it is cropped
+ *          to pixs if required, and %fract is ignored.  The alpha
  *          channel in pixs is never used.
  *      (4) Colormaps are removed to 32 bpp.
  *      (5) The default setting for the border values in the alpha channel
@@ -3209,6 +3312,7 @@ PIX  *pix1, *pix2;
  *          dark regions.
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
+ * </pre>
  */
 PIX *
 pixScaleWithAlpha(PIX       *pixs,
@@ -3230,7 +3334,8 @@ PIX     *pixd, *pix32, *pixg2, *pixgs;
     if (scalex <= 0.0 || scaley <= 0.0)
         return (PIX *)ERROR_PTR("scale factor <= 0.0", procName, NULL);
     if (pixg && pixGetDepth(pixg) != 8) {
-        L_WARNING("pixg not 8 bpp; using @fract transparent alpha\n", procName);
+        L_WARNING("pixg not 8 bpp; using 'fract' transparent alpha\n",
+                  procName);
         pixg = NULL;
     }
     if (!pixg && (fract < 0.0 || fract > 1.0)) {
@@ -3277,4 +3382,3 @@ PIX     *pixd, *pix32, *pixg2, *pixgs;
     pixDestroy(&pixgs);
     return pixd;
 }
-

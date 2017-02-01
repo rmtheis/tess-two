@@ -93,7 +93,8 @@ static char  mainName[] = "colorsegtest";
         return ERROR_INT("pixs not made", mainName, 1);
     startTimer();
     pixt = pixRemoveColormap(pixs, REMOVE_CMAP_BASED_ON_SRC);
-    pixd = pixColorSegment(pixt, max_dist, max_colors, sel_size, final_colors);
+    pixd = pixColorSegment(pixt, max_dist, max_colors, sel_size,
+                           final_colors, 1);
     fprintf(stderr, "Time to segment: %7.3f sec\n", stopTimer());
     pixWrite(fileout, pixd, IFF_PNG);
 

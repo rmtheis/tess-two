@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  bilateral.c
+/*!
+ * \file bilateral.c
+ * <pre>
  *
  *     Top level approximate separable grayscale or color bilateral filtering
  *          PIX                 *pixBilateral()
@@ -69,6 +70,7 @@
  *  and more generally,  any two-dimensional kernel can be used if
  *  you wish to relax the 'abs' condition.  (In that case, the range
  *  filter can be 256 x 256).
+ * </pre>
  */
 
 #include <math.h>
@@ -91,16 +93,17 @@ static void bilateralDestroy(L_BILATERAL **pbil);
  *  Top level approximate separable grayscale or color bilateral filtering  *
  *--------------------------------------------------------------------------*/
 /*!
- *  pixBilateral()
+ * \brief   pixBilateral()
  *
- *      Input:  pixs (8 bpp gray or 32 bpp rgb, no colormap)
- *              spatial_stdev  (of gaussian kernel; in pixels, > 0.5)
- *              range_stdev  (of gaussian range kernel; > 5.0; typ. 50.0)
- *              ncomps (number of intermediate sums J(k,x); in [4 ... 30])
- *              reduction  (1, 2 or 4)
- *      Return: pixd (bilateral filtered image), or null on error
+ * \param[in]    pixs 8 bpp gray or 32 bpp rgb, no colormap
+ * \param[in]    spatial_stdev  of gaussian kernel; in pixels, > 0.5
+ * \param[in]    range_stdev  of gaussian range kernel; > 5.0; typ. 50.0
+ * \param[in]    ncomps number of intermediate sums J(k,x); in [4 ... 30]
+ * \param[in]    reduction  1, 2 or 4
+ * \return  pixd bilateral filtered image, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This performs a relatively fast, separable bilateral
  *          filtering operation.  The time is proportional to ncomps
  *          and varies inversely approximately as the cube of the
@@ -108,19 +111,19 @@ static void bilateralDestroy(L_BILATERAL **pbil);
  *      (2) We impose minimum values for range_stdev and ncomps to
  *          avoid nasty artifacts when either are too small.  We also
  *          impose a constraint on their product:
- *               ncomps * range_stdev >= 100.
- *          So for values of range_stdev >= 25, ncomps can be as small as 4.
+ *               ncomps * range_stdev \>= 100.
+ *          So for values of range_stdev \>= 25, ncomps can be as small as 4.
  *          Here is a qualitative, intuitive explanation for this constraint.
  *          Call the difference in k values between the J(k) == 'delta', where
  *              'delta' ~ 200 / ncomps
  *          Then this constraint is roughly equivalent to the condition:
- *              'delta' < 2 * range_stdev
+ *              'delta' \< 2 * range_stdev
  *          Note that at an intensity difference of (2 * range_stdev), the
  *          range part of the kernel reduces the effect by the factor 0.14.
  *          This constraint requires that we have a sufficient number of
  *          PCBs (i.e, a small enough 'delta'), so that for any value of
  *          image intensity I, there exists a k (and a PCB, J(k), such that
- *              |I - k| < range_stdev
+ *              |I - k| \< range_stdev
  *          Any fewer PCBs and we don't have enough to support this condition.
  *      (3) The upper limit of 30 on ncomps is imposed because the
  *          gain in accuracy is not worth the extra computation.
@@ -141,6 +144,7 @@ static void bilateralDestroy(L_BILATERAL **pbil);
  *          range_stdev = 60, ncomps = 6, and spatial_dev = {10, 30, 50}.
  *          As spatial_dev gets larger, we get the counter-intuitive
  *          result that the body of the red fish becomes less blurry.
+ * </pre>
  */
 PIX *
 pixBilateral(PIX       *pixs,
@@ -197,18 +201,20 @@ PIX          *pixt, *pixr, *pixg, *pixb, *pixd;
 
 
 /*!
- *  pixBilateralGray()
+ * \brief   pixBilateralGray()
  *
- *      Input:  pixs (8 bpp gray)
- *              spatial_stdev  (of gaussian kernel; in pixels, > 0.5)
- *              range_stdev  (of gaussian range kernel; > 5.0; typ. 50.0)
- *              ncomps (number of intermediate sums J(k,x); in [4 ... 30])
- *              reduction  (1, 2 or 4)
- *      Return: pixd (8 bpp bilateral filtered image), or null on error
+ * \param[in]    pixs 8 bpp gray
+ * \param[in]    spatial_stdev  of gaussian kernel; in pixels, > 0.5
+ * \param[in]    range_stdev  of gaussian range kernel; > 5.0; typ. 50.0
+ * \param[in]    ncomps number of intermediate sums J(k,x); in [4 ... 30]
+ * \param[in]    reduction  1, 2 or 4
+ * \return  pixd 8 bpp bilateral filtered image, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixBilateral() for constraints on the input parameters.
  *      (2) See pixBilateral() for algorithm details.
+ * </pre>
  */
 PIX *
 pixBilateralGray(PIX       *pixs,
@@ -251,22 +257,24 @@ L_BILATERAL  *bil;
  *       Implementation of approximate separable bilateral filter       *
  *----------------------------------------------------------------------*/
 /*!
- *  bilateralCreate()
+ * \brief   bilateralCreate()
  *
- *      Input:  pixs (8 bpp gray, no colormap)
- *              spatial_stdev  (of gaussian kernel; in pixels, > 0.5)
- *              range_stdev  (of gaussian range kernel; > 5.0; typ. 50.0)
- *              ncomps (number of intermediate sums J(k,x); in [4 ... 30])
- *              reduction  (1, 2 or 4)
- *      Return: bil, or null on error
+ * \param[in]    pixs 8 bpp gray, no colormap
+ * \param[in]    spatial_stdev  of gaussian kernel; in pixels, > 0.5
+ * \param[in]    range_stdev  of gaussian range kernel; > 5.0; typ. 50.0
+ * \param[in]    ncomps number of intermediate sums J(k,x); in [4 ... 30]
+ * \param[in]    reduction  1, 2 or 4
+ * \return  bil, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This initializes a bilateral filtering operation, generating all
  *          the data required.  It takes most of the time in the bilateral
  *          filtering operation.
  *      (2) See bilateral.h for details of the algorithm.
  *      (3) See pixBilateral() for constraints on input parameters, which
  *          are not checked here.
+ * </pre>
  */
 static L_BILATERAL *
 bilateralCreate(PIX       *pixs,
@@ -445,10 +453,10 @@ PIXA         *pixac;
 
 
 /*!
- *  bilateralApply()
+ * \brief   bilateralApply()
  *
- *      Input:  bil
- *      Return: pixd
+ * \param[in]    bil
+ * \return  pixd
  */
 static PIX *
 bilateralApply(L_BILATERAL  *bil)
@@ -505,10 +513,9 @@ PIXA        *pixac;
 
 
 /*!
- *  bilateralDestroy()
+ * \brief   bilateralDestroy()
  *
- *      Input:  &bil
- *      Return: void
+ * \param[in,out]   pbil will be nulled
  */
 static void
 bilateralDestroy(L_BILATERAL  **pbil)
@@ -547,14 +554,15 @@ L_BILATERAL  *bil;
  *    Exact implementation of grayscale or color bilateral filtering    *
  *----------------------------------------------------------------------*/
 /*!
- *  pixBilateralExact()
+ * \brief   pixBilateralExact()
  *
- *      Input:  pixs (8 bpp gray or 32 bpp rgb)
- *              spatial_kel  (gaussian kernel)
- *              range_kel (<optional> 256 x 1, monotonically decreasing)
- *      Return: pixd (8 bpp bilateral filtered image)
+ * \param[in]    pixs 8 bpp gray or 32 bpp rgb
+ * \param[in]    spatial_kel  gaussian kernel
+ * \param[in]    range_kel [optional] 256 x 1, monotonically decreasing
+ * \return  pixd 8 bpp bilateral filtered image
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The spatial_kel is a conventional smoothing kernel, typically a
  *          2-d Gaussian kernel or other block kernel.  It can be either
  *          normalized or not, but must be everywhere positive.
@@ -566,6 +574,7 @@ L_BILATERAL  *bil;
  *      (3) If range_kel == NULL, a constant weight is applied regardless
  *          of the range value difference.  This degenerates to a regular
  *          pixConvolve() with a normalized kernel.
+ * </pre>
  */
 PIX *
 pixBilateralExact(PIX       *pixs,
@@ -609,15 +618,17 @@ PIX     *pixt, *pixr, *pixg, *pixb, *pixd;
 
 
 /*!
- *  pixBilateralGrayExact()
+ * \brief   pixBilateralGrayExact()
  *
- *      Input:  pixs (8 bpp gray)
- *              spatial_kel  (gaussian kernel)
- *              range_kel (<optional> 256 x 1, monotonically decreasing)
- *      Return: pixd (8 bpp bilateral filtered image)
+ * \param[in]    pixs 8 bpp gray
+ * \param[in]    spatial_kel  gaussian kernel
+ * \param[in]    range_kel [optional] 256 x 1, monotonically decreasing
+ * \return  pixd 8 bpp bilateral filtered image
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixBilateralExact().
+ * </pre>
  */
 PIX *
 pixBilateralGrayExact(PIX       *pixs,
@@ -648,8 +659,10 @@ PIX       *pixt, *pixd;
 
     keli = kernelInvert(spatial_kel);
     kernelGetParameters(keli, &sy, &sx, &cy, &cx);
-    if ((pixt = pixAddMirroredBorder(pixs, cx, sx - cx, cy, sy - cy)) == NULL)
+    if ((pixt = pixAddMirroredBorder(pixs, cx, sx - cx, cy, sy - cy)) == NULL) {
+        kernelDestroy(&keli);
         return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
+    }
 
     pixd = pixCreate(w, h, 8);
     datat = pixGetData(pixt);
@@ -683,14 +696,15 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixBlockBilateralExact()
+ * \brief   pixBlockBilateralExact()
  *
- *      Input:  pixs (8 bpp gray or 32 bpp rgb)
- *              spatial_stdev (> 0.0)
- *              range_stdev (> 0.0)
- *      Return: pixd (8 bpp or 32 bpp bilateral filtered image)
+ * \param[in]    pixs 8 bpp gray or 32 bpp rgb
+ * \param[in]    spatial_stdev > 0.0
+ * \param[in]    range_stdev > 0.0
+ * \return  pixd 8 bpp or 32 bpp bilateral filtered image
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixBilateralExact().  This provides an interface using
  *          the standard deviations of the spatial and range filters.
  *      (2) The convolution window halfwidth is 2 * spatial_stdev,
@@ -715,6 +729,7 @@ PIX       *pixt, *pixd;
  *          on a 3GHz pentium is roughly
  *             T = 1.2 * 10^-8 * (A * sh^2)  sec
  *          where A = # of pixels, sh = spatial halfwidth of filter.
+ * </pre>
  */
 PIX*
 pixBlockBilateralExact(PIX       *pixs,
@@ -753,18 +768,20 @@ PIX       *pixd;
  *                         Kernel helper function                       *
  *----------------------------------------------------------------------*/
 /*!
- *  makeRangeKernel()
+ * \brief   makeRangeKernel()
  *
- *      Input:  range_stdev (> 0)
- *      Return: kel, or null on error
+ * \param[in]    range_stdev > 0
+ * \return  kel, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Creates a one-sided Gaussian kernel with the given
  *          standard deviation.  At grayscale difference of one stdev,
  *          the kernel falls to 0.6, and to 0.01 at three stdev.
  *      (2) A typical input number might be 20.  Then pixels whose
  *          value differs by 60 from the center pixel have their
  *          weight in the convolution reduced by a factor of about 0.01.
+ * </pre>
  */
 L_KERNEL *
 makeRangeKernel(l_float32  range_stdev)

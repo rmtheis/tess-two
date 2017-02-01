@@ -86,11 +86,14 @@ SARRAY    *sa, *satext;
         boxDestroy(&box);
     }
     recogTrainingFinished(recog, 1);
-    recogWritePixa("/tmp/bootnum1.pa", recog);
+    pixa = recogExtractPixa(recog);
+    pixaWrite("/tmp/lept/digits/bootnum1.pa", pixa);
     snprintf(buf, sizeof(buf),
-             "displaypixa /tmp/bootnum1.pa 1.0 2 1 0 /tmp/bootnum1.png fonts");
+             "displaypixa /tmp/lept/digits/bootnum1.pa 1.0 2 1 0 "
+             "/tmp/lept/digits/bootnum1.png fonts");
     ignore = system(buf);
     sarrayDestroy(&sa);
+    pixaDestroy(&pixa);
 #elif 0
     pixa = pixaRead("recog/digits/bootnum1.pa");
     recog = recogCreateFromPixa(pixa, scaledw, scaledh, match_method, 120, 1);
@@ -148,9 +151,10 @@ SARRAY    *sa, *satext;
 #if 1
         /* Split touching characters */
     fprintf(stderr, "Split touching\n");
-    pixd = pixRead("pagenums/pagenum.29.png");  /* 25 or 29 */
+    pixd = pixRead("recog/bootnums/pagenum.29.png");  /* 25 or 29 */
     recoga = recogaCreateFromRecog(recog);
-    recogaIdentifyMultiple(recoga, pixd, 3, -1, -1, &boxat, &pixat, &pixdb, 1);
+    recogaIdentifyMultiple(recoga, pixd, 3, -1, -1, 0,
+                           &boxat, &pixat, &pixdb, 1);
     pixDisplay(pixdb, 800, 800);
     boxaWriteStream(stderr, boxat);
     pixt = pixaDisplay(pixat, 0, 0);

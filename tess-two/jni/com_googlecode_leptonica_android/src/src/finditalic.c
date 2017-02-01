@@ -75,20 +75,21 @@ static const char *str_ital3 = " x"
                                "x ";
 
 /*!
- *  pixItalicWords()
+ * \brief   pixItalicWords()
  *
- *      Input:  pixs (1 bpp)
- *              boxaw (<optional> word bounding boxes; can be NULL)
- *              pixw (<optional> word box mask; can be NULL)
- *              &boxa (<return> boxa of italic words)
- *              debugflag (1 for debug output; 0 otherwise)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    boxaw [optional] word bounding boxes; can be NULL
+ * \param[in]    pixw [optional] word box mask; can be NULL
+ * \param[out]   pboxa boxa of italic words
+ * \param[in]    debugflag 1 for debug output; 0 otherwise
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) You can input the bounding boxes for the words in one of
- *          two forms: as bounding boxes (@boxaw) or as a word mask with
- *          the word bounding boxes filled (@pixw).  For example,
- *          to compute @pixw, you can use pixWordMaskByDilation().
+ *          two forms: as bounding boxes (%boxaw) or as a word mask with
+ *          the word bounding boxes filled (%pixw).  For example,
+ *          to compute %pixw, you can use pixWordMaskByDilation().
  *      (2) Alternatively, you can set both of these inputs to NULL,
  *          in which case the word mask is generated here.  This is
  *          done by dilating and closing the input image to connect
@@ -103,6 +104,7 @@ static const char *str_ital3 = " x"
  *          will not trigger on the slanted lines in the 'W'.
  *      (4) Note that sel_ital2 is shorter than sel_ital1.  It is
  *          more appropriate for a typical font scanned at 200 ppi.
+ * </pre>
  */
 l_int32
 pixItalicWords(PIX     *pixs,

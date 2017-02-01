@@ -33,6 +33,7 @@
 #include <stdarg.h>
 
     /* General and configuration defs */
+#include "endianness.h"
 #include "environ.h"
 
     /* Generic and non-image-specific containers */

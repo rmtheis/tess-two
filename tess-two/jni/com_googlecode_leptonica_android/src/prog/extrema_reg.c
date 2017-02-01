@@ -63,7 +63,7 @@ L_REGPARAMS  *rp;
     gplotAddPlot(gplot, NULL, na1, GPLOT_LINES, "plot 1");
 
         /* Find the local min and max and plot them */
-    na2 = numaFindExtrema(na1, 38.3);
+    na2 = numaFindExtrema(na1, 38.3, NULL);
     n = numaGetCount(na2);
     na3 = numaCreate(n);
     for (i = 0; i < n; i++) {

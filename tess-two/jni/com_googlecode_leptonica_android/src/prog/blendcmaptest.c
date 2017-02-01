@@ -31,21 +31,23 @@
 
 #include "allheaders.h"
 
-#define  NX     4
-#define  NY     5
-
-#define  FADE_FRACTION    0.75
+static const l_int32  NX = 4;
+static const l_int32  NY = 5;
+static const l_float32  FADE_FRACTION = 0.75;
 
 int main(int    argc,
          char **argv)
 {
 l_int32   i, j, sindex, wb, hb, ws, hs, delx, dely, x, y, y0;
-PIX      *pixs, *pixb, *pixt0, *pixt1;
+PIX      *pixs, *pixb, *pix1, *pix2;
+PIXA     *pixa;
 PIXCMAP  *cmap;
 
-    pixs = pixRead("rabi.png");
-    pixb = pixRead("weasel4.11c.png");
-    pixDisplayWrite(NULL, -1);
+    pixs = pixRead("rabi.png");  /* blendee */
+    pixb = pixRead("weasel4.11c.png");   /* blender */
+
+    lept_mkdir("lept/blend");
+    pixa = pixaCreate(0);
 
         /* Fade the blender */
     pixcmapShiftIntensity(pixGetColormap(pixb), FADE_FRACTION);
@@ -53,19 +55,21 @@ PIXCMAP  *cmap;
         /* Downscale the input */
     wb = pixGetWidth(pixb);
     hb = pixGetHeight(pixb);
-    pixt0 = pixScaleToGray4(pixs);
+    pix1 = pixScaleToGray4(pixs);
 
         /* Threshold to 5 levels, 4 bpp */
-    ws = pixGetWidth(pixt0);
-    hs = pixGetHeight(pixt0);
-    pixt1 = pixThresholdTo4bpp(pixt0, 5, 1);
-    pixDisplayWriteFormat(pixt1, 1, IFF_PNG);
-    pixDisplayWrite(pixb, 1);
-    cmap = pixGetColormap(pixt1);
+    ws = pixGetWidth(pix1);
+    hs = pixGetHeight(pix1);
+    pix2 = pixThresholdTo4bpp(pix1, 5, 1);
+    pixaAddPix(pixa, pix2, L_COPY);
+    pixaAddPix(pixa, pixb, L_COPY);
+    cmap = pixGetColormap(pix2);
     pixcmapWriteStream(stderr, cmap);
 
-        /* Overwrite the white pixels (at sindex in pixt1) */
+        /* Overwrite the white pixels (at sindex in pix2) */
     pixcmapGetIndex(cmap, 255, 255, 255, &sindex);
+
+        /* Blend the weasel 20 times */
     delx = ws / NX;
     dely = hs / NY;
     for (i = 0; i < NY; i++) {
@@ -82,19 +86,22 @@ PIXCMAP  *cmap;
             }
             if (x >= ws + wb)
                 continue;
-            pixBlendCmap(pixt1, pixb, x, y0, sindex);
+            pixBlendCmap(pix2, pixb, x, y0, sindex);
         }
     }
-    pixDisplayWriteFormat(pixt1, 1, IFF_PNG);
-    cmap = pixGetColormap(pixt1);
-    pixcmapWriteStream(stderr, cmap);
 
-    pixDisplayMultiple("/tmp/display/file*");
+    pixaAddPix(pixa, pix2, L_COPY);
+    cmap = pixGetColormap(pix2);
+    pixcmapWriteStream(stderr, cmap);
+    fprintf(stderr, "Writing to: /tmp/lept/blend/blendcmap.pdf\n");
+    pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, "cmap-blendtest",
+                     "/tmp/lept/blend/blendcmap.pdf");
 
     pixDestroy(&pixs);
     pixDestroy(&pixb);
-    pixDestroy(&pixt0);
-    pixDestroy(&pixt1);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixaDestroy(&pixa);
     return 0;
 }
 

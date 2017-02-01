@@ -82,17 +82,19 @@ static l_int32 convertChunkToAscii85(l_uint8 *inarray, l_int32 insize,
  *      Utility for encoding and decoding data with base64     *
  *-------------------------------------------------------------*/
 /*!
- *  encodeBase64()
+ * \brief   encodeBase64()
  *
- *      Input:  inarray (input binary data)
- *              insize (number of bytes in input array)
- *              &outsize (<return> number of bytes in output char array)
- *      Return: chara (with MAX_BASE64_LINE characters + \n in each line)
+ * \param[in]    inarray input binary data
+ * \param[in]    insize number of bytes in input array
+ * \param[out]   poutsize number of bytes in output char array
+ * \return  chara with MAX_BASE64_LINE characters + \n in each line
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The input character data is unrestricted binary.
  *          The ouput encoded data consists of the 64 characters
  *          in the base64 set, plus newlines and the pad character '='.
+ * </pre>
  */
 char *
 encodeBase64(l_uint8  *inarray,
@@ -164,14 +166,15 @@ l_int32   outsize, i, j, index, linecount;
 
 
 /*!
- *  decodeBase64()
+ * \brief   decodeBase64()
  *
- *      Input:  inarray (input encoded char data, with 72 chars/line))
- *              insize (number of bytes in input array)
- *              &outsize (<return> number of bytes in output byte array)
- *      Return: bytea (decoded byte data), or null on error
+ * \param[in]    inarray input encoded char data, with 72 chars/line)
+ * \param[in]    insize number of bytes in input array
+ * \param[out]   poutsize number of bytes in output byte array
+ * \return  bytea decoded byte data, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The input character data should have only 66 different characters:
  *          The 64 character set for base64 encoding, plus the pad
  *          character '=' and newlines for formatting with fixed line
@@ -179,6 +182,7 @@ l_int32   outsize, i, j, index, linecount;
  *          will declare the input data to be invalid and return NULL.
  *      (2) The decoder ignores newlines and, for a valid input string,
  *          stops reading input when a pad byte is found.
+ * </pre>
  */
 l_uint8 *
 decodeBase64(const char  *inarray,
@@ -261,7 +265,7 @@ l_int32   i, j, outsize, in_index, out_index;
 
 
 /*!
- *  isBase64()
+ * \brief   isBase64()
  */
 static l_int32
 isBase64(char  c)
@@ -270,7 +274,7 @@ isBase64(char  c)
 }
 
 /*!
- *  genReverseTab64()
+ * \brief   genReverseTab64()
  */
 static l_int32 *
 genReverseTab64()
@@ -286,7 +290,7 @@ l_int32  *rtable64;
 }
 
 /*!
- *  byteConvert3to4()
+ * \brief   byteConvert3to4()
  */
 static void
 byteConvert3to4(l_uint8  *in3,
@@ -300,7 +304,7 @@ byteConvert3to4(l_uint8  *in3,
 }
 
 /*!
- *  byteConvert4to3()
+ * \brief   byteConvert4to3()
  */
 static void
 byteConvert4to3(l_uint8  *in4,
@@ -317,17 +321,19 @@ byteConvert4to3(l_uint8  *in4,
  *      Utility for encoding and decoding data with ascii85    *
  *-------------------------------------------------------------*/
 /*!
- *  encodeAscii85()
+ * \brief   encodeAscii85()
  *
- *      Input:  inarray (input data)
- *              insize (number of bytes in input array)
- *              &outsize (<return> number of bytes in output char array)
- *      Return: chara (with 64 characters + \n in each line)
+ * \param[in]    inarray input data
+ * \param[in]    insize number of bytes in input array
+ * \param[out]   poutsize number of bytes in output char array
+ * \return  chara with 64 characters + \n in each line
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Ghostscript has a stack break if the last line of
- *          data only has a '>', so we avoid the problem by
- *          always putting '~>' on the last line.
+ *          data only has a '\>', so we avoid the problem by
+ *          always putting '~\>' on the last line.
+ * </pre>
  */
 char *
 encodeAscii85(l_uint8  *inarray,
@@ -386,18 +392,20 @@ l_int32  maxsize, i, index, outindex, linecount, nbout, eof;
 
 
 /*!
- *  convertChunkToAscii85()
+ * \brief   convertChunkToAscii85()
  *
- *      Input:  inarray (input data)
- *              insize  (number of bytes in input array)
- *              &index (use and <return> -- ptr)
- *              outbuf (holds 8 ascii chars; we use no more than 7)
- *              &nbsout (<return> number of bytes written to outbuf)
- *      Return: boolean for eof (0 if more data, 1 if end of file)
+ * \param[in]    inarray input data
+ * \param[in]    insize  number of bytes in input array
+ * \param[out]   pindex use and -- ptr
+ * \param[in]    outbuf holds 8 ascii chars; we use no more than 7
+ * \param[out]   pnbsout number of bytes written to outbuf
+ * \return  boolean for eof 0 if more data, 1 if end of file
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Attempts to read 4 bytes and write 5.
  *      (2) Writes 1 byte if the value is 0.
+ * </pre>
  */
 static l_int32
 convertChunkToAscii85(l_uint8  *inarray,
@@ -449,18 +457,20 @@ l_int32   eof, index, nread, nbout, i;
 
 
 /*!
- *  decodeAscii85()
+ * \brief   decodeAscii85()
  *
- *      Input:  inarray (ascii85 input data)
- *              insize (number of bytes in input array)
- *              &outsize (<return> number of bytes in output l_uint8 array)
- *      Return: outarray (binary)
+ * \param[in]    inarray ascii85 input data
+ * \param[in]    insize number of bytes in input array
+ * \param[out]   poutsize number of bytes in output l_uint8 array
+ * \return  outarray binary
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) We assume the data is properly encoded, so we do not check
- *          for invalid characters or the final '>' character.
+ *          for invalid characters or the final '\>' character.
  *      (2) We permit whitespace to be added to the encoding in an
  *          arbitrary way.
+ * </pre>
  */
 l_uint8 *
 decodeAscii85(char     *inarray,
@@ -556,23 +566,25 @@ l_uint32  oword;
  *       String reformatting for base 64 encoded data          *
  *-------------------------------------------------------------*/
 /*!
- *  reformatPacked64()
+ * \brief   reformatPacked64()
  *
- *      Input:  inarray (base64 encoded string with newlines)
- *              insize (number of bytes in input array)
- *              leadspace (number of spaces in each line before the data)
- *              linechars (number of bytes of data in each line; multiple of 4)
- *              addquotes (1 to add quotes to each line of data; 0 to skip)
- *              &outsize (<return> number of bytes in output char array)
- *      Return: outarray (ascii)
+ * \param[in]    inarray base64 encoded string with newlines
+ * \param[in]    insize number of bytes in input array
+ * \param[in]    leadspace number of spaces in each line before the data
+ * \param[in]    linechars number of bytes of data in each line; multiple of 4
+ * \param[in]    addquotes 1 to add quotes to each line of data; 0 to skip
+ * \param[out]   poutsize number of bytes in output char array
+ * \return  outarray ascii
  *
- *  Notes:
- *      (1) Each line in the output array has @leadspace space characters,
- *          followed optionally by a double-quote, followed by @linechars
+ * <pre>
+ * Notes:
+ *      (1) Each line in the output array has %leadspace space characters,
+ *          followed optionally by a double-quote, followed by %linechars
  *          bytes of base64 data, followed optionally by a double-quote,
  *          followed by a newline.
  *      (2) This can be used to convert a base64 encoded string to a
  *          string formatted for inclusion in a C source file.
+ * </pre>
  */
 char *
 reformatPacked64(char     *inarray,
@@ -636,4 +648,3 @@ l_int32  i, j, flatindex, flatsize, outindex, nlines, linewithpad, linecount;
     LEPT_FREE(flata);
     return outa;
 }
-

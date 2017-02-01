@@ -27,10 +27,8 @@
 /*
  * arabic_lines.c
  *
- *   Demonstrates some segmentation techniques and display options
- *   To see the results in one image: /tmp/result.png.
- *
- *   Requires gthumb to visualize the results.
+ *   Demonstrates some segmentation techniques and display options.
+ *   To see the results in one image: /tmp/lept/lineseg/result.png.
  */
 
 #include "allheaders.h"
@@ -58,14 +56,14 @@ static const char *seltext = "xxxxxxx"
 int main(int    argc,
          char **argv)
 {
-l_int32      w, h, d, w2, h2, i, ncols, ignore;
+l_int32      w, h, d, w2, h2, i, ncols, same;
 l_float32    angle, conf;
 BOX         *box;
 BOXA        *boxa, *boxa2;
-PIX         *pix, *pixs, *pixb, *pixb2, *pixd;
-PIX         *pix1, *pix2, *pix3, *pix4, *pix5, *pix6;
+PIX         *pix, *pixs, *pixb, *pixb2;
+PIX         *pix1, *pix2, *pix3, *pix4;
 PIXA        *pixam;  /* mask with a single component over each column */
-PIXA        *pixac, *pixad, *pixat;
+PIXA        *pixa, *pixa1, *pixa2;
 PIXAA       *pixaa, *pixaa2;
 SEL         *selsplit;
 static char  mainName[] = "arabic_lines";
@@ -73,18 +71,20 @@ static char  mainName[] = "arabic_lines";
     if (argc != 1)
         return ERROR_INT(" Syntax:  arabic_lines", mainName, 1);
 
-    pixDisplayWrite(NULL, -1);  /* init debug output */
+    lept_mkdir("lept/lineseg");
+    pixa = pixaCreate(0);
 
         /* Binarize input */
     pixs = pixRead("arabic.png");
     pixGetDimensions(pixs, &w, &h, &d);
     pix = pixConvertTo1(pixs, 128);
+    pixDestroy(&pixs);
 
         /* Deskew */
     pixb = pixFindSkewAndDeskew(pix, 1, &angle, &conf);
     pixDestroy(&pix);
     fprintf(stderr, "Skew angle: %7.2f degrees; %6.2f conf\n", angle, conf);
-    pixDisplayWrite(pixb, 1);
+    pixaAddPix(pixa, pixb, L_INSERT);
 
         /* Use full image morphology to find columns, at 2x reduction.
            This only works for very simple layouts where each column
@@ -94,68 +94,65 @@ static char  mainName[] = "arabic_lines";
     boxa = pixConnComp(pix1, &pixam, 8);
     ncols = boxaGetCount(boxa);
     fprintf(stderr, "Num columns: %d\n", ncols);
-    pixDisplayWrite(pix1, 1);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    boxaDestroy(&boxa);
 
         /* Use selective region-based morphology to get the textline mask. */
-    pixad = pixaMorphSequenceByRegion(pixb2, pixam, "c100.3", 0, 0);
+    pixa2 = pixaMorphSequenceByRegion(pixb2, pixam, "c100.3", 0, 0);
     pixGetDimensions(pixb2, &w2, &h2, NULL);
-    pix2 = pixaDisplay(pixad, w2, h2);
-    pixDisplayWrite(pix2, 1);
-    pixDestroy(&pix2);
+    pix2 = pixaDisplay(pixa2, w2, h2);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixaDestroy(&pixam);
+    pixDestroy(&pixb2);
 
         /* Some of the lines may be touching, so use a HMT to split the
            lines in each column, and use a pixaa to save the results. */
     selsplit = selCreateFromString(seltext, 17, 7, "selsplit");
     pixaa = pixaaCreate(ncols);
     for (i = 0; i < ncols; i++) {
-        pix3 = pixaGetPix(pixad, i, L_CLONE);
-        box = pixaGetBox(pixad, i, L_COPY);
-        pix4 = pixHMT(NULL, pix3, selsplit);
-        pixXor(pix4, pix4, pix3);
-        boxa2 = pixConnComp(pix4, &pixac, 8);
-        pixaaAddPixa(pixaa, pixac, L_INSERT);
+        pix2 = pixaGetPix(pixa2, i, L_CLONE);
+        box = pixaGetBox(pixa2, i, L_COPY);
+        pix3 = pixHMT(NULL, pix2, selsplit);
+        pixXor(pix3, pix3, pix2);
+        boxa2 = pixConnComp(pix3, &pixa1, 8);
+        pixaaAddPixa(pixaa, pixa1, L_INSERT);
         pixaaAddBox(pixaa, box, L_INSERT);
-        pix5 = pixaDisplayRandomCmap(pixac, 0, 0);
-        pixDisplayWrite(pix5, 1);
+        pix4 = pixaDisplayRandomCmap(pixa1, 0, 0);
+        pixaAddPix(pixa, pix4, L_INSERT);
         fprintf(stderr, "Num textlines in col %d: %d\n", i,
                 boxaGetCount(boxa2));
-        pixDestroy(&pix5);
+        pixDestroy(&pix2);
         pixDestroy(&pix3);
-        pixDestroy(&pix4);
         boxaDestroy(&boxa2);
     }
+    pixaDestroy(&pixa2);
 
         /* Visual output */
-    ignore = system("gthumb /tmp/display/file* &");
-    pixat = pixaReadFiles("/tmp/display", "file");
-    pix5 = selDisplayInPix(selsplit, 31, 2);
-    pixaAddPix(pixat, pix5, L_INSERT);
-    pix6 = pixaDisplayTiledAndScaled(pixat, 32, 400, 3, 0, 35, 3);
-    pixWrite("/tmp/result.png", pix6, IFF_PNG);
-    pixaDestroy(&pixat);
-    pixDestroy(&pix6);
+    pix2 = selDisplayInPix(selsplit, 31, 2);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pix3 = pixaDisplayTiledAndScaled(pixa, 32, 400, 3, 0, 35, 3);
+    pixWrite("/tmp/lept/lineseg/result.png", pix3, IFF_PNG);
+    pixDisplay(pix3, 100, 100);
+    pixaDestroy(&pixa);
+    pixDestroy(&pix3);
+    selDestroy(&selsplit);
 
         /* Test pixaa I/O */
-    pixaaWrite("/tmp/pixaa", pixaa);
-    pixaa2 = pixaaRead("/tmp/pixaa");
-    pixaaWrite("/tmp/pixaa2", pixaa2);
+    pixaaWrite("/tmp/lept/lineseg/pixaa", pixaa);
+    pixaa2 = pixaaRead("/tmp/lept/lineseg/pixaa");
+    pixaaWrite("/tmp/lept/lineseg/pixaa2", pixaa2);
+    filesAreIdentical("/tmp/lept/lineseg/pixaa", "/tmp/lept/lineseg/pixaa2",
+                      &same);
+    if (!same)
+       L_ERROR("pixaa I/O failure\n", mainName);
+    pixaaDestroy(&pixaa2);
 
         /* Test pixaa display */
-    pixd = pixaaDisplay(pixaa, w2, h2);
-    pixWrite("/tmp/textlines.png", pixd, IFF_PNG);
-    pixDestroy(&pixd);
-
-        /* Cleanup */
-    pixDestroy(&pixb2);
-    pixDestroy(&pix1);
-    pixaDestroy(&pixam);
-    pixaDestroy(&pixad);
+    pix2 = pixaaDisplay(pixaa, w2, h2);
+    pixWrite("/tmp/lept/lineseg/textlines.png", pix2, IFF_PNG);
     pixaaDestroy(&pixaa);
-    pixaaDestroy(&pixaa2);
-    boxaDestroy(&boxa);
-    selDestroy(&selsplit);
-    pixDestroy(&pixs);
-    pixDestroy(&pixb);
+    pixDestroy(&pix2);
+
     return 0;
 }
 

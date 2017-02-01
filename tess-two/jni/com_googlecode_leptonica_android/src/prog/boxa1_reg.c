@@ -26,6 +26,9 @@
 
 /*
  * boxa1_reg.c
+ *
+ *    This carries out various operations on boxa, including
+ *    region comparison, transforms and display.
  */
 
 #include "allheaders.h"
@@ -35,15 +38,21 @@ static PIX *DisplayBoxa(BOXA  *boxa);
 int main(int    argc,
          char **argv)
 {
-l_int32      same;
-l_float32    diffarea, diffxor;
+l_uint8     *data1, *data2;
+l_int32      i, same, w, h, width, success, nba;
+size_t       size1, size2;
+l_float32    diffarea, diffxor, scalefact;
 BOX         *box;
-BOXA        *boxa1, *boxa2;
+BOXA        *boxa1, *boxa2, *boxa3;
+BOXAA       *baa1, *baa2, *baa3;
 PIX         *pix1, *pixdb;
+PIXA        *pixa1, *pixa2;
 static char  mainName[] = "boxa1_reg";
 
     if (argc != 1)
         return ERROR_INT(" Syntax: boxa1_reg", mainName, 1);
+
+    lept_mkdir("lept/boxa");
 
         /* Make a boxa and display its contents */
     boxa1 = boxaCreate(6);
@@ -74,7 +83,7 @@ static char  mainName[] = "boxa1_reg";
     boxaDestroy(&boxa2);
 
     boxa2 = boxaReconcileEvenOddHeight(boxa1, L_ADJUST_TOP_AND_BOT, 6,
-                                       L_ADJUST_CHOOSE_MIN, 1.0);
+                                       L_ADJUST_CHOOSE_MIN, 1.0, 0);
     pix1 = DisplayBoxa(boxa2);
     pixDisplay(pix1, 100, 500);
     pixDestroy(&pix1);
@@ -87,6 +96,104 @@ static char  mainName[] = "boxa1_reg";
     pixDestroy(&pixdb);
     boxaDestroy(&boxa1);
     boxaDestroy(&boxa2);
+
+        /* Input is a fairly clean boxa */
+    boxa1 = boxaRead("boxa1.ba");
+    boxa2 = boxaReconcileEvenOddHeight(boxa1, L_ADJUST_TOP, 80,
+                                       L_ADJUST_CHOOSE_MIN, 1.05, 1);
+    width = 100;
+    boxaGetExtent(boxa2, &w, &h, NULL);
+    scalefact = (l_float32)width / (l_float32)w;
+    boxa3 = boxaTransform(boxa2, 0, 0, scalefact, scalefact);
+    pix1 = boxaDisplayTiled(boxa3, NULL, 1500, 2, 1.0, 0, 3, 2);
+    pixDisplay(pix1, 0, 100);
+    pixWrite("/tmp/lept/boxa/pix1.png", pix1, IFF_PNG);
+    pixDestroy(&pix1);
+    boxaDestroy(&boxa1);
+    boxaDestroy(&boxa2);
+    boxaDestroy(&boxa3);
+
+        /* Input is an unsmoothed and noisy boxa */
+    boxa1 = boxaRead("boxa2.ba");
+    boxa2 = boxaReconcileEvenOddHeight(boxa1, L_ADJUST_TOP, 80,
+                                       L_ADJUST_CHOOSE_MIN, 1.05, 1);
+    width = 100;
+    boxaGetExtent(boxa2, &w, &h, NULL);
+    scalefact = (l_float32)width / (l_float32)w;
+    boxa3 = boxaTransform(boxa2, 0, 0, scalefact, scalefact);
+    pix1 = boxaDisplayTiled(boxa3, NULL, 1500, 2, 1.0, 0, 3, 2);
+    pixDisplay(pix1, 500, 100);
+    pixWrite("/tmp/lept/boxa/pix2.png", pix1, IFF_PNG);
+    pixDestroy(&pix1);
+    boxaDestroy(&boxa1);
+    boxaDestroy(&boxa2);
+    boxaDestroy(&boxa3);
+
+        /* Input is a boxa smoothed with a median window filter */
+    boxa1 = boxaRead("boxa3.ba");
+    boxa2 = boxaReconcileEvenOddHeight(boxa1, L_ADJUST_TOP, 80,
+                                       L_ADJUST_CHOOSE_MIN, 1.05, 1);
+    width = 100;
+    boxaGetExtent(boxa2, &w, &h, NULL);
+    scalefact = (l_float32)width / (l_float32)w;
+    boxa3 = boxaTransform(boxa2, 0, 0, scalefact, scalefact);
+    pix1 = boxaDisplayTiled(boxa3, NULL, 1500, 2, 1.0, 0, 3, 2);
+    pixDisplay(pix1, 1000, 100);
+    pixWrite("/tmp/lept/boxa/pix3.png", pix1, IFF_PNG);
+    pixDestroy(&pix1);
+    boxaDestroy(&boxa1);
+    boxaDestroy(&boxa2);
+    boxaDestroy(&boxa3);
+
+        /* Test serialized boxa I/O to and from memory */
+    data1 = l_binaryRead("boxa2.ba", &size1);
+    boxa1 = boxaReadMem(data1, size1);
+    boxaWriteMem(&data2, &size2, boxa1);
+    boxa2 = boxaReadMem(data2, size2);
+    boxaWrite("/tmp/lept/boxa/boxa1.ba", boxa1);
+    boxaWrite("/tmp/lept/boxa/boxa2.ba", boxa2);
+    filesAreIdentical("/tmp/lept/boxa/boxa1.ba", "/tmp/lept/boxa/boxa2.ba",
+                      &same); 
+    if (same)
+        fprintf(stderr, "Good: boxes files are identical\n");
+    else
+        fprintf(stderr, "Bad: boxes files differ\n");
+    boxaDestroy(&boxa1);
+    boxaDestroy(&boxa2);
+    lept_free(data1);
+    lept_free(data2);
+
+        /* Test pixaDisplayBoxaa() */
+    pixa1 = pixaReadBoth("showboxes.pac");
+    baa1 = boxaaRead("showboxes1.baa");
+    baa2 = boxaaTranspose(baa1);
+    baa3 = boxaaTranspose(baa2);
+    nba = boxaaGetCount(baa1);
+    success = TRUE;
+    for (i = 0; i < nba; i++) {
+        boxa1 = boxaaGetBoxa(baa1, i, L_CLONE);
+        boxa2 = boxaaGetBoxa(baa3, i, L_CLONE);
+        boxaEqual(boxa1, boxa2, 0, NULL, &same);
+        boxaDestroy(&boxa1);
+        boxaDestroy(&boxa2);
+        if (!same) success = FALSE;
+    }
+    if (success)
+        fprintf(stderr, "Good: transpose is reversible\n");
+    else
+        fprintf(stderr, "Bad: transpose failed\n");
+    pixa2 = pixaDisplayBoxaa(pixa1, baa2, L_DRAW_RGB, 2);
+    pix1 = pixaDisplayTiledInRows(pixa2, 32, 1400, 1.0, 0, 10, 0);
+    pixDisplay(pix1, 0, 600);
+    fprintf(stderr, "Writing to: /tmp/lept/boxa/show.pdf\n");
+    pixaConvertToPdf(pixa2, 75, 1.0, 0, 0, NULL, "/tmp/lept/boxa/show.pdf");
+    pixDestroy(&pix1);
+    pixaDestroy(&pixa1);
+    pixaDestroy(&pixa2);
+    boxaaDestroy(&baa1);
+    boxaaDestroy(&baa2);
+    boxaaDestroy(&baa3);
+
     return 0;
 }
 

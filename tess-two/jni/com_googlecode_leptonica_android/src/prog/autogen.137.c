@@ -68,21 +68,19 @@ l_int32   nfunc = 2;
 
     lept_mkdir("lept/auto");
 
-        /* Unencode selected string, write to file, and read it */
+        /* Unencode the selected string, uncompress it, and read it */
     switch (index) {
     case 0:
         data1 = decodeBase64(l_strdata_0, strlen(l_strdata_0), &size1);
         data2 = zlibUncompress(data1, size1, &size2);
-        l_binaryWrite("/tmp/lept/auto/data.bin","w", data2, size2);
-        result = (void *)pixaRead("/tmp/lept/auto/data.bin");
+        result = (void *)pixaReadMem(data2, size2);
         lept_free(data1);
         lept_free(data2);
         break;
     case 1:
         data1 = decodeBase64(l_strdata_1, strlen(l_strdata_1), &size1);
         data2 = zlibUncompress(data1, size1, &size2);
-        l_binaryWrite("/tmp/lept/auto/data.bin","w", data2, size2);
-        result = (void *)pixaRead("/tmp/lept/auto/data.bin");
+        result = (void *)pixaReadMem(data2, size2);
         lept_free(data1);
         lept_free(data2);
         break;

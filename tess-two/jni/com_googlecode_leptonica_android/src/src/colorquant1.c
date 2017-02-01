@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  colorquant1.c
+/*!
+ * \file colorquant1.c
+ * <pre>
  *
  *  Octcube color quantization
  *
@@ -107,46 +108,52 @@
  *      Find number of occupied octcubes at the specified level
  *          l_int32           pixNumberOccupiedOctcubes()
  *
- *  Note: leptonica also provides color quantization using a modified
+ *  Notes:
+ *        Leptonica also provides color quantization using a modified
  *        form of median cut.  See colorquant2.c for details.
+ * </pre>
  */
 
 #include <string.h>
 #include "allheaders.h"
 
 
-/*  This data structure is used for pixOctreeColorQuant(),
- *  a color octree that adjusts to the color distribution
- *  in the image that is being quantized.  The best settings
- *  are with CQ_NLEVELS = 6 and DITHERING set on.
+/*
+ * <pre>
+ *   This data structure is used for pixOctreeColorQuant(),
+ *   a color octree that adjusts to the color distribution
+ *   in the image that is being quantized.  The best settings
+ *   are with CQ_NLEVELS = 6 and DITHERING set on.
  *
- *  Notes:  (1) the CTE (color table entry) index is sequentially
- *              assigned as the tree is pruned back
- *          (2) if 'bleaf' == 1, all pixels in that cube have been
- *              assigned to one or more CTEs.  But note that if
- *              all 8 subcubes have 'bleaf' == 1, it will have no
- *              pixels left for assignment and will not be a CTE.
- *          (3) 'nleaves', the number of leaves contained at the next
- *              lower level is some number between 0 and 8, inclusive.
- *              If it is zero, it means that all colors within this cube
- *              are part of a single growing cluster that has not yet
- *              been set aside as a leaf.  If 'nleaves' > 0, 'bleaf'
- *              will be set to 1 and all pixels not assigned to leaves
- *              at lower levels will be assigned to a CTE here.
- *              (However, as described above, if all pixels are already
- *              assigned, we set 'bleaf' = 1 but do not create a CTE
- *              at this level.)
- *          (4) To keep the maximum color error to a minimum, we
- *              prune the tree back to level 2, and require that
- *              all 64 level 2 cells are CTEs.
- *          (5) We reserve an extra set of colors to prevent running out
- *              of colors during the assignment of the final 64 level 2 cells.
- *              This is more likely to happen with small images.
- *          (6) When we run out of colors, the dithered image can be very
- *              poor, so we additionally prevent dithering if the image
- *              is small.
- *          (7) The color content of the image is measured, and if there
- *              is very little color, it is quantized in grayscale.
+ * Notes:
+ *      (1) the CTE (color table entry) index is sequentially
+ *          assigned as the tree is pruned back
+ *      (2) if 'bleaf' == 1, all pixels in that cube have been
+ *          assigned to one or more CTEs.  But note that if
+ *          all 8 subcubes have 'bleaf' == 1, it will have no
+ *          pixels left for assignment and will not be a CTE.
+ *      (3) 'nleaves', the number of leaves contained at the next
+ *          lower level is some number between 0 and 8, inclusive.
+ *          If it is zero, it means that all colors within this cube
+ *          are part of a single growing cluster that has not yet
+ *          been set aside as a leaf.  If 'nleaves' > 0, 'bleaf'
+ *          will be set to 1 and all pixels not assigned to leaves
+ *          at lower levels will be assigned to a CTE here.
+ *          (However, as described above, if all pixels are already
+ *          assigned, we set 'bleaf' = 1 but do not create a CTE
+ *          at this level.)
+ *      (4) To keep the maximum color error to a minimum, we
+ *          prune the tree back to level 2, and require that
+ *          all 64 level 2 cells are CTEs.
+ *      (5) We reserve an extra set of colors to prevent running out
+ *          of colors during the assignment of the final 64 level 2 cells.
+ *          This is more likely to happen with small images.
+ *      (6) When we run out of colors, the dithered image can be very
+ *          poor, so we additionally prevent dithering if the image
+ *          is small.
+ *      (7) The color content of the image is measured, and if there
+ *          is very little color, it is quantized in grayscale.
+ * </pre>
  */
 struct ColorQuantCell
 {
@@ -167,15 +174,19 @@ static const l_int32  TREE_GEN_WIDTH = 350;  /* big enough for good stats */
 static const l_int32  MIN_DITHER_SIZE = 250;  /* don't dither if smaller */
 
 
-/*  This data structure is used for pixOctreeQuantNumColors(),
- *  a color octree that adjusts in a simple way to the to the color
- *  distribution in the image that is being quantized.  It outputs
- *  colormapped images, either 4 bpp or 8 bpp, depending on the
- *  max number of colors and the compression desired.
+/*
+ * <pre>
+ *   This data structure is used for pixOctreeQuantNumColors(),
+ *   a color octree that adjusts in a simple way to the to the color
+ *   distribution in the image that is being quantized.  It outputs
+ *   colormapped images, either 4 bpp or 8 bpp, depending on the
+ *   max number of colors and the compression desired.
  *
- *  The number of samples is saved as a float in the first location,
- *  because this is required to use it as the key that orders the
- *  cells in the priority queue.  */
+ *   The number of samples is saved as a float in the first location,
+ *   because this is required to use it as the key that orders the
+ *   cells in the priority queue.
+ * </pre>
+ * */
 struct OctcubeQuantCell
 {
     l_float32  n;                  /* number of samples in this cell       */
@@ -186,8 +197,12 @@ struct OctcubeQuantCell
 typedef struct OctcubeQuantCell    OQCELL;
 
 
-    /* This data structure is using for heap sorting octcubes
-     * by population.  Sort order is decreasing.  */
+/*
+ * <pre>
+ *   This data structure is using for heap sorting octcubes
+ *   by population.  Sort order is decreasing.
+ * </pre>
+ */
 struct L_OctcubePop
 {
     l_float32        npix;    /* parameter on which to sort  */
@@ -198,12 +213,17 @@ struct L_OctcubePop
 };
 typedef struct L_OctcubePop  L_OCTCUBE_POP;
 
-    /* In pixDitherOctindexWithCmap(), we use these default values.
-     * To get the max value of 'dif' in the dithering color transfer,
-     * divide these "DIF_CAP" values by 8.  However, a value of
-     * 0 means that there is no cap (infinite cap).  A very small
-     * value is used for POP_DIF_CAP because dithering on the population
-     * generated colormap can be unstable without a tight cap.   */
+/*
+ * <pre>
+ *   In pixDitherOctindexWithCmap(), we use these default values.
+     To get the max value of 'dif' in the dithering color transfer,
+     divide these "DIF_CAP" values by 8.  However, a value of
+     0 means that there is no cap (infinite cap).  A very small
+     value is used for POP_DIF_CAP because dithering on the population
+     generated colormap can be unstable without a tight cap.
+ * </pre>
+ */
+
 static const l_int32  FIXED_DIF_CAP = 0;
 static const l_int32  POP_DIF_CAP = 40;
 
@@ -254,14 +274,15 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *                Two-pass adaptive octree color quantization              *
  *-------------------------------------------------------------------------*/
 /*!
- *  pixOctreeColorQuant()
+ * \brief   pixOctreeColorQuant()
  *
- *      Input:  pixs  (32 bpp; 24-bit color)
- *              colors  (in colormap; some number in range [128 ... 256];
- *                      the actual number of colors used will be smaller)
- *              ditherflag  (1 to dither, 0 otherwise)
- *      Return: pixd (8 bpp with colormap), or null on error
+ * \param[in]    pixs  32 bpp; 24-bit color
+ * \param[in]    colors  in colormap; some number in range [128 ... 256];
+ *                      the actual number of colors used will be smaller
+ * \param[in]    ditherflag  1 to dither, 0 otherwise
+ * \return  pixd 8 bpp with colormap, or NULL on error
  *
+ * <pre>
  *  I found one description in the literature of octree color
  *  quantization, using progressive truncation of the octree,
  *  by M. Gervautz and W. Purgathofer in Graphics Gems, pp.
@@ -271,16 +292,16 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *  progressively truncated as new pixels are added.  They
  *  need to set up some data structures that are traversed
  *  with the addition of each 24 bit pixel, in order to decide
- *  either (1) in which cluster (sub-branch of the octree) to put
- *  the pixel, or (2) whether to truncate the octree further
- *  to place the pixel in an existing cluster, or (3) which
+ *  either 1) in which cluster (sub-branch of the octree to put
+ *  the pixel, or 2 whether to truncate the octree further
+ *  to place the pixel in an existing cluster, or 3 which
  *  two existing clusters should be merged so that the pixel
  *  can be left to start a truncated leaf of the octree.  Such dynamic
  *  truncation is considerably more complicated, and Gervautz et
  *  al. did not explain how they did it in anywhere near the
  *  detail required to check their implementation.
  *
- *  The simple method in pixFixedOctcubeQuant256() is very
+ *  The simple method in pixFixedOctcubeQuant256 is very
  *  fast, and with dithering the results are good, but you
  *  can do better if the color clusters are selected adaptively
  *  from the image.  We want a method that makes much better
@@ -291,21 +312,21 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *  the pruned tree of color cubes and the second for computing the index
  *  into the color table for each pixel.
  *
- *  A relatively simple adaptive method is pixOctreeQuantByPopulation().
+ *  A relatively simple adaptive method is pixOctreeQuantByPopulation.
  *  That function first determines if the image has very few colors,
  *  and, if so, quantizes to those colors.  If there are more than
  *  256 colors, it generates a histogram of octcube leaf occupancy
  *  at level 4, chooses the 192 most populated such leaves as
  *  the first 192 colors, and sets the remaining 64 colors to the
  *  residual average pixel values in each of the 64 level 2 octcubes.
- *  This is a bit faster than pixOctreeColorQuant(), and does very
+ *  This is a bit faster than pixOctreeColorQuant, and does very
  *  well without dithering, but for most images with dithering it
  *  is clearly inferior.
  *
- *  We now describe pixOctreeColorQuant().  The first pass is done
+ *  We now describe pixOctreeColorQuant.  The first pass is done
  *  on a subsampled image, because we do not need to use all the
  *  pixels in the image to generate the tree.  Subsampling
- *  down to 0.25 (1/16 of the pixels) makes the program run
+ *  down to 0.25 1/16 of the pixels makes the program run
  *  about 1.3 times faster.
  *
  *  Instead of dividing the color space into 256 equal-sized
@@ -314,8 +335,8 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *  This gives us 6 octree levels.  We then prune back,
  *  starting from level 6.  For every cube at level 6, there
  *  are 8 cubes at level 5.  Call the operation of putting a
- *  cube aside as a color table entry (CTE) a "saving."
- *  We use a (in general) level-dependent threshold, and save
+ *  cube aside as a color table entry CTE a "saving."
+ *  We use a in general level-dependent threshold, and save
  *  those level 6 cubes that are above threshold.
  *  The rest are combined into the containing level 5 cube.
  *  If between 1 and 7 level 6 cubes within a level 5
@@ -331,13 +352,13 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *  level above.   We classify the CTEs in terms of the
  *  condition in which they are made as either being "threshold"
  *  or "residual."  They are "threshold" CTEs if no subcubes
- *  are CTEs (that is, they contain every pixel within the cube)
+ *  are CTEs that is, they contain every pixel within the cube
  *  and the number of pixels exceeds the threshold for making
  *  a CTE.  They are "residual" CTEs if at least one but not more
  *  than 7 of the subcubes have already been determined to be CTEs;
  *  this happens automatically -- no threshold is applied.
  *  If all 8 subcubes are determined to be CTEs, the cube is
- *  marked as having all pixels accounted for ('bleaf' = 1) but
+ *  marked as having all pixels accounted for 'bleaf' = 1 but
  *  is not saved as a CTE.
  *
  *  We stop the pruning at level 2, at which there are 64
@@ -347,7 +368,7 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *  As the cubes are saved as color samples in the color table,
  *  the number of remaining pixels P and the number of
  *  remaining colors in the color table N are recomputed,
- *  along with the average number of pixels P/N (ppc) to go in
+ *  along with the average number of pixels P/N ppc to go in
  *  each of the remaining colors.  This running average number is
  *  used to set the threshold at the current level.
  *
@@ -361,9 +382,9 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *  closer to the center of their cells.  And with dithering,
  *  the average pixel color in a small region will be closer still.
  *  Thus with the octree quantizer, we are able to capture
- *  regions of high color pdf (probability density function) in small
+ *  regions of high color pdf probability density function in small
  *  but accurate CTEs, and to have only a small number of pixels
- *  that end up a significant distance (with a guaranteed maximum)
+ *  that end up a significant distance with a guaranteed maximum
  *  from their true color.
  *
  *  How should the threshold factor vary?  Threshold factors
@@ -388,41 +409,41 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *
  *  The implementation logically has four parts:
  *
- *       (1) accumulation into small, fixed cells
- *       (2) pruning back into selected CTE cubes
- *       (3) organizing the CTEs for fast search to find
+ *       1 accumulation into small, fixed cells
+ *       2 pruning back into selected CTE cubes
+ *       3 organizing the CTEs for fast search to find
  *           the CTE to which any image pixel belongs
- *       (4) doing a second scan to code the image pixels by CTE
+ *       4 doing a second scan to code the image pixels by CTE
  *
- *  Step (1) is straightforward; we use 2^15 cells.
+ *  Step 1 is straightforward; we use 2^15 cells.
  *
- *  We've already discussed how the pruning step (2) will be performed.
+ *  We've already discussed how the pruning step 2 will be performed.
  *
- *  Steps (3) and (4) are related, in that the organization
- *  used by step (3) determines how the search actually
- *  takes place for each pixel in step (4).
+ *  Steps 3) and (4 are related, in that the organization
+ *  used by step 3 determines how the search actually
+ *  takes place for each pixel in step 4.
  *
- *  There are many ways to do step (3).  Let's explore a few.
+ *  There are many ways to do step 3.  Let's explore a few.
  *
- *  (a) The simplest is to order the cubes from highest occupancy
+ *  a The simplest is to order the cubes from highest occupancy
  *      to lowest, and traverse the list looking for the deepest
  *      match.  To make this more efficient, so that we know when
  *      to stop looking, any cube that has separate CTE subcubes
  *      would be marked as such, so that we know when we hit a
  *      true leaf.
  *
- *  (b) Alternatively, we can order the cubes by highest
+ *  b Alternatively, we can order the cubes by highest
  *      occupancy separately each level, and work upward,
  *      starting at level 5, so that when we find a match we
  *      know that it will be correct.
  *
- *  (c) Another approach would be to order the cubes by
+ *  c Another approach would be to order the cubes by
  *      "address" and use a hash table to find the cube
  *      corresponding to a pixel color.  I don't know how to
  *      do this with a variable length address, as each CTE
  *      will have 3*n bits, where n is the level.
  *
- *  (d) Another approach entirely is to put the CTE cubes into
+ *  d Another approach entirely is to put the CTE cubes into
  *      a tree, in such a way that starting from the root, and
  *      using 3 bits of address at a time, the correct branch of
  *      each octree can be taken until a leaf is found.  Because
@@ -435,7 +456,7 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *      in the tree, or we can grow from the root only those
  *      branches that end directly on leaves.
  *
- *  What we do here is to take approach (d), and implement the tree
+ *  What we do here is to take approach d, and implement the tree
  *  "virtually", as a set of arrays, one array for each level
  *  of the tree.   Initially we start at level 5, an array with
  *  2^15 cubes, each with 8 subcubes.  We then build nodes at
@@ -443,14 +464,14 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *  each with 8 subcubes; etc.  Using these arrays has
  *  several advantages:
  *
- *     -  We don't need to keep track of links between cubes
+ *     ~  We don't need to keep track of links between cubes
  *        and subcubes, because we can use the canonical
  *        addressing on the cell arrays directly to determine
  *        which nodes are parent cubes and which are sub-cubes.
  *
- *     -  We can prune directly on this tree
+ *     ~  We can prune directly on this tree
  *
- *     -  We can navigate the pruned tree quickly to classify
+ *     ~  We can navigate the pruned tree quickly to classify
  *        each pixel in the image.
  *
  *  Canonical addressing guarantees that the i-th node at level k
@@ -459,7 +480,7 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *  The pruning step works as follows.  We go from the lowest
  *  level up.  At each level, the threshold is found from the
  *  product of a factor near 1.0 and the ratio of unmarked pixels
- *  to remaining colors (minus the 64).  We march through
+ *  to remaining colors minus the 64.  We march through
  *  the space, sequentially considering a cube and its 8 subcubes.
  *  We first check those subcubes that are not already
  *  marked as CTE to see if any are above threshold, and if so,
@@ -481,7 +502,7 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *  accounted for.
  *
  *  Note that the pruning of the tree and labelling of the CTEs
- *  (step 2) accomplishes step 3 implicitly, because the marked
+ *  step 2 accomplishes step 3 implicitly, because the marked
  *  and pruned tree is ready for use in labelling each pixel
  *  in step 4.  We now, for every pixel in the image, traverse
  *  the tree from the root, looking for the lowest cube that is a leaf.
@@ -500,7 +521,7 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *      image is larger than some threshold size.
  *  (3) Reserve an extra set of colors to prevent running out of colors
  *      when pruning the octree; specifically, during the assignment
- *      of those level 2 cells (out of the 64) that have unassigned
+ *      of those level 2 cells out of the 64 that have unassigned
  *      pixels.  The problem of running out is more likely to happen
  *      with small images, because the estimation we use for the
  *      number of pixels available is not accurate.
@@ -508,6 +529,7 @@ static PIX *pixOctcubeQuantFromCmapLUT(PIX *pixs, PIXCMAP *cmap,
  *      image can be very poor.  As this would only happen with very
  *      small images, and dithering is not particularly noticeable with
  *      such images, turn it off.
+ * </pre>
  */
 PIX *
 pixOctreeColorQuant(PIX     *pixs,
@@ -528,25 +550,26 @@ pixOctreeColorQuant(PIX     *pixs,
 
 
 /*!
- *  pixOctreeColorQuantGeneral()
+ * \brief   pixOctreeColorQuantGeneral()
  *
- *      Input:  pixs  (32 bpp; 24-bit color)
- *              colors  (in colormap; some number in range [128 ... 240];
- *                      the actual number of colors used will be smaller)
- *              ditherflag  (1 to dither, 0 otherwise)
- *              validthresh (minimum fraction of pixels neither near white
+ * \param[in]    pixs  32 bpp; 24-bit color
+ * \param[in]    colors  in colormap; some number in range [128 ... 240];
+ *                      the actual number of colors used will be smaller
+ * \param[in]    ditherflag  1 to dither, 0 otherwise
+ * \param[in]    validthresh minimum fraction of pixels neither near white
  *                           nor black, required for color quantization;
  *                           typically ~0.01, but smaller for images that have
- *                           color but are nearly all white)
- *              colorthresh (minimum fraction of pixels with color that are
+ *                           color but are nearly all white
+ * \param[in]    colorthresh minimum fraction of pixels with color that are
  *                           not near white or black, that are required
  *                           for color quantization; typ. ~0.01, but smaller
  *                           for images that have color along with a
- *                           significant fraction of gray)
- *      Return: pixd (8 bit with colormap), or null on error
+ *                           significant fraction of gray
+ * \return  pixd 8 bit with colormap, or NULL on error
  *
- *  Notes:
- *      (1) The parameters @validthresh and @colorthresh are used to
+ * <pre>
+ * Notes:
+ *      (1) The parameters %validthresh and %colorthresh are used to
  *          determine if color quantization should be used on an image,
  *          or whether, instead, it should be quantized in grayscale.
  *          If the image has very few non-white and non-black pixels, or
@@ -558,7 +581,7 @@ pixOctreeColorQuant(PIX     *pixs,
  *          there is only a very small fraction of color pixels, but they're
  *          important to preserve; then you want to use a smaller value for
  *          these parameters.  To disable conversion to gray and force
- *          color quantization, use @validthresh = 0.0 and @colorthresh = 0.0.
+ *          color quantization, use %validthresh = 0.0 and %colorthresh = 0.0.
  *      (2) See pixOctreeColorQuant() for algorithmic and implementation
  *          details.  This function has a more general interface.
  *      (3) See pixColorFraction() for computing the fraction of pixels
@@ -569,9 +592,10 @@ pixOctreeColorQuant(PIX     *pixs,
  *             the pixels that are neither black nor white have very
  *             little color content.  The product 'pixfract * colorfract'
  *             gives the fraction of pixels with significant color content.
- *          We test against the product @validthresh * @colorthresh
+ *          We test against the product %validthresh * %colorthresh
  *          to find color in images that have either very few
  *          intermediate gray pixels or that have many such gray pixels.
+ * </pre>
  */
 PIX *
 pixOctreeColorQuantGeneral(PIX       *pixs,
@@ -633,8 +657,10 @@ PIXCMAP   *cmap;
 
         /* Make the pruned octree */
     cqcaa = octreeGenerateAndPrune(pixsub, colors, CQ_RESERVED_COLORS, &cmap);
-    if (!cqcaa)
+    if (!cqcaa) {
+        pixDestroy(&pixsub);
         return (PIX *)ERROR_PTR("tree not made", procName, NULL);
+    }
 #if DEBUG_COLORQUANT
     L_INFO(" Colors requested = %d\n", procName, colors);
     L_INFO(" Actual colors = %d\n", procName, cmap->n);
@@ -649,8 +675,11 @@ PIXCMAP   *cmap;
         /* Traverse tree from root, looking for lowest cube
          * that is a leaf, and set dest pix value to its
          * colortable index */
-    if ((pixd = pixOctreeQuantizePixels(pixs, cqcaa, ditherflag)) == NULL)
+    if ((pixd = pixOctreeQuantizePixels(pixs, cqcaa, ditherflag)) == NULL) {
+        pixDestroy(&pixsub);
+        cqcellTreeDestroy(&cqcaa);
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    }
 
         /* Attach colormap and copy res */
     pixSetColormap(pixd, cmap);
@@ -676,18 +705,20 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  octreeGenerateAndPrune()
+ * \brief   octreeGenerateAndPrune()
  *
- *      Input:  pixs
- *              number of colors to use (between 128 and 256)
- *              number of reserved colors
- *              &cmap  (made and returned)
- *      Return: octree, colormap and number of colors used, or null
+ * \param[in]    pixs
+ * \param[in]    colors number of colors to use between 128 and 256
+ * \param[in]    reservedcolors number of reserved colors
+ * \param[out]   pcmap  made and returned
+ * \return  octree, colormap and number of colors used, or NULL
  *              on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The number of colors in the cmap may differ from the number
  *          of colors requested, but it will not be larger than 256
+ * </pre>
  */
 static CQCELL ***
 octreeGenerateAndPrune(PIX       *pixs,
@@ -703,7 +734,7 @@ l_int32    npix;  /* number of remaining pixels to be assigned */
 l_int32    ncolor; /* number of remaining color cells to be used */
 l_int32    ppc;  /* ave number of pixels left for each color cell */
 l_int32    rv, gv, bv;
-l_float32  thresholdFactor[] = {0.01, 0.01, 1.0, 1.0, 1.0, 1.0};
+l_float32  thresholdFactor[] = {0.01f, 0.01f, 1.0f, 1.0f, 1.0f, 1.0f};
 l_float32  thresh;  /* factor of ppc for this level */
 l_uint32  *datas, *lines;
 l_uint32  *rtab, *gtab, *btab;
@@ -725,12 +756,12 @@ NUMA      *nar;  /* accumulates levels for residual cells */
     if (!pcmap)
         return (CQCELL ***)ERROR_PTR("&cmap not defined", procName, NULL);
 
-        /* Make the canonical index tables */
-    if (makeRGBToIndexTables(&rtab, &gtab, &btab, CQ_NLEVELS))
-        return (CQCELL ***)ERROR_PTR("tables not made", procName, NULL);
-
     if ((cqcaa = cqcellTreeCreate()) == NULL)
         return (CQCELL ***)ERROR_PTR("cqcaa not made", procName, NULL);
+
+        /* Make the canonical index tables */
+    rtab = gtab = btab = NULL;
+    makeRGBToIndexTables(&rtab, &gtab, &btab, CQ_NLEVELS);
 
         /* Generate an 8 bpp cmap (max size 256) */
     cmap = pixcmapCreate(8);
@@ -757,10 +788,8 @@ NUMA      *nar;  /* accumulates levels for residual cells */
     }
 
         /* Arrays for storing statistics */
-    if ((nat = numaCreate(0)) == NULL)
-        return (CQCELL ***)ERROR_PTR("nat not made", procName, NULL);
-    if ((nar = numaCreate(0)) == NULL)
-        return (CQCELL ***)ERROR_PTR("nar not made", procName, NULL);
+    nat = numaCreate(0);
+    nar = numaCreate(0);
 
         /* Prune back from the lowest level and generate the colormap */
     for (level = CQ_NLEVELS - 1; level >= 2; level--) {
@@ -789,10 +818,9 @@ NUMA      *nar;  /* accumulates levels for residual cells */
                         cqcsub->bc = bv;
 #endif
                     } else {
-                            /* This doesn't seem to happen. */
-                        L_WARNING("possibly assigned pixels to wrong color\n",
-                                  procName);
-                        pixcmapGetNearestIndex(cmap, rv, gv, bv, &cindex);
+                            /* This doesn't seem to happen. Do something. */
+                        L_ERROR("assigning pixels to wrong color\n", procName);
+                        pixcmapGetNearestIndex(cmap, 128, 128, 128, &cindex);
                         cqcsub->index = cindex;  /* assign to the nearest */
                         pixcmapGetColor(cmap, cindex, &rval, &gval, &bval);
                         cqcsub->rc = rval;
@@ -920,14 +948,15 @@ l_int32    nt, nr, ival;
 
 
 /*!
- *  pixOctreeQuantizePixels()
+ * \brief   pixOctreeQuantizePixels()
  *
- *      Input:  pixs (32 bpp)
- *              octree in array format
- *              ditherflag (1 for dithering, 0 for no dithering)
- *      Return: pixd or null on error
+ * \param[in]    pixs 32 bpp
+ * \param[in]    cqcaa octree in array format
+ * \param[in]    ditherflag 1 for dithering, 0 for no dithering
+ * \return  pixd or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This routine doesn't need to use the CTEs (colormap
  *          table entries) because the color indices are embedded
  *          in the octree.  Thus, the calling program must make
@@ -939,6 +968,7 @@ l_int32    nt, nr, ival;
  *          integer buffers.  Because the dif is truncated to an
  *          integer, the dither is accurate to 1/8 of a sample increment,
  *          or 1/2048 of the color range.
+ * </pre>
  */
 static PIX *
 pixOctreeQuantizePixels(PIX       *pixs,
@@ -949,7 +979,7 @@ l_uint8   *bufu8r, *bufu8g, *bufu8b;
 l_int32    rval, gval, bval;
 l_int32    octindex, index;
 l_int32    val1, val2, val3, dif;
-l_int32    w, h, wpls, wpld, i, j;
+l_int32    w, h, wpls, wpld, i, j, success;
 l_int32    rc, gc, bc;
 l_int32   *buf1r, *buf1g, *buf1b, *buf2r, *buf2g, *buf2b;
 l_uint32  *rtab, *gtab, *btab;
@@ -965,10 +995,6 @@ PIX       *pixd;
     if (!cqcaa)
         return (PIX *)ERROR_PTR("cqcaa not defined", procName, NULL);
 
-        /* Make the canonical index tables */
-    if (makeRGBToIndexTables(&rtab, &gtab, &btab, CQ_NLEVELS))
-        return (PIX *)ERROR_PTR("tables not made", procName, NULL);
-
         /* Make output 8 bpp palette image */
     pixGetDimensions(pixs, &w, &h, NULL);
     datas = pixGetData(pixs);
@@ -979,6 +1005,10 @@ PIX       *pixd;
     pixCopyInputFormat(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
+
+        /* Make the canonical index tables */
+    rtab = gtab = btab = NULL;
+    makeRGBToIndexTables(&rtab, &gtab, &btab, CQ_NLEVELS);
 
         /* Traverse tree from root, looking for lowest cube
          * that is a leaf, and set dest pix to its
@@ -997,6 +1027,9 @@ PIX       *pixd;
             }
         }
     } else {  /* Dither */
+        success = TRUE;
+        bufu8r = bufu8g = bufu8b = NULL;
+        buf1r = buf1g = buf1b = buf2r = buf2g = buf2b = NULL;
         bufu8r = (l_uint8 *)LEPT_CALLOC(w, sizeof(l_uint8));
         bufu8g = (l_uint8 *)LEPT_CALLOC(w, sizeof(l_uint8));
         bufu8b = (l_uint8 *)LEPT_CALLOC(w, sizeof(l_uint8));
@@ -1006,11 +1039,12 @@ PIX       *pixd;
         buf2r = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
         buf2g = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
         buf2b = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
-        if (!bufu8r || !bufu8g || !bufu8b)
-            return (PIX *)ERROR_PTR("uint8 mono line buf not made",
-                procName, NULL);
-        if (!buf1r || !buf1g || !buf1b || !buf2r || !buf2g || !buf2b)
-            return (PIX *)ERROR_PTR("mono line buf not made", procName, NULL);
+        if (!bufu8r || !bufu8g || !bufu8b || !buf1r || !buf1g ||
+            !buf1b || !buf2r || !buf2g || !buf2b) {
+            L_ERROR("buffer not made\n", procName);
+            success = FALSE;
+            goto buffer_cleanup;
+        }
 
             /* Start by priming buf2; line 1 is above line 2 */
         pixGetRGBLine(pixs, 0, bufu8r, bufu8g, bufu8b);
@@ -1111,6 +1145,7 @@ PIX       *pixd;
             SET_DATA_BYTE(lined, j, index);
         }
 
+buffer_cleanup:
         LEPT_FREE(bufu8r);
         LEPT_FREE(bufu8g);
         LEPT_FREE(bufu8b);
@@ -1120,6 +1155,7 @@ PIX       *pixd;
         LEPT_FREE(buf2r);
         LEPT_FREE(buf2g);
         LEPT_FREE(buf2b);
+        if (!success) pixDestroy(&pixd);
     }
 
     LEPT_FREE(rtab);
@@ -1130,23 +1166,25 @@ PIX       *pixd;
 
 
 /*!
- *  octreeFindColorCell()
+ * \brief   octreeFindColorCell()
  *
- *      Input:  octindex
- *              cqcaa
- *              &index   (<return> index of CTE; returned to set pixel value)
- *              &rval    (<return> of CTE)
- *              &gval    (<return> of CTE)
- *              &bval    (<return> of CTE)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    octindex
+ * \param[in]    cqcaa
+ * \param[out]   pindex   index of CTE; returned to set pixel value
+ * \param[out]   prval    of CTE
+ * \param[out]   pgval    of CTE
+ * \param[out]   pbval    of CTE
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) As this is in inner loop, we don't check input pointers!
  *      (2) This traverses from the root (well, actually from level 2,
  *          because the level 2 cubes are the largest CTE cubes),
  *          and finds the index number of the cell and the color values,
  *          which can be used either directly or in a (Floyd-Steinberg)
  *          error-diffusion dithering algorithm.
+ * </pre>
  */
 static l_int32
 octreeFindColorCell(l_int32    octindex,
@@ -1214,10 +1252,9 @@ CQCELL  *cqc, *cqcsub;
  *                      Helper cqcell functions                     *
  *------------------------------------------------------------------*/
 /*!
- *  cqcellTreeCreate()
+ * \brief   cqcellTreeCreate()
  *
- *      Input:  none
- *      Return: cqcell array tree
+ * \return  cqcell array tree
  */
 static CQCELL ***
 cqcellTreeCreate(void)
@@ -1234,12 +1271,16 @@ CQCELL   **cqca;   /* one array for each octree level */
         return (CQCELL ***)ERROR_PTR("cqcaa not made", procName, NULL);
     for (level = 0; level <= CQ_NLEVELS; level++) {
         ncells = 1 << (3 * level);
-        if ((cqca = (CQCELL **)LEPT_CALLOC(ncells, sizeof(CQCELL *))) == NULL)
+        if ((cqca = (CQCELL **)LEPT_CALLOC(ncells, sizeof(CQCELL *))) == NULL) {
+            cqcellTreeDestroy(&cqcaa);
             return (CQCELL ***)ERROR_PTR("cqca not made", procName, NULL);
+        }
         cqcaa[level] = cqca;
         for (i = 0; i < ncells; i++) {
-            if ((cqca[i] = (CQCELL *)LEPT_CALLOC(1, sizeof(CQCELL))) == NULL)
+            if ((cqca[i] = (CQCELL *)LEPT_CALLOC(1, sizeof(CQCELL))) == NULL) {
+                cqcellTreeDestroy(&cqcaa);
                 return (CQCELL ***)ERROR_PTR("cqc not made", procName, NULL);
+            }
         }
     }
 
@@ -1248,10 +1289,9 @@ CQCELL   **cqca;   /* one array for each octree level */
 
 
 /*!
- *  cqcellTreeDestroy()
+ * \brief   cqcellTreeDestroy()
  *
- *      Input:  &cqcaa (<to be nulled>
- *      Return: void
+ * \param[in,out]   pcqcaa to be nulled
  */
 static void
 cqcellTreeDestroy(CQCELL  ****pcqcaa)
@@ -1289,31 +1329,33 @@ CQCELL   **cqca;
  *                       Helper index functions                     *
  *------------------------------------------------------------------*/
 /*!
- *  makeRGBToIndexTables()
+ * \brief   makeRGBToIndexTables()
  *
- *      Input:  &rtab, &gtab, &btab  (<return> tables)
- *              cqlevels (can be 1, 2, 3, 4, 5 or 6)
- *      Return: 0 if OK; 1 on error
+ * \param[out]   prtab, pgtab, pbtab  tables
+ * \param[in]    cqlevels can be 1, 2, 3, 4, 5 or 6
+ * \return  0 if OK; 1 on error
  *
+ * <pre>
  *  Set up tables.  e.g., for cqlevels = 5, we need an integer 0 < i < 2^15:
- *      rtab = (0  i7  0   0  i6  0   0  i5  0   0   i4  0   0   i3  0   0)
- *      gtab = (0  0   i7  0   0  i6  0   0  i5  0   0   i4  0   0   i3  0)
- *      btab = (0  0   0   i7  0  0   i6  0  0   i5  0   0   i4  0   0   i3)
+ *      rtab = 0  i7  0   0  i6  0   0  i5  0   0   i4  0   0   i3  0   0
+ *      gtab = 0  0   i7  0   0  i6  0   0  i5  0   0   i4  0   0   i3  0
+ *      btab = 0  0   0   i7  0  0   i6  0  0   i5  0   0   i4  0   0   i3
  *
  *  The tables are then used to map from rbg --> index as follows:
- *      index = (0  r7  g7  b7  r6  g6  b6  r5  g5  b5  r4  g4  b4  r3  g3  b3)
+ *      index = 0  r7  g7  b7  r6  g6  b6  r5  g5  b5  r4  g4  b4  r3  g3  b3
  *
  *    e.g., for cqlevels = 4, we map to
- *      index = (0  0   0   0   r7  g7  b7  r6  g6  b6  r5  g5  b5  r4  g4  b4)
+ *      index = 0  0   0   0   r7  g7  b7  r6  g6  b6  r5  g5  b5  r4  g4  b4
  *
  *  This may look a bit strange.  The notation 'r7' means the MSBit of
- *  the r value (which has 8 bits, going down from r7 to r0).
+ *  the r value which has 8 bits, going down from r7 to r0.
  *  Keep in mind that r7 is actually the r component bit for level 1 of
  *  the octtree.  Level 1 is composed of 8 octcubes, represented by
- *  the bits (r7 g7 b7), which divide the entire color space into
+ *  the bits r7 g7 b7, which divide the entire color space into
  *  8 cubes.  At level 2, each of these 8 octcubes is further divided into
- *  8 cubes, each labeled by the second most significant bits (r6 g6 b6)
+ *  8 cubes, each labeled by the second most significant bits r6 g6 b6
  *  of the rgb color.
+ * </pre>
  */
 l_int32
 makeRGBToIndexTables(l_uint32  **prtab,
@@ -1330,13 +1372,10 @@ l_uint32  *rtab, *gtab, *btab;
         return ERROR_INT("cqlevels must be in {1,...6}", procName, 1);
 
     if (!prtab || !pgtab || !pbtab)
-        return ERROR_INT("&*tab not defined", procName, 1);
-    if ((rtab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32))) == NULL)
-        return ERROR_INT("rtab not made", procName, 1);
-    if ((gtab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32))) == NULL)
-        return ERROR_INT("gtab not made", procName, 1);
-    if ((btab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32))) == NULL)
-        return ERROR_INT("btab not made", procName, 1);
+        return ERROR_INT("not all &tabs defined", procName, 1);
+    rtab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32));
+    gtab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32));
+    btab = (l_uint32 *)LEPT_CALLOC(256, sizeof(l_uint32));
     *prtab = rtab;
     *pgtab = gtab;
     *pbtab = btab;
@@ -1413,14 +1452,17 @@ l_uint32  *rtab, *gtab, *btab;
 
 
 /*!
- *  getOctcubeIndexFromRGB()
+ * \brief   getOctcubeIndexFromRGB()
  *
- *      Input:  rval, gval, bval
- *              rtab, gtab, btab  (generated with makeRGBToIndexTables())
- *              &index (<return>)
- *      Return: void
+ * \param[in]    rval, gval, bval
+ * \param[in]    rtab, gtab, btab  generated with makeRGBToIndexTables()
+ * \param[out]   pindex found index
+ * \return  void
  *
- *  Note: no error checking!
+ * <pre>
+ * Notes:
+ *      No error checking!
+ * </pre>
  */
 void
 getOctcubeIndexFromRGB(l_int32    rval,
@@ -1437,16 +1479,17 @@ getOctcubeIndexFromRGB(l_int32    rval,
 
 
 /*!
- *  getRGBFromOctcube()
+ * \brief   getRGBFromOctcube()
  *
- *      Input:  octcube index
- *              level (at which index is expressed)
- *              &rval  (<return> r val of this cube)
- *              &gval  (<return> g val of this cube)
- *              &bval  (<return> b val of this cube)
- *      Return: void
+ * \param[in]    cubeindex octcube index
+ * \param[in]    level at which index is expressed
+ * \param[out]   prval  r val of this cube
+ * \param[out]   pgval  g val of this cube
+ * \param[out]   pbval  b val of this cube
+ * \return  void
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) We can consider all octcube indices to represent a
  *          specific point in color space: namely, the location
  *          of the 'upper-left' corner of the cube, where indices
@@ -1465,6 +1508,7 @@ getOctcubeIndexFromRGB(l_int32    rval,
  *          levels 4-7, which are contained within each of the level3
  *          octcubes.  Then the rgb values for the center of the
  *          octcube are: rval = 11100000, gval = 10100000, bval = 01100000
+ * </pre>
  */
 static void
 getRGBFromOctcube(l_int32   cubeindex,
@@ -1508,14 +1552,16 @@ l_int32  rgbindex;
 
 
 /*!
- *  getOctcubeIndices()
+ * \brief   getOctcubeIndices()
  *
- *     Input:  rgbindex
- *             octree level (0, 1, 2, 3, 4, 5)
- *             &octcube base index (<return> index at the octree level)
- *             &octcube sub index (<return> index at the next lower level)
- *     Return: 0 if OK, 1 on error
+ * \param[in]    rgbindex
+ * \param[in]    level octree level 0, 1, 2, 3, 4, 5
+ * \param[out]   pbindex base index index at the octree level
+ * \param[out]   psindex sub index index at the next lower level
+ * \return  0 if OK, 1 on error
  *
+ * <pre>
+ * Notes:
  *  for CQ_NLEVELS = 6, the full RGB index is in the form:
  *     index = (0[13] 0 r7 g7 b7 r6 g6 b6 r5 g5 b5 r4 g4 b4 r3 g3 b3 r2 g2 b2)
  *  for CQ_NLEVELS = 5, the full RGB index is in the form:
@@ -1539,6 +1585,7 @@ l_int32  rgbindex;
  *  For level 5: base index = (r7 g7 b7 r6 g6 b6 r5 g5 b5 r4 g4 b4 r3 g3 b3)
  *               sub index = (r7 g7 b7 r6 g6 b6 r5 g5 b5 r4 g4 b4 r3 g3 b3
  *                            r2 g2 b2)
+ * </pre>
  */
 static l_int32
 getOctcubeIndices(l_int32   rgbindex,
@@ -1562,15 +1609,17 @@ getOctcubeIndices(l_int32   rgbindex,
 
 
 /*!
- *  octcubeGetCount()
+ * \brief   octcubeGetCount()
  *
- *      Input:  level (valid values are in [1,...6]; there are 2^level
- *                     cubes along each side of the rgb cube)
- *              &size (<return> 2^(3 * level) cubes in the entire rgb cube)
- *      Return:  0 if OK, 1 on error.  Caller must check!
+ * \param[in]    level valid values are in [1,...6]; there are 2^level
+ *                     cubes along each side of the rgb cube
+ * \param[out]   psize 2^(3 * level) cubes in the entire rgb cube
+ * \return   0 if OK, 1 on error.  Caller must check!
  *
- *         level:   1        2        3        4        5        6
- *         size:    8       64       512     4098     32784   262272
+ * <pre>
+ *     level:   1        2        3        4        5        6
+ *     size:    8       64       512     4098     32784   262272
+ * </pre>
  */
 static l_int32
 octcubeGetCount(l_int32   level,
@@ -1592,27 +1641,28 @@ octcubeGetCount(l_int32   level,
  *      Adaptive octree quantization based on population at a fixed level    *
  *---------------------------------------------------------------------------*/
 /*!
- *  pixOctreeQuantByPopulation()
+ * \brief   pixOctreeQuantByPopulation()
  *
- *      Input:  pixs (32 bpp rgb)
- *              level (significant bits for each of RGB; valid for {3,4},
- *                     Use 0 for default (level 4; recommended)
- *              ditherflag  (1 to dither, 0 otherwise)
- *      Return: pixd (quantized to octcubes) or null on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    level significant bits for each of RGB; valid for {3,4},
+ *                     Use 0 for default (level 4; recommended
+ * \param[in]    ditherflag  1 to dither, 0 otherwise
+ * \return  pixd quantized to octcubes or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This color quantization method works very well without
  *          dithering, using octcubes at two different levels:
- *            (a) the input @level, which is either 3 or 4
+ *            (a) the input %level, which is either 3 or 4
  *            (b) level 2 (64 octcubes to cover the entire color space)
- *      (2) For best results, using @level = 4 is recommended.
+ *      (2) For best results, using %level = 4 is recommended.
  *          Why do we provide an option for using level 3?  Because
  *          there are 512 octcubes at level 3, and for many images
  *          not more than 256 are filled.  As a result, on some images
  *          a very accurate quantized representation is possible using
- *          @level = 3.
+ *          %level = 3.
  *      (3) This first breaks up the color space into octcubes at the
- *          input @level, and computes, for each octcube, the average
+ *          input %level, and computes, for each octcube, the average
  *          value of the pixels that are in it.
  *      (4) Then there are two possible situations:
  *            (a) If there are not more than 256 populated octcubes,
@@ -1627,8 +1677,8 @@ octcubeGetCount(l_int32   level,
  *      (5) Unpopulated level 2 octcubes are represented in the colormap
  *          by their centers.  This, of course, has no effect unless
  *          dithering is used for the output image.
- *      (6) The depth of pixd is the miniumum required to suppport the
- *          number of colors found at @level; namely, 2, 4 or 8.
+ *      (6) The depth of pixd is the minimum required to support the
+ *          number of colors found at %level; namely, 2, 4 or 8.
  *      (7) This function works particularly well on images such as maps,
  *          where there are a relatively small number of well-populated
  *          colors, but due to antialiasing and compression artifacts
@@ -1643,6 +1693,7 @@ octcubeGetCount(l_int32   level,
  *      (9) Dithering shows artifacts on some images.  If you plan to
  *          dither, pixOctreeColorQuant() and pixFixedOctcubeQuant256()
  *          usually give better results.
+ * </pre>
  */
 PIX *
 pixOctreeQuantByPopulation(PIX     *pixs,
@@ -1679,22 +1730,20 @@ PIXCMAP        *cmap;
 
     if (octcubeGetCount(level, &size))  /* array size = 2 ** (3 * level) */
         return (PIX *)ERROR_PTR("size not returned", procName, NULL);
-    if (makeRGBToIndexTables(&rtab, &gtab, &btab, level))
-        return (PIX *)ERROR_PTR("tables not made", procName, NULL);
+    rtab = gtab = btab = NULL;
+    makeRGBToIndexTables(&rtab, &gtab, &btab, level);
 
-    if ((narray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("narray not made", procName, NULL);
-    if ((rarray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("rarray not made", procName, NULL);
-    if ((garray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("garray not made", procName, NULL);
-    if ((barray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("barray not made", procName, NULL);
+    pixd = NULL;
+    narray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
+    rarray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
+    garray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
+    barray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
+    if (!narray || !rarray || !garray || !barray)
+        goto array_cleanup;
 
         /* Place the pixels in octcube leaves. */
     datas = pixGetData(pixs);
     wpls = pixGetWpl(pixs);
-    pixd = NULL;
     for (i = 0; i < h; i++) {
         lines = datas + i * wpls;
         for (j = 0; j < w; j++) {
@@ -1788,8 +1837,7 @@ PIXCMAP        *cmap;
 
         /* Take the top 192.  These will form the first 192 colors
          * in the cmap.  iarray[i] holds the index into the cmap. */
-    if ((iarray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("iarray not made", procName, NULL);
+    iarray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
     for (i = 0; i < 192; i++) {
         opop = (L_OCTCUBE_POP*)lheapRemove(lh);
         if (!opop) break;
@@ -1805,8 +1853,8 @@ PIXCMAP        *cmap;
     }
 
         /* Make the octindex tables for level 2, and reuse rarray, etc. */
-    if (makeRGBToIndexTables(&rtab2, &gtab2, &btab2, 2))
-        return (PIX *)ERROR_PTR("level 2 tables not made", procName, NULL);
+    rtab2 = gtab2 = btab2 = NULL;
+    makeRGBToIndexTables(&rtab2, &gtab2, &btab2, 2);
     for (i = 0; i < 64; i++) {
         narray[i] = 0;
         rarray[i] = 0;
@@ -1816,7 +1864,7 @@ PIXCMAP        *cmap;
 
         /* Take the rest of the occupied octcubes, assigning the pixels
          * to these new colormap indices.  iarray[] is addressed
-         * by @level octcube indices, and it now holds the
+         * by %level octcube indices, and it now holds the
          * colormap indices for all pixels in pixs.  */
     for (i = 192; i < size; i++) {
         opop = (L_OCTCUBE_POP*)lheapRemove(lh);
@@ -1907,21 +1955,22 @@ array_cleanup:
 
 
 /*!
- *  pixDitherOctindexWithCmap()
+ * \brief   pixDitherOctindexWithCmap()
  *
- *      Input:  pixs (32 bpp rgb)
- *              pixd (8 bpp cmapped)
- *              rtab, gtab, btab (tables from rval to octindex)
- *              indexmap (array mapping octindex to cmap index)
- *              difcap (max allowed dither transfer; use 0 for infinite cap)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    pixd 8 bpp cmapped
+ * \param[in]    rtab, gtab, btab tables from rval to octindex
+ * \param[in]    indexmap array mapping octindex to cmap index
+ * \param[in]    difcap max allowed dither transfer; use 0 for infinite cap
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This performs dithering to generate the colormap indices
  *          in pixd.  The colormap has been calculated, along with
  *          four input LUTs that together give the inverse colormapping
  *          from RGB to colormap index.
- *      (2) For pixOctreeQuantByPopulation(), @indexmap maps from the
+ *      (2) For pixOctreeQuantByPopulation(), %indexmap maps from the
  *          standard octindex to colormap index (after subtracting 1).
  *          The basic pixel-level function, without dithering, is:
  *             extractRGBValues(lines[j], &rval, &gval, &bval);
@@ -1933,8 +1982,9 @@ array_cleanup:
  *             cmapindex = indexmap[rtab[rval] | gtab[gval] | btab[bval]] - 1
  *          For example, in pixFixedOctcubeQuant256(), we don't use
  *          standard octcube indexing, the rtab (etc) LUTs map directly
- *          to the colormap index, and @indexmap just compensates for
+ *          to the colormap index, and %indexmap just compensates for
  *          the 1-off indexing assumed to be in that table.
+ * </pre>
  */
 static l_int32
 pixDitherOctindexWithCmap(PIX       *pixs,
@@ -1946,7 +1996,7 @@ pixDitherOctindexWithCmap(PIX       *pixs,
                           l_int32    difcap)
 {
 l_uint8   *bufu8r, *bufu8g, *bufu8b;
-l_int32    i, j, w, h, wpld, octindex, cmapindex;
+l_int32    i, j, w, h, wpld, octindex, cmapindex, success;
 l_int32    rval, gval, bval, rc, gc, bc;
 l_int32    dif, val1, val2, val3;
 l_int32   *buf1r, *buf1g, *buf1b, *buf2r, *buf2g, *buf2b;
@@ -1967,6 +2017,9 @@ PIXCMAP   *cmap;
     if (pixGetWidth(pixd) != w || pixGetHeight(pixd) != h)
         return ERROR_INT("pixs and pixd not same size", procName, 1);
 
+    success = TRUE;
+    bufu8r = bufu8g = bufu8b = NULL;
+    buf1r = buf1g = buf1b = buf2r = buf2g = buf2b = NULL;
     bufu8r = (l_uint8 *)LEPT_CALLOC(w, sizeof(l_uint8));
     bufu8g = (l_uint8 *)LEPT_CALLOC(w, sizeof(l_uint8));
     bufu8b = (l_uint8 *)LEPT_CALLOC(w, sizeof(l_uint8));
@@ -1976,10 +2029,12 @@ PIXCMAP   *cmap;
     buf2r = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
     buf2g = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
     buf2b = (l_int32 *)LEPT_CALLOC(w, sizeof(l_int32));
-    if (!bufu8r || !bufu8g || !bufu8b)
-        return ERROR_INT("uint8 line buf not made", procName, 1);
-    if (!buf1r || !buf1g || !buf1b || !buf2r || !buf2g || !buf2b)
-        return ERROR_INT("mono line buf not made", procName, 1);
+    if (!bufu8r || !bufu8g || !bufu8b || !buf1r || !buf1g ||
+        !buf1b || !buf2r || !buf2g || !buf2b) {
+        L_ERROR("buffer not made\n", procName);
+        success = FALSE;
+        goto buffer_cleanup;
+    }
 
         /* Start by priming buf2; line 1 is above line 2 */
     pixGetRGBLine(pixs, 0, bufu8r, bufu8g, bufu8b);
@@ -2095,6 +2150,7 @@ PIXCMAP   *cmap;
         SET_DATA_BYTE(lined, j, cmapindex);
     }
 
+buffer_cleanup:
     LEPT_FREE(bufu8r);
     LEPT_FREE(bufu8g);
     LEPT_FREE(bufu8b);
@@ -2105,7 +2161,7 @@ PIXCMAP   *cmap;
     LEPT_FREE(buf2g);
     LEPT_FREE(buf2b);
 
-    return 0;
+    return (success) ? 0 : 1;
 }
 
 
@@ -2113,35 +2169,36 @@ PIXCMAP   *cmap;
  *         Adaptive octree quantization to 4 and 8 bpp with max colors       *
  *---------------------------------------------------------------------------*/
 /*!
- *  pixOctreeQuantNumColors()
+ * \brief   pixOctreeQuantNumColors()
  *
- *      Input:  pixs (32 bpp rgb)
- *              maxcolors (8 to 256; the actual number of colors used
- *                         may be less than this)
- *              subsample (factor for computing color distribution;
- *                         use 0 for default)
- *      Return: pixd (4 or 8 bpp, colormapped), or null on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    maxcolors 8 to 256; the actual number of colors used
+ *                         may be less than this
+ * \param[in]    subsample factor for computing color distribution;
+ *                         use 0 for default
+ * \return  pixd 4 or 8 bpp, colormapped, or NULL on error
  *
- *  pixOctreeColorQuant() is very flexible in terms of the relative
+ * <pre>
+ *  pixOctreeColorQuant is very flexible in terms of the relative
  *  depth of different cubes of the octree.   By contrast, this function,
- *  pixOctreeQuantNumColors() is also adaptive, but it supports octcube
+ *  pixOctreeQuantNumColors is also adaptive, but it supports octcube
  *  leaves at only two depths: a smaller depth that guarantees
  *  full coverage of the color space and octcubes at one level
  *  deeper for more accurate colors.  Its main virutes are simplicity
  *  and speed, which are both derived from the natural indexing of
  *  the octcubes from the RGB values.
  *
- *  Before describing pixOctreeQuantNumColors(), consider an even simpler
+ *  Before describing pixOctreeQuantNumColors, consider an even simpler
  *  approach for 4 bpp with either 8 or 16 colors.  With 8 colors,
  *  you simply go to level 1 octcubes and use the average color
  *  found in each cube.  For 16 colors, you find which of the three
  *  colors has the largest variance at the second level, and use two
- *  indices for that color.  The result is quite poor, because (1) some
- *  of the cubes are nearly empty and (2) you don't get much color
+ *  indices for that color.  The result is quite poor, because 1 some
+ *  of the cubes are nearly empty and 2 you don't get much color
  *  differentiation for the extra 8 colors.  Trust me, this method may
  *  be simple, but it isn't worth anything.
  *
- *  In pixOctreeQuantNumColors(), we generate colormapped images at
+ *  In pixOctreeQuantNumColors, we generate colormapped images at
  *  either 4 bpp or 8 bpp.  For 4 bpp, we have a minimum of 8 colors
  *  for the level 1 octcubes, plus up to 8 additional colors that
  *  are determined from the level 2 popularity.  If the number of colors
@@ -2150,15 +2207,15 @@ PIXCMAP   *cmap;
  *
  *  We use a priority queue, implemented with a heap, to select the
  *  requisite number of most populated octcubes at the deepest level
- *  (level 2 for 64 or fewer colors; level 3 for more than 64 colors).
+ *  level 2 for 64 or fewer colors; level 3 for more than 64 colors.
  *  These are combined with one color for each octcube one level above,
  *  which is used to span the color space of octcubes that were not
  *  included at the deeper level.
  *
  *  If the deepest level is 2, we combine the popular level 2 octcubes
- *  (out of a total of 64) with the 8 level 1 octcubes.  If the deepest
- *  level is 3, we combine the popular level 3 octcubes (out of a
- *  total 512) with the 64 level 2 octcubes that span the color space.
+ *  out of a total of 64 with the 8 level 1 octcubes.  If the deepest
+ *  level is 3, we combine the popular level 3 octcubes out of a
+ *  total 512 with the 64 level 2 octcubes that span the color space.
  *  In the latter case, we require a minimum of 64 colors for the level 2
  *  octcubes, plus up to 192 additional colors determined from level 3
  *  popularity.
@@ -2173,7 +2230,7 @@ PIXCMAP   *cmap;
  *  the dest.  It is used to remove any color map entries that
  *  correspond to color space regions that have no pixels in the
  *  source image.  These regions can be either from the higher level
- *  (e.g., level 1 for 4 bpp), or from octcubes at 'maxlevel' that
+ *  e.g., level 1 for 4 bpp, or from octcubes at 'maxlevel' that
  *  are unoccupied.  This remapping results in the minimum number
  *  of colors used according to the constraints induced by the
  *  input 'maxcolors'.  We also compute the average R, G and B color
@@ -2190,7 +2247,7 @@ PIXCMAP   *cmap;
  *       65 to 256                8 bpp               3
  *
  *  It may turn out that the number of extra colors, beyond the
- *  minimum (8 and 64 for maxlevel 2 and 3, respectively), is larger
+ *  minimum 8 and 64 for maxlevel 2 and 3, respectively, is larger
  *  than the actual number of occupied cubes at these levels
  *  In that case, all the pixels are contained in this
  *  subset of cubes at maxlevel, and no colormap colors are needed
@@ -2198,6 +2255,7 @@ PIXCMAP   *cmap;
  *  example, in use one often finds that the pixels in an image
  *  occupy less than 192 octcubes at level 3, so they can be represented
  *  by a colormap for octcubes at level 3 only.
+ * </pre>
  */
 PIX *
 pixOctreeQuantNumColors(PIX     *pixs,
@@ -2266,13 +2324,16 @@ PIXCMAP   *cmap;
          *----------------------------------------------------------*/
     if (nextra == 0) {
             /* prepare the OctcubeQuantCell array */
-        if ((oqca = (OQCELL **)LEPT_CALLOC(nbase, sizeof(OQCELL *))) == NULL)
+        if ((oqca = (OQCELL **)LEPT_CALLOC(nbase, sizeof(OQCELL *))) == NULL) {
+            pixDestroy(&pixd);
             return (PIX *)ERROR_PTR("oqca not made", procName, NULL);
+        }
         for (i = 0; i < nbase; i++) {
             oqca[i] = (OQCELL *)LEPT_CALLOC(1, sizeof(OQCELL));
             oqca[i]->n = 0.0;
         }
 
+        rtab = gtab = btab = NULL;
         makeRGBToIndexTables(&rtab, &gtab, &btab, maxlevel - 1);
 
             /* Go through the entire image, gathering statistics and
@@ -2287,19 +2348,12 @@ PIXCMAP   *cmap;
                 extractRGBValues(*pspixel, &rval, &gval, &bval);
                 getOctcubeIndexFromRGB(rval, gval, bval,
                                        rtab, gtab, btab, &index);
-/*                fprintf(stderr, "rval = %d, gval = %d, bval = %d, index = %d\n",
-                        rval, gval, bval, index); */
-                switch (bpp) {
-                case 4:
+/*                fprintf(stderr, "rval = %d, gval = %d, bval = %d,"
+                                " index = %d\n", rval, gval, bval, index); */
+                if (bpp == 4)
                     SET_DATA_QBIT(lined, j, index);
-                    break;
-                case 8:
+                else  /* bpp == 8 */
                     SET_DATA_BYTE(lined, j, index);
-                    break;
-                default:
-                    return (PIX *)ERROR_PTR("bpp not 4 or 8!", procName, NULL);
-                    break;
-                }
                 oqca[index]->n += 1.0;
                 oqca[index]->rcum += rval;
                 oqca[index]->gcum += gval;
@@ -2339,8 +2393,10 @@ PIXCMAP   *cmap;
          * the colormap.                                              *
          *------------------------------------------------------------*/
         /* Prepare the OctcubeQuantCell array */
-    if ((oqca = (OQCELL **)LEPT_CALLOC(ncubes, sizeof(OQCELL *))) == NULL)
+    if ((oqca = (OQCELL **)LEPT_CALLOC(ncubes, sizeof(OQCELL *))) == NULL) {
+        pixDestroy(&pixd);
         return (PIX *)ERROR_PTR("oqca not made", procName, NULL);
+    }
     for (i = 0; i < ncubes; i++) {
         oqca[i] = (OQCELL *)LEPT_CALLOC(1, sizeof(OQCELL));
         oqca[i]->n = 0.0;
@@ -2348,6 +2404,7 @@ PIXCMAP   *cmap;
 
         /* Make the tables to map color to the octindex,
          * of which there are 'ncubes' at 'maxlevel' */
+    rtab = gtab = btab = NULL;
     makeRGBToIndexTables(&rtab, &gtab, &btab, maxlevel);
 
         /* Estimate the color distribution; we want to find the
@@ -2373,8 +2430,7 @@ PIXCMAP   *cmap;
     LEPT_FREE(oqca);  /* don't need this array */
 
         /* Prepare a new OctcubeQuantCell array, with maxcolors cells  */
-    if ((oqca = (OQCELL **)LEPT_CALLOC(maxcolors, sizeof(OQCELL *))) == NULL)
-        return (PIX *)ERROR_PTR("oqca not made", procName, NULL);
+    oqca = (OQCELL **)LEPT_CALLOC(maxcolors, sizeof(OQCELL *));
     for (i = 0; i < nbase; i++) {  /* make nbase cells */
         oqca[i] = (OQCELL *)LEPT_CALLOC(1, sizeof(OQCELL));
         oqca[i]->n = 0.0;
@@ -2395,8 +2451,7 @@ PIXCMAP   *cmap;
 
         /* Generate a lookup table from octindex at maxlevel
          * to color table index */
-    if ((lut1 = (l_int32 *)LEPT_CALLOC(ncubes, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("lut1 not made", procName, NULL);
+    lut1 = (l_int32 *)LEPT_CALLOC(ncubes, sizeof(l_int32));
     for (i = 0; i < nextra; i++)
         lut1[oqca[nbase + i]->octindex] = nbase + i;
     for (index = 0; index < ncubes; index++) {
@@ -2440,8 +2495,7 @@ PIXCMAP   *cmap;
         /* Compute averages, set up a colormap, and make a second
          * lut that converts from the color values currently in
          * the image to a minimal set */
-    if ((lut2 = (l_int32 *)LEPT_CALLOC(ncubes, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("lut2 not made", procName, NULL);
+    lut2 = (l_int32 *)LEPT_CALLOC(ncubes, sizeof(l_int32));
     cmap = pixcmapCreate(bpp);
     pixSetColormap(pixd, cmap);
     for (i = 0, index = 0; i < maxcolors; i++) {
@@ -2479,8 +2533,10 @@ PIXCMAP   *cmap;
         }
     }
 
-    for (i = 0; i < maxcolors; i++)
-        LEPT_FREE(oqca[i]);
+    if (oqca) {
+        for (i = 0; i < maxcolors; i++)
+            LEPT_FREE(oqca[i]);
+    }
     LEPT_FREE(oqca);
     LEPT_FREE(lut1);
     LEPT_FREE(lut2);
@@ -2495,15 +2551,16 @@ PIXCMAP   *cmap;
  *      Mixed color/gray quantization with specified number of colors      *
  *-------------------------------------------------------------------------*/
 /*!
- *  pixOctcubeQuantMixedWithGray()
+ * \brief   pixOctcubeQuantMixedWithGray()
  *
- *      Input:  pixs (32 bpp rgb)
- *              depth (of output pix)
- *              graylevels (grayscale)
- *              delta (threshold for deciding if a pix is color or grayscale)
- *      Return: pixd (quantized to octcube and gray levels) or null on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    depth of output pix
+ * \param[in]    graylevels grayscale
+ * \param[in]    delta threshold for deciding if a pix is color or grayscale
+ * \return  pixd quantized to octcube and gray levels or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Generates a colormapped image, where the colormap table values
  *          have two components: octcube values representing pixels with
  *          color content, and grayscale values for the rest.
@@ -2520,6 +2577,7 @@ PIXCMAP   *cmap;
  *          = 64 cubes).
  *      (5) Consequently, we have the following constraint on the number
  *          of allowed gray levels: for 4 bpp, 8; for 8 bpp, 192.
+ * </pre>
  */
 PIX *
 pixOctcubeQuantMixedWithGray(PIX     *pixs,
@@ -2557,28 +2615,31 @@ PIXCMAP   *cmap;
         return (PIX *)ERROR_PTR("output depth not 4 or 8 bpp", procName, NULL);
     }
 
+    pixd = NULL;
+
         /* Make octcube index tables */
-    if (makeRGBToIndexTables(&rtab, &gtab, &btab, octlevels))
-        return (PIX *)ERROR_PTR("tables not made", procName, NULL);
+    rtab = gtab = btab = NULL;
+    makeRGBToIndexTables(&rtab, &gtab, &btab, octlevels);
 
         /* Make octcube arrays for storing points in each cube */
-    if ((carray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("carray not made", procName, NULL);
-    if ((rarray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("rarray not made", procName, NULL);
-    if ((garray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("garray not made", procName, NULL);
-    if ((barray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("barray not made", procName, NULL);
+    carray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
+    rarray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
+    garray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
+    barray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
 
         /* Make lookup table, using computed thresholds  */
-    if ((tabval = makeGrayQuantIndexTable(graylevels)) == NULL)
-        return (PIX *)ERROR_PTR("tabval not made", procName, NULL);
+    tabval = makeGrayQuantIndexTable(graylevels);
+    if (!carray || !rarray || !garray || !barray || !tabval) {
+        L_ERROR("calloc fail for an array\n", procName);
+        goto array_cleanup;
+    }
 
         /* Make colormapped output pixd */
     pixGetDimensions(pixs, &w, &h, NULL);
-    if ((pixd = pixCreate(w, h, depth)) == NULL)
-        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    if ((pixd = pixCreate(w, h, depth)) == NULL) {
+        L_ERROR("pixd not made\n", procName);
+        goto array_cleanup;
+    }
     pixCopyResolution(pixd, pixs);
     pixCopyInputFormat(pixd, pixs);
     cmap = pixcmapCreate(depth);
@@ -2654,6 +2715,7 @@ PIXCMAP   *cmap;
         }
     }
 
+array_cleanup:
     LEPT_FREE(carray);
     LEPT_FREE(rarray);
     LEPT_FREE(garray);
@@ -2662,6 +2724,7 @@ PIXCMAP   *cmap;
     LEPT_FREE(gtab);
     LEPT_FREE(btab);
     LEPT_FREE(tabval);
+
     return pixd;
 }
 
@@ -2670,18 +2733,20 @@ PIXCMAP   *cmap;
  *             Fixed partition octcube quantization with 256 cells         *
  *-------------------------------------------------------------------------*/
 /*!
- *  pixFixedOctcubeQuant256()
+ * \brief   pixFixedOctcubeQuant256()
  *
- *      Input:  pixs  (32 bpp; 24-bit color)
- *              ditherflag  (1 for dithering; 0 for no dithering)
- *      Return: pixd (8 bit with colormap), or null on error
+ * \param[in]    pixs  32 bpp; 24-bit color
+ * \param[in]    ditherflag  1 for dithering; 0 for no dithering
+ * \return  pixd 8 bit with colormap, or NULL on error
  *
+ * <pre>
+ * Notes:
  *  This simple 1-pass color quantization works by breaking the
  *  color space into 256 pieces, with 3 bits quantized for each of
  *  red and green, and 2 bits quantized for blue.  We shortchange
  *  blue because the eye is least sensitive to blue.  This
  *  division of the color space is into two levels of octrees,
- *  followed by a further division by 4 (not 8), where both
+ *  followed by a further division by 4 not 8, where both
  *  blue octrees have been combined in the third level.
  *
  *  The color map is generated from the 256 color centers by
@@ -2717,7 +2782,7 @@ PIXCMAP   *cmap;
  *  The algorithm is very fast, because there is no search,
  *  only fast generation of the cell index for each pixel.
  *  We use a simple mapping from the three 8 bit rgb samples
- *  to the 8 bit cell index; namely, (r7 r6 r5 g7 g6 g5 b7 b6).
+ *  to the 8 bit cell index; namely, r7 r6 r5 g7 g6 g5 b7 b6.
  *  This is not in an octcube format, but it doesn't matter.
  *  There are no storage requirements.  We could keep a
  *  running average of the center of each sample in each
@@ -2728,6 +2793,7 @@ PIXCMAP   *cmap;
  *  However, without dithering, the loss of color accuracy is
  *  evident in regions that are very light or that have subtle
  *  blending of colors.
+ * </pre>
  */
 PIX *
 pixFixedOctcubeQuant256(PIX     *pixs,
@@ -2775,8 +2841,10 @@ PIXCMAP   *cmap;
         /* Make output 8 bpp palette image */
     datas = pixGetData(pixs);
     wpls = pixGetWpl(pixs);
-    if ((pixd = pixCreate(w, h, 8)) == NULL)
+    if ((pixd = pixCreate(w, h, 8)) == NULL) {
+        pixcmapDestroy(&cmap);
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    }
     pixSetColormap(pixd, cmap);
     pixCopyResolution(pixd, pixs);
     pixCopyInputFormat(pixd, pixs);
@@ -2828,13 +2896,14 @@ PIXCMAP   *cmap;
  *           Nearly exact quantization for images with few colors            *
  *---------------------------------------------------------------------------*/
 /*!
- *  pixFewColorsOctcubeQuant1()
+ * \brief   pixFewColorsOctcubeQuant1()
  *
- *      Input:  pixs (32 bpp rgb)
- *              level (significant bits for each of RGB; valid in [1...6])
- *      Return: pixd (quantized to octcube) or null on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    level significant bits for each of RGB; valid in [1...6]
+ * \return  pixd quantized to octcube or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Generates a colormapped image, where the colormap table values
  *          are the averages of all pixels that are found in the octcube.
  *      (2) This fails if there are more than 256 colors (i.e., more
@@ -2854,6 +2923,7 @@ PIXCMAP   *cmap;
  *          uses the average value of pixels in the octcube rather
  *          than the first found pixel.  It is also simpler to use,
  *          because it generates the histogram internally.
+ * </pre>
  */
 PIX *
 pixFewColorsOctcubeQuant1(PIX     *pixs,
@@ -2877,25 +2947,26 @@ PIXCMAP   *cmap;
     if (level < 1 || level > 6)
         return (PIX *)ERROR_PTR("invalid level", procName, NULL);
 
+    pixd = NULL;
+
     if (octcubeGetCount(level, &size))  /* array size = 2 ** (3 * level) */
         return (PIX *)ERROR_PTR("size not returned", procName, NULL);
-    if (makeRGBToIndexTables(&rtab, &gtab, &btab, level))
-        return (PIX *)ERROR_PTR("tables not made", procName, NULL);
+    rtab = gtab = btab = NULL;
+    makeRGBToIndexTables(&rtab, &gtab, &btab, level);
 
-    if ((carray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("carray not made", procName, NULL);
-    if ((rarray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("rarray not made", procName, NULL);
-    if ((garray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("garray not made", procName, NULL);
-    if ((barray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("barray not made", procName, NULL);
+    carray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
+    rarray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
+    garray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
+    barray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32));
+    if (!carray || !rarray || !garray || !barray) {
+        L_ERROR("calloc fail for an array\n", procName);
+        goto array_cleanup;
+    }
 
         /* Place the pixels in octcube leaves. */
     pixGetDimensions(pixs, &w, &h, NULL);
     datas = pixGetData(pixs);
     wpls = pixGetWpl(pixs);
-    pixd = NULL;
     for (i = 0; i < h; i++) {
         lines = datas + i * wpls;
         for (j = 0; j < w; j++) {
@@ -2982,18 +3053,19 @@ array_cleanup:
 
 
 /*!
- *  pixFewColorsOctcubeQuant2()
+ * \brief   pixFewColorsOctcubeQuant2()
  *
- *      Input:  pixs (32 bpp rgb)
- *              level (of octcube indexing, for histogram: 3, 4, 5, 6)
- *              na (histogram of pixel occupation in octree leaves at
- *                  given level)
- *              ncolors (number of occupied octree leaves at given level)
- *              &nerrors (<optional return> num of pixels not exactly
- *                        represented in the colormap)
- *      Return: pixd (2, 4 or 8 bpp with colormap), or null on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    level of octcube indexing, for histogram: 3, 4, 5, 6
+ * \param[in]    na histogram of pixel occupation in octree leaves at
+ *                  given level
+ * \param[in]    ncolors number of occupied octree leaves at given level
+ * \param[out]   pnerrors [optional] num of pixels not exactly
+ *                        represented in the colormap
+ * \return  pixd 2, 4 or 8 bpp with colormap, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Generates a colormapped image, where the colormap table values
  *          are the averages of all pixels that are found in the octcube.
  *      (2) This fails if there are more than 256 colors (i.e., more
@@ -3003,7 +3075,7 @@ array_cleanup:
  *      (4) For an image with not more than 256 colors, it is unlikely
  *          that two pixels of different color will fall in the same
  *          octcube at level = 4.   However it is possible, and this
- *          function optionally returns @nerrors, the number of pixels
+ *          function optionally returns %nerrors, the number of pixels
  *          where, because more than one color is in the same octcube,
  *          the pixel color is not exactly reproduced in the colormap.
  *          The colormap for an occupied leaf of the octree contains
@@ -3021,6 +3093,7 @@ array_cleanup:
  *          it is expected that most of the pixels within a leaf
  *          octcube have exactly the same color, and quantization to
  *          that color is lossless.
+ * </pre>
  */
 PIX *
 pixFewColorsOctcubeQuant2(PIX      *pixs,
@@ -3053,10 +3126,25 @@ PIXCMAP   *cmap;
     if (pnerrors)
         *pnerrors = UNDEF;
 
+    pixd = NULL;
+
         /* Represent the image with a set of leaf octcubes
          * at 'level', one for each color. */
-    if (makeRGBToIndexTables(&rtab, &gtab, &btab, level))
-        return (PIX *)ERROR_PTR("tables not made", procName, NULL);
+    rtab = gtab = btab = NULL;
+    makeRGBToIndexTables(&rtab, &gtab, &btab, level);
+
+        /* The octarray will give a ptr from the octcube to the colorarray */
+    ncubes = numaGetCount(na);
+    octarray = (l_int32 *)LEPT_CALLOC(ncubes, sizeof(l_int32));
+
+        /* The colorarray will hold the colors of the first pixel
+         * that lands in the leaf octcube.  After filling, it is
+         * used to generate the colormap.  */
+    colorarray = (l_uint32 *)LEPT_CALLOC(ncolors + 1, sizeof(l_uint32));
+    if (!octarray || !colorarray) {
+        L_ERROR("octarray or colorarray not made\n", procName);
+        goto cleanup_arrays;
+    }
 
         /* Determine the output depth from the number of colors */
     pixGetDimensions(pixs, &w, &h, NULL);
@@ -3069,30 +3157,20 @@ PIXCMAP   *cmap;
     else  /* ncolors <= 256 */
         depth = 8;
 
-    if ((pixd = pixCreate(w, h, depth)) == NULL)
-        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    if ((pixd = pixCreate(w, h, depth)) == NULL) {
+        L_ERROR("pixd not made\n", procName);
+        goto cleanup_arrays;
+    }
     pixCopyResolution(pixd, pixs);
     pixCopyInputFormat(pixd, pixs);
     datad = pixGetData(pixd);
     wpld = pixGetWpl(pixd);
 
-        /* The octarray will give a ptr from the octcube to the colorarray */
-    ncubes = numaGetCount(na);
-    if ((octarray = (l_int32 *)LEPT_CALLOC(ncubes, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("octarray not made", procName, NULL);
-
-        /* The colorarray will hold the colors of the first pixel
-         * that lands in the leaf octcube.  After filling, it is
-         * used to generate the colormap.  */
-    if ((colorarray = (l_uint32 *)LEPT_CALLOC(ncolors + 1, sizeof(l_uint32)))
-            == NULL)
-        return (PIX *)ERROR_PTR("colorarray not made", procName, NULL);
-
         /* For each pixel, get the octree index for its leaf octcube.
          * Check if a pixel has already been found in this octcube.
-         *   - If not yet found, save that color in the colorarray
+         *   ~ If not yet found, save that color in the colorarray
          *     and save the cindex in the octarray.
-         *   - If already found, compare the pixel color with the
+         *   ~ If already found, compare the pixel color with the
          *     color in the colorarray, and note if it differs.
          * Then set the dest pixel value to the cindex - 1, which
          * will be the cmap index for this color.  */
@@ -3136,39 +3214,41 @@ PIXCMAP   *cmap;
     }
     pixSetColormap(pixd, cmap);
 
+cleanup_arrays:
     LEPT_FREE(octarray);
     LEPT_FREE(colorarray);
     LEPT_FREE(rtab);
     LEPT_FREE(gtab);
     LEPT_FREE(btab);
+
     return pixd;
 }
 
 
 /*!
- *  pixFewColorsOctcubeQuantMixed()
+ * \brief   pixFewColorsOctcubeQuantMixed()
  *
- *      Input:  pixs (32 bpp rgb)
- *              level (significant octcube bits for each of RGB;
- *                     valid in [1...6]; use 0 for default)
- *              darkthresh (threshold near black; if the lightest component
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    level significant octcube bits for each of RGB;
+ *                     valid in [1...6]; use 0 for default
+ * \param[in]    darkthresh threshold near black; if the lightest component
  *                          is below this, the pixel is not considered to
- *                          be gray or color; uses 0 for default)
- *              lightthresh (threshold near white; if the darkest component
+ *                          be gray or color; uses 0 for default
+ * \param[in]    lightthresh threshold near white; if the darkest component
  *                           is above this, the pixel is not considered to
- *                           be gray or color; use 0 for default)
- *              diffthresh (thresh for the max difference between component
+ *                           be gray or color; use 0 for default
+ * \param[in]    diffthresh thresh for the max difference between component
  *                          values; for differences below this, the pixel
- *                          is considered to be gray; use 0 for default)
- *                          considered gray; use 0 for default)
- *              minfract (min fraction of pixels for gray histo bin;
- *                        use 0.0 for default)
- *              maxspan (max size of gray histo bin; use 0 for default)
- *      Return: pixd (8 bpp, quantized to octcube for pixels that are
+ *                          is considered to be gray; use 0 for default
+ * \param[in]    minfract min fraction of pixels for gray histo bin;
+ *                        use 0.0 for default
+ * \param[in]    maxspan max size of gray histo bin; use 0 for default
+ * \return  pixd 8 bpp, quantized to octcube for pixels that are
  *                    not gray; gray pixels are quantized separately
- *                    over the full gray range), or null on error
+ *                    over the full gray range, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) First runs pixFewColorsOctcubeQuant1().  If this succeeds,
  *          it separates the color from gray(ish) entries in the cmap,
  *          and re-quantizes the gray pixels.  The result has some pixels
@@ -3185,12 +3265,12 @@ PIXCMAP   *cmap;
  *          method where input parameters determining the buckets are
  *          the minimum population fraction and the maximum allowed size.
  *      (6) Recommended input parameters are:
- *              @level:  3 or 4  (3 is default)
- *              @darkthresh:  20
- *              @lightthresh: 244
- *              @diffthresh: 20
- *              @minfract: 0.05
- *              @maxspan: 15
+ *              %level:  3 or 4  (3 is default)
+ *              %darkthresh:  20
+ *              %lightthresh: 244
+ *              %diffthresh: 20
+ *              %minfract: 0.05
+ *              %maxspan: 15
  *          These numbers are intended to be conservative (somewhat over-
  *          sensitive) in color detection,  It's usually better to pay
  *          extra with octcube quantization of a grayscale image than
@@ -3202,6 +3282,7 @@ PIXCMAP   *cmap;
  *          there are a relatively small number of solid colors.  It usually
  *          gives results that are better than pixOctcubeQuantMixedWithGray(),
  *          both in size and appearance.  But it is a bit slower.
+ * </pre>
  */
 PIX *
 pixFewColorsOctcubeQuantMixed(PIX       *pixs,
@@ -3306,18 +3387,20 @@ PIXCMAP   *cmap, *cmapd;
  *           Fixed partition octcube quantization with RGB output            *
  *---------------------------------------------------------------------------*/
 /*!
- *  pixFixedOctcubeQuantGenRGB()
+ * \brief   pixFixedOctcubeQuantGenRGB()
  *
- *      Input:  pixs (32 bpp rgb)
- *              level (significant bits for each of r,g,b)
- *      Return: pixd (rgb; quantized to octcube centers), or null on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    level significant bits for each of r,g,b
+ * \return  pixd rgb; quantized to octcube centers, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Unlike the other color quantization functions, this one
  *          generates an rgb image.
  *      (2) The pixel values are quantized to the center of each octcube
  *          (at the specified level) containing the pixel.  They are
  *          not quantized to the average of the pixels in that octcube.
+ * </pre>
  */
 PIX *
 pixFixedOctcubeQuantGenRGB(PIX     *pixs,
@@ -3372,23 +3455,25 @@ PIX       *pixd;
  *          Color quantize RGB image using existing colormap        *
  *------------------------------------------------------------------*/
 /*!
- *  pixQuantFromCmap()
+ * \brief   pixQuantFromCmap()
  *
- *      Input:  pixs  (8 bpp grayscale without cmap, or 32 bpp rgb)
- *              cmap  (to quantize to; insert copy into dest pix)
- *              mindepth (minimum depth of pixd: can be 2, 4 or 8 bpp)
- *              level (of octcube used for finding nearest color in cmap)
- *              metric (L_MANHATTAN_DISTANCE, L_EUCLIDEAN_DISTANCE)
- *      Return: pixd  (2, 4 or 8 bpp, colormapped), or null on error
+ * \param[in]    pixs  8 bpp grayscale without cmap, or 32 bpp rgb
+ * \param[in]    cmap  to quantize to; insert copy into dest pix
+ * \param[in]    mindepth minimum depth of pixd: can be 2, 4 or 8 bpp
+ * \param[in]    level of octcube used for finding nearest color in cmap
+ * \param[in]    metric L_MANHATTAN_DISTANCE, L_EUCLIDEAN_DISTANCE
+ * \return  pixd  2, 4 or 8 bpp, colormapped, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a top-level wrapper for quantizing either grayscale
  *          or rgb images to a specified colormap.
- *      (2) The actual output depth is constrained by @mindepth and
- *          by the number of colors in @cmap.
- *      (3) For grayscale, @level and @metric are ignored.
+ *      (2) The actual output depth is constrained by %mindepth and
+ *          by the number of colors in %cmap.
+ *      (3) For grayscale, %level and %metric are ignored.
  *      (4) If the cmap has color and pixs is grayscale, the color is
  *          removed from the cmap before quantizing pixs.
+ * </pre>
  */
 PIX *
 pixQuantFromCmap(PIX      *pixs,
@@ -3418,16 +3503,17 @@ l_int32  d;
 
 
 /*!
- *  pixOctcubeQuantFromCmap()
+ * \brief   pixOctcubeQuantFromCmap()
  *
- *      Input:  pixs  (32 bpp rgb)
- *              cmap  (to quantize to; insert copy into dest pix)
- *              mindepth (minimum depth of pixd: can be 2, 4 or 8 bpp)
- *              level (of octcube used for finding nearest color in cmap)
- *              metric (L_MANHATTAN_DISTANCE, L_EUCLIDEAN_DISTANCE)
- *      Return: pixd  (2, 4 or 8 bpp, colormapped), or null on error
+ * \param[in]    pixs  32 bpp rgb
+ * \param[in]    cmap  to quantize to; insert copy into dest pix
+ * \param[in]    mindepth minimum depth of pixd: can be 2, 4 or 8 bpp
+ * \param[in]    level of octcube used for finding nearest color in cmap
+ * \param[in]    metric L_MANHATTAN_DISTANCE, L_EUCLIDEAN_DISTANCE
+ * \return  pixd  2, 4 or 8 bpp, colormapped, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) In typical use, we are doing an operation, such as
  *          interpolative scaling, on a colormapped pix, where it is
  *          necessary to remove the colormap before the operation.
@@ -3463,7 +3549,7 @@ l_int32  d;
  *          are all within a cell, then every point in the cube will
  *          lie within the cell.
  *      (4) The depth of the output pixd is equal to the maximum of
- *          (a) @mindepth and (b) the minimum (2, 4 or 8 bpp) necessary
+ *          (a) %mindepth and (b) the minimum (2, 4 or 8 bpp) necessary
  *          to hold the indices in the colormap.
  *      (5) We build a mapping table from octcube to colormap index so
  *          that this function can run in a time (otherwise) independent
@@ -3476,6 +3562,7 @@ l_int32  d;
  *          it takes very little time to generate the tables,
  *          compared to the generation of the colormapped dest pix,
  *          so one would not typically use the low-level version.
+ * </pre>
  */
 PIX *
 pixOctcubeQuantFromCmap(PIX      *pixs,
@@ -3504,10 +3591,9 @@ PIX       *pixd;
         return (PIX *)ERROR_PTR("invalid metric", procName, NULL);
 
         /* Set up the tables to map rgb to the nearest colormap index */
-    if (makeRGBToIndexTables(&rtab, &gtab, &btab, level))
-        return (PIX *)ERROR_PTR("index tables not made", procName, NULL);
-    if ((cmaptab = pixcmapToOctcubeLUT(cmap, level, metric)) == NULL)
-        return (PIX *)ERROR_PTR("cmaptab not made", procName, NULL);
+    rtab = gtab = btab = NULL;
+    makeRGBToIndexTables(&rtab, &gtab, &btab, level);
+    cmaptab = pixcmapToOctcubeLUT(cmap, level, metric);
 
     pixd = pixOctcubeQuantFromCmapLUT(pixs, cmap, mindepth,
                                       cmaptab, rtab, gtab, btab);
@@ -3521,16 +3607,17 @@ PIX       *pixd;
 
 
 /*!
- *  pixOctcubeQuantFromCmapLUT()
+ * \brief   pixOctcubeQuantFromCmapLUT()
  *
- *      Input:  pixs  (32 bpp rgb)
- *              cmap  (to quantize to; insert copy into dest pix)
- *              mindepth (minimum depth of pixd: can be 2, 4 or 8 bpp)
- *              cmaptab  (table mapping from octindex to colormap index)
- *              rtab, gtab, btab (tables mapping from RGB to octindex)
- *      Return: pixd  (2, 4 or 8 bpp, colormapped), or null on error
+ * \param[in]    pixs  32 bpp rgb
+ * \param[in]    cmap  to quantize to; insert copy into dest pix
+ * \param[in]    mindepth minimum depth of pixd: can be 2, 4 or 8 bpp
+ * \param[in]    cmaptab  table mapping from octindex to colormap index
+ * \param[in]    rtab, gtab, btab tables mapping from RGB to octindex
+ * \return  pixd  2, 4 or 8 bpp, colormapped, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See the notes in the higher-level function
  *          pixOctcubeQuantFromCmap().  The octcube level for
  *          the generated octree is specified there, along with
@@ -3541,6 +3628,7 @@ PIX       *pixd;
  *          this low-level function can be used directly (i.e.,
  *          independently of pixOctcubeQuantFromCmap()) to build
  *          a colormapped pix that uses the specified colormap.
+ * </pre>
  */
 static PIX *
 pixOctcubeQuantFromCmapLUT(PIX       *pixs,
@@ -3614,15 +3702,17 @@ PIXCMAP   *cmapc;
  *                       Generation of octcube histogram                     *
  *---------------------------------------------------------------------------*/
 /*!
- *  pixOctcubeHistogram()
+ * \brief   pixOctcubeHistogram()
  *
- *      Input:  pixs (32 bpp rgb)
- *              level (significant bits for each of RGB; valid in [1...6])
- *              &ncolors (<optional return> number of occupied cubes)
- *      Return: numa (histogram of color pixels, or null on error)
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    level significant bits for each of RGB; valid in [1...6]
+ * \param[out]   pncolors [optional] number of occupied cubes
+ * \return  numa histogram of color pixels, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Input NULL for &ncolors to prevent computation and return value.
+ * </pre>
  */
 NUMA *
 pixOctcubeHistogram(PIX      *pixs,
@@ -3651,11 +3741,13 @@ NUMA       *na;
 
     if (octcubeGetCount(level, &size))  /* array size = 2 ** (3 * level) */
         return (NUMA *)ERROR_PTR("size not returned", procName, NULL);
-    if (makeRGBToIndexTables(&rtab, &gtab, &btab, level))
-        return (NUMA *)ERROR_PTR("tables not made", procName, NULL);
+    rtab = gtab = btab = NULL;
+    makeRGBToIndexTables(&rtab, &gtab, &btab, level);
 
-    if ((na = numaCreate(size)) == NULL)
-        return (NUMA *)ERROR_PTR("na not made", procName, NULL);
+    if ((na = numaCreate(size)) == NULL) {
+        L_ERROR("na not made\n", procName);
+        goto cleanup_arrays;
+    }
     numaSetCount(na, size);
     array = numaGetFArray(na, L_NOCOPY);
 
@@ -3689,6 +3781,7 @@ NUMA       *na;
         *pncolors = ncolors;
     }
 
+cleanup_arrays:
     LEPT_FREE(rtab);
     LEPT_FREE(gtab);
     LEPT_FREE(btab);
@@ -3700,14 +3793,15 @@ NUMA       *na;
  *              Get filled octcube table from colormap              *
  *------------------------------------------------------------------*/
 /*!
- *  pixcmapToOctcubeLUT()
+ * \brief   pixcmapToOctcubeLUT()
  *
- *      Input:  cmap
- *              level (significant bits for each of RGB; valid in [1...6])
- *              metric (L_MANHATTAN_DISTANCE, L_EUCLIDEAN_DISTANCE)
- *      Return: tab[2**(3 * level)]
+ * \param[in]    cmap
+ * \param[in]    level significant bits for each of RGB; valid in [1...6]
+ * \param[in]    metric L_MANHATTAN_DISTANCE, L_EUCLIDEAN_DISTANCE
+ * \return  tab[2**3 * level]
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function is used to quickly find the colormap color
  *          that is closest to any rgb color.  It is used to assign
  *          rgb colors to an existing colormap.  It can be very expensive
@@ -3729,9 +3823,9 @@ NUMA       *na;
  *          Do the similar thing for black.
  *      (3) Here are the actual function calls for quantizing to a
  *          specified colormap:
- *            - first make the tables that map from rgb --> octcube index
+ *            ~ first make the tables that map from rgb --> octcube index
  *                     makeRGBToIndexTables()
- *            - then for each pixel:
+ *            ~ then for each pixel:
  *                * use the tables to get the octcube index
  *                     getOctcubeIndexFromRGB()
  *                * use this table to get the nearest color in the colormap
@@ -3741,6 +3835,7 @@ NUMA       *na;
  *          level = 5 is slightly better.  When this function is used
  *          for color segmentation, there are typically a small number
  *          of colors and the number of levels can be small (e.g., level = 3).
+ * </pre>
  */
 l_int32 *
 pixcmapToOctcubeLUT(PIXCMAP  *cmap,
@@ -3815,16 +3910,18 @@ l_int32   *rmap, *gmap, *bmap, *tab;
  *               Strip out unused elements in colormap              *
  *------------------------------------------------------------------*/
 /*!
- *  pixRemoveUnusedColors()
+ * \brief   pixRemoveUnusedColors()
  *
- *      Input:  pixs  (colormapped)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs  colormapped
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an in-place operation.
  *      (2) If the image doesn't have a colormap, returns without error.
  *      (3) Unusued colors are removed from the colormap, and the
  *          image pixels are re-numbered.
+ * </pre>
  */
 l_int32
 pixRemoveUnusedColors(PIX  *pixs)
@@ -3951,22 +4048,24 @@ PIXCMAP    *cmap, *cmapd;
  *      Find number of occupied octcubes at the specified level     *
  *------------------------------------------------------------------*/
 /*!
- *  pixNumberOccupiedOctcubes()
+ * \brief   pixNumberOccupiedOctcubes()
  *
- *      Input:  pix (32 bpp)
- *              level (of octcube)
- *              mincount (minimum num pixels in an octcube to be counted;
- *                        -1 to not use)
- *              minfract (minimum fract of pixels in an octcube to be
- *                        counted; -1 to not use)
- *              &ncolors (<return> number of occupied octcubes)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix 32 bpp
+ * \param[in]    level of octcube
+ * \param[in]    mincount minimum num pixels in an octcube to be counted;
+ *                        -1 to not use
+ * \param[in]    minfract minimum fract of pixels in an octcube to be
+ *                        counted; -1 to not use
+ * \param[out]   pncolors number of occupied octcubes
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
- *      (1) Exactly one of (@mincount, @minfract) must be -1, so, e.g.,
- *          if @mincount == -1, then we use @minfract.
- *      (2) If all occupied octcubes are to count, set @mincount == 1.
- *          Setting @minfract == 0.0 is taken to mean the same thing.
+ * <pre>
+ * Notes:
+ *      (1) Exactly one of (%mincount, %minfract) must be -1, so, e.g.,
+ *          if %mincount == -1, then we use %minfract.
+ *      (2) If all occupied octcubes are to count, set %mincount == 1.
+ *          Setting %minfract == 0.0 is taken to mean the same thing.
+ * </pre>
  */
 l_int32
 pixNumberOccupiedOctcubes(PIX       *pix,
@@ -4001,10 +4100,12 @@ l_uint32  *data, *line, *rtab, *gtab, *btab;
 
     if (octcubeGetCount(level, &size))  /* array size = 2 ** (3 * level) */
         return ERROR_INT("size not returned", procName, 1);
-    if (makeRGBToIndexTables(&rtab, &gtab, &btab, level))
-        return ERROR_INT("tables not made", procName, 1);
-    if ((carray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL)
-        return ERROR_INT("carray not made", procName, 1);
+    rtab = gtab = btab = NULL;
+    makeRGBToIndexTables(&rtab, &gtab, &btab, level);
+    if ((carray = (l_int32 *)LEPT_CALLOC(size, sizeof(l_int32))) == NULL) {
+        L_ERROR("carray not made\n", procName);
+        goto cleanup_arrays;
+    }
 
         /* Mark the occupied octcube leaves */
     data = pixGetData(pix);
@@ -4025,6 +4126,7 @@ l_uint32  *data, *line, *rtab, *gtab, *btab;
     }
     *pncolors = ncolors;
 
+cleanup_arrays:
     LEPT_FREE(carray);
     LEPT_FREE(rtab);
     LEPT_FREE(gtab);

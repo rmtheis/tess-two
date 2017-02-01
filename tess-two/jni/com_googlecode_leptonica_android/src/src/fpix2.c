@@ -24,18 +24,19 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  fpix2.c
+/*!
+ * \file fpix2.c
+ * <pre>
  *
  *    This file has these FPix utilities:
- *       - interconversions with pix, fpix, dpix
- *       - min and max values
- *       - integer scaling
- *       - arithmetic operations
- *       - set all
- *       - border functions
- *       - simple rasterop (source --> dest)
- *       - geometric transforms
+ *       ~ interconversions with pix, fpix, dpix
+ *       ~ min and max values
+ *       ~ integer scaling
+ *       ~ arithmetic operations
+ *       ~ set all
+ *       ~ border functions
+ *       ~ simple rasterop (source --> dest)
+ *       ~ geometric transforms
  *
  *    Interconversions between Pix, FPix and DPix
  *          FPIX          *pixConvertToFPix()
@@ -95,6 +96,7 @@
  *
  *    Generate function from components
  *          FPIX          *pixComponentFunction()
+ * </pre>
  */
 
 #include <string.h>
@@ -104,17 +106,19 @@
  *                     FPix  <-->  Pix conversions                    *
  *--------------------------------------------------------------------*/
 /*!
- *  pixConvertToFPix()
+ * \brief   pixConvertToFPix()
  *
- *      Input:  pix (1, 2, 4, 8, 16 or 32 bpp)
- *              ncomps (number of components: 3 for RGB, 1 otherwise)
- *      Return: fpix, or null on error
+ * \param[in]    pixs 1, 2, 4, 8, 16 or 32 bpp
+ * \param[in]    ncomps number of components: 3 for RGB, 1 otherwise
+ * \return  fpix, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If colormapped, remove to grayscale.
- *      (2) If 32 bpp and @ncomps == 3, this is RGB; convert to luminance.
+ *      (2) If 32 bpp and %ncomps == 3, this is RGB; convert to luminance.
  *          In all other cases the src image is treated as having a single
  *          component of pixel values.
+ * </pre>
  */
 FPIX *
 pixConvertToFPix(PIX     *pixs,
@@ -145,8 +149,10 @@ FPIX       *fpixd;
         return (FPIX *)ERROR_PTR("invalid depth", procName, NULL);
     }
 
-    if ((fpixd = fpixCreate(w, h)) == NULL)
+    if ((fpixd = fpixCreate(w, h)) == NULL) {
+        pixDestroy(&pixt);
         return (FPIX *)ERROR_PTR("fpixd not made", procName, NULL);
+    }
     datat = pixGetData(pixt);
     wplt = pixGetWpl(pixt);
     datad = fpixGetData(fpixd);
@@ -193,17 +199,19 @@ FPIX       *fpixd;
 
 
 /*!
- *  pixConvertToDPix()
+ * \brief   pixConvertToDPix()
  *
- *      Input:  pix (1, 2, 4, 8, 16 or 32 bpp)
- *              ncomps (number of components: 3 for RGB, 1 otherwise)
- *      Return: dpix, or null on error
+ * \param[in]    pixs 1, 2, 4, 8, 16 or 32 bpp
+ * \param[in]    ncomps number of components: 3 for RGB, 1 otherwise
+ * \return  dpix, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If colormapped, remove to grayscale.
- *      (2) If 32 bpp and @ncomps == 3, this is RGB; convert to luminance.
+ *      (2) If 32 bpp and %ncomps == 3, this is RGB; convert to luminance.
  *          In all other cases the src image is treated as having a single
  *          component of pixel values.
+ * </pre>
  */
 DPIX *
 pixConvertToDPix(PIX     *pixs,
@@ -234,8 +242,10 @@ DPIX       *dpixd;
         return (DPIX *)ERROR_PTR("invalid depth", procName, NULL);
     }
 
-    if ((dpixd = dpixCreate(w, h)) == NULL)
+    if ((dpixd = dpixCreate(w, h)) == NULL) {
+        pixDestroy(&pixt);
         return (DPIX *)ERROR_PTR("dpixd not made", procName, NULL);
+    }
     datat = pixGetData(pixt);
     wplt = pixGetWpl(pixt);
     datad = dpixGetData(dpixd);
@@ -282,16 +292,17 @@ DPIX       *dpixd;
 
 
 /*!
- *  fpixConvertToPix()
+ * \brief   fpixConvertToPix()
  *
- *      Input:  fpixs
- *              outdepth (0, 8, 16 or 32 bpp)
- *              negvals (L_CLIP_TO_ZERO, L_TAKE_ABSVAL)
- *              errorflag (1 to output error stats; 0 otherwise)
- *      Return: pixd, or null on error
+ * \param[in]    fpixs
+ * \param[in]    outdepth 0, 8, 16 or 32 bpp
+ * \param[in]    negvals L_CLIP_TO_ZERO, L_TAKE_ABSVAL
+ * \param[in]    errorflag 1 to output error stats; 0 otherwise
+ * \return  pixd, or NULL on error
  *
- *  Notes:
- *      (1) Use @outdepth = 0 to programmatically determine the
+ * <pre>
+ * Notes:
+ *      (1) Use %outdepth = 0 to programmatically determine the
  *          output depth.  If no values are greater than 255,
  *          it will set outdepth = 8; otherwise to 16 or 32.
  *      (2) Because we are converting a float to an unsigned int
@@ -301,6 +312,7 @@ DPIX       *dpixd;
  *      (3) If a pixel value is positive and out of range, clip to
  *          the maximum value represented at the outdepth of 8, 16
  *          or 32 bits.
+ * </pre>
  */
 PIX *
 fpixConvertToPix(FPIX    *fpixs,
@@ -308,8 +320,8 @@ fpixConvertToPix(FPIX    *fpixs,
                  l_int32  negvals,
                  l_int32  errorflag)
 {
-l_int32     w, h, i, j, wpls, wpld, maxval;
-l_uint32    vald;
+l_int32     w, h, i, j, wpls, wpld;
+l_uint32    vald, maxval;
 l_float32   val;
 l_float32  *datas, *lines;
 l_uint32   *datad, *lined;
@@ -341,9 +353,14 @@ PIX        *pixd;
             }
         }
     }
-    maxval = (1 << outdepth) - 1;
+    if (outdepth == 8)
+        maxval = 0xff;
+    else if (outdepth == 16)
+        maxval = 0xffff;
+    else  /* outdepth == 32 */
+        maxval = 0xffffffff;
 
-        /* Gather statistics if @errorflag = TRUE */
+        /* Gather statistics if %errorflag = TRUE */
     if (errorflag) {
         l_int32  negs = 0;
         l_int32  overvals = 0;
@@ -396,10 +413,10 @@ PIX        *pixd;
 
 
 /*!
- *  fpixDisplayMaxDynamicRange()
+ * \brief   fpixDisplayMaxDynamicRange()
  *
- *      Input:  fpixs
- *      Return: pixd (8 bpp), or null on error
+ * \param[in]    fpixs
+ * \return  pixd 8 bpp, or NULL on error
  */
 PIX *
 fpixDisplayMaxDynamicRange(FPIX  *fpixs)
@@ -453,10 +470,10 @@ PIX        *pixd;
 
 
 /*!
- *  fpixConvertToDPix()
+ * \brief   fpixConvertToDPix()
  *
- *      Input:  fpix
- *      Return: dpix, or null on error
+ * \param[in]    fpix
+ * \return  dpix, or NULL on error
  */
 DPIX *
 fpixConvertToDPix(FPIX  *fpix)
@@ -494,16 +511,17 @@ DPIX       *dpix;
 
 
 /*!
- *  dpixConvertToPix()
+ * \brief   dpixConvertToPix()
  *
- *      Input:  dpixs
- *              outdepth (0, 8, 16 or 32 bpp)
- *              negvals (L_CLIP_TO_ZERO, L_TAKE_ABSVAL)
- *              errorflag (1 to output error stats; 0 otherwise)
- *      Return: pixd, or null on error
+ * \param[in]    dpixs
+ * \param[in]    outdepth 0, 8, 16 or 32 bpp
+ * \param[in]    negvals L_CLIP_TO_ZERO, L_TAKE_ABSVAL
+ * \param[in]    errorflag 1 to output error stats; 0 otherwise
+ * \return  pixd, or NULL on error
  *
- *  Notes:
- *      (1) Use @outdepth = 0 to programmatically determine the
+ * <pre>
+ * Notes:
+ *      (1) Use %outdepth = 0 to programmatically determine the
  *          output depth.  If no values are greater than 255,
  *          it will set outdepth = 8; otherwise to 16 or 32.
  *      (2) Because we are converting a float to an unsigned int
@@ -513,6 +531,7 @@ DPIX       *dpix;
  *      (3) If a pixel value is positive and out of range, clip to
  *          the maximum value represented at the outdepth of 8, 16
  *          or 32 bits.
+ * </pre>
  */
 PIX *
 dpixConvertToPix(DPIX    *dpixs,
@@ -553,9 +572,13 @@ PIX        *pixd;
             }
         }
     }
-    maxval = (1 << outdepth) - 1;
+    maxval = 0xff;
+    if (outdepth == 16)
+        maxval = 0xffff;
+    else  /* outdepth == 32 */
+        maxval = 0xffffffff;
 
-        /* Gather statistics if @errorflag = TRUE */
+        /* Gather statistics if %errorflag = TRUE */
     if (errorflag) {
         l_int32  negs = 0;
         l_int32  overvals = 0;
@@ -609,10 +632,10 @@ PIX        *pixd;
 
 
 /*!
- *  dpixConvertToFPix()
+ * \brief   dpixConvertToFPix()
  *
- *      Input:  dpix
- *      Return: fpix, or null on error
+ * \param[in]    dpix
+ * \return  fpix, or NULL on error
  */
 FPIX *
 dpixConvertToFPix(DPIX  *dpix)
@@ -654,13 +677,13 @@ FPIX       *fpix;
  *                           Min/max value                            *
  *--------------------------------------------------------------------*/
 /*!
- *  fpixGetMin()
+ * \brief   fpixGetMin()
  *
- *      Input:  fpix
- *              &minval (<optional return> min value)
- *              &xminloc (<optional return> x location of min)
- *              &yminloc (<optional return> y location of min)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    fpix
+ * \param[out]   pminval [optional] min value
+ * \param[out]   pxminloc [optional] x location of min
+ * \param[out]   pyminloc [optional] y location of min
+ * \return  0 if OK; 1 on error
  */
 l_int32
 fpixGetMin(FPIX       *fpix,
@@ -707,13 +730,13 @@ l_float32   minval;
 
 
 /*!
- *  fpixGetMax()
+ * \brief   fpixGetMax()
  *
- *      Input:  fpix
- *              &maxval (<optional return> max value)
- *              &xmaxloc (<optional return> x location of max)
- *              &ymaxloc (<optional return> y location of max)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    fpix
+ * \param[out]   pmaxval [optional] max value
+ * \param[out]   pxmaxloc [optional] x location of max
+ * \param[out]   pymaxloc [optional] y location of max
+ * \return  0 if OK; 1 on error
  */
 l_int32
 fpixGetMax(FPIX       *fpix,
@@ -760,13 +783,13 @@ l_float32   maxval;
 
 
 /*!
- *  dpixGetMin()
+ * \brief   dpixGetMin()
  *
- *      Input:  dpix
- *              &minval (<optional return> min value)
- *              &xminloc (<optional return> x location of min)
- *              &yminloc (<optional return> y location of min)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    dpix
+ * \param[out]   pminval [optional] min value
+ * \param[out]   pxminloc [optional] x location of min
+ * \param[out]   pyminloc [optional] y location of min
+ * \return  0 if OK; 1 on error
  */
 l_int32
 dpixGetMin(DPIX       *dpix,
@@ -813,13 +836,13 @@ l_float64   minval;
 
 
 /*!
- *  dpixGetMax()
+ * \brief   dpixGetMax()
  *
- *      Input:  dpix
- *              &maxval (<optional return> max value)
- *              &xmaxloc (<optional return> x location of max)
- *              &ymaxloc (<optional return> y location of max)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    dpix
+ * \param[out]   pmaxval [optional] max value
+ * \param[out]   pxmaxloc [optional] x location of max
+ * \param[out]   pymaxloc [optional] y location of max
+ * \return  0 if OK; 1 on error
  */
 l_int32
 dpixGetMax(DPIX       *dpix,
@@ -869,22 +892,24 @@ l_float64   maxval;
  *                       Special integer scaling                      *
  *--------------------------------------------------------------------*/
 /*!
- *  fpixScaleByInteger()
+ * \brief   fpixScaleByInteger()
  *
- *      Input:  fpixs (low resolution, subsampled)
- *              factor (scaling factor)
- *      Return: fpixd (interpolated result), or null on error
+ * \param[in]    fpixs low resolution, subsampled
+ * \param[in]    factor scaling factor
+ * \return  fpixd interpolated result, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The width wd of fpixd is related to ws of fpixs by:
  *              wd = factor * (ws - 1) + 1   (and ditto for the height)
  *          We avoid special-casing boundary pixels in the interpolation
  *          by constructing fpixd by inserting (factor - 1) interpolated
  *          pixels between each pixel in fpixs.  Then
  *               wd = ws + (ws - 1) * (factor - 1)    (same as above)
- *          This also has the advantage that if we subsample by @factor,
+ *          This also has the advantage that if we subsample by %factor,
  *          throwing out all the interpolated pixels, we regain the
  *          original low resolution fpix.
+ * </pre>
  */
 FPIX *
 fpixScaleByInteger(FPIX    *fpixs,
@@ -959,22 +984,24 @@ FPIX       *fpixd;
 
 
 /*!
- *  dpixScaleByInteger()
+ * \brief   dpixScaleByInteger()
  *
- *      Input:  dpixs (low resolution, subsampled)
- *              factor (scaling factor)
- *      Return: dpixd (interpolated result), or null on error
+ * \param[in]    dpixs low resolution, subsampled
+ * \param[in]    factor scaling factor
+ * \return  dpixd interpolated result, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The width wd of dpixd is related to ws of dpixs by:
  *              wd = factor * (ws - 1) + 1   (and ditto for the height)
  *          We avoid special-casing boundary pixels in the interpolation
  *          by constructing fpixd by inserting (factor - 1) interpolated
  *          pixels between each pixel in fpixs.  Then
  *               wd = ws + (ws - 1) * (factor - 1)    (same as above)
- *          This also has the advantage that if we subsample by @factor,
+ *          This also has the advantage that if we subsample by %factor,
  *          throwing out all the interpolated pixels, we regain the
  *          original low resolution dpix.
+ * </pre>
  */
 DPIX *
 dpixScaleByInteger(DPIX    *dpixs,
@@ -1052,16 +1079,17 @@ DPIX       *dpixd;
  *                        Arithmetic operations                       *
  *--------------------------------------------------------------------*/
 /*!
- *  fpixLinearCombination()
+ * \brief   fpixLinearCombination()
  *
- *      Input:  fpixd (<optional>; this can be null, equal to fpixs1, or
- *                     different from fpixs1)
- *              fpixs1 (can be == to fpixd)
- *              fpixs2
- *              a, b (multiplication factors on fpixs1 and fpixs2, rsp.)
- *      Return: fpixd always
+ * \param[in]    fpixd [optional]; this can be null, equal to fpixs1, or
+ *                     different from fpixs1
+ * \param[in]    fpixs1 can be == to fpixd
+ * \param[in]    fpixs2
+ * \param[in]    a, b multiplication factors on fpixs1 and fpixs2, rsp.
+ * \return  fpixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Computes pixelwise linear combination: a * src1 + b * src2
  *      (2) Alignment is to UL corner.
  *      (3) There are 3 cases.  The result can go to a new dest,
@@ -1070,6 +1098,7 @@ DPIX       *dpixd;
  *          * fpixd == fpixs1:  (src1 + src2) --> src1  (in-place)
  *          * fpixd != fpixs1: (src1 + src2) --> input fpixd
  *      (4) fpixs2 must be different from both fpixd and fpixs1.
+ * </pre>
  */
 FPIX *
 fpixLinearCombination(FPIX      *fpixd,
@@ -1115,18 +1144,20 @@ l_float32  *datas, *datad, *lines, *lined;
 
 
 /*!
- *  fpixAddMultConstant()
+ * \brief   fpixAddMultConstant()
  *
- *      Input:  fpix
- *              addc  (use 0.0 to skip the operation)
- *              multc (use 1.0 to skip the operation)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fpix
+ * \param[in]    addc  use 0.0 to skip the operation
+ * \param[in]    multc use 1.0 to skip the operation
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an in-place operation.
  *      (2) It can be used to multiply each pixel by a constant,
  *          and also to add a constant to each pixel.  Multiplication
  *          is done first.
+ * </pre>
  */
 l_int32
 fpixAddMultConstant(FPIX      *fpix,
@@ -1167,16 +1198,17 @@ l_float32  *line, *data;
 
 
 /*!
- *  dpixLinearCombination()
+ * \brief   dpixLinearCombination()
  *
- *      Input:  dpixd (<optional>; this can be null, equal to dpixs1, or
- *                     different from dpixs1)
- *              dpixs1 (can be == to dpixd)
- *              dpixs2
- *              a, b (multiplication factors on dpixs1 and dpixs2, rsp.)
- *      Return: dpixd always
+ * \param[in]    dpixd [optional]; this can be null, equal to dpixs1, or
+ *                     different from dpixs1
+ * \param[in]    dpixs1 can be == to dpixd
+ * \param[in]    dpixs2
+ * \param[in]    a, b multiplication factors on dpixs1 and dpixs2, rsp.
+ * \return  dpixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Computes pixelwise linear combination: a * src1 + b * src2
  *      (2) Alignment is to UL corner.
  *      (3) There are 3 cases.  The result can go to a new dest,
@@ -1185,6 +1217,7 @@ l_float32  *line, *data;
  *          * dpixd == dpixs1:  (src1 + src2) --> src1  (in-place)
  *          * dpixd != dpixs1: (src1 + src2) --> input dpixd
  *      (4) dpixs2 must be different from both dpixd and dpixs1.
+ * </pre>
  */
 DPIX *
 dpixLinearCombination(DPIX      *dpixd,
@@ -1230,18 +1263,20 @@ l_float64  *datas, *datad, *lines, *lined;
 
 
 /*!
- *  dpixAddMultConstant()
+ * \brief   dpixAddMultConstant()
  *
- *      Input:  dpix
- *              addc  (use 0.0 to skip the operation)
- *              multc (use 1.0 to skip the operation)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    dpix
+ * \param[in]    addc  use 0.0 to skip the operation
+ * \param[in]    multc use 1.0 to skip the operation
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an in-place operation.
  *      (2) It can be used to multiply each pixel by a constant,
  *          and also to add a constant to each pixel.  Multiplication
  *          is done first.
+ * </pre>
  */
 l_int32
 dpixAddMultConstant(DPIX      *dpix,
@@ -1284,11 +1319,11 @@ l_float64  *line, *data;
  *                              Set all                               *
  *--------------------------------------------------------------------*/
 /*!
- *  fpixSetAllArbitrary()
+ * \brief   fpixSetAllArbitrary()
  *
- *      Input:  fpix
- *              val (to set at each pixel)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fpix
+ * \param[in]    inval to set at each pixel
+ * \return  0 if OK, 1 on error
  */
 l_int32
 fpixSetAllArbitrary(FPIX      *fpix,
@@ -1315,11 +1350,11 @@ l_float32  *data, *line;
 
 
 /*!
- *  dpixSetAllArbitrary()
+ * \brief   dpixSetAllArbitrary()
  *
- *      Input:  dpix
- *              val (to set at each pixel)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    dpix
+ * \param[in]    inval to set at each pixel
+ * \return  0 if OK, 1 on error
  */
 l_int32
 dpixSetAllArbitrary(DPIX      *dpix,
@@ -1349,14 +1384,16 @@ l_float64  *data, *line;
  *                          Border functions                          *
  *--------------------------------------------------------------------*/
 /*!
- *  fpixAddBorder()
+ * \brief   fpixAddBorder()
  *
- *      Input:  fpixs
- *              left, right, top, bot (pixels on each side to be added)
- *      Return: fpixd, or null on error
+ * \param[in]    fpixs
+ * \param[in]    left, right, top, bot pixels on each side to be added
+ * \return  fpixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Adds border of '0' 32-bit pixels
+ * </pre>
  */
 FPIX *
 fpixAddBorder(FPIX    *fpixs,
@@ -1388,11 +1425,11 @@ FPIX    *fpixd;
 
 
 /*!
- *  fpixRemoveBorder()
+ * \brief   fpixRemoveBorder()
  *
- *      Input:  fpixs
- *              left, right, top, bot (pixels on each side to be removed)
- *      Return: fpixd, or null on error
+ * \param[in]    fpixs
+ * \param[in]    left, right, top, bot pixels on each side to be removed
+ * \return  fpixd, or NULL on error
  */
 FPIX *
 fpixRemoveBorder(FPIX    *fpixs,
@@ -1427,14 +1464,16 @@ FPIX    *fpixd;
 
 
 /*!
- *  fpixAddMirroredBorder()
+ * \brief   fpixAddMirroredBorder()
  *
- *      Input:  fpixs
- *              left, right, top, bot (pixels on each side to be added)
- *      Return: fpixd, or null on error
+ * \param[in]    fpixs
+ * \param[in]    left, right, top, bot pixels on each side to be added
+ * \return  fpixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixAddMirroredBorder() for situations of usage.
+ * </pre>
  */
 FPIX *
 fpixAddMirroredBorder(FPIX    *fpixs,
@@ -1471,15 +1510,17 @@ FPIX    *fpixd;
 
 
 /*!
- *  fpixAddContinuedBorder()
+ * \brief   fpixAddContinuedBorder()
  *
- *      Input:  fpixs
- *              left, right, top, bot (pixels on each side to be added)
- *      Return: fpixd, or null on error
+ * \param[in]    fpixs
+ * \param[in]    left, right, top, bot pixels on each side to be added
+ * \return  fpixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This adds pixels on each side whose values are equal to
  *          the value on the closest boundary pixel.
+ * </pre>
  */
 FPIX *
 fpixAddContinuedBorder(FPIX    *fpixs,
@@ -1513,16 +1554,18 @@ FPIX    *fpixd;
 
 
 /*!
- *  fpixAddSlopeBorder()
+ * \brief   fpixAddSlopeBorder()
  *
- *      Input:  fpixs
- *              left, right, top, bot (pixels on each side to be added)
- *      Return: fpixd, or null on error
+ * \param[in]    fpixs
+ * \param[in]    left, right, top, bot pixels on each side to be added
+ * \return  fpixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This adds pixels on each side whose values have a normal
  *          derivative equal to the normal derivative at the boundary
  *          of fpixs.
+ * </pre>
  */
 FPIX *
 fpixAddSlopeBorder(FPIX    *fpixs,
@@ -1589,19 +1632,20 @@ FPIX      *fpixd;
  *                          Simple rasterop                           *
  *--------------------------------------------------------------------*/
 /*!
- *  fpixRasterop()
+ * \brief   fpixRasterop()
  *
- *      Input:  fpixd  (dest fpix)
- *              dx     (x val of UL corner of dest rectangle)
- *              dy     (y val of UL corner of dest rectangle)
- *              dw     (width of dest rectangle)
- *              dh     (height of dest rectangle)
- *              fpixs  (src fpix)
- *              sx     (x val of UL corner of src rectangle)
- *              sy     (y val of UL corner of src rectangle)
- *      Return: 0 if OK; 1 on error.
+ * \param[in]    fpixd  dest fpix
+ * \param[in]    dx     x val of UL corner of dest rectangle
+ * \param[in]    dy     y val of UL corner of dest rectangle
+ * \param[in]    dw     width of dest rectangle
+ * \param[in]    dh     height of dest rectangle
+ * \param[in]    fpixs  src fpix
+ * \param[in]    sx     x val of UL corner of src rectangle
+ * \param[in]    sy     y val of UL corner of src rectangle
+ * \return  0 if OK; 1 on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is similar in structure to pixRasterop(), except
  *          it only allows copying from the source into the destination.
  *          For that reason, no op code is necessary.  Additionally,
@@ -1610,6 +1654,7 @@ FPIX      *fpixd;
  *      (2) Clipping of both src and dest fpix are done automatically.
  *      (3) This allows in-place copying, without checking to see if
  *          the result is valid:  use for in-place with caution!
+ * </pre>
  */
 l_int32
 fpixRasterop(FPIX    *fpixd,
@@ -1705,11 +1750,11 @@ l_float32  *datas, *datad, *lines, *lined;
  *                   Rotation by multiples of 90 degrees              *
  *--------------------------------------------------------------------*/
 /*!
- *  fpixRotateOrth()
+ * \brief   fpixRotateOrth()
  *
- *      Input:  fpixs
- *              quads (0-3; number of 90 degree cw rotations)
- *      Return: fpixd, or null on error
+ * \param[in]    fpixs
+ * \param[in]    quads 0-3; number of 90 degree cw rotations
+ * \return  fpixd, or NULL on error
  */
 FPIX *
 fpixRotateOrth(FPIX     *fpixs,
@@ -1734,14 +1779,15 @@ fpixRotateOrth(FPIX     *fpixs,
 
 
 /*!
- *  fpixRotate180()
+ * \brief   fpixRotate180()
  *
- *      Input:  fpixd  (<optional>; can be null, equal to fpixs,
- *                      or different from fpixs)
- *              fpixs
- *      Return: fpixd, or null on error
+ * \param[in]    fpixd  [optional]; can be null, equal to fpixs,
+ *                      or different from fpixs
+ * \param[in]    fpixs
+ * \return  fpixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does a 180 rotation of the image about the center,
  *          which is equivalent to a left-right flip about a vertical
  *          line through the image center, followed by a top-bottom
@@ -1754,6 +1800,7 @@ fpixRotateOrth(FPIX     *fpixs,
  *          (a) fpixd = fpixRotate180(NULL, fpixs);
  *          (b) fpixRotate180(fpixs, fpixs);
  *          (c) fpixRotate180(fpixd, fpixs);
+ * </pre>
  */
 FPIX *
 fpixRotate180(FPIX  *fpixd,
@@ -1775,16 +1822,18 @@ fpixRotate180(FPIX  *fpixd,
 
 
 /*!
- *  fpixRotate90()
+ * \brief   fpixRotate90()
  *
- *      Input:  fpixs
- *              direction (1 = clockwise,  -1 = counter-clockwise)
- *      Return: fpixd, or null on error
+ * \param[in]    fpixs
+ * \param[in]    direction 1 = clockwise,  -1 = counter-clockwise
+ * \return  fpixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does a 90 degree rotation of the image about the center,
  *          either cw or ccw, returning a new pix.
  *      (2) The direction must be either 1 (cw) or -1 (ccw).
+ * </pre>
  */
 FPIX *
 fpixRotate90(FPIX    *fpixs,
@@ -1835,14 +1884,15 @@ FPIX       *fpixd;
 
 
 /*!
- *  pixFlipLR()
+ * \brief   pixFlipLR()
  *
- *      Input:  fpixd (<optional>; can be null, equal to fpixs,
- *                     or different from fpixs)
- *              fpixs
- *      Return: fpixd, or null on error
+ * \param[in]    fpixd [optional]; can be null, equal to fpixs,
+ *                     or different from fpixs
+ * \param[in]    fpixs
+ * \return  fpixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does a left-right flip of the image, which is
  *          equivalent to a rotation out of the plane about a
  *          vertical line through the image center.
@@ -1856,6 +1906,7 @@ FPIX       *fpixd;
  *          (c) fpixFlipLR(fpixd, fpixs);
  *      (4) If an existing fpixd is not the same size as fpixs, the
  *          image data will be reallocated.
+ * </pre>
  */
 FPIX *
 fpixFlipLR(FPIX  *fpixd,
@@ -1878,8 +1929,10 @@ l_float32  *line, *data, *buffer;
     data = fpixGetData(fpixd);
     wpl = fpixGetWpl(fpixd);  /* 4-byte words */
     bpl = 4 * wpl;
-    if ((buffer = (l_float32 *)LEPT_CALLOC(wpl, sizeof(l_float32))) == NULL)
+    if ((buffer = (l_float32 *)LEPT_CALLOC(wpl, sizeof(l_float32))) == NULL) {
+        fpixDestroy(&fpixd);
         return (FPIX *)ERROR_PTR("buffer not made", procName, NULL);
+    }
     for (i = 0; i < h; i++) {
         line = data + i * wpl;
         memcpy(buffer, line, bpl);
@@ -1892,14 +1945,15 @@ l_float32  *line, *data, *buffer;
 
 
 /*!
- *  fpixFlipTB()
+ * \brief   fpixFlipTB()
  *
- *      Input:  fpixd (<optional>; can be null, equal to fpixs,
- *                     or different from fpixs)
- *              fpixs
- *      Return: fpixd, or null on error
+ * \param[in]    fpixd [optional]; can be null, equal to fpixs,
+ *                     or different from fpixs
+ * \param[in]    fpixs
+ * \return  fpixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does a top-bottom flip of the image, which is
  *          equivalent to a rotation out of the plane about a
  *          horizontal line through the image center.
@@ -1913,6 +1967,7 @@ l_float32  *line, *data, *buffer;
  *          (c) fpixFlipTB(fpixd, fpixs);
  *      (4) If an existing fpixd is not the same size as fpixs, the
  *          image data will be reallocated.
+ * </pre>
  */
 FPIX *
 fpixFlipTB(FPIX  *fpixd,
@@ -1933,8 +1988,10 @@ l_float32  *linet, *lineb, *data, *buffer;
     data = fpixGetData(fpixd);
     wpl = fpixGetWpl(fpixd);
     fpixGetDimensions(fpixd, NULL, &h);
-    if ((buffer = (l_float32 *)LEPT_CALLOC(wpl, sizeof(l_float32))) == NULL)
+    if ((buffer = (l_float32 *)LEPT_CALLOC(wpl, sizeof(l_float32))) == NULL) {
+        fpixDestroy(&fpixd);
         return (FPIX *)ERROR_PTR("buffer not made", procName, NULL);
+    }
     h2 = h / 2;
     bpl = 4 * wpl;
     for (i = 0, k = h - 1; i < h2; i++, k--) {
@@ -1953,24 +2010,26 @@ l_float32  *linet, *lineb, *data, *buffer;
  *            Affine and projective interpolated transforms           *
  *--------------------------------------------------------------------*/
 /*!
- *  fpixAffinePta()
+ * \brief   fpixAffinePta()
  *
- *      Input:  fpixs (8 bpp)
- *              ptad  (4 pts of final coordinate space)
- *              ptas  (4 pts of initial coordinate space)
- *              border (size of extension with constant normal derivative)
- *              inval (value brought in; typ. 0)
- *      Return: fpixd, or null on error
+ * \param[in]    fpixs 8 bpp
+ * \param[in]    ptad  4 pts of final coordinate space
+ * \param[in]    ptas  4 pts of initial coordinate space
+ * \param[in]    border size of extension with constant normal derivative
+ * \param[in]    inval value brought in; typ. 0
+ * \return  fpixd, or NULL on error
  *
- *  Notes:
- *      (1) If @border > 0, all four sides are extended by that distance,
+ * <pre>
+ * Notes:
+ *      (1) If %border > 0, all four sides are extended by that distance,
  *          and removed after the transformation is finished.  Pixels
  *          that would be brought in to the trimmed result from outside
- *          the extended region are assigned @inval.  The purpose of
+ *          the extended region are assigned %inval.  The purpose of
  *          extending the image is to avoid such assignments.
  *      (2) On the other hand, you may want to give all pixels that
  *          are brought in from outside fpixs a specific value.  In that
- *          case, set @border == 0.
+ *          case, set %border == 0.
+ * </pre>
  */
 FPIX *
 fpixAffinePta(FPIX      *fpixs,
@@ -2022,12 +2081,12 @@ FPIX       *fpixs2, *fpixd, *fpixd2;
 
 
 /*!
- *  fpixAffine()
+ * \brief   fpixAffine()
  *
- *      Input:  fpixs (8 bpp)
- *              vc  (vector of 8 coefficients for projective transformation)
- *              inval (value brought in; typ. 0)
- *      Return: fpixd, or null on error
+ * \param[in]    fpixs 8 bpp
+ * \param[in]    vc  vector of 8 coefficients for projective transformation
+ * \param[in]    inval value brought in; typ. 0
+ * \return  fpixd, or NULL on error
  */
 FPIX *
 fpixAffine(FPIX       *fpixs,
@@ -2070,24 +2129,26 @@ FPIX       *fpixd;
 
 
 /*!
- *  fpixProjectivePta()
+ * \brief   fpixProjectivePta()
  *
- *      Input:  fpixs (8 bpp)
- *              ptad  (4 pts of final coordinate space)
- *              ptas  (4 pts of initial coordinate space)
- *              border (size of extension with constant normal derivative)
- *              inval (value brought in; typ. 0)
- *      Return: fpixd, or null on error
+ * \param[in]    fpixs 8 bpp
+ * \param[in]    ptad  4 pts of final coordinate space
+ * \param[in]    ptas  4 pts of initial coordinate space
+ * \param[in]    border size of extension with constant normal derivative
+ * \param[in]    inval value brought in; typ. 0
+ * \return  fpixd, or NULL on error
  *
- *  Notes:
- *      (1) If @border > 0, all four sides are extended by that distance,
+ * <pre>
+ * Notes:
+ *      (1) If %border > 0, all four sides are extended by that distance,
  *          and removed after the transformation is finished.  Pixels
  *          that would be brought in to the trimmed result from outside
- *          the extended region are assigned @inval.  The purpose of
+ *          the extended region are assigned %inval.  The purpose of
  *          extending the image is to avoid such assignments.
  *      (2) On the other hand, you may want to give all pixels that
  *          are brought in from outside fpixs a specific value.  In that
- *          case, set @border == 0.
+ *          case, set %border == 0.
+ * </pre>
  */
 FPIX *
 fpixProjectivePta(FPIX      *fpixs,
@@ -2139,12 +2200,12 @@ FPIX       *fpixs2, *fpixd, *fpixd2;
 
 
 /*!
- *  fpixProjective()
+ * \brief   fpixProjective()
  *
- *      Input:  fpixs (8 bpp)
- *              vc  (vector of 8 coefficients for projective transformation)
- *              inval (value brought in; typ. 0)
- *      Return: fpixd, or null on error
+ * \param[in]    fpixs 8 bpp
+ * \param[in]    vc  vector of 8 coefficients for projective transformation
+ * \param[in]    inval value brought in; typ. 0
+ * \return  fpixd, or NULL on error
  */
 FPIX *
 fpixProjective(FPIX       *fpixs,
@@ -2187,21 +2248,22 @@ FPIX       *fpixd;
 
 
 /*!
- *  linearInterpolatePixelFloat()
+ * \brief   linearInterpolatePixelFloat()
  *
- *      Input:  datas (ptr to beginning of float image data)
- *              wpls (32-bit word/line for this data array)
- *              w, h (of image)
- *              x, y (floating pt location for evaluation)
- *              inval (float value brought in from the outside when the
- *                     input x,y location is outside the image)
- *              &val (<return> interpolated float value)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    datas ptr to beginning of float image data
+ * \param[in]    w, h of image
+ * \param[in]    x, y floating pt location for evaluation
+ * \param[in]    inval float value brought in from the outside when the
+ *                     input x,y location is outside the image
+ * \param[out]   pval interpolated float value
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a standard linear interpolation function.  It is
  *          equivalent to area weighting on each component, and
  *          avoids "jaggies" when rendering sharp edges.
+ * </pre>
  */
 l_int32
 linearInterpolatePixelFloat(l_float32  *datas,
@@ -2255,15 +2317,17 @@ l_float32  *lines;
  *                      Thresholding to 1 bpp Pix                     *
  *--------------------------------------------------------------------*/
 /*!
- *  fpixThresholdToPix()
+ * \brief   fpixThresholdToPix()
  *
- *      Input:  fpix
- *              thresh
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    fpix
+ * \param[in]    thresh
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
- *      (1) For all values of fpix that are <= thresh, sets the pixel
+ * <pre>
+ * Notes:
+ *      (1) For all values of fpix that are \<= thresh, sets the pixel
  *          in pixd to 1.
+ * </pre>
  */
 PIX *
 fpixThresholdToPix(FPIX      *fpix,
@@ -2302,16 +2366,17 @@ PIX        *pixd;
  *                Generate function from components                   *
  *--------------------------------------------------------------------*/
 /*!
- *  pixComponentFunction()
+ * \brief   pixComponentFunction()
  *
- *      Input:  pix (32 bpp rgb)
- *              rnum, gnum, bnum (coefficients for numerator)
- *              rdenom, gdenom, bdenom (coefficients for denominator)
- *      Return: fpixd, or null on error
+ * \param[in]    pix 32 bpp rgb
+ * \param[in]    rnum, gnum, bnum coefficients for numerator
+ * \param[in]    rdenom, gdenom, bdenom coefficients for denominator
+ * \return  fpixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This stores a function of the component values of each
- *          input pixel in @fpixd.
+ *          input pixel in %fpixd.
  *      (2) The function is a ratio of linear combinations of component values.
  *          There are two special cases for denominator coefficients:
  *          (a) The denominator is 1.0: input 0 for all denominator coefficients
@@ -2320,6 +2385,7 @@ PIX        *pixd;
  *      (3) If the denominator is 0, multiply by an arbitrary number that
  *          is much larger than 1.  Choose 256 "arbitrarily".
  *
+ * </pre>
  */
 FPIX *
 pixComponentFunction(PIX       *pix,
@@ -2397,4 +2463,3 @@ FPIX       *fpixd;
     LEPT_FREE(recip);
     return fpixd;
 }
-

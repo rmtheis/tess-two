@@ -24,10 +24,12 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  jp2kheaderstub.c
+/*!
+ * \file jp2kheaderstub.c
+ * <pre>
  *
  *     Stubs for jp2kheader.c functions
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -67,4 +69,3 @@ l_int32 fgetJp2kResolution(FILE *fp, l_int32 *pxres, l_int32 *pyres)
 
 /* --------------------------------------------*/
 #endif  /* !USE_JP2KHEADER */
-/* --------------------------------------------*/

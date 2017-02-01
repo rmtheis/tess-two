@@ -49,13 +49,14 @@ L_REGPARAMS  *rp;
     /* ----------------  Find all the jpg and tif images --------------- */
     sa1 = getSortedPathnamesInDirectory(".", ".jpg", 0, 0);
     sa2 = getSortedPathnamesInDirectory(".", ".tif", 0, 0);
-    sa3 = sarraySelectByRange(sa1, 0, 9);
-    sa4 = sarraySelectByRange(sa2, 0, 9);
+    sa3 = sarraySelectByRange(sa1, 10, 19);
+    sa4 = sarraySelectByRange(sa2, 10, 19);
     sarrayJoin(sa3, sa4);
     n =sarrayGetCount(sa3);
     sarrayDestroy(&sa1);
     sarrayDestroy(&sa2);
     sarrayDestroy(&sa4);
+    sarrayWriteStream(stderr, sa3);
 
     /* ---------------- Use replace to fill up a pixa -------------------*/
     pixa = pixaCreate(1);
@@ -67,22 +68,26 @@ L_REGPARAMS  *rp;
     pixaInitFull(pixa, pix1, NULL);  /* fill it up */
     pixd = pixaDisplayTiledInRows(pixa, 32, 1000, 1.0, 0, 25, 2);
     pixDisplayWithTitle(pixd, 100, 100, NULL, rp->display);
-    pixWrite("/tmp/lept/regout/pix1.jpg", pixd, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/regout/pixa2-1.jpg", pixd, IFF_JFIF_JPEG);
     pixDestroy(&pix1);
     pixDestroy(&pixd);
 
     /* ---------------- And again with jpgs and tifs -------------------*/
     for (i = 0; i < n; i++) {
         name = sarrayGetString(sa3, i, L_NOCOPY);
-        if ((pix0 = pixRead(name)) == NULL)
+        if ((pix0 = pixRead(name)) == NULL) {
+            fprintf(stderr, "Error in %s_reg: failed to read %s\n",
+                    rp->testname, name);
             rp->success = FALSE;
+            continue;
+        }
         pix1 = pixScaleToSize(pix0, 144, 108);
         pixaReplacePix(pixa, i, pix1, NULL);
         pixDestroy(&pix0);
     }
     pixd = pixaDisplayTiledInRows(pixa, 32, 1000, 1.0, 0, 25, 2);
     pixDisplayWithTitle(pixd, 400, 100, NULL, rp->display);
-    pixWrite("/tmp/lept/regout/pix2.jpg", pixd, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/regout/pixa2-2.jpg", pixd, IFF_JFIF_JPEG);
     pixDestroy(&pixd);
 
     /* ---------------- And again, reversing the order ------------------*/
@@ -91,15 +96,19 @@ L_REGPARAMS  *rp;
     boxDestroy(&box);
     for (i = 0; i < n; i++) {
         name = sarrayGetString(sa3, i, L_NOCOPY);
-        if ((pix0 = pixRead(name)) == NULL)
+        if ((pix0 = pixRead(name)) == NULL) {
+            fprintf(stderr, "Error in %s_reg: failed to read %s\n",
+                    rp->testname, name);
             rp->success = FALSE;
+            continue;
+        }
         pix1 = pixScaleToSize(pix0, 144, 108);
         pixaReplacePix(pixa, n - 1 - i, pix1, NULL);
         pixDestroy(&pix0);
     }
     pixd = pixaDisplayTiledInRows(pixa, 32, 1000, 1.0, 0, 25, 2);
     pixDisplayWithTitle(pixd, 700, 100, NULL, rp->display);
-    pixWrite("/tmp/lept/regout/pix3.jpg", pixd, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/regout/pixa2-3.jpg", pixd, IFF_JFIF_JPEG);
     pixDestroy(&pixd);
     sarrayDestroy(&sa3);
 

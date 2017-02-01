@@ -32,12 +32,6 @@
  *       - global linear color mapping and extraction of color magnitude
  */
 
-#ifndef  _WIN32
-#include <unistd.h>
-#else
-#include <windows.h>   /* for Sleep() */
-#endif  /* _WIN32 */
-
 #include "allheaders.h"
 
 int main(int    argc,
@@ -49,7 +43,7 @@ l_uint32      pixel;
 GPLOT        *gplot1, *gplot2;
 NUMA         *naseq, *na;
 NUMAA        *naa1, *naa2;
-PIX          *pixs, *pixt, *pixt0, *pixt1, *pixt2;
+PIX          *pixs, *pix0, *pix1, *pix2, *pix3;
 PIX          *pixr, *pixg, *pixb;  /* for color content extraction */
 PIXA         *pixa, *pixat;
 PIXCMAP      *cmap;
@@ -67,39 +61,39 @@ L_REGPARAMS  *rp;
     for (i = 0; i < 19; i++) {
         convertHSVToRGB((240 * i / 18), 255, 255, &rval, &gval, &bval);
         composeRGBPixel(rval, gval, bval, &pixel);
-        pixt1 = pixCreate(50, 100, 32);
-        pixSetAllArbitrary(pixt1, pixel);
-        pixaAddPix(pixat, pixt1, L_INSERT);
+        pix1 = pixCreate(50, 100, 32);
+        pixSetAllArbitrary(pix1, pixel);
+        pixaAddPix(pixat, pix1, L_INSERT);
     }
-    pixt2 = pixaDisplayTiledInRows(pixat, 32, 1100, 1.0, 0, 0, 0);
-    regTestWritePixAndCheck(rp, pixt2, IFF_PNG);  /* 0 */
-    pixaAddPix(pixa, pixt2, L_INSERT);
+    pix2 = pixaDisplayTiledInRows(pixat, 32, 1100, 1.0, 0, 0, 0);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 0 */
+    pixaAddPix(pixa, pix2, L_INSERT);
     pixaDestroy(&pixat);
 
         /* Colorspace conversion in rgb */
     pixs = pixRead("wyom.jpg");
     pixaAddPix(pixa, pixs, L_INSERT);
-    pixt = pixConvertRGBToHSV(NULL, pixs);
-    regTestWritePixAndCheck(rp, pixt, IFF_JFIF_JPEG);  /* 1 */
-    pixaAddPix(pixa, pixt, L_COPY);
-    pixConvertHSVToRGB(pixt, pixt);
-    regTestWritePixAndCheck(rp, pixt, IFF_JFIF_JPEG);  /* 2 */
-    pixaAddPix(pixa, pixt, L_INSERT);
+    pix3 = pixConvertRGBToHSV(NULL, pixs);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 1 */
+    pixaAddPix(pixa, pix3, L_COPY);
+    pixConvertHSVToRGB(pix3, pix3);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 2 */
+    pixaAddPix(pixa, pix3, L_INSERT);
 
         /* Colorspace conversion on a colormap */
-    pixt = pixOctreeQuantNumColors(pixs, 25, 0);
-    regTestWritePixAndCheck(rp, pixt, IFF_JFIF_JPEG);  /* 3 */
-    pixaAddPix(pixa, pixt, L_COPY);
-    cmap = pixGetColormap(pixt);
+    pix3 = pixOctreeQuantNumColors(pixs, 25, 0);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 3 */
+    pixaAddPix(pixa, pix3, L_COPY);
+    cmap = pixGetColormap(pix3);
     if (rp->display) pixcmapWriteStream(stderr, cmap);
     pixcmapConvertRGBToHSV(cmap);
     if (rp->display) pixcmapWriteStream(stderr, cmap);
-    regTestWritePixAndCheck(rp, pixt, IFF_JFIF_JPEG);  /* 4 */
-    pixaAddPix(pixa, pixt, L_COPY);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 4 */
+    pixaAddPix(pixa, pix3, L_COPY);
     pixcmapConvertHSVToRGB(cmap);
     if (rp->display) pixcmapWriteStream(stderr, cmap);
-    regTestWritePixAndCheck(rp, pixt, IFF_JFIF_JPEG);  /* 5 */
-    pixaAddPix(pixa, pixt, L_INSERT);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 5 */
+    pixaAddPix(pixa, pix3, L_INSERT);
 
         /* Color content extraction */
     pixColorContent(pixs, 0, 0, 0, 0, &pixr, &pixg, &pixb);
@@ -132,32 +126,32 @@ L_REGPARAMS  *rp;
         rwhite = 100 + 5 * i;
         gwhite = 200 - 5 * i;
         bwhite = 150;
-        pixt0 = pixGlobalNormRGB(NULL, pixs, rwhite, gwhite, bwhite, 255);
-        pixaAddPix(pixat, pixt0, L_INSERT);
-        pixt1 = pixColorMagnitude(pixs, rwhite, gwhite, bwhite,
+        pix0 = pixGlobalNormRGB(NULL, pixs, rwhite, gwhite, bwhite, 255);
+        pixaAddPix(pixat, pix0, L_INSERT);
+        pix1 = pixColorMagnitude(pixs, rwhite, gwhite, bwhite,
                                   L_MAX_DIFF_FROM_AVERAGE_2);
         for (j = 0; j < 6; j++) {
-            pixt2 = pixThresholdToBinary(pixt1, 30 + 10 * j);
-            pixInvert(pixt2, pixt2);
-            pixCountPixels(pixt2, &count, NULL);
+            pix2 = pixThresholdToBinary(pix1, 30 + 10 * j);
+            pixInvert(pix2, pix2);
+            pixCountPixels(pix2, &count, NULL);
             na = numaaGetNuma(naa1, j, L_CLONE);
             numaAddNumber(na, (l_float32)count / (l_float32)(w * h));
             numaDestroy(&na);
-            pixDestroy(&pixt2);
+            pixDestroy(&pix2);
         }
-        pixDestroy(&pixt1);
-        pixt1 = pixColorMagnitude(pixs, rwhite, gwhite, bwhite,
+        pixDestroy(&pix1);
+        pix1 = pixColorMagnitude(pixs, rwhite, gwhite, bwhite,
                                   L_MAX_MIN_DIFF_FROM_2);
         for (j = 0; j < 6; j++) {
-            pixt2 = pixThresholdToBinary(pixt1, 30 + 10 * j);
-            pixInvert(pixt2, pixt2);
-            pixCountPixels(pixt2, &count, NULL);
+            pix2 = pixThresholdToBinary(pix1, 30 + 10 * j);
+            pixInvert(pix2, pix2);
+            pixCountPixels(pix2, &count, NULL);
             na = numaaGetNuma(naa2, j, L_CLONE);
             numaAddNumber(na, (l_float32)count / (l_float32)(w * h));
             numaDestroy(&na);
-            pixDestroy(&pixt2);
+            pixDestroy(&pix2);
         }
-        pixDestroy(&pixt1);
+        pixDestroy(&pix1);
     }
     gplot1 = gplotCreate("/tmp/lept/regout/colorspace.10", GPLOT_PNG,
                          "Fraction with given color (diff from average)",
@@ -178,31 +172,24 @@ L_REGPARAMS  *rp;
     gplotMakeOutput(gplot2);
     gplotDestroy(&gplot1);
     gplotDestroy(&gplot2);
-    pixt1 = pixaDisplayTiledAndScaled(pixat, 32, 250, 4, 0, 10, 2);
-    regTestWritePixAndCheck(rp, pixt1, IFF_JFIF_JPEG);  /* 9 */
-    pixaAddPix(pixa, pixt1, L_INSERT);
-    pixDisplayWithTitle(pixt1, 0, 100, "Color magnitude", rp->display);
+    pix1 = pixaDisplayTiledAndScaled(pixat, 32, 250, 4, 0, 10, 2);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 9 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDisplayWithTitle(pix1, 0, 100, "Color magnitude", rp->display);
     pixaDestroy(&pixat);
     numaDestroy(&naseq);
     numaaDestroy(&naa1);
     numaaDestroy(&naa2);
-
-        /* Give gnuplot time to write out the files */
-#ifndef  _WIN32
-    sleep(1);
-#else
-    Sleep(1000);
-#endif  /* _WIN32 */
 
         /* Save as golden files, or check against them */
     regTestCheckFile(rp, "/tmp/lept/regout/colorspace.10.png");  /* 10 */
     regTestCheckFile(rp, "/tmp/lept/regout/colorspace.11.png");  /* 11 */
 
     if (rp->display) {
-        pixt = pixRead("/tmp/lept/regout/colorspace.10.png");
-        pixaAddPix(pixa, pixt, L_INSERT);
-        pixt = pixRead("/tmp/lept/regout/colorspace.11.png");
-        pixaAddPix(pixa, pixt, L_INSERT);
+        pix3 = pixRead("/tmp/lept/regout/colorspace.10.png");
+        pixaAddPix(pixa, pix3, L_INSERT);
+        pix3 = pixRead("/tmp/lept/regout/colorspace.11.png");
+        pixaAddPix(pixa, pix3, L_INSERT);
         pixaConvertToPdf(pixa, 0, 1.0, 0, 0, "colorspace tests",
                          "/tmp/lept/regout/colorspace.pdf");
         L_INFO("Output pdf: /tmp/lept/regout/colorspace.pdf\n", rp->testname);

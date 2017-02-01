@@ -25,7 +25,7 @@
  *====================================================================*/
 
 /*!
- *      Top-level fast binary morphology with auto-generated sels
+ * \brief       Top-level fast binary morphology with auto-generated sels
  *
  *             PIX     *pixMorphDwa_1()
  *             PIX     *pixFMorphopGen_1()
@@ -103,21 +103,23 @@ static char  SEL_NAMES[][80] = {
                              "sel_5dm"};
 
 /*!
- *  pixMorphDwa_1()
+ * \brief   pixMorphDwa_1()
  *
- *      Input:  pixd (usual 3 choices: null, == pixs, != pixs)
- *              pixs (1 bpp)
- *              operation  (L_MORPH_DILATE, L_MORPH_ERODE,
- *                          L_MORPH_OPEN, L_MORPH_CLOSE)
- *              sel name
- *      Return: pixd
+ * \param[in]    pixd usual 3 choices: null, == pixs, != pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    operation  L_MORPH_DILATE, L_MORPH_ERODE,
+ *                          L_MORPH_OPEN, L_MORPH_CLOSE
+ * \param[in]    sel name
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This simply adds a border, calls the appropriate
  *          pixFMorphopGen_*(), and removes the border.
  *          See the notes for that function.
  *      (2) The size of the border depends on the operation
  *          and the boundary conditions.
+ * </pre>
  */
 PIX *
 pixMorphDwa_1(PIX     *pixd,
@@ -157,16 +159,17 @@ PIX     *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  pixFMorphopGen_1()
+ * \brief   pixFMorphopGen_1()
  *
- *      Input:  pixd (usual 3 choices: null, == pixs, != pixs)
- *              pixs (1 bpp)
- *              operation  (L_MORPH_DILATE, L_MORPH_ERODE,
- *                          L_MORPH_OPEN, L_MORPH_CLOSE)
- *              sel name
- *      Return: pixd
+ * \param[in]    pixd usual 3 choices: null, == pixs, != pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    operation  L_MORPH_DILATE, L_MORPH_ERODE,
+ *                          L_MORPH_OPEN, L_MORPH_CLOSE
+ * \param[in]    sel name
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a dwa operation, and the Sels must be limited in
  *          size to not more than 31 pixels about the origin.
  *      (2) A border of appropriate size (32 pixels, or 64 pixels
@@ -176,6 +179,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *          before erosion and dilation.
  *      (4) The closing operation is safe; no pixels can be removed
  *          near the boundary.
+ * </pre>
  */
 PIX *
 pixFMorphopGen_1(PIX     *pixd,
@@ -270,4 +274,3 @@ PIX       *pixt;
 
     return pixd;
 }
-

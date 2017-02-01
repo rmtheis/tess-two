@@ -24,10 +24,12 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  zlibmemstub.c
+/*!
+ * \file zlibmemstub.c
+ * <pre>
  *
  *     Stubs for zlibmem.c functions
+ * </pre>
  */
 
 #ifdef HAVE_CONFIG_H

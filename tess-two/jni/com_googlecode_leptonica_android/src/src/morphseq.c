@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  morphseq.c
+/*!
+ * \file morphseq.c
+ * <pre>
  *
  *      Run a sequence of binary rasterop morphological operations
  *            PIX     *pixMorphSequence()
@@ -47,6 +48,7 @@
  *
  *      Run a sequence of color morphological operations
  *            PIX     *pixColorMorphSequence()
+ * </pre>
  */
 
 #include <string.h>
@@ -56,18 +58,19 @@
  *         Run a sequence of binary rasterop morphological operations      *
  *-------------------------------------------------------------------------*/
 /*!
- *  pixMorphSequence()
+ * \brief   pixMorphSequence()
  *
- *      Input:  pixs
- *              sequence (string specifying sequence)
- *              dispsep (controls debug display of each result in the sequence:
+ * \param[in]    pixs
+ * \param[in]    sequence string specifying sequence
+ * \param[in]    dispsep controls debug display of each result in the sequence:
  *                       0: no output
  *                       > 0: gives horizontal separation in pixels between
  *                            successive displays
- *                       < 0: pdf output; abs(dispsep) is used for naming)
- *      Return: pixd, or null on error
+ *                       < 0: pdf output; abs(dispsep) is used for naming
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does rasterop morphology on binary images.
  *      (2) This runs a pipeline of operations; no branching is allowed.
  *      (3) This only uses brick Sels, which are created on the fly.
@@ -84,9 +87,9 @@
  *      (9) Thanks to Dar-Shyang Lee, who had the idea for this and
  *          built the first implementation.
  *      (10) The sequence string is formatted as follows:
- *            - An arbitrary number of operations,  each separated
+ *            ~ An arbitrary number of operations,  each separated
  *              by a '+' character.  White space is ignored.
- *            - Each operation begins with a case-independent character
+ *            ~ Each operation begins with a case-independent character
  *              specifying the operation:
  *                 d or D  (dilation)
  *                 e or E  (erosion)
@@ -95,12 +98,12 @@
  *                 r or R  (rank binary reduction)
  *                 x or X  (replicative binary expansion)
  *                 b or B  (add a border of 0 pixels of this size)
- *            - The args to the morphological operations are bricks of hits,
+ *            ~ The args to the morphological operations are bricks of hits,
  *              and are formatted as a.b, where a and b are horizontal and
  *              vertical dimensions, rsp.
- *            - The args to the reduction are a sequence of up to 4 integers,
+ *            ~ The args to the reduction are a sequence of up to 4 integers,
  *              each from 1 to 4.
- *            - The arg to the expansion is a power of two, in the set
+ *            ~ The arg to the expansion is a power of two, in the set
  *              {2, 4, 8, 16}.
  *      (11) An example valid sequence is:
  *               "b32 + o1.3 + C3.1 + r23 + e2.2 + D3.2 + X4"
@@ -119,22 +122,23 @@
  *           a sufficiently large border as the first operation in
  *           the sequence.  This will be removed automatically at the
  *           end.  There are two cautions:
- *              - When computing what is sufficient, remember that if
+ *              ~ When computing what is sufficient, remember that if
  *                reductions are carried out, the border is also reduced.
- *              - The border is removed at the end, so if a border is
+ *              ~ The border is removed at the end, so if a border is
  *                added at the beginning, the result must be at the
  *                same resolution as the input!
+ * </pre>
  */
 PIX *
 pixMorphSequence(PIX         *pixs,
                  const char  *sequence,
                  l_int32      dispsep)
 {
-char    *rawop, *op, *fname;
-char     buf[256];
+char    *rawop, *op;
+char     fname[256];
 l_int32  nops, i, j, nred, fact, w, h, x, y, border, pdfout;
 l_int32  level[4];
-PIX     *pixt1, *pixt2;
+PIX     *pix1, *pix2;
 PIXA    *pixa;
 SARRAY  *sa;
 
@@ -161,12 +165,10 @@ SARRAY  *sa;
     if (pdfout) {
         pixa = pixaCreate(0);
         pixaAddPix(pixa, pixs, L_CLONE);
-        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
-        fname = genPathname(buf, NULL);
     }
     border = 0;
-    pixt1 = pixCopy(NULL, pixs);
-    pixt2 = NULL;
+    pix1 = pixCopy(NULL, pixs);
+    pix2 = NULL;
     x = y = 0;
     for (i = 0; i < nops; i++) {
         rawop = sarrayGetString(sa, i, L_NOCOPY);
@@ -176,24 +178,24 @@ SARRAY  *sa;
         case 'd':
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixDilateBrick(NULL, pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixDilateBrick(NULL, pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixErodeBrick(NULL, pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixErodeBrick(NULL, pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixOpenBrick(pixt1, pixt1, w, h);
+            pixOpenBrick(pix1, pix1, w, h);
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixCloseSafeBrick(pixt1, pixt1, w, h);
+            pixCloseSafeBrick(pix1, pix1, w, h);
             break;
         case 'r':
         case 'R':
@@ -202,21 +204,21 @@ SARRAY  *sa;
                 level[j] = op[j + 1] - '0';
             for (j = nred; j < 4; j++)
                 level[j] = 0;
-            pixt2 = pixReduceRankBinaryCascade(pixt1, level[0], level[1],
+            pix2 = pixReduceRankBinaryCascade(pix1, level[0], level[1],
                                                level[2], level[3]);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'x':
         case 'X':
             sscanf(&op[1], "%d", &fact);
-            pixt2 = pixExpandReplicate(pixt1, fact);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixExpandReplicate(pix1, fact);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'b':
         case 'B':
             sscanf(&op[1], "%d", &border);
-            pixt2 = pixAddBorder(pixt1, border, 0);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixAddBorder(pix1, border, 0);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
@@ -226,25 +228,26 @@ SARRAY  *sa;
 
             /* Debug output */
         if (dispsep > 0) {
-            pixDisplay(pixt1, x, y);
+            pixDisplay(pix1, x, y);
             x += dispsep;
         }
         if (pdfout)
-            pixaAddPix(pixa, pixt1, L_COPY);
+            pixaAddPix(pixa, pix1, L_COPY);
     }
     if (border > 0) {
-        pixt2 = pixRemoveBorder(pixt1, border);
-        pixSwapAndDestroy(&pixt1, &pixt2);
+        pix2 = pixRemoveBorder(pix1, border);
+        pixSwapAndDestroy(&pix1, &pix2);
     }
 
     if (pdfout) {
+        snprintf(fname, sizeof(fname), "/tmp/lept/seq_output_%d.pdf",
+                 L_ABS(dispsep));
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
-    return pixt1;
+    return pix1;
 }
 
 
@@ -252,18 +255,19 @@ SARRAY  *sa;
  *   Run a sequence of binary composite rasterop morphological operations  *
  *-------------------------------------------------------------------------*/
 /*!
- *  pixMorphCompSequence()
+ * \brief   pixMorphCompSequence()
  *
- *      Input:  pixs
- *              sequence (string specifying sequence)
- *              dispsep (controls debug display of each result in the sequence:
+ * \param[in]    pixs
+ * \param[in]    sequence string specifying sequence
+ * \param[in]    dispsep controls debug display of each result in the sequence:
  *                       0: no output
  *                       > 0: gives horizontal separation in pixels between
  *                            successive displays
- *                       < 0: pdf output; abs(dispsep) is used for naming)
- *      Return: pixd, or null on error
+ *                       < 0: pdf output; abs(dispsep) is used for naming
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does rasterop morphology on binary images, using composite
  *          operations for extra speed on large Sels.
  *      (2) Safe closing is used atomically.  However, if you implement a
@@ -273,9 +277,9 @@ SARRAY  *sa;
  *          remove it at the end.
  *      (3) For other usage details, see the notes for pixMorphSequence().
  *      (4) The sequence string is formatted as follows:
- *            - An arbitrary number of operations,  each separated
+ *            ~ An arbitrary number of operations,  each separated
  *              by a '+' character.  White space is ignored.
- *            - Each operation begins with a case-independent character
+ *            ~ Each operation begins with a case-independent character
  *              specifying the operation:
  *                 d or D  (dilation)
  *                 e or E  (erosion)
@@ -284,24 +288,25 @@ SARRAY  *sa;
  *                 r or R  (rank binary reduction)
  *                 x or X  (replicative binary expansion)
  *                 b or B  (add a border of 0 pixels of this size)
- *            - The args to the morphological operations are bricks of hits,
+ *            ~ The args to the morphological operations are bricks of hits,
  *              and are formatted as a.b, where a and b are horizontal and
  *              vertical dimensions, rsp.
- *            - The args to the reduction are a sequence of up to 4 integers,
+ *            ~ The args to the reduction are a sequence of up to 4 integers,
  *              each from 1 to 4.
- *            - The arg to the expansion is a power of two, in the set
+ *            ~ The arg to the expansion is a power of two, in the set
  *              {2, 4, 8, 16}.
+ * </pre>
  */
 PIX *
 pixMorphCompSequence(PIX         *pixs,
                      const char  *sequence,
                      l_int32      dispsep)
 {
-char    *rawop, *op, *fname;
-char     buf[256];
+char    *rawop, *op;
+char     fname[256];
 l_int32  nops, i, j, nred, fact, w, h, x, y, border, pdfout;
 l_int32  level[4];
-PIX     *pixt1, *pixt2;
+PIX     *pix1, *pix2;
 PIXA    *pixa;
 SARRAY  *sa;
 
@@ -328,12 +333,10 @@ SARRAY  *sa;
     if (pdfout) {
         pixa = pixaCreate(0);
         pixaAddPix(pixa, pixs, L_CLONE);
-        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
-        fname = genPathname(buf, NULL);
     }
     border = 0;
-    pixt1 = pixCopy(NULL, pixs);
-    pixt2 = NULL;
+    pix1 = pixCopy(NULL, pixs);
+    pix2 = NULL;
     x = y = 0;
     for (i = 0; i < nops; i++) {
         rawop = sarrayGetString(sa, i, L_NOCOPY);
@@ -343,24 +346,24 @@ SARRAY  *sa;
         case 'd':
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixDilateCompBrick(NULL, pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixDilateCompBrick(NULL, pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixErodeCompBrick(NULL, pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixErodeCompBrick(NULL, pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixOpenCompBrick(pixt1, pixt1, w, h);
+            pixOpenCompBrick(pix1, pix1, w, h);
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixCloseSafeCompBrick(pixt1, pixt1, w, h);
+            pixCloseSafeCompBrick(pix1, pix1, w, h);
             break;
         case 'r':
         case 'R':
@@ -369,21 +372,21 @@ SARRAY  *sa;
                 level[j] = op[j + 1] - '0';
             for (j = nred; j < 4; j++)
                 level[j] = 0;
-            pixt2 = pixReduceRankBinaryCascade(pixt1, level[0], level[1],
+            pix2 = pixReduceRankBinaryCascade(pix1, level[0], level[1],
                                                level[2], level[3]);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'x':
         case 'X':
             sscanf(&op[1], "%d", &fact);
-            pixt2 = pixExpandReplicate(pixt1, fact);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixExpandReplicate(pix1, fact);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'b':
         case 'B':
             sscanf(&op[1], "%d", &border);
-            pixt2 = pixAddBorder(pixt1, border, 0);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixAddBorder(pix1, border, 0);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
@@ -393,25 +396,26 @@ SARRAY  *sa;
 
             /* Debug output */
         if (dispsep > 0) {
-            pixDisplay(pixt1, x, y);
+            pixDisplay(pix1, x, y);
             x += dispsep;
         }
         if (pdfout)
-            pixaAddPix(pixa, pixt1, L_COPY);
+            pixaAddPix(pixa, pix1, L_COPY);
     }
     if (border > 0) {
-        pixt2 = pixRemoveBorder(pixt1, border);
-        pixSwapAndDestroy(&pixt1, &pixt2);
+        pix2 = pixRemoveBorder(pix1, border);
+        pixSwapAndDestroy(&pix1, &pix2);
     }
 
     if (pdfout) {
+        snprintf(fname, sizeof(fname), "/tmp/lept/seq_output_%d.pdf",
+                 L_ABS(dispsep));
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
-    return pixt1;
+    return pix1;
 }
 
 
@@ -419,18 +423,19 @@ SARRAY  *sa;
  *           Run a sequence of binary dwa morphological operations         *
  *-------------------------------------------------------------------------*/
 /*!
- *  pixMorphSequenceDwa()
+ * \brief   pixMorphSequenceDwa()
  *
- *      Input:  pixs
- *              sequence (string specifying sequence)
- *              dispsep (controls debug display of each result in the sequence:
+ * \param[in]    pixs
+ * \param[in]    sequence string specifying sequence
+ * \param[in]    dispsep controls debug display of each result in the sequence:
  *                       0: no output
  *                       > 0: gives horizontal separation in pixels between
  *                            successive displays
- *                       < 0: pdf output; abs(dispsep) is used for naming)
- *      Return: pixd, or null on error
+ *                       < 0: pdf output; abs(dispsep) is used for naming
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does dwa morphology on binary images.
  *      (2) This runs a pipeline of operations; no branching is allowed.
  *      (3) This only uses brick Sels that have been pre-compiled with
@@ -439,17 +444,18 @@ SARRAY  *sa;
  *      (5) This contains an interpreter, allowing sequences to be
  *          generated and run.
  *      (6) See pixMorphSequence() for further information about usage.
+ * </pre>
  */
 PIX *
 pixMorphSequenceDwa(PIX         *pixs,
                     const char  *sequence,
                     l_int32      dispsep)
 {
-char    *rawop, *op, *fname;
-char     buf[256];
+char    *rawop, *op;
+char     fname[256];
 l_int32  nops, i, j, nred, fact, w, h, x, y, border, pdfout;
 l_int32  level[4];
-PIX     *pixt1, *pixt2;
+PIX     *pix1, *pix2;
 PIXA    *pixa;
 SARRAY  *sa;
 
@@ -476,12 +482,10 @@ SARRAY  *sa;
     if (pdfout) {
         pixa = pixaCreate(0);
         pixaAddPix(pixa, pixs, L_CLONE);
-        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
-        fname = genPathname(buf, NULL);
     }
     border = 0;
-    pixt1 = pixCopy(NULL, pixs);
-    pixt2 = NULL;
+    pix1 = pixCopy(NULL, pixs);
+    pix2 = NULL;
     x = y = 0;
     for (i = 0; i < nops; i++) {
         rawop = sarrayGetString(sa, i, L_NOCOPY);
@@ -491,24 +495,24 @@ SARRAY  *sa;
         case 'd':
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixDilateBrickDwa(NULL, pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixDilateBrickDwa(NULL, pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixErodeBrickDwa(NULL, pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixErodeBrickDwa(NULL, pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixOpenBrickDwa(pixt1, pixt1, w, h);
+            pixOpenBrickDwa(pix1, pix1, w, h);
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixCloseBrickDwa(pixt1, pixt1, w, h);
+            pixCloseBrickDwa(pix1, pix1, w, h);
             break;
         case 'r':
         case 'R':
@@ -517,21 +521,21 @@ SARRAY  *sa;
                 level[j] = op[j + 1] - '0';
             for (j = nred; j < 4; j++)
                 level[j] = 0;
-            pixt2 = pixReduceRankBinaryCascade(pixt1, level[0], level[1],
+            pix2 = pixReduceRankBinaryCascade(pix1, level[0], level[1],
                                                level[2], level[3]);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'x':
         case 'X':
             sscanf(&op[1], "%d", &fact);
-            pixt2 = pixExpandReplicate(pixt1, fact);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixExpandReplicate(pix1, fact);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'b':
         case 'B':
             sscanf(&op[1], "%d", &border);
-            pixt2 = pixAddBorder(pixt1, border, 0);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixAddBorder(pix1, border, 0);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
@@ -541,25 +545,26 @@ SARRAY  *sa;
 
             /* Debug output */
         if (dispsep > 0) {
-            pixDisplay(pixt1, x, y);
+            pixDisplay(pix1, x, y);
             x += dispsep;
         }
         if (pdfout)
-            pixaAddPix(pixa, pixt1, L_COPY);
+            pixaAddPix(pixa, pix1, L_COPY);
     }
     if (border > 0) {
-        pixt2 = pixRemoveBorder(pixt1, border);
-        pixSwapAndDestroy(&pixt1, &pixt2);
+        pix2 = pixRemoveBorder(pix1, border);
+        pixSwapAndDestroy(&pix1, &pix2);
     }
 
     if (pdfout) {
+        snprintf(fname, sizeof(fname), "/tmp/lept/seq_output_%d.pdf",
+                 L_ABS(dispsep));
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
-    return pixt1;
+    return pix1;
 }
 
 
@@ -567,18 +572,19 @@ SARRAY  *sa;
  *      Run a sequence of binary composite dwa morphological operations    *
  *-------------------------------------------------------------------------*/
 /*!
- *  pixMorphCompSequenceDwa()
+ * \brief   pixMorphCompSequenceDwa()
  *
- *      Input:  pixs
- *              sequence (string specifying sequence)
- *              dispsep (controls debug display of each result in the sequence:
+ * \param[in]    pixs
+ * \param[in]    sequence string specifying sequence
+ * \param[in]    dispsep controls debug display of each result in the sequence:
  *                       0: no output
  *                       > 0: gives horizontal separation in pixels between
  *                            successive displays
- *                       < 0: pdf output; abs(dispsep) is used for naming)
- *      Return: pixd, or null on error
+ *                       < 0: pdf output; abs(dispsep) is used for naming
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does dwa morphology on binary images, using brick Sels.
  *      (2) This runs a pipeline of operations; no branching is allowed.
  *      (3) It implements all brick Sels that have dimensions up to 63
@@ -587,17 +593,18 @@ SARRAY  *sa;
  *      (5) This contains an interpreter, allowing sequences to be
  *          generated and run.
  *      (6) See pixMorphSequence() for further information about usage.
+ * </pre>
  */
 PIX *
 pixMorphCompSequenceDwa(PIX         *pixs,
                         const char  *sequence,
                         l_int32      dispsep)
 {
-char    *rawop, *op, *fname;
-char     buf[256];
+char    *rawop, *op;
+char     fname[256];
 l_int32  nops, i, j, nred, fact, w, h, x, y, border, pdfout;
 l_int32  level[4];
-PIX     *pixt1, *pixt2;
+PIX     *pix1, *pix2;
 PIXA    *pixa;
 SARRAY  *sa;
 
@@ -624,12 +631,10 @@ SARRAY  *sa;
     if (pdfout) {
         pixa = pixaCreate(0);
         pixaAddPix(pixa, pixs, L_CLONE);
-        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
-        fname = genPathname(buf, NULL);
     }
     border = 0;
-    pixt1 = pixCopy(NULL, pixs);
-    pixt2 = NULL;
+    pix1 = pixCopy(NULL, pixs);
+    pix2 = NULL;
     x = y = 0;
     for (i = 0; i < nops; i++) {
         rawop = sarrayGetString(sa, i, L_NOCOPY);
@@ -639,24 +644,24 @@ SARRAY  *sa;
         case 'd':
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixDilateCompBrickDwa(NULL, pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixDilateCompBrickDwa(NULL, pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixErodeCompBrickDwa(NULL, pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixErodeCompBrickDwa(NULL, pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixOpenCompBrickDwa(pixt1, pixt1, w, h);
+            pixOpenCompBrickDwa(pix1, pix1, w, h);
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixCloseCompBrickDwa(pixt1, pixt1, w, h);
+            pixCloseCompBrickDwa(pix1, pix1, w, h);
             break;
         case 'r':
         case 'R':
@@ -665,21 +670,21 @@ SARRAY  *sa;
                 level[j] = op[j + 1] - '0';
             for (j = nred; j < 4; j++)
                 level[j] = 0;
-            pixt2 = pixReduceRankBinaryCascade(pixt1, level[0], level[1],
+            pix2 = pixReduceRankBinaryCascade(pix1, level[0], level[1],
                                                level[2], level[3]);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'x':
         case 'X':
             sscanf(&op[1], "%d", &fact);
-            pixt2 = pixExpandReplicate(pixt1, fact);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixExpandReplicate(pix1, fact);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'b':
         case 'B':
             sscanf(&op[1], "%d", &border);
-            pixt2 = pixAddBorder(pixt1, border, 0);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixAddBorder(pix1, border, 0);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
@@ -689,25 +694,26 @@ SARRAY  *sa;
 
             /* Debug output */
         if (dispsep > 0) {
-            pixDisplay(pixt1, x, y);
+            pixDisplay(pix1, x, y);
             x += dispsep;
         }
         if (pdfout)
-            pixaAddPix(pixa, pixt1, L_COPY);
+            pixaAddPix(pixa, pix1, L_COPY);
     }
     if (border > 0) {
-        pixt2 = pixRemoveBorder(pixt1, border);
-        pixSwapAndDestroy(&pixt1, &pixt2);
+        pix2 = pixRemoveBorder(pix1, border);
+        pixSwapAndDestroy(&pix1, &pix2);
     }
 
     if (pdfout) {
+        snprintf(fname, sizeof(fname), "/tmp/lept/seq_output_%d.pdf",
+                 L_ABS(dispsep));
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
-    return pixt1;
+    return pix1;
 }
 
 
@@ -715,16 +721,18 @@ SARRAY  *sa;
  *            Parser verifier for binary morphological operations          *
  *-------------------------------------------------------------------------*/
 /*!
- *  morphSequenceVerify()
+ * \brief   morphSequenceVerify()
  *
- *      Input:  sarray (of operation sequence)
- *      Return: TRUE if valid; FALSE otherwise or on error
+ * \param[in]    sa string array of operation sequence
+ * \return  TRUE if valid; FALSE otherwise or on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does verification of valid binary morphological
  *          operation sequences.
  *      (2) See pixMorphSequence() for notes on valid operations
  *          in the sequence.
+ * </pre>
  */
 l_int32
 morphSequenceVerify(SARRAY  *sa)
@@ -854,20 +862,21 @@ l_int32  intlogbase2[5] = {1, 2, 3, 0, 4};  /* of arg/4 */
  *       Run a sequence of grayscale morphological operations      *
  *-----------------------------------------------------------------*/
 /*!
- *  pixGrayMorphSequence()
+ * \brief   pixGrayMorphSequence()
  *
- *      Input:  pixs
- *              sequence (string specifying sequence)
- *              dispsep (controls debug display of each result in the sequence:
+ * \param[in]    pixs
+ * \param[in]    sequence string specifying sequence
+ * \param[in]    dispsep controls debug display of each result in the sequence:
  *                       0: no output
  *                       > 0: gives horizontal separation in pixels between
  *                            successive displays
- *                       < 0: pdf output; abs(dispsep) is used for naming)
- *              dispy (if dispsep > 0, this gives the y-value of the
- *                     UL corner for display; otherwise it is ignored)
- *      Return: pixd, or null on error
+ *                       < 0: pdf output; abs(dispsep) is used for naming
+ * \param[in]    dispy if dispsep > 0, this gives the y-value of the
+ *                     UL corner for display; otherwise it is ignored
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This works on 8 bpp grayscale images.
  *      (2) This runs a pipeline of operations; no branching is allowed.
  *      (3) This only uses brick SELs.
@@ -880,24 +889,25 @@ l_int32  intlogbase2[5] = {1, 2, 3, 0, 4};  /* of arg/4 */
  *      (8) Sel sizes (width, height) must each be odd numbers.
  *      (9) Intermediate results can optionally be displayed
  *      (10) The sequence string is formatted as follows:
- *            - An arbitrary number of operations,  each separated
+ *            ~ An arbitrary number of operations,  each separated
  *              by a '+' character.  White space is ignored.
- *            - Each operation begins with a case-independent character
+ *            ~ Each operation begins with a case-independent character
  *              specifying the operation:
  *                 d or D  (dilation)
  *                 e or E  (erosion)
  *                 o or O  (opening)
  *                 c or C  (closing)
  *                 t or T  (tophat)
- *            - The args to the morphological operations are bricks of hits,
+ *            ~ The args to the morphological operations are bricks of hits,
  *              and are formatted as a.b, where a and b are horizontal and
  *              vertical dimensions, rsp. (each must be an odd number)
- *            - The args to the tophat are w or W (for white tophat)
+ *            ~ The args to the tophat are w or W (for white tophat)
  *              or b or B (for black tophat), followed by a.b as for
  *              the dilation, erosion, opening and closing.
  *           Example valid sequences are:
  *             "c5.3 + o7.5"
  *             "c9.9 + tw9.9"
+ * </pre>
  */
 PIX *
 pixGrayMorphSequence(PIX         *pixs,
@@ -905,10 +915,10 @@ pixGrayMorphSequence(PIX         *pixs,
                      l_int32      dispsep,
                      l_int32      dispy)
 {
-char    *rawop, *op, *fname;
-char     buf[256];
+char    *rawop, *op;
+char     fname[256];
 l_int32  nops, i, valid, w, h, x, pdfout;
-PIX     *pixt1, *pixt2;
+PIX     *pix1, *pix2;
 PIXA    *pixa;
 SARRAY  *sa;
 
@@ -989,11 +999,9 @@ SARRAY  *sa;
     if (pdfout) {
         pixa = pixaCreate(0);
         pixaAddPix(pixa, pixs, L_CLONE);
-        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
-        fname = genPathname(buf, NULL);
     }
-    pixt1 = pixCopy(NULL, pixs);
-    pixt2 = NULL;
+    pix1 = pixCopy(NULL, pixs);
+    pix2 = NULL;
     x = 0;
     for (i = 0; i < nops; i++) {
         rawop = sarrayGetString(sa, i, L_NOCOPY);
@@ -1003,35 +1011,35 @@ SARRAY  *sa;
         case 'd':
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixDilateGray(pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixDilateGray(pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixErodeGray(pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixErodeGray(pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixOpenGray(pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixOpenGray(pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixCloseGray(pixt1, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixCloseGray(pix1, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 't':
         case 'T':
             sscanf(&op[2], "%d.%d", &w, &h);
             if (op[1] == 'w' || op[1] == 'W')
-                pixt2 = pixTophat(pixt1, w, h, L_TOPHAT_WHITE);
+                pix2 = pixTophat(pix1, w, h, L_TOPHAT_WHITE);
             else   /* 'b' or 'B' */
-                pixt2 = pixTophat(pixt1, w, h, L_TOPHAT_BLACK);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+                pix2 = pixTophat(pix1, w, h, L_TOPHAT_BLACK);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
@@ -1041,21 +1049,22 @@ SARRAY  *sa;
 
             /* Debug output */
         if (dispsep > 0) {
-            pixDisplay(pixt1, x, dispy);
+            pixDisplay(pix1, x, dispy);
             x += dispsep;
         }
         if (pdfout)
-            pixaAddPix(pixa, pixt1, L_COPY);
+            pixaAddPix(pixa, pix1, L_COPY);
     }
 
     if (pdfout) {
+        snprintf(fname, sizeof(fname), "/tmp/lept/seq_output_%d.pdf",
+                 L_ABS(dispsep));
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
-    return pixt1;
+    return pix1;
 }
 
 
@@ -1063,20 +1072,21 @@ SARRAY  *sa;
  *         Run a sequence of color morphological operations        *
  *-----------------------------------------------------------------*/
 /*!
- *  pixColorMorphSequence()
+ * \brief   pixColorMorphSequence()
  *
- *      Input:  pixs
- *              sequence (string specifying sequence)
- *              dispsep (controls debug display of each result in the sequence:
+ * \param[in]    pixs
+ * \param[in]    sequence string specifying sequence
+ * \param[in]    dispsep controls debug display of each result in the sequence:
  *                       0: no output
  *                       > 0: gives horizontal separation in pixels between
  *                            successive displays
- *                       < 0: pdf output; abs(dispsep) is used for naming)
- *              dispy (if dispsep > 0, this gives the y-value of the
- *                     UL corner for display; otherwise it is ignored)
- *      Return: pixd, or null on error
+ *                       < 0: pdf output; abs(dispsep) is used for naming
+ * \param[in]    dispy if dispsep > 0, this gives the y-value of the
+ *                     UL corner for display; otherwise it is ignored
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This works on 32 bpp rgb images.
  *      (2) Each component is processed separately.
  *      (3) This runs a pipeline of operations; no branching is allowed.
@@ -1088,20 +1098,21 @@ SARRAY  *sa;
  *      (8) The format of the sequence string is defined below.
  *      (9) Intermediate results can optionally be displayed.
  *      (10) The sequence string is formatted as follows:
- *            - An arbitrary number of operations,  each separated
+ *            ~ An arbitrary number of operations,  each separated
  *              by a '+' character.  White space is ignored.
- *            - Each operation begins with a case-independent character
+ *            ~ Each operation begins with a case-independent character
  *              specifying the operation:
  *                 d or D  (dilation)
  *                 e or E  (erosion)
  *                 o or O  (opening)
  *                 c or C  (closing)
- *            - The args to the morphological operations are bricks of hits,
+ *            ~ The args to the morphological operations are bricks of hits,
  *              and are formatted as a.b, where a and b are horizontal and
  *              vertical dimensions, rsp. (each must be an odd number)
  *           Example valid sequences are:
  *             "c5.3 + o7.5"
  *             "D9.1"
+ * </pre>
  */
 PIX *
 pixColorMorphSequence(PIX         *pixs,
@@ -1109,10 +1120,10 @@ pixColorMorphSequence(PIX         *pixs,
                       l_int32      dispsep,
                       l_int32      dispy)
 {
-char    *rawop, *op, *fname;
-char     buf[256];
+char    *rawop, *op;
+char     fname[256];
 l_int32  nops, i, valid, w, h, x, pdfout;
-PIX     *pixt1, *pixt2;
+PIX     *pix1, *pix2;
 PIXA    *pixa;
 SARRAY  *sa;
 
@@ -1174,11 +1185,9 @@ SARRAY  *sa;
     if (pdfout) {
         pixa = pixaCreate(0);
         pixaAddPix(pixa, pixs, L_CLONE);
-        snprintf(buf, sizeof(buf), "/tmp/seq_output_%d.pdf", L_ABS(dispsep));
-        fname = genPathname(buf, NULL);
     }
-    pixt1 = pixCopy(NULL, pixs);
-    pixt2 = NULL;
+    pix1 = pixCopy(NULL, pixs);
+    pix2 = NULL;
     x = 0;
     for (i = 0; i < nops; i++) {
         rawop = sarrayGetString(sa, i, L_NOCOPY);
@@ -1188,26 +1197,26 @@ SARRAY  *sa;
         case 'd':
         case 'D':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixColorMorph(pixt1, L_MORPH_DILATE, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixColorMorph(pix1, L_MORPH_DILATE, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'e':
         case 'E':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixColorMorph(pixt1, L_MORPH_ERODE, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixColorMorph(pix1, L_MORPH_ERODE, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'o':
         case 'O':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixColorMorph(pixt1, L_MORPH_OPEN, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixColorMorph(pix1, L_MORPH_OPEN, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         case 'c':
         case 'C':
             sscanf(&op[1], "%d.%d", &w, &h);
-            pixt2 = pixColorMorph(pixt1, L_MORPH_CLOSE, w, h);
-            pixSwapAndDestroy(&pixt1, &pixt2);
+            pix2 = pixColorMorph(pix1, L_MORPH_CLOSE, w, h);
+            pixSwapAndDestroy(&pix1, &pix2);
             break;
         default:
             /* All invalid ops are caught in the first pass */
@@ -1217,19 +1226,20 @@ SARRAY  *sa;
 
             /* Debug output */
         if (dispsep > 0) {
-            pixDisplay(pixt1, x, dispy);
+            pixDisplay(pix1, x, dispy);
             x += dispsep;
         }
         if (pdfout)
-            pixaAddPix(pixa, pixt1, L_COPY);
+            pixaAddPix(pixa, pix1, L_COPY);
     }
 
     if (pdfout) {
+        snprintf(fname, sizeof(fname), "/tmp/lept/seq_output_%d.pdf",
+                 L_ABS(dispsep));
         pixaConvertToPdf(pixa, 0, 1.0, L_FLATE_ENCODE, 0, fname, fname);
-        LEPT_FREE(fname);
         pixaDestroy(&pixa);
     }
 
     sarrayDestroy(&sa);
-    return pixt1;
+    return pix1;
 }

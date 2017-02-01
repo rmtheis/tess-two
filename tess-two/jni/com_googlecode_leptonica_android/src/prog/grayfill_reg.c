@@ -44,7 +44,6 @@ PIX     *pixs2, *pixs2_8, *pixs3, *pixs3_8;
 PIX     *pixb1, *pixb2, *pixb3, *pixmin, *pixd;
 PIXA    *pixac;
 
-    pixDisplayWrite(NULL, -1);
     pixac = pixaCreate(0);
 
         /* Mask */

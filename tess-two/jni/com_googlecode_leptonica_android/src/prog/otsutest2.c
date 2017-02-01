@@ -43,11 +43,6 @@
  *   the fg and bg peaks, producing a much cleaner binarization.
  */
 
-#ifndef  _WIN32
-#include <unistd.h>
-#else
-#include <windows.h>   /* for Sleep() */
-#endif  /* _WIN32 */
 
 #include "allheaders.h"
 
@@ -59,67 +54,67 @@ char       textstr[256];
 l_int32    i, thresh, fgval, bgval;
 l_float32  scorefract;
 L_BMF     *bmf;
-PIX       *pixs, *pixb, *pixb2, *pixb3, *pixg, *pixp, *pixt1, *pixt2;
-PIXA      *pixa;
+PIX       *pixs, *pixb, *pixg, *pixp, *pix1, *pix2, *pix3;
+PIXA      *pixa1, *pixad;
 
     pixs = pixRead("1555.007.jpg");
     pixg = pixConvertTo8(pixs, 0);
-    bmf = bmfCreate("fonts", 8);
+    bmf = bmfCreate(NULL, 8);
+    pixad = pixaCreate(0);
+    lept_mkdir("lept/otsu");
     for (i = 0; i < 3; i++) {
-        pixa = pixaCreate(3);
+        pixa1 = pixaCreate(2);
         scorefract = 0.1 * i;
+            /* Get a 1 bpp version; use a single tile */
         pixOtsuAdaptiveThreshold(pixg, 2000, 2000, 0, 0, scorefract,
                                  NULL, &pixb);
-        pixSaveTiledOutline(pixb, pixa, 0.5, 1, 20, 2, 32);
-        pixSplitDistributionFgBg(pixg, scorefract, 1, &thresh, &fgval, &bgval, 1);
+        pixSaveTiledOutline(pixb, pixa1, 0.5, 1, 20, 2, 32);
+            /* Show the histogram of gray values and the split location */
+        pixSplitDistributionFgBg(pixg, scorefract, 1,
+                                 &thresh, &fgval, &bgval, &pixp);
         fprintf(stderr, "thresh = %d, fgval = %d, bgval = %d\n", thresh, fgval,
                  bgval);
-
-        /* Give gnuplot time to write out the plot */
-#ifndef  _WIN32
-    sleep(1);
-#else
-    Sleep(1000);
-#endif  /* _WIN32 */
-
-        pixp = pixRead("/tmp/histplot.png");
-        pixSaveTiled(pixp, pixa, 1.0, 0, 20, 1);
-        pixt1 = pixaDisplay(pixa, 0, 0);
+        pixSaveTiled(pixp, pixa1, 1.0, 0, 20, 1);
+            /* Join these together and add some text */
+        pix1 = pixaDisplay(pixa1, 0, 0);
         snprintf(textstr, sizeof(textstr),
              "Scorefract = %3.1f ........... Thresh = %d", scorefract, thresh);
-        pixt2 = pixAddSingleTextblock(pixt1, bmf, textstr, 0x00ff0000,
+        pix2 = pixAddSingleTextblock(pix1, bmf, textstr, 0x00ff0000,
                                       L_ADD_BELOW, NULL);
-        pixDisplay(pixt2, 100, 100);
-        snprintf(textstr, sizeof(textstr), "/tmp/otsu.%d.png", i);
-        pixWrite(textstr, pixt2, IFF_PNG);
+            /* Save and display the result */
+        pixaAddPix(pixad, pix2, L_INSERT);
+        snprintf(textstr, sizeof(textstr), "/tmp/lept/otsu/%03d.png", i);
+        pixWrite(textstr, pix2, IFF_PNG);
+        pixDisplay(pix2, 100, 100);
         pixDestroy(&pixb);
         pixDestroy(&pixp);
-        pixDestroy(&pixt1);
-        pixDestroy(&pixt2);
-        pixaDestroy(&pixa);
+        pixDestroy(&pix1);
+        pixaDestroy(&pixa1);
     }
 
-    pixa = pixaCreate(2);
+        /* Use a smaller tile for Otsu */
     for (i = 0; i < 2; i++) {
         scorefract = 0.1 * i;
         pixOtsuAdaptiveThreshold(pixg, 300, 300, 0, 0, scorefract,
                                  NULL, &pixb);
-        pixb2 = pixAddBlackOrWhiteBorder(pixb, 2, 2, 2, 2, L_GET_BLACK_VAL);
+        pix1 = pixAddBlackOrWhiteBorder(pixb, 2, 2, 2, 2, L_GET_BLACK_VAL);
+        pix2 = pixScale(pix1, 0.5, 0.5);
         snprintf(textstr, sizeof(textstr),
              "Scorefract = %3.1f", scorefract);
-        pixb3 = pixAddSingleTextblock(pixb2, bmf, textstr, 1,
-                                      L_ADD_BELOW, NULL);
-        pixSaveTiled(pixb3, pixa, 2, (i + 1) % 1, 20, 32);
+        pix3 = pixAddSingleTextblock(pix2, bmf, textstr, 1,
+                                     L_ADD_BELOW, NULL);
+        pixaAddPix(pixad, pix3, L_INSERT);
         pixDestroy(&pixb);
-        pixDestroy(&pixb2);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
     }
-    pixb = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/otsu-tiled.jpg", pixb, IFF_PNG);
-    pixDestroy(&pixb);
-    pixaDestroy(&pixa);
 
+    fprintf(stderr, "Writing to: /tmp/lept/otsu/result1.pdf\n");
+    pixaConvertToPdf(pixad, 75, 1.0, 0, 0, "Otsu thresholding",
+                     "/tmp/lept/otsu/result1.pdf");
     bmfDestroy(&bmf);
     pixDestroy(&pixs);
     pixDestroy(&pixg);
+    pixaDestroy(&pixad);
     return 0;
 }

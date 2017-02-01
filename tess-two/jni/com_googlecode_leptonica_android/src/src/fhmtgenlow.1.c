@@ -25,7 +25,7 @@
  *====================================================================*/
 
 /*!
- *     Low-level fast hit-miss transform with auto-generated sels
+ * \brief      Low-level fast hit-miss transform with auto-generated sels
  *
  *      Dispatcher:
  *             l_int32    fhmtgen_low_1()
@@ -52,7 +52,7 @@ static void  fhmt_1_9(l_uint32 *, l_int32, l_int32, l_int32, l_uint32 *, l_int32
  *                           Fast hmt dispatcher                       *
  *---------------------------------------------------------------------*/
 /*!
- *  fhmtgen_low_1()
+ * \brief   fhmtgen_low_1()
  *
  *       a dispatcher to appropriate low-level code
  */
@@ -442,4 +442,3 @@ l_int32             wpls2;
         }
     }
 }
-

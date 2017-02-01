@@ -51,14 +51,15 @@ static const l_int32  FinalColors[] = {4, 8, 16};
 int main(int    argc,
          char **argv)
 {
-char         namebuf[256];
-l_int32      i, j, k, maxdist, maxcolors, selsize, finalcolors;
-PIX         *pixs, *pixt, *pixd;
-PIXA        *pixa;
-static char  mainName[] = "colorseg_reg";
+l_int32       i, j, k, maxdist, maxcolors, selsize, finalcolors;
+l_int32       nc, rval, gval, bval;
+PIX          *pixs, *pix1, *pix2;
+PIXA         *pixa;
+PIXCMAP      *cmap, *cmapr;
+L_REGPARAMS  *rp;
 
-    if (argc != 1)
-        return ERROR_INT("Syntax: colorseg_reg", mainName, 1);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
 
     pixs = pixRead("tetons.jpg");
     for (k = 0; k < 3; k++) {
@@ -70,23 +71,41 @@ static char  mainName[] = "colorseg_reg";
             maxdist = 20 * i;
             for (j = 0; j <= 6; j++) {
                 selsize = j;
-                pixt = pixColorSegment(pixs, maxdist, maxcolors, selsize,
-                                       finalcolors);
-                pixSaveTiled(pixt, pixa, 1.0, j == 0 ? 1 : 0, 15, 32);
-                pixDestroy(&pixt);
+                pix1 = pixColorSegment(pixs, maxdist, maxcolors, selsize,
+                                       finalcolors, 0);
+                pixSaveTiled(pix1, pixa, 1.0, j == 0 ? 1 : 0, 15, 32);
+                pixDestroy(&pix1);
             }
         }
 
-        pixd = pixaDisplay(pixa, 0, 0);
-        pixDisplay(pixd, 100, 100);
-        sprintf(namebuf, "/tmp/junkcolorseg%d.jpg", k);
-        pixWrite(namebuf, pixd, IFF_JFIF_JPEG);
-        pixDestroy(&pixd);
+        pix2 = pixaDisplay(pixa, 0, 0);
+        regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 0, 1, 2 */
+        pixDisplayWithTitle(pix2, 100, k * 300, "colorseg", rp->display);
+        pixDestroy(&pix2);
         pixaDestroy(&pixa);
     }
-
     pixDestroy(&pixs);
-    return 0;
-}
 
+    pixs = pixRead("wyom.jpg");
+    pix1 = pixColorSegment(pixs, 50, 6, 6, 6, 0);
+    cmap = pixGetColormap(pix1);
+    nc = pixcmapGetCount(cmap);
+    cmapr = pixcmapCreateRandom(8, 0, 0);
+    for (i = 0; i < nc; i++) {
+        pix2 = pixMakeMaskFromVal(pix1, i);
+        pixcmapGetColor(cmapr, i, &rval, &gval, &bval);
+        pixRenderHashMaskArb(pixs, pix2, 0, 0, 8, 3, i % 4, 0,
+                             rval, gval, bval);
+        pixDestroy(&pix2);
+    }
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 3 */
+    regTestWritePixAndCheck(rp, pixs, IFF_JFIF_JPEG);  /* 4 */
+    pixDisplayWithTitle(pix1, 800, 0, NULL, rp->display);
+    pixDisplayWithTitle(pixs, 800, 640, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pixs);
+    pixcmapDestroy(&cmapr);
+
+    return regTestCleanup(rp);
+}
 

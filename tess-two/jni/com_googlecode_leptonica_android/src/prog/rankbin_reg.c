@@ -32,14 +32,7 @@
  *      (2) numaGetRankBinValues()
  */
 
-#ifndef  _WIN32
-#include <unistd.h>
-#else
-#include <windows.h>   /* for Sleep() */
-#endif  /* _WIN32 */
-
 #include "allheaders.h"
-
 
 int main(int    argc,
          char **argv)
@@ -90,13 +83,6 @@ L_REGPARAMS  *rp;
                  "height vs rank bins (30)");
     numaDestroy(&naw_med);
     numaDestroy(&nah_med);
-
-        /* Give gnuplot time to write out the files */
-#ifndef  _WIN32
-    sleep(2);
-#else
-    Sleep(2000);
-#endif  /* _WIN32 */
 
         /* Save as golden files, or check against them */
     regTestCheckFile(rp, "/tmp/lept/regout/w_10bin.png");  /* 0 */

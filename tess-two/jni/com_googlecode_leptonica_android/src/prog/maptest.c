@@ -104,7 +104,7 @@ RB_TYPE   *pval;
         /* Build a histogram the old-fashioned way */
     na = pixGetCmapHistogram(pix, 1);
     numaWrite("/tmp/lept/map/map2.na", na);
-    gplotSimple1(na, GPLOT_X11, "/tmp/lept/map/map1", NULL);
+    gplotSimple1(na, GPLOT_PNG, "/tmp/lept/map/map1", NULL);
     numaDestroy(&na);
 
         /* Build a separate map from (rgb) --> colormap index ... */
@@ -181,6 +181,7 @@ DisplayMapHistogram(L_AMAP      *m,
                     PIXCMAP     *cmap,
                     const char  *rootname)
 {
+char      buf[128];
 l_int32   i, n, ival;
 l_uint32  val32;
 NUMA     *na;
@@ -198,8 +199,9 @@ RB_TYPE  *pval;
             numaAddNumber(na, ival);
         }
     }
-/*    numaWrite("/tmp/lept/map/map.na", na); */
-    gplotSimple1(na, GPLOT_X11, rootname, NULL);
+    gplotSimple1(na, GPLOT_PNG, rootname, NULL);
+    snprintf(buf, sizeof(buf), "%s.png", rootname);
+    l_fileDisplay(buf, 700, 0, 1.0);
     numaDestroy(&na);
     return;
 }

@@ -53,6 +53,8 @@ static char  mainName[] = "rotatetest1";
     fileout = argv[3];
     deg2rad = 3.1415926535 / 180.;
 
+    lept_mkdir("lept/rotate");
+
     if ((pixs = pixRead(filein)) == NULL)
         return ERROR_INT("pix not made", mainName, 1);
     if (pixGetDepth(pixs) == 1) {
@@ -151,20 +153,21 @@ static char  mainName[] = "rotatetest1";
     startTimer();
     pix1 = pixRotateAMColor(pixs, 0.12, 0xffffff00);
     fprintf(stderr, " standard color rotate: %7.2f sec\n", stopTimer());
-    pixWrite("junkcolor1", pix1, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/rotate/color1.jpg", pix1, IFF_JFIF_JPEG);
     startTimer();
     pix2 = pixRotateAMColorFast(pixs, 0.12, 0xffffff00);
     fprintf(stderr, " fast color rotate: %7.2f sec\n", stopTimer());
-    pixWrite("junkcolor2", pix2, IFF_JFIF_JPEG);
+    pixWrite("/tmp/lept/rotate/color2.jpg", pix2, IFF_JFIF_JPEG);
     pixd = pixAbsDifference(pix1, pix2);
     pixGetColorHistogram(pixd, 1, &nar, &nag, &nab);
     naseq = numaMakeSequence(0., 1., 256);
-    gplot = gplotCreate("junk_absdiff", GPLOT_X11, "Number vs diff",
-                        "diff", "number");
+    gplot = gplotCreate("/tmp/lept/rotate/absdiff", GPLOT_PNG,
+                        "Number vs diff", "diff", "number");
     gplotAddPlot(gplot, naseq, nar, GPLOT_POINTS, "red");
     gplotAddPlot(gplot, naseq, nag, GPLOT_POINTS, "green");
     gplotAddPlot(gplot, naseq, nab, GPLOT_POINTS, "blue");
     gplotMakeOutput(gplot);
+    l_fileDisplay("/tmp/lept/rotate/absdiff.png", 100, 100, 1.0);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixDestroy(&pixd);
@@ -189,7 +192,7 @@ static char  mainName[] = "rotatetest1";
     ang = 7.0 * deg2rad;
     pixGetDimensions(pixs, &w, &h, NULL);
     pixd = pixRotate(pixs, ang, rotflag, L_BRING_IN_WHITE, w, h);
-    pixWrite("junkrot7", pixd, IFF_PNG);
+    pixWrite("/tmp/lept/rotate/rot7.png", pixd, IFF_PNG);
     for (i = 1; i < 180; i++) {
         pixs = pixd;
         pixd = pixRotate(pixs, ang, rotflag, L_BRING_IN_WHITE, w, h);
@@ -197,7 +200,7 @@ static char  mainName[] = "rotatetest1";
         pixDestroy(&pixs);
     }
 
-    pixWrite("junkspin", pixd, IFF_PNG);
+    pixWrite("/tmp/lept/rotate/spin.png", pixd, IFF_PNG);
     pixDisplay(pixd, 0, 0);
 
     for (i = 0; i < 180; i++) {
@@ -207,7 +210,7 @@ static char  mainName[] = "rotatetest1";
         pixDestroy(&pixs);
     }
 
-    pixWrite("junkunspin", pixd, IFF_PNG);
+    pixWrite("/tmp/lept/rotate/unspin.png", pixd, IFF_PNG);
     pixDisplay(pixd, 0, 500);
     pixDestroy(&pixd);
 #endif

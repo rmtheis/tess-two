@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  rotateorth.c
+/*!
+ * \file rotateorth.c
+ * <pre>
  *
  *      Top-level rotation by multiples of 90 degrees
  *            PIX             *pixRotateOrth()
@@ -46,6 +47,7 @@
  *            static l_uint8  *makeReverseByteTab1()
  *            static l_uint8  *makeReverseByteTab2()
  *            static l_uint8  *makeReverseByteTab4()
+ * </pre>
  */
 
 #include <string.h>
@@ -60,11 +62,11 @@ static l_uint8 *makeReverseByteTab4(void);
  *           Top-level rotation by multiples of 90 degrees          *
  *------------------------------------------------------------------*/
 /*!
- *  pixRotateOrth()
+ * \brief   pixRotateOrth()
  *
- *      Input:  pixs (all depths)
- *              quads (0-3; number of 90 degree cw rotations)
- *      Return: pixd, or null on error
+ * \param[in]    pixs all depths
+ * \param[in]    quads 0-3; number of 90 degree cw rotations
+ * \return  pixd, or NULL on error
  */
 PIX *
 pixRotateOrth(PIX     *pixs,
@@ -92,14 +94,15 @@ pixRotateOrth(PIX     *pixs,
  *                          180 degree rotation                     *
  *------------------------------------------------------------------*/
 /*!
- *  pixRotate180()
+ * \brief   pixRotate180()
  *
- *      Input:  pixd  (<optional>; can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (all depths)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs all depths
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does a 180 rotation of the image about the center,
  *          which is equivalent to a left-right flip about a vertical
  *          line through the image center, followed by a top-bottom
@@ -112,6 +115,7 @@ pixRotateOrth(PIX     *pixs,
  *          (a) pixd = pixRotate180(NULL, pixs);
  *          (b) pixRotate180(pixs, pixs);
  *          (c) pixRotate180(pixd, pixs);
+ * </pre>
  */
 PIX *
 pixRotate180(PIX  *pixd,
@@ -142,16 +146,18 @@ l_int32  d;
  *                           90 degree rotation                     *
  *------------------------------------------------------------------*/
 /*!
- *  pixRotate90()
+ * \brief   pixRotate90()
  *
- *      Input:  pixs (all depths)
- *              direction (1 = clockwise,  -1 = counter-clockwise)
- *      Return: pixd, or null on error
+ * \param[in]    pixs all depths
+ * \param[in]    direction 1 = clockwise,  -1 = counter-clockwise
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does a 90 degree rotation of the image about the center,
  *          either cw or ccw, returning a new pix.
  *      (2) The direction must be either 1 (cw) or -1 (ccw).
+ * </pre>
  */
 PIX *
 pixRotate90(PIX     *pixs,
@@ -371,14 +377,15 @@ PIX       *pixd;
  *                            Left-right flip                       *
  *------------------------------------------------------------------*/
 /*!
- *  pixFlipLR()
+ * \brief   pixFlipLR()
  *
- *      Input:  pixd  (<optional>; can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (all depths)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs all depths
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does a left-right flip of the image, which is
  *          equivalent to a rotation out of the plane about a
  *          vertical line through the image center.
@@ -393,7 +400,7 @@ PIX       *pixd;
  *      (4) If an existing pixd is not the same size as pixs, the
  *          image data will be reallocated.
  *      (5) The pixel access routines allow a trivial implementation.
- *          However, for d < 8, it is more efficient to right-justify
+ *          However, for d \< 8, it is more efficient to right-justify
  *          each line to a 32-bit boundary and then extract bytes and
  *          do pixel reversing.   In those cases, as in the 180 degree
  *          rotation, we right-shift the data (if necessary) to
@@ -402,14 +409,15 @@ PIX       *pixd;
  *          the pixels in each byte using a table.  These functions
  *          for 1, 2 and 4 bpp were tested against the "trivial"
  *          version (shown here for 4 bpp):
- *              for (i = 0; i < h; i++) {
+ *              for (i = 0; i \< h; i++) {
  *                  line = data + i * wpl;
  *                  memcpy(buffer, line, bpl);
- *                    for (j = 0; j < w; j++) {
+ *                    for (j = 0; j \< w; j++) {
  *                      val = GET_DATA_QBIT(buffer, w - 1 - j);
  *                        SET_DATA_QBIT(line, j, val);
  *                  }
  *              }
+ * </pre>
  */
 PIX *
 pixFlipLR(PIX  *pixd,
@@ -560,14 +568,15 @@ l_uint32  *line, *data, *buffer;
  *                            Top-bottom flip                       *
  *------------------------------------------------------------------*/
 /*!
- *  pixFlipTB()
+ * \brief   pixFlipTB()
  *
- *      Input:  pixd  (<optional>; can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (all depths)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs all depths
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does a top-bottom flip of the image, which is
  *          equivalent to a rotation out of the plane about a
  *          horizontal line through the image center.
@@ -584,6 +593,7 @@ l_uint32  *line, *data, *buffer;
  *      (5) This is simple and fast.  We use the memcpy function
  *          to do all the work on aligned data, regardless of pixel
  *          depth.
+ * </pre>
  */
 PIX *
 pixFlipTB(PIX  *pixd,
@@ -630,7 +640,7 @@ l_uint32  *data, *buffer;
  *                      Static byte reverse tables                  *
  *------------------------------------------------------------------*/
 /*!
- *  makeReverseByteTab1()
+ * \brief   makeReverseByteTab1()
  *
  *  Notes:
  *      (1) This generates an 8 bit lookup table for reversing
@@ -662,7 +672,7 @@ l_uint8  *tab;
 
 
 /*!
- *  makeReverseByteTab2()
+ * \brief   makeReverseByteTab2()
  *
  *  Notes:
  *      (1) This generates an 8 bit lookup table for reversing
@@ -689,7 +699,7 @@ l_uint8  *tab;
 
 
 /*!
- *  makeReverseByteTab4()
+ * \brief   makeReverseByteTab4()
  *
  *  Notes:
  *      (1) This generates an 8 bit lookup table for reversing

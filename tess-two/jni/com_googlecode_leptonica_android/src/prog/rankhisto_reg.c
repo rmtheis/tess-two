@@ -33,11 +33,6 @@
  */
 
 #include <math.h>
-#ifndef  _WIN32
-#include <unistd.h>
-#else
-#include <windows.h>   /* for Sleep() */
-#endif  /* _WIN32 */
 #include "allheaders.h"
 
 static PIXA *PixSavePlots1(void);
@@ -87,11 +82,6 @@ L_REGPARAMS  *rp;
     pixDestroy(&pixd);
     lept_free(marray);
 
-#ifndef  _WIN32
-    sleep(2);  /* give gnuplot time to write out the files */
-#else
-    Sleep(2000);
-#endif  /* _WIN32 */
         /* Save the histogram plots */
     pixa = PixSavePlots1();
     pixd = pixaDisplay(pixa, 0, 0);
@@ -135,12 +125,6 @@ L_REGPARAMS  *rp;
         numaDestroy(&narbin);
         numaDestroy(&nai);
     }
-
-#ifndef  _WIN32
-    sleep(2);  /* give gnuplot time to write out the files */
-#else
-    Sleep(2000);
-#endif  /* _WIN32 */
 
     pixa = PixSavePlots2();
     pixd = pixaDisplay(pixa, 0, 0);

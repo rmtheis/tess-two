@@ -41,16 +41,38 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMake Targets")
 project(leptonica C CXX)
 
 set(VERSION_MAJOR 1)
-set(VERSION_MINOR 73)
-set(VERSION_PLAIN ${VERSION_MAJOR}.${VERSION_MINOR})
+set(VERSION_MINOR 74)
+set(VERSION_PATCH 1)
+set(VERSION_PLAIN ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 find_package(GIF)
-#find_package(JP2K)
 find_package(JPEG)
 find_package(PNG)
 find_package(TIFF)
-#find_package(WEBP)
 find_package(ZLIB)
+
+find_package(PkgConfig)
+
+if (PKG_CONFIG_FOUND)
+pkg_check_modules(WEBP libwebp)
+pkg_check_modules(JP2K libopenjp2)
+endif()
+
+if(EXISTS ${PROJECT_SOURCE_DIR}/cppan)
+    add_subdirectory(cppan)
+
+    add_definitions(
+        -DHAVE_LIBGIF=1
+        -DHAVE_LIBJPEG=1
+        -DHAVE_LIBPNG=1
+        -DHAVE_LIBTIFF=1
+        -DHAVE_LIBWEBP=1
+        -DHAVE_LIBZ=1
+
+        -DHAVE_LIBJP2K=1
+        -DLIBJP2K_HEADER="openjpeg.h"
+    )
+endif()
 
 ###############################################################################
 #
@@ -65,7 +87,8 @@ endif()
 
 if (WIN32)
     if (MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0")
+        add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W1")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
     endif()
 endif()
@@ -83,7 +106,7 @@ include(Configure)
 
 configure_file(${AUTOCONFIG_SRC} ${AUTOCONFIG} @ONLY)
 
-set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src)
+set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/src" "${CMAKE_CURRENT_BINARY_DIR}/src")
 
 configure_file(
     ${CMAKE_SOURCE_DIR}/cmake/templates/LeptonicaConfig-version.cmake.in
@@ -102,23 +125,6 @@ add_definitions(-DHAVE_CONFIG_H)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
-
-########################################
-# FUNCTION add_prog_target
-########################################
-function(add_prog_target target)
-    set                             (${target}_src "${ARGN}")
-    if (WIN32)
-        set_source_files_properties (${${target}_src} PROPERTIES LANGUAGE CXX)
-    endif()
-    add_executable                  (${target} ${${target}_src})
-    if (NOT STATIC)
-        target_compile_definitions  (${target} PRIVATE -DLIBLEPT_IMPORTS)
-    endif()
-    target_link_libraries           (${target} leptonica)
-    set_target_properties           (${target} PROPERTIES FOLDER prog)
-endfunction(add_prog_target)
-########################################
 
 if (BUILD_PROG)
 add_subdirectory(prog)

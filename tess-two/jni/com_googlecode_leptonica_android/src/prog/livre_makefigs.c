@@ -33,6 +33,11 @@
  *   Scientific Publishing, Ltd, 2010.
  */
 
+#ifndef  _WIN32
+#include <unistd.h>
+#else
+#include <windows.h>   /* for Sleep() */
+#endif  /* _WIN32 */
 #include "allheaders.h"
 
 int main(int    argc,
@@ -45,45 +50,72 @@ static char  mainName[] = "livre_makefigs";
     if (argc != 1)
         return ERROR_INT(" Syntax:  livre_makefigs", mainName, 1);
 
+    lept_mkdir("lept/livre");
+
         /* Generate Figure 1 (page segmentation) */
     ignore = system("livre_seedgen");
-    snprintf(buf, sizeof(buf), "cp /tmp/seedgen.png /tmp/dia_fig1.png");
+    snprintf(buf, sizeof(buf),
+             "cp /tmp/lept/livre/seedgen.png /tmp/lept/livre/dia_fig1.png");
     ignore = system(buf);
 
         /* Generate Figures 2-5 (page segmentation) */
     snprintf(buf, sizeof(buf), "livre_pageseg pageseg2.tif");
     ignore = system(buf);
-    snprintf(buf, sizeof(buf), "cp /tmp/segout.1.png /tmp/dia_fig2.png");
+    snprintf(buf, sizeof(buf),
+             "cp /tmp/lept/livre/segout.1.png /tmp/lept/livre/dia_fig2.png");
     ignore = system(buf);
-    snprintf(buf, sizeof(buf), "cp /tmp/segout.2.png /tmp/dia_fig3.png");
+    snprintf(buf, sizeof(buf),
+             "cp /tmp/lept/livre/segout.2.png /tmp/lept/livre/dia_fig3.png");
     ignore = system(buf);
-    snprintf(buf, sizeof(buf), "cp /tmp/segout.3.png /tmp/dia_fig4.png");
+    snprintf(buf, sizeof(buf),
+             "cp /tmp/lept/livre/segout.3.png /tmp/lept/livre/dia_fig4.png");
     ignore = system(buf);
-    snprintf(buf, sizeof(buf), "cp /tmp/segout.4.png /tmp/dia_fig5.png");
+    snprintf(buf, sizeof(buf),
+             "cp /tmp/lept/livre/segout.4.png /tmp/lept/livre/dia_fig5.png");
     ignore = system(buf);
+#ifndef  _WIN32
+    sleep(1);
+#else
+    Sleep(1000);
+#endif  /* _WIN32 */
 
         /* Generate Figure 6 (hmt sels for text orientation) */
     ignore = system("livre_orient");
-    snprintf(buf, sizeof(buf), "cp /tmp/orient.png /tmp/dia_fig6.png");
+    snprintf(buf, sizeof(buf),
+             "cp /tmp/lept/livre/orient.png /tmp/lept/livre/dia_fig6.png");
     ignore = system(buf);
+#ifndef  _WIN32
+    sleep(1);
+#else
+    Sleep(1000);
+#endif  /* _WIN32 */
 
         /* Generate Figure 7 (hmt sel for fancy "Tribune") */
     ignore = system("livre_hmt 1 8");
-    snprintf(buf, sizeof(buf), "cp /tmp/hmt.png /tmp/dia_fig7.png");
+    snprintf(buf, sizeof(buf),
+             "cp /tmp/lept/livre/hmt.png /tmp/lept/livre/dia_fig7.png");
     ignore = system(buf);
+#ifndef  _WIN32
+    sleep(1);
+#else
+    Sleep(1000);
+#endif  /* _WIN32 */
 
         /* Generate Figure 8 (hmt sel for fancy "T") */
     ignore = system("livre_hmt 2 4");
-    snprintf(buf, sizeof(buf), "cp /tmp/hmt.png /tmp/dia_fig8.png");
+    snprintf(buf, sizeof(buf),
+             "cp /tmp/lept/livre/hmt.png /tmp/lept/livre/dia_fig8.png");
     ignore = system(buf);
 
         /* Generate Figure 9 (tophat background cleaning) */
     ignore = system("livre_tophat");
-    snprintf(buf, sizeof(buf), "cp /tmp/tophat.jpg /tmp/dia_fig9.jpg");
+    snprintf(buf, sizeof(buf),
+             "cp /tmp/lept/livre/tophat.jpg /tmp/lept/livre/dia_fig9.jpg");
     ignore = system(buf);
 
         /* Run livre_adapt to generate an expanded version of Figure 9 */
     ignore = system("livre_adapt");
+
 
     return 0;
 }

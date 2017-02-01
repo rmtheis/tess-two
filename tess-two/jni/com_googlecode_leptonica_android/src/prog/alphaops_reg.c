@@ -49,7 +49,6 @@
 
 static PIX *DoBlendTest(PIX *pix, BOX *box, l_uint32 val, l_float32 gamma,
                         l_int32 minval, l_int32 maxval, l_int32 which);
-void CmapEqual(PIXCMAP *cmap1, PIXCMAP *cmap2, l_int32 *pequal);
 
 int main(int    argc,
          char **argv)
@@ -258,7 +257,7 @@ L_REGPARAMS  *rp;
         /* Test binary serialization/deserialization of colormap with alpha */
     pixcmapSerializeToMemory(cmap, 4, &ncolors, &data);
     cmap2 = pixcmapDeserializeFromMemory(data, 4, ncolors);
-    CmapEqual(cmap, cmap2, &equal);
+    cmapEqual(cmap, cmap2, 4, &equal);
     regTestCompareValues(rp, TRUE, equal, 0.0);  /* 25 */
     pixcmapDestroy(&cmap2);
     lept_free(data);
@@ -270,7 +269,7 @@ L_REGPARAMS  *rp;
     fp = fopenReadStream("/tmp/lept/alpha/cmap.4");
     cmap2 = pixcmapReadStream(fp);
     fclose(fp);
-    CmapEqual(cmap, cmap2, &equal);
+    cmapEqual(cmap, cmap2, 4, &equal);
     regTestCompareValues(rp, TRUE, equal, 0.0);  /* 26 */
     pixcmapDestroy(&cmap2);
 
@@ -338,25 +337,3 @@ PIXA  *pixa;
   pixaDestroy(&pixa);
   return pixd;
 }
-
-void
-CmapEqual(PIXCMAP *cmap1, PIXCMAP *cmap2, l_int32 *pequal)
-{
-l_int32  n1, n2, i, rval1, gval1, bval1, aval1, rval2, gval2, bval2, aval2;
-
-    *pequal = FALSE;
-    n1 = pixcmapGetCount(cmap1);
-    n2 = pixcmapGetCount(cmap1);
-    if (n1 != n2) return;
-
-    for (i = 0; i < n1; i++) {
-        pixcmapGetRGBA(cmap1, i, &rval1, &gval1, &bval1, &aval1);
-        pixcmapGetRGBA(cmap2, i, &rval2, &gval2, &bval2, &aval2);
-        if ((rval1 != rval2) || (gval1 != gval2) ||
-            (bval1 != bval2) || (aval1 != aval2))
-            return;
-    }
-    *pequal = TRUE;
-    return;
-}
-

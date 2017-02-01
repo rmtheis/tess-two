@@ -25,7 +25,7 @@
  *====================================================================*/
 
 /*!
- *      Top-level fast hit-miss transform with auto-generated sels
+ * \brief       Top-level fast hit-miss transform with auto-generated sels
  *
  *             PIX     *pixHMTDwa_1()
  *             PIX     *pixFHMTGen_1()
@@ -55,17 +55,19 @@ static char  SEL_NAMES[][80] = {
                              "sel_lrc"};
 
 /*!
- *  pixHMTDwa_1()
+ * \brief   pixHMTDwa_1()
  *
- *      Input:  pixd (usual 3 choices: null, == pixs, != pixs)
- *              pixs (1 bpp)
- *              sel name
- *      Return: pixd
+ * \param[in]    pixd usual 3 choices: null, == pixs, != pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel name
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This simply adds a 32 pixel border, calls the appropriate
  *          pixFHMTGen_*(), and removes the border.
  *          See notes below for that function.
+ * </pre>
  */
 PIX *
 pixHMTDwa_1(PIX         *pixd,
@@ -97,14 +99,15 @@ PIX  *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  pixFHMTGen_1()
+ * \brief   pixFHMTGen_1()
  *
- *      Input:  pixd (usual 3 choices: null, == pixs, != pixs)
- *              pixs (1 bpp)
- *              sel name
- *      Return: pixd
+ * \param[in]    pixd usual 3 choices: null, == pixs, != pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel name
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a dwa implementation of the hit-miss transform
  *          on pixs by the sel.
  *      (2) The sel must be limited in size to not more than 31 pixels
@@ -112,6 +115,7 @@ PIX  *pixt1, *pixt2, *pixt3;
  *          can have any number of misses.
  *      (3) This handles all required setting of the border pixels
  *          before erosion and dilation.
+ * </pre>
  */
 PIX *
 pixFHMTGen_1(PIX         *pixd,
@@ -171,4 +175,3 @@ PIX       *pixt;
 
     return pixd;
 }
-

@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  ropiplow.c
+/*!
+ * \file ropiplow.c
+ * <pre>
  *
  *      Low level in-place full height vertical block transfer
  *
@@ -35,6 +36,7 @@
  *
  *           void     rasteropHipLow()
  *           void     shiftDataHorizontalLow()
+ * </pre>
  */
 
 
@@ -68,28 +70,30 @@ static const l_uint32 rmask32[] = {0x0,
  *                 Low-level Vertical In-place Rasterop               *
  *--------------------------------------------------------------------*/
 /*!
- *  rasteropVipLow()
+ * \brief   rasteropVipLow()
  *
- *      Input:  data   (ptr to image data)
- *              pixw   (width)
- *              pixh   (height)
- *              depth  (depth)
- *              wpl    (wpl)
- *              x      (x val of UL corner of rectangle)
- *              w      (width of rectangle)
- *              shift  (+ shifts data downward in vertical column)
- *      Return: 0 if OK; 1 on error.
+ * \param[in]    data   ptr to image data
+ * \param[in]    pixw   width
+ * \param[in]    pixh   height
+ * \param[in]    depth  depth
+ * \param[in]    wpl    wpl
+ * \param[in]    x      x val of UL corner of rectangle
+ * \param[in]    w      width of rectangle
+ * \param[in]    shift  + shifts data downward in vertical column
+ * \return  0 if OK; 1 on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This clears the pixels that are left exposed after the
  *          translation.  You can consider them as pixels that are
  *          shifted in from outside the image.  This can be later
  *          overridden by the incolor parameter in higher-level functions
- *          that call this.  For example, for images with depth > 1,
+ *          that call this.  For example, for images with depth \> 1,
  *          these pixels are cleared to black; to be white they
  *          must later be SET to white.  See, e.g., pixRasteropVip().
  *      (2) This function scales the width to accommodate any depth,
  *          performs clipping, and then does the in-place rasterop.
+ * </pre>
  */
 void
 rasteropVipLow(l_uint32  *data,
@@ -285,24 +289,26 @@ l_int32    i, j;
  *                 Low-level Horizontal In-place Rasterop             *
  *--------------------------------------------------------------------*/
 /*!
- *  rasteropHipLow()
+ * \brief   rasteropHipLow()
  *
- *      Input:  data   (ptr to image data)
- *              pixh   (height)
- *              depth  (depth)
- *              wpl    (wpl)
- *              y      (y val of UL corner of rectangle)
- *              h      (height of rectangle)
- *              shift  (+ shifts data to the left in a horizontal column)
- *      Return: 0 if OK; 1 on error.
+ * \param[in]    data   ptr to image data
+ * \param[in]    pixh   height
+ * \param[in]    depth  depth
+ * \param[in]    wpl    wpl
+ * \param[in]    y      y val of UL corner of rectangle
+ * \param[in]    h      height of rectangle
+ * \param[in]    shift  + shifts data to the left in a horizontal column
+ * \return  0 if OK; 1 on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This clears the pixels that are left exposed after the rasterop.
- *          Therefore, for Pix with depth > 1, these pixels become black,
+ *          Therefore, for Pix with depth \> 1, these pixels become black,
  *          and must be subsequently SET if they are to be white.
  *          For example, see pixRasteropHip().
  *      (2) This function performs clipping and calls shiftDataHorizontalLine()
  *          to do the in-place rasterop on each line.
+ * </pre>
  */
 void
 rasteropHipLow(l_uint32  *data,
@@ -335,21 +341,23 @@ l_uint32  *line;
 
 
 /*!
- *  shiftDataHorizontalLow()
+ * \brief   shiftDataHorizontalLow()
  *
- *      Input:  datad  (ptr to beginning of dest line)
- *              wpld   (wpl of dest)
- *              datas  (ptr to beginning of src line)
- *              wpls   (wpl of src)
- *              shift  (horizontal shift of block; >0 is to right)
- *      Return: void
+ * \param[in]    datad  ptr to beginning of dest line
+ * \param[in]    wpld   wpl of dest
+ * \param[in]    datas  ptr to beginning of src line
+ * \param[in]    wpls   wpl of src
+ * \param[in]    shift  horizontal shift of block; >0 is to right
+ * \return  void
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This can also be used for in-place operation; see, e.g.,
  *          rasteropHipLow().
  *      (2) We are clearing the pixels that are shifted in from
  *          outside the image.  This can be overridden by the
  *          incolor parameter in higher-level functions that call this.
+ * </pre>
  */
 void
 shiftDataHorizontalLow(l_uint32  *datad,

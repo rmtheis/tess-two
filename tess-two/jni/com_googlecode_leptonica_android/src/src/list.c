@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *   list.c
+/*!
+ * \file  list.c
+ * <pre>
  *
  *      Inserting and removing elements
  *
@@ -100,13 +101,13 @@
  *
  *      For example, to add an arbitrary data structure foo to the
  *      tail of a list, use
- *             listAddToTail(&head, &tail, pfoo);
+ *             listAddToTail(\&head, \&tail, pfoo);
  *      where head and tail are list cell ptrs and pfoo is
  *      a pointer to the foo object.
  *      And to remove an arbitrary data structure foo from a
  *      list, when you know the list cell element it is hanging from,
  *      use
- *             pfoo = listRemoveElement(&head, elem)
+ *             pfoo = listRemoveElement(\&head, elem)
  *      where head and elem are list cell ptrs and pfoo is a pointer
  *      to the foo object.  No casts are required for foo in
  *      either direction in ANSI C.  (However, casts are
@@ -117,8 +118,8 @@
  *      We use doubly-linked cells to simplify insertion
  *      and deletion, and to allow operations to proceed in either
  *      direction along the list.  With doubly-linked lists,
- *      it is tempting to make them circular, by setting head->prev
- *      to the tail of the list and tail->next to the head.
+ *      it is tempting to make them circular, by setting head-\>prev
+ *      to the tail of the list and tail-\>next to the head.
  *      The circular list costs nothing extra in storage, and
  *      allows operations to proceed from either end of the list
  *      with equal speed.  However, the circular link adds
@@ -136,15 +137,15 @@
  *      To run through a list forwards, use:
  *
  *          for (elem = head; elem; elem = nextelem) {
- *              nextelem = elem->next;   (in case we destroy elem)
- *              <do something with elem->data>
+ *              nextelem = elem-\>next;   (in case we destroy elem)
+ *              \<do something with elem-\>data\>
  *          }
  *
  *      To run through a list backwards, find the tail and use:
  *
  *          for (elem = tail; elem; elem = prevelem) {
- #              prevelem = elem->prev;  (in case we destroy elem)
- *              <do something with elem->data>
+ #              prevelem = elem-\>prev;  (in case we destroy elem)
+ *              \<do something with elem-\>data\>
  *          }
  *
  *      Even though these patterns are very simple, they are so common
@@ -152,11 +153,11 @@
  *      macros, this becomes:
  *
  *          L_BEGIN_LIST_FORWARD(head, elem)
- *              <do something with elem->data>
+ *              \<do something with elem-\>data\>
  *          L_END_LIST
  *
  *          L_BEGIN_LIST_REVERSE(tail, elem)
- *              <do something with elem->data>
+ *              \<do something with elem-\>data\>
  *          L_END_LIST
  *
  *      Note again that with macros, the application programmer does
@@ -170,20 +171,20 @@
  *      removing all items from the head of the list, you can use
  *
  *          while (head) {
- *              obj = listRemoveFromHead(&head);
- *              <do something with obj>
+ *              obj = listRemoveFromHead(\&head);
+ *              \<do something with obj\>
  *          }
  *
  *      Removing successive elements from the tail is equally simple:
  *
  *          while (tail) {
- *              obj = listRemoveFromTail(&head, &tail);
- *              <do something with obj>
+ *              obj = listRemoveFromTail(\&head, \&tail);
+ *              \<do something with obj\>
  *          }
  *
  *      When removing an arbitrary element from a list, use
  *
- *              obj = listRemoveElement(&head, elem);
+ *              obj = listRemoveElement(\&head, elem);
  *
  *      All the listRemove*() functions hand you the object,
  *      destroy the list cell to which it was attached, and
@@ -206,6 +207,7 @@
  *      around at any time, the list cells can be stored for
  *      later re-use in a stack (see the generic stack functions
  *      in stack.c).
+ * </pre>
  */
 
 #include <string.h>
@@ -216,17 +218,19 @@
  *                    Inserting and removing elements                  *
  *---------------------------------------------------------------------*/
 /*!
- *  listDestroy()
+ * \brief   listDestroy()
  *
- *      Input:  &head   (<to be nulled> head of list)
- *      Return: void
+ * \param[in,out]   phead   to be nulled; head of list
+ * \return  void
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This only destroys the cons cells.  Before destroying
  *          the list, it is necessary to remove all data and set the
  *          data pointers in each cons cell to NULL.
  *      (2) listDestroy() will give a warning message for each data
  *          ptr that is not NULL.
+ * </pre>
  */
 void
 listDestroy(DLLIST  **phead)
@@ -255,17 +259,19 @@ DLLIST  *elem, *next, *head;
 
 
 /*!
- *  listAddToHead()
+ * \brief   listAddToHead()
  *
- *      Input:  &head  (<optional> input head)
- *              data  (void* ptr, to be added)
- *      Return: 0 if OK; 1 on error
+ * \param[in,out]   phead  [optional] input head
+ * \param[in]    data  void* ptr, to be added
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This makes a new cell, attaches the data, and adds the
  *          cell to the head of the list.
  *      (2) When consing from NULL, be sure to initialize head to NULL
  *          before calling this function.
+ * </pre>
  */
 l_int32
 listAddToHead(DLLIST  **phead,
@@ -299,18 +305,19 @@ DLLIST  *cell, *head;
 
 
 /*!
- *  listAddToTail()
+ * \brief   listAddToTail()
  *
- *      Input:  &head  (<may be updated>, head can be null)
- *              &tail  (<updated>, tail can be null)
- *              data  (void* ptr, to be hung on tail cons cell)
- *      Return: 0 if OK; 1 on error
+ * \param[in,out]   phead  [may be updated], can be NULL
+ * \param[in,out]   ptail  [updated], can be NULL
+ * \param[in]    data  void* ptr, to be hung on tail cons cell
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This makes a new cell, attaches the data, and adds the
  *          cell to the tail of the list.
- *      (2) &head is input to allow the list to be "cons'd" up from NULL.
- *      (3) &tail is input to allow the tail to be updated
+ *      (2) \&head is input to allow the list to be "cons'd" up from NULL.
+ *      (3) \&tail is input to allow the tail to be updated
  *          for efficient sequential operation with this function.
  *      (4) We assume that if *phead and/or *ptail are not NULL,
  *          then they are valid addresses.  Therefore:
@@ -318,6 +325,7 @@ DLLIST  *cell, *head;
  *               head and tail to NULL.
  *           (b) when tail == NULL for an existing list, the tail
  *               will be found and updated.
+ * </pre>
  */
 l_int32
 listAddToTail(DLLIST  **phead,
@@ -360,24 +368,26 @@ DLLIST  *cell, *head, *tail;
 
 
 /*!
- *  listInsertBefore()
+ * \brief   listInsertBefore()
  *
- *      Input:  &head  (<optional> input head)
- *               elem  (list element to be inserted in front of;
- *                      must be null if head is null)
- *               data  (void*  address, to be added)
- *      Return: 0 if OK; 1 on error
+ * \param[in,out]   phead  [optional] input head
+ * \param[in]     elem  list element to be inserted in front of;
+ *                      must be NULL if head is NULL
+ * \param[in]     data  void*  address, to be added
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This can be called on a null list, in which case both
  *          head and elem must be null.
  *      (2) If you are searching through a list, looking for a condition
  *          to add an element, you can do something like this:
  *            L_BEGIN_LIST_FORWARD(head, elem)
- *                <identify an elem to insert before>
- *                listInsertBefore(&head, elem, data);
+ *                \<identify an elem to insert before\>
+ *                listInsertBefore(\&head, elem, data);
  *            L_END_LIST
  *
+ * </pre>
  */
 l_int32
 listInsertBefore(DLLIST  **phead,
@@ -421,24 +431,26 @@ DLLIST  *cell, *head;
 
 
 /*!
- *  listInsertAfter()
+ * \brief   listInsertAfter()
  *
- *      Input:  &head  (<optional> input head)
- *               elem  (list element to be inserted after;
- *                      must be null if head is null)
- *               data  (void*  ptr, to be added)
- *      Return: 0 if OK; 1 on error
+ * \param[in,out]   phead  [optional] input head
+ * \param[in]     elem  list element to be inserted after;
+ *                      must be NULL if head is NULL
+ * \param[in]     data  void*  ptr, to be added
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This can be called on a null list, in which case both
  *          head and elem must be null.  The head is included
  *          in the call to allow "consing" up from NULL.
  *      (2) If you are searching through a list, looking for a condition
  *          to add an element, you can do something like this:
  *            L_BEGIN_LIST_FORWARD(head, elem)
- *                <identify an elem to insert after>
- *                listInsertAfter(&head, elem, data);
+ *                \<identify an elem to insert after\>
+ *                listInsertAfter(\&head, elem, data);
  *            L_END_LIST
+ * </pre>
  */
 l_int32
 listInsertAfter(DLLIST  **phead,
@@ -481,17 +493,19 @@ DLLIST  *cell, *head;
 
 
 /*!
- *  listRemoveElement()
+ * \brief   listRemoveElement()
  *
- *      Input:  &head (<can be changed> input head)
- *              elem (list element to be removed)
- *      Return: data  (void* struct on cell)
+ * \param[in,out]   phead [can be changed] input head
+ * \param[in]    elem list element to be removed
+ * \return  data  void* struct on cell
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) in ANSI C, it is not necessary to cast return to actual type; e.g.,
- *             pix = listRemoveElement(&head, elem);
+ *             pix = listRemoveElement(\&head, elem);
  *          but in ANSI C++, it is necessary to do the cast:
- *             pix = (Pix *)listRemoveElement(&head, elem);
+ *             pix = (Pix *)listRemoveElement(\&head, elem);
+ * </pre>
  */
 void *
 listRemoveElement(DLLIST  **phead,
@@ -532,16 +546,18 @@ DLLIST  *head;
 
 
 /*!
- *  listRemoveFromHead()
+ * \brief   listRemoveFromHead()
  *
- *      Input:  &head (<to be updated> head of list)
- *      Return: data  (void* struct on cell), or null on error
+ * \param[in,out]   phead head of list [to be updated]
+ * \return  data  void* struct on cell, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) in ANSI C, it is not necessary to cast return to actual type; e.g.,
- *            pix = listRemoveFromHead(&head);
+ *            pix = listRemoveFromHead(\&head);
  *          but in ANSI C++, it is necessary to do the cast; e.g.,
- *            pix = (Pix *)listRemoveFromHead(&head);
+ *            pix = (Pix *)listRemoveFromHead(\&head);
+ * </pre>
  */
 void *
 listRemoveFromHead(DLLIST  **phead)
@@ -570,14 +586,15 @@ void    *data;
 
 
 /*!
- *  listRemoveFromTail()
+ * \brief   listRemoveFromTail()
  *
- *      Input:  &head (<may be changed>, head must NOT be null)
- *              &tail (<always updated>, tail may be null)
- *      Return: data  (void* struct on cell) or null on error
+ * \param[in,out]   phead [may be changed], head must NOT be NULL
+ * \param[in,out]   ptail [always updated], tail may be NULL
+ * \return  data  void* struct on cell or NULL on error
  *
- *  Notes:
- *      (1) We include &head so that it can be set to NULL if
+ * <pre>
+ * Notes:
+ *      (1) We include \&head so that it can be set to NULL if
  *          if the only element in the list is removed.
  *      (2) The function is relying on the fact that if tail is
  *          not NULL, then is is a valid address.  You can use
@@ -585,9 +602,10 @@ void    *data;
  *          which case  the tail is found and updated, and the
  *          removed element is returned.
  *      (3) In ANSI C, it is not necessary to cast return to actual type; e.g.,
- *            pix = listRemoveFromTail(&head, &tail);
+ *            pix = listRemoveFromTail(\&head, \&tail);
  *          but in ANSI C++, it is necessary to do the cast; e.g.,
- *            pix = (Pix *)listRemoveFromTail(&head, &tail);
+ *            pix = (Pix *)listRemoveFromTail(\&head, \&tail);
+ * </pre>
  */
 void *
 listRemoveFromTail(DLLIST  **phead,
@@ -626,13 +644,14 @@ void    *data;
  *                         Other list operations                       *
  *---------------------------------------------------------------------*/
 /*!
- *  listFindElement()
+ * \brief   listFindElement()
  *
- *      Input:  head  (list head)
- *              data  (void*  address, to be searched for)
- *      Return: cell  (the containing cell, or null if not found or on error)
+ * \param[in]    head  list head
+ * \param[in]    data  void*  address, to be searched for
+ * \return  cell  the containing cell, or NULL if not found or on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This returns a ptr to the cell, which is still embedded in
  *          the list.
  *      (2) This handle and the attached data have not been copied or
@@ -640,6 +659,7 @@ void    *data;
  *          violates our basic rule that every handle returned from a
  *          function is owned by that function and must be destroyed,
  *          but if rules aren't there to be broken, why have them?
+ * </pre>
  */
 DLLIST *
 listFindElement(DLLIST  *head,
@@ -664,10 +684,10 @@ DLLIST  *cell;
 
 
 /*!
- *  listFindTail()
+ * \brief   listFindTail()
  *
- *      Input:  head
- *      Return: tail, or null on error
+ * \param[in]    head
+ * \return  tail, or NULL on error
  */
 DLLIST *
 listFindTail(DLLIST  *head)
@@ -689,10 +709,10 @@ DLLIST  *cell;
 
 
 /*!
- *  listGetCount()
+ * \brief   listGetCount()
  *
- *      Input:  head  (of list)
- *      Return: number of elements; 0 if no list or on error
+ * \param[in]    head  of list
+ * \return  number of elements; 0 if no list or on error
  */
 l_int32
 listGetCount(DLLIST  *head)
@@ -714,13 +734,15 @@ DLLIST  *elem;
 
 
 /*!
- *  listReverse()
+ * \brief   listReverse()
  *
- *      Input:  &head  (<may be changed> list head)
- *      Return: 0 if OK, 1 on error
+ * \param[in,out]   phead  [may be changed] list head
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This reverses the list in-place.
+ * </pre>
  */
 l_int32
 listReverse(DLLIST  **phead)
@@ -747,15 +769,17 @@ DLLIST  *head, *rhead;
 
 
 /*!
- *  listJoin()
+ * \brief   listJoin()
  *
- *      Input:  &head1  (<may be changed> head of first list)
- *              &head2  (<to be nulled> head of second list)
- *      Return: 0 if OK, 1 on error
+ * \param[in,out]   phead1  [may be changed] head of first list
+ * \param[in,out]   phead2  to be nulled; head of second list
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The concatenated list is returned with head1 as the new head.
  *      (2) Both input ptrs must exist, though either can have the value NULL.
+ * </pre>
  */
 l_int32
 listJoin(DLLIST  **phead1,

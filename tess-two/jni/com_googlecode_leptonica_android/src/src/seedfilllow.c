@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  seedfilllow.c
+/*!
+ * \file seedfilllow.c
+ * <pre>
  *
  *      Seedfill:
  *      Gray seedfill (source: Luc Vincent:fast-hybrid-grayscale-reconstruction)
@@ -41,6 +42,7 @@
  *      Seed spread:
  *               void   seedspreadLow()
  *
+ * </pre>
  */
 
 #include <math.h>
@@ -58,7 +60,7 @@ typedef struct L_Pixel  L_PIXEL;
  *                 Vincent's Iterative Binary Seedfill                   *
  *-----------------------------------------------------------------------*/
 /*!
- *  seedfillBinaryLow()
+ * \brief   seedfillBinaryLow()
  *
  *  Notes:
  *      (1) This is an in-place fill, where the seed image is
@@ -261,7 +263,7 @@ l_uint32  *lines, *linem;
  *                 Vincent's Hybrid Grayscale Seedfill                *
  *-----------------------------------------------------------------------*/
 /*!
- *  seedfillGrayLow()
+ * \brief   seedfillGrayLow()
  *
  *  Notes:
  *      (1) The pixels are numbered as follows:
@@ -727,7 +729,7 @@ L_QUEUE  *lq_pixel;
 
 
 /*!
- *  seedfillGrayInvLow()
+ * \brief   seedfillGrayInvLow()
  *
  *  Notes:
  *      (1) The pixels are numbered as follows:
@@ -737,7 +739,7 @@ L_QUEUE  *lq_pixel;
  *          This low-level filling operation consists of two scans,
  *          raster and anti-raster, covering the entire seed image.
  *          During the anti-raster scan, every pixel p such that its
- *          current value could still be propogated during the next
+ *          current value could still be propagated during the next
  *          raster scanning is put into the FIFO-queue.
  *          Next step is the propagation step where where we update
  *          and propagate the values using FIFO structure created in
@@ -1193,7 +1195,7 @@ L_QUEUE  *lq_pixel;
  *                 Vincent's Iterative Grayscale Seedfill                *
  *-----------------------------------------------------------------------*/
 /*!
- *  seedfillGrayLowSimple()
+ * \brief   seedfillGrayLowSimple()
  *
  *  Notes:
  *      (1) The pixels are numbered as follows:
@@ -1359,7 +1361,7 @@ l_uint32  *lines, *linem;
 
 
 /*!
- *  seedfillGrayInvLowSimple()
+ * \brief   seedfillGrayInvLowSimple()
  *
  *  Notes:
  *      (1) The pixels are numbered as follows:
@@ -1520,7 +1522,7 @@ l_uint32  *lines, *linem;
  *                   Vincent's Distance Function method                  *
  *-----------------------------------------------------------------------*/
 /*!
- *  distanceFunctionLow()
+ * \brief   distanceFunctionLow()
  */
 void
 distanceFunctionLow(l_uint32  *datad,
@@ -1692,7 +1694,7 @@ l_uint32  *lined;
  *                 Seed spread (based on distance function)              *
  *-----------------------------------------------------------------------*/
 /*!
- *  seedspreadLow()
+ * \brief   seedspreadLow()
  *
  *    See pixSeedspread() for a brief description of the algorithm here.
  */

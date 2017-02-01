@@ -63,7 +63,7 @@ L_REGPARAMS  *rp;
     /* ---------------- Shortest path in binary maze ---------------- */
         /* Generate the maze */
     pixm = generateBinaryMaze(200, 200, 20, 20, 0.65, 0.25);
-    pixd = pixExpandBinaryReplicate(pixm, 3);
+    pixd = pixExpandBinaryReplicate(pixm, 3, 3);
     pixSaveTiledOutline(pixd, pixa, 1.0, 1, 20, 2, 32);
     pixDestroy(&pixd);
 

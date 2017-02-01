@@ -27,106 +27,114 @@
 /*
  * conncomp_reg.c
  *
- *        Regression test for connected components (both 4 and 8
- *        connected), including regeneration of the original
- *        image from the components.  This is also an implicit
- *        test of rasterop.
+ *      Regression test for connected components (both 4 and 8
+ *      connected), including regeneration of the original
+ *      image from the components.  This is also an implicit
+ *      test of rasterop.
  */
 
-#include <string.h>
 #include "allheaders.h"
-
-#define  NTIMES             10
 
 int main(int    argc,
          char **argv)
 {
-l_uint8     *array1, *array2;
-l_int32      n, np, same, diff;
-size_t       nbytes1, nbytes2;
-FILE        *fp;
-BOXA        *boxa, *boxa2;
-PIX         *pixs, *pixd;
-PIXA        *pixa;
-PIXCMAP     *cmap;
-static char  mainName[] = "conncomp_reg";
+l_uint8      *array1, *array2;
+l_int32       n1, n2, n3;
+size_t        size1, size2;
+FILE         *fp;
+BOXA         *boxa1, *boxa2;
+PIX          *pixs, *pix1;
+PIXA         *pixa1;
+PIXCMAP      *cmap;
+L_REGPARAMS  *rp;
 
-    if (argc != 1)
-        return ERROR_INT(" Syntax: conncomp_reg", mainName, 1);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
 
     pixs = pixRead("feyn.tif");
 
-        /* Test pixConnComp() with output to both boxa and pixa */
+    /* --------------------------------------------------------------- *
+     *         Test pixConnComp() and pixCountConnComp(),              *
+     *            with output to both boxa and pixa                    *
+     * --------------------------------------------------------------- */
         /* First, test with 4-cc */
-    boxa = pixConnComp(pixs, &pixa, 4);
-    n = boxaGetCount(boxa);
-    fprintf(stderr, "Number of 4 c.c. b.b: %d\n", n);
-    np = pixaGetCount(pixa);
-    fprintf(stderr, "Number of 4 c.c. pix: %d\n", np);
-    pixd = pixaDisplay(pixa, pixGetWidth(pixs), pixGetHeight(pixs));
-    pixWrite("/tmp/junkout1.png", pixd, IFF_PNG);
-    pixEqual(pixs, pixd, &same);
-    if (same == 1)
-        fprintf(stderr, "Source and reconstructed pix are the same.\n");
-    else
-        fprintf(stderr, "Error: source and reconstructed pix differ!\n");
-    pixaDestroy(&pixa);
-    boxaDestroy(&boxa);
-    pixDestroy(&pixd);
+    boxa1= pixConnComp(pixs, &pixa1, 4);
+    n1 = boxaGetCount(boxa1);
+    boxa2= pixConnComp(pixs, NULL, 4);
+    n2 = boxaGetCount(boxa2);
+    pixCountConnComp(pixs, 4, &n3);
+    fprintf(stderr, "Number of 4 c.c.:  n1 = %d; n2 = %d, n3 = %d\n",
+            n1, n2, n3);
+    regTestCompareValues(rp, n1, n2, 0);  /* 0 */
+    regTestCompareValues(rp, n1, n3, 0);  /* 1 */
+    regTestCompareValues(rp, n1, 4452, 0);  /* 2 */
+    pix1 = pixaDisplay(pixa1, pixGetWidth(pixs), pixGetHeight(pixs));
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 3 */
+    regTestComparePix(rp, pixs, pix1);  /* 4 */
+    pixaDestroy(&pixa1);
+    boxaDestroy(&boxa1);
+    boxaDestroy(&boxa2);
+    pixDestroy(&pix1);
 
         /* Test with 8-cc */
-    boxa = pixConnComp(pixs, &pixa, 8);
-    n = boxaGetCount(boxa);
-    fprintf(stderr, "Number of 8 c.c. b.b: %d\n", n);
-    np = pixaGetCount(pixa);
-    fprintf(stderr, "Number of 8 c.c. pix: %d\n", np);
-    pixd = pixaDisplay(pixa, pixGetWidth(pixs), pixGetHeight(pixs));
-    pixWrite("/tmp/junkout2.png", pixd, IFF_PNG);
-    pixEqual(pixs, pixd, &same);
-    if (same == 1)
-        fprintf(stderr, "Source and reconstructed pix are the same.\n");
-    else
-        fprintf(stderr, "Error: source and reconstructed pix differ!\n");
-    pixaDestroy(&pixa);
-    boxaDestroy(&boxa);
-    pixDestroy(&pixd);
+    boxa1= pixConnComp(pixs, &pixa1, 8);
+    n1 = boxaGetCount(boxa1);
+    boxa2= pixConnComp(pixs, NULL, 8);
+    n2 = boxaGetCount(boxa2);
+    pixCountConnComp(pixs, 8, &n3);
+    fprintf(stderr, "Number of 8 c.c.:  n1 = %d; n2 = %d, n3 = %d\n",
+            n1, n2, n3);
+    regTestCompareValues(rp, n1, n2, 0);  /* 5 */
+    regTestCompareValues(rp, n1, n3, 0);  /* 6 */
+    regTestCompareValues(rp, n1, 4305, 0);  /* 7 */
+    pix1 = pixaDisplay(pixa1, pixGetWidth(pixs), pixGetHeight(pixs));
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 8 */
+    regTestComparePix(rp, pixs, pix1);  /* 9 */
+    pixaDestroy(&pixa1);
+    boxaDestroy(&boxa1);
+    boxaDestroy(&boxa2);
+    pixDestroy(&pix1);
 
-        /* Test i/o */
-    boxa = pixConnComp(pixs, NULL, 4);
-    fp = lept_fopen("/tmp/junk1.ba", "wb+");
-    boxaWriteStream(fp, boxa);
+
+    /* --------------------------------------------------------------- *
+     *                        Test boxa I/O                            *
+     * --------------------------------------------------------------- */
+    lept_mkdir("lept/conn");
+    boxa1 = pixConnComp(pixs, NULL, 4);
+    fp = lept_fopen("/tmp/lept/conn/boxa1.ba", "wb+");
+    boxaWriteStream(fp, boxa1);
     lept_fclose(fp);
-    fp = lept_fopen("/tmp/junk1.ba", "rb");
+    fp = lept_fopen("/tmp/lept/conn/boxa1.ba", "rb");
     boxa2 = boxaReadStream(fp);
     lept_fclose(fp);
-    fp = lept_fopen("/tmp/junk2.ba", "wb+");
+    fp = lept_fopen("/tmp/lept/conn/boxa2.ba", "wb+");
     boxaWriteStream(fp, boxa2);
     lept_fclose(fp);
-    array1 = l_binaryRead("/tmp/junk1.ba", &nbytes1);
-    array2 = l_binaryRead("/tmp/junk2.ba", &nbytes2);
-    diff = strcmp((char *)array1, (char *)array2);
-    if (nbytes1 != nbytes2 || diff)
-        fprintf(stderr, "I/O error for boxes.\n");
-    else
-        fprintf(stderr, "I/O valid for boxes.\n");
+    array1 = l_binaryRead("/tmp/lept/conn/boxa1.ba", &size1);
+    array2 = l_binaryRead("/tmp/lept/conn/boxa2.ba", &size2);
+    regTestCompareStrings(rp, array1, size1, array2, size2);  /* 10 */
     lept_free(array1);
     lept_free(array2);
-    boxaDestroy(&boxa);
+    boxaDestroy(&boxa1);
     boxaDestroy(&boxa2);
 
-        /* Just for fun, display each component as a random color
-         * in cmapped 8 bpp.  Background is color 0; it is set to white. */
-    boxa = pixConnComp(pixs, &pixa, 4);
-    pixd = pixaDisplayRandomCmap(pixa, pixGetWidth(pixs), pixGetHeight(pixs));
-    cmap = pixGetColormap(pixd);
+
+    /* --------------------------------------------------------------- *
+     *    Just for fun, display each component as a random color in    *
+     *    cmapped 8 bpp.  Background is color 0; it is set to white.   *
+     * --------------------------------------------------------------- */
+    boxa1 = pixConnComp(pixs, &pixa1, 4);
+    pix1 = pixaDisplayRandomCmap(pixa1, pixGetWidth(pixs), pixGetHeight(pixs));
+    cmap = pixGetColormap(pix1);
     pixcmapResetColor(cmap, 0, 255, 255, 255);  /* reset background to white */
-    pixDisplay(pixd, 100, 100);
-    boxaDestroy(&boxa);
-    pixDestroy(&pixd);
-    pixaDestroy(&pixa);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 11 */
+    if (rp->display) pixDisplay(pix1, 100, 100);
+    boxaDestroy(&boxa1);
+    pixDestroy(&pix1);
+    pixaDestroy(&pixa1);
 
     pixDestroy(&pixs);
-    return 0;
+    return regTestCleanup(rp);
 }
 
 

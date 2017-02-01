@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  selgen.c
+/*!
+ * \file selgen.c
+ * <pre>
  *
  *      This file contains functions that generate hit-miss Sels
  *      for doing a loose match to a small bitmap.  The hit-miss
@@ -63,6 +64,7 @@
  *
  *      Display generated sel with originating image
  *            PIX     *pixDisplayHitMissSel()
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -92,21 +94,22 @@ static const l_int32  MAX_SEL_SCALEFACTOR = 31;  /* should be big enough */
  *           Generate a subsampled structuring element             *
  *-----------------------------------------------------------------*/
 /*!
- *  pixGenerateSelWithRuns()
+ * \brief   pixGenerateSelWithRuns()
  *
- *      Input:  pix (1 bpp, typically small, to be used as a pattern)
- *              nhlines (number of hor lines along which elements are found)
- *              nvlines (number of vert lines along which elements are found)
- *              distance (min distance from boundary pixel; use 0 for default)
- *              minlength (min runlength to set hit or miss; use 0 for default)
- *              toppix (number of extra pixels of bg added above)
- *              botpix (number of extra pixels of bg added below)
- *              leftpix (number of extra pixels of bg added to left)
- *              rightpix (number of extra pixels of bg added to right)
- *              &pixe (<optional return> input pix expanded by extra pixels)
- *      Return: sel (hit-miss for input pattern), or null on error
+ * \param[in]    pixs 1 bpp, typically small, to be used as a pattern
+ * \param[in]    nhlines number of hor lines along which elements are found
+ * \param[in]    nvlines number of vert lines along which elements are found
+ * \param[in]    distance min distance from boundary pixel; use 0 for default
+ * \param[in]    minlength min runlength to set hit or miss; use 0 for default
+ * \param[in]    toppix number of extra pixels of bg added above
+ * \param[in]    botpix number of extra pixels of bg added below
+ * \param[in]    leftpix number of extra pixels of bg added to left
+ * \param[in]    rightpix number of extra pixels of bg added to right
+ * \param[out]   ppixe [optional] input pix expanded by extra pixels
+ * \return  sel hit-miss for input pattern, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) The horizontal and vertical lines along which elements are
  *        selected are roughly equally spaced.  The actual locations of
  *        the hits and misses are the centers of respective run-lengths.
@@ -137,6 +140,7 @@ static const l_int32  MAX_SEL_SCALEFACTOR = 31;  /* should be big enough */
  *        can optionally be returned.  For debugging, call
  *        pixDisplayHitMissSel() to visualize the hit-miss sel superimposed
  *        on the generating bitmap.
+ * </pre>
  */
 SEL *
 pixGenerateSelWithRuns(PIX     *pixs,
@@ -296,20 +300,21 @@ SEL       *seld, *sel;
 
 
 /*!
- *  pixGenerateSelRandom()
+ * \brief   pixGenerateSelRandom()
  *
- *      Input:  pix (1 bpp, typically small, to be used as a pattern)
- *              hitfract (fraction of allowable fg pixels that are hits)
- *              missfract (fraction of allowable bg pixels that are misses)
- *              distance (min distance from boundary pixel; use 0 for default)
- *              toppix (number of extra pixels of bg added above)
- *              botpix (number of extra pixels of bg added below)
- *              leftpix (number of extra pixels of bg added to left)
- *              rightpix (number of extra pixels of bg added to right)
- *              &pixe (<optional return> input pix expanded by extra pixels)
- *      Return: sel (hit-miss for input pattern), or null on error
+ * \param[in]    pixs 1 bpp, typically small, to be used as a pattern
+ * \param[in]    hitfract fraction of allowable fg pixels that are hits
+ * \param[in]    missfract fraction of allowable bg pixels that are misses
+ * \param[in]    distance min distance from boundary pixel; use 0 for default
+ * \param[in]    toppix number of extra pixels of bg added above
+ * \param[in]    botpix number of extra pixels of bg added below
+ * \param[in]    leftpix number of extra pixels of bg added to left
+ * \param[in]    rightpix number of extra pixels of bg added to right
+ * \param[out]   ppixe [optional] input pix expanded by extra pixels
+ * \return  sel hit-miss for input pattern, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) Either of hitfract and missfract can be zero.  If both are zero,
  *        the sel would be empty, and NULL is returned.
  *    (2) No elements are selected that are less than 'distance' pixels away
@@ -325,6 +330,7 @@ SEL       *seld, *sel;
  *        can optionally be returned.  For debugging, call
  *        pixDisplayHitMissSel() to visualize the hit-miss sel superimposed
  *        on the generating bitmap.
+ * </pre>
  */
 SEL *
 pixGenerateSelRandom(PIX       *pixs,
@@ -439,29 +445,30 @@ SEL       *seld, *sel;
 
 
 /*!
- *  pixGenerateSelBoundary()
+ * \brief   pixGenerateSelBoundary()
  *
- *      Input:  pix (1 bpp, typically small, to be used as a pattern)
- *              hitdist (min distance from fg boundary pixel)
- *              missdist (min distance from bg boundary pixel)
- *              hitskip (number of boundary pixels skipped between hits)
- *              missskip (number of boundary pixels skipped between misses)
- *              topflag (flag for extra pixels of bg added above)
- *              botflag (flag for extra pixels of bg added below)
- *              leftflag (flag for extra pixels of bg added to left)
- *              rightflag (flag for extra pixels of bg added to right)
- *              &pixe (<optional return> input pix expanded by extra pixels)
- *      Return: sel (hit-miss for input pattern), or null on error
+ * \param[in]    pixs 1 bpp, typically small, to be used as a pattern
+ * \param[in]    hitdist min distance from fg boundary pixel
+ * \param[in]    missdist min distance from bg boundary pixel
+ * \param[in]    hitskip number of boundary pixels skipped between hits
+ * \param[in]    missskip number of boundary pixels skipped between misses
+ * \param[in]    topflag flag for extra pixels of bg added above
+ * \param[in]    botflag flag for extra pixels of bg added below
+ * \param[in]    leftflag flag for extra pixels of bg added to left
+ * \param[in]    rightflag flag for extra pixels of bg added to right
+ * \param[out]   ppixe [optional] input pix expanded by extra pixels
+ * \return  sel hit-miss for input pattern, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) All fg elements selected are exactly hitdist pixels away from
  *        the nearest fg boundary pixel, and ditto for bg elements.
  *        Valid inputs of hitdist and missdist are 0, 1, 2, 3 and 4.
  *        For example, a hitdist of 0 puts the hits at the fg boundary.
- *        Usually, the distances should be > 0 avoid the effect of
+ *        Usually, the distances should be \> 0 avoid the effect of
  *        noise at the boundary.
- *    (2) Set hitskip < 0 if no hits are to be used.  Ditto for missskip.
- *        If both hitskip and missskip are < 0, the sel would be empty,
+ *    (2) Set hitskip \< 0 if no hits are to be used.  Ditto for missskip.
+ *        If both hitskip and missskip are \< 0, the sel would be empty,
  *        and NULL is returned.
  *    (3) The 4 flags determine whether the sel is increased on that side
  *        to allow bg misses to be placed all along that boundary.
@@ -476,6 +483,7 @@ SEL       *seld, *sel;
  *    (5) This is probably the best of the three sel generators, in the
  *        sense that you have the most flexibility with the smallest number
  *        of hits and misses.
+ * </pre>
  */
 SEL *
 pixGenerateSelBoundary(PIX     *pixs,
@@ -596,14 +604,15 @@ PTA     *ptah, *ptam;
  *              Accumulate data on runs along lines                *
  *-----------------------------------------------------------------*/
 /*!
- *  pixGetRunCentersOnLine()
+ * \brief   pixGetRunCentersOnLine()
  *
- *      Input:  pixs (1 bpp)
- *              x, y (set one of these to -1; see notes)
- *              minlength (minimum length of acceptable run)
- *      Return: numa of fg runs, or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    x, y set one of these to -1; see notes
+ * \param[in]    minlength minimum length of acceptable run
+ * \return  numa of fg runs, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Action: this function computes the fg (black) and bg (white)
  *          pixel runlengths along the specified horizontal or vertical line,
  *          and returns a Numa of the "center" pixels of each fg run
@@ -621,6 +630,7 @@ PTA     *ptah, *ptam;
  *      (5) If there are no fg runs along the line that satisfy the
  *          minlength constraint, the returned Numa is empty.  This
  *          is not an error.
+ * </pre>
  */
 NUMA *
 pixGetRunCentersOnLine(PIX     *pixs,
@@ -678,19 +688,21 @@ NUMA     *naruns, *nad;
 
 
 /*!
- *  pixGetRunsOnLine()
+ * \brief   pixGetRunsOnLine()
  *
- *      Input:  pixs (1 bpp)
- *              x1, y1, x2, y2
- *      Return: numa, or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    x1, y1, x2, y2
+ * \return  numa, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Action: this function uses the bresenham algorithm to compute
  *          the pixels along the specified line.  It returns a Numa of the
  *          runlengths of the fg (black) and bg (white) runs, always
  *          starting with a white run.
  *      (2) If the first pixel on the line is black, the length of the
  *          first returned run (which is white) is 0.
+ * </pre>
  */
 NUMA *
 pixGetRunsOnLine(PIX     *pixs,
@@ -762,13 +774,14 @@ PTA      *pta;
  *        Subsample boundary pixels in relatively ordered way      *
  *-----------------------------------------------------------------*/
 /*!
- *  pixSubsampleBoundaryPixels()
+ * \brief   pixSubsampleBoundaryPixels()
  *
- *      Input:  pixs (1 bpp, with only boundary pixels in fg)
- *              skip (number to skip between samples as you traverse boundary)
- *      Return: pta, or null on error
+ * \param[in]    pixs 1 bpp, with only boundary pixels in fg
+ * \param[in]    skip number to skip between samples as you traverse boundary
+ * \return  pta, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If skip = 0, we take all the fg pixels.
  *      (2) We try to traverse the boundaries in a regular way.
  *          Some pixels may be missed, and these are then subsampled
@@ -781,6 +794,7 @@ PTA      *pta;
  *          one continues a raster-based search for the next fg pixel,
  *          and the inner one does a reasonable job running along
  *          each 4-connected coutour.
+ * </pre>
  */
 PTA *
 pixSubsampleBoundaryPixels(PIX     *pixs,
@@ -836,16 +850,18 @@ PTA     *pta;
 
 
 /*!
- *  adjacentOnPixelInRaster()
+ * \brief   adjacentOnPixelInRaster()
  *
- *      Input:  pixs (1 bpp)
- *              x, y (current pixel)
- *              xa, ya (adjacent ON pixel, found by simple CCW search)
- *      Return: 1 if a pixel is found; 0 otherwise or on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    x, y current pixel
+ * \param[out]   pxa, pya adjacent ON pixel, found by simple CCW search
+ * \return  1 if a pixel is found; 0 otherwise or on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Search is in 4-connected directions first; then on diagonals.
  *          This allows traversal along a 4-connected boundary.
+ * </pre>
  */
 l_int32
 adjacentOnPixelInRaster(PIX      *pixs,
@@ -890,18 +906,20 @@ l_uint32  val;
  *          Display generated sel with originating image           *
  *-----------------------------------------------------------------*/
 /*!
- *  pixDisplayHitMissSel()
+ * \brief   pixDisplayHitMissSel()
  *
- *      Input:  pixs (1 bpp)
- *              sel (hit-miss in general)
- *              scalefactor (an integer >= 1; use 0 for default)
- *              hitcolor (RGB0 color for center of hit pixels)
- *              misscolor (RGB0 color for center of miss pixels)
- *      Return: pixd (RGB showing both pixs and sel), or null on error
- *  Notes:
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel hit-miss in general
+ * \param[in]    scalefactor an integer >= 1; use 0 for default
+ * \param[in]    hitcolor RGB0 color for center of hit pixels
+ * \param[in]    misscolor RGB0 color for center of miss pixels
+ * \return  pixd RGB showing both pixs and sel, or NULL on error
+ * <pre>
+ * Notes:
  *    (1) We don't allow scalefactor to be larger than MAX_SEL_SCALEFACTOR
  *    (2) The colors are conveniently given as 4 bytes in hex format,
  *        such as 0xff008800.  The least significant byte is ignored.
+ * </pre>
  */
 PIX *
 pixDisplayHitMissSel(PIX      *pixs,

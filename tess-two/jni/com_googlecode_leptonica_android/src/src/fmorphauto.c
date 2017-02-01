@@ -25,8 +25,9 @@
  *====================================================================*/
 
 
-/*
- *  fmorphauto.c
+/*!
+ * \file fmorphauto.c
+ * <pre>
  *
  *    Main function calls:
  *       l_int32             fmorphautogen()
@@ -90,6 +91,7 @@
  *        For examples of use, see the file prog/binmorph_reg1.c, which
  *        verifies the consistency of the various implementations by
  *        comparing the dwa result with that of full-image rasterops.
+ * </pre>
  */
 
 #include <string.h>
@@ -223,17 +225,19 @@ static char wplstrm[][10] = {"- wpls", "- wpls2", "- wpls3", "- wpls4",
 
 
 /*!
- *  fmorphautogen()
+ * \brief   fmorphautogen()
  *
- *      Input:  sela
- *              fileindex
- *              filename (<optional>; can be null)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    sela
+ * \param[in]    fileindex
+ * \param[in]    filename [optional]; can be null
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function generates all the code for implementing
  *          dwa morphological operations using all the sels in the sela.
  *      (2) See fmorphautogen1() and fmorphautogen2() for details.
+ * </pre>
  */
 l_int32
 fmorphautogen(SELA        *sela,
@@ -255,23 +259,25 @@ l_int32  ret1, ret2;
 
 
 /*!
- *  fmorphautogen1()
+ * \brief   fmorphautogen1()
  *
- *      Input:  sela
- *              fileindex
- *              filename (<optional>; can be null)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    sela
+ * \param[in]    fileindex
+ * \param[in]    filename [optional]; can be null
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function uses morphtemplate1.txt to create a
  *          top-level file that contains two functions.  These
  *          functions will carry out dilation, erosion,
  *          opening or closing for any of the sels in the input sela.
  *      (2) The fileindex parameter is inserted into the output
  *          filename, as described below.
- *      (3) If filename == NULL, the output file is fmorphgen.<n>.c,
- *          where <n> is equal to the 'fileindex' parameter.
- *      (4) If filename != NULL, the output file is <filename>.<n>.c.
+ *      (3) If filename == NULL, the output file is fmorphgen.\<n\>.c,
+ *          where \<n\> is equal to the 'fileindex' parameter.
+ *      (4) If filename != NULL, the output file is \<filename\>.\<n\>.c.
+ * </pre>
  */
 l_int32
 fmorphautogen1(SELA        *sela,
@@ -451,7 +457,7 @@ SARRAY  *sa1, *sa2, *sa3;
         return ERROR_INT("filestr from sa3 not made", procName, 1);
     nbytes = strlen(filestr);
     if (filename)
-        sprintf(bigbuf, "%s.%d.c", filename, fileindex);
+        snprintf(bigbuf, L_BUF_SIZE, "%s.%d.c", filename, fileindex);
     else
         sprintf(bigbuf, "%s.%d.c", OUTROOT, fileindex);
     l_binaryWrite(bigbuf, "w", filestr, nbytes);
@@ -528,7 +534,7 @@ SEL     *sel;
     if ((sa3 = sarrayCreate(2 * nsels)) == NULL)
         return ERROR_INT("sa3 not made", procName, 1);
     for (i = 0; i < 2 * nsels; i++) {
-        fname = sarrayGetString(sa2, i, 0);
+        fname = sarrayGetString(sa2, i, L_NOCOPY);
         sprintf(bigbuf, "static void  %s%s", fname, PROTOARGS);
         sarrayAddString(sa3, bigbuf, L_COPY);
     }
@@ -638,7 +644,7 @@ SEL     *sel;
         return ERROR_INT("filestr from sa4 not made", procName, 1);
     nbytes = strlen(filestr);
     if (filename)
-        sprintf(bigbuf, "%slow.%d.c", filename, fileindex);
+        snprintf(bigbuf, L_BUF_SIZE, "%slow.%d.c", filename, fileindex);
     else
         sprintf(bigbuf, "%slow.%d.c", OUTROOT, fileindex);
     l_binaryWrite(bigbuf, "w", filestr, nbytes);
@@ -656,7 +662,7 @@ SEL     *sel;
  *                            Helper code for sel                           *
  *--------------------------------------------------------------------------*/
 /*!
- *  sarrayMakeWplsCode()
+ * \brief   sarrayMakeWplsCode()
  */
 static SARRAY *
 sarrayMakeWplsCode(SEL  *sel)
@@ -739,7 +745,7 @@ SARRAY  *sa;
 
 
 /*!
- *  sarrayMakeInnerLoopDWACode()
+ * \brief   sarrayMakeInnerLoopDWACode()
  */
 static SARRAY *
 sarrayMakeInnerLoopDWACode(SEL     *sel,
@@ -815,7 +821,7 @@ SARRAY  *sa;
 
 
 /*!
- *  makeBarrelshiftString()
+ * \brief   makeBarrelshiftString()
  */
 static char *
 makeBarrelshiftString(l_int32  delx,    /* j - cx */

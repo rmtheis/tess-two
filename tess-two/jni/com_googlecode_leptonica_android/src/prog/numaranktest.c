@@ -27,7 +27,7 @@
 /*
  * numaranktest.c
  *
- *     test on 8 bpp grayscale (e.g., w91frag.jpg)
+ *    Test on 8 bpp grayscale (e.g., w91frag.jpg)
  */
 
 #include "allheaders.h"
@@ -51,6 +51,8 @@ static char  mainName[] = "numaranktest";
     filein = argv[1];
     sampling = atoi(argv[2]);
 
+    lept_mkdir("lept/numa");
+
     if ((pix = pixRead(filein)) == NULL)
         return ERROR_INT("pix not made", mainName, 1);
     pixGetDimensions(pix, &w, &h, &d);
@@ -71,14 +73,16 @@ static char  mainName[] = "numaranktest";
         numaHistogramGetRankFromVal(nah, rval, &rank);
         numaAddNumber(nar, rank);
     }
-    gplotSimple1(nar, GPLOT_X11, "/tmp/junkroot1", "rank vs val");
+    gplotSimple1(nar, GPLOT_PNG, "/tmp/lept/numa/rank", "rank vs val");
+    l_fileDisplay("/tmp/lept/numa/rank.png", 0, 0, 1.0);
 
     nav = numaCreate(0);
     for (rank = 0.0; rank <= 1.0; rank += 0.01) {
         numaHistogramGetValFromRank(nah, rank, &rval);
         numaAddNumber(nav, rval);
     }
-    gplotSimple1(nav, GPLOT_X11, "/tmp/junkroot2", "val vs rank");
+    gplotSimple1(nav, GPLOT_PNG, "/tmp/lept/numa/val", "val vs rank");
+    l_fileDisplay("/tmp/lept/numa/val.png", 750, 0, 1.0);
 
     pixDestroy(&pix);
     numaDestroy(&na);

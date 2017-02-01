@@ -24,10 +24,12 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  pdfio1stub.c
+/*!
+ * \file pdfio1stub.c
+ * <pre>
  *
  *     Stubs for pdfio1.c functions
+ * </pre>
  */
 
 #include "allheaders.h"

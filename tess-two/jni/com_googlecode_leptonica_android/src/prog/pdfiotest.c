@@ -197,7 +197,7 @@ static char  mainName[] = "pdfiotest";
     pix1 = pixRead("rabi.png");
     pixSetResolution(pix1, 300, 300);
     pixGetDimensions(pix1, &w, &h, NULL);
-    pix2 = pixGenHalftoneMask(pix1, NULL, NULL, 0);
+    pix2 = pixGenerateHalftoneMask(pix1, NULL, NULL, NULL);
     pix3 = pixMorphSequence(pix2, "c20.1 + c1.20", 0);
     boxa1 = pixConnComp(pix3, NULL, 8);
     boxa2 = boxaTransform(boxa1, 0, 0, 0.5, 0.5);
@@ -413,7 +413,7 @@ PIXA  *pixa;
 
     pixSetResolution(pixs, 200, 200);
     pix1 = pixConvertTo1(pixs, 100);
-    pix2 = pixGenHalftoneMask(pix1, NULL, NULL, 0);
+    pix2 = pixGenerateHalftoneMask(pix1, NULL, NULL, NULL);
     pix3 = pixMorphSequence(pix2, "c20.1 + c1.20", 0);
     *pboxa = pixConnComp(pix3, NULL, 8);
     if (debugfile) {

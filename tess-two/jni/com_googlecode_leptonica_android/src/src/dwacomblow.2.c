@@ -25,7 +25,7 @@
  *====================================================================*/
 
 /*!
- *     Low-level fast binary morphology with auto-generated sels
+ * \brief      Low-level fast binary morphology with auto-generated sels
  *
  *      Dispatcher:
  *             l_int32    fmorphopgen_low_2()
@@ -195,7 +195,7 @@ static void  ferode_2_75(l_uint32 *, l_int32, l_int32, l_int32, l_uint32 *, l_in
  *                          Fast morph dispatcher                      *
  *---------------------------------------------------------------------*/
 /*!
- *  fmorphopgen_low_2()
+ * \brief   fmorphopgen_low_2()
  *
  *       a dispatcher to appropriate low-level code
  */
@@ -4963,4 +4963,3 @@ l_int32             wpls27;
         }
     }
 }
-

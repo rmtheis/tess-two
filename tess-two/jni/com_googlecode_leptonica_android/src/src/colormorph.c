@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  colormorph.c
+/*!
+ * \file colormorph.c
+ * <pre>
  *
  *      Top-level color morphological operations
  *
@@ -34,6 +35,7 @@
  *      Method: Algorithm by van Herk and Gil and Werman, 1992
  *              Apply grayscale morphological operations separately
  *              to each component.
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -43,20 +45,22 @@
  *              Top-level color morphological operations           *
  *-----------------------------------------------------------------*/
 /*!
- *  pixColorMorph()
+ * \brief   pixColorMorph()
  *
- *      Input:  pixs
- *              type  (L_MORPH_DILATE, L_MORPH_ERODE, L_MORPH_OPEN,
- *                     or L_MORPH_CLOSE)
- *              hsize  (of Sel; must be odd; origin implicitly in center)
- *              vsize  (ditto)
- *      Return: pixd
+ * \param[in]    pixs
+ * \param[in]    type  L_MORPH_DILATE, L_MORPH_ERODE, L_MORPH_OPEN,
+ *                     or L_MORPH_CLOSE
+ * \param[in]    hsize  of Sel; must be odd; origin implicitly in center
+ * \param[in]    vsize  ditto
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does the morph operation on each component separately,
  *          and recombines the result.
  *      (2) Sel is a brick with all elements being hits.
  *      (3) If hsize = vsize = 1, just returns a copy.
+ * </pre>
  */
 PIX *
 pixColorMorph(PIX     *pixs,

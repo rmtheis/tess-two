@@ -26,13 +26,11 @@
 
 /*
  * gammatest.c
- *
  */
 
 #include <math.h>
 #include "allheaders.h"
 
-#define  NPLOTS      5
 #define  MINVAL      30
 #define  MAXVAL      210
 
@@ -43,7 +41,7 @@ char        *filein, *fileout;
 char         bigbuf[512];
 l_int32      iplot, same;
 l_float32    gam;
-l_float64    gamma[NPLOTS] = {.5, 1.0, 1.5, 2.0, 2.5};
+l_float64    gamma[] = {.5, 1.0, 1.5, 2.0, 2.5, -1.0};
 GPLOT       *gplot;
 NUMA        *na, *nax;
 PIX         *pixs, *pixd;
@@ -51,6 +49,8 @@ static char  mainName[] = "gammatest";
 
     if (argc != 4)
         return ERROR_INT(" Syntax:  gammatest filein gam fileout", mainName, 1);
+
+    lept_mkdir("lept/gamma");
 
     filein = argv[1];
     gam = atof(argv[2]);
@@ -69,15 +69,16 @@ static char  mainName[] = "gammatest";
     pixDestroy(&pixs);
 
     na = numaGammaTRC(gam, MINVAL, MAXVAL);
-    gplotSimple1(na, GPLOT_X11, "/tmp/junkroot", "gamma trc");
+    gplotSimple1(na, GPLOT_PNG, "/tmp/lept/gamma/trc", "gamma trc");
+    l_fileDisplay("/tmp/lept/gamma/trc.png", 100, 100, 1.0);
     numaDestroy(&na);
 
         /* Plot gamma TRC maps */
-    gplot = gplotCreate("/tmp/junkmap", GPLOT_X11,
+    gplot = gplotCreate("/tmp/lept/gamma/corr", GPLOT_PNG,
                         "Mapping function for gamma correction",
-                               "value in", "value out");
+                        "value in", "value out");
     nax = numaMakeSequence(0.0, 1.0, 256);
-    for (iplot = 0; iplot < NPLOTS; iplot++) {
+    for (iplot = 0; gamma[iplot] >= 0.0; iplot++) {
         na = numaGammaTRC(gamma[iplot], 30, 215);
         sprintf(bigbuf, "gamma = %3.1f", gamma[iplot]);
         gplotAddPlot(gplot, nax, na, GPLOT_LINES, bigbuf);
@@ -85,9 +86,8 @@ static char  mainName[] = "gammatest";
     }
     gplotMakeOutput(gplot);
     gplotDestroy(&gplot);
+    l_fileDisplay("/tmp/lept/gamma/corr.png", 100, 100, 1.0);
     numaDestroy(&nax);
     return 0;
 }
-
-
 

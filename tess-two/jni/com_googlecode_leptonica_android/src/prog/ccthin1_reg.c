@@ -33,267 +33,166 @@
 
 #include "allheaders.h"
 
-    /* Sels for 4-connected thinning */
-static const char *sel_4_1 = "  x"
-                             "oCx"
-                             "  x";
-
-static const char *sel_4_2 = "  x"
-                             "oCx"
-                             " o ";
-
-static const char *sel_4_3 = " o "
-                             "oCx"
-                             "  x";
-
-static const char *sel_4_4 = " o "
-                             "oCx"
-                             " o ";
-
-static const char *sel_4_5 = " ox"
-                             "oCx"
-                             " o ";
-
-static const char *sel_4_6 = " o "
-                             "oCx"
-                             " ox";
-
-static const char *sel_4_7 = " xx"
-                             "oCx"
-                             " o ";
-
-static const char *sel_4_8 = "  x"
-                             "oCx"
-                             "o x";
-
-static const char *sel_4_9 = "o x"
-                             "oCx"
-                             "  x";
-
-    /* Sels for 8-connected thinning */
-static const char *sel_8_1 = " x "
-                             "oCx"
-                             " x ";
-
-static const char *sel_8_2 = " x "
-                             "oCx"
-                             "o  ";
-
-static const char *sel_8_3 = "o  "
-                             "oCx"
-                             " x ";
-
-static const char *sel_8_4 = "o  "
-                             "oCx"
-                             "o  ";
-
-static const char *sel_8_5 = "o x"
-                             "oCx"
-                             "o  ";
-
-static const char *sel_8_6 = "o  "
-                             "oCx"
-                             "o x";
-
-static const char *sel_8_7 = " x "
-                             "oCx"
-                             "oo ";
-
-static const char *sel_8_8 = " x "
-                             "oCx"
-                             "ox ";
-
-static const char *sel_8_9 = "ox "
-                             "oCx"
-                             " x ";
-
-    /* Sels for both 4 and 8-connected thinning */
-static const char *sel_48_1 = " xx"
-                              "oCx"
-                              "oo ";
-
-static const char *sel_48_2 = "o x"
-                              "oCx"
-                              "o x";
-
-
 int main(int    argc,
          char **argv)
 {
-BOX         *box;
-PIX         *pix, *pixs, *pixd, *pixt;
-PIXA        *pixa;
-SEL         *sel, *sel1, *sel2, *sel3;
-SELA        *sela4, *sela8, *sela48;
-static char  mainName[] = "ccthin1_reg";
+BOX          *box;
+PIX          *pix, *pixs, *pix1, *pix2;
+PIXA         *pixa;
+SEL          *sel, *sel1, *sel2, *sel3;
+SELA         *sela, *sela4, *sela8, *sela48;
+L_REGPARAMS  *rp;
 
-    if (argc != 1)
-        return ERROR_INT(" Syntax: ccthin1_reg", mainName, 1);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
+
+    pixa = pixaCreate(0);
 
         /* Generate and display all of the 4-cc sels */
-    sela4 = selaCreate(9);
-    sel = selCreateFromString(sel_4_1, 3, 3, "sel_4_1");
-    selaAddSel(sela4, sel, NULL, 0);
-    sel = selCreateFromString(sel_4_2, 3, 3, "sel_4_2");
-    selaAddSel(sela4, sel, NULL, 0);
-    sel = selCreateFromString(sel_4_3, 3, 3, "sel_4_3");
-    selaAddSel(sela4, sel, NULL, 0);
-    sel = selCreateFromString(sel_4_4, 3, 3, "sel_4_4");
-    selaAddSel(sela4, sel, NULL, 0);
-    sel = selCreateFromString(sel_4_5, 3, 3, "sel_4_5");
-    selaAddSel(sela4, sel, NULL, 0);
-    sel = selCreateFromString(sel_4_6, 3, 3, "sel_4_6");
-    selaAddSel(sela4, sel, NULL, 0);
-    sel = selCreateFromString(sel_4_7, 3, 3, "sel_4_7");
-    selaAddSel(sela4, sel, NULL, 0);
-    sel = selCreateFromString(sel_4_8, 3, 3, "sel_4_8");
-    selaAddSel(sela4, sel, NULL, 0);
-    sel = selCreateFromString(sel_4_9, 3, 3, "sel_4_9");
-    selaAddSel(sela4, sel, NULL, 0);
-    pixt = selaDisplayInPix(sela4, 35, 3, 15, 3);
-    pixWrite("/tmp/junkallsel4.png", pixt, IFF_PNG);
-    pixDestroy(&pixt);
+    sela4 = sela4ccThin(NULL);
+    pix1 = selaDisplayInPix(sela4, 35, 3, 15, 3);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 0 */
+    pixDisplayWithTitle(pix1, 400, 0, NULL, rp->display);
+    pixaAddPix(pixa, pix1, L_INSERT);
     selaDestroy(&sela4);
 
         /* Generate and display all of the 8-cc sels */
-    sela8 = selaCreate(9);
-    sel = selCreateFromString(sel_8_1, 3, 3, "sel_8_1");
-    selaAddSel(sela8, sel, NULL, 0);
-    sel = selCreateFromString(sel_8_2, 3, 3, "sel_8_2");
-    selaAddSel(sela8, sel, NULL, 0);
-    sel = selCreateFromString(sel_8_3, 3, 3, "sel_8_3");
-    selaAddSel(sela8, sel, NULL, 0);
-    sel = selCreateFromString(sel_8_4, 3, 3, "sel_8_4");
-    selaAddSel(sela8, sel, NULL, 0);
-    sel = selCreateFromString(sel_8_5, 3, 3, "sel_8_5");
-    selaAddSel(sela8, sel, NULL, 0);
-    sel = selCreateFromString(sel_8_6, 3, 3, "sel_8_6");
-    selaAddSel(sela8, sel, NULL, 0);
-    sel = selCreateFromString(sel_8_7, 3, 3, "sel_8_7");
-    selaAddSel(sela8, sel, NULL, 0);
-    sel = selCreateFromString(sel_8_8, 3, 3, "sel_8_8");
-    selaAddSel(sela8, sel, NULL, 0);
-    sel = selCreateFromString(sel_8_9, 3, 3, "sel_8_9");
-    selaAddSel(sela8, sel, NULL, 0);
-    pixt = selaDisplayInPix(sela8, 35, 3, 15, 3);
-    pixWrite("/tmp/junkallsel8.png", pixt, IFF_PNG);
-    pixDestroy(&pixt);
+    sela8 = sela8ccThin(NULL);
+    pix1 = selaDisplayInPix(sela8, 35, 3, 15, 3);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 1 */
+    pixDisplayWithTitle(pix1, 850, 0, NULL, rp->display);
+    pixaAddPix(pixa, pix1, L_INSERT);
     selaDestroy(&sela8);
 
         /* Generate and display all of the 4 and 8-cc preserving sels */
-    sela48 = selaCreate(3);
-    sel = selCreateFromString(sel_48_1, 3, 3, "sel_48_1");
-    selaAddSel(sela48, sel, NULL, 0);
-    sel = selCreateFromString(sel_48_2, 3, 3, "sel_48_2");
-    selaAddSel(sela48, sel, NULL, 0);
-    pixt = selaDisplayInPix(sela48, 35, 3, 15, 4);
-    pixWrite("/tmp/junkallsel48.png", pixt, IFF_PNG);
-    pixDestroy(&pixt);
+    sela48 = sela4and8ccThin(NULL);
+    pix1 = selaDisplayInPix(sela48, 35, 3, 15, 4);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 2 */
+    pixDisplayWithTitle(pix1, 1300, 0, NULL, rp->display);
+    pixaAddPix(pixa, pix1, L_INSERT);
     selaDestroy(&sela48);
 
         /* Generate and display three of the 4-cc sels and their rotations */
-    sela4 = selaCreate(3);
-    sel = selCreateFromString(sel_4_1, 3, 3, "sel_4_1");
+    sela = sela4ccThin(NULL);
+    sela4 = selaCreate(0);
+    selaFindSelByName(sela, "sel_4_1", NULL, &sel);
     sel1 = selRotateOrth(sel, 1);
     sel2 = selRotateOrth(sel, 2);
     sel3 = selRotateOrth(sel, 3);
-    selaAddSel(sela4, sel, NULL, 0);
-    selaAddSel(sela4, sel1, "sel_4_1_90", 0);
-    selaAddSel(sela4, sel2, "sel_4_1_180", 0);
-    selaAddSel(sela4, sel3, "sel_4_1_270", 0);
-    sel = selCreateFromString(sel_4_2, 3, 3, "sel_4_2");
+    selaAddSel(sela4, sel, NULL, L_COPY);
+    selaAddSel(sela4, sel1, "sel_4_1_90", L_INSERT);
+    selaAddSel(sela4, sel2, "sel_4_1_180", L_INSERT);
+    selaAddSel(sela4, sel3, "sel_4_1_270", L_INSERT);
+    selaFindSelByName(sela, "sel_4_2", NULL, &sel);
     sel1 = selRotateOrth(sel, 1);
     sel2 = selRotateOrth(sel, 2);
     sel3 = selRotateOrth(sel, 3);
-    selaAddSel(sela4, sel, NULL, 0);
-    selaAddSel(sela4, sel1, "sel_4_2_90", 0);
-    selaAddSel(sela4, sel2, "sel_4_2_180", 0);
-    selaAddSel(sela4, sel3, "sel_4_2_270", 0);
-    sel = selCreateFromString(sel_4_3, 3, 3, "sel_4_3");
+    selaAddSel(sela4, sel, NULL, L_COPY);
+    selaAddSel(sela4, sel1, "sel_4_2_90", L_INSERT);
+    selaAddSel(sela4, sel2, "sel_4_2_180", L_INSERT);
+    selaAddSel(sela4, sel3, "sel_4_2_270", L_INSERT);
+    selaFindSelByName(sela, "sel_4_3", NULL, &sel);
     sel1 = selRotateOrth(sel, 1);
     sel2 = selRotateOrth(sel, 2);
     sel3 = selRotateOrth(sel, 3);
-    selaAddSel(sela4, sel, NULL, 0);
-    selaAddSel(sela4, sel1, "sel_4_3_90", 0);
-    selaAddSel(sela4, sel2, "sel_4_3_180", 0);
-    selaAddSel(sela4, sel3, "sel_4_3_270", 0);
-    pixt = selaDisplayInPix(sela4, 35, 3, 15, 4);
-    pixWrite("/tmp/junksel4.png", pixt, IFF_PNG);
-    pixDestroy(&pixt);
+    selaAddSel(sela4, sel, NULL, L_COPY);
+    selaAddSel(sela4, sel1, "sel_4_3_90", L_INSERT);
+    selaAddSel(sela4, sel2, "sel_4_3_180", L_INSERT);
+    selaAddSel(sela4, sel3, "sel_4_3_270", L_INSERT);
+    pix1 = selaDisplayInPix(sela4, 35, 3, 15, 4);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 3 */
+    pixDisplayWithTitle(pix1, 400, 500, NULL, rp->display);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    selaDestroy(&sela);
     selaDestroy(&sela4);
 
         /* Generate and display four of the 8-cc sels and their rotations */
-    sela8 = selaCreate(4);
-    sel = selCreateFromString(sel_8_2, 3, 3, "sel_8_2");
+    sela = sela8ccThin(NULL);
+    sela8 = selaCreate(0);
+    selaFindSelByName(sela, "sel_8_2", NULL, &sel);
     sel1 = selRotateOrth(sel, 1);
     sel2 = selRotateOrth(sel, 2);
     sel3 = selRotateOrth(sel, 3);
-    selaAddSel(sela8, sel, NULL, 0);
-    selaAddSel(sela8, sel1, "sel_8_2_90", 0);
-    selaAddSel(sela8, sel2, "sel_8_2_180", 0);
-    selaAddSel(sela8, sel3, "sel_8_2_270", 0);
-    sel = selCreateFromString(sel_8_3, 3, 3, "sel_8_3");
+    selaAddSel(sela8, sel, NULL, L_COPY);
+    selaAddSel(sela8, sel1, "sel_8_2_90", L_INSERT);
+    selaAddSel(sela8, sel2, "sel_8_2_180", L_INSERT);
+    selaAddSel(sela8, sel3, "sel_8_2_270", L_INSERT);
+    selaFindSelByName(sela, "sel_8_3", NULL, &sel);
     sel1 = selRotateOrth(sel, 1);
     sel2 = selRotateOrth(sel, 2);
     sel3 = selRotateOrth(sel, 3);
-    selaAddSel(sela8, sel, NULL, 0);
-    selaAddSel(sela8, sel1, "sel_8_3_90", 0);
-    selaAddSel(sela8, sel2, "sel_8_3_180", 0);
-    selaAddSel(sela8, sel3, "sel_8_3_270", 0);
-    sel = selCreateFromString(sel_8_5, 3, 3, "sel_8_5");
+    selaAddSel(sela8, sel, NULL, L_COPY);
+    selaAddSel(sela8, sel1, "sel_8_3_90", L_INSERT);
+    selaAddSel(sela8, sel2, "sel_8_3_180", L_INSERT);
+    selaAddSel(sela8, sel3, "sel_8_3_270", L_INSERT);
+    selaFindSelByName(sela, "sel_8_5", NULL, &sel);
     sel1 = selRotateOrth(sel, 1);
     sel2 = selRotateOrth(sel, 2);
     sel3 = selRotateOrth(sel, 3);
-    selaAddSel(sela8, sel, NULL, 0);
-    selaAddSel(sela8, sel1, "sel_8_5_90", 0);
-    selaAddSel(sela8, sel2, "sel_8_5_180", 0);
-    selaAddSel(sela8, sel3, "sel_8_5_270", 0);
-    sel = selCreateFromString(sel_8_6, 3, 3, "sel_8_6");
+    selaAddSel(sela8, sel, NULL, L_COPY);
+    selaAddSel(sela8, sel1, "sel_8_5_90", L_INSERT);
+    selaAddSel(sela8, sel2, "sel_8_5_180", L_INSERT);
+    selaAddSel(sela8, sel3, "sel_8_5_270", L_INSERT);
+    selaFindSelByName(sela, "sel_8_6", NULL, &sel);
     sel1 = selRotateOrth(sel, 1);
     sel2 = selRotateOrth(sel, 2);
     sel3 = selRotateOrth(sel, 3);
-    selaAddSel(sela8, sel, NULL, 0);
-    selaAddSel(sela8, sel1, "sel_8_6_90", 0);
-    selaAddSel(sela8, sel2, "sel_8_6_180", 0);
-    selaAddSel(sela8, sel3, "sel_8_6_270", 0);
-    pixt = selaDisplayInPix(sela8, 35, 3, 15, 4);
-    pixWrite("/tmp/junksel8.png", pixt, IFF_PNG);
-    pixDestroy(&pixt);
+    selaAddSel(sela8, sel, NULL, L_COPY);
+    selaAddSel(sela8, sel1, "sel_8_6_90", L_INSERT);
+    selaAddSel(sela8, sel2, "sel_8_6_180", L_INSERT);
+    selaAddSel(sela8, sel3, "sel_8_6_270", L_INSERT);
+    pix1 = selaDisplayInPix(sela8, 35, 3, 15, 4);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 4 */
+    pixDisplayWithTitle(pix1, 1000, 500, NULL, rp->display);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    selaDestroy(&sela);
     selaDestroy(&sela8);
 
+        /* Optional display */
+    if (rp->display) {
+        lept_mkdir("/lept/thin");
+        fprintf(stderr, "Writing to: /tmp/lept/thin/ccthin1-1.pdf");
+        pixaConvertToPdf(pixa, 0, 1.0, 0, 0, "Thin 1 Sels",
+                         "/tmp/lept/thin/ccthin1-1.pdf");
+    }
+    pixaDestroy(&pixa);
+
+    pixa = pixaCreate(0);
+
         /* Test the best 4 and 8 cc thinning */
-    pixDisplayWrite(NULL, 0);
-    pix = pixRead("feyn.tif");
+    pix2 = pixRead("feyn.tif");
     box = boxCreate(683, 799, 970, 479);
-    pixs = pixClipRectangle(pix, box, NULL);
-    pixDisplayWrite(pixs, 1);
+    pix1 = pixClipRectangle(pix2, box, NULL);
+    boxDestroy(&box);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 5 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
 
-    pixt = pixThin(pixs, L_THIN_FG, 4, 0);
-    pixDisplayWrite(pixt, 1);
-    pixDestroy(&pixt);
-    pixt = pixThin(pixs, L_THIN_BG, 4, 0);
-    pixDisplayWrite(pixt, 1);
-    pixDestroy(&pixt);
+    pix2 = pixThinConnected(pix1, L_THIN_FG, 4, 0);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 6 */
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pix2 = pixThinConnected(pix1, L_THIN_BG, 4, 0);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 7 */
+    pixaAddPix(pixa, pix2, L_INSERT);
 
-    pixt = pixThin(pixs, L_THIN_FG, 8, 0);
-    pixDisplayWrite(pixt, 1);
-    pixDestroy(&pixt);
-    pixt = pixThin(pixs, L_THIN_BG, 8, 0);
-    pixDisplayWrite(pixt, 1);
-    pixDestroy(&pixt);
+    pix2 = pixThinConnected(pix1, L_THIN_FG, 8, 0);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 8 */
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pix2 = pixThinConnected(pix1, L_THIN_BG, 8, 0);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 9 */
+    pixaAddPix(pixa, pix2, L_INSERT);
 
         /* Display tiled */
-    pixa = pixaReadFiles("/tmp/display", "file");
-    pixd = pixaDisplayTiledAndScaled(pixa, 8, 500, 1, 0, 25, 2);
-    pixWrite("/tmp/junktiles.jpg", pixd, IFF_JFIF_JPEG);
-    pixDestroy(&pixd);
+    pix1 = pixaDisplayTiledAndScaled(pixa, 8, 500, 1, 0, 25, 2);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 10 */
+    pixDisplayWithTitle(pix1, 0, 0, NULL, rp->display);
+    pixDestroy(&pix1);
+    if (rp->display) {
+        fprintf(stderr, "Writing to: /tmp/lept/thin/ccthin1-2.pdf");
+        pixaConvertToPdf(pixa, 0, 1.0, 0, 0, "Thin 1 Results",
+                         "/tmp/lept/thin/ccthin1-2.pdf");
+    }
     pixaDestroy(&pixa);
-    pixDestroy(&pix);
-    pixDestroy(&pixs);
-    boxDestroy(&box);
 
-    pixDisplayMultiple("/tmp/display/file*");
-    return 0;
+    return regTestCleanup(rp);
 }
-
-

@@ -24,17 +24,18 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  stringcode.c
+/*!
+ * \file stringcode.c
+ * <pre>
  *
  *   Generation of code for storing and extracting serializable
  *   leptonica objects (such as pixa, recog, ...).
  *
  *   The input is a set of files with serialized data.
  *   The output is two files, that must be compiled and linked:
- *     - autogen.*.c: code for base64 unencoding the strings and
+ *     ~ autogen.*.c: code for base64 unencoding the strings and
  *                    deserializing the result.
- *     - autogen.*.h: function prototypes and base64 encoded strings
+ *     ~ autogen.*.h: function prototypes and base64 encoded strings
  *                    of the input data
  *
  *   This should work for any data structures in leptonica that have
@@ -45,16 +46,16 @@
  *
  *   Each time the generator function is invoked, three sets of strings are
  *   produced, which are written into their respective string arrays:
- *     - string of serialized, gzipped and base 64 encoded data
- *     - case string for base64 decoding, gunzipping and deserialization,
+ *     ~ string of serialized, gzipped and base 64 encoded data
+ *     ~ case string for base64 decoding, gunzipping and deserialization,
  *       to return the data struct in memory
- *     - description string for selecting which struct to return
+ *     ~ description string for selecting which struct to return
  *   To create the two output files, a finalize function is invoked.
  *
  *   There are two ways to do this, both shown in prog/autogentest1.c.
- *     - Explicitly call strcodeGenerate() for each file with the
+ *     ~ Explicitly call strcodeGenerate() for each file with the
  *       serialized data structure, followed by strcodeFinalize().
- *     - Put the filenames of the serialized data structures in a file,
+ *     ~ Put the filenames of the serialized data structures in a file,
  *       and call strcodeCreateFromFile().
  *
  *   The generated code in autogen.X.c and autogen.X.h (where X is an
@@ -71,7 +72,7 @@
  *       void             strcodeCreateFromFile()
  *       l_int32          strcodeGenerate()
  *       void             strcodeFinalize()
- *       l_int32          l_getStructnameFromFile()   (useful externally)
+ *       l_int32          l_getStructStrFromFile()   (useful externally)
  *
  *   Static helpers
  *       static l_int32   l_getIndexFromType()
@@ -80,6 +81,7 @@
  *       static char     *l_genDataString()
  *       static char     *l_genCaseString()
  *       static char     *l_genDescrString()
+ * </pre>
  */
 
 #include <string.h>
@@ -89,39 +91,41 @@
 #define TEMPLATE1  "stringtemplate1.txt"  /* for assembling autogen.*.c */
 #define TEMPLATE2  "stringtemplate2.txt"  /* for assembling autogen.*.h */
 
-    /* Associations between names and functions */
+    /*! Associations between names and functions */
 struct L_GenAssoc
 {
     l_int32  index;
     char     type[16];        /* e.g., "PIXA" */
     char     structname[16];  /* e.g., "Pixa" */
     char     reader[16];      /* e.g., "pixaRead" */
+    char     memreader[20];   /* e.g., "pixaReadMem" */
 };
 
-    /* Serializable data types */
+    /*! Number of serializable data types */
 static const l_int32  l_ntypes = 20;
+    /*! Serializable data types */
 static const struct L_GenAssoc l_assoc[] = {
-    {0,  "INVALID",     "invalid",     "invalid"       },
-    {1,  "BOXA",        "Boxa",        "boxaRead"      },
-    {2,  "BOXAA",       "Boxaa",       "boxaaRead"     },
-    {3,  "L_DEWARP",    "Dewarp",      "dewarpRead"    },
-    {4,  "L_DEWARPA",   "Dewarpa",     "dewarpaRead"   },
-    {5,  "L_DNA",       "L_Dna",       "l_dnaRead"     },
-    {6,  "L_DNAA",      "L_Dnaa",      "l_dnaaRead"    },
-    {7,  "DPIX",        "DPix",        "dpixRead"      },
-    {8,  "FPIX",        "FPix",        "fpixRead"      },
-    {9,  "NUMA",        "Numa",        "numaRead"      },
-    {10, "NUMAA",       "Numaa",       "numaaRead"     },
-    {11, "PIX",         "Pix",         "pixRead"       },
-    {12, "PIXA",        "Pixa",        "pixaRead"      },
-    {13, "PIXAA",       "Pixaa",       "pixaaRead"     },
-    {14, "PIXACOMP",    "Pixacomp",    "pixacompRead"  },
-    {15, "PIXCMAP",     "Pixcmap",     "pixcmapRead"   },
-    {16, "PTA",         "Pta",         "ptaRead"       },
-    {17, "PTAA",        "Ptaa",        "ptaaRead"      },
-    {18, "RECOG",       "Recog",       "recogRead"     },
-    {19, "RECOGA",      "Recoga",      "recogaRead"    },
-    {20, "SARRAY",      "Sarray",      "sarrayRead"    }
+    {0,  "INVALID",     "invalid",     "invalid",        "invalid"         },
+    {1,  "BOXA",        "Boxa",        "boxaRead",       "boxaReadMem"     },
+    {2,  "BOXAA",       "Boxaa",       "boxaaRead",      "boxaaReadMem"    },
+    {3,  "L_DEWARP",    "Dewarp",      "dewarpRead",     "dewarpReadMem"   },
+    {4,  "L_DEWARPA",   "Dewarpa",     "dewarpaRead",    "dewarpaReadMem"  },
+    {5,  "L_DNA",       "L_Dna",       "l_dnaRead",      "l_dnaReadMem"    },
+    {6,  "L_DNAA",      "L_Dnaa",      "l_dnaaRead",     "l_dnaaReadMem"   },
+    {7,  "DPIX",        "DPix",        "dpixRead",       "dpixReadMem"     },
+    {8,  "FPIX",        "FPix",        "fpixRead",       "fpixReadMem"     },
+    {9,  "NUMA",        "Numa",        "numaRead",       "numaReadMem"     },
+    {10, "NUMAA",       "Numaa",       "numaaRead",      "numaaReadMem"    },
+    {11, "PIX",         "Pix",         "pixRead",        "pixReadMem"      },
+    {12, "PIXA",        "Pixa",        "pixaRead",       "pixaReadMem"     },
+    {13, "PIXAA",       "Pixaa",       "pixaaRead",      "pixaaReadMem"    },
+    {14, "PIXACOMP",    "Pixacomp",    "pixacompRead",   "pixacompReadMem" },
+    {15, "PIXCMAP",     "Pixcmap",     "pixcmapRead",    "pixcmapReadMem"  },
+    {16, "PTA",         "Pta",         "ptaRead",        "ptaReadMem"      },
+    {17, "PTAA",        "Ptaa",        "ptaaRead",       "ptaaReadMem"     },
+    {18, "RECOG",       "Recog",       "recogRead",      "recogReadMem"    },
+    {19, "RECOGA",      "Recoga",      "recogaRead",     "recogaReadMem"   },
+    {20, "SARRAY",      "Sarray",      "sarrayRead",     "sarrayReadMem"   }
 };
 
 static l_int32 l_getIndexFromType(const char *type, l_int32 *pindex);
@@ -136,16 +140,18 @@ static char *l_genDescrString(const char *filein, l_int32 ifunc, l_int32 itype);
 /*                         Stringcode functions                        */
 /*---------------------------------------------------------------------*/
 /*!
- *  strcodeCreate()
+ * \brief   strcodeCreate()
  *
- *      Input:  fileno (integer that labels the two output files)
- *      Return: initialized L_StrCode, or null on error
+ * \param[in]    fileno integer that labels the two output files
+ * \return  initialized L_StrCode, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This struct exists to build two files containing code for
  *          any number of data objects.  The two files are named
- *             autogen.<fileno>.c
- *             autogen.<fileno>.h
+ *             autogen.\<fileno\>.c
+ *             autogen.\<fileno\>.h
+ * </pre>
  */
 L_STRCODE *
 strcodeCreate(l_int32  fileno)
@@ -168,10 +174,10 @@ L_STRCODE  *strcode;
 
 
 /*!
- *  strcodeDestroy()
+ * \brief   strcodeDestroy()
  *
- *      Input:  &strcode (strcode is set to null after destroying the sarrays)
- *      Return: void
+ * \param[out]  pstrcode &strcode is set to null after destroying the sarrays
+ * \return  void
  */
 static void
 strcodeDestroy(L_STRCODE  **pstrcode)
@@ -198,19 +204,21 @@ L_STRCODE  *strcode;
 
 
 /*!
- *  strcodeCreateFromFile()
+ * \brief   strcodeCreateFromFile()
  *
- *      Input:  filein (containing filenames of serialized data)
- *              fileno (integer that labels the two output files)
- *              outdir (<optional> if null, files are made in /tmp/lept/auto)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    filein containing filenames of serialized data
+ * \param[in]    fileno integer that labels the two output files
+ * \param[in]    outdir [optional] if null, files are made in /tmp/lept/auto
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
- *      (1) The @filein has one filename on each line.
+ * <pre>
+ * Notes:
+ *      (1) The %filein has one filename on each line.
  *          Comment lines begin with "#".
  *      (2) The output is 2 files:
- *             autogen.<fileno>.c
- *             autogen.<fileno>.h
+ *             autogen.\<fileno\>.c
+ *             autogen.\<fileno\>.h
+ * </pre>
  */
 l_int32
 strcodeCreateFromFile(const char  *filein,
@@ -260,20 +268,22 @@ L_STRCODE   *strcode;
 
 
 /*!
- *  strcodeGenerate()
+ * \brief   strcodeGenerate()
  *
- *      Input:  strcode (for accumulating data)
- *              filein (input file with serialized data)
- *              type (of data; use the typedef string)
- *      Return: 0 if OK, 1 on error.
+ * \param[in]    strcode for accumulating data
+ * \param[in]    filein input file with serialized data
+ * \param[in]    type of data; use the typedef string
+ * \return  0 if OK, 1 on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The generated function name is
- *            l_autodecode_<fileno>()
- *          where <fileno> is the index label for the pair of output files.
+ *            l_autodecode_\<fileno\>()
+ *          where \<fileno\> is the index label for the pair of output files.
  *      (2) To deserialize this data, the function is called with the
  *          argument 'ifunc', which increments each time strcodeGenerate()
  *          is called.
+ * </pre>
  */
 l_int32
 strcodeGenerate(L_STRCODE   *strcode,
@@ -316,11 +326,11 @@ l_int32  itype;
 
 
 /*!
- *  strcodeFinalize()
+ * \brief   strcodeFinalize()
  *
- *      Input: &strcode (destroys after .c and .h files have been generated)
- *              outdir (<optional> if null, files are made in /tmp/lept/auto)
- *      Return: void
+ * \param[in,out]  pstrcode destroys after .c and .h files have been generated
+ * \param[in]      outdir [optional] if NULL, files are made in /tmp/lept/auto
+ * \return  void
  */
 l_int32
 strcodeFinalize(L_STRCODE  **pstrcode,
@@ -507,30 +517,47 @@ SARRAY     *sa1, *sa2, *sa3;
 
 
 /*!
- *  l_getStructnameFromFile()
+ * \brief   l_getStructStrFromFile()
  *
- *      Input:  filename
- *              &sn (<return> structname; e.g., "Pixa")
- *      Return: 0 if found, 1 on error.
+ * \param[in]    filename
+ * \param[in]    field  (L_STR_TYPE, L_STR_NAME, L_STR_READER, L_STR_MEMREADER)
+ * \param[out]   pstr  struct string for this file
+ * \return  0 if found, 1 on error.
+ *
+ * <pre>
+ * Notes:
+ *      (1) For example, if %field == L_STR_NAME, and the file is a serialized
+ *          pixa, this will return "Pixa", the name of the struct.
+ *      (2) Caller must free the returned string.
  */
 l_int32
-l_getStructnameFromFile(const char  *filename,
-                        char       **psn)
+l_getStructStrFromFile(const char  *filename,
+                       l_int32      field,
+                       char       **pstr)
 {
 l_int32  index;
 
+    PROCNAME("l_getStructStrFromFile");
 
-    PROCNAME("l_getStructnameFromFile");
-
-    if (!psn)
-        return ERROR_INT("&sn not defined", procName, 1);
-    *psn = NULL;
+    if (!pstr)
+        return ERROR_INT("&str not defined", procName, 1);
+    *pstr = NULL;
     if (!filename)
         return ERROR_INT("filename not defined", procName, 1);
+    if (field != L_STR_TYPE && field != L_STR_NAME &&
+        field != L_STR_READER && field != L_STR_MEMREADER)
+        return ERROR_INT("invalid field", procName, 1);
 
     if (l_getIndexFromFile(filename, &index))
         return ERROR_INT("index not retrieved", procName, 1);
-    *psn = stringNew(l_assoc[index].structname);
+    if (field == L_STR_TYPE)
+        *pstr = stringNew(l_assoc[index].type);
+    else if (field == L_STR_NAME)
+        *pstr = stringNew(l_assoc[index].structname);
+    else if (field == L_STR_READER)
+        *pstr = stringNew(l_assoc[index].reader);
+    else   /* field == L_STR_MEMREADER */
+        *pstr = stringNew(l_assoc[index].memreader);
     return 0;
 }
 
@@ -539,18 +566,20 @@ l_int32  index;
 /*                           Static helpers                            */
 /*---------------------------------------------------------------------*/
 /*!
- *  l_getIndexFromType()
+ * \brief   l_getIndexFromType()
  *
- *      Input:  type (e.g., "PIXA")
- *              &index (<return>)
- *      Return: 0 if found, 1 if not.
+ * \param[in]    type e.g., "PIXA"
+ * \param[out]   pindex found index
+ * \return  0 if found, 1 if not.
  *
- *  Notes:
- *      (1) For valid type, @found == true and @index > 0.
+ * <pre>
+ * Notes:
+ *      (1) For valid type, %found == true and %index > 0.
+ * </pre>
  */
 static l_int32
 l_getIndexFromType(const char  *type,
-                    l_int32     *pindex)
+                   l_int32     *pindex)
 {
 l_int32  i, found;
 
@@ -575,16 +604,18 @@ l_int32  i, found;
 
 
 /*!
- *  l_getIndexFromStructname()
+ * \brief   l_getIndexFromStructname()
  *
- *      Input:  structname (e.g., "Pixa")
- *              &index (<return>)
- *      Return: 0 if found, 1 if not.
+ * \param[in]    sn structname e.g., "Pixa"
+ * \param[out]   pindex found index
+ * \return  0 if found, 1 if not.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is used to identify the type of serialized file;
  *          the first word in the file is the structname.
- *      (2) For valid structname, @found == true and @index > 0.
+ *      (2) For valid structname, %found == true and %index \> 0.
+ * </pre>
  */
 static l_int32
 l_getIndexFromStructname(const char  *sn,
@@ -613,11 +644,11 @@ l_int32  i, found;
 
 
 /*!
- *  l_getIndexFromFile()
+ * \brief   l_getIndexFromFile()
  *
- *      Input:  filename
- *              &index (<return>)
- *      Return: 0 if found, 1 on error.
+ * \param[in]    filename
+ * \param[out]   pindex found index
+ * \return  0 if found, 1 on error.
  */
 static l_int32
 l_getIndexFromFile(const char  *filename,
@@ -668,11 +699,11 @@ SARRAY  *sa;
 
 
 /*!
- *  l_genDataString()
+ * \brief   l_genDataString()
  *
- *      Input:  filein (input file of serialized data)
- *              ifunc (index into set of functions in output file)
- *      Return: encoded ascii data string, or null on error reading from file
+ * \param[in]    filein input file of serialized data
+ * \param[in]    ifunc index into set of functions in output file
+ * \return  encoded ascii data string, or NULL on error reading from file
  */
 static char *
 l_genDataString(const char  *filein,
@@ -714,14 +745,16 @@ SARRAY   *sa;
 
 
 /*!
- *  l_genCaseString()
+ * \brief   l_genCaseString()
  *
- *      Input:  ifunc (index into set of functions in generated file)
- *              itype (index into type of function to be used)
- *      Return: case string for this decoding function
+ * \param[in]    ifunc index into set of functions in generated file
+ * \param[in]    itype index into type of function to be used
+ * \return  case string for this decoding function
  *
- *  Notes:
- *      (1) @ifunc and @itype have been validated, so no error can occur
+ * <pre>
+ * Notes:
+ *      (1) %ifunc and %itype have been validated, so no error can occur
+ * </pre>
  */
 static char *
 l_genCaseString(l_int32  ifunc,
@@ -738,12 +771,9 @@ char  *code = NULL;
     stringJoinIP(&code, buf);
     stringJoinIP(&code,
                  "        data2 = zlibUncompress(data1, size1, &size2);\n");
-    stringJoinIP(&code,
-        "        l_binaryWrite(\"/tmp/lept/auto/data.bin\","
-        "\"w\", data2, size2);\n");
     snprintf(buf, sizeof(buf),
-             "        result = (void *)%s(\"/tmp/lept/auto/data.bin\");\n",
-             l_assoc[itype].reader);
+             "        result = (void *)%s(data2, size2);\n",
+             l_assoc[itype].memreader);
     stringJoinIP(&code, buf);
     stringJoinIP(&code, "        lept_free(data1);\n");
     stringJoinIP(&code, "        lept_free(data2);\n");
@@ -753,12 +783,12 @@ char  *code = NULL;
 
 
 /*!
- *  l_genDescrString()
+ * \brief   l_genDescrString()
  *
- *      Input:  filein (input file of serialized data)
- *              ifunc (index into set of functions in generated file)
- *              itype (index into type of function to be used)
- *      Return: description string for this decoding function
+ * \param[in]    filein input file of serialized data
+ * \param[in]    ifunc index into set of functions in generated file
+ * \param[in]    itype index into type of function to be used
+ * \return  description string for this decoding function
  */
 static char *
 l_genDescrString(const char  *filein,
@@ -780,4 +810,3 @@ char  *tail;
     LEPT_FREE(tail);
     return stringNew(buf);
 }
-

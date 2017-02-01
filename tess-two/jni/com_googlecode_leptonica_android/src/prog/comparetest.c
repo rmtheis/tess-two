@@ -104,7 +104,7 @@ static char  mainName[] = "comparetest";
             comptype = L_COMPARE_ABS_DIFF;
         else
             comptype = L_COMPARE_SUBTRACT;
-        pixCompareGrayOrRGB(pixs1, pixs2, comptype, GPLOT_X11, &same, &diff,
+        pixCompareGrayOrRGB(pixs1, pixs2, comptype, GPLOT_PNG, &same, &diff,
                             &rmsdiff, &pixd);
         if (type == 0) {
             if (same)
@@ -137,12 +137,13 @@ static char  mainName[] = "comparetest";
                 fprintf(stderr, "Nonzero diff range: first = %d, last = %d\n",
                         first, last);
                 na2 = numaClipToInterval(na1, first, last);
-                gplot = gplotCreate("/tmp/junkrank", GPLOT_X11,
-                                    "Pixel Rank Difference", "pixel val",
-                                    "rank");
+                gplot = gplotCreate("/tmp/lept/comp/rank", GPLOT_PNG,
+                                    "Pixel Rank Difference",
+                                    "pixel val difference", "rank");
                 gplotAddPlot(gplot, NULL, na2, GPLOT_LINES, "rank");
                 gplotMakeOutput(gplot);
                 gplotDestroy(&gplot);
+                l_fileDisplay("/tmp/lept/comp/rank.png", 100, 100, 1.0);
                 numaDestroy(&na1);
                 numaDestroy(&na2);
             }

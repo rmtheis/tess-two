@@ -107,7 +107,6 @@ L_REGPARAMS  *rp;
     pixg = pixClipRectangle(pixs, box, NULL);
     pixb = pixThresholdToBinary(pixg, 180);
     pixInvert(pixb, pixb);
-    pixDisplayWrite(pixb, 1);
     composeRGBPixel(50, 0, 250, &val32);
     pixPaintThroughMask(pixt, pixb, box->x, box->y, val32);
     boxDestroy(&box);

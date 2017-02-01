@@ -37,13 +37,22 @@
  *  The probability of a collision goes as n^2, so with 10M entities,
  *  the collision probabililty is about 10^-5.
  *
- *  For hash maps, the 64-bit hash only needs to randomize the lower
- *  order bits corresponding to the prime number used for assigning
- *  to buckets.  To the extent that those bits are not randomized, the
- *  calculation will run slower but the result will be exact.
+ *  For the dna hashing, a faster but weaker hash function is used.
+ *  The hash should do a reasonable job of randomizing the lower order
+ *  bits corresponding to the prime number used with the mod function
+ *  for assigning to buckets. (To the extent that those bits are not
+ *  randomized, the calculation will run slower because bucket
+ *  occupancy will not be random, but the result will still be exact.)
+ *  Hash collisions in the key are allowed because the dna in
+ *  the selected bucket stores integers into arrays (of pts or strings,
+ *  for example), and not keys.  The input point or string is hashed to
+ *  a bucket (a dna), which is then traversed, and each stored value
+ *  (an index) is used check if the point or string is in the associated
+ *  array at that location.
  *
- *  Also tests similar functions directly (without hashing the number)
- *  for numa.  (To be replaced by doing it with dna.)
+ *  Also tests similar functions directly (without hashing the number) for dna.
+ *  This will allow handling of both float64 and large integers that are
+ *  accurately represented by float64.
  */
 
 #include "allheaders.h"
@@ -56,14 +65,16 @@ l_int32 main(int    argc,
              char **argv)
 {
 L_ASET     *set;
-L_DNA      *da1, *da2, *da3, *da4, *da5, *da6, *dav, *dac, *da7;
+L_DNA      *da1, *da2, *da3, *da4, *da5, *da6, *da7, *da8, *dav, *dac;
 L_DNAHASH  *dahash;
-NUMA       *na1, *na2, *na3, *na4, *na5, *na6, *na7, *na8, *nav, *nac;
+NUMA       *nav, *nac;
 PTA        *pta1, *pta2, *pta3;
 SARRAY     *sa1, *sa2, *sa3, *sa4;
 
+    lept_mkdir("lept/hash");
+
 #if 1
-        /* Test good string hashing with aset */
+        /* Test string hashing with aset */
     fprintf(stderr, "Set results with string hashing:\n");
     sa1 = BuildShortStrings(3, 0);
     sa2 = BuildShortStrings(3, 1);
@@ -85,10 +96,9 @@ SARRAY     *sa1, *sa2, *sa3, *sa4;
     sarrayDestroy(&sa3);
     sarrayDestroy(&sa4);
 
-        /* Test sarray set operations with hash map (dnaHash).
-         * We use a weak hash; collisions are OK if they're not too
-         * spatially localized. */
-    fprintf(stderr, "\nHash map results for sarray:\n");
+        /* Test sarray set operations with dna hash.
+         * We use the same hash function as is used with aset. */
+    fprintf(stderr, "\nDna hash results for sarray:\n");
     fprintf(stderr, "  size with unique strings: %d\n", sarrayGetCount(sa1));
     fprintf(stderr, "  size with dups: %d\n", sarrayGetCount(sa2));
     startTimer();
@@ -112,12 +122,13 @@ SARRAY     *sa1, *sa2, *sa3, *sa4;
 #endif
 
 #if 1
-        /* Test good pt hashing with aset.
-         * Enter all points up to (1999, 1999), and include
-         * 800,000 duplicates in pta1.  Note: there are no hash
-         * collisions up to 100M points (up to 10000 x 10000). */
-    pta1 = BuildPointSet(1000, 1000, 0);
-    pta2 = BuildPointSet(1000, 1000, 1);
+        /* Test point hashing with aset.
+         * Enter all points within a 1500 x 1500 image in pta1, and include
+         * 450,000 duplicates in pta2.  With this pt hashing function,
+         * there are no hash collisions among any of the 400 million pixel
+         * locations in a 20000 x 20000 image. */
+    pta1 = BuildPointSet(1500, 1500, 0);
+    pta2 = BuildPointSet(1500, 1500, 1);
     fprintf(stderr, "\nSet results for pta:\n");
     fprintf(stderr, "  pta1 size with unique points: %d\n", ptaGetCount(pta1));
     fprintf(stderr, "  pta2 size with dups: %d\n", ptaGetCount(pta2));
@@ -137,11 +148,12 @@ SARRAY     *sa1, *sa2, *sa3, *sa4;
 #endif
 
 #if 1
-        /* Test pta set operations with hash map (dnaHash).
-         * Collisions are OK if they're not too spatially localized */
-    pta1 = BuildPointSet(1000, 1000, 0);
-    pta2 = BuildPointSet(1000, 1000, 1);
-    fprintf(stderr, "\nHash map results for pta:\n");
+        /* Test pta set operations with dna hash, using the same pt hashing
+         * function.  Although there are no collisions in 20K x 20K images,
+         * the dna hash implementation works properly even if there are some. */
+    pta1 = BuildPointSet(1500, 1500, 0);
+    pta2 = BuildPointSet(1500, 1500, 1);
+    fprintf(stderr, "\nDna hash results for pta:\n");
     fprintf(stderr, "  pta1 size with unique points: %d\n", ptaGetCount(pta1));
     fprintf(stderr, "  pta2 size with dups: %d\n", ptaGetCount(pta2));
     startTimer();
@@ -157,12 +169,11 @@ SARRAY     *sa1, *sa2, *sa3, *sa4;
     ptaDestroy(&pta1);
     ptaDestroy(&pta2);
     ptaDestroy(&pta3);
-
 #endif
 
-        /* Test dna set and histo operations with hash map (dnaHash) */
+        /* Test dna set and histo operations using dna hash */
 #if 1
-    fprintf(stderr, "\nHash map results for dna:\n");
+    fprintf(stderr, "\nDna hash results for dna:\n");
     da1 = l_dnaMakeSequence(0.0, 0.125, 8000);
     da2 = l_dnaMakeSequence(300.0, 0.125, 8000);
     da3 = l_dnaMakeSequence(600.0, 0.125, 8000);
@@ -180,12 +191,14 @@ SARRAY     *sa1, *sa2, *sa3, *sa4;
     nav = l_dnaConvertToNuma(dav);
     nac = l_dnaConvertToNuma(dac);
     fprintf(stderr, "  dna number of histo points = %d\n", l_dnaGetCount(dac));
-    gplotSimpleXY1(nav, nac, GPLOT_IMPULSES, GPLOT_X11, "/tmp/histo", "Histo");
+    gplotSimpleXY1(nav, nac, GPLOT_IMPULSES, GPLOT_PNG,
+                   "/tmp/lept/hash/histo", "Histo");
     da7 = l_dnaIntersectionByHash(da2, da3);
     fprintf(stderr, "  dna number of points: da2 = %d, da3 = %d\n",
             l_dnaGetCount(da2), l_dnaGetCount(da3));
     fprintf(stderr, "  dna number of da2/da3 intersection points = %d\n",
             l_dnaGetCount(da7));
+    l_fileDisplay("/tmp/lept/hash/histo.png", 700, 100, 1.0);
     l_dnaDestroy(&da1);
     l_dnaDestroy(&da2);
     l_dnaDestroy(&da3);
@@ -200,55 +213,55 @@ SARRAY     *sa1, *sa2, *sa3, *sa4;
     numaDestroy(&nac);
 #endif
 
-#if 0
-    na1 = numaMakeSequence(0, 3, 10000);
-    na2 = numaMakeSequence(0, 5, 10000);
-    na3 = numaMakeSequence(0, 7, 10000);
-    numaJoin(na1, na2, 0, -1);
-    numaJoin(na1, na3, 0, -1);
+#if 1
+    da1 = l_dnaMakeSequence(0, 3, 10000);
+    da2 = l_dnaMakeSequence(0, 5, 10000);
+    da3 = l_dnaMakeSequence(0, 7, 10000);
+    l_dnaJoin(da1, da2, 0, -1);
+    l_dnaJoin(da1, da3, 0, -1);
 
-    fprintf(stderr, "\nNuma results using set:\n");
-    fprintf(stderr, "  na1 count: %d\n", numaGetCount(na1));
-    set = l_asetCreateFromNuma(na1);
-    fprintf(stderr, "  na1 set size: %d\n\n", l_asetSize(set));
+    fprintf(stderr, "\nDna results using set:\n");
+    fprintf(stderr, "  da1 count: %d\n", l_dnaGetCount(da1));
+    set = l_asetCreateFromDna(da1);
+    fprintf(stderr, "  da1 set size: %d\n\n", l_asetSize(set));
     l_asetDestroy(&set);
 
-    na4 = numaUnionByAset(na2, na3);
-    fprintf(stderr, "  na4 count: %d\n", numaGetCount(na4));
-    set = l_asetCreateFromNuma(na4);
-    fprintf(stderr, "  na4 set size: %d\n\n", l_asetSize(set));
+    da4 = l_dnaUnionByAset(da2, da3);
+    fprintf(stderr, "  da4 count: %d\n", l_dnaGetCount(da4));
+    set = l_asetCreateFromDna(da4);
+    fprintf(stderr, "  da4 set size: %d\n\n", l_asetSize(set));
     l_asetDestroy(&set);
 
-    na5 = numaIntersectionByAset(na1, na2);
-    fprintf(stderr, "  na5 count: %d\n", numaGetCount(na5));
-    set = l_asetCreateFromNuma(na5);
-    fprintf(stderr, "  na5 set size: %d\n\n", l_asetSize(set));
+    da5 = l_dnaIntersectionByAset(da1, da2);
+    fprintf(stderr, "  da5 count: %d\n", l_dnaGetCount(da5));
+    set = l_asetCreateFromDna(da5);
+    fprintf(stderr, "  da5 set size: %d\n\n", l_asetSize(set));
     l_asetDestroy(&set);
 
-    na6 = numaMakeSequence(100000, 11, 5000);
-    numaJoin(na6, na1, 0, -1);
-    fprintf(stderr, "  na6 count: %d\n", numaGetCount(na6));
-    set = l_asetCreateFromNuma(na6);
-    fprintf(stderr, "  na6 set size: %d\n\n", l_asetSize(set));
+    da6 = l_dnaMakeSequence(100000, 11, 5000);
+    l_dnaJoin(da6, da1, 0, -1);
+    fprintf(stderr, "  da6 count: %d\n", l_dnaGetCount(da6));
+    set = l_asetCreateFromDna(da6);
+    fprintf(stderr, "  da6 set size: %d\n\n", l_asetSize(set));
     l_asetDestroy(&set);
 
-    na7 = numaIntersectionByAset(na6, na3);
-    fprintf(stderr, "  na7 count: %d\n", numaGetCount(na7));
-    set = l_asetCreateFromNuma(na7);
-    fprintf(stderr, "  na7 set size: %d\n\n", l_asetSize(set));
+    da7 = l_dnaIntersectionByAset(da6, da3);
+    fprintf(stderr, "  da7 count: %d\n", l_dnaGetCount(da7));
+    set = l_asetCreateFromDna(da7);
+    fprintf(stderr, "  da7 set size: %d\n\n", l_asetSize(set));
     l_asetDestroy(&set);
 
-    na8 = numaRemoveDups(na1);
-    fprintf(stderr, "  na8 count: %d\n\n", numaGetCount(na8));
+    da8 = l_dnaRemoveDupsByAset(da1);
+    fprintf(stderr, "  da8 count: %d\n\n", l_dnaGetCount(da8));
 
-    numaDestroy(&na1);
-    numaDestroy(&na2);
-    numaDestroy(&na3);
-    numaDestroy(&na4);
-    numaDestroy(&na5);
-    numaDestroy(&na6);
-    numaDestroy(&na7);
-    numaDestroy(&na8);
+    l_dnaDestroy(&da1);
+    l_dnaDestroy(&da2);
+    l_dnaDestroy(&da3);
+    l_dnaDestroy(&da4);
+    l_dnaDestroy(&da5);
+    l_dnaDestroy(&da6);
+    l_dnaDestroy(&da7);
+    l_dnaDestroy(&da8);
 #endif
 
     return 0;

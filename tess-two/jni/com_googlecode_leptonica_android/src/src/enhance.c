@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  enhance.c
+/*!
+ * \file enhance.c
+ * <pre>
  *
  *      Gamma TRC (tone reproduction curve) mapping
  *           PIX     *pixGammaTRC()
@@ -73,15 +74,15 @@
  *      apply a simple mapping function to each pixel (or, for color
  *      images, to each sample (i.e., r,g,b) of the pixel).
  *
- *       - Gamma correction either lightens the image or darkens
+ *       ~ Gamma correction either lightens the image or darkens
  *         it, depending on whether the gamma factor is greater
  *         or less than 1.0, respectively.
  *
- *       - Contrast enhancement darkens the pixels that are already
+ *       ~ Contrast enhancement darkens the pixels that are already
  *         darker than the middle of the dynamic range (128)
  *         and lightens pixels that are lighter than 128.
  *
- *       - Histogram equalization remaps to have the same number
+ *       ~ Histogram equalization remaps to have the same number
  *         of image pixels at each of 256 intensity values.  This is
  *         a quick and dirty method of adjusting contrast and brightness
  *         to bring out details in both light and dark regions.
@@ -106,6 +107,7 @@
  *
  *      Unsharp masking is never in-place, and returns a clone if no
  *      operation is to be performed.
+ * </pre>
  */
 
 
@@ -124,16 +126,17 @@ static const l_int32  DEFAULT_HISTO_SAMPLES = 100000;
  *         Gamma TRC (tone reproduction curve) mapping         *
  *-------------------------------------------------------------*/
 /*!
- *  pixGammaTRC()
+ * \brief   pixGammaTRC()
  *
- *      Input:  pixd (<optional> null or equal to pixs)
- *              pixs (8 or 32 bpp; or 2, 4 or 8 bpp with colormap)
- *              gamma (gamma correction; must be > 0.0)
- *              minval  (input value that gives 0 for output; can be < 0)
- *              maxval  (input value that gives 255 for output; can be > 255)
- *      Return: pixd always
+ * \param[in]    pixd [optional] null or equal to pixs
+ * \param[in]    pixs 8 or 32 bpp; or 2, 4 or 8 bpp with colormap
+ * \param[in]    gamma gamma correction; must be > 0.0
+ * \param[in]    minval  input value that gives 0 for output; can be < 0
+ * \param[in]    maxval  input value that gives 255 for output; can be > 255
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) pixd must either be null or equal to pixs.
  *          For in-place operation, set pixd == pixs:
  *             pixGammaTRC(pixs, pixs, ...);
@@ -161,6 +164,7 @@ static const l_int32  DEFAULT_HISTO_SAMPLES = 100000;
  *           will darken the image and make the colors more intense;
  *           e.g., minval = 50, maxval = 200.
  *      (11) See numaGammaTRC() for further examples of use.
+ * </pre>
  */
 PIX *
 pixGammaTRC(PIX       *pixd,
@@ -212,21 +216,23 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  pixGammaTRCMasked()
+ * \brief   pixGammaTRCMasked()
  *
- *      Input:  pixd (<optional> null or equal to pixs)
- *              pixs (8 or 32 bpp; not colormapped)
- *              pixm (<optional> null or 1 bpp)
- *              gamma (gamma correction; must be > 0.0)
- *              minval  (input value that gives 0 for output; can be < 0)
- *              maxval  (input value that gives 255 for output; can be > 255)
- *      Return: pixd always
+ * \param[in]    pixd [optional] null or equal to pixs
+ * \param[in]    pixs 8 or 32 bpp; not colormapped
+ * \param[in]    pixm [optional] null or 1 bpp
+ * \param[in]    gamma gamma correction; must be > 0.0
+ * \param[in]    minval  input value that gives 0 for output; can be < 0
+ * \param[in]    maxval  input value that gives 255 for output; can be > 255
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Same as pixGammaTRC() except mapping is optionally over
  *          a subset of pixels described by pixm.
  *      (2) Masking does not work for colormapped images.
  *      (3) See pixGammaTRC() for details on how to use the parameters.
+ * </pre>
  */
 PIX *
 pixGammaTRCMasked(PIX       *pixd,
@@ -276,19 +282,21 @@ NUMA    *nag;
 
 
 /*!
- *  pixGammaTRCWithAlpha()
+ * \brief   pixGammaTRCWithAlpha()
  *
- *      Input:  pixd (<optional> null or equal to pixs)
- *              pixs (32 bpp)
- *              gamma (gamma correction; must be > 0.0)
- *              minval  (input value that gives 0 for output; can be < 0)
- *              maxval  (input value that gives 255 for output; can be > 255)
- *      Return: pixd always
+ * \param[in]    pixd [optional] null or equal to pixs
+ * \param[in]    pixs 32 bpp
+ * \param[in]    gamma gamma correction; must be > 0.0
+ * \param[in]    minval  input value that gives 0 for output; can be < 0
+ * \param[in]    maxval  input value that gives 255 for output; can be > 255
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See usage notes in pixGammaTRC().
  *      (2) This version saves the alpha channel.  It is only valid
  *          for 32 bpp (no colormap), and is a bit slower.
+ * </pre>
  */
 PIX *
 pixGammaTRCWithAlpha(PIX       *pixd,
@@ -332,14 +340,15 @@ PIX   *pixalpha;
 
 
 /*!
- *  numaGammaTRC()
+ * \brief   numaGammaTRC()
  *
- *      Input:  gamma   (gamma factor; must be > 0.0)
- *              minval  (input value that gives 0 for output)
- *              maxval  (input value that gives 255 for output)
- *      Return: na, or null on error
+ * \param[in]    gamma   gamma factor; must be > 0.0
+ * \param[in]    minval  input value that gives 0 for output
+ * \param[in]    maxval  input value that gives 255 for output
+ * \return  na, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The map is returned as a numa; values are clipped to [0, 255].
  *      (2) To force all intensities into a range within fraction delta
  *          of white, use: minval = -256 * (1 - delta) / delta
@@ -347,6 +356,7 @@ PIX   *pixalpha;
  *      (3) To force all intensities into a range within fraction delta
  *          of black, use: minval = 0
  *                         maxval = 256 * (1 - delta) / delta
+ * </pre>
  */
 NUMA *
 numaGammaTRC(l_float32  gamma,
@@ -390,14 +400,15 @@ NUMA      *na;
  *                      Contrast enhancement                   *
  *-------------------------------------------------------------*/
 /*!
- *  pixContrastTRC()
+ * \brief   pixContrastTRC()
  *
- *      Input:  pixd (<optional> null or equal to pixs)
- *              pixs (8 or 32 bpp; or 2, 4 or 8 bpp with colormap)
- *              factor  (0.0 is no enhancement)
- *      Return: pixd always
+ * \param[in]    pixd [optional] null or equal to pixs
+ * \param[in]    pixs 8 or 32 bpp; or 2, 4 or 8 bpp with colormap
+ * \param[in]    factor  0.0 is no enhancement
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) pixd must either be null or equal to pixs.
  *          For in-place operation, set pixd == pixs:
  *             pixContrastTRC(pixs, pixs, ...);
@@ -415,6 +426,7 @@ NUMA      *na;
  *          unless in-place, in which case this is a no-op.
  *      (6) For color images that are not colormapped, the mapping
  *          is applied to each component.
+ * </pre>
  */
 PIX *
 pixContrastTRC(PIX       *pixd,
@@ -462,19 +474,21 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  pixContrastTRCMasked()
+ * \brief   pixContrastTRCMasked()
  *
- *      Input:  pixd (<optional> null or equal to pixs)
- *              pixs (8 or 32 bpp; or 2, 4 or 8 bpp with colormap)
- *              pixm (<optional> null or 1 bpp)
- *              factor  (0.0 is no enhancement)
- *      Return: pixd always
+ * \param[in]    pixd [optional] null or equal to pixs
+ * \param[in]    pixs 8 or 32 bpp; or 2, 4 or 8 bpp with colormap
+ * \param[in]    pixm [optional] null or 1 bpp
+ * \param[in]    factor  0.0 is no enhancement
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Same as pixContrastTRC() except mapping is optionally over
  *          a subset of pixels described by pixm.
  *      (2) Masking does not work for colormapped images.
  *      (3) See pixContrastTRC() for details on how to use the parameters.
+ * </pre>
  */
 PIX *
 pixContrastTRCMasked(PIX       *pixd,
@@ -520,18 +534,20 @@ NUMA    *nac;
 
 
 /*!
- *  numaContrastTRC()
+ * \brief   numaContrastTRC()
  *
- *      Input:  factor (generally between 0.0 (no enhancement)
- *              and 1.0, but can be larger than 1.0)
- *      Return: na, or null on error
+ * \param[in]    factor generally between 0.0 [no enhancement]
+ *              and 1.0, but can be larger than 1.0
+ * \return  na, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The mapping is monotonic increasing, where 0 is mapped
  *          to 0 and 255 is mapped to 255.
  *      (2) As 'factor' is increased from 0.0 (where the mapping is linear),
  *          the map gets closer to its limit as a step function that
  *          jumps from 0 to 255 at the center (input value = 127).
+ * </pre>
  */
 NUMA *
 numaContrastTRC(l_float32  factor)
@@ -571,15 +587,16 @@ NUMA      *na;
  *                     Histogram equalization                  *
  *-------------------------------------------------------------*/
 /*!
- *  pixEqualizeTRC()
+ * \brief   pixEqualizeTRC()
  *
- *      Input:  pixd (<optional> null or equal to pixs)
- *              pixs (8 bpp gray, 32 bpp rgb, or colormapped)
- *              fract (fraction of equalization movement of pixel values)
- *              factor (subsampling factor; integer >= 1)
- *      Return: pixd, or null on error
+ * \param[in]    pixd [optional] null or equal to pixs
+ * \param[in]    pixs 8 bpp gray, 32 bpp rgb, or colormapped
+ * \param[in]    fract fraction of equalization movement of pixel values
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) pixd must either be null or equal to pixs.
  *          For in-place operation, set pixd == pixs:
  *             pixEqualizeTRC(pixs, pixs, ...);
@@ -600,6 +617,7 @@ NUMA      *na;
  *          in-place operation because the intermediate image pixt
  *          is copied back to pixs (which for in-place is the same
  *          as pixd).
+ * </pre>
  */
 PIX *
 pixEqualizeTRC(PIX       *pixd,
@@ -671,20 +689,22 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  numaEqualizeTRC()
+ * \brief   numaEqualizeTRC()
  *
- *      Input:  pix (8 bpp, no colormap)
- *              fract (fraction of equalization movement of pixel values)
- *              factor (subsampling factor; integer >= 1)
- *      Return: nad, or null on error
+ * \param[in]    pix 8 bpp, no colormap
+ * \param[in]    fract fraction of equalization movement of pixel values
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \return  nad, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If fract == 0.0, no equalization will be performed.
  *          If fract == 1.0, equalization is complete.
  *      (2) Set the subsampling factor > 1 to reduce the amount of computation.
  *      (3) The map is returned as a numa with 256 values, specifying
  *          the equalized value (array value) for every input value
  *          (the array index).
+ * </pre>
  */
 NUMA *
 numaEqualizeTRC(PIX       *pix,
@@ -733,14 +753,15 @@ NUMA      *nah, *nasum, *nad;
  *                       Generic TRC mapping                   *
  *-------------------------------------------------------------*/
 /*!
- *  pixTRCMap()
+ * \brief   pixTRCMap()
  *
- *      Input:  pixs (8 grayscale or 32 bpp rgb; not colormapped)
- *              pixm (<optional> 1 bpp mask)
- *              na (mapping array)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 grayscale or 32 bpp rgb; not colormapped
+ * \param[in]    pixm [optional] 1 bpp mask
+ * \param[in]    na mapping array
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This operation is in-place on pixs.
  *      (2) For 32 bpp, this applies the same map to each of the r,g,b
  *          components.
@@ -750,6 +771,7 @@ NUMA      *nah, *nasum, *nad;
  *          aligned with pixs, and the map function is applied only
  *          to pixels in pixs under the fg of pixm.
  *      (5) For 32 bpp, this does not save the alpha channel.
+ * </pre>
  */
 l_int32
 pixTRCMap(PIX   *pixs,
@@ -857,20 +879,22 @@ l_uint32  *data, *datam, *line, *linem;
  *                             Unsharp masking                           *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixUnsharpMasking()
+ * \brief   pixUnsharpMasking()
  *
- *      Input:  pixs (all depths except 1 bpp; with or without colormaps)
- *              halfwidth  ("half-width" of smoothing filter)
- *              fract  (fraction of edge added back into image)
- *      Return: pixd, or null on error
+ * \param[in]    pixs all depths except 1 bpp; with or without colormaps
+ * \param[in]    halfwidth  "half-width" of smoothing filter
+ * \param[in]    fract  fraction of edge added back into image
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) We use symmetric smoothing filters of odd dimension,
- *          typically use sizes of 3, 5, 7, etc.  The @halfwidth parameter
+ *          typically use sizes of 3, 5, 7, etc.  The %halfwidth parameter
  *          for these is (size - 1)/2; i.e., 1, 2, 3, etc.
  *      (2) The fract parameter is typically taken in the
  *          range:  0.2 < fract < 0.7
  *      (3) Returns a clone if no sharpening is requested.
+ * </pre>
  */
 PIX *
 pixUnsharpMasking(PIX       *pixs,
@@ -893,7 +917,7 @@ PIX     *pixt, *pixd, *pixr, *pixrs, *pixg, *pixgs, *pixb, *pixbs;
         return pixUnsharpMaskingFast(pixs, halfwidth, fract, L_BOTH_DIRECTIONS);
 
         /* Remove colormap; clone if possible; result is either 8 or 32 bpp */
-    if ((pixt = pixConvertTo8Or32(pixs, 0, 1)) == NULL)
+    if ((pixt = pixConvertTo8Or32(pixs, L_CLONE, 0)) == NULL)
         return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
 
         /* Sharpen */
@@ -924,20 +948,22 @@ PIX     *pixt, *pixd, *pixr, *pixrs, *pixg, *pixgs, *pixb, *pixbs;
 
 
 /*!
- *  pixUnsharpMaskingGray()
+ * \brief   pixUnsharpMaskingGray()
  *
- *      Input:  pixs (8 bpp; no colormap)
- *              halfwidth  ("half-width" of smoothing filter)
- *              fract  (fraction of edge added back into image)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 bpp; no colormap
+ * \param[in]    halfwidth  "half-width" of smoothing filter
+ * \param[in]    fract  fraction of edge added back into image
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) We use symmetric smoothing filters of odd dimension,
- *          typically use sizes of 3, 5, 7, etc.  The @halfwidth parameter
+ *          typically use sizes of 3, 5, 7, etc.  The %halfwidth parameter
  *          for these is (size - 1)/2; i.e., 1, 2, 3, etc.
  *      (2) The fract parameter is typically taken in the range:
  *          0.2 < fract < 0.7
  *      (3) Returns a clone if no sharpening is requested.
+ * </pre>
  */
 PIX *
 pixUnsharpMaskingGray(PIX       *pixs,
@@ -999,27 +1025,28 @@ PIXACC  *pixacc;
 
 
 /*!
- *  pixUnsharpMaskingFast()
+ * \brief   pixUnsharpMaskingFast()
  *
- *      Input:  pixs (all depths except 1 bpp; with or without colormaps)
- *              halfwidth  ("half-width" of smoothing filter; 1 and 2 only)
- *              fract  (fraction of high frequency added to image)
- *              direction (L_HORIZ, L_VERT, L_BOTH_DIRECTIONS)
- *      Return: pixd, or null on error
+ * \param[in]    pixs all depths except 1 bpp; with or without colormaps
+ * \param[in]    halfwidth  "half-width" of smoothing filter; 1 and 2 only
+ * \param[in]    fract  fraction of high frequency added to image
+ * \param[in]    direction L_HORIZ, L_VERT, L_BOTH_DIRECTIONS
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The fast version uses separable 1-D filters directly on
  *          the input image.  The halfwidth is either 1 (full width = 3)
  *          or 2 (full width = 5).
  *      (2) The fract parameter is typically taken in the
  *            range:  0.2 < fract < 0.7
- *      (3) To skip horizontal sharpening, use @fracth = 0.0; ditto for @fractv
+ *      (3) To skip horizontal sharpening, use %fracth = 0.0; ditto for %fractv
  *      (4) For one dimensional filtering (as an example):
- *          For @halfwidth = 1, the low-pass filter is
+ *          For %halfwidth = 1, the low-pass filter is
  *              L:    1/3    1/3   1/3
  *          and the high-pass filter is
  *              H = I - L:   -1/3   2/3   -1/3
- *          For @halfwidth = 2, the low-pass filter is
+ *          For %halfwidth = 2, the low-pass filter is
  *              L:    1/5    1/5   1/5    1/5    1/5
  *          and the high-pass filter is
  *              H = I - L:   -1/5  -1/5   4/5  -1/5   -1/5
@@ -1030,9 +1057,10 @@ PIXACC  *pixacc;
  *      (5) For 2D, the sharpening filter is not separable, because the
  *          vertical filter depends on the horizontal location relative
  *          to the filter origin, and v.v.   So we either do the full
- *          2D filter (for @halfwidth == 1) or do the low-pass
+ *          2D filter (for %halfwidth == 1) or do the low-pass
  *          convolution separably and then compose with the original pix.
  *      (6) Returns a clone if no sharpening is requested.
+ * </pre>
  */
 PIX *
 pixUnsharpMaskingFast(PIX       *pixs,
@@ -1058,7 +1086,7 @@ PIX     *pixt, *pixd, *pixr, *pixrs, *pixg, *pixgs, *pixb, *pixbs;
         return (PIX *)ERROR_PTR("invalid direction", procName, NULL);
 
         /* Remove colormap; clone if possible; result is either 8 or 32 bpp */
-    if ((pixt = pixConvertTo8Or32(pixs, 0, 1)) == NULL)
+    if ((pixt = pixConvertTo8Or32(pixs, L_CLONE, 0)) == NULL)
         return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
 
         /* Sharpen */
@@ -1090,18 +1118,20 @@ PIX     *pixt, *pixd, *pixr, *pixrs, *pixg, *pixgs, *pixb, *pixbs;
 
 
 /*!
- *  pixUnsharpMaskingGrayFast()
+ * \brief   pixUnsharpMaskingGrayFast()
  *
- *      Input:  pixs (8 bpp; no colormap)
- *              halfwidth  ("half-width" of smoothing filter: 1 or 2)
- *              fract  (fraction of high frequency added to image)
- *              direction (L_HORIZ, L_VERT, L_BOTH_DIRECTIONS)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 bpp; no colormap
+ * \param[in]    halfwidth  "half-width" of smoothing filter: 1 or 2
+ * \param[in]    fract  fraction of high frequency added to image
+ * \param[in]    direction L_HORIZ, L_VERT, L_BOTH_DIRECTIONS
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For usage and explanation of the algorithm, see notes
  *          in pixUnsharpMaskingFast().
  *      (2) Returns a clone if no sharpening is requested.
+ * </pre>
  */
 PIX *
 pixUnsharpMaskingGrayFast(PIX       *pixs,
@@ -1137,18 +1167,20 @@ PIX  *pixd;
 
 
 /*!
- *  pixUnsharpMaskingGray1D()
+ * \brief   pixUnsharpMaskingGray1D()
  *
- *      Input:  pixs (8 bpp; no colormap)
- *              halfwidth  ("half-width" of smoothing filter: 1 or 2)
- *              fract  (fraction of high frequency added to image)
- *              direction (of filtering; use L_HORIZ or L_VERT)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 bpp; no colormap
+ * \param[in]    halfwidth  "half-width" of smoothing filter: 1 or 2
+ * \param[in]    fract  fraction of high frequency added to image
+ * \param[in]    direction of filtering; use L_HORIZ or L_VERT
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For usage and explanation of the algorithm, see notes
  *          in pixUnsharpMaskingFast().
  *      (2) Returns a clone if no sharpening is requested.
+ * </pre>
  */
 PIX *
 pixUnsharpMaskingGray1D(PIX       *pixs,
@@ -1270,18 +1302,20 @@ PIX       *pixd;
 
 
 /*!
- *  pixUnsharpMaskingGray2D()
+ * \brief   pixUnsharpMaskingGray2D()
  *
- *      Input:  pixs (8 bpp; no colormap)
- *              halfwidth  ("half-width" of smoothing filter: 1 or 2)
- *              fract  (fraction of high frequency added to image)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 bpp; no colormap
+ * \param[in]    halfwidth  "half-width" of smoothing filter: 1 or 2
+ * \param[in]    fract  fraction of high frequency added to image
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For halfwidth == 1, we implement the full sharpening filter
  *          directly.  For halfwidth == 2, we implement the the lowpass
  *          filter separably and then compute the sharpening result locally.
  *      (2) Returns a clone if no sharpening is requested.
+ * </pre>
  */
 PIX *
 pixUnsharpMaskingGray2D(PIX       *pixs,
@@ -1400,14 +1434,15 @@ FPIX       *fpix;
  *                    Hue and saturation modification                    *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixModifyHue()
+ * \brief   pixModifyHue()
  *
- *      Input:  pixd (<optional> can be null or equal to pixs)
- *              pixs (32 bpp rgb)
- *              fract (between -1.0 and 1.0)
- *      Return: pixd, or null on error
+ * \param[in]    pixd [optional] can be null or equal to pixs
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    fract between -1.0 and 1.0
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) pixd must either be null or equal to pixs.
  *          For in-place operation, set pixd == pixs:
  *             pixEqualizeTRC(pixs, pixs, ...);
@@ -1418,6 +1453,7 @@ FPIX       *fpix;
  *      (2) If no modification is requested (fract = -1.0 or 0 or 1.0),
  *          return a copy unless in-place, in which case this is a no-op.
  *      (3) See discussion of color-modification methods, in coloring.c.
+ * </pre>
  */
 PIX  *
 pixModifyHue(PIX       *pixd,
@@ -1472,14 +1508,15 @@ l_uint32  *data, *line;
 
 
 /*!
- *  pixModifySaturation()
+ * \brief   pixModifySaturation()
  *
- *      Input:  pixd (<optional> can be null, existing or equal to pixs)
- *              pixs (32 bpp rgb)
- *              fract (between -1.0 and 1.0)
- *      Return: pixd, or null on error
+ * \param[in]    pixd [optional] can be null, existing or equal to pixs
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    fract between -1.0 and 1.0
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If fract > 0.0, it gives the fraction that the pixel
  *          saturation is moved from its initial value toward 255.
  *          If fract < 0.0, it gives the fraction that the pixel
@@ -1489,6 +1526,7 @@ l_uint32  *data, *line;
  *      (2) If fract = 0, no modification is requested; return a copy
  *          unless in-place, in which case this is a no-op.
  *      (3) See discussion of color-modification methods, in coloring.c.
+ * </pre>
  */
 PIX  *
 pixModifySaturation(PIX       *pixd,
@@ -1538,12 +1576,12 @@ l_uint32  *data, *line;
 
 
 /*!
- *  pixMeasureSaturation()
+ * \brief   pixMeasureSaturation()
  *
- *      Input:  pixs (32 bpp rgb)
- *              factor (subsampling factor; integer >= 1)
- *              &sat (<return> average saturation)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[out]   psat average saturation
+ * \return  pixd, or NULL on error
  */
 l_int32
 pixMeasureSaturation(PIX        *pixs,
@@ -1586,14 +1624,15 @@ l_uint32  *data, *line;
 
 
 /*!
- *  pixModifyBrightness()
+ * \brief   pixModifyBrightness()
  *
- *      Input:  pixd (<optional> can be null, existing or equal to pixs)
- *              pixs (32 bpp rgb)
- *              fract (between -1.0 and 1.0)
- *      Return: pixd, or null on error
+ * \param[in]    pixd [optional] can be null, existing or equal to pixs
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    fract between -1.0 and 1.0
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If fract > 0.0, it gives the fraction that the v-parameter,
  *          which is max(r,g,b), is moved from its initial value toward 255.
  *          If fract < 0.0, it gives the fraction that the v-parameter
@@ -1603,6 +1642,7 @@ l_uint32  *data, *line;
  *      (2) If fract = 0, no modification is requested; return a copy
  *          unless in-place, in which case this is a no-op.
  *      (3) See discussion of color-modification methods, in coloring.c.
+ * </pre>
  */
 PIX  *
 pixModifyBrightness(PIX       *pixd,
@@ -1655,15 +1695,16 @@ l_uint32  *data, *line;
  *                             Color shifting                            *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixColorShiftRGB()
+ * \brief   pixColorShiftRGB()
  *
- *      Input:  pixs (32 bpp rgb)
- *              rfract (fractional shift in red component)
- *              gfract (fractional shift in green component)
- *              bfract (fractional shift in blue component)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    rfract fractional shift in red component
+ * \param[in]    gfract fractional shift in green component
+ * \param[in]    bfract fractional shift in blue component
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This allows independent fractional shifts of the r,g and b
  *          components.  A positive shift pushes to saturation (255);
  *          a negative shift pushes toward 0 (black).
@@ -1676,6 +1717,7 @@ l_uint32  *data, *line;
  *      (4) Examples of limiting cases:
  *            rfract = 1 ==> r = 255
  *            rfract = -1 ==> r = 0
+ * </pre>
  */
 PIX *
 pixColorShiftRGB(PIX       *pixs,
@@ -1751,19 +1793,21 @@ PIX       *pixd;
 /*-----------------------------------------------------------------------*
  *            General multiplicative constant color transform            *
  *-----------------------------------------------------------------------*/
-/*
- *  pixMultConstantColor()
+/*!
+ * \brief   pixMultConstantColor()
  *
- *      Input:  pixs (colormapped or rgb)
- *              rfact, gfact, bfact (multiplicative factors on each component)
- *      Return: pixd (colormapped or rgb, with colors scaled), or null on error
+ * \param[in]    pixs colormapped or rgb
+ * \param[in]    rfact, gfact, bfact multiplicative factors on each component
+ * \return  pixd colormapped or rgb, with colors scaled, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) rfact, gfact and bfact can only have non-negative values.
  *          They can be greater than 1.0.  All transformed component
  *          values are clipped to the interval [0, 255].
  *      (2) For multiplication with a general 3x3 matrix of constants,
  *          use pixMultMatrixColor().
+ * </pre>
  */
 PIX *
 pixMultConstantColor(PIX       *pixs,
@@ -1834,14 +1878,15 @@ PIXCMAP   *cmap;
 }
 
 
-/*
- *  pixMultMatrixColor()
+/*!
+ * \brief   pixMultMatrixColor()
  *
- *      Input:  pixs (colormapped or rgb)
- *              kernel (3x3 matrix of floats)
- *      Return: pixd (colormapped or rgb), or null on error
+ * \param[in]    pixs colormapped or rgb
+ * \param[in]    kel kernel 3x3 matrix of floats
+ * \return  pixd colormapped or rgb, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The kernel is a data structure used mostly for floating point
  *          convolution.  Here it is a 3x3 matrix of floats that are used
  *          to transform the pixel values by matrix multiplication:
@@ -1864,6 +1909,7 @@ PIXCMAP   *cmap;
  *      (4) Matrix entries can have positive and negative values, and can
  *          be larger than 1.0.  All transformed component values
  *          are clipped to [0, 255].
+ * </pre>
  */
 PIX *
 pixMultMatrixColor(PIX       *pixs,
@@ -1943,15 +1989,16 @@ PIXCMAP   *cmap;
  *                    Half-edge by bandpass                    *
  *-------------------------------------------------------------*/
 /*!
- *  pixHalfEdgeByBandpass()
+ * \brief   pixHalfEdgeByBandpass()
  *
- *      Input:  pixs (8 bpp gray or 32 bpp rgb)
- *              sm1h, sm1v ("half-widths" of smoothing filter sm1)
- *              sm2h, sm2v ("half-widths" of smoothing filter sm2)
- *                      (require sm2 != sm1)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 bpp gray or 32 bpp rgb
+ * \param[in]    sm1h, sm1v "half-widths" of smoothing filter sm1
+ * \param[in]    sm2h, sm2v "half-widths" of smoothing filter sm2;
+ *                      require sm2 != sm1
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) We use symmetric smoothing filters of odd dimension,
  *          typically use 3, 5, 7, etc.  The smoothing parameters
  *          for these are 1, 2, 3, etc.  The filter size is related
@@ -1971,6 +2018,7 @@ PIXCMAP   *cmap;
  *          the transition.  Likewise, if sm1 > sm2, the sm1 - sm2
  *          signal difference is positive on the lower half of
  *          the transition.
+ * </pre>
  */
 PIX *
 pixHalfEdgeByBandpass(PIX     *pixs,

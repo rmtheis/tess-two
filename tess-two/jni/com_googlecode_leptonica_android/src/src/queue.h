@@ -27,9 +27,10 @@
 #ifndef  LEPTONICA_QUEUE_H
 #define  LEPTONICA_QUEUE_H
 
-/*
- *  queue.h
+/*!
+ * \file queue.h
  *
+ * <pre>
  *      Expandable pointer queue for arbitrary void* data.
  *
  *      The L_Queue is a fifo that implements a queue of void* pointers.
@@ -56,16 +57,18 @@
  *      items popped from the queue.  It is not made by default.
  *
  *      For further implementation details, see queue.c.
+ * </pre>
  */
 
+/*! Expandable pointer queue for arbitrary void* data */
 struct L_Queue
 {
-    l_int32          nalloc;     /* size of allocated ptr array            */
-    l_int32          nhead;      /* location of head (in ptrs) from the    */
-                                 /* beginning of the array                 */
-    l_int32          nelem;      /* number of elements stored in the queue */
-    void           **array;      /* ptr array                              */
-    struct L_Stack  *stack;      /* auxiliary stack                        */
+    l_int32          nalloc;   /*!< size of allocated ptr array            */
+    l_int32          nhead;    /*!< location of head (in ptrs) from the    */
+                               /*!< beginning of the array                 */
+    l_int32          nelem;    /*!< number of elements stored in the queue */
+    void           **array;    /*!< ptr array                              */
+    struct L_Stack  *stack;    /*!< auxiliary stack                        */
 
 };
 typedef struct L_Queue L_QUEUE;

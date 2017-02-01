@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  jp2kio.c
+/*!
+ * \file jp2kio.c
+ * <pre>
  *
  *    Read jp2k from file
  *          PIX                *pixReadJp2k()  [special top level]
@@ -95,6 +96,7 @@
  *      quality to jpeg's default standard of 75.  For document images,
  *      SNR = 25 is very poor, whereas SNR = 45 is nearly lossless.  If you
  *      use the latter, you will pay dearly in the size of the compressed file.
+ * </pre>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -151,31 +153,32 @@ static void info_callback(const char *msg, void *client_data) {
  *                 Read jp2k from file (special function)              *
  *---------------------------------------------------------------------*/
 /*!
- *  pixReadJp2k()
+ * \brief   pixReadJp2k()
  *
- *      Input:  filename
- *              reduction (scaling factor: 1, 2, 4, 8, 16)
- *              box  (<optional> for extracting a subregion), can be null
- *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
- *              debug (output callback messages, etc)
- *      Return: pix (8 or 32 bpp), or null on error
+ * \param[in]    filename
+ * \param[in]    reduction scaling factor: 1, 2, 4, 8, 16
+ * \param[in]    box  [optional] for extracting a subregion, can be null
+ * \param[in]    hint a bitwise OR of L_JP2K_* values; 0 for default
+ * \param[in]    debug output callback messages, etc
+ * \return  pix 8 or 32 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a special function for reading jp2k files.
  *          The high-level pixReadStream() uses default values:
- *             @reduction = 1
- *             @box = NULL
+ *             %reduction = 1
+ *             %box = NULL
  *      (2) This decodes at either full resolution or at a reduction by
- *          a power of 2.  The default value @reduction == 1 gives a full
- *          resolution image.  Use @reduction > 1 to get a reduced image.
- *          The actual values of @reduction that can be used on an image
+ *          a power of 2.  The default value %reduction == 1 gives a full
+ *          resolution image.  Use %reduction > 1 to get a reduced image.
+ *          The actual values of %reduction that can be used on an image
  *          depend on the number of resolution levels chosen when the
  *          image was compressed.  Typical values might be 1, 2, 4, 8 and 16.
  *          Using a value representing a reduction level that was not
  *          stored when the file was written will fail with the message:
  *          "failed to read the header".
- *      (3) Use @box to decode only a part of the image.  The box is defined
- *          at full resolution.  It is reduced internally by @reduction,
+ *      (3) Use %box to decode only a part of the image.  The box is defined
+ *          at full resolution.  It is reduced internally by %reduction,
  *          and clipping to the right and bottom of the image is automatic.
  *      (4) We presently only handle images with 8 bits/sample (bps).
  *          If the image has 16 bps, the read will fail.
@@ -185,7 +188,8 @@ static void info_callback(const char *msg, void *client_data) {
  *           spp = 2  ==>  grayscale + alpha   [32 bpp rgba]
  *           spp = 3  ==>  rgb                 [32 bpp rgb]
  *           spp = 4  ==>  rgba                [32 bpp rgba]
- *      (6) The @hint parameter is reserved for future use.
+ *      (6) The %hint parameter is reserved for future use.
+ * </pre>
  */
 PIX *
 pixReadJp2k(const char  *filename,
@@ -214,17 +218,19 @@ PIX      *pix;
 
 
 /*!
- *  pixReadStreamJp2k()
+ * \brief   pixReadStreamJp2k()
  *
- *      Input:  stream
- *              reduction (scaling factor: 1, 2, 4, 8)
- *              box  (<optional> for extracting a subregion), can be null
- *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
- *              debug (output callback messages, etc)
- *      Return: pix (8 or 32 bpp), or null on error
+ * \param[in]    fp file stream
+ * \param[in]    reduction scaling factor: 1, 2, 4, 8
+ * \param[in]    box  [optional] for extracting a subregion, can be null
+ * \param[in]    hint a bitwise OR of L_JP2K_* values; 0 for default
+ * \param[in]    debug output callback messages, etc
+ * \return  pix 8 or 32 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixReadJp2k() for usage.
+ * </pre>
  */
 PIX *
 pixReadStreamJp2k(FILE     *fp,
@@ -434,30 +440,32 @@ PIX               *pix = NULL;
  *                        Write jp2k to file                           *
  *---------------------------------------------------------------------*/
 /*!
- *  pixWriteJp2k()
+ * \brief   pixWriteJp2k()
  *
- *      Input:  filename
- *              pix  (any depth, cmap is OK)
- *              quality (SNR > 0; default ~34; 0 for lossless encoding)
- *              nlevels (resolution levels; <= 10; default = 5)
- *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
- *              debug (output callback messages, etc)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    filename
+ * \param[in]    pix  any depth, cmap is OK
+ * \param[in]    quality SNR > 0; default ~34; 0 for lossless encoding
+ * \param[in]    nlevels resolution levels; <= 10; default = 5
+ * \param[in]    hint a bitwise OR of L_JP2K_* values; 0 for default
+ * \param[in]    debug output callback messages, etc
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
- *      (1) The @quality parameter is the SNR.  The useful range is narrow:
+ * <pre>
+ * Notes:
+ *      (1) The %quality parameter is the SNR.  The useful range is narrow:
  *             SNR < 27  (terrible quality)
  *             SNR = 34  (default; approximately equivalent to jpeg quality 75)
  *             SNR = 40  (very high quality)
  *             SNR = 45  (nearly lossless)
  *          Use 0 for default.
- *      (2) The @nlevels parameter is the number of resolution levels
+ *      (2) The %nlevels parameter is the number of resolution levels
  *          to be written.  For example, with nlevels == 5, images with
  *          reduction factors of 1, 2, 4, 8 and 16 are encoded, and retrieval
  *          is done at the level requested when reading.  For default,
  *          use either 5 or 0.
- *      (3) The @hint parameter is not yet in use.
+ *      (3) The %hint parameter is not yet in use.
  *      (4) For now, we only support 1 "layer" for quality.
+ * </pre>
  */
 l_int32
 pixWriteJp2k(const char  *filename,
@@ -490,19 +498,21 @@ FILE  *fp;
 
 
 /*!
- *  pixWriteStreamJp2k()
+ * \brief   pixWriteStreamJp2k()
  *
- *      Input:  stream
- *              pix  (any depth, cmap is OK)
- *              quality (SNR > 0; default ~34; 0 for lossless encoding)
- *              nlevels (<= 10)
- *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
- *              debug (output callback messages, etc)
- *      Return: 0 if OK, 1 on error
- *  Notes:
+ * \param[in]    fp file stream
+ * \param[in]    pix  any depth, cmap is OK
+ * \param[in]    quality SNR > 0; default ~34; 0 for lossless encoding
+ * \param[in]    nlevels <= 10
+ * \param[in]    hint a bitwise OR of L_JP2K_* values; 0 for default
+ * \param[in]    debug output callback messages, etc
+ * \return  0 if OK, 1 on error
+ * <pre>
+ * Notes:
  *      (1) See pixWriteJp2k() for usage.
  *      (2) For an encoder with more encoding options, see, e.g.,
  *    https://github.com/OpenJPEG/openjpeg/blob/master/tests/test_tile_encoder.c
+ * </pre>
  */
 l_int32
 pixWriteStreamJp2k(FILE    *fp,
@@ -657,14 +667,16 @@ opj_image_t       *image = NULL;
 
 
 /*!
- *  pixConvertToOpjImage()
+ * \brief   pixConvertToOpjImage()
  *
- *      Input:  pix  (8 or 32 bpp)
- *      Return: opj_image, or NULL on error
+ * \param[in]    pix  8 or 32 bpp
+ * \return  opj_image, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Input pix is 8 bpp grayscale, 32 bpp rgb, or 32 bpp rgba.
  *      (2) Gray + alpha pix are all represented as rgba.
+ * </pre>
  */
 static opj_image_t *
 pixConvertToOpjImage(PIX  *pix)
@@ -743,28 +755,26 @@ opj_image_cmptparm_t  cmptparm[4];
 /*---------------------------------------------------------------------*
  *                         Read/write to memory                        *
  *---------------------------------------------------------------------*/
-#if HAVE_FMEMOPEN
-extern FILE *open_memstream(char **data, size_t *size);
-extern FILE *fmemopen(void *data, size_t size, const char *mode);
-#endif  /* HAVE_FMEMOPEN */
 
 /*!
- *  pixReadMemJp2k()
+ * \brief   pixReadMemJp2k()
  *
- *      Input:  data (const; jpeg-encoded)
- *              size (of data)
- *              reduction (scaling factor: 1, 2, 4, 8)
- *              box  (<optional> for extracting a subregion), can be null
- *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
- *              debug (output callback messages, etc)
- *      Return: pix, or null on error
+ * \param[in]    data const; jpeg-encoded
+ * \param[in]    size of data
+ * \param[in]    reduction scaling factor: 1, 2, 4, 8
+ * \param[in]    box  [optional] for extracting a subregion, can be null
+ * \param[in]    hint a bitwise OR of L_JP2K_* values; 0 for default
+ * \param[in]    debug output callback messages, etc
+ * \return  pix, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This crashes when reading through the fmemopen cookie.
  *          Until we can fix this, we use the file-based work-around.
  *          And fixing this may take some time, because the basic
  *          stream interface is no longer supported in openjpeg.
  *      (2) See pixReadJp2k() for usage.
+ * </pre>
  */
 PIX *
 pixReadMemJp2k(const l_uint8  *data,
@@ -782,16 +792,8 @@ PIX      *pix;
     if (!data)
         return (PIX *)ERROR_PTR("data not defined", procName, NULL);
 
-#if HAVE_FMEMOPEN
-    if ((fp = fmemopen((void *)data, size, "rb")) == NULL)
+    if ((fp = fopenReadFromMemory(data, size)) == NULL)
         return (PIX *)ERROR_PTR("stream not opened", procName, NULL);
-#else
-    L_WARNING("work-around: writing to a temp file\n", procName);
-    if ((fp = tmpfile()) == NULL)
-        return (PIX *)ERROR_PTR("tmpfile stream not opened", procName, NULL);
-    fwrite(data, 1, size, fp);
-    rewind(fp);
-#endif  /* HAVE_FMEMOPEN */
     pix = pixReadStreamJp2k(fp, reduction, box, hint, debug);
     fclose(fp);
     if (!pix) L_ERROR("pix not read\n", procName);
@@ -800,20 +802,22 @@ PIX      *pix;
 
 
 /*!
- *  pixWriteMemJp2k()
+ * \brief   pixWriteMemJp2k()
  *
- *      Input:  &data (<return> data of jpeg compressed image)
- *              &size (<return> size of returned data)
- *              pix (8 or 32 bpp)
- *              quality (SNR > 0; default ~34; 0 for lossless encoding)
- *              nlevels (0 for default)
- *              hint (a bitwise OR of L_JP2K_* values; 0 for default)
- *              debug (output callback messages, etc)
- *      Return: 0 if OK, 1 on error
+ * \param[out]   pdata data of jpeg compressed image
+ * \param[out]   psize size of returned data
+ * \param[in]    pix 8 or 32 bpp
+ * \param[in]    quality SNR > 0; default ~34; 0 for lossless encoding
+ * \param[in]    nlevels 0 for default
+ * \param[in]    hint a bitwise OR of L_JP2K_* values; 0 for default
+ * \param[in]    debug output callback messages, etc
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixWriteJp2k() for usage.  This version writes to
  *          memory instead of to a file stream.
+ * </pre>
  */
 l_int32
 pixWriteMemJp2k(l_uint8  **pdata,
@@ -843,9 +847,14 @@ FILE    *fp;
         return ERROR_INT("stream not opened", procName, 1);
     ret = pixWriteStreamJp2k(fp, pix, quality, nlevels, hint, debug);
 #else
-    L_WARNING("work-around: writing to a temp file\n", procName);
+    L_INFO("work-around: writing to a temp file\n", procName);
+  #ifdef _WIN32
+    if ((fp = fopenWriteWinTempfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
+  #else
     if ((fp = tmpfile()) == NULL)
         return ERROR_INT("tmpfile stream not opened", procName, 1);
+  #endif  /* _WIN32 */
     ret = pixWriteStreamJp2k(fp, pix, quality, nlevels, hint, debug);
     rewind(fp);
     *pdata = l_binaryReadStream(fp, psize);
@@ -931,5 +940,5 @@ opj_stream_t  *l_stream;
 }
 
 /* --------------------------------------------*/
-#endif  /* HAVE_LIBJPEG */
+#endif  /* HAVE_LIBJP2K */
 /* --------------------------------------------*/

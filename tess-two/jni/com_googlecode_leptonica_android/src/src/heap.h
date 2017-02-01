@@ -27,9 +27,10 @@
 #ifndef  LEPTONICA_HEAP_H
 #define  LEPTONICA_HEAP_H
 
-/*
- *  heap.h
+/*!
+ * \file heap.h
  *
+ * <pre>
  *      Expandable priority queue configured as a heap for arbitrary void* data
  *
  *      The L_Heap is used to implement a priority queue.  The elements
@@ -69,14 +70,16 @@
  *      the ptr array size to double.
  *
  *      For further implementation details, see heap.c.
+ * </pre>
  */
 
+/*! Heap of arbitrary void* data */
 struct L_Heap
 {
-    l_int32      nalloc;      /* size of allocated ptr array                 */
-    l_int32      n;           /* number of elements stored in the heap       */
-    void       **array;       /* ptr array                                   */
-    l_int32      direction;   /* L_SORT_INCREASING or L_SORT_DECREASING      */
+    l_int32      nalloc;      /*!< size of allocated ptr array               */
+    l_int32      n;           /*!< number of elements stored in the heap     */
+    void       **array;       /*!< ptr array                                 */
+    l_int32      direction;   /*!< L_SORT_INCREASING or L_SORT_DECREASING    */
 };
 typedef struct L_Heap  L_HEAP;
 

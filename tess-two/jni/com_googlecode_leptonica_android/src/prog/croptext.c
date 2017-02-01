@@ -62,7 +62,7 @@ static char  mainName[] = "croptext";
     nfiles = sarrayGetCount(safiles);
 
     for (i = 0; i < nfiles; i++) {
-        infile = sarrayGetString(safiles, i, 0);
+        infile = sarrayGetString(safiles, i, L_NOCOPY);
         splitPathAtDirectory(infile, NULL, &tail);
         outfile = genPathname(dirout, tail);
         pixs = pixRead(infile);

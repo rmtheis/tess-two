@@ -89,7 +89,7 @@ static char  mainName[] = "wordsinorder";
     baa = boxaaCreate(nfiles);
     naa = numaaCreate(nfiles);
     for (i = 0; i < nfiles; i++) {
-        fname = sarrayGetString(safiles, i, 0);
+        fname = sarrayGetString(safiles, i, L_NOCOPY);
         if ((pixs = pixRead(fname)) == NULL) {
             L_WARNING("image file %d not read\n", mainName, i);
             continue;

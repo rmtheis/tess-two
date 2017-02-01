@@ -33,11 +33,6 @@
  */
 
 #include <math.h>
-#ifndef _WIN32
-#include <unistd.h>
-#else
-#include <windows.h>   /* for Sleep() */
-#endif  /* _WIN32 */
 #include "allheaders.h"
 
 static void MakePtasAffine(l_int32 i, PTA **pptas, PTA **pptad);
@@ -69,11 +64,11 @@ l_float32     sum, sumx, sumy, diff;
 L_DEWARP     *dew;
 L_DEWARPA    *dewa;
 FPIX         *fpixs, *fpixs2, *fpixs3, *fpixs4, *fpixg, *fpixd;
-FPIX         *fpix1, *fpix2, *fpixt1, *fpixt2;
+FPIX         *fpix1, *fpix2;
 DPIX         *dpix, *dpix2;
 L_KERNEL     *kel, *kelx, *kely;
-PIX          *pixs, *pixs2, *pixs3, *pixt, *pixd, *pixg, *pixb, *pixn;
-PIX          *pixt1, *pixt2, *pixt3, *pixt4, *pixt5, *pixt6;
+PIX          *pixs, *pixs2, *pixs3, *pixd, *pixg, *pixb, *pixn;
+PIX          *pix0, *pix1, *pix2, *pix3, *pix4, *pix5, *pix6;
 PIXA         *pixa;
 PTA          *ptas, *ptad;
 L_REGPARAMS  *rp;
@@ -87,10 +82,10 @@ L_REGPARAMS  *rp;
     kel = makeGaussianKernel(5, 5, 3.0, 4.0);
     kernelGetSum(kel, &sum);
     if (rp->display) fprintf(stderr, "Sum for 2d gaussian kernel = %f\n", sum);
-    pixt = kernelDisplayInPix(kel, 41, 2);
-    regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 0 */
-    pixSaveTiled(pixt, pixa, 1.0, 1, 20, 8);
-    pixDestroy(&pixt);
+    pix0 = kernelDisplayInPix(kel, 41, 2);
+    regTestWritePixAndCheck(rp, pix0, IFF_PNG);  /* 0 */
+    pixSaveTiled(pix0, pixa, 1.0, 1, 20, 8);
+    pixDestroy(&pix0);
 
         /* Separable gaussian kernel */
     makeGaussianKernelSep(5, 5, 3.0, 4.0, &kelx, &kely);
@@ -100,14 +95,14 @@ L_REGPARAMS  *rp;
     if (rp->display) fprintf(stderr, "Sum for y gaussian kernel = %f\n", sumy);
     if (rp->display) fprintf(stderr, "Sum for x * y gaussian kernel = %f\n",
                          sumx * sumy);
-    pixt = kernelDisplayInPix(kelx, 41, 2);
-    regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 1 */
-    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
-    pixDestroy(&pixt);
-    pixt = kernelDisplayInPix(kely, 41, 2);
-    regTestWritePixAndCheck(rp, pixt, IFF_PNG);  /* 2 */
-    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 8);
-    pixDestroy(&pixt);
+    pix0 = kernelDisplayInPix(kelx, 41, 2);
+    regTestWritePixAndCheck(rp, pix0, IFF_PNG);  /* 1 */
+    pixSaveTiled(pix0, pixa, 1.0, 0, 20, 8);
+    pixDestroy(&pix0);
+    pix0 = kernelDisplayInPix(kely, 41, 2);
+    regTestWritePixAndCheck(rp, pix0, IFF_PNG);  /* 2 */
+    pixSaveTiled(pix0, pixa, 1.0, 0, 20, 8);
+    pixDestroy(&pix0);
 
         /* Use pixRasterop() to generate source image */
     pixs = pixRead("test8.jpg");
@@ -116,55 +111,53 @@ L_REGPARAMS  *rp;
     regTestWritePixAndCheck(rp, pixs, IFF_JFIF_JPEG);  /* 3 */
 
         /* Convolution directly with pix */
-    pixt1 = pixConvolve(pixs, kel, 8, 1);
-    regTestWritePixAndCheck(rp, pixt1, IFF_JFIF_JPEG);  /* 4 */
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixConvolveSep(pixs, kelx, kely, 8, 1);
-    regTestWritePixAndCheck(rp, pixt2, IFF_JFIF_JPEG);  /* 5 */
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
+    pix1 = pixConvolve(pixs, kel, 8, 1);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 4 */
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixConvolveSep(pixs, kelx, kely, 8, 1);
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 5 */
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
 
         /* Convolution indirectly with fpix, using fpixRasterop()
          * to generate the source image. */
     fpixs = pixConvertToFPix(pixs, 3);
     fpixs2 = pixConvertToFPix(pixs2, 3);
     fpixRasterop(fpixs, 150, 125, 150, 100, fpixs2, 75, 100);
-    fpixt1 = fpixConvolve(fpixs, kel, 1);
-    pixt3 = fpixConvertToPix(fpixt1, 8, L_CLIP_TO_ZERO, 1);
-    regTestWritePixAndCheck(rp, pixt3, IFF_JFIF_JPEG);  /* 6 */
-    pixSaveTiled(pixt3, pixa, 1.0, 1, 20, 8);
-    fpixt2 = fpixConvolveSep(fpixs, kelx, kely, 1);
-    pixt4 = fpixConvertToPix(fpixt2, 8, L_CLIP_TO_ZERO, 1);
-    regTestWritePixAndCheck(rp, pixt4, IFF_JFIF_JPEG);  /* 7 */
-    pixSaveTiled(pixt4, pixa, 1.0, 0, 20, 8);
+    fpix1 = fpixConvolve(fpixs, kel, 1);
+    pix3 = fpixConvertToPix(fpix1, 8, L_CLIP_TO_ZERO, 1);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 6 */
+    pixSaveTiled(pix3, pixa, 1.0, 1, 20, 8);
+    fpix2 = fpixConvolveSep(fpixs, kelx, kely, 1);
+    pix4 = fpixConvertToPix(fpix2, 8, L_CLIP_TO_ZERO, 1);
+    regTestWritePixAndCheck(rp, pix4, IFF_JFIF_JPEG);  /* 7 */
+    pixSaveTiled(pix4, pixa, 1.0, 0, 20, 8);
     pixDestroy(&pixs2);
     fpixDestroy(&fpixs2);
-    fpixDestroy(&fpixt1);
-    fpixDestroy(&fpixt2);
+    fpixDestroy(&fpix1);
+    fpixDestroy(&fpix2);
 
         /* Comparison of results */
-    pixCompareGray(pixt1, pixt2, L_COMPARE_ABS_DIFF, 0, NULL,
-                   &diff, NULL, NULL);
-    if (rp->display)
+    if (rp->display) {
+        pixCompareGray(pix1, pix2, L_COMPARE_ABS_DIFF, 0, NULL,
+                       &diff, NULL, NULL);
         fprintf(stderr, "Ave diff of pixConvolve and pixConvolveSep: %f\n",
                 diff);
-    pixCompareGray(pixt3, pixt4, L_COMPARE_ABS_DIFF, 0, NULL,
-                   &diff, NULL, NULL);
-    if (rp->display)
+        pixCompareGray(pix3, pix4, L_COMPARE_ABS_DIFF, 0, NULL,
+                       &diff, NULL, NULL);
         fprintf(stderr, "Ave diff of fpixConvolve and fpixConvolveSep: %f\n",
                 diff);
-    pixCompareGray(pixt1, pixt3, L_COMPARE_ABS_DIFF, 0, NULL,
-                   &diff, NULL, NULL);
-    if (rp->display)
+        pixCompareGray(pix1, pix3, L_COMPARE_ABS_DIFF, 0, NULL,
+                       &diff, NULL, NULL);
         fprintf(stderr, "Ave diff of pixConvolve and fpixConvolve: %f\n", diff);
-    pixCompareGray(pixt2, pixt4, L_COMPARE_ABS_DIFF, GPLOT_PNG, NULL,
+    }
+    pixCompareGray(pix2, pix4, L_COMPARE_ABS_DIFF, GPLOT_PNG, NULL,
                    &diff, NULL, NULL);
-    if (rp->display)
-        fprintf(stderr, "Ave diff of pixConvolveSep and fpixConvolveSep: %f\n",
-                diff);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+    fprintf(stderr, "Ave diff of pixConvolveSep and fpixConvolveSep: %f\n",
+            diff);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
         /* Test arithmetic operations; add in a fraction rotated by 180 */
     pixs3 = pixRotate180(NULL, pixs);
@@ -184,15 +177,10 @@ L_REGPARAMS  *rp;
     fpixDestroy(&fpixs);
 
         /* Save the comparison graph; gnuplot should have made it by now! */
-#ifndef _WIN32
-    sleep(2);
-#else
-    Sleep(2000);
-#endif  /* _WIN32 */
-    pixt5 = pixRead("/tmp/lept/comp/compare_gray0.png");
-    regTestWritePixAndCheck(rp, pixt5, IFF_PNG);  /* 10 */
-    pixSaveTiled(pixt5, pixa, 1.0, 1, 20, 8);
-    pixDestroy(&pixt5);
+    pix5 = pixRead("/tmp/lept/comp/compare_gray0.png");
+    regTestWritePixAndCheck(rp, pix5, IFF_PNG);  /* 10 */
+    pixSaveTiled(pix5, pixa, 1.0, 1, 20, 8);
+    pixDestroy(&pix5);
 
         /* Display results */
     pixd = pixaDisplay(pixa, 0, 0);
@@ -206,40 +194,40 @@ L_REGPARAMS  *rp;
     pixs = pixRead("1555.007.jpg");
     pixg = pixConvertTo8(pixs, 0);
     l_setConvolveSampling(5, 5);
-    pixt1 = pixConvolve(pixg, kel, 8, 1);
-    regTestWritePixAndCheck(rp, pixt1, IFF_JFIF_JPEG);  /* 12 */
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 32);
-    pixt2 = pixConvolveSep(pixg, kelx, kely, 8, 1);
-    regTestWritePixAndCheck(rp, pixt2, IFF_JFIF_JPEG);  /* 13 */
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 32);
-    pixt3 = pixConvolveRGB(pixs, kel);
-    regTestWritePixAndCheck(rp, pixt3, IFF_JFIF_JPEG);  /* 14 */
-    pixSaveTiled(pixt3, pixa, 1.0, 0, 20, 32);
-    pixt4 = pixConvolveRGBSep(pixs, kelx, kely);
-    regTestWritePixAndCheck(rp, pixt4, IFF_JFIF_JPEG);  /* 15 */
-    pixSaveTiled(pixt4, pixa, 1.0, 0, 20, 32);
+    pix1 = pixConvolve(pixg, kel, 8, 1);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 12 */
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 32);
+    pix2 = pixConvolveSep(pixg, kelx, kely, 8, 1);
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 13 */
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 32);
+    pix3 = pixConvolveRGB(pixs, kel);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 14 */
+    pixSaveTiled(pix3, pixa, 1.0, 0, 20, 32);
+    pix4 = pixConvolveRGBSep(pixs, kelx, kely);
+    regTestWritePixAndCheck(rp, pix4, IFF_JFIF_JPEG);  /* 15 */
+    pixSaveTiled(pix4, pixa, 1.0, 0, 20, 32);
 
         /* Then on fpix */
     fpixg = pixConvertToFPix(pixg, 1);
-    fpixt1 = fpixConvolve(fpixg, kel, 1);
-    pixt5 = fpixConvertToPix(fpixt1, 8, L_CLIP_TO_ZERO, 0);
-    regTestWritePixAndCheck(rp, pixt5, IFF_JFIF_JPEG);  /* 16 */
-    pixSaveTiled(pixt5, pixa, 1.0, 1, 20, 32);
-    fpixt2 = fpixConvolveSep(fpixg, kelx, kely, 1);
-    pixt6 = fpixConvertToPix(fpixt2, 8, L_CLIP_TO_ZERO, 0);
-    regTestWritePixAndCheck(rp, pixt6, IFF_JFIF_JPEG);  /* 17 */
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 32);
-    regTestCompareSimilarPix(rp, pixt1, pixt5, 2, 0.00, 0);  /* 18 */
-    regTestCompareSimilarPix(rp, pixt2, pixt6, 2, 0.00, 0);  /* 19 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
-    pixDestroy(&pixt5);
-    pixDestroy(&pixt6);
+    fpix1 = fpixConvolve(fpixg, kel, 1);
+    pix5 = fpixConvertToPix(fpix1, 8, L_CLIP_TO_ZERO, 0);
+    regTestWritePixAndCheck(rp, pix5, IFF_JFIF_JPEG);  /* 16 */
+    pixSaveTiled(pix5, pixa, 1.0, 1, 20, 32);
+    fpix2 = fpixConvolveSep(fpixg, kelx, kely, 1);
+    pix6 = fpixConvertToPix(fpix2, 8, L_CLIP_TO_ZERO, 0);
+    regTestWritePixAndCheck(rp, pix6, IFF_JFIF_JPEG);  /* 17 */
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 32);
+    regTestCompareSimilarPix(rp, pix1, pix5, 2, 0.00, 0);  /* 18 */
+    regTestCompareSimilarPix(rp, pix2, pix6, 2, 0.00, 0);  /* 19 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
+    pixDestroy(&pix6);
     fpixDestroy(&fpixg);
-    fpixDestroy(&fpixt1);
-    fpixDestroy(&fpixt2);
+    fpixDestroy(&fpix1);
+    fpixDestroy(&fpix2);
 
     pixd = pixaDisplay(pixa, 0, 0);
     regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 20 */
@@ -270,31 +258,31 @@ L_REGPARAMS  *rp;
     fpixs3 = fpixAddSlopeBorder(fpixs, 200, 200, 100, 300);
     dpix = fpixConvertToDPix(fpixs3);
     fpixs4 = dpixConvertToFPix(dpix);
-    pixt1 = fpixRenderContours(fpixs, 2.0, 0.2);
-    pixt2 = fpixRenderContours(fpixs2, 2.0, 0.2);
-    pixt3 = fpixRenderContours(fpixs3, 2.0, 0.2);
-    pixt4 = fpixRenderContours(fpixs4, 2.0, 0.2);
-    pixt5 = pixRead("karen8.jpg");
-    dpix2 = pixConvertToDPix(pixt5, 1);
-    pixt6 = dpixConvertToPix(dpix2, 8, L_CLIP_TO_ZERO, 0);
-    regTestWritePixAndCheck(rp, pixt1, IFF_PNG);  /* 21 */
-    pixDisplayWithTitle(pixt1, 0, 100, NULL, rp->display);
-    regTestWritePixAndCheck(rp, pixt2, IFF_PNG);  /* 22 */
-    pixDisplayWithTitle(pixt2, 470, 100, NULL, rp->display);
-    regTestWritePixAndCheck(rp, pixt3, IFF_PNG);  /* 23 */
-    pixDisplayWithTitle(pixt3, 1035, 100, NULL, rp->display);
-    regTestComparePix(rp, pixt3, pixt4);  /* 24 */
-    regTestComparePix(rp, pixt5, pixt6);  /* 25 */
+    pix1 = fpixRenderContours(fpixs, 2.0, 0.2);
+    pix2 = fpixRenderContours(fpixs2, 2.0, 0.2);
+    pix3 = fpixRenderContours(fpixs3, 2.0, 0.2);
+    pix4 = fpixRenderContours(fpixs4, 2.0, 0.2);
+    pix5 = pixRead("karen8.jpg");
+    dpix2 = pixConvertToDPix(pix5, 1);
+    pix6 = dpixConvertToPix(dpix2, 8, L_CLIP_TO_ZERO, 0);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 21 */
+    pixDisplayWithTitle(pix1, 0, 100, NULL, rp->display);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 22 */
+    pixDisplayWithTitle(pix2, 470, 100, NULL, rp->display);
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 23 */
+    pixDisplayWithTitle(pix3, 1035, 100, NULL, rp->display);
+    regTestComparePix(rp, pix3, pix4);  /* 24 */
+    regTestComparePix(rp, pix5, pix6);  /* 25 */
     pixDestroy(&pixs);
     pixDestroy(&pixn);
     pixDestroy(&pixg);
     pixDestroy(&pixb);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
-    pixDestroy(&pixt5);
-    pixDestroy(&pixt6);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
+    pixDestroy(&pix6);
     fpixDestroy(&fpixs2);
     fpixDestroy(&fpixs3);
     fpixDestroy(&fpixs4);
@@ -304,31 +292,31 @@ L_REGPARAMS  *rp;
         /* Test affine and projective transforms on fpix */
     fpixWrite("/tmp/lept/regout/fpix1.fp", dew->fullvdispar);
     fpix1 = fpixRead("/tmp/lept/regout/fpix1.fp");
-    pixt1 = fpixAutoRenderContours(fpix1, 40);
-    regTestWritePixAndCheck(rp, pixt1, IFF_PNG);  /* 26 */
-    pixDisplayWithTitle(pixt1, 0, 500, NULL, rp->display);
-    pixDestroy(&pixt1);
+    pix1 = fpixAutoRenderContours(fpix1, 40);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 26 */
+    pixDisplayWithTitle(pix1, 0, 500, NULL, rp->display);
+    pixDestroy(&pix1);
 
     MakePtasAffine(1, &ptas, &ptad);
     fpix2 = fpixAffinePta(fpix1, ptad, ptas, 200, 0.0);
-    pixt2 = fpixAutoRenderContours(fpix2, 40);
-    regTestWritePixAndCheck(rp, pixt2, IFF_PNG);  /* 27 */
-    pixDisplayWithTitle(pixt2, 400, 500, NULL, rp->display);
+    pix2 = fpixAutoRenderContours(fpix2, 40);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 27 */
+    pixDisplayWithTitle(pix2, 400, 500, NULL, rp->display);
     fpixDestroy(&fpix2);
-    pixDestroy(&pixt2);
+    pixDestroy(&pix2);
     ptaDestroy(&ptas);
     ptaDestroy(&ptad);
 
     MakePtas(1, &ptas, &ptad);
     fpix2 = fpixProjectivePta(fpix1, ptad, ptas, 200, 0.0);
-    pixt3 = fpixAutoRenderContours(fpix2, 40);
-    regTestWritePixAndCheck(rp, pixt3, IFF_PNG);  /* 28 */
-    pixDisplayWithTitle(pixt3, 400, 500, NULL, rp->display);
+    pix3 = fpixAutoRenderContours(fpix2, 40);
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 28 */
+    pixDisplayWithTitle(pix3, 400, 500, NULL, rp->display);
+    fpixDestroy(&fpix1);
     fpixDestroy(&fpix2);
-    pixDestroy(&pixt3);
+    pixDestroy(&pix3);
     ptaDestroy(&ptas);
     ptaDestroy(&ptad);
-    fpixDestroy(&fpix1);
     dewarpaDestroy(&dewa);
 
     kernelDestroy(&kel);

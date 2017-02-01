@@ -55,116 +55,179 @@ static const l_int32  xp4[] = { 520,  520,  520};
 static const l_int32  yp4[] = { 694,  624,  622};
 
 #define  ALL                        1
-#define  ADDED_BORDER_PIXELS      500
+#define  ADDED_BORDER_PIXELS      250
 
 int main(int    argc,
          char **argv)
 {
-l_int32      i;
-PIX         *pixs, *pixgb, *pixt1, *pixt2, *pixt3, *pixt4, *pixg, *pixd;
-PIXA        *pixa;
-PTA         *ptas, *ptad;
-static char  mainName[] = "bilinear_reg";
+l_int32       i;
+PIX          *pixs, *pix1, *pix2, *pix3, *pix4, *pixd;
+PIX          *pixb, *pixg, *pixc, *pixcs;
+PIXA         *pixa;
+PTA          *ptas, *ptad;
+L_REGPARAMS  *rp;
 
-    if (argc != 1)
-        return ERROR_INT(" Syntax:  bilinear_reg", mainName, 1);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
 
-#if 1
     pixs = pixRead("feyn.tif");
-    pixg = pixScaleToGray3(pixs);
-#else
-    pixs = pixRead("marge.jpg");
-    pixg = pixConvertTo8(pixs, 0);
-#endif
+    pixg = pixScaleToGray(pixs, 0.2);
+    pixDestroy(&pixs);
 
 #if ALL
         /* Test non-invertability of sampling */
+    fprintf(stderr, "Test invertability of sampling\n");
     pixa = pixaCreate(0);
     for (i = 1; i < 3; i++) {
-        pixgb = pixAddBorder(pixg, ADDED_BORDER_PIXELS, 255);
+        pixb = pixAddBorder(pixg, ADDED_BORDER_PIXELS, 255);
         MakePtas(i, &ptas, &ptad);
-        pixt1 = pixBilinearSampledPta(pixgb, ptad, ptas, L_BRING_IN_WHITE);
-        pixSaveTiled(pixt1, pixa, 0.5, 1, 20, 8);
-        pixt2 = pixBilinearSampledPta(pixt1, ptas, ptad, L_BRING_IN_WHITE);
-        pixSaveTiled(pixt2, pixa, 0.5, 0, 20, 0);
-        pixd = pixRemoveBorder(pixt2, ADDED_BORDER_PIXELS);
+        pix1 = pixBilinearSampledPta(pixb, ptad, ptas, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 0,3,6 */
+        pixaAddPix(pixa, pix1, L_INSERT);
+        pix2 = pixBilinearSampledPta(pix1, ptas, ptad, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 1,4,7 */
+        pixaAddPix(pixa, pix2, L_INSERT);
+        pixd = pixRemoveBorder(pix2, ADDED_BORDER_PIXELS);
         pixInvert(pixd, pixd);
         pixXor(pixd, pixd, pixg);
-        pixSaveTiled(pixd, pixa, 0.5, 0, 20, 0);
-        if (i == 0) pixWrite("/tmp/junksamp.png", pixt1, IFF_PNG);
-        pixDestroy(&pixgb);
-        pixDestroy(&pixt1);
-        pixDestroy(&pixt2);
-        pixDestroy(&pixd);
+        regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 2,5,8 */
+        pixaAddPix(pixa, pixd, L_INSERT);
+        pixDestroy(&pixb);
         ptaDestroy(&ptas);
         ptaDestroy(&ptad);
     }
 
-    pixt1 = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/junkbilin1.png", pixt1, IFF_PNG);
-    pixDisplay(pixt1, 100, 300);
-    pixDestroy(&pixt1);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 0.5, 20, 3);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 9 */
+    pixDisplayWithTitle(pix1, 0, 100, NULL, rp->display);
+    pixDestroy(&pix1);
     pixaDestroy(&pixa);
 #endif
 
 #if ALL
-        /* Test non-invertability of interpolation */
+        /* Test invertability of grayscale interpolation */
+    fprintf(stderr, "Test invertability of grayscale interpolation\n");
     pixa = pixaCreate(0);
     for (i = 1; i < 3; i++) {
-        pixgb = pixAddBorder(pixg, ADDED_BORDER_PIXELS, 255);
+        pixb = pixAddBorder(pixg, ADDED_BORDER_PIXELS, 255);
         MakePtas(i, &ptas, &ptad);
-        pixt1 = pixBilinearPta(pixgb, ptad, ptas, L_BRING_IN_WHITE);
-        pixSaveTiled(pixt1, pixa, 0.5, 1, 20, 8);
-        pixt2 = pixBilinearPta(pixt1, ptas, ptad, L_BRING_IN_WHITE);
-        pixSaveTiled(pixt2, pixa, 0.5, 0, 20, 0);
-        pixd = pixRemoveBorder(pixt2, ADDED_BORDER_PIXELS);
+        pix1 = pixBilinearPta(pixb, ptad, ptas, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 10,13 */
+        pixaAddPix(pixa, pix1, L_INSERT);
+        pix2 = pixBilinearPta(pix1, ptas, ptad, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 11,14 */
+        pixaAddPix(pixa, pix2, L_INSERT);
+        pixd = pixRemoveBorder(pix2, ADDED_BORDER_PIXELS);
         pixInvert(pixd, pixd);
         pixXor(pixd, pixd, pixg);
-        pixSaveTiled(pixd, pixa, 0.5, 0, 20, 0);
-        if (i == 0) pixWrite("/tmp/junkinterp.png", pixt1, IFF_PNG);
-        pixDestroy(&pixgb);
-        pixDestroy(&pixt1);
-        pixDestroy(&pixt2);
-        pixDestroy(&pixd);
+        regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 12,15 */
+        pixaAddPix(pixa, pixd, L_INSERT);
+        pixDestroy(&pixb);
         ptaDestroy(&ptas);
         ptaDestroy(&ptad);
     }
 
-    pixt1 = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/junkbilin2.png", pixt1, IFF_PNG);
-    pixDisplay(pixt1, 100, 300);
-    pixDestroy(&pixt1);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 0.5, 20, 3);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 16 */
+    pixDisplayWithTitle(pix1, 200, 100, NULL, rp->display);
+    pixDestroy(&pix1);
     pixaDestroy(&pixa);
 #endif
 
-#if ALL   /* test with large distortion and inversion */
-    MakePtas(0, &ptas, &ptad);
+#if ALL
+        /* Test invertability of color interpolation */
+    fprintf(stderr, "Test invertability of color interpolation\n");
+    pixa = pixaCreate(0);
+    pixc = pixRead("test24.jpg");
+    pixcs = pixScale(pixc, 0.3, 0.3);
+    for (i = 1; i < 3; i++) {
+        pixb = pixAddBorder(pixcs, ADDED_BORDER_PIXELS / 2, 0xffffff00);
+        MakePtas(i, &ptas, &ptad);
+        pix1 = pixBilinearPta(pixb, ptad, ptas, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 17,20 */
+        pixaAddPix(pixa, pix1, L_INSERT);
+        pix2 = pixBilinearPta(pix1, ptas, ptad, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 18,21 */
+        pixaAddPix(pixa, pix2, L_INSERT);
+        pixd = pixRemoveBorder(pix2, ADDED_BORDER_PIXELS / 2);
+        pixXor(pixd, pixd, pixc);
+        pixInvert(pixd, pixd);
+        regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 19,22 */
+        pixaAddPix(pixa, pixd, L_INSERT);
+        pixDestroy(&pixb);
+        ptaDestroy(&ptas);
+        ptaDestroy(&ptad);
+    }
+
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 0.5, 20, 3);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 23 */
+    pixDisplayWithTitle(pix1, 400, 100, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pixc);
+    pixDestroy(&pixcs);
+    pixaDestroy(&pixa);
+#endif
+
+#if ALL
+        /* Comparison between sampling and interpolated */
+    fprintf(stderr, "Compare sampling with interpolated\n");
+    MakePtas(2, &ptas, &ptad);
     pixa = pixaCreate(0);
 
-    startTimer();
-    pixt1 = pixBilinearSampledPta(pixg, ptas, ptad, L_BRING_IN_WHITE);
-    fprintf(stderr, " Time for pixBilinearSampled(): %6.2f sec\n", stopTimer());
-    pixSaveTiled(pixt1, pixa, 0.5, 1, 20, 8);
+        /* Use sampled transform */
+    pix1 = pixBilinearSampledPta(pixg, ptas, ptad, L_BRING_IN_WHITE);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 24 */
+    pixaAddPix(pixa, pix1, L_INSERT);
 
-    startTimer();
-    pixt2 = pixBilinearPta(pixg, ptas, ptad, L_BRING_IN_WHITE);
-    fprintf(stderr, " Time for pixBilinearInterpolated(): %6.2f sec\n",
-           stopTimer());
-    pixSaveTiled(pixt2, pixa, 0.5, 0, 20, 8);
+        /* Use interpolated transforms */
+    pix2 = pixBilinearPta(pixg, ptas, ptad, L_BRING_IN_WHITE);
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 25 */
+    pixaAddPix(pixa, pix2, L_COPY);
 
-    pixt3 = pixBilinearSampledPta(pixt1, ptad, ptas, L_BRING_IN_WHITE);
-    pixSaveTiled(pixt3, pixa, 0.5, 0, 20, 8);
-    pixt4 = pixBilinearPta(pixt2, ptad, ptas, L_BRING_IN_WHITE);
-    pixSaveTiled(pixt4, pixa, 0.5, 0, 20, 8);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+        /* Compare the results */
+    pixXor(pix2, pix2, pix1);
+    pixInvert(pix2, pix2);
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 26 */
+    pixaAddPix(pixa, pix2, L_INSERT);
 
-    pixt1 = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/junkbilin3.png", pixt1, IFF_PNG);
-    pixDisplay(pixt1, 100, 300);
-    pixDestroy(&pixt1);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 0.5, 20, 3);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 27 */
+    pixDisplayWithTitle(pix1, 600, 100, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pixg);
+    pixaDestroy(&pixa);
+    ptaDestroy(&ptas);
+    ptaDestroy(&ptad);
+#endif
+
+#if ALL
+        /* Large distortion with inversion */
+    fprintf(stderr, "Large bilinear distortion with inversion\n");
+    MakePtas(0, &ptas, &ptad);
+    pixa = pixaCreate(0);
+    pixs = pixRead("marge.jpg");
+    pixg = pixConvertTo8(pixs, 0);
+
+    pix1 = pixBilinearSampledPta(pixg, ptas, ptad, L_BRING_IN_WHITE);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 28 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+
+    pix2 = pixBilinearPta(pixg, ptas, ptad, L_BRING_IN_WHITE);
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 29 */
+    pixaAddPix(pixa, pix2, L_INSERT);
+
+    pix3 = pixBilinearSampledPta(pix1, ptad, ptas, L_BRING_IN_WHITE);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 30 */
+    pixaAddPix(pixa, pix3, L_INSERT);
+
+    pix4 = pixBilinearPta(pix2, ptad, ptas, L_BRING_IN_WHITE);
+    regTestWritePixAndCheck(rp, pix4, IFF_JFIF_JPEG);  /* 31 */
+    pixaAddPix(pixa, pix4, L_INSERT);
+
+    pix1 = pixaDisplayTiledInColumns(pixa, 4, 1.0, 20, 0);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 32 */
+    pixDisplayWithTitle(pix1, 800, 100, NULL, rp->display);
+    pixDestroy(&pix1);
     pixaDestroy(&pixa);
 
     pixDestroy(&pixs);
@@ -173,7 +236,7 @@ static char  mainName[] = "bilinear_reg";
     ptaDestroy(&ptad);
 #endif
 
-    return 0;
+    return regTestCleanup(rp);
 }
 
 

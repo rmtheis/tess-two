@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  morph.c
+/*!
+ * \file morph.c
+ * <pre>
  *
  *     Generic binary morphological ops implemented with rasterop
  *         PIX     *pixDilate()
@@ -102,7 +103,7 @@
  *      code can be auto-gen'd for them; see the instructions in morphdwa.c.
  *
  *  (4) Same as (1), but you run it through pixMorphSequence(), with
- *      the sequence string either compiled in or generated using sprintf.
+ *      the sequence string either compiled in or generated using snprintf.
  *      All intermediate images and Sels are created, used and destroyed.
  *      You always get the result as a new Pix.  For example, you can
  *      specify a separable 11 x 17 brick opening as "o11.17",
@@ -110,12 +111,12 @@
  *      explicitly as "o11.1 + o1.11".  See morphseq.c for details.
  *
  *  (5) Same as (2), but you run it through pixMorphCompSequence(), with
- *      the sequence string either compiled in or generated using sprintf.
+ *      the sequence string either compiled in or generated using snprintf.
  *      All intermediate images and Sels are created, used and destroyed.
  *      You always get the result as a new Pix.  See morphseq.c for details.
  *
  *  (6) Same as (3), but you run it through pixMorphSequenceDwa(), with
- *      the sequence string either compiled in or generated using sprintf.
+ *      the sequence string either compiled in or generated using snprintf.
  *      All intermediate images and Sels are created, used and destroyed.
  *      You always get the result as a new Pix.  See morphseq.c for details.
  *
@@ -158,6 +159,7 @@
  *
  *  These functions are extensively tested in prog/binmorph1_reg.c,
  *  prog/binmorph2_reg.c, and prog/binmorph3_reg.c.
+ * </pre>
  */
 
 #include <math.h>
@@ -181,15 +183,16 @@ static PIX * processMorphArgs2(PIX *pixd, PIX *pixs, SEL *sel);
  *    Generic binary morphological ops implemented with rasterop   *
  *-----------------------------------------------------------------*/
 /*!
- *  pixDilate()
+ * \brief   pixDilate()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              sel
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This dilates src using hits in Sel.
  *      (2) There are three cases:
  *          (a) pixd == null   (result into new pixd)
@@ -200,6 +203,7 @@ static PIX * processMorphArgs2(PIX *pixd, PIX *pixs, SEL *sel);
  *          (b) pixDilate(pixs, pixs, ...);
  *          (c) pixDilate(pixd, pixs, ...);
  *      (4) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixDilate(PIX  *pixd,
@@ -233,15 +237,16 @@ PIX     *pixt;
 
 
 /*!
- *  pixErode()
+ * \brief   pixErode()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              sel
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This erodes src using hits in Sel.
  *      (2) There are three cases:
  *          (a) pixd == null   (result into new pixd)
@@ -252,6 +257,7 @@ PIX     *pixt;
  *          (b) pixErode(pixs, pixs, ...);
  *          (c) pixErode(pixd, pixs, ...);
  *      (4) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixErode(PIX  *pixd,
@@ -304,15 +310,16 @@ PIX     *pixt;
 
 
 /*!
- *  pixHMT()
+ * \brief   pixHMT()
  *
- *      Input:  pixd (<optional>; this can be null, equal to pixs,
- *                    or different from pixs)
- *              pixs (1 bpp)
- *              sel
- *      Return: pixd
+ * \param[in]    pixd [optional]; this can be null, equal to pixs,
+ *                    or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The hit-miss transform erodes the src, using both hits
  *          and misses in the Sel.  It ANDs the shifted src for hits
  *          and ANDs the inverted shifted src for misses.
@@ -325,6 +332,7 @@ PIX     *pixt;
  *          (b) pixHMT(pixs, pixs, ...);
  *          (c) pixHMT(pixd, pixs, ...);
  *      (4) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixHMT(PIX  *pixd,
@@ -388,15 +396,16 @@ PIX     *pixt;
 
 
 /*!
- *  pixOpen()
+ * \brief   pixOpen()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              sel
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Generic morphological opening, using hits in the Sel.
  *      (2) There are three cases:
  *          (a) pixd == null   (result into new pixd)
@@ -407,6 +416,7 @@ PIX     *pixt;
  *          (b) pixOpen(pixs, pixs, ...);
  *          (c) pixOpen(pixd, pixs, ...);
  *      (4) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixOpen(PIX  *pixd,
@@ -430,15 +440,16 @@ PIX  *pixt;
 
 
 /*!
- *  pixClose()
+ * \brief   pixClose()
  *
- *      Input:  pixd (<optional>; this can be null, equal to pixs,
- *                    or different from pixs)
- *              pixs (1 bpp)
- *              sel
- *      Return: pixd
+ * \param[in]    pixd [optional]; this can be null, equal to pixs,
+ *                    or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Generic morphological closing, using hits in the Sel.
  *      (2) This implementation is a strict dual of the opening if
  *          symmetric boundary conditions are used (see notes at top
@@ -452,6 +463,7 @@ PIX  *pixt;
  *          (b) pixClose(pixs, pixs, ...);
  *          (c) pixClose(pixd, pixs, ...);
  *      (5) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixClose(PIX  *pixd,
@@ -475,15 +487,16 @@ PIX  *pixt;
 
 
 /*!
- *  pixCloseSafe()
+ * \brief   pixCloseSafe()
  *
- *      Input:  pixd (<optional>; this can be null, equal to pixs,
- *                    or different from pixs)
- *              pixs (1 bpp)
- *              sel
- *      Return: pixd
+ * \param[in]    pixd [optional]; this can be null, equal to pixs,
+ *                    or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Generic morphological closing, using hits in the Sel.
  *      (2) If non-symmetric boundary conditions are used, this
  *          function adds a border of OFF pixels that is of
@@ -501,6 +514,7 @@ PIX  *pixt;
  *          (b) pixCloseSafe(pixs, pixs, ...);
  *          (c) pixCloseSafe(pixd, pixs, ...);
  *      (6) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixCloseSafe(PIX  *pixd,
@@ -544,15 +558,16 @@ PIX     *pixt1, *pixt2;
 
 
 /*!
- *  pixOpenGeneralized()
+ * \brief   pixOpenGeneralized()
  *
- *      Input:  pixd (<optional>; this can be null, equal to pixs,
- *                    or different from pixs)
- *              pixs (1 bpp)
- *              sel
- *      Return: pixd
+ * \param[in]    pixd [optional]; this can be null, equal to pixs,
+ *                    or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Generalized morphological opening, using both hits and
  *          misses in the Sel.
  *      (2) This does a hit-miss transform, followed by a dilation
@@ -566,6 +581,7 @@ PIX     *pixt1, *pixt2;
  *          (b) pixOpenGeneralized(pixs, pixs, ...);
  *          (c) pixOpenGeneralized(pixd, pixs, ...);
  *      (5) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixOpenGeneralized(PIX  *pixd,
@@ -588,15 +604,16 @@ PIX  *pixt;
 
 
 /*!
- *  pixCloseGeneralized()
+ * \brief   pixCloseGeneralized()
  *
- *      Input:  pixd (<optional>; this can be null, equal to pixs,
- *                    or different from pixs)
- *              pixs (1 bpp)
- *              sel
- *      Return: pixd
+ * \param[in]    pixd [optional]; this can be null, equal to pixs,
+ *                    or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Generalized morphological closing, using both hits and
  *          misses in the Sel.
  *      (2) This does a dilation using the hits, followed by a
@@ -611,6 +628,7 @@ PIX  *pixt;
  *          (b) pixCloseGeneralized(pixs, pixs, ...);
  *          (c) pixCloseGeneralized(pixd, pixs, ...);
  *      (6) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixCloseGeneralized(PIX  *pixd,
@@ -637,16 +655,17 @@ PIX  *pixt;
  *          Binary morphological (raster) ops with brick Sels      *
  *-----------------------------------------------------------------*/
 /*!
- *  pixDilateBrick()
+ * \brief   pixDilateBrick()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sel is a brick with all elements being hits
  *      (2) The origin is at (x, y) = (hsize/2, vsize/2)
  *      (3) Do separably if both hsize and vsize are > 1.
@@ -659,6 +678,7 @@ PIX  *pixt;
  *          (b) pixDilateBrick(pixs, pixs, ...);
  *          (c) pixDilateBrick(pixd, pixs, ...);
  *      (6) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixDilateBrick(PIX     *pixd,
@@ -699,16 +719,17 @@ SEL  *sel, *selh, *selv;
 
 
 /*!
- *  pixErodeBrick()
+ * \brief   pixErodeBrick()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sel is a brick with all elements being hits
  *      (2) The origin is at (x, y) = (hsize/2, vsize/2)
  *      (3) Do separably if both hsize and vsize are > 1.
@@ -721,6 +742,7 @@ SEL  *sel, *selh, *selv;
  *          (b) pixErodeBrick(pixs, pixs, ...);
  *          (c) pixErodeBrick(pixd, pixs, ...);
  *      (6) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixErodeBrick(PIX     *pixd,
@@ -761,16 +783,17 @@ SEL  *sel, *selh, *selv;
 
 
 /*!
- *  pixOpenBrick()
+ * \brief   pixOpenBrick()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sel is a brick with all elements being hits
  *      (2) The origin is at (x, y) = (hsize/2, vsize/2)
  *      (3) Do separably if both hsize and vsize are > 1.
@@ -783,6 +806,7 @@ SEL  *sel, *selh, *selv;
  *          (b) pixOpenBrick(pixs, pixs, ...);
  *          (c) pixOpenBrick(pixd, pixs, ...);
  *      (6) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixOpenBrick(PIX     *pixd,
@@ -825,16 +849,17 @@ SEL  *sel, *selh, *selv;
 
 
 /*!
- *  pixCloseBrick()
+ * \brief   pixCloseBrick()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sel is a brick with all elements being hits
  *      (2) The origin is at (x, y) = (hsize/2, vsize/2)
  *      (3) Do separably if both hsize and vsize are > 1.
@@ -847,6 +872,7 @@ SEL  *sel, *selh, *selv;
  *          (b) pixCloseBrick(pixs, pixs, ...);
  *          (c) pixCloseBrick(pixd, pixs, ...);
  *      (6) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixCloseBrick(PIX     *pixd,
@@ -889,16 +915,17 @@ SEL  *sel, *selh, *selv;
 
 
 /*!
- *  pixCloseSafeBrick()
+ * \brief   pixCloseSafeBrick()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sel is a brick with all elements being hits
  *      (2) The origin is at (x, y) = (hsize/2, vsize/2)
  *      (3) Do separably if both hsize and vsize are > 1.
@@ -916,6 +943,7 @@ SEL  *sel, *selh, *selv;
  *          (b) pixCloseBrick(pixs, pixs, ...);
  *          (c) pixCloseBrick(pixd, pixs, ...);
  *      (7) The size of the result is determined by pixs.
+ * </pre>
  */
 PIX *
 pixCloseSafeBrick(PIX     *pixd,
@@ -1040,14 +1068,15 @@ l_int32  factor1, factor2;
 
 
 /*!
- *  selectComposableSizes()
+ * \brief   selectComposableSizes()
  *
- *      Input:  size (of sel to be decomposed)
- *              &factor1 (<return> larger factor)
- *              &factor2 (<return> smaller factor)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    size of sel to be decomposed
+ * \param[out]   pfactor1 larger factor
+ * \param[out]   pfactor2 smaller factor
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This works for Sel sizes up to 62500, which seems sufficient.
  *      (2) The composable sel size is typically within +- 1 of
  *          the requested size.  Up to size = 300, the maximum difference
@@ -1057,6 +1086,7 @@ l_int32  factor1, factor2;
  *          the penalty for additional rasterops.
  *      (4) Returned values: factor1 >= factor2
  *          If size > 1, then factor1 > 1.
+ * </pre>
  */
 l_int32
 selectComposableSizes(l_int32   size,
@@ -1130,16 +1160,17 @@ l_int32  diff[256];  /* diff between product (sel size) and input size */
 
 
 /*!
- *  pixDilateCompBrick()
+ * \brief   pixDilateCompBrick()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sel is a brick with all elements being hits
  *      (2) The origin is at (x, y) = (hsize/2, vsize/2)
  *      (3) Do compositely for each dimension > 1.
@@ -1166,6 +1197,7 @@ l_int32  diff[256];  /* diff between product (sel size) and input size */
  *          a prime number, the decomposer will break this into two
  *          terms, 6 and 6, so that the net result is a dilation
  *          with hsize = 36.
+ * </pre>
  */
 PIX *
 pixDilateCompBrick(PIX     *pixd,
@@ -1228,16 +1260,17 @@ SEL  *selh1, *selh2, *selv1, *selv2;
 
 
 /*!
- *  pixErodeCompBrick()
+ * \brief   pixErodeCompBrick()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sel is a brick with all elements being hits
  *      (2) The origin is at (x, y) = (hsize/2, vsize/2)
  *      (3) Do compositely for each dimension > 1.
@@ -1264,6 +1297,7 @@ SEL  *selh1, *selh2, *selv1, *selv2;
  *          a prime number, the decomposer will break this into two
  *          terms, 6 and 6, so that the net result is a dilation
  *          with hsize = 36.
+ * </pre>
  */
 PIX *
 pixErodeCompBrick(PIX     *pixd,
@@ -1317,16 +1351,17 @@ SEL  *selh1, *selh2, *selv1, *selv2;
 
 
 /*!
- *  pixOpenCompBrick()
+ * \brief   pixOpenCompBrick()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sel is a brick with all elements being hits
  *      (2) The origin is at (x, y) = (hsize/2, vsize/2)
  *      (3) Do compositely for each dimension > 1.
@@ -1353,6 +1388,7 @@ SEL  *selh1, *selh2, *selv1, *selv2;
  *          a prime number, the decomposer will break this into two
  *          terms, 6 and 6, so that the net result is a dilation
  *          with hsize = 36.
+ * </pre>
  */
 PIX *
 pixOpenCompBrick(PIX     *pixd,
@@ -1414,16 +1450,17 @@ SEL  *selh1, *selh2, *selv1, *selv2;
 
 
 /*!
- *  pixCloseCompBrick()
+ * \brief   pixCloseCompBrick()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sel is a brick with all elements being hits
  *      (2) The origin is at (x, y) = (hsize/2, vsize/2)
  *      (3) Do compositely for each dimension > 1.
@@ -1450,6 +1487,7 @@ SEL  *selh1, *selh2, *selv1, *selv2;
  *          a prime number, the decomposer will break this into two
  *          terms, 6 and 6, so that the net result is a dilation
  *          with hsize = 36.
+ * </pre>
  */
 PIX *
 pixCloseCompBrick(PIX     *pixd,
@@ -1511,16 +1549,17 @@ SEL  *selh1, *selh2, *selv1, *selv2;
 
 
 /*!
- *  pixCloseSafeCompBrick()
+ * \brief   pixCloseSafeCompBrick()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd, or null on error
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sel is a brick with all elements being hits
  *      (2) The origin is at (x, y) = (hsize/2, vsize/2)
  *      (3) Do compositely for each dimension > 1.
@@ -1552,6 +1591,7 @@ SEL  *selh1, *selh2, *selv1, *selv2;
  *          a prime number, the decomposer will break this into two
  *          terms, 6 and 6, so that the net result is a dilation
  *          with hsize = 36.
+ * </pre>
  */
 PIX *
 pixCloseSafeCompBrick(PIX     *pixd,
@@ -1637,10 +1677,10 @@ SEL     *selh1, *selh2, *selv1, *selv2;
  *           Functions associated with boundary conditions         *
  *-----------------------------------------------------------------*/
 /*!
- *  resetMorphBoundaryCondition()
+ * \brief   resetMorphBoundaryCondition()
  *
- *      Input:  bc (SYMMETRIC_MORPH_BC, ASYMMETRIC_MORPH_BC)
- *      Return: void
+ * \param[in]    bc SYMMETRIC_MORPH_BC, ASYMMETRIC_MORPH_BC
+ * \return  void
  */
 void
 resetMorphBoundaryCondition(l_int32  bc)
@@ -1657,11 +1697,11 @@ resetMorphBoundaryCondition(l_int32  bc)
 
 
 /*!
- *  getMorphBorderPixelColor()
+ * \brief   getMorphBorderPixelColor()
  *
- *      Input:  type (L_MORPH_DILATE, L_MORPH_ERODE)
- *              depth (of pix)
- *      Return: color of border pixels for this operation
+ * \param[in]    type L_MORPH_DILATE, L_MORPH_ERODE
+ * \param[in]    depth of pix
+ * \return  color of border pixels for this operation
  */
 l_uint32
 getMorphBorderPixelColor(l_int32  type,
@@ -1690,17 +1730,19 @@ getMorphBorderPixelColor(l_int32  type,
  *               Static helpers for arg processing                 *
  *-----------------------------------------------------------------*/
 /*!
- *  processMorphArgs1()
+ * \brief   processMorphArgs1()
  *
- *      Input:  pixd (<optional>; this can be null, equal to pixs,
- *                    or different from pixs)
- *              pixs (1 bpp)
- *              sel
- *              &pixt (<returned>)
- *      Return: pixd, or null on error.
+ * \param[in]    pixd [optional]; this can be null, equal to pixs,
+ *                    or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    sel
+ * \param[out]   ppixt ptr to PIX*
+ * \return  pixd, or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is used for generic erosion, dilation and HMT.
+ * </pre>
  */
 static PIX *
 processMorphArgs1(PIX   *pixd,
@@ -1746,7 +1788,7 @@ l_int32  sx, sy;
 
 
 /*!
- *  processMorphArgs2()
+ * \brief   processMorphArgs2()
  *
  *  This is used for generic openings and closings.
  */

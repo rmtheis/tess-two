@@ -24,10 +24,12 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  jp2kiostub.c
+/*!
+ * \file jp2kiostub.c
+ * <pre>
  *
  *     Stubs for jp2kio.c functions
+ * </pre>
  */
 
 #ifdef HAVE_CONFIG_H

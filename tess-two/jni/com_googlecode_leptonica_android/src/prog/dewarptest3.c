@@ -31,7 +31,7 @@
  *   of horizontal text, showing results for different interpolations
  *   (quadratic, cubic, quartic).
  *
- *   Inspeciton of the output pdf shows that using LS fitting beyond
+ *   Inspection of the output pdf shows that using LS fitting beyond
  *   quadratic has a tendency to overfit.  So we choose to use
  *   quadratic LSF for the textlines.
  */

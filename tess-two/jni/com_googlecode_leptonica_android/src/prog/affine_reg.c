@@ -27,12 +27,13 @@
 /*
  * affine_reg.c
  *
+ *   Tests affine transforms, including invertability and large distortions.
  */
 
 #include "allheaders.h"
 
 static void MakePtas(l_int32 i, PTA **pptas, PTA **pptad);
-l_int32 RenderHashedBoxa(PIX *pixt, BOXA *boxa, l_int32 i);
+static l_int32 RenderHashedBoxa(PIX *pixt, BOXA *boxa, l_int32 i);
 
 
     /* Sample values.
@@ -67,232 +68,256 @@ static const l_float32  ROTATION = 0.11;   /* radian */
 int main(int    argc,
          char **argv)
 {
-char         bufname[256];
-l_int32      i, w, h;
-l_float32   *mat1, *mat2, *mat3, *mat1i, *mat2i, *mat3i, *matdinv;
-l_float32    matd[9], matdi[9];
-BOXA        *boxa, *boxa2;
-PIX         *pix, *pixs, *pixb, *pixg, *pixc, *pixcs;
-PIX         *pixd, *pixt1, *pixt2, *pixt3;
-PIXA        *pixa;
-PTA         *ptas, *ptad;
-static char  mainName[] = "affine_reg";
+char          bufname[256];
+l_int32       i, w, h;
+l_float32    *mat1, *mat2, *mat3, *mat1i, *mat2i, *mat3i, *matdinv;
+l_float32     matd[9], matdi[9];
+BOXA         *boxa, *boxa2;
+PIX          *pix, *pixs, *pixb, *pixg, *pixc, *pixcs;
+PIX          *pixd, *pix1, *pix2, *pix3;
+PIXA         *pixa;
+PTA          *ptas, *ptad;
+L_REGPARAMS  *rp;
 
-    if (argc != 1)
-        return ERROR_INT(" Syntax:  affine_reg", mainName, 1);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
 
-    if ((pixs = pixRead("feyn.tif")) == NULL)
-        return ERROR_INT("pixs not made", mainName, 1);
+    pix = pixRead("feyn.tif");
+    pixs = pixScale(pix, 0.22, 0.22);
+    pixDestroy(&pix);
 
-#if 1
+#if ALL
         /* Test invertability of sequential. */
+    fprintf(stderr, "Test invertability of sequential\n");
     pixa = pixaCreate(0);
     for (i = 0; i < 3; i++) {
         pixb = pixAddBorder(pixs, ADDED_BORDER_PIXELS, 0);
         MakePtas(i, &ptas, &ptad);
-        pixt1 = pixAffineSequential(pixb, ptad, ptas, 0, 0);
-        pixSaveTiled(pixt1, pixa, 0.3333, 1, 20, 8);
-        pixt2 = pixAffineSequential(pixt1, ptas, ptad, 0, 0);
-        pixSaveTiled(pixt2, pixa, 0.3333, 0, 20, 0);
-        pixd = pixRemoveBorder(pixt2, ADDED_BORDER_PIXELS);
+        pix1 = pixAffineSequential(pixb, ptad, ptas, 0, 0);
+        regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 0,3,6 */
+        pixaAddPix(pixa, pix1, L_INSERT);
+        pix2 = pixAffineSequential(pix1, ptas, ptad, 0, 0);
+        regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 1,4,7 */
+        pixaAddPix(pixa, pix2, L_INSERT);
+        pixd = pixRemoveBorder(pix2, ADDED_BORDER_PIXELS);
         pixXor(pixd, pixd, pixs);
-        pixSaveTiled(pixd, pixa, 0.3333, 0, 20, 0);
-        sprintf(bufname, "/tmp/seq%d.png", i);
-        pixWrite(bufname, pixd, IFF_PNG);
+        regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 2,5,8 */
+        pixaAddPix(pixa, pixd, L_INSERT);
         pixDestroy(&pixb);
-        pixDestroy(&pixt1);
-        pixDestroy(&pixt2);
-        pixDestroy(&pixd);
         ptaDestroy(&ptas);
         ptaDestroy(&ptad);
     }
 
-    pixt1 = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/affine1.png", pixt1, IFF_PNG);
-    pixDisplay(pixt1, 100, 100);
-    pixDestroy(&pixt1);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 1.0, 20, 3);
+    pix2 = pixScaleToGray(pix1, 0.2);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 9 */
+    pixDisplayWithTitle(pix2, 0, 100, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
     pixaDestroy(&pixa);
 #endif
 
 #if ALL
         /* Test invertability of sampling */
+    fprintf(stderr, "Test invertability of sampling\n");
     pixa = pixaCreate(0);
     for (i = 0; i < 3; i++) {
         pixb = pixAddBorder(pixs, ADDED_BORDER_PIXELS, 0);
         MakePtas(i, &ptas, &ptad);
-        pixt1 = pixAffineSampledPta(pixb, ptad, ptas, L_BRING_IN_WHITE);
-        pixSaveTiled(pixt1, pixa, 0.3333, 1, 20, 8);
-        pixt2 = pixAffineSampledPta(pixt1, ptas, ptad, L_BRING_IN_WHITE);
-        pixSaveTiled(pixt2, pixa, 0.3333, 0, 20, 0);
-        pixd = pixRemoveBorder(pixt2, ADDED_BORDER_PIXELS);
+        pix1 = pixAffineSampledPta(pixb, ptad, ptas, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 10,13,16 */
+        pixaAddPix(pixa, pix1, L_INSERT);
+        pix2 = pixAffineSampledPta(pix1, ptas, ptad, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 11,14,17 */
+        pixaAddPix(pixa, pix2, L_INSERT);
+        pixd = pixRemoveBorder(pix2, ADDED_BORDER_PIXELS);
         pixXor(pixd, pixd, pixs);
-        pixSaveTiled(pixd, pixa, 0.3333, 0, 20, 0);
-        if (i == 0) pixWrite("/tmp/samp.png", pixt1, IFF_PNG);
+        regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 12,15,18 */
+        pixaAddPix(pixa, pixd, L_INSERT);
         pixDestroy(&pixb);
-        pixDestroy(&pixt1);
-        pixDestroy(&pixt2);
-        pixDestroy(&pixd);
         ptaDestroy(&ptas);
         ptaDestroy(&ptad);
     }
 
-    pixt1 = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/affine2.png", pixt1, IFF_PNG);
-    pixDisplay(pixt1, 100, 300);
-    pixDestroy(&pixt1);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 1.0, 20, 3);
+    pix2 = pixScaleToGray(pix1, 0.2);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 19 */
+    pixDisplayWithTitle(pix2, 200, 100, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pixs);
     pixaDestroy(&pixa);
 #endif
 
 #if ALL
         /* Test invertability of interpolation on grayscale */
+    fprintf(stderr, "Test invertability of grayscale interpolation\n");
+    pix = pixRead("feyn.tif");
+    pixg = pixScaleToGray3(pix);
+    pixDestroy(&pix);
     pixa = pixaCreate(0);
-    pixg = pixScaleToGray3(pixs);
     for (i = 0; i < 3; i++) {
         pixb = pixAddBorder(pixg, ADDED_BORDER_PIXELS / 3, 255);
         MakePtas(i, &ptas, &ptad);
-        pixt1 = pixAffinePta(pixb, ptad, ptas, L_BRING_IN_WHITE);
-        pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-        pixt2 = pixAffinePta(pixt1, ptas, ptad, L_BRING_IN_WHITE);
-        pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 0);
-        pixd = pixRemoveBorder(pixt2, ADDED_BORDER_PIXELS / 3);
+        pix1 = pixAffinePta(pixb, ptad, ptas, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 20,23,26 */
+        pixaAddPix(pixa, pix1, L_INSERT);
+        pix2 = pixAffinePta(pix1, ptas, ptad, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 21,24,27 */
+        pixaAddPix(pixa, pix2, L_INSERT);
+        pixd = pixRemoveBorder(pix2, ADDED_BORDER_PIXELS / 3);
         pixXor(pixd, pixd, pixg);
-        pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
-        if (i == 0) pixWrite("/tmp/interp.png", pixt1, IFF_PNG);
+        pixInvert(pixd, pixd);
+        regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 22,25,28 */
+        pixaAddPix(pixa, pixd, L_INSERT);
         pixDestroy(&pixb);
-        pixDestroy(&pixt1);
-        pixDestroy(&pixt2);
-        pixDestroy(&pixd);
         ptaDestroy(&ptas);
         ptaDestroy(&ptad);
     }
 
-    pixt1 = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/affine3.png", pixt1, IFF_PNG);
-    pixDisplay(pixt1, 100, 500);
-    pixDestroy(&pixt1);
-    pixaDestroy(&pixa);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 1.0, 20, 3);
+    pix2 = pixScale(pix1, 0.2, 0.2);
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 29 */
+    pixDisplayWithTitle(pix2, 400, 100, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
     pixDestroy(&pixg);
+    pixaDestroy(&pixa);
 #endif
 
 #if ALL
         /* Test invertability of interpolation on color */
+    fprintf(stderr, "Test invertability of color interpolation\n");
     pixa = pixaCreate(0);
     pixc = pixRead("test24.jpg");
     pixcs = pixScale(pixc, 0.3, 0.3);
     for (i = 0; i < 3; i++) {
         pixb = pixAddBorder(pixcs, ADDED_BORDER_PIXELS / 4, 0xffffff00);
         MakePtas(i, &ptas, &ptad);
-        pixt1 = pixAffinePta(pixb, ptad, ptas, L_BRING_IN_WHITE);
-        pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 32);
-        pixt2 = pixAffinePta(pixt1, ptas, ptad, L_BRING_IN_WHITE);
-        pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 0);
-        pixd = pixRemoveBorder(pixt2, ADDED_BORDER_PIXELS / 4);
+        pix1 = pixAffinePta(pixb, ptad, ptas, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 30,33,36 */
+        pixaAddPix(pixa, pix1, L_INSERT);
+        pix2 = pixAffinePta(pix1, ptas, ptad, L_BRING_IN_WHITE);
+        regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 31,34,37 */
+        pixaAddPix(pixa, pix2, L_INSERT);
+        pixd = pixRemoveBorder(pix2, ADDED_BORDER_PIXELS / 4);
         pixXor(pixd, pixd, pixcs);
-        pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
+        pixInvert(pixd, pixd);
+        regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 32,35,38 */
+        pixaAddPix(pixa, pixd, L_INSERT);
         pixDestroy(&pixb);
-        pixDestroy(&pixt1);
-        pixDestroy(&pixt2);
-        pixDestroy(&pixd);
         ptaDestroy(&ptas);
         ptaDestroy(&ptad);
     }
 
-    pixt1 = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/affine4.png", pixt1, IFF_PNG);
-    pixDisplay(pixt1, 100, 500);
-    pixDestroy(&pixt1);
-    pixaDestroy(&pixa);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 1.0, 20, 3);
+    pix2 = pixScale(pix1, 0.25, 0.25);
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 39 */
+    pixDisplayWithTitle(pix2, 600, 100, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
     pixDestroy(&pixc);
-    pixDestroy(&pixcs);
+    pixaDestroy(&pixa);
 #endif
 
 #if ALL
        /* Comparison between sequential and sampling */
+    fprintf(stderr, "Compare sequential with sampling\n");
+    pix = pixRead("feyn.tif");
+    pixs = pixScale(pix, 0.22, 0.22);
+    pixDestroy(&pix);
+
     MakePtas(3, &ptas, &ptad);
     pixa = pixaCreate(0);
 
         /* Use sequential transforms */
-    pixt1 = pixAffineSequential(pixs, ptas, ptad,
+    pix1 = pixAffineSequential(pixs, ptas, ptad,
                      ADDED_BORDER_PIXELS, ADDED_BORDER_PIXELS);
-    pixSaveTiled(pixt1, pixa, 0.5, 0, 20, 8);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 40 */
+    pixaAddPix(pixa, pix1, L_INSERT);
 
         /* Use sampled transform */
-    pixt2 = pixAffineSampledPta(pixs, ptas, ptad, L_BRING_IN_WHITE);
-    pixSaveTiled(pixt2, pixa, 0.5, 0, 20, 8);
+    pix2 = pixAffineSampledPta(pixs, ptas, ptad, L_BRING_IN_WHITE);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 41 */
+    pixaAddPix(pixa, pix2, L_COPY);
 
         /* Compare the results */
-    pixXor(pixt2, pixt2, pixt1);
-    pixSaveTiled(pixt2, pixa, 0.5, 0, 20, 8);
+    pixXor(pix2, pix2, pix1);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 42 */
+    pixaAddPix(pixa, pix2, L_INSERT);
 
-    pixd = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/affine5.png", pixd, IFF_PNG);
-    pixDisplay(pixd, 100, 700);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixd);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 1.0, 20, 3);
+    pix2 = pixScale(pix1, 0.5, 0.5);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 43 */
+    pixDisplayWithTitle(pix2, 800, 100, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pixs);
     pixaDestroy(&pixa);
     ptaDestroy(&ptas);
     ptaDestroy(&ptad);
 #endif
 
+
 #if ALL
-       /* Get timings and test with large distortion */
+       /* Test with large distortion */
+    fprintf(stderr, "Test with large distortion\n");
     MakePtas(4, &ptas, &ptad);
     pixa = pixaCreate(0);
-    pixg = pixScaleToGray3(pixs);
+    pix = pixRead("feyn.tif");
+    pixg = pixScaleToGray6(pix);
+    pixDestroy(&pix);
 
-    startTimer();
-    pixt1 = pixAffineSequential(pixg, ptas, ptad, 0, 0);
-    fprintf(stderr, " Time for pixAffineSequentialPta(): %6.2f sec\n",
-            stopTimer());
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
+    pix1 = pixAffineSequential(pixg, ptas, ptad, 0, 0);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 44 */
+    pixaAddPix(pixa, pix1, L_COPY);
 
-    startTimer();
-    pixt2 = pixAffineSampledPta(pixg, ptas, ptad, L_BRING_IN_WHITE);
-    fprintf(stderr, " Time for pixAffineSampledPta(): %6.2f sec\n", stopTimer());
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
+    pix2 = pixAffineSampledPta(pixg, ptas, ptad, L_BRING_IN_WHITE);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 45 */
+    pixaAddPix(pixa, pix2, L_COPY);
 
-    startTimer();
-    pixt3 = pixAffinePta(pixg, ptas, ptad, L_BRING_IN_WHITE);
-    fprintf(stderr, " Time for pixAffinePta(): %6.2f sec\n", stopTimer());
-    pixSaveTiled(pixt3, pixa, 1.0, 0, 20, 8);
+    pix3 = pixAffinePta(pixg, ptas, ptad, L_BRING_IN_WHITE);
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 46 */
+    pixaAddPix(pixa, pix3, L_INSERT);
 
-    pixXor(pixt1, pixt1, pixt2);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixXor(pixt2, pixt2, pixt3);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
+    pixXor(pix1, pix1, pix2);
+    pixInvert(pix1, pix1);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 47 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixXor(pix2, pix2, pix3);
+    pixInvert(pix2, pix2);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 48 */
+    pixaAddPix(pixa, pix2, L_INSERT);
 
-    pixd = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/affine6.png", pixd, IFF_PNG);
-    pixDisplay(pixd, 100, 900);
-    pixDestroy(&pixd);
+    pix1 = pixaDisplayTiledInColumns(pixa, 5, 1.0, 20, 3);
+    pix2 = pixScale(pix1, 0.8, 0.8);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 49 */
+    pixDisplayWithTitle(pix2, 1000, 100, NULL, rp->display);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
     pixDestroy(&pixg);
     pixaDestroy(&pixa);
     ptaDestroy(&ptas);
     ptaDestroy(&ptad);
 #endif
 
-    pixDestroy(&pixs);
-
-#if ALL
+#if ALL 
         /* Set up pix and boxa */
+    fprintf(stderr, "Test affine transforms and inverses on pix and boxa\n");
     pixa = pixaCreate(0);
     pix = pixRead("lucasta.1.300.tif");
     pixTranslate(pix, pix, 70, 0, L_BRING_IN_WHITE);
-    pixt1 = pixCloseBrick(NULL, pix, 14, 5);
-    pixOpenBrick(pixt1, pixt1, 1, 2);
-    boxa = pixConnComp(pixt1, NULL, 8);
+    pix1 = pixCloseBrick(NULL, pix, 14, 5);
+    pixOpenBrick(pix1, pix1, 1, 2);
+    boxa = pixConnComp(pix1, NULL, 8);
     pixs = pixConvertTo32(pix);
     pixGetDimensions(pixs, &w, &h, NULL);
     pixc = pixCopy(NULL, pixs);
     RenderHashedBoxa(pixc, boxa, 113);
-    pixSaveTiled(pixc, pixa, 0.5, 1, 30, 32);
+    regTestWritePixAndCheck(rp, pixc, IFF_PNG);  /* 50 */
+    pixaAddPix(pixa, pixc, L_INSERT);
     pixDestroy(&pix);
-    pixDestroy(&pixc);
-    pixDestroy(&pixt1);
+    pixDestroy(&pix1);
 
         /* Set up an affine transform in matd, and apply it to boxa */
     mat1 = createMatrix2dTranslate(SHIFTX, SHIFTY);
@@ -301,43 +326,46 @@ static char  mainName[] = "affine_reg";
     l_productMat3(mat3, mat2, mat1, matd, 3);
     boxa2 = boxaAffineTransform(boxa, matd);
 
-        /* Set up the inverse transform in matdi */
+        /* Set up the inverse transform --> matdi */
     mat1i = createMatrix2dTranslate(-SHIFTX, -SHIFTY);
     mat2i = createMatrix2dScale(1.0/ SCALEX, 1.0 / SCALEY);
     mat3i = createMatrix2dRotate(w / 2, h / 2, -ROTATION);
     l_productMat3(mat1i, mat2i, mat3i, matdi, 3);
 
-        /* Invert the original affine transform in matdinv */
+        /* Invert the original affine transform --> matdinv */
     affineInvertXform(matd, &matdinv);
-    fprintf(stderr, "Affine transform, applied to boxa\n");
-    for (i = 0; i < 9; i++) {
-        if (i && (i % 3 == 0))  fprintf(stderr, "\n");
-        fprintf(stderr, " %7.3f ", matd[i]);
+    if (rp->display) { 
+        fprintf(stderr, "  Affine transform, applied to boxa\n");
+        for (i = 0; i < 9; i++) {
+            if (i && (i % 3 == 0))  fprintf(stderr, "\n");
+            fprintf(stderr, "   %7.3f ", matd[i]);
+        }
+        fprintf(stderr, "\n  Inverse transform, by composing inverse parts");
+        for (i = 0; i < 9; i++) {
+            if (i % 3 == 0)  fprintf(stderr, "\n");
+            fprintf(stderr, "   %7.3f ", matdi[i]);
+        }
+        fprintf(stderr, "\n  Inverse transform, by inverting affine xform");
+        for (i = 0; i < 6; i++) {
+            if (i % 3 == 0)  fprintf(stderr, "\n");
+            fprintf(stderr, "   %7.3f ", matdinv[i]);
+        }
+        fprintf(stderr, "\n");
     }
-    fprintf(stderr, "\nInverse transform, made by composing inverse parts");
-    for (i = 0; i < 9; i++) {
-        if (i % 3 == 0)  fprintf(stderr, "\n");
-        fprintf(stderr, " %7.3f ", matdi[i]);
-    }
-    fprintf(stderr, "\nInverse transform, made by inverting the affine xform");
-    for (i = 0; i < 6; i++) {
-        if (i % 3 == 0)  fprintf(stderr, "\n");
-        fprintf(stderr, " %7.3f ", matdinv[i]);
-    }
-    fprintf(stderr, "\n");
 
-        /* Apply the inverted affine transform pixs */
+        /* Apply the inverted affine transform --> pixs */
     pixd = pixAffine(pixs, matdinv, L_BRING_IN_WHITE);
     RenderHashedBoxa(pixd, boxa2, 513);
-    pixSaveTiled(pixd, pixa, 0.5, 0, 30, 32);
-    pixDestroy(&pixd);
+    regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 51 */
+    pixaAddPix(pixa, pixd, L_INSERT);
 
-    pixd = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/affine7.png", pixd, IFF_PNG);
-    pixDisplay(pixd, 100, 900);
-    pixDestroy(&pixd);
-    pixDestroy(&pixs);
+    pix1 = pixaDisplayTiledInColumns(pixa, 2, 1.0, 30, 2);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 52 */
+    pixDisplayWithTitle(pix1, 1200, 100, NULL, rp->display);
+    pixDestroy(&pix1);
     pixaDestroy(&pixa);
+
+    pixDestroy(&pixs);
     boxaDestroy(&boxa);
     boxaDestroy(&boxa2);
     lept_free(mat1);
@@ -346,9 +374,10 @@ static char  mainName[] = "affine_reg";
     lept_free(mat1i);
     lept_free(mat2i);
     lept_free(mat3i);
+    lept_free(matdinv);
 #endif
 
-    return 0;
+    return regTestCleanup(rp);
 }
 
 static void
@@ -369,7 +398,7 @@ MakePtas(l_int32  i,
 }
 
 
-l_int32
+static l_int32
 RenderHashedBoxa(PIX    *pixt,
                  BOXA   *boxa,
                  l_int32 i)

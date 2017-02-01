@@ -100,6 +100,7 @@ static char  mainName[] = "buffertest";
     bbufferWriteStream(bb2, fp, nbytes, &nout);
     fprintf(stderr, " bytes written out to fileout: %lu\n",
             (unsigned long)nout);
+    lept_fclose(fp);
 
     bbufferDestroy(&bb);
     bbufferDestroy(&bb2);

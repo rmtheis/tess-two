@@ -56,21 +56,23 @@
  *           Optimized 2 pix correlators (for jbig2 clustering)         *
  * -------------------------------------------------------------------- */
 /*!
- *  pixCorrelationScore()
+ * \brief   pixCorrelationScore()
  *
- *      Input:  pix1   (test pix, 1 bpp)
- *              pix2   (exemplar pix, 1 bpp)
- *              area1  (number of on pixels in pix1)
- *              area2  (number of on pixels in pix2)
- *              delx   (x comp of centroid difference)
- *              dely   (y comp of centroid difference)
- *              maxdiffw (max width difference of pix1 and pix2)
- *              maxdiffh (max height difference of pix1 and pix2)
- *              tab    (sum tab for byte)
- *              &score (<return> correlation score)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix1   test pix, 1 bpp
+ * \param[in]    pix2   exemplar pix, 1 bpp
+ * \param[in]    area1  number of on pixels in pix1
+ * \param[in]    area2  number of on pixels in pix2
+ * \param[in]    delx   x comp of centroid difference
+ * \param[in]    dely   y comp of centroid difference
+ * \param[in]    maxdiffw max width difference of pix1 and pix2
+ * \param[in]    maxdiffh max height difference of pix1 and pix2
+ * \param[in]    tab    sum tab for byte
+ * \param[out]   pscore correlation score
+ * \return  0 if OK, 1 on error
  *
- *  Note: we check first that the two pix are roughly the same size.
+ * <pre>
+ * Notes:
+ *  We check first that the two pix are roughly the same size.
  *  For jbclass (jbig2) applications at roughly 300 ppi, maxdiffw and
  *  maxdiffh should be at least 2.
  *
@@ -82,8 +84,8 @@
  *  pixels in the AND of the two bitmaps to the product of the number
  *  of ON pixels in each.  Denote the number of ON pixels in pix1
  *  by |1|, the number in pix2 by |2|, and the number in the AND
- *  of pix1 and pix2 by |1 & 2|.  The correlation score is then
- *  (|1 & 2|)**2 / (|1|*|2|).
+ *  of pix1 and pix2 by |1 \& 2|.  The correlation score is then
+ *  (|1 \& 2|)**2 / (|1|*|2|).
  *
  *  This score is compared with an input threshold, which can
  *  be modified depending on the weight of the template.
@@ -110,13 +112,14 @@
  *  the AND and implementation uses rasterop:
  *      pixt = pixCreateTemplate(pix1);
  *      pixRasterop(pixt, idelx, idely, wt, ht, PIX_SRC, pix2, 0, 0);
- *      pixRasterop(pixt, 0, 0, wi, hi, PIX_SRC & PIX_DST, pix1, 0, 0);
- *      pixCountPixels(pixt, &count, tab);
- *      pixDestroy(&pixt);
+ *      pixRasterop(pixt, 0, 0, wi, hi, PIX_SRC \& PIX_DST, pix1, 0, 0);
+ *      pixCountPixels(pixt, \&count, tab);
+ *      pixDestroy(\&pixt);
  *  However, here it is done in a streaming fashion, counting as it goes,
  *  and touching memory exactly once, giving a 3-4x speedup over the
  *  simple implementation.  This very fast correlation matcher was
  *  contributed by William Rucklidge.
+ * </pre>
  */
 l_int32
 pixCorrelationScore(PIX        *pix1,
@@ -363,23 +366,25 @@ l_uint32  *row1, *row2;
 
 
 /*!
- *  pixCorrelationScoreThresholded()
+ * \brief   pixCorrelationScoreThresholded()
  *
- *      Input:  pix1   (test pix, 1 bpp)
- *              pix2   (exemplar pix, 1 bpp)
- *              area1  (number of on pixels in pix1)
- *              area2  (number of on pixels in pix2)
- *              delx   (x comp of centroid difference)
- *              dely   (y comp of centroid difference)
- *              maxdiffw (max width difference of pix1 and pix2)
- *              maxdiffh (max height difference of pix1 and pix2)
- *              tab    (sum tab for byte)
- *              downcount (count of 1 pixels below each row of pix1)
- *              score_threshold
- *      Return: whether the correlation score is >= score_threshold
+ * \param[in]    pix1   test pix, 1 bpp
+ * \param[in]    pix2   exemplar pix, 1 bpp
+ * \param[in]    area1  number of on pixels in pix1
+ * \param[in]    area2  number of on pixels in pix2
+ * \param[in]    delx   x comp of centroid difference
+ * \param[in]    dely   y comp of centroid difference
+ * \param[in]    maxdiffw max width difference of pix1 and pix2
+ * \param[in]    maxdiffh max height difference of pix1 and pix2
+ * \param[in]    tab    sum tab for byte
+ * \param[in]    downcount count of 1 pixels below each row of pix1
+ * \param[in]    score_threshold
+ * \return  whether the correlation score is >= score_threshold
  *
  *
- *  Note: we check first that the two pix are roughly the same size.
+ * <pre>
+ * Notes:
+ *  We check first that the two pix are roughly the same size.
  *  Only if they meet that criterion do we compare the bitmaps.
  *  The centroid difference is used to align the two images to the
  *  nearest integer for the correlation.
@@ -388,8 +393,8 @@ l_uint32  *row1, *row2;
  *  pixels in the AND of the two bitmaps to the product of the number
  *  of ON pixels in each.  Denote the number of ON pixels in pix1
  *  by |1|, the number in pix2 by |2|, and the number in the AND
- *  of pix1 and pix2 by |1 & 2|.  The correlation score is then
- *  (|1 & 2|)**2 / (|1|*|2|).
+ *  of pix1 and pix2 by |1 \& 2|.  The correlation score is then
+ *  (|1 \& 2|)**2 / (|1|*|2|).
  *
  *  This score is compared with an input threshold, which can
  *  be modified depending on the weight of the template.
@@ -412,6 +417,7 @@ l_uint32  *row1, *row2;
  *  constraint.  However, this is not particularly effective.
  *
  *  This very fast correlation matcher was contributed by William Rucklidge.
+ * </pre>
  */
 l_int32
 pixCorrelationScoreThresholded(PIX       *pix1,
@@ -700,25 +706,27 @@ l_int32    threshold;
  *             Simple 2 pix correlators (for jbig2 clustering)          *
  * -------------------------------------------------------------------- */
 /*!
- *  pixCorrelationScoreSimple()
+ * \brief   pixCorrelationScoreSimple()
  *
- *      Input:  pix1   (test pix, 1 bpp)
- *              pix2   (exemplar pix, 1 bpp)
- *              area1  (number of on pixels in pix1)
- *              area2  (number of on pixels in pix2)
- *              delx   (x comp of centroid difference)
- *              dely   (y comp of centroid difference)
- *              maxdiffw (max width difference of pix1 and pix2)
- *              maxdiffh (max height difference of pix1 and pix2)
- *              tab    (sum tab for byte)
- *              &score (<return> correlation score, in range [0.0 ... 1.0])
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix1   test pix, 1 bpp
+ * \param[in]    pix2   exemplar pix, 1 bpp
+ * \param[in]    area1  number of on pixels in pix1
+ * \param[in]    area2  number of on pixels in pix2
+ * \param[in]    delx   x comp of centroid difference
+ * \param[in]    dely   y comp of centroid difference
+ * \param[in]    maxdiffw max width difference of pix1 and pix2
+ * \param[in]    maxdiffh max height difference of pix1 and pix2
+ * \param[in]    tab    sum tab for byte
+ * \param[out]   pscore correlation score, in range [0.0 ... 1.0]
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This calculates exactly the same value as pixCorrelationScore().
  *          It is 2-3x slower, but much simpler to understand.
  *      (2) The returned correlation score is 0.0 if the width or height
- *          exceed @maxdiffw or @maxdiffh.
+ *          exceed %maxdiffw or %maxdiffh.
+ * </pre>
  */
 l_int32
 pixCorrelationScoreSimple(PIX        *pix1,
@@ -791,19 +799,20 @@ PIX     *pixt;
 
 
 /*!
- *  pixCorrelationScoreShifted()
+ * \brief   pixCorrelationScoreShifted()
  *
- *      Input:  pix1   (1 bpp)
- *              pix2   (1 bpp)
- *              area1  (number of on pixels in pix1)
- *              area2  (number of on pixels in pix2)
- *              delx (x translation of pix2 relative to pix1)
- *              dely (y translation of pix2 relative to pix1)
- *              tab    (sum tab for byte)
- *              &score (<return> correlation score)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix1   1 bpp
+ * \param[in]    pix2   1 bpp
+ * \param[in]    area1  number of on pixels in pix1
+ * \param[in]    area2  number of on pixels in pix2
+ * \param[in]    delx x translation of pix2 relative to pix1
+ * \param[in]    dely y translation of pix2 relative to pix1
+ * \param[in]    tab    sum tab for byte
+ * \param[out]   pscore correlation score
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This finds the correlation between two 1 bpp images,
  *          when pix2 is shifted by (delx, dely) with respect
  *          to each other.
@@ -820,6 +829,7 @@ PIX     *pixt;
  *          translations delx and dely are varied to find the best alignment.
  *      (5) We do not check the sizes of pix1 and pix2, because they should
  *          be comparable.
+ * </pre>
  */
 l_int32
 pixCorrelationScoreShifted(PIX        *pix1,

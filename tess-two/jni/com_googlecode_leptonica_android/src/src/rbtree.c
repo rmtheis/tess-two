@@ -31,8 +31,9 @@
  * CC0 1.0 waiver (http://creativecommons.org/publicdomain/zero/1.0/).
  */
 
-/*
- *  rbtree.c
+/*!
+ * \file rbtree.c
+ * <pre>
  *
  *  Basic functions for using red-black trees.  These are "nearly" balanced
  *  sorted trees with ordering by key that allows insertion, lookup and
@@ -67,6 +68,7 @@
  *
  *  General comparison function
  *           l_int32         l_compareKeys()
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -88,14 +90,7 @@ static void print_tree_helper(FILE *fp, node *n, l_int32 keytype,
 static node *grandparent(node *n);
 static node *sibling(node *n);
 static node *uncle(node *n);
-static void verify_properties(L_RBTREE *t);
-static void verify_property_1(node *root);
-static void verify_property_2(node *root);
 static l_int32 node_color(node *n);
-static void verify_property_4(node *root);
-static void verify_property_5(node *root);
-static void verify_property_5_helper(node *n, int black_count,
-                                     int* black_count_path);
 static node *new_node(RB_TYPE key, RB_TYPE value, l_int32 node_color,
                       node *left, node *right);
 static node *lookup_node(L_RBTREE *t, RB_TYPE key);
@@ -114,6 +109,7 @@ static void delete_case3(L_RBTREE *t, node *n);
 static void delete_case4(L_RBTREE *t, node *n);
 static void delete_case5(L_RBTREE *t, node *n);
 static void delete_case6(L_RBTREE *t, node *n);
+static void verify_properties(L_RBTREE *t);
 
 #ifndef  NO_CONSOLE_IO
 #define  VERIFY_RBTREE     0   /* only for debugging */
@@ -467,7 +463,7 @@ count_helper(node  *n, l_int32  *pcount)
 /*
  *  l_rbtreePrint()
  *
- *      Input:  stream
+ *      Input:  fp (file stream)
  *              t (rbtree)
  *      Return: null
  */
@@ -600,71 +596,10 @@ static node *uncle(node *n) {
     return sibling(n->parent);
 }
 
-
-static void verify_properties(L_RBTREE *t) {
-#if VERIFY_RBTREE
-    verify_property_1(t->root);
-    verify_property_2(t->root);
-    /* Property 3 is implicit */
-    verify_property_4(t->root);
-    verify_property_5(t->root);
-#endif
-}
-
-static void verify_property_1(node *n) {
-    if (node_color(n) != L_RED_NODE && node_color(n) != L_BLACK_NODE) {
-        L_ERROR("color neither RED nor BLACK\n", "verify_property_1");
-        return;
-    }
-    if (n == NULL) return;
-    verify_property_1(n->left);
-    verify_property_1(n->right);
-}
-
-static void verify_property_2(node *root) {
-    if (node_color(root) != L_BLACK_NODE)
-        L_ERROR("root is not black!\n", "verify_property_2");
-}
-
 static l_int32 node_color(node *n) {
     return n == NULL ? L_BLACK_NODE : n->color;
 }
 
-static void verify_property_4(node *n) {
-    if (node_color(n) == L_RED_NODE) {
-        if (node_color(n->left) != L_BLACK_NODE ||
-            node_color(n->right) != L_BLACK_NODE ||
-            node_color(n->parent) != L_BLACK_NODE) {
-            L_ERROR("children & parent not all BLACK", "verify_property_4");
-            return;
-        }
-    }
-    if (n == NULL) return;
-    verify_property_4(n->left);
-    verify_property_4(n->right);
-}
-
-static void verify_property_5(node *root) {
-    int black_count_path = -1;
-    verify_property_5_helper(root, 0, &black_count_path);
-}
-
-static void verify_property_5_helper(node *n, int black_count,
-                                     int* path_black_count) {
-    if (node_color(n) == L_BLACK_NODE) {
-        black_count++;
-    }
-    if (n == NULL) {
-        if (*path_black_count == -1) {
-            *path_black_count = black_count;
-        } else if (*path_black_count != black_count) {
-            L_ERROR("incorrect black count", "verify_property_5_helper");
-        }
-        return;
-    }
-    verify_property_5_helper(n->left,  black_count, path_black_count);
-    verify_property_5_helper(n->right, black_count, path_black_count);
-}
 
 static node *new_node(RB_TYPE key, RB_TYPE value, l_int32 node_color,
                       node *left, node *right) {
@@ -872,3 +807,78 @@ static void delete_case6(L_RBTREE *t, node *n) {
     }
 }
 
+
+/* ------------------------------------------------------------- *
+ *               Debugging: verify if tree is valid              *
+ * ------------------------------------------------------------- */
+#if VERIFY_RBTREE
+static void verify_property_1(node *root);
+static void verify_property_2(node *root);
+static void verify_property_4(node *root);
+static void verify_property_5(node *root);
+static void verify_property_5_helper(node *n, int black_count,
+                                     int* black_count_path);
+#endif
+
+static void verify_properties(L_RBTREE *t) {
+#if VERIFY_RBTREE
+    verify_property_1(t->root);
+    verify_property_2(t->root);
+    /* Property 3 is implicit */
+    verify_property_4(t->root);
+    verify_property_5(t->root);
+#endif
+}
+
+#if VERIFY_RBTREE
+static void verify_property_1(node *n) {
+    if (node_color(n) != L_RED_NODE && node_color(n) != L_BLACK_NODE) {
+        L_ERROR("color neither RED nor BLACK\n", "verify_property_1");
+        return;
+    }
+    if (n == NULL) return;
+    verify_property_1(n->left);
+    verify_property_1(n->right);
+}
+
+static void verify_property_2(node *root) {
+    if (node_color(root) != L_BLACK_NODE)
+        L_ERROR("root is not black!\n", "verify_property_2");
+}
+
+static void verify_property_4(node *n) {
+    if (node_color(n) == L_RED_NODE) {
+        if (node_color(n->left) != L_BLACK_NODE ||
+            node_color(n->right) != L_BLACK_NODE ||
+            node_color(n->parent) != L_BLACK_NODE) {
+            L_ERROR("children & parent not all BLACK", "verify_property_4");
+            return;
+        }
+    }
+    if (n == NULL) return;
+    verify_property_4(n->left);
+    verify_property_4(n->right);
+}
+
+static void verify_property_5(node *root) {
+    int black_count_path = -1;
+    verify_property_5_helper(root, 0, &black_count_path);
+}
+
+static void verify_property_5_helper(node *n, int black_count,
+                                     int* path_black_count) {
+    if (node_color(n) == L_BLACK_NODE) {
+        black_count++;
+    }
+    if (n == NULL) {
+        if (*path_black_count == -1) {
+            *path_black_count = black_count;
+        } else if (*path_black_count != black_count) {
+            L_ERROR("incorrect black count", "verify_property_5_helper");
+        }
+        return;
+    }
+    verify_property_5_helper(n->left,  black_count, path_black_count);
+    verify_property_5_helper(n->right, black_count, path_black_count);
+}
+#endif

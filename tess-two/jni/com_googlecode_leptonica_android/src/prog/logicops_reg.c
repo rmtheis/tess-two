@@ -27,239 +27,148 @@
 /*
  * logicops_reg.c
  *
+ *    Regression test for pixel-wise logical operations, both in-place and
+ *    generating new images.  Implemented by rasterops.
  */
 
 #include "allheaders.h"
 
-#define   DISPLAY    0
-
 int main(int    argc,
          char **argv)
 {
-l_int32      same;
-PIX         *pixs, *pixt1, *pixt2, *pixt3, *pixt4;
-static char  mainName[] = "logicops_reg";
+PIX          *pixs, *pix1, *pix2, *pix3, *pix4;
+L_REGPARAMS  *rp;
 
-    if (argc != 1)
-        return ERROR_INT(" Syntax: logicops_reg", mainName, 1);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
 
     pixs = pixRead("test1.png");
-    pixDisplayWrite(pixs, DISPLAY);
+
 
         /* pixInvert */
-    pixt1 = pixInvert(NULL, pixs);
-    pixt2 = pixCreateTemplate(pixs);  /* into pixd of same size */
-    pixInvert(pixt2, pixs);
-    pixEqual(pixt1, pixt2, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixInvert\n");
-    else
-        fprintf(stderr, "Correct: pixInvert\n");
-    pixDisplayWrite(pixt1, DISPLAY);
+    pix1 = pixInvert(NULL, pixs);
+    pix2 = pixCreateTemplate(pixs);  /* into pixd of same size */
+    pixInvert(pix2, pixs);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 0 */
+    regTestComparePix(rp, pix1, pix2);  /* 1 */
 
-    pixt3 = pixRead("marge.jpg");  /* into pixd of different size */
-    pixInvert(pixt3, pixs);
-    pixEqual(pixt1, pixt3, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixInvert\n");
-    else
-        fprintf(stderr, "Correct: pixInvert\n");
-    pixDisplayWrite(pixt3, DISPLAY);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
+    pix3 = pixRead("marge.jpg");  /* into pixd of different size */
+    pixInvert(pix3, pixs);
+    regTestComparePix(rp, pix1, pix3);  /* 2 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
 
-    pixt1 = pixOpenBrick(NULL, pixs, 1, 9);
-    pixt2 = pixDilateBrick(NULL, pixs, 1, 9);
-    pixDisplayWrite(pixt1, DISPLAY);
-    pixDisplayWrite(pixt2, DISPLAY);
+    pix1 = pixOpenBrick(NULL, pixs, 1, 9);
+    pix2 = pixDilateBrick(NULL, pixs, 1, 9);
 
         /* pixOr */
-    pixt3 = pixCreateTemplate(pixs);
-    pixOr(pixt3, pixs, pixt1);  /* existing */
-    pixt4 = pixOr(NULL, pixs, pixt1);  /* new */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixOr\n");
-    else
-        fprintf(stderr, "Correct: pixOr\n");
-    pixDisplayWrite(pixt3, DISPLAY);
-    pixCopy(pixt4, pixt1);
-    pixOr(pixt4, pixt4, pixs);  /* in-place */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixOr\n");
-    else
-        fprintf(stderr, "Correct: pixOr\n");
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+    pix3 = pixCreateTemplate(pixs);
+    pixOr(pix3, pixs, pix1);  /* existing */
+    pix4 = pixOr(NULL, pixs, pix1);  /* new */
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 3 */
+    regTestComparePix(rp, pix3, pix4);  /* 4 */
+    pixCopy(pix4, pix1);
+    pixOr(pix4, pix4, pixs);  /* in-place */
+    regTestComparePix(rp, pix3, pix4);  /* 5 */
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
-    pixt3 = pixCreateTemplate(pixs);
-    pixOr(pixt3, pixs, pixt2);  /* existing */
-    pixt4 = pixOr(NULL, pixs, pixt2);  /* new */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixOr\n");
-    else
-        fprintf(stderr, "Correct: pixOr\n");
-    pixDisplayWrite(pixt3, DISPLAY);
-    pixCopy(pixt4, pixt2);
-    pixOr(pixt4, pixt4, pixs);  /* in-place */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixOr\n");
-    else
-        fprintf(stderr, "Correct: pixOr\n");
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+    pix3 = pixCreateTemplate(pixs);
+    pixOr(pix3, pixs, pix2);  /* existing */
+    pix4 = pixOr(NULL, pixs, pix2);  /* new */
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 6 */
+    regTestComparePix(rp, pix3, pix4);  /* 7 */
+    pixCopy(pix4, pix2);
+    pixOr(pix4, pix4, pixs);  /* in-place */
+    regTestComparePix(rp, pix3, pix4);  /* 8 */
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
         /* pixAnd */
-    pixt3 = pixCreateTemplate(pixs);
-    pixAnd(pixt3, pixs, pixt1);  /* existing */
-    pixt4 = pixAnd(NULL, pixs, pixt1);  /* new */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixAnd\n");
-    else
-        fprintf(stderr, "Correct: pixAnd\n");
-    pixDisplayWrite(pixt3, DISPLAY);
-    pixCopy(pixt3, pixt1);
-    pixAnd(pixt3, pixt3, pixs);  /* in-place */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixAnd\n");
-    else
-        fprintf(stderr, "Correct: pixAnd\n");
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+    pix3 = pixCreateTemplate(pixs);
+    pixAnd(pix3, pixs, pix1);  /* existing */
+    pix4 = pixAnd(NULL, pixs, pix1);  /* new */
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 9 */
+    regTestComparePix(rp, pix3, pix4);  /* 10 */
+    pixCopy(pix4, pix1);
+    pixAnd(pix4, pix4, pixs);  /* in-place */
+    regTestComparePix(rp, pix3, pix4);  /* 11 */
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
-    pixt3 = pixCreateTemplate(pixs);
-    pixAnd(pixt3, pixs, pixt2);  /* existing */
-    pixt4 = pixAnd(NULL, pixs, pixt2);  /* new */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixAnd\n");
-    else
-        fprintf(stderr, "Correct: pixAnd\n");
-    pixDisplayWrite(pixt3, DISPLAY);
-    pixCopy(pixt3, pixt2);
-    pixAnd(pixt3, pixt3, pixs);  /* in-place */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixAnd\n");
-    else
-        fprintf(stderr, "Correct: pixAnd\n");
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+    pix3 = pixCreateTemplate(pixs);
+    pixAnd(pix3, pixs, pix2);  /* existing */
+    pix4 = pixAnd(NULL, pixs, pix2);  /* new */
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 12 */
+    regTestComparePix(rp, pix3, pix4);  /* 13 */
+    pixCopy(pix4, pix2);
+    pixAnd(pix4, pix4, pixs);  /* in-place */
+    regTestComparePix(rp, pix3, pix4);  /* 14 */
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
         /* pixXor */
-    pixt3 = pixCreateTemplate(pixs);
-    pixXor(pixt3, pixs, pixt1);  /* existing */
-    pixt4 = pixXor(NULL, pixs, pixt1);  /* new */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixXor\n");
-    else
-        fprintf(stderr, "Correct: pixXor\n");
-    pixDisplayWrite(pixt3, DISPLAY);
-    pixCopy(pixt3, pixt1);
-    pixXor(pixt3, pixt3, pixs);  /* in-place */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixXor\n");
-    else
-        fprintf(stderr, "Correct: pixXor\n");
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+    pix3 = pixCreateTemplate(pixs);
+    pixXor(pix3, pixs, pix1);  /* existing */
+    pix4 = pixXor(NULL, pixs, pix1);  /* new */
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 15 */
+    regTestComparePix(rp, pix3, pix4);  /* 16 */
+    pixCopy(pix4, pix1);
+    pixXor(pix4, pix4, pixs);  /* in-place */
+    regTestComparePix(rp, pix3, pix4);  /* 17 */
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
-    pixt3 = pixCreateTemplate(pixs);
-    pixXor(pixt3, pixs, pixt2);  /* existing */
-    pixt4 = pixXor(NULL, pixs, pixt2);  /* new */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixXor\n");
-    else
-        fprintf(stderr, "Correct: pixXor\n");
-    pixDisplayWrite(pixt3, DISPLAY);
-    pixCopy(pixt3, pixt2);
-    pixXor(pixt3, pixt3, pixs);  /* in-place */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixXor\n");
-    else
-        fprintf(stderr, "Correct: pixXor\n");
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+    pix3 = pixCreateTemplate(pixs);
+    pixXor(pix3, pixs, pix2);  /* existing */
+    pix4 = pixXor(NULL, pixs, pix2);  /* new */
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 18 */
+    regTestComparePix(rp, pix3, pix4);  /* 19 */
+    pixCopy(pix4, pix2);
+    pixXor(pix4, pix4, pixs);  /* in-place */
+    regTestComparePix(rp, pix3, pix4);  /* 20 */
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
         /* pixSubtract */
-    pixt3 = pixCreateTemplate(pixs);
-    pixSubtract(pixt3, pixs, pixt1);  /* existing */
-    pixt4 = pixSubtract(NULL, pixs, pixt1);  /* new */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixSubtract\n");
-    else
-        fprintf(stderr, "Correct: pixSubtract\n");
-    pixDisplayWrite(pixt3, DISPLAY);
-    pixCopy(pixt4, pixt1);
-    pixSubtract(pixt4, pixs, pixt4);  /* in-place */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixSubtract\n");
-    else
-        fprintf(stderr, "Correct: pixSubtract\n");
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+    pix3 = pixCreateTemplate(pixs);
+    pixSubtract(pix3, pixs, pix1);  /* existing */
+    pix4 = pixSubtract(NULL, pixs, pix1);  /* new */
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 21 */
+    regTestComparePix(rp, pix3, pix4);  /* 22 */
+    pixCopy(pix4, pix1);
+    pixSubtract(pix4, pixs, pix4);  /* in-place */
+    regTestComparePix(rp, pix3, pix4);  /* 23 */
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
-    pixt3 = pixCreateTemplate(pixs);
-    pixSubtract(pixt3, pixs, pixt2);  /* existing */
-    pixt4 = pixSubtract(NULL, pixs, pixt2);  /* new */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixSubtract\n");
-    else
-        fprintf(stderr, "Correct: pixSubtract\n");
-    pixDisplayWrite(pixt3, DISPLAY);
-    pixCopy(pixt4, pixt2);
-    pixSubtract(pixt4, pixs, pixt4);  /* in-place */
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixSubtract\n");
-    else
-        fprintf(stderr, "Correct: pixSubtract\n");
-    pixCopy(pixt4, pixt2);
-    pixSubtract(pixs, pixs, pixt4);  /* in-place */
-    pixEqual(pixt3, pixs, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixSubtract\n");
-    else
-        fprintf(stderr, "Correct: pixSubtract\n");
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+    pix3 = pixCreateTemplate(pixs);
+    pixSubtract(pix3, pixs, pix2);  /* existing */
+    pix4 = pixSubtract(NULL, pixs, pix2);  /* new */
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 24 */
+    regTestComparePix(rp, pix3, pix4);  /* 25 */
+    pixCopy(pix4, pix2);
+    pixSubtract(pix4, pixs, pix4);  /* in-place */
+    regTestComparePix(rp, pix3, pix4);  /* 26 */
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
-    pixt4 = pixRead("marge.jpg");
-    pixSubtract(pixt4, pixs, pixs);  /* subtract from itself; should be empty */
-    pixt3 = pixCreateTemplate(pixs);
-    pixEqual(pixt3, pixt4, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixSubtract\n");
-    else
-        fprintf(stderr, "Correct: pixSubtract\n");
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
+    pix4 = pixRead("marge.jpg");
+    pixSubtract(pix4, pixs, pixs);  /* subtract from itself; should be empty */
+    pix3 = pixCreateTemplate(pixs);
+    regTestComparePix(rp, pix3, pix4);  /* 27*/
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
     pixSubtract(pixs, pixs, pixs);  /* subtract from itself; should be empty */
-    pixt3 = pixCreateTemplate(pixs);
-    pixEqual(pixt3, pixs, &same);
-    if (!same)
-        fprintf(stderr, "Error: pixSubtract\n");
-    else
-        fprintf(stderr, "Correct: pixSubtract\n");
-    pixDestroy(&pixt3);
+    pix3 = pixCreateTemplate(pixs);
+    regTestComparePix(rp, pix3, pixs);  /* 28*/
+    pixDestroy(&pix3);
 
     pixDestroy(&pixs);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    return 0;
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    return regTestCleanup(rp);
 }
 

@@ -27,25 +27,27 @@
 /*
  *  compfilter_reg.c
  *
- *     Tests filters that select components based on size, etc.
+ *     Regression test for filters that select connected components
+ *     based on size, using logical combinations of indicator arrays.
  */
 
 #include "allheaders.h"
 
-static void count_pieces(PIX  *pix, l_int32 nexp);
-static void count_pieces2(BOXA *boxa, l_int32 nexp);
-static l_int32 count_ones(NUMA  *na, l_int32 nexp, l_int32 index,
-                          const char *name);
+static void Count_pieces(L_REGPARAMS *rp, PIX  *pix, l_int32 nexp);
+static void Count_pieces2(L_REGPARAMS *rp, BOXA *boxa, l_int32 nexp);
+static l_int32 Count_ones(L_REGPARAMS *rp, NUMA  *na, l_int32 nexp,
+                          l_int32 index, const char *name);
 
 static const l_float32 edges[13] = {0.0, 0.2, 0.3, 0.35, 0.4, 0.45, 0.5,
                                     0.55, 0.6, 0.7, 0.8, 0.9, 1.0};
 
-#if 1   /* for feyn.tif */
+    /* for feyn.tif */
 static const l_int32 band[12] = {1, 11, 48, 264, 574, 704, 908, 786, 466,
                                  157, 156, 230};
 static const l_int32 total[12] = {1, 12, 60, 324, 898, 1602, 2510, 3296,
                                   3762, 3919, 4075, 4305};
-#else   /* for rabi.png */
+#if 0
+    /* for rabi.png */
 static const l_int32 band[12] = {24, 295, 490, 817, 1768, 962, 8171,
                                  63, 81, 51, 137, 8619};
 static const l_int32 total[12] = {24, 319, 809, 1626, 3394, 4356, 12527,
@@ -56,15 +58,17 @@ static const l_int32 total[12] = {24, 319, 809, 1626, 3394, 4356, 12527,
 int main(int    argc,
          char **argv)
 {
-l_int32  w, h, n, i, sum, sumi, empty;
-BOX     *box1, *box2, *box3, *box4;
-BOXA    *boxa, *boxat;
-NUMA    *na1, *na2, *na3, *na4, *na5;
-NUMA    *na2i, *na3i, *na4i, *nat, *naw, *nah;
-PIX     *pixs, *pixc, *pixt, *pixt2, *pixd, *pixcount;
-PIXA    *pixas, *pixad, *pixac;
+l_int32       w, h, n, i, sum, sumi, empty;
+BOX          *box1, *box2, *box3, *box4;
+BOXA         *boxa1, *boxa2;
+NUMA         *na1, *na2, *na3, *na4, *na5;
+NUMA         *na2i, *na3i, *na4i, *nat, *naw, *nah;
+PIX          *pixs, *pix1, *pix2, *pix3, *pix4;
+PIXA         *pixa1, *pixa2, *pixa3;
+L_REGPARAMS  *rp;
 
-    pixDisplayWrite(NULL, -1);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
 
         /* Draw 4 filled boxes of different sizes */
     pixs = pixCreate(200, 200, 1);
@@ -72,117 +76,115 @@ PIXA    *pixas, *pixad, *pixac;
     box2 = boxCreate(50, 10, 40, 20);
     box3 = boxCreate(110, 10, 35, 5);
     box4 = boxCreate(160, 10, 5, 15);
-    boxa = boxaCreate(4);
-    boxaAddBox(boxa, box1, L_INSERT);
-    boxaAddBox(boxa, box2, L_INSERT);
-    boxaAddBox(boxa, box3, L_INSERT);
-    boxaAddBox(boxa, box4, L_INSERT);
+    boxa1 = boxaCreate(4);
+    boxaAddBox(boxa1, box1, L_INSERT);
+    boxaAddBox(boxa1, box2, L_INSERT);
+    boxaAddBox(boxa1, box3, L_INSERT);
+    boxaAddBox(boxa1, box4, L_INSERT);
     pixRenderBox(pixs, box1, 1, L_SET_PIXELS);
     pixRenderBox(pixs, box2, 1, L_SET_PIXELS);
     pixRenderBox(pixs, box3, 1, L_SET_PIXELS);
     pixRenderBox(pixs, box4, 1, L_SET_PIXELS);
-    pixt = pixFillClosedBorders(pixs, 4);
-    pixDisplayWrite(pixt, 1);
-    pixt2 = pixCreateTemplate(pixs);
-    pixRenderHashBox(pixt2, box1, 6, 4, L_POS_SLOPE_LINE, 1, L_SET_PIXELS);
-    pixRenderHashBox(pixt2, box2, 7, 2, L_POS_SLOPE_LINE, 1, L_SET_PIXELS);
-    pixRenderHashBox(pixt2, box3, 4, 2, L_VERTICAL_LINE, 1, L_SET_PIXELS);
-    pixRenderHashBox(pixt2, box4, 3, 1, L_HORIZONTAL_LINE, 1, L_SET_PIXELS);
-    pixDisplayWrite(pixt2, 1);
+    pix1 = pixFillClosedBorders(pixs, 4);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 0 */
+    pix2 = pixCreateTemplate(pixs);
+    pixRenderHashBox(pix2, box1, 6, 4, L_POS_SLOPE_LINE, 1, L_SET_PIXELS);
+    pixRenderHashBox(pix2, box2, 7, 2, L_POS_SLOPE_LINE, 1, L_SET_PIXELS);
+    pixRenderHashBox(pix2, box3, 4, 2, L_VERTICAL_LINE, 1, L_SET_PIXELS);
+    pixRenderHashBox(pix2, box4, 3, 1, L_HORIZONTAL_LINE, 1, L_SET_PIXELS);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 1 */
 
-        /* Exercise the parameters */
-    pixd = pixSelectBySize(pixt, 0, 22, 8, L_SELECT_HEIGHT,
+        /* Exercise the parameters:  Reg indices 2-27  */
+    pix3 = pixSelectBySize(pix1, 0, 22, 8, L_SELECT_HEIGHT,
                            L_SELECT_IF_GT, NULL);
-    count_pieces(pixd, 1);
-    pixd = pixSelectBySize(pixt, 0, 30, 8, L_SELECT_HEIGHT,
+    Count_pieces(rp, pix3, 1);
+    pix3 = pixSelectBySize(pix1, 0, 30, 8, L_SELECT_HEIGHT,
                            L_SELECT_IF_LT, NULL);
-    count_pieces(pixd, 3);
-    pixd = pixSelectBySize(pixt, 0, 5, 8, L_SELECT_HEIGHT,
+    Count_pieces(rp, pix3, 3);
+    pix3 = pixSelectBySize(pix1, 0, 5, 8, L_SELECT_HEIGHT,
                            L_SELECT_IF_GT, NULL);
-    count_pieces(pixd, 3);
-    pixd = pixSelectBySize(pixt, 0, 6, 8, L_SELECT_HEIGHT,
+    Count_pieces(rp, pix3, 3);
+    pix3 = pixSelectBySize(pix1, 0, 6, 8, L_SELECT_HEIGHT,
                            L_SELECT_IF_LT, NULL);
-    count_pieces(pixd, 1);
-    pixd = pixSelectBySize(pixt, 20, 0, 8, L_SELECT_WIDTH,
+    Count_pieces(rp, pix3, 1);
+    pix3 = pixSelectBySize(pix1, 20, 0, 8, L_SELECT_WIDTH,
                            L_SELECT_IF_GT, NULL);
-    count_pieces(pixd, 2);
-    pixd = pixSelectBySize(pixt, 31, 0, 8, L_SELECT_WIDTH,
+    Count_pieces(rp, pix3, 2);
+    pix3 = pixSelectBySize(pix1, 31, 0, 8, L_SELECT_WIDTH,
                            L_SELECT_IF_LT, NULL);
-    count_pieces(pixd, 2);
-    pixd = pixSelectBySize(pixt, 21, 10, 8, L_SELECT_IF_EITHER,
+    Count_pieces(rp, pix3, 2);
+    pix3 = pixSelectBySize(pix1, 21, 10, 8, L_SELECT_IF_EITHER,
                            L_SELECT_IF_LT, NULL);
-    count_pieces(pixd, 3);
-    pixd = pixSelectBySize(pixt, 20, 30, 8, L_SELECT_IF_EITHER,
+    Count_pieces(rp, pix3, 3);
+    pix3 = pixSelectBySize(pix1, 20, 30, 8, L_SELECT_IF_EITHER,
                            L_SELECT_IF_GT, NULL);
-    count_pieces(pixd, 2);
-    pixd = pixSelectBySize(pixt, 22, 32, 8, L_SELECT_IF_BOTH,
+    Count_pieces(rp, pix3, 2);
+    pix3 = pixSelectBySize(pix1, 22, 32, 8, L_SELECT_IF_BOTH,
                            L_SELECT_IF_LT, NULL);
-    count_pieces(pixd, 2);
-    pixd = pixSelectBySize(pixt, 6, 32, 8, L_SELECT_IF_BOTH,
+    Count_pieces(rp, pix3, 2);
+    pix3 = pixSelectBySize(pix1, 6, 32, 8, L_SELECT_IF_BOTH,
                            L_SELECT_IF_LT, NULL);
-    count_pieces(pixd, 1);
-    pixd = pixSelectBySize(pixt, 5, 25, 8, L_SELECT_IF_BOTH,
+    Count_pieces(rp, pix3, 1);
+    pix3 = pixSelectBySize(pix1, 5, 25, 8, L_SELECT_IF_BOTH,
                            L_SELECT_IF_GT, NULL);
-    count_pieces(pixd, 1);
-    pixd = pixSelectBySize(pixt, 25, 5, 8, L_SELECT_IF_BOTH,
+    Count_pieces(rp, pix3, 1);
+    pix3 = pixSelectBySize(pix1, 25, 5, 8, L_SELECT_IF_BOTH,
                            L_SELECT_IF_GT, NULL);
-    count_pieces(pixd, 1);
+    Count_pieces(rp, pix3, 1);
 
-    pixd = pixSelectByPerimToAreaRatio(pixt, 0.3, 8, L_SELECT_IF_GT, NULL);
-    count_pieces(pixd, 2);
-    pixd = pixSelectByPerimToAreaRatio(pixt, 0.15, 8, L_SELECT_IF_GT, NULL);
-    count_pieces(pixd, 3);
-    pixd = pixSelectByPerimToAreaRatio(pixt, 0.4, 8, L_SELECT_IF_LTE, NULL);
-    count_pieces(pixd, 2);
-    pixd = pixSelectByPerimToAreaRatio(pixt, 0.45, 8, L_SELECT_IF_LT, NULL);
-    count_pieces(pixd, 3);
+    pix3 = pixSelectByPerimToAreaRatio(pix1, 0.3, 8, L_SELECT_IF_GT, NULL);
+    Count_pieces(rp, pix3, 2);
+    pix3 = pixSelectByPerimToAreaRatio(pix1, 0.15, 8, L_SELECT_IF_GT, NULL);
+    Count_pieces(rp, pix3, 3);
+    pix3 = pixSelectByPerimToAreaRatio(pix1, 0.4, 8, L_SELECT_IF_LTE, NULL);
+    Count_pieces(rp, pix3, 2);
+    pix3 = pixSelectByPerimToAreaRatio(pix1, 0.45, 8, L_SELECT_IF_LT, NULL);
+    Count_pieces(rp, pix3, 3);
 
-    pixd = pixSelectByPerimSizeRatio(pixt2, 2.3, 8, L_SELECT_IF_GT, NULL);
-    count_pieces(pixd, 2);
-    pixd = pixSelectByPerimSizeRatio(pixt2, 1.2, 8, L_SELECT_IF_GT, NULL);
-    count_pieces(pixd, 3);
-    pixd = pixSelectByPerimSizeRatio(pixt2, 1.7, 8, L_SELECT_IF_LTE, NULL);
-    count_pieces(pixd, 1);
-    pixd = pixSelectByPerimSizeRatio(pixt2, 2.9, 8, L_SELECT_IF_LT, NULL);
-    count_pieces(pixd, 3);
+    pix3 = pixSelectByPerimSizeRatio(pix2, 2.3, 8, L_SELECT_IF_GT, NULL);
+    Count_pieces(rp, pix3, 2);
+    pix3 = pixSelectByPerimSizeRatio(pix2, 1.2, 8, L_SELECT_IF_GT, NULL);
+    Count_pieces(rp, pix3, 3);
+    pix3 = pixSelectByPerimSizeRatio(pix2, 1.7, 8, L_SELECT_IF_LTE, NULL);
+    Count_pieces(rp, pix3, 1);
+    pix3 = pixSelectByPerimSizeRatio(pix2, 2.9, 8, L_SELECT_IF_LT, NULL);
+    Count_pieces(rp, pix3, 3);
 
-    pixd = pixSelectByAreaFraction(pixt2, 0.3, 8, L_SELECT_IF_LT, NULL);
-    count_pieces(pixd, 0);
-    pixd = pixSelectByAreaFraction(pixt2, 0.9, 8, L_SELECT_IF_LT, NULL);
-    count_pieces(pixd, 4);
-    pixd = pixSelectByAreaFraction(pixt2, 0.5, 8, L_SELECT_IF_GTE, NULL);
-    count_pieces(pixd, 3);
-    pixd = pixSelectByAreaFraction(pixt2, 0.7, 8, L_SELECT_IF_GT, NULL);
-    count_pieces(pixd, 2);
+    pix3 = pixSelectByAreaFraction(pix2, 0.3, 8, L_SELECT_IF_LT, NULL);
+    Count_pieces(rp, pix3, 0);
+    pix3 = pixSelectByAreaFraction(pix2, 0.9, 8, L_SELECT_IF_LT, NULL);
+    Count_pieces(rp, pix3, 4);
+    pix3 = pixSelectByAreaFraction(pix2, 0.5, 8, L_SELECT_IF_GTE, NULL);
+    Count_pieces(rp, pix3, 3);
+    pix3 = pixSelectByAreaFraction(pix2, 0.7, 8, L_SELECT_IF_GT, NULL);
+    Count_pieces(rp, pix3, 2);
 
-    boxat = boxaSelectBySize(boxa, 21, 10, L_SELECT_IF_EITHER,
+    boxa2 = boxaSelectBySize(boxa1, 21, 10, L_SELECT_IF_EITHER,
                              L_SELECT_IF_LT, NULL);
-    count_pieces2(boxat, 3);
-    boxat = boxaSelectBySize(boxa, 22, 32, L_SELECT_IF_BOTH,
+    Count_pieces2(rp, boxa2, 3);
+    boxa2 = boxaSelectBySize(boxa1, 22, 32, L_SELECT_IF_BOTH,
                              L_SELECT_IF_LT, NULL);
-    count_pieces2(boxat, 2);
-
-    boxaDestroy(&boxa);
-    pixDestroy(&pixt);
-    pixDestroy(&pixt2);
+    Count_pieces2(rp, boxa2, 2);
+    boxaDestroy(&boxa1);
     pixDestroy(&pixs);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
-        /* Here's the most general method for selecting components.
-         * We do it for area fraction, but any combination of
-         * size, area/perimeter ratio and area fraction can be used. */
+        /* Here's the most general method for selecting components.   *
+         * We do it for area fraction, but any combination of         *
+         * size, area/perimeter ratio and area fraction can be used.  *
+         * Reg indices 28-85                                          */
     pixs = pixRead("feyn.tif");
-/*    pixs = pixRead("rabi.png"); */
-    pixc = pixCopy(NULL, pixs);  /* subtract bands from this */
-    pixt = pixCreateTemplate(pixs);  /* add bands to this */
+    pix1 = pixCopy(NULL, pixs);  /* subtract bands from this */
+    pix2 = pixCreateTemplate(pixs);  /* add bands to this */
     pixGetDimensions(pixs, &w, &h, NULL);
-    boxa = pixConnComp(pixs, &pixas, 8);
-    n = boxaGetCount(boxa);
-    fprintf(stderr, "total: %d\n", n);
-    na1 = pixaFindAreaFraction(pixas);
+    boxa1 = pixConnComp(pixs, &pixa1, 8);
+    n = boxaGetCount(boxa1);
+    na1 = pixaFindAreaFraction(pixa1);
     nat = numaCreate(0);
     numaSetCount(nat, n);  /* initialize to all 0 */
     sum = sumi = 0;
-    pixac = pixaCreate(0);
+    pixa3 = pixaCreate(0);
     for (i = 0; i < 12; i++) {
             /* Compute within the intervals using an intersection. */
         na2 = numaMakeThresholdIndicator(na1, edges[i], L_SELECT_IF_GTE);
@@ -192,7 +194,7 @@ PIXA    *pixas, *pixad, *pixac;
             na3 = numaMakeThresholdIndicator(na1, edges[i + 1],
                                              L_SELECT_IF_LTE);
         na4 = numaLogicalOp(NULL, na2, na3, L_INTERSECTION);
-        sum += count_ones(na4, 0, 0, NULL);
+        sum += Count_ones(rp, na4, 0, 0, NULL);
 
             /* Compute outside the intervals using a union, and invert */
         na2i = numaMakeThresholdIndicator(na1, edges[i], L_SELECT_IF_LT);
@@ -204,29 +206,27 @@ PIXA    *pixas, *pixad, *pixac;
                                               L_SELECT_IF_GT);
         na4i = numaLogicalOp(NULL, na3i, na2i, L_UNION);
         numaInvert(na4i, na4i);
-        sumi += count_ones(na4i, 0, 0, NULL);
+        sumi += Count_ones(rp, na4i, 0, 0, NULL);
 
             /* Compare the two methods */
-        if (sum == sumi)
-            fprintf(stderr, "\nCorrect: sum = sumi = %d\n", sum);
-        else
-            fprintf(stderr, "\nWRONG: sum = %d, sumi = %d\n", sum, sumi);
+        if (sum != sumi)
+            fprintf(stderr, "WRONG: sum = %d, sumi = %d\n", sum, sumi);
 
             /* Reconstruct the image, band by band. */
         numaLogicalOp(nat, nat, na4, L_UNION);
-        pixad = pixaSelectWithIndicator(pixas, na4, NULL);
-        pixd = pixaDisplay(pixad, w, h);
-        pixOr(pixt, pixt, pixd);  /* add them in */
-        pixcount = pixCopy(NULL, pixt);  /* destroyed by count_pieces */
-        count_ones(na4, band[i], i, "band");
-        count_pieces(pixd, band[i]);
-        count_ones(nat, total[i], i, "total");
-        count_pieces(pixcount, total[i]);
-        pixaDestroy(&pixad);
+        pixa2 = pixaSelectWithIndicator(pixa1, na4, NULL);
+        pix3 = pixaDisplay(pixa2, w, h);
+        pixOr(pix2, pix2, pix3);  /* add them in */
+        pix4 = pixCopy(NULL, pix2);  /* destroyed by Count_pieces */
+        Count_ones(rp, na4, band[i], i, "band");
+        Count_pieces(rp, pix3, band[i]);
+        Count_ones(rp, nat, total[i], i, "total");
+        Count_pieces(rp, pix4, total[i]);
+        pixaDestroy(&pixa2);
 
             /* Remove band successively from full image */
-        pixRemoveWithIndicator(pixc, pixas, na4);
-        pixSaveTiled(pixc, pixac, 0.25, 1 - i % 2, 25, 8);
+        pixRemoveWithIndicator(pix1, pixa1, na4);
+        pixSaveTiled(pix1, pixa3, 0.25, 1 - i % 2, 25, 8);
 
         numaDestroy(&na2);
         numaDestroy(&na3);
@@ -236,16 +236,17 @@ PIXA    *pixas, *pixad, *pixac;
         numaDestroy(&na4i);
     }
 
-        /* Did we remove all components from pixc? */
-    pixZero(pixc, &empty);
+        /* Did we remove all components from pix1? */
+    pixZero(pix1, &empty);
+    regTestCompareValues(rp, 1, empty, 0.0);
     if (!empty)
-        fprintf(stderr, "\nWRONG: not all pixels removed from pixc\n");
+        fprintf(stderr, "\nWRONG: not all pixels removed from pix1\n");
 
     pixDestroy(&pixs);
-    pixDestroy(&pixc);
-    pixDestroy(&pixt);
-    boxaDestroy(&boxa);
-    pixaDestroy(&pixas);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    boxaDestroy(&boxa1);
+    pixaDestroy(&pixa1);
     numaDestroy(&na1);
     numaDestroy(&nat);
 
@@ -253,10 +254,10 @@ PIXA    *pixas, *pixad, *pixac;
          * a height of at least 50 or a width of between 30 and 35,
          * and also have a relatively large perimeter/area ratio. */
     pixs = pixRead("feyn.tif");
-    boxa = pixConnComp(pixs, &pixas, 8);
-    n = boxaGetCount(boxa);
-    pixaFindDimensions(pixas, &naw, &nah);
-    na1 = pixaFindPerimToAreaRatio(pixas);
+    boxa1 = pixConnComp(pixs, &pixa1, 8);
+    n = boxaGetCount(boxa1);
+    pixaFindDimensions(pixa1, &naw, &nah);
+    na1 = pixaFindPerimToAreaRatio(pixa1);
     na2 = numaMakeThresholdIndicator(nah, 50, L_SELECT_IF_GTE);
     na3 = numaMakeThresholdIndicator(naw, 30, L_SELECT_IF_GTE);
     na4 = numaMakeThresholdIndicator(naw, 35, L_SELECT_IF_LTE);
@@ -265,11 +266,12 @@ PIXA    *pixas, *pixad, *pixac;
     numaLogicalOp(na2, na2, na3, L_UNION);
     numaLogicalOp(na2, na2, na5, L_INTERSECTION);
     numaInvert(na2, na2);  /* get components to be removed */
-    pixRemoveWithIndicator(pixs, pixas, na2);
-    pixSaveTiled(pixs, pixac, 0.25, 1, 25, 8);
+    pixRemoveWithIndicator(pixs, pixa1, na2); 
+    regTestWritePixAndCheck(rp, pixs, IFF_PNG);  /* 86 */
+    pixSaveTiled(pixs, pixa3, 0.25, 1, 25, 8);
     pixDestroy(&pixs);
-    boxaDestroy(&boxa);
-    pixaDestroy(&pixas);
+    boxaDestroy(&boxa1);
+    pixaDestroy(&pixa1);
     numaDestroy(&naw);
     numaDestroy(&nah);
     numaDestroy(&na1);
@@ -278,45 +280,52 @@ PIXA    *pixas, *pixad, *pixac;
     numaDestroy(&na4);
     numaDestroy(&na5);
 
-    pixDisplayMultiple("/tmp/display/file*");
-    pixd = pixaDisplay(pixac, 0, 0);
-    pixDisplay(pixd, 100, 100);
-    pixWrite("/tmp/comp.jpg", pixd, IFF_JFIF_JPEG);
-    pixDestroy(&pixd);
-    pixaDestroy(&pixac);
-    return 0;
+    if (rp->display) {
+        pix1 = pixaDisplay(pixa3, 0, 0);
+        pixDisplay(pix1, 100, 100);
+        pixWrite("/tmp/lept/filter/result.png", pix1, IFF_PNG);
+        pixDestroy(&pix1);
+    }
+    pixaDestroy(&pixa3);
+
+    return regTestCleanup(rp);
 }
 
 
-void count_pieces(PIX  *pix, l_int32 nexp)
+/* ---------------------  Helpers -------------------------- */
+
+static void
+Count_pieces(L_REGPARAMS *rp, PIX  *pix, l_int32 nexp)
 {
 l_int32  n;
 BOXA    *boxa;
 
-    pixDisplayWrite(pix, 1);
+    if (rp->index > 28 && rp->index < 55)
+        regTestWritePixAndCheck(rp, pix, IFF_PNG);  /* ... */
     boxa = pixConnComp(pix, NULL, 8);
     n = boxaGetCount(boxa);
-    if (n == nexp)
-        fprintf(stderr, "Correct: Num. comps: %d\n", n);
-    else
-        fprintf(stderr, "WRONG!: Num. comps: %d\n", n);
+    regTestCompareValues(rp, nexp, n, 0.0);
+    if (n != nexp)
+        fprintf(stderr, "WRONG!: Num. comps = %d; expected = %d\n", n, nexp);
     boxaDestroy(&boxa);
     pixDestroy(&pix);
 }
 
-void count_pieces2(BOXA  *boxa, l_int32 nexp)
+static void
+Count_pieces2(L_REGPARAMS *rp, BOXA  *boxa, l_int32 nexp)
 {
 l_int32  n;
 
     n = boxaGetCount(boxa);
-    if (n == nexp)
-        fprintf(stderr, "Correct: Num. boxes: %d\n", n);
-    else
-        fprintf(stderr, "WRONG!: Num. boxes: %d\n", n);
+    regTestCompareValues(rp, nexp, n, 0.0);
+    if (n != nexp)
+        fprintf(stderr, "WRONG!: Num. boxes = %d; expected = %d\n", n, nexp);
     boxaDestroy(&boxa);
 }
 
-l_int32 count_ones(NUMA  *na, l_int32 nexp, l_int32 index, const char *name)
+static l_int32
+Count_ones(L_REGPARAMS *rp, NUMA  *na, l_int32 nexp,
+           l_int32 index, const char *name)
 {
 l_int32  i, n, val, sum;
 
@@ -327,11 +336,9 @@ l_int32  i, n, val, sum;
         if (val == 1) sum++;
     }
     if (!name) return sum;
-    if (nexp == sum)
-        fprintf(stderr, "Correct: %s[%d]: num. ones: %d\n", name, index, sum);
-    else
-        fprintf(stderr, "WRONG!: %s[%d]: num. ones: %d\n", name, index, sum);
+    regTestCompareValues(rp, nexp, sum, 0.0);
+    if (nexp != sum)
+        fprintf(stderr, "WRONG! %s[%d]: num. ones = %d; expected = %d\n",
+                name, index, sum, nexp);
     return 0;
 }
-
-

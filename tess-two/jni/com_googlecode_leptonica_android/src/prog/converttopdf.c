@@ -42,9 +42,9 @@
  *    This is meant for the simplest set of input arguments.  It is
  *    very fast for jpeg, jp2k and png.
  *    The syntax for using all files in the directory is:
- *         convertopdf <pdf_outfile>
+ *         convertopdf <directory> <pdf_outfile>
  *    The syntax using some substring to be matched in the file names is:
- *         converttopdf <substring> <pdf_outfile>
+ *         converttopdf <directory> <substring> <pdf_outfile>
  *    If you want something more general, use convertfilestopdf.
  */
 

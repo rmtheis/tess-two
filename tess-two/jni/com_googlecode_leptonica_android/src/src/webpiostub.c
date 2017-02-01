@@ -24,10 +24,12 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  webpiostub.c
+/*!
+ * \file webpiostub.c
+ * <pre>
  *
  *     Stubs for webpio.c functions
+ * </pre>
  */
 
 #ifdef HAVE_CONFIG_H

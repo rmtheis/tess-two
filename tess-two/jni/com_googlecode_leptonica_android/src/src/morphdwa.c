@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  morphdwa.c
+/*!
+ * \file morphdwa.c
+ * <pre>
  *
  *    Binary morphological (dwa) ops with brick Sels
  *         PIX     *pixDilateBrickDwa()
@@ -69,7 +70,7 @@
  *          composite function is called.
  *
  *      (3) The extended composite function calls the composite function
- *          a number of times with size 63, and once with size < 63.
+ *          a number of times with size 63, and once with size \< 63.
  *          Because each operation with a size of 63 is done compositely
  *          with 7 x 9 (exactly 63), the net result is correct in
  *          length to within 2 pixels.
@@ -92,39 +93,40 @@
  *    You have three choices for how to use these:
  *
  *    (1) Add both the new Sels and the dwa code to the library:
- *        - For simplicity, add your new brick Sels to those defined
+ *        ~ For simplicity, add your new brick Sels to those defined
  *          in selaAddBasic().
- *        - Recompile the library.
- *        - Make prog/fmorphautogen.
- *        - Run prog/fmorphautogen, to generate new versions of the
+ *        ~ Recompile the library.
+ *        ~ Make prog/fmorphautogen.
+ *        ~ Run prog/fmorphautogen, to generate new versions of the
  *          dwa code in fmorphgen.1.c and fmorphgenlow.1.c.
- *        - Copy these two files to src.
- *        - Recompile the library again.
- *        - Use the new brick Sels in your program and compile it.
+ *        ~ Copy these two files to src.
+ *        ~ Recompile the library again.
+ *        ~ Use the new brick Sels in your program and compile it.
  *
  *    (2) Make both the new Sels and dwa code outside the library,
  *        and link it directly to an executable:
- *        - Write a function to generate the new Sels in a Sela, and call
- *          fmorphautogen(sela, <N>, filename) to generate the code.
- *        - Compile your program that uses the newly generated function
- *          pixMorphDwa_<N>(), and link to the two new C files.
+ *        ~ Write a function to generate the new Sels in a Sela, and call
+ *          fmorphautogen(sela, \<N\>, filename) to generate the code.
+ *        ~ Compile your program that uses the newly generated function
+ *          pixMorphDwa_\<N\>(), and link to the two new C files.
  *
  *    (3) Make the new Sels in the library and use the dwa code outside it:
- *        - Add code in the library to generate your new brick Sels.
+ *        ~ Add code in the library to generate your new brick Sels.
  *          (It is suggested that you NOT add these Sels to the
  *          selaAddBasic() function; write a new function that generates
  *          a new Sela.)
- *        - Recompile the library.
- *        - Write a small program that generates the Sela and calls
- *          fmorphautogen(sela, <N>, filename) to generate the code.
- *        - Compile your program that uses the newly generated function
- *          pixMorphDwa_<N>(), and link to the two new C files.
+ *        ~ Recompile the library.
+ *        ~ Write a small program that generates the Sela and calls
+ *          fmorphautogen(sela, \<N\>, filename) to generate the code.
+ *        ~ Compile your program that uses the newly generated function
+ *          pixMorphDwa_\<N\>(), and link to the two new C files.
  *       As an example of this approach, see prog/dwamorph*_reg.c:
- *        - added selaAddDwaLinear() to sel2.c
- *        - wrote dwamorph1_reg.c, to generate the dwa code.
- *        - compiled and linked the generated code with the application,
+ *        ~ added selaAddDwaLinear() to sel2.c
+ *        ~ wrote dwamorph1_reg.c, to generate the dwa code.
+ *        ~ compiled and linked the generated code with the application,
  *          dwamorph2_reg.c.  (Note: because this was a regression test,
  *          dwamorph1_reg also builds and runs the application program.)
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -138,21 +140,22 @@
  *           Binary morphological (dwa) ops with brick Sels        *
  *-----------------------------------------------------------------*/
 /*!
- *  pixDilateBrickDwa()
+ * \brief   pixDilateBrickDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) These implement 2D brick Sels, using linear Sels generated
  *          with selaAddBasic().
  *      (2) A brick Sel has hits for all elements.
  *      (3) The origin of the Sel is at (x, y) = (hsize/2, vsize/2)
- *      (4) Do separably if both hsize and vsize are > 1.
+ *      (4) Do separably if both hsize and vsize are \> 1.
  *      (5) It is necessary that both horizontal and vertical Sels
  *          of the input size are defined in the basic sela.
  *      (6) There are three cases:
@@ -166,6 +169,7 @@
  *      (8) The size of pixd is determined by pixs.
  *      (9) If either linear Sel is not found, this calls
  *          the appropriate decomposible function.
+ * </pre>
  */
 PIX *
 pixDilateBrickDwa(PIX     *pixd,
@@ -235,21 +239,22 @@ PIX     *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  pixErodeBrickDwa()
+ * \brief   pixErodeBrickDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) These implement 2D brick Sels, using linear Sels generated
  *          with selaAddBasic().
  *      (2) A brick Sel has hits for all elements.
  *      (3) The origin of the Sel is at (x, y) = (hsize/2, vsize/2)
- *      (4) Do separably if both hsize and vsize are > 1.
+ *      (4) Do separably if both hsize and vsize are \> 1.
  *      (5) It is necessary that both horizontal and vertical Sels
  *          of the input size are defined in the basic sela.
  *      (6) Note that we must always set or clear the border pixels
@@ -266,6 +271,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *      (9) The size of the result is determined by pixs.
  *      (10) If either linear Sel is not found, this calls
  *           the appropriate decomposible function.
+ * </pre>
  */
 PIX *
 pixErodeBrickDwa(PIX     *pixd,
@@ -335,21 +341,22 @@ PIX     *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  pixOpenBrickDwa()
+ * \brief   pixOpenBrickDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) These implement 2D brick Sels, using linear Sels generated
  *          with selaAddBasic().
  *      (2) A brick Sel has hits for all elements.
  *      (3) The origin of the Sel is at (x, y) = (hsize/2, vsize/2)
- *      (4) Do separably if both hsize and vsize are > 1.
+ *      (4) Do separably if both hsize and vsize are \> 1.
  *      (5) It is necessary that both horizontal and vertical Sels
  *          of the input size are defined in the basic sela.
  *      (6) Note that we must always set or clear the border pixels
@@ -366,6 +373,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *      (9) The size of the result is determined by pixs.
  *      (10) If either linear Sel is not found, this calls
  *           the appropriate decomposible function.
+ * </pre>
  */
 PIX *
 pixOpenBrickDwa(PIX     *pixd,
@@ -438,23 +446,24 @@ PIX     *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  pixCloseBrickDwa()
+ * \brief   pixCloseBrickDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a 'safe' closing; we add an extra border of 32 OFF
  *          pixels for the standard asymmetric b.c.
  *      (2) These implement 2D brick Sels, using linear Sels generated
  *          with selaAddBasic().
  *      (3) A brick Sel has hits for all elements.
  *      (4) The origin of the Sel is at (x, y) = (hsize/2, vsize/2)
- *      (5) Do separably if both hsize and vsize are > 1.
+ *      (5) Do separably if both hsize and vsize are \> 1.
  *      (6) It is necessary that both horizontal and vertical Sels
  *          of the input size are defined in the basic sela.
  *      (7) Note that we must always set or clear the border pixels
@@ -471,6 +480,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *      (10) The size of the result is determined by pixs.
  *      (11) If either linear Sel is not found, this calls
  *           the appropriate decomposible function.
+ * </pre>
  */
 PIX *
 pixCloseBrickDwa(PIX     *pixd,
@@ -556,22 +566,23 @@ PIX     *pixt1, *pixt2, *pixt3;
  *    Binary composite morphological (dwa) ops with brick Sels     *
  *-----------------------------------------------------------------*/
 /*!
- *  pixDilateCompBrickDwa()
+ * \brief   pixDilateCompBrickDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) These implement a separable composite dilation with 2D brick Sels.
  *      (2) For efficiency, it may decompose each linear morphological
  *          operation into two (brick + comb).
  *      (3) A brick Sel has hits for all elements.
  *      (4) The origin of the Sel is at (x, y) = (hsize/2, vsize/2)
- *      (5) Do separably if both hsize and vsize are > 1.
+ *      (5) Do separably if both hsize and vsize are \> 1.
  *      (6) It is necessary that both horizontal and vertical Sels
  *          of the input size are defined in the basic sela.
  *      (7) There are three cases:
@@ -596,6 +607,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *           a prime number, the decomposer will break this into two
  *           terms, 6 and 6, so that the net result is a dilation
  *           with hsize = 36.
+ * </pre>
  */
 PIX *
 pixDilateCompBrickDwa(PIX     *pixd,
@@ -687,22 +699,23 @@ PIX     *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  pixErodeCompBrickDwa()
+ * \brief   pixErodeCompBrickDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) These implement a separable composite erosion with 2D brick Sels.
  *      (2) For efficiency, it may decompose each linear morphological
  *          operation into two (brick + comb).
  *      (3) A brick Sel has hits for all elements.
  *      (4) The origin of the Sel is at (x, y) = (hsize/2, vsize/2)
- *      (5) Do separably if both hsize and vsize are > 1.
+ *      (5) Do separably if both hsize and vsize are \> 1.
  *      (6) It is necessary that both horizontal and vertical Sels
  *          of the input size are defined in the basic sela.
  *      (7) There are three cases:
@@ -727,6 +740,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *           a prime number, the decomposer will break this into two
  *           terms, 6 and 6, so that the net result is a dilation
  *           with hsize = 36.
+ * </pre>
  */
 PIX *
 pixErodeCompBrickDwa(PIX     *pixd,
@@ -814,22 +828,23 @@ PIX     *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  pixOpenCompBrickDwa()
+ * \brief   pixOpenCompBrickDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) These implement a separable composite opening with 2D brick Sels.
  *      (2) For efficiency, it may decompose each linear morphological
  *          operation into two (brick + comb).
  *      (3) A brick Sel has hits for all elements.
  *      (4) The origin of the Sel is at (x, y) = (hsize/2, vsize/2)
- *      (5) Do separably if both hsize and vsize are > 1.
+ *      (5) Do separably if both hsize and vsize are \> 1.
  *      (6) It is necessary that both horizontal and vertical Sels
  *          of the input size are defined in the basic sela.
  *      (7) There are three cases:
@@ -854,6 +869,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *           a prime number, the decomposer will break this into two
  *           terms, 6 and 6, so that the net result is a dilation
  *           with hsize = 36.
+ * </pre>
  */
 PIX *
 pixOpenCompBrickDwa(PIX     *pixd,
@@ -978,23 +994,24 @@ PIX     *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  pixCloseCompBrickDwa()
+ * \brief   pixCloseCompBrickDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This implements a separable composite safe closing with 2D
  *          brick Sels.
  *      (2) For efficiency, it may decompose each linear morphological
  *          operation into two (brick + comb).
  *      (3) A brick Sel has hits for all elements.
  *      (4) The origin of the Sel is at (x, y) = (hsize/2, vsize/2)
- *      (5) Do separably if both hsize and vsize are > 1.
+ *      (5) Do separably if both hsize and vsize are \> 1.
  *      (6) It is necessary that both horizontal and vertical Sels
  *          of the input size are defined in the basic sela.
  *      (7) There are three cases:
@@ -1019,6 +1036,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *           a prime number, the decomposer will break this into two
  *           terms, 6 and 6, so that the net result is a dilation
  *           with hsize = 36.
+ * </pre>
  */
 PIX *
 pixCloseCompBrickDwa(PIX     *pixd,
@@ -1141,16 +1159,17 @@ PIX     *pixt1, *pixt2, *pixt3;
  *    Binary expanded composite morphological (dwa) ops with brick Sels     *
  *--------------------------------------------------------------------------*/
 /*!
- *  pixDilateCompBrickExtendDwa()
+ * \brief   pixDilateCompBrickExtendDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Ankur Jain suggested and implemented extending the composite
  *          DWA operations beyond the 63 pixel limit.  This is a
  *          simplified and approximate implementation of the extension.
@@ -1167,6 +1186,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *          (c) pixd != pixs   (puts result into existing pixd)
  *      (4) There is no need to call this directly:  pixDilateCompBrickDwa()
  *          calls this function if either brick dimension exceeds 63.
+ * </pre>
  */
 PIX *
 pixDilateCompBrickExtendDwa(PIX     *pixd,
@@ -1272,19 +1292,21 @@ PIX     *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  pixErodeCompBrickExtendDwa()
+ * \brief   pixErodeCompBrickExtendDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixDilateCompBrickExtendDwa() for usage.
  *      (2) There is no need to call this directly:  pixErodeCompBrickDwa()
  *          calls this function if either brick dimension exceeds 63.
+ * </pre>
  */
 PIX *
 pixErodeCompBrickExtendDwa(PIX     *pixd,
@@ -1390,20 +1412,20 @@ PIX     *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  pixOpenCompBrickExtendDwa()
+ * \brief   pixOpenCompBrickExtendDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *      (1) There are three cases:
- *          (a) pixd == null   (result into new pixd)
- *          (b) pixd == pixs   (in-place; writes result back to pixs)
- *          (c) pixd != pixs   (puts result into existing pixd)
- *      (2) There is no need to call this directly:  pixOpenCompBrickDwa()
+ *      1 There are three cases:
+ *          a) pixd == null   (result into new pixd
+ *          b) pixd == pixs   (in-place; writes result back to pixs
+ *          c) pixd != pixs   (puts result into existing pixd
+ *      2) There is no need to call this directly:  pixOpenCompBrickDwa(
  *          calls this function if either brick dimension exceeds 63.
  */
 PIX *
@@ -1431,20 +1453,20 @@ PIX     *pixt;
 
 
 /*!
- *  pixCloseCompBrickExtendDwa()
+ * \brief   pixCloseCompBrickExtendDwa()
  *
- *      Input:  pixd  (<optional>; this can be null, equal to pixs,
- *                     or different from pixs)
- *              pixs (1 bpp)
- *              hsize (width of brick Sel)
- *              vsize (height of brick Sel)
- *      Return: pixd
+ * \param[in]    pixd  [optional]; this can be null, equal to pixs,
+ *                     or different from pixs
+ * \param[in]    pixs 1 bpp
+ * \param[in]    hsize width of brick Sel
+ * \param[in]    vsize height of brick Sel
+ * \return  pixd
  *
- *      (1) There are three cases:
- *          (a) pixd == null   (result into new pixd)
- *          (b) pixd == pixs   (in-place; writes result back to pixs)
- *          (c) pixd != pixs   (puts result into existing pixd)
- *      (2) There is no need to call this directly:  pixCloseCompBrickDwa()
+ *      1 There are three cases:
+ *          a) pixd == null   (result into new pixd
+ *          b) pixd == pixs   (in-place; writes result back to pixs
+ *          c) pixd != pixs   (puts result into existing pixd
+ *      2) There is no need to call this directly:  pixCloseCompBrickDwa(
  *          calls this function if either brick dimension exceeds 63.
  */
 PIX *
@@ -1494,15 +1516,16 @@ PIX     *pixt1, *pixt2, *pixt3;
 
 
 /*!
- *  getExtendedCompositeParameters()
+ * \brief   getExtendedCompositeParameters()
  *
- *      Input:  size (of linear Sel)
- *              &pn (<return> number of 63 wide convolutions)
- *              &pextra (<return> size of extra Sel)
- *              &actualsize (<optional return> actual size used in operation)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    size of linear Sel
+ * \param[out]   pn number of 63 wide convolutions
+ * \param[out]   pextra size of extra Sel
+ * \param[out]   pactualsize [optional] actual size used in operation
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The DWA implementation allows Sels to be used with hits
  *          up to 31 pixels from the origin, either horizontally or
  *          vertically.  Larger Sels can be used if decomposed into
@@ -1510,13 +1533,13 @@ PIX     *pixt1, *pixt2, *pixt3;
  *          in either width or height (and with the origin as close
  *          to the center of the Sel as possible).
  *      (2) This returns the decomposition of a linear Sel of length
- *          @size into a set of @n Sels of length 63 plus an extra
- *          Sel of length @extra.
- *      (3) For notation, let w == @size, n == @n, and e == @extra.
- *          We have 1 < e < 63.
+ *          %size into a set of %n Sels of length 63 plus an extra
+ *          Sel of length %extra.
+ *      (3) For notation, let w == %size, n == %n, and e == %extra.
+ *          We have 1 \< e \< 63.
  *
- *          Then if w < 64, we have n = 0 and e = w.
- *          The general formula for w > 63 is:
+ *          Then if w \< 64, we have n = 0 and e = w.
+ *          The general formula for w \> 63 is:
  *             w = 63 + (n - 1) * 62 + (e - 1)
  *
  *          Where did this come from?  Each successive convolution with
@@ -1524,7 +1547,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *          This accounts for using 62 for each additional Sel of size 63,
  *          and using (e - 1) for the additional Sel of size e.
  *
- *          Solving for n and e for w > 63:
+ *          Solving for n and e for w \> 63:
  *             n = 1 + Int((w - 63) / 62)
  *             e = w - 63 - (n - 1) * 62 + 1
  *
@@ -1533,6 +1556,7 @@ PIX     *pixt1, *pixt2, *pixt3;
  *             e' = f1 * f2
  *          Then the actual width is:
  *             w' = 63 + (n - 1) * 62 + f1 * f2 - 1
+ * </pre>
  */
 l_int32
 getExtendedCompositeParameters(l_int32   size,

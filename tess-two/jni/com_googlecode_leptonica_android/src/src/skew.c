@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  skew.c
+/*!
+ * \file skew.c
+ * <pre>
  *
  *      Top-level deskew interfaces
  *          PIX       *pixDeskew()
@@ -90,6 +91,7 @@
  *      significantly over the page.  Local skew determination
  *      is not very important except for locating lines of
  *      handwritten text that may be mixed with printed text.
+ * </pre>
  */
 
 #include <math.h>
@@ -141,17 +143,19 @@ static const l_int32  DEFAULT_BINARY_THRESHOLD = 130;
  *                       Top-level deskew interfaces                     *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixDeskew()
+ * \brief   pixDeskew()
  *
- *      Input:  pixs (any depth)
- *              redsearch (for binary search: reduction factor = 1, 2 or 4;
- *                         use 0 for default)
- *      Return: pixd (deskewed pix), or null on error
+ * \param[in]    pixs any depth
+ * \param[in]    redsearch for binary search: reduction factor = 1, 2 or 4;
+ *                         use 0 for default
+ * \return  pixd deskewed pix, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This binarizes if necessary and finds the skew angle.  If the
  *          angle is large enough and there is sufficient confidence,
  *          it returns a deskewed image; otherwise, it returns a clone.
+ * </pre>
  */
 PIX *
 pixDeskew(PIX     *pixs,
@@ -171,21 +175,23 @@ pixDeskew(PIX     *pixs,
 
 
 /*!
- *  pixFindSkewAndDeskew()
+ * \brief   pixFindSkewAndDeskew()
  *
- *      Input:  pixs (any depth)
- *              redsearch (for binary search: reduction factor = 1, 2 or 4;
- *                         use 0 for default)
- *              &angle   (<optional return> angle required to deskew,
- *                        in degrees; use NULL to skip)
- *              &conf    (<optional return> conf value is ratio
- *                        of max/min scores; use NULL to skip)
- *      Return: pixd (deskewed pix), or null on error
+ * \param[in]    pixs any depth
+ * \param[in]    redsearch for binary search: reduction factor = 1, 2 or 4;
+ *                         use 0 for default
+ * \param[out]   pangle   [optional] angle required to deskew,
+ *                        in degrees; use NULL to skip
+ * \param[out]   pconf    [optional] conf value is ratio
+ *                        of max/min scores; use NULL to skip
+ * \return  pixd deskewed pix, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This binarizes if necessary and finds the skew angle.  If the
  *          angle is large enough and there is sufficient confidence,
  *          it returns a deskewed image; otherwise, it returns a clone.
+ * </pre>
  */
 PIX *
 pixFindSkewAndDeskew(PIX        *pixs,
@@ -207,27 +213,29 @@ pixFindSkewAndDeskew(PIX        *pixs,
 
 
 /*!
- *  pixDeskewGeneral()
+ * \brief   pixDeskewGeneral()
  *
- *      Input:  pixs  (any depth)
- *              redsweep  (for linear search: reduction factor = 1, 2 or 4;
- *                         use 0 for default)
- *              sweeprange (in degrees in each direction from 0;
- *                          use 0.0 for default)
- *              sweepdelta (in degrees; use 0.0 for default)
- *              redsearch  (for binary search: reduction factor = 1, 2 or 4;
- *                          use 0 for default;)
- *              thresh (for binarizing the image; use 0 for default)
- *              &angle   (<optional return> angle required to deskew,
- *                        in degrees; use NULL to skip)
- *              &conf    (<optional return> conf value is ratio
- *                        of max/min scores; use NULL to skip)
- *      Return: pixd (deskewed pix), or null on error
+ * \param[in]    pixs  any depth
+ * \param[in]    redsweep  for linear search: reduction factor = 1, 2 or 4;
+ *                         use 0 for default
+ * \param[in]    sweeprange in degrees in each direction from 0;
+ *                          use 0.0 for default
+ * \param[in]    sweepdelta in degrees; use 0.0 for default
+ * \param[in]    redsearch  for binary search: reduction factor = 1, 2 or 4;
+ *                          use 0 for default;
+ * \param[in]    thresh for binarizing the image; use 0 for default
+ * \param[out]   pangle   [optional] angle required to deskew,
+ *                        in degrees; use NULL to skip
+ * \param[out]   pconf    [optional] conf value is ratio
+ *                        of max/min scores; use NULL to skip
+ * \return  pixd deskewed pix, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This binarizes if necessary and finds the skew angle.  If the
  *          angle is large enough and there is sufficient confidence,
  *          it returns a deskewed image; otherwise, it returns a clone.
+ * </pre>
  */
 PIX *
 pixDeskewGeneral(PIX        *pixs,
@@ -298,19 +306,21 @@ PIX       *pixb, *pixd;
  *                  Simple top-level angle-finding interface             *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixFindSkew()
+ * \brief   pixFindSkew()
  *
- *      Input:  pixs  (1 bpp)
- *              &angle   (<return> angle required to deskew, in degrees)
- *              &conf    (<return> confidence value is ratio max/min scores)
- *      Return: 0 if OK, 1 on error or if angle measurment not valid
+ * \param[in]    pixs  1 bpp
+ * \param[out]   pangle   angle required to deskew, in degrees
+ * \param[out]   pconf    confidence value is ratio max/min scores
+ * \return  0 if OK, 1 on error or if angle measurment not valid
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a simple high-level interface, that uses default
  *          values of the parameters for reasonable speed and accuracy.
  *      (2) The angle returned is the negative of the skew angle of
  *          the image.  It is the angle required for deskew.
  *          Clockwise rotations are positive angles.
+ * </pre>
  */
 l_int32
 pixFindSkew(PIX        *pixs,
@@ -341,18 +351,20 @@ pixFindSkew(PIX        *pixs,
  *                       Basic angle-finding functions                   *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixFindSkewSweep()
+ * \brief   pixFindSkewSweep()
  *
- *      Input:  pixs  (1 bpp)
- *              &angle   (<return> angle required to deskew, in degrees)
- *              reduction  (factor = 1, 2, 4 or 8)
- *              sweeprange   (half the full range; assumed about 0; in degrees)
- *              sweepdelta   (angle increment of sweep; in degrees)
- *      Return: 0 if OK, 1 on error or if angle measurment not valid
+ * \param[in]    pixs  1 bpp
+ * \param[out]   pangle   angle required to deskew, in degrees
+ * \param[in]    reduction  factor = 1, 2, 4 or 8
+ * \param[in]    sweeprange   half the full range; assumed about 0; in degrees
+ * \param[in]    sweepdelta   angle increment of sweep; in degrees
+ * \return  0 if OK, 1 on error or if angle measurment not valid
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This examines the 'score' for skew angles with equal intervals.
  *      (2) Caller must check the return value for validity of the result.
+ * </pre>
  */
 l_int32
 pixFindSkewSweep(PIX        *pixs,
@@ -471,30 +483,32 @@ cleanup:
 
 
 /*!
- *  pixFindSkewSweepAndSearch()
+ * \brief   pixFindSkewSweepAndSearch()
  *
- *      Input:  pixs  (1 bpp)
- *              &angle   (<return> angle required to deskew; in degrees)
- *              &conf    (<return> confidence given by ratio of max/min score)
- *              redsweep  (sweep reduction factor = 1, 2, 4 or 8)
- *              redsearch  (binary search reduction factor = 1, 2, 4 or 8;
- *                          and must not exceed redsweep)
- *              sweeprange   (half the full range, assumed about 0; in degrees)
- *              sweepdelta   (angle increment of sweep; in degrees)
- *              minbsdelta   (min binary search increment angle; in degrees)
- *      Return: 0 if OK, 1 on error or if angle measurment not valid
+ * \param[in]    pixs  1 bpp
+ * \param[out]   pangle   angle required to deskew; in degrees
+ * \param[out]   pconf    confidence given by ratio of max/min score
+ * \param[in]    redsweep  sweep reduction factor = 1, 2, 4 or 8
+ * \param[in]    redsearch  binary search reduction factor = 1, 2, 4 or 8;
+ *                          and must not exceed redsweep
+ * \param[in]    sweeprange   half the full range, assumed about 0; in degrees
+ * \param[in]    sweepdelta   angle increment of sweep; in degrees
+ * \param[in]    minbsdelta   min binary search increment angle; in degrees
+ * \return  0 if OK, 1 on error or if angle measurment not valid
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This finds the skew angle, doing first a sweep through a set
  *          of equal angles, and then doing a binary search until
  *          convergence.
  *      (2) Caller must check the return value for validity of the result.
  *      (3) In computing the differential line sum variance score, we sum
  *          the result over scanlines, but we always skip:
- *           - at least one scanline
- *           - not more than 10% of the image height
- *           - not more than 5% of the image width
+ *           ~ at least one scanline
+ *           ~ not more than 10% of the image height
+ *           ~ not more than 5% of the image width
  *      (4) See also notes in pixFindSkewSweepAndSearchScore()
+ * </pre>
  */
 l_int32
 pixFindSkewSweepAndSearch(PIX        *pixs,
@@ -513,29 +527,30 @@ pixFindSkewSweepAndSearch(PIX        *pixs,
 
 
 /*!
- *  pixFindSkewSweepAndSearchScore()
+ * \brief   pixFindSkewSweepAndSearchScore()
  *
- *      Input:  pixs  (1 bpp)
- *              &angle   (<return> angle required to deskew; in degrees)
- *              &conf    (<return> confidence given by ratio of max/min score)
- *              &endscore (<optional return> max score; use NULL to ignore)
- *              redsweep  (sweep reduction factor = 1, 2, 4 or 8)
- *              redsearch  (binary search reduction factor = 1, 2, 4 or 8;
- *                          and must not exceed redsweep)
- *              sweepcenter  (angle about which sweep is performed; in degrees)
- *              sweeprange   (half the full range, taken about sweepcenter;
- *                            in degrees)
- *              sweepdelta   (angle increment of sweep; in degrees)
- *              minbsdelta   (min binary search increment angle; in degrees)
- *      Return: 0 if OK, 1 on error or if angle measurment not valid
+ * \param[in]    pixs  1 bpp
+ * \param[out]   pangle   angle required to deskew; in degrees
+ * \param[out]   pconf    confidence given by ratio of max/min score
+ * \param[out]   pendscore [optional] max score; use NULL to ignore
+ * \param[in]    redsweep  sweep reduction factor = 1, 2, 4 or 8
+ * \param[in]    redsearch  binary search reduction factor = 1, 2, 4 or 8;
+ *                          and must not exceed redsweep
+ * \param[in]    sweepcenter  angle about which sweep is performed; in degrees
+ * \param[in]    sweeprange   half the full range, taken about sweepcenter;
+ *                            in degrees
+ * \param[in]    sweepdelta   angle increment of sweep; in degrees
+ * \param[in]    minbsdelta   min binary search increment angle; in degrees
+ * \return  0 if OK, 1 on error or if angle measurment not valid
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This finds the skew angle, doing first a sweep through a set
  *          of equal angles, and then doing a binary search until convergence.
  *      (2) There are two built-in constants that determine if the
  *          returned confidence is nonzero:
- *            - MIN_VALID_MAXSCORE (minimum allowed maxscore)
- *            - MINSCORE_THRESHOLD_CONSTANT (determines minimum allowed
+ *            ~ MIN_VALID_MAXSCORE (minimum allowed maxscore)
+ *            ~ MINSCORE_THRESHOLD_CONSTANT (determines minimum allowed
  *                 minscore, by multiplying by (height * width^2)
  *          If either of these conditions is not satisfied, the returned
  *          confidence value will be zero.  The maxscore is optionally
@@ -547,6 +562,7 @@ pixFindSkewSweepAndSearch(PIX        *pixs,
  *          variance.  It should be compared to a threshold, which depends
  *          on the application.  Values between 3.0 and 6.0 are common.
  *      (4) By default, the shear is about the UL corner.
+ * </pre>
  */
 l_int32
 pixFindSkewSweepAndSearchScore(PIX        *pixs,
@@ -569,24 +585,25 @@ pixFindSkewSweepAndSearchScore(PIX        *pixs,
 
 
 /*!
- *  pixFindSkewSweepAndSearchScorePivot()
+ * \brief   pixFindSkewSweepAndSearchScorePivot()
  *
- *      Input:  pixs  (1 bpp)
- *              &angle   (<return> angle required to deskew; in degrees)
- *              &conf    (<return> confidence given by ratio of max/min score)
- *              &endscore (<optional return> max score; use NULL to ignore)
- *              redsweep  (sweep reduction factor = 1, 2, 4 or 8)
- *              redsearch  (binary search reduction factor = 1, 2, 4 or 8;
- *                          and must not exceed redsweep)
- *              sweepcenter  (angle about which sweep is performed; in degrees)
- *              sweeprange   (half the full range, taken about sweepcenter;
- *                            in degrees)
- *              sweepdelta   (angle increment of sweep; in degrees)
- *              minbsdelta   (min binary search increment angle; in degrees)
- *              pivot  (L_SHEAR_ABOUT_CORNER, L_SHEAR_ABOUT_CENTER)
- *      Return: 0 if OK, 1 on error or if angle measurment not valid
+ * \param[in]    pixs  1 bpp
+ * \param[out]   pangle   angle required to deskew; in degrees
+ * \param[out]   pconf    confidence given by ratio of max/min score
+ * \param[out]   pendscore [optional] max score; use NULL to ignore
+ * \param[in]    redsweep  sweep reduction factor = 1, 2, 4 or 8
+ * \param[in]    redsearch  binary search reduction factor = 1, 2, 4 or 8;
+ *                          and must not exceed redsweep
+ * \param[in]    sweepcenter  angle about which sweep is performed; in degrees
+ * \param[in]    sweeprange   half the full range, taken about sweepcenter;
+ *                            in degrees
+ * \param[in]    sweepdelta   angle increment of sweep; in degrees
+ * \param[in]    minbsdelta   min binary search increment angle; in degrees
+ * \param[in]    pivot  L_SHEAR_ABOUT_CORNER, L_SHEAR_ABOUT_CENTER
+ * \return  0 if OK, 1 on error or if angle measurment not valid
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See notes in pixFindSkewSweepAndSearchScore().
  *      (2) This allows choice of shear pivoting from either the UL corner
  *          or the center.  For small angles, the ability to discriminate
@@ -594,6 +611,7 @@ pixFindSkewSweepAndSearchScore(PIX        *pixs,
  *          for large angles (say, greater than 20 degrees), it is better
  *          to shear about the center because a shear from the UL corner
  *          loses too much of the image.
+ * </pre>
  */
 l_int32
 pixFindSkewSweepAndSearchScorePivot(PIX        *pixs,
@@ -934,7 +952,7 @@ cleanup:
  *          clockwise.  For exploring the full range of possibilities,
  *          suggest using sweeprange = 47.0 degrees, giving some overlap
  *          at 45 and 135 degrees.  From these results, and discounting
- *          the the second confidence by @confprior, it selects the
+ *          the the second confidence by %confprior, it selects the
  *          angle for maximal differential variance.  If the angle
  *          is larger than pi/4, the angle found after 90 degree rotation
  *          is selected.
@@ -955,16 +973,16 @@ cleanup:
  *            (b) If there are vertical lines in the margins, do not
  *                work below 150 ppi.  The signal from the text lines must
  *                exceed that from the margin lines.
- *      (4) Choosing the @confprior parameter depends on knowing something
+ *      (4) Choosing the %confprior parameter depends on knowing something
  *          about the source of image.  However, we're not using
  *          real probabilities here, so its use is qualitative.
  *          If landscape and portrait are equally likely, use
- *          @confprior = 0.0.  If the likelihood of portrait (non-rotated)
+ *          %confprior = 0.0.  If the likelihood of portrait (non-rotated)
  *          is 100 times higher than that of landscape, we want to reduce
  *          the chance that we rotate to landscape in a situation where
  *          the landscape signal is accidentally larger than the
  *          portrait signal.  To do this use a positive value of
- *          @confprior; say 1.5.
+ *          %confprior; say 1.5.
  */
 l_int32
 pixFindSkewOrthogonalRange(PIX        *pixs,
@@ -1025,17 +1043,19 @@ PIX       *pixr;
  *                  Differential square sum function              *
  *----------------------------------------------------------------*/
 /*!
- *  pixFindDifferentialSquareSum()
+ * \brief   pixFindDifferentialSquareSum()
  *
- *      Input:  pixs
- *              &sum  (<return> result)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs
+ * \param[out]   psum  result
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) At the top and bottom, we skip:
- *           - at least one scanline
- *           - not more than 10% of the image height
- *           - not more than 5% of the image width
+ *           ~ at least one scanline
+ *           ~ not more than 10% of the image height
+ *           ~ not more than 5% of the image width
+ * </pre>
  */
 l_int32
 pixFindDifferentialSquareSum(PIX        *pixs,
@@ -1088,17 +1108,18 @@ NUMA      *na;
  *                        Normalized square sum                   *
  *----------------------------------------------------------------*/
 /*!
- *  pixFindNormalizedSquareSum()
+ * \brief   pixFindNormalizedSquareSum()
  *
- *      Input:  pixs
- *              &hratio (<optional return> ratio of normalized horiz square sum
- *                       to result if the pixel distribution were uniform)
- *              &vratio (<optional return> ratio of normalized vert square sum
- *                       to result if the pixel distribution were uniform)
- *              &fract  (<optional return> ratio of fg pixels to total pixels)
- *      Return: 0 if OK, 1 on error or if there are no fg pixels
+ * \param[in]    pixs
+ * \param[out]   phratio [optional] ratio of normalized horiz square sum
+ *                       to result if the pixel distribution were uniform
+ * \param[out]   pvratio [optional] ratio of normalized vert square sum
+ *                       to result if the pixel distribution were uniform
+ * \param[out]   pfract  [optional] ratio of fg pixels to total pixels
+ * \return  0 if OK, 1 on error or if there are no fg pixels
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Let the image have h scanlines and N fg pixels.
  *          If the pixels were uniformly distributed on scanlines,
  *          the sum of squares of fg pixels on each scanline would be
@@ -1107,6 +1128,7 @@ NUMA      *na;
  *          pixels will be larger.  We return in hratio and vratio the
  *          ratio of these two values.
  *      (2) If there are no fg pixels, hratio and vratio are returned as 0.0.
+ * </pre>
  */
 l_int32
 pixFindNormalizedSquareSum(PIX        *pixs,

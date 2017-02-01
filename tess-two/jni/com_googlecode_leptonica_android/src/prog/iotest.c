@@ -180,8 +180,9 @@ static char  mainName[] = "iotest";
 
         /* Other fields in the pix */
     format = pixGetInputFormat(pixs);
-    fprintf(stderr, "Input format extension: %s\n",
-            ImageFileFormatExtensions[format]);
+    if (format != UNDEF)
+        fprintf(stderr, "Input format extension: %s\n",
+                ImageFileFormatExtensions[format]);
     pixSetText(pixs, "reconstituted 4-bit weasel");
     text = pixGetText(pixs);
     if (text && strlen(text) != 0)

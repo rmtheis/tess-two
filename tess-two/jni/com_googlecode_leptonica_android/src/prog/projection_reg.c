@@ -31,11 +31,6 @@
  *    Just for interest, a number of different tests are done.
  */
 
-#ifndef  _WIN32
-#include <unistd.h>
-#else
-#include <windows.h>   /* for Sleep() */
-#endif  /* _WIN32 */
 #include "allheaders.h"
 
 void TestProjection(L_REGPARAMS *rp, PIX *pix);
@@ -102,11 +97,6 @@ PIXA    *pixa;
                  "Square Root Variance");
     gplotSimple1(na12, GPLOT_PNG, "/tmp/lept/regout/proj.11",
                  "Square Root Variance");
-#ifndef  _WIN32
-    sleep(1);
-#else
-    Sleep(1000);
-#endif  /* _WIN32 */
 
         /* Each of the 12 plot files is read into a pix and then:
          *    (1) saved into a pixa for display

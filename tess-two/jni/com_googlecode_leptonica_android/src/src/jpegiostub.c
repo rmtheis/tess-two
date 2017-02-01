@@ -24,10 +24,12 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  jpegiostub.c
+/*!
+ * \file jpegiostub.c
+ * <pre>
  *
  *     Stubs for jpegio.c functions
+ * </pre>
  */
 
 #ifdef HAVE_CONFIG_H

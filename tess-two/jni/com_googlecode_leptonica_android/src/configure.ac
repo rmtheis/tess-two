@@ -1,5 +1,5 @@
 AC_PREREQ([2.50])
-AC_INIT([leptonica], [1.73])
+AC_INIT([leptonica], [1.74.1])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_HEADERS([config_auto.h:config/config.h.in])
 AC_CONFIG_SRCDIR([src/adaptmap.c])

@@ -36,11 +36,14 @@
 int main(int    argc,
          char **argv)
 {
-l_int32  i, j, w1, h1, w2, h2, w, h, same;
-BOX     *box1, *box2;
-PIX     *pixs, *pixs1, *pixs2, *pix1, *pix2;
-PIX     *pixg, *pixg1, *pixg2, *pixc2, *pixbl, *pixd;
-PIXA    *pixa;
+l_int32       i, j, w1, h1, w2, h2, w, h;
+BOX          *box1, *box2;
+PIX          *pixg, *pixs, *pixs1, *pixs2, *pix1, *pix2, *pix3, *pix4, *pix5;
+PIXA         *pixa;
+L_REGPARAMS  *rp;
+
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
 
         /* --- Set up the 8 bpp blending image --- */
     pixg = pixCreate(660, 500, 8);
@@ -51,6 +54,7 @@ PIXA    *pixa;
         /* --- Set up the initial color images to be blended together --- */
     pixs1 = pixRead("wyom.jpg");
     pixs2 = pixRead("fish24.jpg");
+    pixGetDimensions(pixs1, &w, &h, NULL);
     pixGetDimensions(pixs1, &w1, &h1, NULL);
     pixGetDimensions(pixs2, &w2, &h2, NULL);
     h = L_MIN(h1, h2);
@@ -67,95 +71,113 @@ PIXA    *pixa;
         /* --- Blend 2 rgb images --- */
     pixa = pixaCreate(0);
     pixSaveTiled(pixg, pixa, 1.0, 1, 40, 32);
-    pixd = pixBlendWithGrayMask(pix1, pix2, pixg, 50, 50);
+    pix3 = pixBlendWithGrayMask(pix1, pix2, pixg, 50, 50);
     pixSaveTiled(pix1, pixa, 1.0, 1, 40, 32);
     pixSaveTiled(pix2, pixa, 1.0, 0, 40, 32);
-    pixSaveTiled(pixd, pixa, 1.0, 0, 40, 32);
-    pixDestroy(&pixd);
+    pixSaveTiled(pix3, pixa, 1.0, 0, 40, 32);
+    regTestWritePixAndCheck(rp, pixg, IFF_JFIF_JPEG);  /* 0 */
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 1 */
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 2 */
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 3 */
+    pixDestroy(&pix3);
 
         /* --- Blend 2 grayscale images --- */
-    pixg1 = pixConvertRGBToLuminance(pix1);
-    pixg2 = pixConvertRGBToLuminance(pix2);
-    pixd = pixBlendWithGrayMask(pixg1, pixg2, pixg, 50, 50);
-    pixSaveTiled(pixg1, pixa, 1.0, 1, 40, 32);
-    pixSaveTiled(pixg2, pixa, 1.0, 0, 40, 32);
-    pixSaveTiled(pixd, pixa, 1.0, 0, 40, 32);
-    pixDestroy(&pixg1);
-    pixDestroy(&pixg2);
-    pixDestroy(&pixd);
+    pix3 = pixConvertRGBToLuminance(pix1);
+    pix4 = pixConvertRGBToLuminance(pix2);
+    pix5 = pixBlendWithGrayMask(pix3, pix4, pixg, 50, 50);
+    pixSaveTiled(pix3, pixa, 1.0, 1, 40, 32);
+    pixSaveTiled(pix4, pixa, 1.0, 0, 40, 32);
+    pixSaveTiled(pix5, pixa, 1.0, 0, 40, 32);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 4 */
+    regTestWritePixAndCheck(rp, pix4, IFF_JFIF_JPEG);  /* 5 */
+    regTestWritePixAndCheck(rp, pix5, IFF_JFIF_JPEG);  /* 6 */
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
 
         /* --- Blend a colormap image and an rgb image --- */
-    pixc2 = pixFixedOctcubeQuantGenRGB(pix2, 2);
-    pixd = pixBlendWithGrayMask(pix1, pixc2, pixg, 50, 50);
+    pix3 = pixFixedOctcubeQuantGenRGB(pix2, 2);
+    pix4 = pixBlendWithGrayMask(pix1, pix3, pixg, 50, 50);
     pixSaveTiled(pix1, pixa, 1.0, 1, 40, 32);
-    pixSaveTiled(pixc2, pixa, 1.0, 0, 40, 32);
-    pixSaveTiled(pixd, pixa, 1.0, 0, 40, 32);
-    pixDestroy(&pixc2);
-    pixDestroy(&pixd);
+    pixSaveTiled(pix3, pixa, 1.0, 0, 40, 32);
+    pixSaveTiled(pix4, pixa, 1.0, 0, 40, 32);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 7 */
+    regTestWritePixAndCheck(rp, pix4, IFF_JFIF_JPEG);  /* 8 */
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
         /* --- Blend a colormap image and a grayscale image --- */
-    pixg1 = pixConvertRGBToLuminance(pix1);
-    pixc2 = pixFixedOctcubeQuantGenRGB(pix2, 2);
-    pixd = pixBlendWithGrayMask(pixg1, pixc2, pixg, 50, 50);
-    pixSaveTiled(pixg1, pixa, 1.0, 1, 40, 32);
-    pixSaveTiled(pixc2, pixa, 1.0, 0, 40, 32);
-    pixSaveTiled(pixd, pixa, 1.0, 0, 40, 32);
-    pixDestroy(&pixd);
-    pixd = pixBlendWithGrayMask(pixg1, pixc2, pixg, -100, -100);
-    pixSaveTiled(pixg1, pixa, 1.0, 1, 40, 32);
-    pixSaveTiled(pixc2, pixa, 1.0, 0, 40, 32);
-    pixSaveTiled(pixd, pixa, 1.0, 0, 40, 32);
-    pixDestroy(&pixd);
-    pixDestroy(&pixg1);
-    pixDestroy(&pixc2);
+    pix3 = pixConvertRGBToLuminance(pix1);
+    pix4 = pixFixedOctcubeQuantGenRGB(pix2, 2);
+    pix5 = pixBlendWithGrayMask(pix3, pix4, pixg, 50, 50);
+    pixSaveTiled(pix3, pixa, 1.0, 1, 40, 32);
+    pixSaveTiled(pix4, pixa, 1.0, 0, 40, 32);
+    pixSaveTiled(pix5, pixa, 1.0, 0, 40, 32);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 9 */
+    regTestWritePixAndCheck(rp, pix4, IFF_JFIF_JPEG);  /* 10 */
+    regTestWritePixAndCheck(rp, pix5, IFF_JFIF_JPEG);  /* 11 */
+    pixDestroy(&pix5);
+    pix5 = pixBlendWithGrayMask(pix3, pix4, pixg, -100, -100);
+    pixSaveTiled(pix3, pixa, 1.0, 1, 40, 32);
+    pixSaveTiled(pix4, pixa, 1.0, 0, 40, 32);
+    pixSaveTiled(pix5, pixa, 1.0, 0, 40, 32);
+    regTestWritePixAndCheck(rp, pix5, IFF_JFIF_JPEG);  /* 12 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
 
-        /* --- Test png read/write with alpha channel --- */
-        /* First make pixs1, using pixg as the alpha channel */
-    pixs = pixRead("fish24.jpg");
+    /* --------- Test png read/write with alpha channel --------- */
+        /* First make pix2, using pixg as the alpha channel */
+    pix1 = pixRead("fish24.jpg");
     box1 = boxCreate(0, 300, 660, 500);
-    pixs1 = pixClipRectangle(pixs, box1, NULL);
-    pixSaveTiled(pixs1, pixa, 1.0, 1, 40, 32);
-    pixSetRGBComponent(pixs1, pixg, L_ALPHA_CHANNEL);
-        /* To see the alpha channel, blend with a black image */
-    pixbl = pixCreate(660, 500, 32);
-    pixd = pixBlendWithGrayMask(pixbl, pixs1, NULL, 0, 0);
-    pixSaveTiled(pixd, pixa, 1.0, 0, 40, 32);
-    pixDestroy(&pixd);
-        /* Write out the RGBA image and read it back */
-    pixWrite("/tmp/junkpixs1.png", pixs1, IFF_PNG);
-    pixs2 = pixRead("/tmp/junkpixs1.png");
-        /* Make sure that the alpha channel image hasn't changed */
-    pixg2 = pixGetRGBComponent(pixs2, L_ALPHA_CHANNEL);
-    pixEqual(pixg, pixg2, &same);
-    if (same)
-        fprintf(stderr, "PNG with alpha read/write OK\n");
-    else
-        fprintf(stderr, "PNG with alpha read/write failed\n");
-        /* Blend again with a black image */
-    pixd = pixBlendWithGrayMask(pixbl, pixs2, NULL, 0, 0);
-    pixSaveTiled(pixd, pixa, 1.0, 0, 40, 32);
-    pixDestroy(&pixd);
-        /* Blend with a white image */
-    pixSetAll(pixbl);
-    pixd = pixBlendWithGrayMask(pixbl, pixs2, NULL, 0, 0);
-    pixSaveTiled(pixd, pixa, 1.0, 0, 40, 32);
-    pixDestroy(&pixd);
-    pixDestroy(&pixbl);
-    pixDestroy(&pixs);
-    pixDestroy(&pixs1);
-    pixDestroy(&pixs2);
-    pixDestroy(&pixg2);
+    pix2 = pixClipRectangle(pix1, box1, NULL);
     boxDestroy(&box1);
+    pixSaveTiled(pix2, pixa, 1.0, 1, 40, 32);
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 13 */
+    pixSetRGBComponent(pix2, pixg, L_ALPHA_CHANNEL);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 14 */
 
-        /* --- Display results --- */
-    pixd = pixaDisplay(pixa, 0, 0);
-    pixDisplay(pixd, 100, 100);
-    pixWrite("/tmp/junkblend2.jpg", pixd, IFF_JFIF_JPEG);
-    pixDestroy(&pixd);
-    pixaDestroy(&pixa);
+        /* To see the alpha channel, blend with a black image */
+    pix3 = pixCreate(660, 500, 32);
+    pix4 = pixBlendWithGrayMask(pix3, pix2, NULL, 0, 0);
+    pixSaveTiled(pix4, pixa, 1.0, 0, 40, 32);
+    regTestWritePixAndCheck(rp, pix4, IFF_JFIF_JPEG);  /* 15 */
+    pixDestroy(&pix4);
 
+        /* Read the RGBA image back */
+    pix4 = pixRead("/tmp/lept/regout/blend2.14.png");
+
+        /* Make sure that the alpha channel image hasn't changed */
+    pix5 = pixGetRGBComponent(pix4, L_ALPHA_CHANNEL);
+    regTestComparePix(rp, pixg, pix5);  /* 16 */
+    pixDestroy(&pix5);
+
+        /* Blend again with a black image */
+    pix5 = pixBlendWithGrayMask(pix3, pix4, NULL, 0, 0);
+    pixSaveTiled(pix5, pixa, 1.0, 0, 40, 32);
+    regTestWritePixAndCheck(rp, pix5, IFF_JFIF_JPEG);  /* 17 */
+    pixDestroy(&pix5);
+
+        /* Blend with a white image */
+    pixSetAll(pix3);
+    pix5 = pixBlendWithGrayMask(pix3, pix4, NULL, 0, 0);
+    pixSaveTiled(pix5, pixa, 1.0, 0, 40, 32);
+    regTestWritePixAndCheck(rp, pix5, IFF_JFIF_JPEG);  /* 18 */
     pixDestroy(&pixg);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
-    return 0;
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
+
+        /* Display results */
+    pix1 = pixaDisplay(pixa, 0, 0);
+    pixDisplayWithTitle(pix1, 100, 100, NULL, rp->display);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 19 */
+    pixDestroy(&pix1);
+    pixaDestroy(&pixa);
+
+    return regTestCleanup(rp);
 }

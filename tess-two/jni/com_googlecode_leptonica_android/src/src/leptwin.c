@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  leptwin.c
+/*!
+ * \file leptwin.c
+ * <pre>
  *
  *    This file contains Leptonica routines needed only on Microsoft Windows
  *
@@ -33,6 +34,7 @@
  *    (based on dibsectn.c by jmh, 03-30-98):
  *
  *      HBITMAP    pixGetWindowsHBITMAP(PIX *pix)
+ * </pre>
  */
 
 #ifdef _WIN32
@@ -120,11 +122,11 @@ ImageBitsSize(HBITMAP hBitmap)
 }
 
 /*!
- *  setColormap(LPBITMAPINFO pbmi, PIXCMAP *cmap)
+ * \brief   setColormap(LPBITMAPINFO pbmi, PIXCMAP *cmap)
  *
- *      Input:  pbmi (pointer to a BITMAPINFO describing a DIB)
- *              cmap (leptonica colormap)
- *      Return: number of colors in cmap
+ * \param[in]    pbmi pointer to a BITMAPINFO describing a DIB
+ * \param[in]    cmap leptonica colormap
+ * \return  number of colors in cmap
  */
 static int
 setColormap(LPBITMAPINFO  pbmi,
@@ -285,15 +287,17 @@ LPBYTE        pBits;
 
 
 /*!
- *  pixGetWindowsHBITMAP()
+ * \brief   pixGetWindowsHBITMAP()
  *
- *      Input:  pix
- *      Return: Windows hBitmap, or null on error
+ * \param[in]    pix
+ * \return  Windows hBitmap, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) It's the responsibility of the caller to destroy the
  *          returned hBitmap with a call to DeleteObject (or with
  *          something that eventually calls DeleteObject).
+ * </pre>
  */
 HBITMAP
 pixGetWindowsHBITMAP(PIX  *pix)

@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *   heap.c
+/*!
+ * \file  heap.c
+ * <pre>
  *
  *      Create/Destroy L_Heap
  *          L_HEAP         *lheapCreate()
@@ -70,6 +71,7 @@
  *    choose (but don't) to pass an application-specific comparison
  *    function into the heap operation functions.
  *    --------------------------  N.B.  ------------------------------
+ * </pre>
  */
 
 #include <string.h>
@@ -90,11 +92,11 @@ static l_int32 lheapExtendArray(L_HEAP *lh);
  *                          L_Heap create/destroy                           *
  *--------------------------------------------------------------------------*/
 /*!
- *  lheapCreate()
+ * \brief   lheapCreate()
  *
- *      Input:  size of ptr array to be alloc'd (0 for default)
- *              direction (L_SORT_INCREASING, L_SORT_DECREASING)
- *      Return: lheap, or null on error
+ * \param[in]    nalloc size of ptr array to be alloc'd 0 for default
+ * \param[in]    direction L_SORT_INCREASING, L_SORT_DECREASING
+ * \return  lheap, or NULL on error
  */
 L_HEAP *
 lheapCreate(l_int32  nalloc,
@@ -110,8 +112,10 @@ L_HEAP  *lh;
         /* Allocate ptr array and initialize counters. */
     if ((lh = (L_HEAP *)LEPT_CALLOC(1, sizeof(L_HEAP))) == NULL)
         return (L_HEAP *)ERROR_PTR("lh not made", procName, NULL);
-    if ((lh->array = (void **)LEPT_CALLOC(nalloc, sizeof(void *))) == NULL)
+    if ((lh->array = (void **)LEPT_CALLOC(nalloc, sizeof(void *))) == NULL) {
+        lheapDestroy(&lh, FALSE);
         return (L_HEAP *)ERROR_PTR("ptr array not made", procName, NULL);
+    }
     lh->nalloc = nalloc;
     lh->n = 0;
     lh->direction = direction;
@@ -120,13 +124,14 @@ L_HEAP  *lh;
 
 
 /*!
- *  lheapDestroy()
+ * \brief   lheapDestroy()
  *
- *      Input:  &lheap  (<to be nulled>)
- *              freeflag (TRUE to free each remaining struct in the array)
- *      Return: void
+ * \param[in,out]   plh  to be nulled
+ * \param[in]    freeflag TRUE to free each remaining struct in the array
+ * \return  void
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Use freeflag == TRUE when the items in the array can be
  *          simply destroyed using free.  If those items require their
  *          own destroy function, they must be destroyed before
@@ -134,6 +139,7 @@ L_HEAP  *lh;
  *          with freeflag == FALSE.
  *      (2) To destroy the lheap, we destroy the ptr array, then
  *          the lheap, and then null the contents of the input ptr.
+ * </pre>
  */
 void
 lheapDestroy(L_HEAP  **plh,
@@ -170,11 +176,11 @@ L_HEAP  *lh;
  *                                  Accessors                               *
  *--------------------------------------------------------------------------*/
 /*!
- *  lheapAdd()
+ * \brief   lheapAdd()
  *
- *      Input:  lheap
- *              item to be added to the tail of the heap
- *      Return: 0 if OK, 1 on error
+ * \param[in]    lh heap
+ * \param[in]    item to be added to the tail of the heap
+ * \return  0 if OK, 1 on error
  */
 l_int32
 lheapAdd(L_HEAP  *lh,
@@ -202,10 +208,10 @@ lheapAdd(L_HEAP  *lh,
 
 
 /*!
- *  lheapExtendArray()
+ * \brief   lheapExtendArray()
  *
- *      Input:  lheap
- *      Return: 0 if OK, 1 on error
+ * \param[in]    lh heap
+ * \return  0 if OK, 1 on error
  */
 static l_int32
 lheapExtendArray(L_HEAP  *lh)
@@ -226,11 +232,11 @@ lheapExtendArray(L_HEAP  *lh)
 
 
 /*!
- *  lheapRemove()
+ * \brief   lheapRemove()
  *
- *      Input:  lheap
- *      Return: ptr to item popped from the root of the heap,
- *              or null if the heap is empty or on error
+ * \param[in]    lh heap
+ * \return  ptr to item popped from the root of the heap,
+ *              or NULL if the heap is empty or on error
  */
 void *
 lheapRemove(L_HEAP  *lh)
@@ -256,10 +262,10 @@ void   *item;
 
 
 /*!
- *  lheapGetCount()
+ * \brief   lheapGetCount()
  *
- *      Input:  lheap
- *      Return: count, or 0 on error
+ * \param[in]    lh heap
+ * \return  count, or 0 on error
  */
 l_int32
 lheapGetCount(L_HEAP  *lh)
@@ -278,19 +284,21 @@ lheapGetCount(L_HEAP  *lh)
  *                               Heap operations                            *
  *--------------------------------------------------------------------------*/
 /*!
- *  lheapSwapUp()
+ * \brief   lheapSwapUp()
  *
- *      Input:  lh (heap)
- *              index (of array corresponding to node to be swapped up)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    lh heap
+ * \param[in]    index of array corresponding to node to be swapped up
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is called after a new item is put on the heap, at the
  *          bottom of a complete tree.
  *      (2) To regain the heap order, we let it bubble up,
  *          iteratively swapping with its parent, until it either
  *          reaches the root of the heap or it finds a parent that
  *          is in the correct position already vis-a-vis the child.
+ * </pre>
  */
 l_int32
 lheapSwapUp(L_HEAP  *lh,
@@ -338,12 +346,13 @@ l_float32  valp, valc;
 
 
 /*!
- *  lheapSwapDown()
+ * \brief   lheapSwapDown()
  *
- *      Input:  lh (heap)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    lh heap
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is called after an item has been popped off the
  *          root of the heap, and the last item in the heap has
  *          been placed at the root.
@@ -355,6 +364,7 @@ l_float32  valp, valc;
  *          parent finds that neither child should swap with it
  *          (e.g., for a decreasing heap, the parent is larger
  *          than or equal to both children).
+ * </pre>
  */
 l_int32
 lheapSwapDown(L_HEAP  *lh)
@@ -428,14 +438,16 @@ l_float32  valp, valcl, valcr;
 
 
 /*!
- *  lheapSort()
+ * \brief   lheapSort()
  *
- *      Input:  lh (heap, with internal array)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    lh heap, with internal array
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This sorts an array into heap order.  If the heap is already
  *          in heap order for the direction given, this has no effect.
+ * </pre>
  */
 l_int32
 lheapSort(L_HEAP  *lh)
@@ -455,12 +467,13 @@ l_int32  i;
 
 
 /*!
- *  lheapSortStrictOrder()
+ * \brief   lheapSortStrictOrder()
  *
- *      Input:  lh (heap, with internal array)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    lh heap, with internal array
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This sorts a heap into strict order.
  *      (2) For each element, starting at the end of the array and
  *          working forward, the element is swapped with the head
@@ -468,6 +481,7 @@ l_int32  i;
  *          size reduced by one.  The result is that the heap is
  *          reversed but in strict order.  The array elements are
  *          then reversed to put it in the original order.
+ * </pre>
  */
 l_int32
 lheapSortStrictOrder(L_HEAP  *lh)
@@ -500,11 +514,11 @@ l_int32  i, index, size;
  *                            Debug output                             *
  *---------------------------------------------------------------------*/
 /*!
- *  lheapPrint()
+ * \brief   lheapPrint()
  *
- *      Input:  stream
- *              lheap
- *      Return: 0 if OK; 1 on error
+ * \param[in]    fp file stream
+ * \param[in]    lh heap
+ * \return  0 if OK; 1 on error
  */
 l_int32
 lheapPrint(FILE    *fp,

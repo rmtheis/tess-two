@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *   partition.c
+/*!
+ * \file  partition.c
+ * <pre>
  *
  *      Whitespace block extraction
  *          BOXA            *boxaGetWhiteblocks()
@@ -38,10 +39,12 @@
  *          static BOX      *boxaSelectPivotBox()
  *          static l_int32   boxaCheckIfOverlapIsSmall()
  *          BOXA            *boxaPruneSortedOnOverlap()
+ * </pre>
  */
 
 #include "allheaders.h"
 
+/*! Partition element */
 struct PartitionElement {
     l_float32  size;  /* sorting key */
     BOX       *box;   /* region of the element */
@@ -59,7 +62,7 @@ static BOX * boxaSelectPivotBox(BOX *box, BOXA *boxa, l_int32 maxperim,
 static l_int32 boxCheckIfOverlapIsBig(BOX *box, BOXA *boxa,
                                       l_float32 maxoverlap);
 
-static const l_int32  DEFAULT_MAX_POPS = 20000;  /* a big number! */
+static const l_int32  DEFAULT_MAX_POPS = 20000;
 
 
 #ifndef  NO_CONSOLE_IO
@@ -71,28 +74,29 @@ static const l_int32  DEFAULT_MAX_POPS = 20000;  /* a big number! */
  *                    Whitespace block extraction                   *
  *------------------------------------------------------------------*/
 /*!
- *  boxaGetWhiteblocks()
+ * \brief   boxaGetWhiteblocks()
  *
- *      Input:  boxas (typically, a set of bounding boxes of fg components)
- *              box (initial region; typically including all boxes in boxas;
+ * \param[in]    boxas typically, a set of bounding boxes of fg components
+ * \param[in]    box initial region; typically including all boxes in boxas;
  *                   if null, it computes the region to include all boxes
- *                   in boxas)
- *              sortflag (L_SORT_BY_WIDTH, L_SORT_BY_HEIGHT,
+ *                   in boxas
+ * \param[in]    sortflag L_SORT_BY_WIDTH, L_SORT_BY_HEIGHT,
  *                        L_SORT_BY_MIN_DIMENSION, L_SORT_BY_MAX_DIMENSION,
- *                        L_SORT_BY_PERIMETER, L_SORT_BY_AREA)
- *              maxboxes (maximum number of output whitespace boxes; e.g., 100)
- *              maxoverlap (maximum fractional overlap of a box by any
- *                          of the larger boxes; e.g., 0.2)
- *              maxperim (maximum half-perimeter, in pixels, for which
+ *                        L_SORT_BY_PERIMETER, L_SORT_BY_AREA
+ * \param[in]    maxboxes maximum number of output whitespace boxes; e.g., 100
+ * \param[in]    maxoverlap maximum fractional overlap of a box by any
+ *                          of the larger boxes; e.g., 0.2
+ * \param[in]    maxperim maximum half-perimeter, in pixels, for which
  *                        pivot is selected by proximity to box centroid;
- *                        e.g., 200)
- *              fract (fraction of box diagonal that is an acceptable
+ *                        e.g., 200
+ * \param[in]    fract fraction of box diagonal that is an acceptable
  *                     distance from the box centroid to select the pivot;
- *                     e.g., 0.2)
- *              maxpops (maximum number of pops from the heap; use 0 as default)
- *      Return: boxa (of sorted whitespace boxes), or null on error
+ *                     e.g., 0.2
+ * \param[in]    maxpops maximum number of pops from the heap; use 0 as default
+ * \return  boxa of sorted whitespace boxes, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This uses the elegant Breuel algorithm, found in "Two
  *          Geometric Algorithms for Layout Analysis", 2002,
  *          url: "citeseer.ist.psu.edu/breuel02two.html".
@@ -142,9 +146,16 @@ static const l_int32  DEFAULT_MAX_POPS = 20000;  /* a big number! */
  *          as a pivot, as the partitioning continues, at no time will
  *          any of the whitespace inside this component be part of a
  *          rectangle with zero overlapping boxes.  Thus, the interiors
-*           of all boxes are necessarily excluded from the union of
-*           the returned whitespace boxes.
- *     (10) USAGE: One way to accommodate to this weakness is to remove such
+ *          of all boxes are necessarily excluded from the union of
+ *          the returned whitespace boxes.
+ *     (10) It should be noted that the algorithm puts a large number
+ *          of partels on the queue.  Setting a limit of X partels to
+ *          remove from the queue, one typically finds that there will be
+ *          several times that number (say, 2X - 3X) left on the queue.
+ *          For an efficient algorithm to find the largest white or
+ *          or black rectangles, without permitting them to overlap,
+ *          see pixFindLargeRectangles().
+ *     (11) USAGE: One way to accommodate to this weakness is to remove such
  *          large b.b. before starting the computation.  For example,
  *          if 'box' is an input image region containing 'boxa' b.b. of c.c.:
  *
@@ -172,6 +183,7 @@ static const l_int32  DEFAULT_MAX_POPS = 20000;  /* a big number! */
  *          between a box and any of the taller ones, and avoiding the
  *          use of any c.c. with a b.b. half perimeter greater than 200
  *          as a pivot.
+ * </pre>
  */
 BOXA *
 boxaGetWhiteblocks(BOXA      *boxas,
@@ -219,16 +231,18 @@ L_HEAP  *lh;
     partelSetSize(partel, sortflag);
     lheapAdd(lh, partel);
 
+    npush = 1;
+    npop = 0;
     boxad = boxaCreate(0);
-
-    npush = npop = 0;
     while (1) {
         if ((partel = (PARTEL *)lheapRemove(lh)) == NULL)  /* we're done */
             break;
 
         npop++;  /* How many boxes have we retrieved from the queue? */
-        if (npop > maxpops)
+        if (npop > maxpops) {
+            partelDestroy(&partel);
             break;
+        }
 
             /* Extract the contents */
         boxa = boxaCopy(partel->boxa, L_CLONE);
@@ -274,8 +288,9 @@ L_HEAP  *lh;
     fprintf(stderr, "Heap statistics:\n");
     fprintf(stderr, "  Number of boxes pushed: %d\n", npush);
     fprintf(stderr, "  Number of boxes popped: %d\n", npop);
+    fprintf(stderr, "  Number of boxes on heap: %d\n", lheapGetCount(lh));
 #endif  /* OUTPUT_HEAP_STATS */
-
+  
         /* Clean up the heap */
     while ((partel = (PARTEL *)lheapRemove(lh)) != NULL)
         partelDestroy(&partel);
@@ -289,10 +304,10 @@ L_HEAP  *lh;
  *                               Helpers                            *
  *------------------------------------------------------------------*/
 /*!
- *  partelCreate()
+ * \brief   partelCreate()
  *
- *      Input:  box (region; inserts a copy)
- *      Return: partel, or null on error
+ * \param[in]    box region; inserts a copy
+ * \return  partel, or NULL on error
  */
 static PARTEL *
 partelCreate(BOX  *box)
@@ -310,10 +325,10 @@ PARTEL  *partel;
 
 
 /*!
- *  partelDestroy()
+ * \brief   partelDestroy()
  *
- *      Input:  &partel (<will be set to null before returning>)
- *      Return: void
+ * \param[in,out]   ppartel  contents will be set to null before returning
+ * \return  void
  */
 static void
 partelDestroy(PARTEL  **ppartel)
@@ -339,13 +354,13 @@ PARTEL  *partel;
 
 
 /*!
- *  partelSetSize()
+ * \brief   partelSetSize()
  *
- *      Input:  partel
- *              sortflag (L_SORT_BY_WIDTH, L_SORT_BY_HEIGHT,
+ * \param[in]    partel
+ * \param[in]    sortflag L_SORT_BY_WIDTH, L_SORT_BY_HEIGHT,
  *                        L_SORT_BY_MIN_DIMENSION, L_SORT_BY_MAX_DIMENSION,
- *                        L_SORT_BY_PERIMETER, L_SORT_BY_AREA)
- *      Return: 0 if OK, 1 on error
+ *                        L_SORT_BY_PERIMETER, L_SORT_BY_AREA
+ * \return  0 if OK, 1 on error
  */
 static l_int32
 partelSetSize(PARTEL  *partel,
@@ -378,16 +393,16 @@ l_int32  w, h;
 
 
 /*!
- *  boxaGenerateSubboxes()
+ * \brief   boxaGenerateSubboxes()
  *
- *      Input:  box (region to be split into up to four overlapping subregions)
- *              boxa (boxes of rectangles intersecting the box)
- *              maxperim (maximum half-perimeter for which pivot
- *                        is selected by proximity to box centroid)
- *              fract (fraction of box diagonal that is an acceptable
- *                     distance from the box centroid to select the pivot)
- *      Return: boxa (of four or less overlapping subrectangles of the box),
- *              or null on error
+ * \param[in]    box region to be split into up to four overlapping subregions
+ * \param[in]    boxa boxes of rectangles intersecting the box
+ * \param[in]    maxperim maximum half-perimeter for which pivot
+ *                        is selected by proximity to box centroid
+ * \param[in]    fract fraction of box diagonal that is an acceptable
+ *                     distance from the box centroid to select the pivot
+ * \return  boxa of four or less overlapping subrectangles of the box,
+ *              or NULL on error
  */
 static BOXA *
 boxaGenerateSubboxes(BOX       *box,
@@ -434,18 +449,19 @@ BOXA    *boxa4;
 
 
 /*!
- *  boxaSelectPivotBox()
+ * \brief   boxaSelectPivotBox()
  *
- *      Input:  box (containing box; to be split by the pivot box)
- *              boxa (boxes of rectangles, from which 1 is to be chosen)
- *              maxperim (maximum half-perimeter for which pivot
- *                        is selected by proximity to box centroid)
- *              fract (fraction of box diagonal that is an acceptable
- *                     distance from the box centroid to select the pivot)
- *      Return: box (pivot box for subdivision into 4 rectangles), or
- *                   null on error
+ * \param[in]    box containing box; to be split by the pivot box
+ * \param[in]    boxa boxes of rectangles, from which 1 is to be chosen
+ * \param[in]    maxperim maximum half-perimeter for which pivot
+ *                        is selected by proximity to box centroid
+ * \param[in]    fract fraction of box diagonal that is an acceptable
+ *                     distance from the box centroid to select the pivot
+ * \return  box pivot box for subdivision into 4 rectangles, or
+ *                   NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a tricky piece that wasn't discussed in the
  *          Breuel's 2002 paper.
  *      (2) Selects a box from boxa whose centroid is reasonably close to
@@ -464,6 +480,7 @@ BOXA    *boxa4;
  *      (6) Choose maxperim to represent a connected component that is
  *          small enough so that you don't care about the white space
  *          that could be inside of it.
+ * </pre>
  */
 static BOX *
 boxaSelectPivotBox(BOX       *box,
@@ -536,13 +553,13 @@ BOX       *boxt;
 
 
 /*!
- *  boxCheckIfOverlapIsBig()
+ * \brief   boxCheckIfOverlapIsBig()
  *
- *      Input:  box (to be tested)
- *              boxa (of boxes already stored)
- *              maxoverlap (maximum fractional overlap of the input box
- *                          by any of the boxes in boxa)
- *      Return: 0 if box has small overlap with every box in boxa;
+ * \param[in]    box to be tested
+ * \param[in]    boxa of boxes already stored
+ * \param[in]    maxoverlap maximum fractional overlap of the input box
+ *                          by any of the boxes in boxa
+ * \return  0 if box has small overlap with every box in boxa;
  *              1 otherwise or on error
  */
 static l_int32
@@ -583,20 +600,22 @@ BOX       *boxt;
 
 
 /*!
- *  boxaPruneSortedOnOverlap()
+ * \brief   boxaPruneSortedOnOverlap()
  *
- *      Input:  boxas (sorted by size in decreasing order)
- *              maxoverlap (maximum fractional overlap of a box by any
- *                          of the larger boxes)
- *      Return: boxad (pruned), or null on error
+ * \param[in]    boxas sorted by size in decreasing order
+ * \param[in]    maxoverlap maximum fractional overlap of a box by any
+ *                          of the larger boxes
+ * \return  boxad pruned, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This selectively removes smaller boxes when they are overlapped
  *          by any larger box by more than the input 'maxoverlap' fraction.
  *      (2) To avoid all pruning, use maxoverlap = 1.0.  To select only
  *          boxes that have no overlap with each other (maximal pruning),
  *          set maxoverlap = 0.0.
  *      (3) If there are no boxes in boxas, returns an empty boxa.
+ * </pre>
  */
 BOXA *
 boxaPruneSortedOnOverlap(BOXA      *boxas,

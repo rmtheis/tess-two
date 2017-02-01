@@ -24,10 +24,12 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  pdfio2stub.c
+/*!
+ * \file pdfio2stub.c
+ * <pre>
  *
  *     Stubs for pdfio2.c functions
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -53,6 +55,13 @@ l_int32 ptraConcatenatePdfToData(L_PTRA *pa_data, SARRAY *sa,
                                  l_uint8 **pdata, size_t *pnbytes)
 {
     return ERROR_INT("function not present", "ptraConcatenatePdfToData", 1);
+}
+
+/* ----------------------------------------------------------------------*/
+
+l_int32 convertTiffMultipageToPdf(const char *filein, const char *fileout)
+{
+    return ERROR_INT("function not present", "convertTiffMultipageToPdf", 1);
 }
 
 /* ----------------------------------------------------------------------*/

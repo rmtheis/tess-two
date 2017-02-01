@@ -63,11 +63,12 @@ static void  fhmt_1_3(l_uint32 *, l_int32, l_int32, l_int32, l_uint32 *, l_int32
 /*
  *  pixFlipFHMTGen()
  *
- *     Input:  pixd (usual 3 choices: null, == pixs, != pixs)
- *             pixs
- *             sel name (one of four defined in SEL_NAMES[])
- *     Return: pixd
+ *      Input:  pixd (usual 3 choices: null, == pixs, != pixs)
+ *              pixs
+ *              sel name (one of four defined in SEL_NAMES[])
+ *      Return: pixd
  *
+ *  Notes:
  *     Action: hit-miss transform on pixs by the sel
  *     N.B.: the sel must have at least one hit, and it
  *           can have any number of misses.

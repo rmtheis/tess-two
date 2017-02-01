@@ -36,11 +36,20 @@
  *      8:   L_SORT_BY_MAX_DIMENSION
  *      9:   L_SORT_BY_PERIMETER
  *      10:  L_SORT_BY_AREA
+ *
+ *  This partitions the input (1 bpp) image using boxaGetWhiteblocks(),
+ *  which is an elegant but flawed method in computational geometry to
+ *  extract the significant rectangular white blocks in a 1 bpp image.
+ *  See partition.c for details.
+ *
+ *  It then sorts the regions according to the selected input type,
+ *  and displays the top sorted blocks in several different ways:
+ *    - as outlines or solid filled regions
+ *    - with random or specific colors
+ *    - as an rgb or colormapped image.
  */
 
 #include "allheaders.h"
-
-#define  REDUCTION     1
 
 int main(int    argc,
          char **argv)
@@ -50,7 +59,8 @@ l_int32      w, h, type, maxboxes;
 l_float32    ovlap;
 BOX         *box;
 BOXA        *boxa, *boxat, *boxad;
-PIX         *pix, *pixt, *pixs, *pixd;
+PIX         *pix, *pixs, *pix1, *pix2;
+PIXA        *pixa;
 static char  mainName[] = "partitiontest";
 
     if (argc != 3 && argc != 5)
@@ -83,16 +93,17 @@ static char  mainName[] = "partitiontest";
     }
     if (argc == 5) {
         maxboxes = atoi(argv[3]);
-	ovlap = atof(argv[4]);
+        ovlap = atof(argv[4]);
     } else {
         maxboxes = 100;
-	ovlap = 0.2;
+        ovlap = 0.2;
     }
 
-
+    pixa = pixaCreate(0);
     pix = pixRead(filename);
     pixs = pixConvertTo1(pix, 128);
     pixDilateBrick(pixs, pixs, 5, 5);
+    pixaAddPix(pixa, pixs, L_COPY);
     boxa = pixConnComp(pixs, NULL, 4);
     pixGetDimensions(pixs, &w, &h, NULL);
     box = boxCreate(0, 0, w, h);
@@ -103,60 +114,53 @@ static char  mainName[] = "partitiontest";
     boxad = boxaGetWhiteblocks(boxat, box, type, maxboxes, ovlap,
                                200, 0.15, 20000);
     fprintf(stderr, "Time: %7.3f sec\n", stopTimer());
-    boxaWriteStream(stderr, boxad);
-
-    pixDisplayWrite(NULL, -1);
-    pixDisplayWrite(pixs, REDUCTION);
+/*    boxaWriteStream(stderr, boxad); */
 
         /* Display box outlines in a single color in a cmapped image */
-    pixd = pixDrawBoxa(pixs, boxad, 7, 0xe0708000);
-    pixDisplayWrite(pixd, REDUCTION);
-    pixDestroy(&pixd);
+    pix1 = pixDrawBoxa(pixs, boxad, 7, 0xe0708000);
+    pixaAddPix(pixa, pix1, L_INSERT);
 
         /* Display box outlines in a single color in an RGB image */
-    pixt = pixConvertTo8(pixs, FALSE);
-    pixd = pixDrawBoxa(pixt, boxad, 7, 0x40a0c000);
-    pixDisplayWrite(pixd, REDUCTION);
-    pixDestroy(&pixt);
-    pixDestroy(&pixd);
+    pix1 = pixConvertTo8(pixs, FALSE);
+    pix2 = pixDrawBoxa(pix1, boxad, 7, 0x40a0c000);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixDestroy(&pix1);
 
         /* Display box outlines with random colors in a cmapped image */
-    pixd = pixDrawBoxaRandom(pixs, boxad, 7);
-    pixDisplayWrite(pixd, REDUCTION);
-    pixDestroy(&pixd);
+    pix1 = pixDrawBoxaRandom(pixs, boxad, 7);
+    pixaAddPix(pixa, pix1, L_INSERT);
 
         /* Display box outlines with random colors in an RGB image */
-    pixt = pixConvertTo8(pixs, FALSE);
-    pixd = pixDrawBoxaRandom(pixt, boxad, 7);
-    pixDisplayWrite(pixd, REDUCTION);
-    pixDestroy(&pixt);
-    pixDestroy(&pixd);
+    pix1 = pixConvertTo8(pixs, FALSE);
+    pix2 = pixDrawBoxaRandom(pix1, boxad, 7);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixDestroy(&pix1);
 
         /* Display boxes in the same color in a cmapped image */
-    pixd = pixPaintBoxa(pixs, boxad, 0x60e0a000);
-    pixDisplayWrite(pixd, REDUCTION);
-    pixDestroy(&pixd);
+    pix1 = pixPaintBoxa(pixs, boxad, 0x60e0a000);
+    pixaAddPix(pixa, pix1, L_INSERT);
 
         /* Display boxes in the same color in an RGB image */
-    pixt = pixConvertTo8(pixs, FALSE);
-    pixd = pixPaintBoxa(pixt, boxad, 0xc030a000);
-    pixDisplayWrite(pixd, REDUCTION);
-    pixDestroy(&pixt);
-    pixDestroy(&pixd);
+    pix1 = pixConvertTo8(pixs, FALSE);
+    pix2 = pixPaintBoxa(pix2, boxad, 0xc030a000);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixDestroy(&pix1);
 
         /* Display boxes in random colors in a cmapped image */
-    pixd = pixPaintBoxaRandom(pixs, boxad);
-    pixDisplayWrite(pixd, REDUCTION);
-    pixDestroy(&pixd);
+    pix1 = pixPaintBoxaRandom(pixs, boxad);
+    pixaAddPix(pixa, pix1, L_INSERT);
 
         /* Display boxes in random colors in an RGB image */
-    pixt = pixConvertTo8(pixs, FALSE);
-    pixd = pixPaintBoxaRandom(pixt, boxad);
-    pixDisplayWrite(pixd, REDUCTION);
-    pixDestroy(&pixt);
-    pixDestroy(&pixd);
+    pix1 = pixConvertTo8(pixs, FALSE);
+    pix2 = pixPaintBoxaRandom(pix1, boxad);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixDestroy(&pix1);
 
-    pixDisplayMultiple("/tmp/display/file*");
+    fprintf(stderr, "Writing to: /tmp/lept/part/partition.pdf\n");
+    lept_mkdir("lept/part");
+    pixaConvertToPdf(pixa, 300, 1.0, L_FLATE_ENCODE, 0, "Partition test",
+                     "/tmp/lept/part/partition.pdf");
+    pixaDestroy(&pixa);
 
     pixDestroy(&pix);
     pixDestroy(&pixs);
@@ -166,5 +170,3 @@ static char  mainName[] = "partitiontest";
     boxaDestroy(&boxad);
     return 0;
 }
-
-

@@ -24,10 +24,12 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  psio1stub.c
+/*!
+ * \file psio1stub.c
+ * <pre>
  *
  *     Stubs for psio1.c functions
+ * </pre>
  */
 
 #include "allheaders.h"

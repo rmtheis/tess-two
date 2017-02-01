@@ -27,6 +27,8 @@
 /*
  * expand_reg.c
  *
+ *   Regression test for replicative and power-of-2 expansion (and
+ *   corresponding reductions)
  */
 
 #include "allheaders.h"
@@ -44,111 +46,116 @@
 int main(int    argc,
          char **argv)
 {
-l_int32      i, w, h, same;
+l_int32      i, w, h, format;
 char         filename[][64] = {BINARY_IMAGE,
                                TWO_BPP_IMAGE_NO_CMAP, TWO_BPP_IMAGE_CMAP,
                                FOUR_BPP_IMAGE_NO_CMAP, FOUR_BPP_IMAGE_CMAP,
                                EIGHT_BPP_IMAGE_NO_CMAP, EIGHT_BPP_IMAGE_CMAP,
                                RGB_IMAGE};
-BOX         *box;
-PIX         *pix, *pixs, *pixt, *pixt1, *pixt2, *pixt3, *pixt4, *pixt5, *pixd;
-static char  mainName[] = "expand_reg";
+BOX          *box;
+PIX          *pixs, *pix1, *pix2, *pix3, *pix4, *pix5, *pix6;
+PIXA         *pixa;
+L_REGPARAMS  *rp;
 
-    if (argc != 1)
-        return ERROR_INT(" Syntax:  expand_reg", mainName, 1);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
 
-    pixDisplayWrite(NULL, -1);
+    pixa = pixaCreate(0);
     for (i = 0; i < 8; i++) {
         pixs = pixRead(filename[i]);
-        pixt = pixExpandReplicate(pixs, 2);
-        pixDisplayWrite(pixt, 1);
-        pixDestroy(&pixt);
-        pixt = pixExpandReplicate(pixs, 3);
-        pixDisplayWrite(pixt, 1);
-        pixDestroy(&pixt);
-
-        if (i == 4) {
-            pixt = pixScale(pixs, 3.0, 3.0);
-            pixWrite("/tmp/junkpixt.png", pixt, IFF_PNG);
-            pixDestroy(&pixt);
-        }
+        pix1 = pixExpandReplicate(pixs, 2);
+        format = (i == 7) ? IFF_JFIF_JPEG : IFF_PNG;
+        regTestWritePixAndCheck(rp, pix1, format);  /* 0 - 7 */
+        pixaAddPix(pixa, pix1, L_INSERT);
+        pixDestroy(&pixs);
+    }
+    for (i = 0; i < 8; i++) {
+        pixs = pixRead(filename[i]);
+        pix1 = pixExpandReplicate(pixs, 3);
+        format = (i == 7) ? IFF_JFIF_JPEG : IFF_PNG;
+        regTestWritePixAndCheck(rp, pix1, format);  /* 8 - 15 */
+        pixaAddPix(pixa, pix1, L_INSERT);
         pixDestroy(&pixs);
     }
 
-    pix = pixRead("test1.png");
-    pixGetDimensions(pix, &w, &h, NULL);
+    pixs = pixRead("test1.png");
+    pixGetDimensions(pixs, &w, &h, NULL);
     for (i = 1; i <= 15; i++) {
         box = boxCreate(13 * i, 13 * i, w - 13 * i, h - 13 * i);
-        pixs = pixClipRectangle(pix, box, NULL);
-        pixt = pixExpandReplicate(pixs, 3);
-        pixDisplayWrite(pixt, 1);
+        pix1 = pixClipRectangle(pixs, box, NULL);
+        pix2 = pixExpandReplicate(pix1, 3);
+        regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 16 - 30 */
+        pixaAddPix(pixa, pix2, L_INSERT);
         boxDestroy(&box);
-        pixDestroy(&pixt);
-        pixDestroy(&pixs);
+        pixDestroy(&pix1);
     }
-    pixDestroy(&pix);
-
-    pixs = pixRead("speckle.png");
-        /* Test 2x expansion of 1 bpp */
-    pixt = pixExpandBinaryPower2(pixs, 2);
-    pixDisplayWrite(pixt, 1);
-    pixd = pixReduceRankBinary2(pixt, 4, NULL);
-    pixEqual(pixs, pixd, &same);
-    if (!same)
-        fprintf(stderr, "Error in 2x 1bpp expansion\n");
-    pixDestroy(&pixt);
-    pixDestroy(&pixd);
-        /* Test 2x expansion of 2 bpp */
-    pixt1 = pixConvert1To2(NULL, pixs, 3, 0);
-    pixt2 = pixExpandReplicate(pixt1, 2);
-    pixDisplayWrite(pixt2, 1);
-    pixt3 = pixConvertTo8(pixt2, FALSE);
-    pixt4 = pixThresholdToBinary(pixt3, 250);
-    pixd = pixReduceRankBinary2(pixt4, 4, NULL);
-    pixEqual(pixs, pixd, &same);
-    if (!same)
-        fprintf(stderr, "Error in 2x 2bpp expansion\n");
-    pixt5 = pixExpandBinaryPower2(pixd, 2);
-    pixDisplayWrite(pixt5, 1);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
-    pixDestroy(&pixt5);
-    pixDestroy(&pixd);
-        /* Test 4x expansion of 4 bpp */
-    pixt1 = pixConvert1To4(NULL, pixs, 15, 0);
-    pixt2 = pixExpandReplicate(pixt1, 4);
-    pixDisplayWrite(pixt2, 2);
-    pixt3 = pixConvertTo8(pixt2, FALSE);
-    pixt4 = pixThresholdToBinary(pixt3, 250);
-    pixDisplayWrite(pixt4, 2);
-    pixd = pixReduceRankBinaryCascade(pixt4, 4, 4, 0, 0);
-    pixEqual(pixs, pixd, &same);
-    if (!same)
-        fprintf(stderr, "Error in 4x 4bpp expansion\n");
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
-    pixDestroy(&pixd);
-        /* Test 8x expansion of 8 bpp */
-    pixt1 = pixConvertTo8(pixs, FALSE);
-    pixt2 = pixExpandReplicate(pixt1, 8);
-    pixDisplayWrite(pixt2, 4);
-    pixt3 = pixThresholdToBinary(pixt2, 250);
-    pixDisplayWrite(pixt3, 4);
-    pixd = pixReduceRankBinaryCascade(pixt3, 4, 4, 4, 0);
-    pixEqual(pixs, pixd, &same);
-    if (!same)
-        fprintf(stderr, "Error in 4x 4bpp expansion\n");
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
-    pixDestroy(&pixd);
     pixDestroy(&pixs);
 
-    pixDisplayMultiple("/tmp/display/file*");
-    return 0;
+    /* --------- Power of 2 expansion and reduction -------- */
+    pixs = pixRead("speckle.png");
+
+        /* Test 2x expansion of 1 bpp */
+    pix1 = pixExpandBinaryPower2(pixs, 2);
+    pix2 = pixReduceRankBinary2(pix1, 4, NULL);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 31 */
+    regTestComparePix(rp, pixs, pix2);  /* 32 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+
+        /* Test 2x expansion of 2 bpp */
+    pix1 = pixConvert1To2(NULL, pixs, 3, 0);
+    pix2 = pixExpandReplicate(pix1, 2);
+    pix3 = pixConvertTo8(pix2, FALSE);
+    pix4 = pixThresholdToBinary(pix3, 250);
+    regTestWritePixAndCheck(rp, pix4, IFF_PNG);  /* 33 */
+    pix5 = pixReduceRankBinary2(pix4, 4, NULL);
+    regTestWritePixAndCheck(rp, pix5, IFF_PNG);  /* 34 */
+    regTestComparePix(rp, pixs, pix5);  /* 35 */
+    pixaAddPix(pixa, pix5, L_INSERT);
+    pix6 = pixExpandBinaryPower2(pix5, 2);
+    regTestWritePixAndCheck(rp, pix6, IFF_PNG);  /* 36 */
+    pixaAddPix(pixa, pix6, L_INSERT);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+
+        /* Test 4x expansion of 4 bpp */
+    pix1 = pixConvert1To4(NULL, pixs, 15, 0);
+    pix2 = pixExpandReplicate(pix1, 4);
+    pix3 = pixConvertTo8(pix2, FALSE);
+    pix4 = pixThresholdToBinary(pix3, 250);
+    regTestWritePixAndCheck(rp, pix4, IFF_PNG);  /* 37 */
+    pixaAddPix(pixa, pix4, L_INSERT);
+    pix5 = pixReduceRankBinaryCascade(pix4, 4, 4, 0, 0);
+    regTestWritePixAndCheck(rp, pix5, IFF_PNG);  /* 38 */
+    regTestComparePix(rp, pixs, pix5);  /* 39 */
+    pixaAddPix(pixa, pix5, L_INSERT);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+
+        /* Test 8x expansion of 8 bpp */
+    pix1 = pixConvertTo8(pixs, FALSE);
+    pix2 = pixExpandReplicate(pix1, 8);
+    pix3 = pixThresholdToBinary(pix2, 250);
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 40 */
+    pixaAddPix(pixa, pix3, L_INSERT);
+    pix4 = pixReduceRankBinaryCascade(pix3, 4, 4, 4, 0);
+    regTestWritePixAndCheck(rp, pix4, IFF_PNG);  /* 41 */
+    regTestComparePix(rp, pixs, pix4);  /* 42 */
+    pixaAddPix(pixa, pix4, L_INSERT);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pixs);
+
+    if (rp->display) {
+        fprintf(stderr, "Writing to: /tmp/lept/expand/test.pdf\n");
+        pixaConvertToPdf(pixa, 0, 1.0, 0, 0, "Replicative expansion",
+                         "/tmp/lept/expand/test.pdf");
+    }
+    pixaDestroy(&pixa);
+
+    return regTestCleanup(rp);
 }
 

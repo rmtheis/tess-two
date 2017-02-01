@@ -27,6 +27,8 @@
 /*
  * runlengthtest.c
  *
+ *    Set 1 tests the runlength and 1-component dynamic range transform.
+ *    Set 2 tests the 3-component (rgb) dynamic range transform.
  */
 
 #include "allheaders.h"
@@ -34,39 +36,66 @@
 int main(int    argc,
          char **argv)
 {
-PIX         *pixs, *pixh, *pixv, *pix, *pixd;
-char        *filein, *fileout;
+l_float32    avediff, rmsdiff;
+PIX         *pix1, *pix2, *pix3, *pix4, *pix5, *pix6, *pix7;
 static char  mainName[] = "runlengthtest";
 
-    if (argc != 3)
-        return ERROR_INT(" Syntax:  runlengthtest filein fileout", mainName, 1);
+    if (argc != 1)
+        return ERROR_INT(" Syntax:  runlengthtest", mainName, 1);
 
-    filein = argv[1];
-    fileout = argv[2];
+    lept_mkdir("lept/run");
 
-    if ((pixs = pixRead(filein)) == NULL)
-        return ERROR_INT("pixs not made", mainName, 1);
-
+        /* Set 1 */
     startTimer();
-    pixh = pixRunlengthTransform(pixs, 0, L_HORIZONTAL_RUNS, 8);
-    pixv = pixRunlengthTransform(pixs, 0, L_VERTICAL_RUNS, 8);
-    pix = pixMinOrMax(NULL, pixh, pixv, L_CHOOSE_MAX);
-    pixd = pixMaxDynamicRange(pix, L_LINEAR_SCALE);
-    fprintf(stderr, "Total time: %7.3f sec\n", stopTimer());
-    pixDisplay(pixh, 0, 0);
-    pixDisplay(pixv, 400, 0);
-    pixDisplay(pix, 800, 0);
-    pixDisplay(pixd, 1200, 0);
-    pixWrite("/tmp/junkpixh.png", pixh, IFF_PNG);
-    pixWrite("/tmp/junkpixv.png", pixv, IFF_PNG);
-    pixWrite("/tmp/junkpix.png", pix, IFF_PNG);
-    pixWrite(fileout, pixd, IFF_PNG);
+    pix1 = pixRead("rabi.png");
+    pix2 = pixRunlengthTransform(pix1, 0, L_HORIZONTAL_RUNS, 8);
+    pix3 = pixRunlengthTransform(pix1, 0, L_VERTICAL_RUNS, 8);
+    pix4 = pixMinOrMax(NULL, pix2, pix3, L_CHOOSE_MIN);
+    pix5 = pixMaxDynamicRange(pix4, L_LOG_SCALE);
+    pix6 = pixMinOrMax(NULL, pix2, pix3, L_CHOOSE_MAX);
+    pix7 = pixMaxDynamicRange(pix6, L_LOG_SCALE);
+    fprintf(stderr, "Time for set 1: %7.3f sec\n", stopTimer());
+    pixDisplay(pix2, 0, 0);
+    pixDisplay(pix3, 600, 0);
+    pixDisplay(pix4, 1200, 0);
+    pixDisplay(pix5, 1800, 0);
+    pixDisplay(pix6, 1200, 0);
+    pixDisplay(pix7, 1800, 0);
+    pixWrite("/tmp/lept/run/pixh.png", pix2, IFF_PNG);
+    pixWrite("/tmp/lept/run/pixv.png", pix3, IFF_PNG);
+    pixWrite("/tmp/lept/run/pixmin.png", pix4, IFF_PNG);
+    pixWrite("/tmp/lept/run/pixminlog.png", pix5, IFF_PNG);
+    pixWrite("/tmp/lept/run/pixmax.png", pix6, IFF_PNG);
+    pixWrite("/tmp/lept/run/pixmaxlog.png", pix7, IFF_PNG);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
+    pixDestroy(&pix6);
+    pixDestroy(&pix7);
 
-    pixDestroy(&pixs);
-    pixDestroy(&pixh);
-    pixDestroy(&pixv);
-    pixDestroy(&pix);
-    pixDestroy(&pixd);
+        /* Set 2 */
+    startTimer();
+    pix1 = pixRead("test24.jpg");
+    pixWriteJpeg("/tmp/lept/run/junk24.jpg", pix1, 5, 0);
+    pix2 = pixRead("/tmp/lept/run/junk24.jpg");
+    pixCompareGrayOrRGB(pix1, pix2, L_COMPARE_ABS_DIFF, GPLOT_PNG,
+                        NULL, &avediff, &rmsdiff, &pix3);
+    fprintf(stderr, "Ave diff = %6.3f, RMS diff = %6.3f\n", avediff, rmsdiff);
+    pix4 = pixMaxDynamicRangeRGB(pix3, L_LINEAR_SCALE);
+    pix5 = pixMaxDynamicRangeRGB(pix3, L_LOG_SCALE);
+    fprintf(stderr, "Time for set 2: %7.3f sec\n", stopTimer());
+    pixDisplay(pix4, 0, 800);
+    pixDisplay(pix5, 1000, 800);
+    pixWrite("/tmp/lept/run/linear.png", pix4, IFF_PNG);
+    pixWrite("/tmp/lept/run/log.png", pix5, IFF_PNG);
+
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+    pixDestroy(&pix5);
+
     return 0;
 }
-

@@ -24,16 +24,19 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  adaptmap.c
+/*!
+ * \file adaptmap.c
+ * <pre>
  *
- *  ===================================================================
+ *  -------------------------------------------------------------------
+ *
  *  Image binarization algorithms are found in:
  *     grayquant.c:   standard, simple, general grayscale quantization
  *     adaptmap.c:    local adaptive; mostly gray-to-gray in preparation
  *                    for binarization
  *     binarize.c:    special binarization methods, locally adaptive.
- *  ===================================================================
+ *
+ *  -------------------------------------------------------------------
  *
  *      Clean background to white using background normalization
  *          PIX       *pixCleanBackgroundToWhite()
@@ -128,30 +131,31 @@
  *      useful for improving the appearance of pages with very light
  *      foreground or very dark background, and where the local TRC
  *      function doesn't change rapidly with position.
+ * </pre>
  */
 
 #include "allheaders.h"
 
     /* Default input parameters for pixBackgroundNormSimple()
-     * Note:
+     * Notes:
      *    (1) mincount must never exceed the tile area (width * height)
      *    (2) bgval must be sufficiently below 255 to avoid accidental
      *        saturation; otherwise it should be large to avoid
      *        shrinking the dynamic range
      *    (3) results should otherwise not be sensitive to these values
      */
-static const l_int32  DEFAULT_TILE_WIDTH = 10;
-static const l_int32  DEFAULT_TILE_HEIGHT = 15;
-static const l_int32  DEFAULT_FG_THRESHOLD = 60;
-static const l_int32  DEFAULT_MIN_COUNT = 40;
-static const l_int32  DEFAULT_BG_VAL = 200;
-static const l_int32  DEFAULT_X_SMOOTH_SIZE = 2;
-static const l_int32  DEFAULT_Y_SMOOTH_SIZE = 1;
+static const l_int32  DEFAULT_TILE_WIDTH = 10;    /*!< default tile width    */
+static const l_int32  DEFAULT_TILE_HEIGHT = 15;   /*!< default tile height   */
+static const l_int32  DEFAULT_FG_THRESHOLD = 60;  /*!< default fg threshold  */
+static const l_int32  DEFAULT_MIN_COUNT = 40;     /*!< default minimum count */
+static const l_int32  DEFAULT_BG_VAL = 200;       /*!< default bg value      */
+static const l_int32  DEFAULT_X_SMOOTH_SIZE = 2;  /*!< default x smooth size */
+static const l_int32  DEFAULT_Y_SMOOTH_SIZE = 1;  /*!< default y smooth size */
 
 static l_int32 *iaaGetLinearTRC(l_int32 **iaa, l_int32 diff);
 
 #ifndef  NO_CONSOLE_IO
-#define  DEBUG_GLOBAL    0
+#define  DEBUG_GLOBAL    0    /*!< set to 1 to debug pixGlobalNormNoSatRGB() */
 #endif  /* ~NO_CONSOLE_IO */
 
 
@@ -159,17 +163,18 @@ static l_int32 *iaaGetLinearTRC(l_int32 **iaa, l_int32 diff);
  *      Clean background to white using background normalization    *
  *------------------------------------------------------------------*/
 /*!
- *  pixCleanBackgroundToWhite()
+ * \brief   pixCleanBackgroundToWhite()
  *
- *      Input:  pixs (8 bpp grayscale or 32 bpp rgb)
- *              pixim (<optional> 1 bpp 'image' mask; can be null)
- *              pixg (<optional> 8 bpp grayscale version; can be null)
- *              gamma (gamma correction; must be > 0.0; typically ~1.0)
- *              blackval (dark value to set to black (0))
- *              whiteval (light value to set to white (255))
- *      Return: pixd (8 bpp or 32 bpp rgb), or null on error
+ * \param[in]    pixs 8 bpp grayscale or 32 bpp rgb
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null
+ * \param[in]    pixg [optional] 8 bpp grayscale version; can be null
+ * \param[in]    gamma gamma correction; must be > 0.0; typically ~1.0
+ * \param[in]    blackval dark value to set to black (0)
+ * \param[in]    whiteval light value to set to white (255)
+ * \return  pixd 8 bpp or 32 bpp rgb, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) This is a simplified interface for cleaning an image.
  *        For comparison, see pixAdaptThresholdToBinaryGen().
  *    (2) The suggested default values for the input parameters are:
@@ -177,6 +182,7 @@ static l_int32 *iaaGetLinearTRC(l_int32 **iaa, l_int32 diff);
  *                          for light text)
  *          blackval   70  (a bit more than 60)
  *          whiteval  190  (a bit less than 200)
+ * </pre>
  */
 PIX *
 pixCleanBackgroundToWhite(PIX       *pixs,
@@ -207,18 +213,20 @@ PIX     *pixd;
  *                Adaptive background normalization                 *
  *------------------------------------------------------------------*/
 /*!
- *  pixBackgroundNormSimple()
+ * \brief   pixBackgroundNormSimple()
  *
- *      Input:  pixs (8 bpp grayscale or 32 bpp rgb)
- *              pixim (<optional> 1 bpp 'image' mask; can be null)
- *              pixg (<optional> 8 bpp grayscale version; can be null)
- *      Return: pixd (8 bpp or 32 bpp rgb), or null on error
+ * \param[in]    pixs 8 bpp grayscale or 32 bpp rgb
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null
+ * \param[in]    pixg [optional] 8 bpp grayscale version; can be null
+ * \return  pixd 8 bpp or 32 bpp rgb, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) This is a simplified interface to pixBackgroundNorm(),
  *        where seven parameters are defaulted.
  *    (2) The input image is either grayscale or rgb.
  *    (3) See pixBackgroundNorm() for usage and function.
+ * </pre>
  */
 PIX *
 pixBackgroundNormSimple(PIX  *pixs,
@@ -234,20 +242,21 @@ pixBackgroundNormSimple(PIX  *pixs,
 
 
 /*!
- *  pixBackgroundNorm()
+ * \brief   pixBackgroundNorm()
  *
- *      Input:  pixs (8 bpp grayscale or 32 bpp rgb)
- *              pixim (<optional> 1 bpp 'image' mask; can be null)
- *              pixg (<optional> 8 bpp grayscale version; can be null)
- *              sx, sy (tile size in pixels)
- *              thresh (threshold for determining foreground)
- *              mincount (min threshold on counts in a tile)
- *              bgval (target bg val; typ. > 128)
- *              smoothx (half-width of block convolution kernel width)
- *              smoothy (half-width of block convolution kernel height)
- *      Return: pixd (8 bpp or 32 bpp rgb), or null on error
+ * \param[in]    pixs 8 bpp grayscale or 32 bpp rgb
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null
+ * \param[in]    pixg [optional] 8 bpp grayscale version; can be null
+ * \param[in]    sx, sy tile size in pixels
+ * \param[in]    thresh threshold for determining foreground
+ * \param[in]    mincount min threshold on counts in a tile
+ * \param[in]    bgval target bg val; typ. > 128
+ * \param[in]    smoothx half-width of block convolution kernel width
+ * \param[in]    smoothy half-width of block convolution kernel height
+ * \return  pixd 8 bpp or 32 bpp rgb, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) This is a top-level interface for normalizing the image intensity
  *        by mapping the image so that the background is near the input
  *        value 'bgval'.
@@ -288,6 +297,7 @@ pixBackgroundNormSimple(PIX  *pixs,
  *        the map.  Each low-pass filter kernel dimension is
  *        is 2 * (smoothing factor) + 1, so a
  *        value of 0 means no smoothing. A value of 1 or 2 is recommended.
+ * </pre>
  */
 PIX *
 pixBackgroundNorm(PIX     *pixs,
@@ -383,16 +393,17 @@ PIX     *pixmr, *pixmg, *pixmb, *pixmri, *pixmgi, *pixmbi;
 
 
 /*!
- *  pixBackgroundNormMorph()
+ * \brief   pixBackgroundNormMorph()
  *
- *      Input:  pixs (8 bpp grayscale or 32 bpp rgb)
- *              pixim (<optional> 1 bpp 'image' mask; can be null)
- *              reduction (at which morph closings are done; between 2 and 16)
- *              size (of square Sel for the closing; use an odd number)
- *              bgval (target bg val; typ. > 128)
- *      Return: pixd (8 bpp), or null on error
+ * \param[in]    pixs 8 bpp grayscale or 32 bpp rgb
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null
+ * \param[in]    reduction at which morph closings are done; between 2 and 16
+ * \param[in]    size of square Sel for the closing; use an odd number
+ * \param[in]    bgval target bg val; typ. > 128
+ * \return  pixd 8 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) This is a top-level interface for normalizing the image intensity
  *        by mapping the image so that the background is near the input
  *        value 'bgval'.
@@ -418,6 +429,7 @@ PIX     *pixmr, *pixmg, *pixmb, *pixmri, *pixmgi, *pixmbi;
  *    (7) A 'bgval' target background value for the normalized image.  This
  *        should be at least 128.  If set too close to 255, some
  *        clipping will occur in the result.
+ * </pre>
  */
 PIX *
 pixBackgroundNormMorph(PIX     *pixs,
@@ -509,24 +521,26 @@ PIX       *pixmr, *pixmg, *pixmb, *pixmri, *pixmgi, *pixmbi;
  *      (3) Each component in the input pixs generates a 16 bpp pix array. *
  *-------------------------------------------------------------------------*/
 /*!
- *  pixBackgroundNormGrayArray()
+ * \brief   pixBackgroundNormGrayArray()
  *
- *      Input:  pixs (8 bpp grayscale)
- *              pixim (<optional> 1 bpp 'image' mask; can be null)
- *              sx, sy (tile size in pixels)
- *              thresh (threshold for determining foreground)
- *              mincount (min threshold on counts in a tile)
- *              bgval (target bg val; typ. > 128)
- *              smoothx (half-width of block convolution kernel width)
- *              smoothy (half-width of block convolution kernel height)
- *              &pixd (<return> 16 bpp array of inverted background value)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp grayscale
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null
+ * \param[in]    sx, sy tile size in pixels
+ * \param[in]    thresh threshold for determining foreground
+ * \param[in]    mincount min threshold on counts in a tile
+ * \param[in]    bgval target bg val; typ. > 128
+ * \param[in]    smoothx half-width of block convolution kernel width
+ * \param[in]    smoothy half-width of block convolution kernel height
+ * \param[out]   ppixd 16 bpp array of inverted background value
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) See notes in pixBackgroundNorm().
  *    (2) This returns a 16 bpp pix that can be used by
  *        pixApplyInvBackgroundGrayMap() to generate a normalized version
  *        of the input pixs.
+ * </pre>
  */
 l_int32
 pixBackgroundNormGrayArray(PIX     *pixs,
@@ -581,27 +595,29 @@ PIX     *pixm;
 
 
 /*!
- *  pixBackgroundNormRGBArrays()
+ * \brief   pixBackgroundNormRGBArrays()
  *
- *      Input:  pixs (32 bpp rgb)
- *              pixim (<optional> 1 bpp 'image' mask; can be null)
- *              pixg (<optional> 8 bpp grayscale version; can be null)
- *              sx, sy (tile size in pixels)
- *              thresh (threshold for determining foreground)
- *              mincount (min threshold on counts in a tile)
- *              bgval (target bg val; typ. > 128)
- *              smoothx (half-width of block convolution kernel width)
- *              smoothy (half-width of block convolution kernel height)
- *              &pixr (<return> 16 bpp array of inverted R background value)
- *              &pixg (<return> 16 bpp array of inverted G background value)
- *              &pixb (<return> 16 bpp array of inverted B background value)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null
+ * \param[in]    pixg [optional] 8 bpp grayscale version; can be null
+ * \param[in]    sx, sy tile size in pixels
+ * \param[in]    thresh threshold for determining foreground
+ * \param[in]    mincount min threshold on counts in a tile
+ * \param[in]    bgval target bg val; typ. > 128
+ * \param[in]    smoothx half-width of block convolution kernel width
+ * \param[in]    smoothy half-width of block convolution kernel height
+ * \param[out]   ppixr 16 bpp array of inverted R background value
+ * \param[out]   ppixg 16 bpp array of inverted G background value
+ * \param[out]   ppixb 16 bpp array of inverted B background value
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) See notes in pixBackgroundNorm().
  *    (2) This returns a set of three 16 bpp pix that can be used by
  *        pixApplyInvBackgroundGrayMap() to generate a normalized version
  *        of each component of the input pixs.
+ * </pre>
  */
 l_int32
 pixBackgroundNormRGBArrays(PIX     *pixs,
@@ -668,21 +684,23 @@ PIX     *pixmr, *pixmg, *pixmb;
 
 
 /*!
- *  pixBackgroundNormGrayArrayMorph()
+ * \brief   pixBackgroundNormGrayArrayMorph()
  *
- *      Input:  pixs (8 bpp grayscale)
- *              pixim (<optional> 1 bpp 'image' mask; can be null)
- *              reduction (at which morph closings are done; between 2 and 16)
- *              size (of square Sel for the closing; use an odd number)
- *              bgval (target bg val; typ. > 128)
- *              &pixd (<return> 16 bpp array of inverted background value)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp grayscale
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null
+ * \param[in]    reduction at which morph closings are done; between 2 and 16
+ * \param[in]    size of square Sel for the closing; use an odd number
+ * \param[in]    bgval target bg val; typ. > 128
+ * \param[out]   ppixd 16 bpp array of inverted background value
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) See notes in pixBackgroundNormMorph().
  *    (2) This returns a 16 bpp pix that can be used by
  *        pixApplyInvBackgroundGrayMap() to generate a normalized version
  *        of the input pixs.
+ * </pre>
  */
 l_int32
 pixBackgroundNormGrayArrayMorph(PIX     *pixs,
@@ -729,23 +747,25 @@ PIX     *pixm;
 
 
 /*!
- *  pixBackgroundNormRGBArraysMorph()
+ * \brief   pixBackgroundNormRGBArraysMorph()
  *
- *      Input:  pixs (32 bpp rgb)
- *              pixim (<optional> 1 bpp 'image' mask; can be null)
- *              reduction (at which morph closings are done; between 2 and 16)
- *              size (of square Sel for the closing; use an odd number)
- *              bgval (target bg val; typ. > 128)
- *              &pixr (<return> 16 bpp array of inverted R background value)
- *              &pixg (<return> 16 bpp array of inverted G background value)
- *              &pixb (<return> 16 bpp array of inverted B background value)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null
+ * \param[in]    reduction at which morph closings are done; between 2 and 16
+ * \param[in]    size of square Sel for the closing; use an odd number
+ * \param[in]    bgval target bg val; typ. > 128
+ * \param[out]   ppixr 16 bpp array of inverted R background value
+ * \param[out]   ppixg 16 bpp array of inverted G background value
+ * \param[out]   ppixb 16 bpp array of inverted B background value
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) See notes in pixBackgroundNormMorph().
  *    (2) This returns a set of three 16 bpp pix that can be used by
  *        pixApplyInvBackgroundGrayMap() to generate a normalized version
  *        of each component of the input pixs.
+ * </pre>
  */
 l_int32
 pixBackgroundNormRGBArraysMorph(PIX     *pixs,
@@ -806,21 +826,23 @@ PIX     *pixmr, *pixmg, *pixmb;
  *                 Measurement of local background                  *
  *------------------------------------------------------------------*/
 /*!
- *  pixGetBackgroundGrayMap()
+ * \brief   pixGetBackgroundGrayMap()
  *
- *      Input:  pixs (8 bpp grayscale; not cmapped)
- *              pixim (<optional> 1 bpp 'image' mask; can be null; it
- *                     should not have all foreground pixels)
- *              sx, sy (tile size in pixels)
- *              thresh (threshold for determining foreground)
- *              mincount (min threshold on counts in a tile)
- *              &pixd (<return> 8 bpp grayscale map)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp grayscale; not cmapped
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null; it
+ *                     should not have all foreground pixels
+ * \param[in]    sx, sy tile size in pixels
+ * \param[in]    thresh threshold for determining foreground
+ * \param[in]    mincount min threshold on counts in a tile
+ * \param[out]   ppixd 8 bpp grayscale map
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The background is measured in regions that don't have
  *          images.  It is then propagated into the image regions,
  *          and finally smoothed in each image region.
+ * </pre>
  */
 l_int32
 pixGetBackgroundGrayMap(PIX     *pixs,
@@ -980,23 +1002,25 @@ PIX       *pixd, *piximi, *pixb, *pixf, *pixims;
 
 
 /*!
- *  pixGetBackgroundRGBMap()
+ * \brief   pixGetBackgroundRGBMap()
  *
- *      Input:  pixs (32 bpp rgb)
- *              pixim (<optional> 1 bpp 'image' mask; can be null; it
- *                     should not have all foreground pixels)
- *              pixg (<optional> 8 bpp grayscale version; can be null)
- *              sx, sy (tile size in pixels)
- *              thresh (threshold for determining foreground)
- *              mincount (min threshold on counts in a tile)
- *              &pixmr, &pixmg, &pixmb (<return> rgb maps)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null; it
+ *                     should not have all foreground pixels
+ * \param[in]    pixg [optional] 8 bpp grayscale version; can be null
+ * \param[in]    sx, sy tile size in pixels
+ * \param[in]    thresh threshold for determining foreground
+ * \param[in]    mincount min threshold on counts in a tile
+ * \param[out]   ppixmr, ppixmg, ppixmb rgb maps
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If pixg, which is a grayscale version of pixs, is provided,
  *          use this internally to generate the foreground mask.
  *          Otherwise, a grayscale version of pixs will be generated
  *          from the green component only, used, and destroyed.
+ * </pre>
  */
 l_int32
 pixGetBackgroundRGBMap(PIX     *pixs,
@@ -1173,15 +1197,15 @@ PIX       *pixmr, *pixmg, *pixmb;
 
 
 /*!
- *  pixGetBackgroundGrayMapMorph()
+ * \brief   pixGetBackgroundGrayMapMorph()
  *
- *      Input:  pixs (8 bpp grayscale; not cmapped)
- *              pixim (<optional> 1 bpp 'image' mask; can be null; it
- *                     should not have all foreground pixels)
- *              reduction (factor at which closing is performed)
- *              size (of square Sel for the closing; use an odd number)
- *              &pixm (<return> grayscale map)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp grayscale; not cmapped
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null; it
+ *                     should not have all foreground pixels
+ * \param[in]    reduction factor at which closing is performed
+ * \param[in]    size of square Sel for the closing; use an odd number
+ * \param[out]   ppixm grayscale map
+ * \return  0 if OK, 1 on error
  */
 l_int32
 pixGetBackgroundGrayMapMorph(PIX     *pixs,
@@ -1250,10 +1274,9 @@ PIX       *pixm, *pixt1, *pixt2, *pixt3, *pixims;
 
         /* Finally, for each connected region corresponding to the
          * fg mask, reset all pixels to their average value. */
-    if (pixim && fgpixels) {
+    if (pixim && fgpixels)
         pixSmoothConnectedRegions(pixm, pixims, 2);
-        pixDestroy(&pixims);
-    }
+    pixDestroy(&pixims);
 
     *ppixm = pixm;
     pixCopyResolution(*ppixm, pixs);
@@ -1262,17 +1285,17 @@ PIX       *pixm, *pixt1, *pixt2, *pixt3, *pixims;
 
 
 /*!
- *  pixGetBackgroundRGBMapMorph()
+ * \brief   pixGetBackgroundRGBMapMorph()
  *
- *      Input:  pixs (32 bpp rgb)
- *              pixim (<optional> 1 bpp 'image' mask; can be null; it
- *                     should not have all foreground pixels)
- *              reduction (factor at which closing is performed)
- *              size (of square Sel for the closing; use an odd number)
- *              &pixmr (<return> red component map)
- *              &pixmg (<return> green component map)
- *              &pixmb (<return> blue component map)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null; it
+ *                     should not have all foreground pixels
+ * \param[in]    reduction factor at which closing is performed
+ * \param[in]    size of square Sel for the closing; use an odd number
+ * \param[out]   ppixmr red component map
+ * \param[out]   ppixmg green component map
+ * \param[out]   ppixmb blue component map
+ * \return  0 if OK, 1 on error
  */
 l_int32
 pixGetBackgroundRGBMapMorph(PIX     *pixs,
@@ -1391,17 +1414,18 @@ PIX       *pixm, *pixmr, *pixmg, *pixmb, *pixt1, *pixt2, *pixt3, *pixims;
 
 
 /*!
- *  pixFillMapHoles()
+ * \brief   pixFillMapHoles()
  *
- *      Input:  pix (8 bpp; a map, with one pixel for each tile in
- *              a larger image)
- *              nx (number of horizontal pixel tiles that are entirely
- *                  covered with pixels in the original source image)
- *              ny (ditto for the number of vertical pixel tiles)
- *              filltype (L_FILL_WHITE or L_FILL_BLACK)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix 8 bpp; a map, with one pixel for each tile in
+ *              a larger image
+ * \param[in]    nx number of horizontal pixel tiles that are entirely
+ *                  covered with pixels in the original source image
+ * \param[in]    ny ditto for the number of vertical pixel tiles
+ * \param[in]    filltype L_FILL_WHITE or L_FILL_BLACK
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an in-place operation on pix (the map).  pix is
  *          typically a low-resolution version of some other image
  *          from which it was derived, where each pixel in pix
@@ -1423,6 +1447,7 @@ PIX       *pixm, *pixmr, *pixmg, *pixmb, *pixt1, *pixt2, *pixt3, *pixims;
  *          For filling holes in a bg mask, initialize the holes to
  *          white (255) and use L_FILL_WHITE.
  *      (4) If w is the map width, nx = w or nx = w - 1; ditto for h and ny.
+ * </pre>
  */
 l_int32
 pixFillMapHoles(PIX     *pix,
@@ -1524,15 +1549,17 @@ PIX      *pixt;
 
 
 /*!
- *  pixExtendByReplication()
+ * \brief   pixExtendByReplication()
  *
- *      Input:  pixs (8 bpp)
- *              addw (number of extra pixels horizontally to add)
- *              addh (number of extra pixels vertically to add)
- *      Return: pixd (extended with replicated pixel values), or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    addw number of extra pixels horizontally to add
+ * \param[in]    addh number of extra pixels vertically to add
+ * \return  pixd extended with replicated pixel values, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The pixel values are extended to the left and down, as required.
+ * </pre>
  */
 PIX *
 pixExtendByReplication(PIX     *pixs,
@@ -1578,14 +1605,15 @@ PIX      *pixd;
 
 
 /*!
- *  pixSmoothConnectedRegions()
+ * \brief   pixSmoothConnectedRegions()
  *
- *      Input:  pixs (8 bpp grayscale; no colormap)
- *              pixm (<optional> 1 bpp; if null, this is a no-op)
- *              factor (subsampling factor for getting average; >= 1)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp grayscale; no colormap
+ * \param[in]    pixm [optional] 1 bpp; if null, this is a no-op
+ * \param[in]    factor subsampling factor for getting average; >= 1
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The pixels in pixs corresponding to those in each
  *          8-connected region in the mask are set to the average value.
  *      (2) This is required for adaptive mapping to avoid the
@@ -1594,6 +1622,7 @@ PIX      *pixd;
  *      (3) This function is optimized for background smoothing, where
  *          there are a relatively small number of components.  It will
  *          be inefficient if used where there are many small components.
+ * </pre>
  */
 l_int32
 pixSmoothConnectedRegions(PIX     *pixs,
@@ -1649,16 +1678,17 @@ PIXA      *pixa;
 #if 0    /* Not working properly: do not use */
 
 /*!
- *  pixGetForegroundGrayMap()
+ * \brief   pixGetForegroundGrayMap()
  *
- *      Input:  pixs (8 bpp)
- *              pixim (<optional> 1 bpp 'image' mask; can be null)
- *              sx, sy (src tile size, in pixels)
- *              thresh (threshold for determining foreground)
- *              &pixd (<return> 8 bpp grayscale map)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    pixim [optional] 1 bpp 'image' mask; can be null
+ * \param[in]    sx, sy src tile size, in pixels
+ * \param[in]    thresh threshold for determining foreground
+ * \param[out]   ppixd 8 bpp grayscale map
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Each (sx, sy) tile of pixs gets mapped to one pixel in pixd.
  *      (2) pixd is the estimate of the fg (darkest) value within each tile.
  *      (3) All pixels in pixd that are in 'image' regions, as specified
@@ -1668,19 +1698,20 @@ PIXA      *pixa;
  *      (5) In practice, pixd can be used to normalize the fg, and
  *          it can be done after background normalization.
  *      (6) The overall procedure is:
- *            - reduce 2x by sampling
- *            - paint all 'image' pixels white, so that they don't
- *              participate in the Min reduction
- *            - do a further (sx, sy) Min reduction -- think of
+ *            ~ reduce 2x by sampling
+ *            ~ paint all 'image' pixels white, so that they don't
+ *            ~ participate in the Min reduction
+ *            ~ do a further (sx, sy) Min reduction -- think of
  *              it as a large opening followed by subsampling by the
  *              reduction factors
- *            - threshold the result to identify fg, and set the
+ *            ~ threshold the result to identify fg, and set the
  *              bg pixels to 255 (these are 'holes')
- *            - fill holes by propagation from fg values
- *            - replicatively expand by 2x, arriving at the final
+ *            ~ fill holes by propagation from fg values
+ *            ~ replicatively expand by 2x, arriving at the final
  *              resolution of pixd
- *            - smooth with a 17x17 kernel
- *            - paint the 'image' regions black
+ *            ~ smooth with a 17x17 kernel
+ *            ~ paint the 'image' regions black
+ * </pre>
  */
 l_int32
 pixGetForegroundGrayMap(PIX     *pixs,
@@ -1779,18 +1810,20 @@ PIX     *pixd, *piximi, *pixim2, *pixims, *pixs2, *pixb, *pixt1, *pixt2, *pixt3;
  *                  Generate inverted background map                *
  *------------------------------------------------------------------*/
 /*!
- *  pixGetInvBackgroundMap()
+ * \brief   pixGetInvBackgroundMap()
  *
- *      Input:  pixs (8 bpp grayscale; no colormap)
- *              bgval (target bg val; typ. > 128)
- *              smoothx (half-width of block convolution kernel width)
- *              smoothy (half-width of block convolution kernel height)
- *      Return: pixd (16 bpp), or null on error
+ * \param[in]    pixs 8 bpp grayscale; no colormap
+ * \param[in]    bgval target bg val; typ. > 128
+ * \param[in]    smoothx half-width of block convolution kernel width
+ * \param[in]    smoothy half-width of block convolution kernel height
+ * \return  pixd 16 bpp, or NULL on error
  *
- *  Note:
- *     - bgval should typically be > 120 and < 240
- *     - pixd is a normalization image; the original image is
+ * <pre>
+ * Notes:
+ *     (1) bgval should typically be \> 120 and \< 240
+ *     (2) pixd is a normalization image; the original image is
  *       multiplied by pixd and the result is divided by 256.
+ * </pre>
  */
 PIX *
 pixGetInvBackgroundMap(PIX     *pixs,
@@ -1847,13 +1880,13 @@ PIX       *pixsm, *pixd;
  *                    Apply background map to image                 *
  *------------------------------------------------------------------*/
 /*!
- *  pixApplyInvBackgroundGrayMap()
+ * \brief   pixApplyInvBackgroundGrayMap()
  *
- *      Input:  pixs (8 bpp grayscale; no colormap)
- *              pixm (16 bpp, inverse background map)
- *              sx (tile width in pixels)
- *              sy (tile height in pixels)
- *      Return: pixd (8 bpp), or null on error
+ * \param[in]    pixs 8 bpp grayscale; no colormap
+ * \param[in]    pixm 16 bpp, inverse background map
+ * \param[in]    sx tile width in pixels
+ * \param[in]    sy tile height in pixels
+ * \return  pixd 8 bpp, or NULL on error
  */
 PIX *
 pixApplyInvBackgroundGrayMap(PIX     *pixs,
@@ -1910,15 +1943,15 @@ PIX       *pixd;
 
 
 /*!
- *  pixApplyInvBackgroundRGBMap()
+ * \brief   pixApplyInvBackgroundRGBMap()
  *
- *      Input:  pixs (32 bpp rbg)
- *              pixmr (16 bpp, red inverse background map)
- *              pixmg (16 bpp, green inverse background map)
- *              pixmb (16 bpp, blue inverse background map)
- *              sx (tile width in pixels)
- *              sy (tile height in pixels)
- *      Return: pixd (32 bpp rbg), or null on error
+ * \param[in]    pixs 32 bpp rbg
+ * \param[in]    pixmr 16 bpp, red inverse background map
+ * \param[in]    pixmg 16 bpp, green inverse background map
+ * \param[in]    pixmb 16 bpp, blue inverse background map
+ * \param[in]    sx tile width in pixels
+ * \param[in]    sy tile height in pixels
+ * \return  pixd 32 bpp rbg, or NULL on error
  */
 PIX *
 pixApplyInvBackgroundRGBMap(PIX     *pixs,
@@ -1992,14 +2025,15 @@ PIX       *pixd;
  *                         Apply variable map                       *
  *------------------------------------------------------------------*/
 /*!
- *  pixApplyVariableGrayMap()
+ * \brief   pixApplyVariableGrayMap()
  *
- *      Input:  pixs (8 bpp)
- *              pixg (8 bpp, variable map)
- *              target (typ. 128 for threshold)
- *      Return: pixd (8 bpp), or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    pixg 8 bpp, variable map
+ * \param[in]    target typ. 128 for threshold
+ * \return  pixd 8 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Suppose you have an image that you want to transform based
  *          on some photometric measurement at each point, such as the
  *          threshold value for binarization.  Representing the photometric
@@ -2014,6 +2048,7 @@ PIX       *pixd;
  *          same result as a direct binarization using pixg with
  *          pixVarThresholdToBinary().
  *      (2) The sizes of pixs and pixg must be equal.
+ * </pre>
  */
 PIX *
 pixApplyVariableGrayMap(PIX     *pixs,
@@ -2097,16 +2132,17 @@ PIX       *pixd;
  *                  Non-adaptive (global) mapping                   *
  *------------------------------------------------------------------*/
 /*!
- *  pixGlobalNormRGB()
+ * \brief   pixGlobalNormRGB()
  *
- *      Input:  pixd (<optional> null, existing or equal to pixs)
- *              pixs (32 bpp rgb, or colormapped)
- *              rval, gval, bval (pixel values in pixs that are
- *                                linearly mapped to mapval)
- *              mapval (use 255 for mapping to white)
- *      Return: pixd (32 bpp rgb or colormapped), or null on error
+ * \param[in]    pixd [optional] null, existing or equal to pixs
+ * \param[in]    pixs 32 bpp rgb, or colormapped
+ * \param[in]    rval, gval, bval pixel values in pixs that are
+ *                                linearly mapped to mapval
+ * \param[in]    mapval use 255 for mapping to white
+ * \return  pixd 32 bpp rgb or colormapped, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) The value of pixd determines if the results are written to a
  *        new pix (use NULL), in-place to pixs (use pixs), or to some
  *        other existing pix.
@@ -2127,6 +2163,7 @@ PIX       *pixd;
  *        where bgval is the value you want to be mapped to 255.
  *        Or more generally, if you want bgval to be mapped to mapval:
  *            pixGammaTRC(pixd, pixs, 1.0, 0, 255 * bgval / mapval);
+ * </pre>
  */
 PIX *
 pixGlobalNormRGB(PIX     *pixd,
@@ -2164,15 +2201,15 @@ PIXCMAP   *cmap;
     nar = numaGammaTRC(1.0, 0, L_MAX(1, 255 * rval / mapval));
     nag = numaGammaTRC(1.0, 0, L_MAX(1, 255 * gval / mapval));
     nab = numaGammaTRC(1.0, 0, L_MAX(1, 255 * bval / mapval));
-    if (!nar || !nag || !nab)
-        return (PIX *)ERROR_PTR("trc maps not all made", procName, pixd);
 
         /* Extract copies of the internal arrays */
     rarray = numaGetIArray(nar);
     garray = numaGetIArray(nag);
     barray = numaGetIArray(nab);
-    if (!rarray || !garray || !barray)
-        return (PIX *)ERROR_PTR("*arrays not all made", procName, pixd);
+    if (!nar || !nag || !nab || !rarray || !garray || !barray) {
+        L_ERROR("allocation failure in arrays\n", procName);
+        goto cleanup_arrays;
+    }
 
     if (cmap) {
         ncolors = pixcmapGetCount(cmap);
@@ -2193,6 +2230,7 @@ PIXCMAP   *cmap;
         }
     }
 
+cleanup_arrays:
     numaDestroy(&nar);
     numaDestroy(&nag);
     numaDestroy(&nab);
@@ -2204,17 +2242,18 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  pixGlobalNormNoSatRGB()
+ * \brief   pixGlobalNormNoSatRGB()
  *
- *      Input:  pixd (<optional> null, existing or equal to pixs)
- *              pixs (32 bpp rgb)
- *              rval, gval, bval (pixel values in pixs that are
- *                                linearly mapped to mapval; but see below)
- *              factor (subsampling factor; integer >= 1)
- *              rank (between 0.0 and 1.0; typ. use a value near 1.0)
- *      Return: pixd (32 bpp rgb), or null on error
+ * \param[in]    pixd [optional] null, existing or equal to pixs
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    rval, gval, bval pixel values in pixs that are
+ *                                linearly mapped to mapval; but see below
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[in]    rank between 0.0 and 1.0; typ. use a value near 1.0
+ * \return  pixd 32 bpp rgb, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *    (1) This is a version of pixGlobalNormRGB(), where the output
  *        intensity is scaled back so that a controlled fraction of
  *        pixel components is allowed to saturate.  See comments in
@@ -2233,6 +2272,7 @@ PIXCMAP   *cmap;
  *    (5) The mapval used in pixGlobalNormRGB() is computed here to
  *        avoid saturation of any component in the image (save for a
  *        fraction of the pixels given by the input rank value).
+ * </pre>
  */
 PIX *
 pixGlobalNormNoSatRGB(PIX       *pixd,
@@ -2294,23 +2334,24 @@ l_float32  rfract, gfract, bfract, maxfract;
  *              Adaptive threshold spread normalization             *
  *------------------------------------------------------------------*/
 /*!
- *  pixThresholdSpreadNorm()
+ * \brief   pixThresholdSpreadNorm()
  *
- *      Input:  pixs (8 bpp grayscale; not colormapped)
- *              filtertype (L_SOBEL_EDGE or L_TWO_SIDED_EDGE);
- *              edgethresh (threshold on magnitude of edge filter; typ 10-20)
- *              smoothx, smoothy (half-width of convolution kernel applied to
- *                                spread threshold: use 0 for no smoothing)
- *              gamma (gamma correction; typ. about 0.7)
- *              minval  (input value that gives 0 for output; typ. -25)
- *              maxval  (input value that gives 255 for output; typ. 255)
- *              targetthresh (target threshold for normalization)
- *              &pixth (<optional return> computed local threshold value)
- *              &pixb (<optional return> thresholded normalized image)
- *              &pixd (<optional return> normalized image)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp grayscale; not colormapped
+ * \param[in]    filtertype L_SOBEL_EDGE or L_TWO_SIDED_EDGE;
+ * \param[in]    edgethresh threshold on magnitude of edge filter; typ 10-20
+ * \param[in]    smoothx, smoothy half-width of convolution kernel applied to
+ *                                spread threshold: use 0 for no smoothing
+ * \param[in]    gamma gamma correction; typ. about 0.7
+ * \param[in]    minval  input value that gives 0 for output; typ. -25
+ * \param[in]    maxval  input value that gives 255 for output; typ. 255
+ * \param[in]    targetthresh target threshold for normalization
+ * \param[out]   ppixth [optional] computed local threshold value
+ * \param[out]   ppixb [optional] thresholded normalized image
+ * \param[out]   ppixd [optional] normalized image
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The basis of this approach is the use of seed spreading
  *          on a (possibly) sparse set of estimates for the local threshold.
  *          The resulting dense estimates are smoothed by convolution
@@ -2331,6 +2372,7 @@ l_float32  rfract, gfract, bfract, maxfract;
  *      (6) This function can be used with the pixtiling utility if the
  *          images are too large.  See pixOtsuAdaptiveThreshold() for
  *          an example of this.
+ * </pre>
  */
 l_int32
 pixThresholdSpreadNorm(PIX       *pixs,
@@ -2410,18 +2452,19 @@ PIX  *pixe, *pixet, *pixsd, *pixg1, *pixg2, *pixth;
  *      Adaptive background normalization (flexible adaptaption)    *
  *------------------------------------------------------------------*/
 /*!
- *  pixBackgroundNormFlex()
+ * \brief   pixBackgroundNormFlex()
  *
- *      Input:  pixs (8 bpp grayscale; not colormapped)
- *              sx, sy (desired tile dimensions; actual size may vary; use
- *                      values between 3 and 10)
- *              smoothx, smoothy (half-width of convolution kernel applied to
- *                                threshold array: use values between 1 and 3)
- *              delta (difference parameter in basin filling; use 0
- *                     to skip)
- *      Return: pixd (8 bpp, background-normalized), or null on error)
+ * \param[in]    pixs 8 bpp grayscale; not colormapped
+ * \param[in]    sx, sy desired tile dimensions; actual size may vary; use
+ *                      values between 3 and 10
+ * \param[in]    smoothx, smoothy half-width of convolution kernel applied to
+ *                                threshold array: use values between 1 and 3
+ * \param[in]    delta difference parameter in basin filling; use 0
+ *                     to skip
+ * \return  pixd 8 bpp, background-normalized), or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This does adaptation flexibly to a quickly varying background.
  *          For that reason, all input parameters should be small.
  *      (2) sx and sy give the tile size; they should be in [5 - 7].
@@ -2429,12 +2472,13 @@ PIX  *pixe, *pixet, *pixsd, *pixg1, *pixg2, *pixth;
  *          are (2 * smoothx + 1) and (2 * smoothy + 1).  They
  *          should be in [1 - 2].
  *      (4) Basin filling is used to fill the large fg regions.  The
- *          parameter @delta measures the height that the black
+ *          parameter %delta measures the height that the black
  *          background is raised from the local minima.  By raising
  *          the background, it is possible to threshold the large
- *          fg regions to foreground.  If @delta is too large,
+ *          fg regions to foreground.  If %delta is too large,
  *          bg regions will be lifted, causing thickening of
  *          the fg regions.  Use 0 to skip.
+ * </pre>
  */
 PIX *
 pixBackgroundNormFlex(PIX     *pixs,
@@ -2493,20 +2537,21 @@ PIX       *pixt, *pixsd, *pixmin, *pixbg, *pixbgi, *pixd;
  *                    Adaptive contrast normalization               *
  *------------------------------------------------------------------*/
 /*!
- *  pixContrastNorm()
+ * \brief   pixContrastNorm()
  *
- *      Input:  pixd (<optional> 8 bpp; null or equal to pixs)
- *              pixs (8 bpp grayscale; not colormapped)
- *              sx, sy (tile dimensions)
- *              mindiff (minimum difference to accept as valid)
- *              smoothx, smoothy (half-width of convolution kernel applied to
- *                                min and max arrays: use 0 for no smoothing)
- *      Return: pixd always
+ * \param[in]    pixd [optional] 8 bpp; null or equal to pixs
+ * \param[in]    pixs 8 bpp grayscale; not colormapped
+ * \param[in]    sx, sy tile dimensions
+ * \param[in]    mindiff minimum difference to accept as valid
+ * \param[in]    smoothx, smoothy half-width of convolution kernel applied to
+ *                                min and max arrays: use 0 for no smoothing
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function adaptively attempts to expand the contrast
  *          to the full dynamic range in each tile.  If the contrast in
- *          a tile is smaller than @mindiff, it uses the min and max
+ *          a tile is smaller than %mindiff, it uses the min and max
  *          pixel values from neighboring tiles.  It also can use
  *          convolution to smooth the min and max values from
  *          neighboring tiles.  After all that processing, it is
@@ -2528,6 +2573,7 @@ PIX       *pixt, *pixsd, *pixmin, *pixbg, *pixbgi, *pixd;
  *          in each tile.  The result can subsequently be globally corrected,
  *          by applying pixGammaTRC() with arbitrary values of gamma
  *          and the 0 and 255 points of the mapping.
+ * </pre>
  */
 PIX *
 pixContrastNorm(PIX       *pixd,
@@ -2571,21 +2617,23 @@ PIX  *pixmin, *pixmax;
 
 
 /*!
- *  pixMinMaxTiles()
+ * \brief   pixMinMaxTiles()
  *
- *      Input:  pixs (8 bpp grayscale; not colormapped)
- *              sx, sy (tile dimensions)
- *              mindiff (minimum difference to accept as valid)
- *              smoothx, smoothy (half-width of convolution kernel applied to
- *                                min and max arrays: use 0 for no smoothing)
- *              &pixmin (<return> tiled minima)
- *              &pixmax (<return> tiled maxima)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp grayscale; not colormapped
+ * \param[in]    sx, sy tile dimensions
+ * \param[in]    mindiff minimum difference to accept as valid
+ * \param[in]    smoothx, smoothy half-width of convolution kernel applied to
+ *                                min and max arrays: use 0 for no smoothing
+ * \param[out]   ppixmin tiled minima
+ * \param[out]   ppixmax tiled maxima
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This computes filtered and smoothed values for the min and
  *          max pixel values in each tile of the image.
  *      (2) See pixContrastNorm() for usage.
+ * </pre>
  */
 l_int32
 pixMinMaxTiles(PIX     *pixs,
@@ -2659,22 +2707,24 @@ PIX     *pixmin1, *pixmax1, *pixmin2, *pixmax2;
 
 
 /*!
- *  pixSetLowContrast()
+ * \brief   pixSetLowContrast()
  *
- *      Input:  pixs1 (8 bpp)
- *              pixs2 (8 bpp)
- *              mindiff (minimum difference to accept as valid)
- *      Return: 0 if OK; 1 if no pixel diffs are large enough, or on error
+ * \param[in]    pixs1 8 bpp
+ * \param[in]    pixs2 8 bpp
+ * \param[in]    mindiff minimum difference to accept as valid
+ * \return  0 if OK; 1 if no pixel diffs are large enough, or on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This compares corresponding pixels in pixs1 and pixs2.
- *          When they differ by less than @mindiff, set the pixel
+ *          When they differ by less than %mindiff, set the pixel
  *          values to 0 in each.  Each pixel typically represents a tile
  *          in a larger image, and a very small difference between
  *          the min and max in the tile indicates that the min and max
  *          values are not to be trusted.
  *      (2) If contrast (pixel difference) detection is expected to fail,
  *          caller should check return value.
+ * </pre>
  */
 l_int32
 pixSetLowContrast(PIX     *pixs1,
@@ -2737,16 +2787,17 @@ l_uint32  *data1, *data2, *line1, *line2;
 
 
 /*!
- *  pixLinearTRCTiled()
+ * \brief   pixLinearTRCTiled()
  *
- *      Input:  pixd (<optional> 8 bpp)
- *              pixs (8 bpp, not colormapped)
- *              sx, sy (tile dimensions)
- *              pixmin (pix of min values in tiles)
- *              pixmax (pix of max values in tiles)
- *      Return: pixd always
+ * \param[in]    pixd [optional] 8 bpp
+ * \param[in]    pixs 8 bpp, not colormapped
+ * \param[in]    sx, sy tile dimensions
+ * \param[in]    pixmin pix of min values in tiles
+ * \param[in]    pixmax pix of max values in tiles
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) pixd can be equal to pixs (in-place operation) or
  *          null (makes a new pixd).
  *      (2) sx and sy give the tile size; they are typically at least 20.
@@ -2756,6 +2807,7 @@ l_uint32  *data1, *data2, *line1, *line2;
  *          max value in the tile becomes 255.
  *      (5) The LUTs that do the mapping are generated as needed
  *          and stored for reuse in an integer array within the ptr array iaa[].
+ * </pre>
  */
 PIX *
 pixLinearTRCTiled(PIX       *pixd,
@@ -2829,12 +2881,12 @@ l_uint32  *data, *datamin, *datamax, *line, *tline, *linemin, *linemax;
 
 
 /*!
- *  iaaGetLinearTRC()
+ * \brief   iaaGetLinearTRC()
  *
- *      Input:  iaa (bare array of ptrs to l_int32)
- *              diff (between min and max pixel values that are
- *                    to be mapped to 0 and 255)
- *      Return: ia (LUT with input (val - minval) and output a
+ * \param[in]    iaa bare array of ptrs to l_int32
+ * \param[in]    diff between min and max pixel values that are
+ *                    to be mapped to 0 and 255
+ * \return  ia LUT with input (val - minval and output a
  *                  value between 0 and 255)
  */
 static l_int32 *

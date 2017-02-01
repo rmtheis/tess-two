@@ -154,9 +154,14 @@ L_REGPARAMS  *rp;
     pixDestroy(&pixd);
 
         /* Test a few of the fpix functions */
+    if (!dew2) {
+        L_ERROR("dew2 doesn't exist !!!!\n", "dewarp_reg");
+        return 1;
+    }
     fpix1 = fpixClone(dew2->sampvdispar);
     fpixWrite("/tmp/lept/regout/dewarp.12.fpix", fpix1);
     regTestCheckFile(rp, "/tmp/lept/regout/dewarp.12.fpix");  /* 12 */
+
     fpix2 = fpixRead("/tmp/lept/regout/dewarp.12.fpix");
     fpixWrite("/tmp/lept/regout/dewarp.13.fpix", fpix2);
     regTestCheckFile(rp, "/tmp/lept/regout/dewarp.13.fpix");  /* 13 */

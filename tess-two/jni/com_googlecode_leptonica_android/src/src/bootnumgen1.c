@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *   bootnumgen1.c
+/*!
+ * \file  bootnumgen1.c
+ * <pre>
  *
  *   Function for generating prog/recog/digits/bootnum1.pa from an
  *   encoded, gzipped and serialized string.
@@ -38,13 +39,15 @@
  *       L_STRCODE  *strc;
  *       strc = strcodeCreate(101);   // arbitrary integer
  *       strcodeGenerate(strc, "recog/digits/bootnum1.pa", "PIXA");
- *       strcodeFinalize(&strc, ".");
+ *       strcodeFinalize(\&strc, ".");
  *
  *   The two output files, autogen.101.c and autogen.101.h, were
  *   then slightly edited and merged into this file.
  *
  *   Call this way:
- *       Pixa  *pixa = (PIXA *)l_bootnum_gen1();
+ *       PIXA  *pixa = l_bootnum_gen1();   (C)
+ *       Pixa  *pixa = l_bootnum_gen1();   (C++)
+ * </pre>
  */
 
 #include <string.h>
@@ -240,34 +243,29 @@ static const char *l_bootnum1 =
 /*                      Auto-generated deserializer                    */
 /*---------------------------------------------------------------------*/
 /*!
- *  l_bootnum_gen1()
+ * \brief   l_bootnum_gen1()
  *
- *      Return: the bootnum1 pixa
+ * \return   pixa  of labelled digits
  *
- *  Call this way:
- *      PIXA  *pixa = (PIXA *)l_bootnum_gen1();   (C)
- *      Pixa  *pixa = (Pixa *)l_bootnum_gen1();   (C++)
+ * <pre>
+ * Call this way:
+ *      PIXA  *pixa = l_bootnum_gen1();   (C)
+ *      Pixa  *pixa = l_bootnum_gen1();   (C++)
+ * </pre>
  */
-void *
+PIXA *
 l_bootnum_gen1(void)
 {
 l_uint8  *data1, *data2;
 l_int32   size1;
 size_t    size2;
-void     *result;
-
-    lept_mkdir("lept/auto");
+PIXA     *pixa;
 
         /* Unencode selected string, write to file, and read it */
     data1 = decodeBase64(l_bootnum1, strlen(l_bootnum1), &size1);
     data2 = zlibUncompress(data1, size1, &size2);
-    l_binaryWrite("/tmp/lept/auto/data.bin","w", data2, size2);
-    result = (void *)pixaRead("/tmp/lept/auto/data.bin");
+    pixa = pixaReadMem(data2, size2);
     lept_free(data1);
     lept_free(data2);
-    return result;
+    return pixa;
 }
-
-
-
-

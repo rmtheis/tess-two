@@ -36,7 +36,7 @@
  *                     2 (break down into multiple steps)
  *
  *   Default image is cat.035.jpg.
- *   Others are 1555.007.jpg, etc.
+ *   Others are 1555.007.jpg, shearer.148.tif, etc.
  */
 
 #include "allheaders.h"
@@ -70,11 +70,12 @@ static char  mainName[] = "dewarptest2";
     lept_mkdir("lept/dewarp");
 
     if (method == 1) {  /* Use single page dewarp function */
-        dewarpSinglePage(pixs, 0, 1, 1, &pixd, NULL, 1);
+        dewarpSinglePage(pixs, 0, 1, 1, 0, &pixd, NULL, 1);
         pixDisplay(pixd, 100, 100);
     } else {  /* Break down into multiple steps; require min of only 8 lines */
         dewa = dewarpaCreate(40, 30, 1, 8, 50);
         dewarpaUseBothArrays(dewa, 1);
+        dewarpaSetCheckColumns(dewa, 0);
 
 #if NORMALIZE
             /* Normalize for varying background and binarize */

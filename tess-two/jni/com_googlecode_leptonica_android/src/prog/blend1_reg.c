@@ -35,139 +35,152 @@
 
 #include "allheaders.h"
 
-#define  DISPLAY   0
-
 void GrayBlend(PIX  *pixs, PIX  *pixb, l_int32 op, l_float32 fract);
 void AdaptiveGrayBlend(PIX  *pixs, PIX  *pixb, l_float32 fract);
 void ColorBlend(PIX  *pixs, PIX  *pixb, l_float32 fract);
 PIX *MakeGrayWash(l_int32 w, l_int32 h);
 PIX *MakeColorWash(l_int32 w, l_int32 h, l_int32 color);
 
+
 int main(int    argc,
          char **argv)
 {
-PIX   *pixs, *pixg, *pixc, *pixt, *pixd;
-PIXA  *pixa;
+PIX          *pixs, *pixg, *pixc, *pix1, *pix2;
+PIXA         *pixa;
+L_REGPARAMS  *rp;
 
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
+
+        /* Set up blenders */
     pixg = pixRead("blender8.png");
-    pixt = pixRead("weasel4.11c.png");
-    pixc = pixRemoveColormap(pixt, REMOVE_CMAP_TO_FULL_COLOR);
-    pixDisplayWrite(NULL, -1);
+    pix1 = pixRead("weasel4.11c.png");
+    pixc = pixRemoveColormap(pix1, REMOVE_CMAP_TO_FULL_COLOR);
+    pixDestroy(&pix1);
     pixa = pixaCreate(0);
 
-#if 1
         /* Gray blend (straight) */
     pixs = pixRead("test24.jpg");
-    GrayBlend(pixs, pixg, L_BLEND_GRAY, 0.3);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 100, 100, NULL, DISPLAY);
+    pix1 = pixScale(pixs, 0.4, 0.4);
+    GrayBlend(pix1, pixg, L_BLEND_GRAY, 0.3);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 0 */
+    pixaAddPix(pixa, pix1, L_INSERT); 
+    pixDisplayWithTitle(pix1, 0, 100, NULL, rp->display);
     pixDestroy(&pixs);
+
     pixs = pixRead("marge.jpg");
     GrayBlend(pixs, pixg, L_BLEND_GRAY, 0.2);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 100, 100, NULL, DISPLAY);
-    pixDestroy(&pixs);
-    pixs = pixRead("marge.jpg");
-    pixt = pixConvertRGBToLuminance(pixs);
-    GrayBlend(pixt, pixg, L_BLEND_GRAY, 0.2);
-    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 32);
-    pixDisplayWithTitle(pixt, 100, 100, NULL, DISPLAY);
-    pixDestroy(&pixs);
-    pixDestroy(&pixt);
-#endif
+    regTestWritePixAndCheck(rp, pixs, IFF_JFIF_JPEG);  /* 1 */
+    pixaAddPix(pixa, pixs, L_INSERT); 
+    pixDisplayWithTitle(pixs, 100, 100, NULL, rp->display);
 
-#if 1
+    pixs = pixRead("marge.jpg");
+    pix1 = pixConvertRGBToLuminance(pixs);
+    GrayBlend(pix1, pixg, L_BLEND_GRAY, 0.2);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 2 */
+    pixaAddPix(pixa, pix1, L_INSERT); 
+    pixDisplayWithTitle(pix1, 200, 100, NULL, rp->display);
+    pixDestroy(&pixs);
+
         /* Gray blend (inverse) */
     pixs = pixRead("test24.jpg");
-    GrayBlend(pixs, pixg, L_BLEND_GRAY_WITH_INVERSE, 0.6);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 100, 100, NULL, DISPLAY);
+    pix1 = pixScale(pixs, 0.4, 0.4);
+    GrayBlend(pix1, pixg, L_BLEND_GRAY_WITH_INVERSE, 0.6);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 3 */
+    pixaAddPix(pixa, pix1, L_INSERT); 
+    pixDisplayWithTitle(pix1, 300, 100, NULL, rp->display);
     pixDestroy(&pixs);
+
     pixs = pixRead("marge.jpg");
     GrayBlend(pixs, pixg, L_BLEND_GRAY_WITH_INVERSE, 0.6);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 100, 100, NULL, DISPLAY);
-    pixDestroy(&pixs);
+    regTestWritePixAndCheck(rp, pixs, IFF_JFIF_JPEG);  /* 4 */
+    pixaAddPix(pixa, pixs, L_INSERT); 
+    pixDisplayWithTitle(pixs, 400, 100, NULL, rp->display);
+
     pixs = pixRead("marge.jpg");
-    pixt = pixConvertRGBToLuminance(pixs);
-    GrayBlend(pixt, pixg, L_BLEND_GRAY_WITH_INVERSE, 0.6);
-    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 32);
-    pixDisplayWithTitle(pixt, 100, 100, NULL, DISPLAY);
+    pix1 = pixConvertRGBToLuminance(pixs);
+    GrayBlend(pix1, pixg, L_BLEND_GRAY_WITH_INVERSE, 0.6);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 5 */
+    pixaAddPix(pixa, pix1, L_INSERT); 
+    pixDisplayWithTitle(pix1, 500, 100, NULL, rp->display);
     pixDestroy(&pixs);
-    pixDestroy(&pixt);
+
     pixs = MakeGrayWash(1000, 120);
     GrayBlend(pixs, pixg, L_BLEND_GRAY_WITH_INVERSE, 0.3);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 200, 100, NULL, DISPLAY);
-    pixDestroy(&pixs);
+    regTestWritePixAndCheck(rp, pixs, IFF_PNG);  /* 6 */
+    pixaAddPix(pixa, pixs, L_INSERT); 
+    pixDisplayWithTitle(pixs, 0, 600, NULL, rp->display);
+
     pixs = MakeColorWash(1000, 120, COLOR_RED);
     GrayBlend(pixs, pixg, L_BLEND_GRAY_WITH_INVERSE, 1.0);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 200, 100, NULL, DISPLAY);
-    pixDestroy(&pixs);
-#endif
+    regTestWritePixAndCheck(rp, pixs, IFF_PNG);  /* 7 */
+    pixaAddPix(pixa, pixs, L_INSERT); 
+    pixDisplayWithTitle(pixs, 0, 750, NULL, rp->display);
 
-#if 1
         /* Adaptive gray blend */
     pixs = pixRead("test24.jpg");
-    AdaptiveGrayBlend(pixs, pixg, 0.8);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 200, 100, NULL, DISPLAY);
+    pix1 = pixScale(pixs, 0.4, 0.4);
+    AdaptiveGrayBlend(pix1, pixg, 0.8);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 8 */
+    pixaAddPix(pixa, pix1, L_INSERT); 
+    pixDisplayWithTitle(pix1, 600, 100, NULL, rp->display);
     pixDestroy(&pixs);
+
     pixs = pixRead("marge.jpg");
     AdaptiveGrayBlend(pixs, pixg, 0.8);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 200, 100, NULL, DISPLAY);
-    pixt = pixConvertRGBToLuminance(pixs);
-    AdaptiveGrayBlend(pixt, pixg, 0.1);
-    pixSaveTiled(pixt, pixa, 1.0, 0, 20, 32);
-    pixDisplayWithTitle(pixt, 200, 100, NULL, DISPLAY);
-    pixDestroy(&pixs);
-    pixDestroy(&pixt);
+    regTestWritePixAndCheck(rp, pixs, IFF_JFIF_JPEG);  /* 9 */
+    pixaAddPix(pixa, pixs, L_INSERT); 
+    pixDisplayWithTitle(pixs, 700, 100, NULL, rp->display);
+
+    pix1 = pixConvertRGBToLuminance(pixs);
+    AdaptiveGrayBlend(pix1, pixg, 0.1);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 10 */
+    pixaAddPix(pixa, pix1, L_INSERT); 
+    pixDisplayWithTitle(pix1, 800, 100, NULL, rp->display);
+
     pixs = MakeGrayWash(1000, 120);
     AdaptiveGrayBlend(pixs, pixg, 0.3);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 200, 100, NULL, DISPLAY);
-    pixDestroy(&pixs);
+    regTestWritePixAndCheck(rp, pixs, IFF_PNG);  /* 11 */
+    pixaAddPix(pixa, pixs, L_INSERT); 
+    pixDisplayWithTitle(pixs, 0, 900, NULL, rp->display);
+
     pixs = MakeColorWash(1000, 120, COLOR_RED);
     AdaptiveGrayBlend(pixs, pixg, 0.5);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 200, 100, NULL, DISPLAY);
-    pixDestroy(&pixs);
-#endif
+    regTestWritePixAndCheck(rp, pixs, IFF_PNG);  /* 12 */
+    pixaAddPix(pixa, pixs, L_INSERT); 
+    pixDisplayWithTitle(pixs, 0, 1050, NULL, rp->display);
 
-#if 1
         /* Color blend */
     pixs = pixRead("test24.jpg");
-    ColorBlend(pixs, pixc, 0.3);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 300, 100, NULL, DISPLAY);
+    pix1 = pixScale(pixs, 0.4, 0.4);
+    ColorBlend(pix1, pixc, 0.3);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 13 */
+    pixaAddPix(pixa, pix1, L_INSERT); 
+    pixDisplayWithTitle(pix1, 900, 100, NULL, rp->display);
     pixDestroy(&pixs);
+
     pixs = pixRead("marge.jpg");
     ColorBlend(pixs, pixc, 0.30);
-    pixSaveTiled(pixs, pixa, 1.0, 1, 20, 32);
-    pixDisplayWithTitle(pixs, 300, 100, NULL, DISPLAY);
-    pixDestroy(&pixs);
+    regTestWritePixAndCheck(rp, pixs, IFF_JFIF_JPEG);  /* 14 */
+    pixaAddPix(pixa, pixs, L_INSERT); 
+    pixDisplayWithTitle(pixs, 1000, 100, NULL, rp->display);
+
     pixs = pixRead("marge.jpg");
     ColorBlend(pixs, pixc, 0.15);
-    pixSaveTiled(pixs, pixa, 1.0, 0, 20, 32);
-    pixDisplayWithTitle(pixs, 300, 100, NULL, DISPLAY);
-    pixDestroy(&pixs);
-#endif
+    regTestWritePixAndCheck(rp, pixs, IFF_JFIF_JPEG);  /* 15 */
+    pixaAddPix(pixa, pixs, L_INSERT); 
+    pixDisplayWithTitle(pixs, 1100, 100, NULL, rp->display);
 
-        /* Display results */
-    pixd = pixaDisplay(pixa, 0, 0);
-    pixDisplay(pixd, 100, 100);
-    pixWrite("/tmp/junkblend.jpg", pixd, IFF_JFIF_JPEG);
-    pixDestroy(&pixd);
+        /* Mosaic all results */
+    pix1 = pixaDisplayTiledInRows(pixa, 32, 1700, 1.0, 0, 20, 2);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 16 */
+    pixDisplayWithTitle(pix1, 0, 0, NULL, rp->display);
     pixaDestroy(&pixa);
-
-    pixDisplayMultiple("/tmp/display/file*");
+    pixDestroy(&pix1);
 
     pixDestroy(&pixg);
-    pixDestroy(&pixt);
     pixDestroy(&pixc);
-    return 0;
+    return regTestCleanup(rp);
 }
 
 
@@ -196,7 +209,6 @@ l_int32   i, j, wb, hb, ws, hs, delx, dely, x, y;
             pixBlendGray(pixs, pixs, pixb, x, y, fract, op, 1, 255);
         }
     }
-    pixDisplayWriteFormat(pixs, 1, IFF_PNG);
 }
 
 
@@ -224,7 +236,6 @@ l_int32   i, j, wb, hb, ws, hs, delx, dely, x, y;
             pixBlendGrayAdapt(pixs, pixs, pixb, x, y, fract, 80);
         }
     }
-    pixDisplayWriteFormat(pixs, 1, IFF_PNG);
 }
 
 
@@ -252,7 +263,6 @@ l_int32   i, j, wb, hb, ws, hs, delx, dely, x, y;
             pixBlendColor(pixs, pixs, pixb, x, y, fract, 1, 255);
         }
     }
-    pixDisplayWriteFormat(pixs, 1, IFF_PNG);
 }
 
 

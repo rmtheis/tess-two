@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  recogbasic.c
+/*!
+ * \file recogbasic.c
+ * <pre>
  *
  *      Recoga creation, destruction and access
  *         L_RECOGA           *recogaCreateFromRecog()
@@ -60,14 +61,18 @@
  *      Serialization
  *         L_RECOGA           *recogaRead()
  *         L_RECOGA           *recogaReadStream()
+ *         L_RECOGA           *recogaReadMem()
  *         l_int32             recogaWrite()
  *         l_int32             recogaWriteStream()
  *         l_int32             recogaWritePixaa()
+ *         l_int32             recogaWriteMem()
  *         L_RECOG            *recogRead()
  *         L_RECOG            *recogReadStream()
+ *         L_RECOG            *recogReadMem()
  *         l_int32             recogWrite()
  *         l_int32             recogWriteStream()
- *         l_int32             recogWritePixa()
+ *         l_int32             recogWriteMem()
+ *         PIXA               *recogExtractPixa()
  *         static l_int32      recogAddCharstrLabels()
  *         static l_int32      recogAddAllSamples()
  *
@@ -134,7 +139,7 @@
  *                                                 128, 1);
  *
  *  This is useful as a "bootstrap" recognizer for training a new
- *  recognizer (rec) on an unlabelled data set that has a different
+ *  adapted recognizer (rec) on an unlabelled data set that has a different
  *  origin from recboot.  To do this, the new recognizer must be
  *  initialized to use the same (w,h) scaling as the bootstrap recognizer.
  *  If the new recognizer is to be used without scaling (e.g., on images
@@ -147,7 +152,12 @@
  *             recogTrainUnlabelled(rec, recboot, pix, NULL, 1, 0.75, 0);
  *         }
  *         recogTrainingFinished(rec, 0);
- *         recogSetScaling(rec, 0, 0);  // use with no scaling
+ *         recogSetScaling(rec, 0, 0, L_USE_ALL);  // use with no scaling
+ *
+ *  The adapted recognizer seems to work better if you use all the
+ *  templates.
+ *
+ * </pre>
  */
 
 #include <string.h>
@@ -169,17 +179,19 @@ static l_float32  DEFAULT_ASPERITY_FRACT = 0.25;
  *                Recoga: creation, destruction, access                   *
  *------------------------------------------------------------------------*/
 /*!
- *  recogaCreateFromRecog()
+ * \brief   recogaCreateFromRecog()
  *
- *      Input:  recog
- *      Return: recoga, or null on error
+ * \param[in]    recog
+ * \return  recoga, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a convenience function for making a recoga after
  *          you have a recog.  The recog is owned by the recoga.
  *      (2) For splitting connected components, the
  *          input recog must be from the material to be identified,
  *          and not a generic bootstrap recog.  Those can be added later.
+ * </pre>
  */
 L_RECOGA *
 recogaCreateFromRecog(L_RECOG  *recog)
@@ -198,17 +210,18 @@ L_RECOGA  *recoga;
 
 
 /*!
- *  recogaCreateFromPixaa()
+ * \brief   recogaCreateFromPixaa()
  *
- *      Input:  paa (of labelled, 1 bpp images)
- *              scalew  (scale all widths to this; use 0 for no scaling)
- *              scaleh  (scale all heights to this; use 0 for no scaling)
- *              templ_type (L_USE_AVERAGE or L_USE_ALL)
- *              threshold (for binarization; typically ~128)
- *              maxyshift (from nominal centroid alignment; typically 0 or 1)
- *      Return: recoga, or null on error
+ * \param[in]    paa of labelled, 1 bpp images
+ * \param[in]    scalew  scale all widths to this; use 0 for no scaling
+ * \param[in]    scaleh  scale all heights to this; use 0 for no scaling
+ * \param[in]    templ_type L_USE_AVERAGE or L_USE_ALL
+ * \param[in]    threshold for binarization; typically ~128
+ * \param[in]    maxyshift from nominal centroid alignment; typically 0 or 1
+ * \return  recoga, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a convenience function for training from labelled data.
  *      (2) Each pixa in the paa is a set of labelled data that is used
  *          to train a recognizer (e.g., for a set of characters in a font).
@@ -217,6 +230,7 @@ L_RECOGA  *recoga;
  *          the same class should be similar.
  *      (3) The pixaa can be written by recogaWritePixaa(), and must contain
  *          the unscaled bitmaps used for training.
+ * </pre>
  */
 L_RECOGA *
 recogaCreateFromPixaa(PIXAA       *paa,
@@ -256,10 +270,10 @@ PIXA      *pixa;
 
 
 /*!
- *  recogaCreate()
+ * \brief   recogaCreate()
  *
- *      Input:  n (initial number of recog ptrs)
- *      Return: recoga, or null on error
+ * \param[in]    n initial number of recog ptrs
+ * \return  recoga, or NULL on error
  */
 L_RECOGA *
 recogaCreate(l_int32  n)
@@ -284,14 +298,16 @@ L_RECOGA  *recoga;
 
 
 /*!
- *  recogaDestroy()
+ * \brief   recogaDestroy()
  *
- *      Input:  &recoga (<will be set to null before returning>)
- *      Return: void
+ * \param[in,out]   precoga will be set to null before returning
+ * \return  void
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If a recog has a parent, the parent owns it.  To destroy
  *          a recog, it must first be "orphaned".
+ * </pre>
  */
 void
 recogaDestroy(L_RECOGA  **precoga)
@@ -327,11 +343,11 @@ L_RECOGA  *recoga;
 
 
 /*!
- *  recogaAddRecog()
+ * \brief   recogaAddRecog()
  *
- *      Input:  recoga
- *              recog (to be added and owned by the recoga; not a copy)
- *      Return: recoga, or null on error
+ * \param[in]    recoga
+ * \param[in]    recog to be added and owned by the recoga; not a copy
+ * \return  recoga, or NULL on error
  */
 l_int32
 recogaAddRecog(L_RECOGA  *recoga,
@@ -358,10 +374,10 @@ l_int32  n;
 
 
 /*!
- *  recogaExtendArray()
+ * \brief   recogaExtendArray()
  *
- *      Input:  recoga
- *      Return: 0 if OK, 1 on error
+ * \param[in]    recoga
+ * \return  0 if OK, 1 on error
  */
 static l_int32
 recogaExtendArray(L_RECOGA  *recoga)
@@ -382,16 +398,18 @@ recogaExtendArray(L_RECOGA  *recoga)
 
 
 /*!
- *  recogReplaceInRecoga()
+ * \brief   recogReplaceInRecoga()
  *
- *      Input:  &recog1 (old recog, to be destroyed)
- *              recog2 (new recog, to be inserted in place of @recog1)
- *      Return: 0 if OK, 1 on error
+ * \param[in,out]  precog1 old recog, to be destroyed
+ * \param[in]      recog2 new recog, to be inserted in place of %recog1
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This always destroys recog1.
  *      (2) If recog1 belongs to a recoga, this inserts recog2 into
  *          the slot that recog1 previously occupied.
+ * </pre>
  */
 l_int32
 recogReplaceInRecoga(L_RECOG  **precog1,
@@ -434,15 +452,17 @@ L_RECOGA  *recoga;
 
 
 /*!
- *  recogaGetRecog()
+ * \brief   recogaGetRecog()
  *
- *      Input:  recoga
- *              index (to the index-th recog)
- *      Return: recog, or null on error
+ * \param[in]    recoga
+ * \param[in]    index to the index-th recog
+ * \return  recog, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This returns a ptr to the recog, which is still owned by
  *          the recoga.  Do not destroy it.
+ * </pre>
  */
 L_RECOG *
 recogaGetRecog(L_RECOGA  *recoga,
@@ -463,10 +483,10 @@ L_RECOG  *recog;
 
 
 /*!
- *  recogaGetCount()
+ * \brief   recogaGetCount()
  *
- *      Input:  recoga
- *      Return: count of recog in array; 0 if no recog or on error
+ * \param[in]    recoga
+ * \return  count of recog in array; 0 if no recog or on error
  */
 l_int32
 recogaGetCount(L_RECOGA  *recoga)
@@ -480,10 +500,10 @@ recogaGetCount(L_RECOGA  *recoga)
 
 
 /*!
- *  recogGetCount()
+ * \brief   recogGetCount()
  *
- *      Input:  recog
- *      Return: count of classes in recog; 0 if no recog or on error
+ * \param[in]    recog
+ * \return  count of classes in recog; 0 if no recog or on error
  */
 l_int32
 recogGetCount(L_RECOG  *recog)
@@ -497,11 +517,11 @@ recogGetCount(L_RECOG  *recog)
 
 
 /*!
- *  recogGetIndex()
+ * \brief   recogGetIndex()
  *
- *      Input:  recog
- *             &index (into the parent recoga; -1 if no parent)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    recog
+ * \param[out]   pindex into the parent recoga; -1 if no parent
+ * \return  0 if OK, 1 on error
  */
 l_int32
 recogGetIndex(L_RECOG  *recog,
@@ -519,10 +539,10 @@ recogGetIndex(L_RECOG  *recog,
 }
 
 /*!
- *  recogGetParent()
+ * \brief   recogGetParent()
  *
- *      Input:  recog
- *      Return: recoga (back-pointer to parent); can be null
+ * \param[in]    recog
+ * \return  recoga back-pointer to parent; can be null
  */
 L_RECOGA *
 recogGetParent(L_RECOG  *recog)
@@ -536,18 +556,20 @@ recogGetParent(L_RECOG  *recog)
 
 
 /*!
- *  recogSetBootflag()
+ * \brief   recogSetBootflag()
  *
- *      Input:  recog
- *      Return: 0 if OK, 1 on error
+ * \param[in]    recog
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This must be set for any bootstrap recog, where the samples
  *          are not from the media being identified.
  *      (2) It is used to enforce scaled bitmaps for identification,
  *          and to prevent the recog from being used to split touching
  *          characters (which requires unscaled samples from the
  *          material being identified).
+ * </pre>
  */
 l_int32
 recogSetBootflag(L_RECOG  *recog)
@@ -565,19 +587,21 @@ recogSetBootflag(L_RECOG  *recog)
  *                Recog: initialization and destruction                   *
  *------------------------------------------------------------------------*/
 /*!
- *  recogCreateFromRecog()
+ * \brief   recogCreateFromRecog()
  *
- *      Input:  recs (source recog with arbitrary input parameters)
- *              scalew  (scale all widths to this; use 0 for no scaling)
- *              scaleh  (scale all heights to this; use 0 for no scaling)
- *              templ_type (L_USE_AVERAGE or L_USE_ALL)
- *              threshold (for binarization; typically ~128)
- *              maxyshift (from nominal centroid alignment; typically 0 or 1)
- *      Return: recd, or null on error
+ * \param[in]    recs source recog with arbitrary input parameters
+ * \param[in]    scalew  scale all widths to this; use 0 for no scaling
+ * \param[in]    scaleh  scale all heights to this; use 0 for no scaling
+ * \param[in]    templ_type L_USE_AVERAGE or L_USE_ALL
+ * \param[in]    threshold for binarization; typically ~128
+ * \param[in]    maxyshift from nominal centroid alignment; typically 0 or 1
+ * \return  recd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a convenience function that generates a recog using
  *          the unscaled training data in an existing recog.
+ * </pre>
  */
 L_RECOG *
 recogCreateFromRecog(L_RECOG     *recs,
@@ -604,17 +628,18 @@ PIXA     *pixa;
 
 
 /*!
- *  recogCreateFromPixa()
+ * \brief   recogCreateFromPixa()
  *
- *      Input:  pixa (of labelled, 1 bpp images)
- *              scalew  (scale all widths to this; use 0 for no scaling)
- *              scaleh  (scale all heights to this; use 0 for no scaling)
- *              templ_type (L_USE_AVERAGE or L_USE_ALL)
- *              threshold (for binarization; typically ~128)
- *              maxyshift (from nominal centroid alignment; typically 0 or 1)
- *      Return: recog, or null on error
+ * \param[in]    pixa of labelled, 1 bpp images
+ * \param[in]    scalew  scale all widths to this; use 0 for no scaling
+ * \param[in]    scaleh  scale all heights to this; use 0 for no scaling
+ * \param[in]    templ_type L_USE_AVERAGE or L_USE_ALL
+ * \param[in]    threshold for binarization; typically ~128
+ * \param[in]    maxyshift from nominal centroid alignment; typically 0 or 1
+ * \return  recog, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a convenience function for training from labelled data.
  *          The pixa can be read from file.
  *      (2) The pixa should contain the unscaled bitmaps used for training.
@@ -622,6 +647,7 @@ PIXA     *pixa;
  *          each image example is put into a class defined by its
  *          character label.  All examples in the same class should be
  *          similar.
+ * </pre>
  */
 L_RECOG *
 recogCreateFromPixa(PIXA        *pixa,
@@ -676,22 +702,24 @@ PIX      *pix;
 
 
 /*!
- *  recogCreate()
+ * \brief   recogCreate()
  *
- *      Input:  scalew  (scale all widths to this; use 0 for no scaling)
- *              scaleh  (scale all heights to this; use 0 for no scaling)
- *              templ_type (L_USE_AVERAGE or L_USE_ALL)
- *              threshold (for binarization; typically ~128)
- *              maxyshift (from nominal centroid alignment; typically 0 or 1)
- *      Return: recog, or null on error
+ * \param[in]    scalew  scale all widths to this; use 0 for no scaling
+ * \param[in]    scaleh  scale all heights to this; use 0 for no scaling
+ * \param[in]    templ_type L_USE_AVERAGE or L_USE_ALL
+ * \param[in]    threshold for binarization; typically ~128
+ * \param[in]    maxyshift from nominal centroid alignment; typically 0 or 1
+ * \return  recog, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For a set trained on one font, such as numbers in a book,
  *          it is sensible to set scalew = scaleh = 0.
  *      (2) For a mixed training set, scaling to a fixed height,
  *          such as 32 pixels, but leaving the width unscaled, is effective.
  *      (3) The storage for most of the arrays is allocated when training
  *          is finished.
+ * </pre>
  */
 L_RECOG *
 recogCreate(l_int32      scalew,
@@ -754,14 +782,16 @@ PIXAA    *paa;
 
 
 /*!
- *  recogDestroy()
+ * \brief   recogDestroy()
  *
- *      Input:  &recog (<will be set to null before returning>)
- *      Return: void
+ * \param[in,out]   precog will be set to null before returning
+ * \return  void
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If a recog has a parent, the parent owns it.  A recogDestroy()
  *          will fail if there is a parent.
+ * </pre>
  */
 void
 recogDestroy(L_RECOG  **precog)
@@ -786,7 +816,6 @@ L_RECOG  *recog;
     LEPT_FREE(recog->bootpath);
     LEPT_FREE(recog->centtab);
     LEPT_FREE(recog->sumtab);
-    LEPT_FREE(recog->fname);
     sarrayDestroy(&recog->sa_text);
     l_dnaDestroy(&recog->dna_tochar);
     pixaaDestroy(&recog->pixaa_u);
@@ -822,13 +851,14 @@ L_RECOG  *recog;
  *                                Appending                               *
  *------------------------------------------------------------------------*/
 /*!
- *  recogAppend()
+ * \brief   recogAppend()
  *
- *      Input:  recog1
- *              recog2 (gets added to recog1)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    recog1
+ * \param[in]    recog2 gets added to recog1
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is used to make a training recognizer from more than
  *          one trained recognizer source.  It should only be used
  *          when the bitmaps for corresponding character classes are
@@ -838,6 +868,7 @@ L_RECOG  *recog;
  *      (2) This is done by appending recog2 to recog1.  Averages are
  *          computed for each recognizer, if necessary, before appending.
  *      (3) Non-array fields are combined using the appropriate min and max.
+ * </pre>
  */
 l_int32
 recogAppend(L_RECOG  *recog1,
@@ -889,20 +920,22 @@ recogAppend(L_RECOG  *recog1,
  *                         Character/index lookup                         *
  *------------------------------------------------------------------------*/
 /*!
- *  recogGetClassIndex()
+ * \brief   recogGetClassIndex()
  *
- *      Input:  recog (with LUT's pre-computed)
- *              val (integer value; can be up to 3 bytes for UTF-8)
- *              text (text from which @val was derived; used if not found)
- *              &index (<return> index into dna_tochar)
- *      Return: 0 if found; 1 if not found and added; 2 on error.
+ * \param[in]    recog with LUT's pre-computed
+ * \param[in]    val integer value; can be up to 3 bytes for UTF-8
+ * \param[in]    text text from which %val was derived; used if not found
+ * \param[out]   pindex index into dna_tochar
+ * \return  0 if found; 1 if not found and added; 2 on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is used during training.  It searches the
- *          dna character array for @val.  If not found, it increments
+ *          dna character array for %val.  If not found, it increments
  *          the setsize by 1, augmenting both the index and text arrays.
  *      (2) Returns the index in &index, except on error.
  *      (3) Caller must check the function return value.
+ * </pre>
  */
 l_int32
 recogGetClassIndex(L_RECOG  *recog,
@@ -942,12 +975,12 @@ l_int32  i, n, ival;
 
 
 /*!
- *  recogStringToIndex()
+ * \brief   recogStringToIndex()
  *
- *      Input:  recog
- *              text (text string for some class)
- *              &index (<return> index for that class; -1 if not found)
- *      Return: 0 if OK, 1 on error (not finding the string is an error)
+ * \param[in]    recog
+ * \param[in]    text text string for some class
+ * \param[out]   pindex index for that class; -1 if not found
+ * \return  0 if OK, 1 on error not finding the string is an error
  */
 l_int32
 recogStringToIndex(L_RECOG  *recog,
@@ -987,18 +1020,20 @@ l_int32  i, n, diff;
 
 
 /*!
- *  recogGetClassString()
+ * \brief   recogGetClassString()
  *
- *      Input:  recog
- *              index (into array of char types)
- *              &charstr (<return> string representation;
- *                        returns an empty string on error)
- *      Return: 0 if found, 1 on error
+ * \param[in]    recog
+ * \param[in]    index into array of char types
+ * \param[out]   pcharstr string representation;
+ *                        returns an empty string on error
+ * \return  0 if found, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Extracts a copy of the string from sa_text, which
  *          the caller must free.
  *      (2) Caller must check the function return value.
+ * </pre>
  */
 l_int32
 recogGetClassString(L_RECOG  *recog,
@@ -1022,13 +1057,13 @@ recogGetClassString(L_RECOG  *recog,
 
 
 /*!
- *  l_convertCharstrToInt()
+ * \brief   l_convertCharstrToInt()
  *
- *      Input:  str (input string representing one UTF-8 character;
- *                   not more than 4 bytes)
- *              &val (<return> integer value for the input.  Think of it
- *                    as a 1-to-1 hash code.)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    str input string representing one UTF-8 character;
+ *                   not more than 4 bytes
+ * \param[out]   pval integer value for the input.  Think of it
+ *                    as a 1-to-1 hash code.
+ * \return  0 if OK, 1 on error
  */
 l_int32
 l_convertCharstrToInt(const char  *str,
@@ -1065,14 +1100,16 @@ l_int32  size, val;
  *                             Serialization                              *
  *------------------------------------------------------------------------*/
 /*!
- *  recogaRead()
+ * \brief   recogaRead()
  *
- *      Input:  filename
- *      Return: recoga, or null on error
+ * \param[in]    filename
+ * \return  recoga, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This allows serialization of an array of recognizers, each of which
  *          can be used for different fonts, font styles, etc.
+ * </pre>
  */
 L_RECOGA *
 recogaRead(const char  *filename)
@@ -1098,10 +1135,10 @@ L_RECOGA  *recoga;
 
 
 /*!
- *  recogaReadStream()
+ * \brief   recogaReadStream()
  *
- *      Input:  stream
- *      Return: recog, or null on error
+ * \param[in]    fp file stream
+ * \return  recog, or NULL on error
  */
 L_RECOGA *
 recogaReadStream(FILE  *fp)
@@ -1140,11 +1177,39 @@ L_RECOGA  *recoga;
 
 
 /*!
- *  recogaWrite()
+ * \brief   recogaReadMem()
  *
- *      Input:  filename
- *              recoga
- *      Return: 0 if OK, 1 on error
+ * \param[in]    data  serialization of recoga (not ascii)
+ * \param[in]    size  of data in bytes
+ * \return  recoga, or NULL on error
+ */
+L_RECOGA *
+recogaReadMem(const l_uint8  *data,
+              size_t          size)
+{
+FILE      *fp;
+L_RECOGA  *recoga;
+
+    PROCNAME("recogaReadMem");
+
+    if (!data)
+        return (L_RECOGA *)ERROR_PTR("data not defined", procName, NULL);
+    if ((fp = fopenReadFromMemory(data, size)) == NULL)
+        return (L_RECOGA *)ERROR_PTR("stream not opened", procName, NULL);
+
+    recoga = recogaReadStream(fp);
+    fclose(fp);
+    if (!recoga) L_ERROR("recoga not read\n", procName);
+    return recoga;
+}
+
+
+/*!
+ * \brief   recogaWrite()
+ *
+ * \param[in]    filename
+ * \param[in]    recoga
+ * \return  0 if OK, 1 on error
  */
 l_int32
 recogaWrite(const char  *filename,
@@ -1161,7 +1226,7 @@ FILE  *fp;
 
     if ((fp = fopenWriteStream(filename, "wb")) == NULL)
         return ERROR_INT("stream not opened", procName, 1);
-    if (recogaWriteStream(fp, recoga, filename))
+    if (recogaWriteStream(fp, recoga))
         return ERROR_INT("recoga not written to stream", procName, 1);
     fclose(fp);
     return 0;
@@ -1169,17 +1234,15 @@ FILE  *fp;
 
 
 /*!
- *  recogaWriteStream()
+ * \brief   recogaWriteStream()
  *
- *      Input:  stream (opened for "wb")
- *              recoga
- *              filename (output serialized filename; embedded in file)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fp file stream opened for "wb"
+ * \param[in]    recoga
+ * \return  0 if OK, 1 on error
  */
 l_int32
-recogaWriteStream(FILE        *fp,
-                  L_RECOGA    *recoga,
-                  const char  *filename)
+recogaWriteStream(FILE      *fp,
+                  L_RECOGA  *recoga)
 {
 l_int32   i;
 L_RECOG  *recog;
@@ -1198,7 +1261,7 @@ L_RECOG  *recog;
         fprintf(fp, "==============================\n");
         fprintf(fp, "Recognizer %d\n", i);
         recog = recogaGetRecog(recoga, i);
-        recogWriteStream(fp, recog, filename);
+        recogWriteStream(fp, recog);
         fprintf(fp, "\n");
     }
 
@@ -1207,19 +1270,75 @@ L_RECOG  *recog;
 
 
 /*!
- *  recogaWritePixaa()
+ * \brief   recogaWriteMem()
  *
- *      Input:  filename
- *              recoga
- *      Return: 0 if OK, 1 on error
+ * \param[out]   pdata data of serialized recoga (not ascii)
+ * \param[out]   psize size of returned data
+ * \param[in]    recoga
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
+ *      (1) Serializes a recoga in memory and puts the result in a buffer.
+ * </pre>
+ */
+l_int32
+recogaWriteMem(l_uint8  **pdata,
+               size_t    *psize,
+               L_RECOGA  *recoga)
+{
+l_int32  ret;
+FILE    *fp;
+
+    PROCNAME("recogaWriteMem");
+
+    if (pdata) *pdata = NULL;
+    if (psize) *psize = 0;
+    if (!pdata)
+        return ERROR_INT("&data not defined", procName, 1);
+    if (!psize)
+        return ERROR_INT("&size not defined", procName, 1);
+    if (!recoga)
+        return ERROR_INT("recoga not defined", procName, 1);
+
+#if HAVE_FMEMOPEN
+    if ((fp = open_memstream((char **)pdata, psize)) == NULL)
+        return ERROR_INT("stream not opened", procName, 1);
+    ret = recogaWriteStream(fp, recoga);
+#else
+    L_INFO("work-around: writing to a temp file\n", procName);
+  #ifdef _WIN32
+    if ((fp = fopenWriteWinTempfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
+  #else
+    if ((fp = tmpfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
+  #endif  /* _WIN32 */
+    ret = recogaWriteStream(fp, recoga);
+    rewind(fp);
+    *pdata = l_binaryReadStream(fp, psize);
+#endif  /* HAVE_FMEMOPEN */
+    fclose(fp);
+    return ret;
+}
+
+
+/*!
+ * \brief   recogaWritePixaa()
+ *
+ * \param[in]    filename
+ * \param[in]    recoga
+ * \return  0 if OK, 1 on error
+ *
+ * <pre>
+ * Notes:
  *      (1) For each recognizer, this generates a pixa of all the
  *          unscaled images.  They are combined into a pixaa for
  *          the set of recognizers.  Each pix has has its character
  *          string in the pix text field.
  *      (2) As a side-effect, the character class label is written
  *          into each pix in recog.
+ * </pre>
  */
 l_int32
 recogaWritePixaa(const char  *filename,
@@ -1251,12 +1370,13 @@ L_RECOG  *recog;
 
 
 /*!
- *  recogRead()
+ * \brief   recogRead()
  *
- *      Input:  filename
- *      Return: recog, or null on error
+ * \param[in]    filename
+ * \return  recog, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Serialization can be applied to any recognizer, including
  *          one with more than one "font".  That is, it can have
  *          multiple character classes with the same character set
@@ -1264,6 +1384,7 @@ L_RECOG  *recog;
  *          that are very similar in size and shape.  Each pixa in
  *          the serialized pixaa contains images for a single character
  *          class.
+ * </pre>
  */
 L_RECOG *
 recogRead(const char  *filename)
@@ -1289,15 +1410,14 @@ L_RECOG  *recog;
 
 
 /*!
- *  recogReadStream()
+ * \brief   recogReadStream()
  *
- *      Input:  stream
- *      Return: recog, or null on error
+ * \param[in]    fp file stream
+ * \return  recog, or NULL on error
  */
 L_RECOG *
 recogReadStream(FILE  *fp)
 {
-char      fname[256];
 l_int32   version, setsize, templ_type, threshold, scalew, scaleh;
 l_int32   maxyshift, nc;
 L_DNA    *dna_tochar;
@@ -1330,9 +1450,6 @@ SARRAY   *sa_text;
                              maxyshift)) == NULL)
         return (L_RECOG *)ERROR_PTR("recog not made", procName, NULL);
 
-    if (fscanf(fp, "Serialized filename: %s\n", fname) != 1)
-        return (L_RECOG *)ERROR_PTR("filename not read", procName, NULL);
-
     if (fscanf(fp, "\nLabels for character set:\n") != 0)
         return (L_RECOG *)ERROR_PTR("label intro not read", procName, NULL);
     l_dnaDestroy(&recog->dna_tochar);
@@ -1348,7 +1465,6 @@ SARRAY   *sa_text;
         return (L_RECOG *)ERROR_PTR("pixaa intro not read", procName, NULL);
     if ((paa = pixaaReadStream(fp)) == NULL)
         return (L_RECOG *)ERROR_PTR("pixaa not read", procName, NULL);
-    recog->fname = stringNew(fname);
     recog->setsize = setsize;
     nc = pixaaGetCount(paa, NULL);
     if (nc != setsize) {
@@ -1364,11 +1480,39 @@ SARRAY   *sa_text;
 
 
 /*!
- *  recogWrite()
+ * \brief   recogReadMem()
  *
- *      Input:  filename
- *              recog
- *      Return: 0 if OK, 1 on error
+ * \param[in]    data  serialization of recog (not ascii)
+ * \param[in]    size  of data in bytes
+ * \return  recog, or NULL on error
+ */
+L_RECOG *
+recogReadMem(const l_uint8  *data,
+             size_t          size)
+{
+FILE     *fp;
+L_RECOG  *recog;
+
+    PROCNAME("recogReadMem");
+
+    if (!data)
+        return (L_RECOG *)ERROR_PTR("data not defined", procName, NULL);
+    if ((fp = fopenReadFromMemory(data, size)) == NULL)
+        return (L_RECOG *)ERROR_PTR("stream not opened", procName, NULL);
+
+    recog = recogReadStream(fp);
+    fclose(fp);
+    if (!recog) L_ERROR("recog not read\n", procName);
+    return recog;
+}
+
+
+/*!
+ * \brief   recogWrite()
+ *
+ * \param[in]    filename
+ * \param[in]    recog
+ * \return  0 if OK, 1 on error
  */
 l_int32
 recogWrite(const char  *filename,
@@ -1385,7 +1529,7 @@ FILE  *fp;
 
     if ((fp = fopenWriteStream(filename, "wb")) == NULL)
         return ERROR_INT("stream not opened", procName, 1);
-    if (recogWriteStream(fp, recog, filename))
+    if (recogWriteStream(fp, recog))
         return ERROR_INT("recog not written to stream", procName, 1);
     fclose(fp);
     return 0;
@@ -1393,17 +1537,15 @@ FILE  *fp;
 
 
 /*!
- *  recogWriteStream()
+ * \brief   recogWriteStream()
  *
- *      Input:  stream (opened for "wb")
- *              recog
- *              filename (output serialized filename; embedded in file)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fp file stream opened for "wb"
+ * \param[in]    recog
+ * \return  0 if OK, 1 on error
  */
 l_int32
-recogWriteStream(FILE        *fp,
-                 L_RECOG     *recog,
-                 const char  *filename)
+recogWriteStream(FILE     *fp,
+                 L_RECOG  *recog)
 {
     PROCNAME("recogWriteStream");
 
@@ -1411,8 +1553,6 @@ recogWriteStream(FILE        *fp,
         return ERROR_INT("stream not defined", procName, 1);
     if (!recog)
         return ERROR_INT("recog not defined", procName, 1);
-    if (!filename)
-        return ERROR_INT("filename not defined", procName, 1);
 
     fprintf(fp, "\nRecog Version %d\n", RECOG_VERSION_NUMBER);
     fprintf(fp, "Size of character set = %d\n", recog->setsize);
@@ -1421,7 +1561,6 @@ recogWriteStream(FILE        *fp,
     fprintf(fp, "Maxyshift = %d\n", recog->maxyshift);
     fprintf(fp, "Scale to width = %d\n", recog->scalew);
     fprintf(fp, "Scale to height = %d\n", recog->scaleh);
-    fprintf(fp, "Serialized filename: %s\n", filename);
     fprintf(fp, "\nLabels for character set:\n");
     l_dnaWriteStream(fp, recog->dna_tochar);
     sarrayWriteStream(fp, recog->sa_text);
@@ -1433,46 +1572,92 @@ recogWriteStream(FILE        *fp,
 
 
 /*!
- *  recogWritePixa()
+ * \brief   recogWriteMem()
  *
- *      Input:  filename
- *              recog
- *      Return: 0 if OK, 1 on error
+ * \param[out]   pdata data of serialized recog (not ascii)
+ * \param[out]   psize size of returned data
+ * \param[in]    recog
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
+ *      (1) Serializes a recog in memory and puts the result in a buffer.
+ * </pre>
+ */
+l_int32
+recogWriteMem(l_uint8  **pdata,
+              size_t    *psize,
+              L_RECOG   *recog)
+{
+l_int32  ret;
+FILE    *fp;
+
+    PROCNAME("recogWriteMem");
+
+    if (pdata) *pdata = NULL;
+    if (psize) *psize = 0;
+    if (!pdata)
+        return ERROR_INT("&data not defined", procName, 1);
+    if (!psize)
+        return ERROR_INT("&size not defined", procName, 1);
+    if (!recog)
+        return ERROR_INT("recog not defined", procName, 1);
+
+#if HAVE_FMEMOPEN
+    if ((fp = open_memstream((char **)pdata, psize)) == NULL)
+        return ERROR_INT("stream not opened", procName, 1);
+    ret = recogWriteStream(fp, recog);
+#else
+    L_INFO("work-around: writing to a temp file\n", procName);
+  #ifdef _WIN32
+    if ((fp = fopenWriteWinTempfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
+  #else
+    if ((fp = tmpfile()) == NULL)
+        return ERROR_INT("tmpfile stream not opened", procName, 1);
+  #endif  /* _WIN32 */
+    ret = recogWriteStream(fp, recog);
+    rewind(fp);
+    *pdata = l_binaryReadStream(fp, psize);
+#endif  /* HAVE_FMEMOPEN */
+    fclose(fp);
+    return ret;
+}
+
+
+/*!
+ * \brief   recogExtractPixa()
+ *
+ * \param[in]   recog
+ * \return  pixa if OK, NULL on error
+ *
+ * <pre>
+ * Notes:
  *      (1) This generates a pixa of all the unscaled images in the
  *          recognizer, where each one has its character string in
  *          the pix text field, by flattening pixaa_u to a pixa.
  *      (2) As a side-effect, the character class label is written
  *          into each pix in recog.
+ * </pre>
  */
-l_int32
-recogWritePixa(const char  *filename,
-               L_RECOG     *recog)
+PIXA *
+recogExtractPixa(L_RECOG  *recog)
 {
-PIXA  *pixa;
+    PROCNAME("recogExtractPixa");
 
-    PROCNAME("recogWritePixa");
-
-    if (!filename)
-        return ERROR_INT("filename not defined", procName, 1);
     if (!recog)
-        return ERROR_INT("recog not defined", procName, 1);
+        return (PIXA *)ERROR_PTR("recog not defined", procName, NULL);
 
     recogAddCharstrLabels(recog);
-    pixa = pixaaFlattenToPixa(recog->pixaa_u, NULL, L_CLONE);
-    pixaWrite(filename, pixa);
-    pixaDestroy(&pixa);
-    return 0;
+    return pixaaFlattenToPixa(recog->pixaa_u, NULL, L_CLONE);
 }
 
 
 /*!
- *  recogAddCharstrLabels()
+ * \brief   recogAddCharstrLabels()
  *
- *      Input:  filename
- *              recog
- *      Return: 0 if OK, 1 on error
+ * \param[in]    recog
+ * \return  0 if OK, 1 on error
  */
 static l_int32
 recogAddCharstrLabels(L_RECOG  *recog)
@@ -1508,14 +1693,15 @@ PIXAA   *paa;
 
 
 /*!
- *  recogAddAllSamples()
+ * \brief   recogAddAllSamples()
  *
- *      Input:  recog
- *              paa (pixaa from previously trained recog)
- *              debug
- *      Return: 0 if OK, 1 on error
+ * \param[in]    recog
+ * \param[in]    paa pixaa from previously trained recog
+ * \param[in]    debug
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is used with the serialization routine recogRead(),
  *          where each pixa in the pixaa represents a set of characters
  *          in a different class.  Two different pixa may represent
@@ -1524,6 +1710,7 @@ PIXAA   *paa;
  *          given by the setsize field in recog, equals the number of
  *          pixa in the paa.  The character labels for each set are
  *          in the sa_text field.
+ * </pre>
  */
 static l_int32
 recogAddAllSamples(L_RECOG  *recog,
@@ -1560,4 +1747,3 @@ PIXA    *pixa;
     recogTrainingFinished(recog, debug);
     return 0;
 }
-

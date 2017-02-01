@@ -24,134 +24,109 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  ccthin.c
+/*!
+ * \file ccthin.c
+ * <pre>
  *
- *     PIX    *pixThin()
- *     PIX    *pixThinGeneral()
- *     PIX    *pixThinExamples()
+ *     PIXA   *pixaThinConnected()
+ *     PIX    *pixThinConnected()
+ *     PIX    *pixThinConnectedBySet()
+ *     SELA   *selaMakeThinSets()
+ * </pre>
  */
 
 #include "allheaders.h"
 
-
     /* ------------------------------------------------------------
-     * These sels (and their rotated counterparts) are the useful
-     * 3x3 Sels for thinning.   The notation is based on
-     * "Connectivity-preserving morphological image transformations,"
-     * a version of which can be found at
+     * The sels used here (and their rotated counterparts) are the
+     * useful 3x3 Sels for thinning.   They are defined in sel2.c,
+     * and the sets are constructed in selaMakeThinSets().
+     * The notation is based on "Connectivity-preserving morphological
+     * image transformations", a version of which can be found at
      *           http://www.leptonica.com/papers/conn.pdf
      * ------------------------------------------------------------ */
-
-    /* Sels for 4-connected thinning */
-static const char *sel_4_1 = "  x"
-                             "oCx"
-                             "  x";
-
-static const char *sel_4_2 = "  x"
-                             "oCx"
-                             " o ";
-
-static const char *sel_4_3 = " o "
-                             "oCx"
-                             "  x";
-
-static const char *sel_4_4 = " o "
-                             "oCx"
-                             " o ";
-
-static const char *sel_4_5 = " ox"
-                             "oCx"
-                             " o ";
-
-static const char *sel_4_6 = " o "
-                             "oCx"
-                             " ox";
-
-static const char *sel_4_7 = " xx"
-                             "oCx"
-                             " o ";
-
-static const char *sel_4_8 = "  x"
-                             "oCx"
-                             "o x";
-
-static const char *sel_4_9 = "o x"
-                             "oCx"
-                             "  x";
-
-    /* Sels for 8-connected thinning */
-static const char *sel_8_1 = " x "
-                             "oCx"
-                             " x ";
-
-static const char *sel_8_2 = " x "
-                             "oCx"
-                             "o  ";
-
-static const char *sel_8_3 = "o  "
-                             "oCx"
-                             " x ";
-
-static const char *sel_8_4 = "o  "
-                             "oCx"
-                             "o  ";
-
-static const char *sel_8_5 = "o x"
-                             "oCx"
-                             "o  ";
-
-static const char *sel_8_6 = "o  "
-                             "oCx"
-                             "o x";
-
-static const char *sel_8_7 = " x "
-                             "oCx"
-                             "oo ";
-
-static const char *sel_8_8 = " x "
-                             "oCx"
-                             "ox ";
-
-static const char *sel_8_9 = "ox "
-                             "oCx"
-                             " x ";
-
-    /* Sels for both 4 and 8-connected thinning */
-static const char *sel_48_1 = " xx"
-                              "oCx"
-                              "oo ";
-
-static const char *sel_48_2 = "o x"
-                              "oCx"
-                              "o x";
-
-#ifndef NO_CONSOLE_IO
-#define  DEBUG_SELS     0
-#endif   /* ~NO_CONSOLE_IO */
-
 
 /*----------------------------------------------------------------*
  *                      CC-preserving thinning                    *
  *----------------------------------------------------------------*/
 /*!
- *  pixThin()
+ * \brief   pixaThinConnected()
  *
- *      Input:  pixs (1 bpp)
- *              type (L_THIN_FG, L_THIN_BG)
- *              connectivity (4 or 8)
- *              maxiters (max number of iters allowed; use 0 to iterate
- *                        until completion)
- *      Return: pixd, or null on error
+ * \param[in]    pixas  of 1 bpp pix
+ * \param[in]    type L_THIN_FG, L_THIN_BG
+ * \param[in]    connectivity 4 or 8
+ * \param[in]    maxiters max number of iters allowed; use 0 to iterate
+ *                        until completion
+ * \return  pixds, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
+ *      (1) See notes in pixThinConnected().
+ * </pre>
+ */
+PIXA *
+pixaThinConnected(PIXA    *pixas,
+                  l_int32  type,
+                  l_int32  connectivity,
+                  l_int32  maxiters)
+{
+l_int32  i, n, d;
+PIX     *pix1, *pix2;
+PIXA    *pixad;
+SELA    *sela;
+
+    PROCNAME("pixaThinConnected");
+
+    if (!pixas)
+        return (PIXA *)ERROR_PTR("pixas not defined", procName, NULL);
+    if (type != L_THIN_FG && type != L_THIN_BG)
+        return (PIXA *)ERROR_PTR("invalid fg/bg type", procName, NULL);
+    if (connectivity != 4 && connectivity != 8)
+        return (PIXA *)ERROR_PTR("connectivity not 4 or 8", procName, NULL);
+    if (maxiters == 0) maxiters = 10000;
+
+    pixaVerifyDepth(pixas, &d);
+    if (d != 1)
+        return (PIXA *)ERROR_PTR("pix are not all 1 bpp", procName, NULL);
+
+    if (connectivity == 4)
+        sela = selaMakeThinSets(1, 0);
+    else  /* connectivity == 8 */
+        sela = selaMakeThinSets(5, 0);
+
+    n = pixaGetCount(pixas);
+    pixad = pixaCreate(n);
+    for (i = 0; i < n; i++) {
+        pix1 = pixaGetPix(pixas, i, L_CLONE);
+        pix2 = pixThinConnectedBySet(pix1, type, sela, maxiters);
+        pixaAddPix(pixad, pix2, L_INSERT);
+        pixDestroy(&pix1);
+    }
+
+    selaDestroy(&sela);
+    return pixad;
+}
+
+
+/*!
+ * \brief   pixThinConnected()
+ *
+ * \param[in]    pixs 1 bpp
+ * \param[in]    type L_THIN_FG, L_THIN_BG
+ * \param[in]    connectivity 4 or 8
+ * \param[in]    maxiters max number of iters allowed; use 0 to iterate
+ *                        until completion
+ * \return  pixd, or NULL on error
+ *
+ * <pre>
+ * Notes:
  *      (1) See "Connectivity-preserving morphological image transformations,"
  *          Dan S. Bloomberg, in SPIE Visual Communications and Image
  *          Processing, Conference 1606, pp. 320-334, November 1991,
  *          Boston, MA.   A web version is available at
  *              http://www.leptonica.com/papers/conn.pdf
- *      (2) We implement here two of the best iterative
- *          morphological thinning algorithms, for 4 c.c and 8 c.c.
+ *      (2) This is a simple interface for two of the best iterative
+ *          morphological thinning algorithms, for 4-c.c and 8-c.c.
  *          Each iteration uses a mixture of parallel operations
  *          (using several different 3x3 Sels) and serial operations.
  *          Specifically, each thinning iteration consists of
@@ -163,24 +138,32 @@ static const char *sel_48_2 = "o x"
  *      (3) A "good" thinning algorithm is one that generates a skeleton
  *          that is near the medial axis and has neither pruned
  *          real branches nor left extra dendritic branches.
- *      (4) To thin the foreground, which is the usual situation,
- *          use type == L_THIN_FG.  Thickening the foreground is equivalent
- *          to thinning the background (type == L_THIN_BG), where the
- *          opposite connectivity gets preserved.  For example, to thicken
- *          the fg using 4-connectivity, we thin the bg using Sels that
- *          preserve 8-connectivity.
+ *      (4) Duality between operations on fg and bg require switching
+ *          the connectivity.  To thin the foreground, which is the usual
+ *          situation, use type == L_THIN_FG.  Thickening the foreground
+ *          is equivalent to thinning the background (type == L_THIN_BG),
+ *          where the alternate connectivity gets preserved.
+ *          For example, to thicken the fg with 2 rounds of iterations
+ *          using 4-c.c., thin the bg using Sels that preserve 8-connectivity:
+ *             Pix *pix = pixThinConnected(pixs, L_THIN_BG, 8, 2);
+ *      (5) This makes and destroys the sela set each time. It's not a large
+ *          overhead, but if you are calling this thousands of times on
+ *          very small images, you can avoid the overhead; e.g.
+ *             Sela *sela = selaMakeThinSets(1, 0);  // for 4-c.c.
+ *             Pix *pix = pixThinConnectedBySet(pixs, L_THIN_FG, sela, 0);
+ *          using set 1 for 4-c.c. and set 5 for 8-c.c operations.
+ * </pre>
  */
 PIX *
-pixThin(PIX     *pixs,
-        l_int32  type,
-        l_int32  connectivity,
-        l_int32  maxiters)
+pixThinConnected(PIX     *pixs,
+                 l_int32  type,
+                 l_int32  connectivity,
+                 l_int32  maxiters)
 {
 PIX   *pixd;
-SEL   *sel;
 SELA  *sela;
 
-    PROCNAME("pixThin");
+    PROCNAME("pixThinConnected");
 
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
@@ -192,26 +175,12 @@ SELA  *sela;
         return (PIX *)ERROR_PTR("connectivity not 4 or 8", procName, NULL);
     if (maxiters == 0) maxiters = 10000;
 
-    sela = selaCreate(4);
-    if (connectivity == 4) {
-        sel = selCreateFromString(sel_4_1, 3, 3, "sel_4_1");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_4_2, 3, 3, "sel_4_2");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_4_3, 3, 3, "sel_4_3");
-        selaAddSel(sela, sel, NULL, 0);
-    } else {  /* connectivity == 8 */
-        sel = selCreateFromString(sel_8_2, 3, 3, "sel_8_2");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_8_3, 3, 3, "sel_8_3");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_8_5, 3, 3, "sel_8_5");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_8_6, 3, 3, "sel_8_6");
-        selaAddSel(sela, sel, NULL, 0);
-    }
+    if (connectivity == 4)
+        sela = selaMakeThinSets(1, 0);
+    else  /* connectivity == 8 */
+        sela = selaMakeThinSets(5, 0);
 
-    pixd = pixThinGeneral(pixs, type, sela, maxiters);
+    pixd = pixThinConnectedBySet(pixs, type, sela, maxiters);
 
     selaDestroy(&sela);
     return pixd;
@@ -219,36 +188,47 @@ SELA  *sela;
 
 
 /*!
- *  pixThinGeneral()
+ * \brief   pixThinConnectedBySet()
  *
- *      Input:  pixs (1 bpp)
- *              type (L_THIN_FG, L_THIN_BG)
- *              sela (of Sels for parallel composite HMTs)
- *              maxiters (max number of iters allowed; use 0 to iterate
- *                        until completion)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    type L_THIN_FG, L_THIN_BG
+ * \param[in]    sela of Sels for parallel composite HMTs
+ * \param[in]    maxiters max number of iters allowed; use 0 to iterate
+ *                        until completion
+ * \return  pixd, or NULL on error
  *
- *  Notes:
- *      (1) See notes in pixThin().  That function chooses among
- *          the best of the Sels for thinning.
- *      (2) This is a general function that takes a Sela of HMTs
- *          that are used in parallel for thinning from each
- *          of four directions.  One iteration consists of four
- *          such parallel thins.
+ * <pre>
+ * Notes:
+ *      (1) See notes in pixThinConnected().
+ *      (2) This takes a sela representing one of 11 sets of HMT Sels.
+ *          The HMTs from this set are run in parallel and the result
+ *          is OR'd before being subtracted from the source.  For each
+ *          iteration, this "parallel" thin is performed four times
+ *          sequentially, for sels rotated by 90 degrees in all four
+ *          directions.
+ *      (3) The "parallel" and "sequential" nomenclature is standard
+ *          in digital filtering.  Here, "parallel" operations work on the
+ *          same source (pixd), and accumulate the results in a temp
+ *          image before actually applying them to the source (in this
+ *          case, using an in-place subtraction).  "Sequential" operations
+ *          operate directly on the source (pixd) to produce the result
+ *          (in this case, with four sequential thinning operations, one
+ *          from each of four directions).
+ * </pre>
  */
 PIX *
-pixThinGeneral(PIX     *pixs,
-               l_int32  type,
-               SELA    *sela,
-               l_int32  maxiters)
+pixThinConnectedBySet(PIX     *pixs,
+                      l_int32  type,
+                      SELA    *sela,
+                      l_int32  maxiters)
 {
 l_int32  i, j, r, nsels, same;
 PIXA    *pixahmt;
 PIX    **pixhmt;  /* array owned by pixahmt; do not destroy! */
-PIX     *pixd, *pixt;
+PIX     *pix1, *pix2, *pixd;
 SEL     *sel, *selr;
 
-    PROCNAME("pixThinGeneral");
+    PROCNAME("pixThinConnectedBySet");
 
     if (!pixs)
         return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
@@ -264,18 +244,14 @@ SEL     *sel, *selr;
     nsels = selaGetCount(sela);
     pixahmt = pixaCreate(nsels);
     for (i = 0; i < nsels; i++) {
-        pixt = pixCreateTemplate(pixs);
-        pixaAddPix(pixahmt, pixt, L_INSERT);
+        pix1 = pixCreateTemplate(pixs);
+        pixaAddPix(pixahmt, pix1, L_INSERT);
     }
     pixhmt = pixaGetPixArray(pixahmt);
-    if (!pixhmt)
+    if (!pixhmt) {
+        pixaDestroy(&pixahmt);
         return (PIX *)ERROR_PTR("pixhmt array not made", procName, NULL);
-
-#if  DEBUG_SELS
-    pixt = selaDisplayInPix(sela, 35, 3, 15, 4);
-    pixDisplayWithTitle(pixt, 100, 100, "allsels", 1);
-    pixDestroy(&pixt);
-#endif  /* DEBUG_SELS */
+    }
 
         /* Set up initial image for fg thinning */
     if (type == L_THIN_FG)
@@ -285,7 +261,7 @@ SEL     *sel, *selr;
 
         /* Thin the fg, with up to maxiters iterations */
     for (i = 0; i < maxiters; i++) {
-        pixt = pixCopy(NULL, pixd);  /* test for completion */
+        pix1 = pixCopy(NULL, pixd);  /* test for completion */
         for (r = 0; r < 4; r++) {  /* over 90 degree rotations of Sels */
             for (j = 0; j < nsels; j++) {  /* over individual sels in sela */
                 sel = selaGetSel(sela, j);  /* not a copy */
@@ -297,16 +273,35 @@ SEL     *sel, *selr;
             }
             pixSubtract(pixd, pixd, pixhmt[0]);  /* remove result */
         }
-        pixEqual(pixd, pixt, &same);
-        pixDestroy(&pixt);
+        pixEqual(pixd, pix1, &same);
+        pixDestroy(&pix1);
         if (same) {
-            L_INFO("%d iterations to completion\n", procName, i);
+/*            L_INFO("%d iterations to completion\n", procName, i); */
             break;
         }
     }
 
-    if (type == L_THIN_BG)
-        pixInvert(pixd, pixd);
+        /* This is a bit tricky. If we're thickening the foreground, then
+         * we get a fg border of thickness equal to the number of
+         * iterations.  This border is connected to all components that
+         * were initially touching the border, but as it grows, it does
+         * not touch other growing components -- it leaves a 1 pixel wide
+         * background between it and the growing components, and that
+         * thin background prevents the components from growing further.
+         * This border can be entirely removed as follows:
+         * (1) Subtract the original (unthickened) image pixs from the
+         *     thickened image. This removes the pixels that were originally
+         *     touching the border.
+         * (2) Get all remaining pixels that are connected to the border.
+         * (3) Remove those pixels from the thickened image.  */
+    if (type == L_THIN_BG) {
+        pixInvert(pixd, pixd);  /* finish with duality */
+        pix1 = pixSubtract(NULL, pixd, pixs);
+        pix2 = pixExtractBorderConnComps(pix1, 4);
+        pixSubtract(pixd, pixd, pix2);
+        pixDestroy(&pix1);
+        pixDestroy(&pix2);
+    }
 
     pixaDestroy(&pixahmt);
     return pixd;
@@ -314,159 +309,165 @@ SEL     *sel, *selr;
 
 
 /*!
- *  pixThinExamples()
+ * \brief   selaMakeThinSets()
  *
- *      Input:  pixs (1 bpp)
- *              type (L_THIN_FG, L_THIN_BG)
- *              index (into specific examples; valid 1-9; see notes)
- *              maxiters (max number of iters allowed; use 0 to iterate
- *                        until completion)
- *              selfile (<optional> filename for output sel display)
- *      Return: pixd, or null on error
+ * \param[in]    index  into specific sets
+ * \param[in]    debug  1 to output display of sela
+ * \return  sela, or NULL on error
  *
- *  Notes:
- *      (1) See notes in pixThin().  The examples are taken from
- *          the paper referenced there.
- *      (2) Here we allow specific sets of HMTs to be used in
- *          parallel for thinning from each of four directions.
- *          One iteration consists of four such parallel thins.
- *      (3) The examples are indexed as follows:
- *          Thinning  (e.g., run to completion):
- *              index = 1     sel_4_1, sel_4_5, sel_4_6
- *              index = 2     sel_4_1, sel_4_7, sel_4_7_rot
- *              index = 3     sel_48_1, sel_48_1_rot, sel_48_2
- *              index = 4     sel_8_2, sel_8_3, sel_48_2
- *              index = 5     sel_8_1, sel_8_5, sel_8_6
- *              index = 6     sel_8_2, sel_8_3, sel_8_8, sel_8_9
- *              index = 7     sel_8_5, sel_8_6, sel_8_7, sel_8_7_rot
- *          Thickening:
- *              index = 8     sel_4_2, sel_4_3 (e.g,, do just a few iterations)
- *              index = 9     sel_8_4 (e.g., do just a few iterations)
+ * <pre>
+ * Notes:
+ *      (1) These are specific sets of HMTs to be used in parallel for
+ *          for thinning from each of four directions.
+ *      (2) The sets are indexed as follows:
+ *          For thinning (e.g., run to completion):
+ *              index = 1     sel_4_1, sel_4_2, sel_4_3
+ *              index = 2     sel_4_1, sel_4_5, sel_4_6
+ *              index = 3     sel_4_1, sel_4_7, sel_4_7_rot
+ *              index = 4     sel_48_1, sel_48_1_rot, sel_48_2
+ *              index = 5     sel_8_2, sel_8_3, sel_8_5, sel_8_6
+ *              index = 6     sel_8_2, sel_8_3, sel_48_2
+ *              index = 7     sel_8_1, sel_8_5, sel_8_6
+ *              index = 8     sel_8_2, sel_8_3, sel_8_8, sel_8_9
+ *              index = 9     sel_8_5, sel_8_6, sel_8_7, sel_8_7_rot
+ *          For thickening (e.g., just a few iterations):
+ *              index = 10    sel_4_2, sel_4_3
+ *              index = 11    sel_8_4
+ *      (3) For a very smooth skeleton, use set 1 for 4 connected and
+ *          set 5 for 8 connected thins.
+ * </pre>
  */
-PIX *
-pixThinExamples(PIX         *pixs,
-                l_int32      type,
-                l_int32      index,
-                l_int32      maxiters,
-                const char  *selfile)
+SELA *
+selaMakeThinSets(l_int32  index,
+                 l_int32  debug)
 {
-PIX   *pixd, *pixt;
 SEL   *sel;
-SELA  *sela;
+SELA  *sela1, *sela2, *sela3;
 
-    PROCNAME("pixThinExamples");
+    PROCNAME("selaMakeThinSets");
 
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    if (pixGetDepth(pixs) != 1)
-        return (PIX *)ERROR_PTR("pixs not 1 bpp", procName, NULL);
-    if (type != L_THIN_FG && type != L_THIN_BG)
-        return (PIX *)ERROR_PTR("invalid fg/bg type", procName, NULL);
-    if (index < 1 || index > 9)
-        return (PIX *)ERROR_PTR("invalid index", procName, NULL);
-    if (maxiters == 0) maxiters = 10000;
+    if (index < 1 || index > 11)
+        return (SELA *)ERROR_PTR("invalid index", procName, NULL);
 
+    sela2 = selaCreate(4);
     switch(index)
     {
     case 1:
-        sela = selaCreate(3);
-        sel = selCreateFromString(sel_4_1, 3, 3, "sel_4_1");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_4_5, 3, 3, "sel_4_5");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_4_6, 3, 3, "sel_4_6");
-        selaAddSel(sela, sel, NULL, 0);
+        sela1 = sela4ccThin(NULL);
+        selaFindSelByName(sela1, "sel_4_1", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_4_2", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_4_3", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
         break;
     case 2:
-        sela = selaCreate(3);
-        sel = selCreateFromString(sel_4_1, 3, 3, "sel_4_1");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_4_7, 3, 3, "sel_4_7");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selRotateOrth(sel, 1);
-        selaAddSel(sela, sel, "sel_4_7_rot", 0);
+        sela1 = sela4ccThin(NULL);
+        selaFindSelByName(sela1, "sel_4_1", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_4_5", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_4_6", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
         break;
     case 3:
-        sela = selaCreate(3);
-        sel = selCreateFromString(sel_48_1, 3, 3, "sel_48_1");
-        selaAddSel(sela, sel, NULL, 0);
+        sela1 = sela4ccThin(NULL);
+        selaFindSelByName(sela1, "sel_4_1", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_4_7", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
         sel = selRotateOrth(sel, 1);
-        selaAddSel(sela, sel, "sel_48_1_rot", 0);
-        sel = selCreateFromString(sel_48_2, 3, 3, "sel_48_2");
-        selaAddSel(sela, sel, NULL, 0);
+        selaAddSel(sela2, sel, "sel_4_7_rot", L_INSERT);
         break;
     case 4:
-        sela = selaCreate(3);
-        sel = selCreateFromString(sel_8_2, 3, 3, "sel_8_2");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_8_3, 3, 3, "sel_8_3");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_48_2, 3, 3, "sel_48_2");
-        selaAddSel(sela, sel, NULL, 0);
+        sela1 = sela4and8ccThin(NULL);
+        selaFindSelByName(sela1, "sel_48_1", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        sel = selRotateOrth(sel, 1);
+        selaAddSel(sela2, sel, "sel_48_1_rot", L_INSERT);
+        selaFindSelByName(sela1, "sel_48_2", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
         break;
     case 5:
-        sela = selaCreate(3);
-        sel = selCreateFromString(sel_8_1, 3, 3, "sel_8_1");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_8_5, 3, 3, "sel_8_5");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_8_6, 3, 3, "sel_8_6");
-        selaAddSel(sela, sel, NULL, 0);
+        sela1 = sela8ccThin(NULL);
+        selaFindSelByName(sela1, "sel_8_2", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_8_3", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_8_5", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_8_6", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
         break;
     case 6:
-        sela = selaCreate(4);
-        sel = selCreateFromString(sel_8_2, 3, 3, "sel_8_2");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_8_3, 3, 3, "sel_8_3");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_8_8, 3, 3, "sel_8_8");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_8_9, 3, 3, "sel_8_9");
-        selaAddSel(sela, sel, NULL, 0);
+        sela1 = sela8ccThin(NULL);
+        sela3 = sela4and8ccThin(NULL);
+        selaFindSelByName(sela1, "sel_8_2", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_8_3", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela3, "sel_48_2", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaDestroy(&sela3);
         break;
     case 7:
-        sela = selaCreate(4);
-        sel = selCreateFromString(sel_8_5, 3, 3, "sel_8_5");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_8_6, 3, 3, "sel_8_6");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_8_7, 3, 3, "sel_8_7");
-        selaAddSel(sela, sel, NULL, 0);
+        sela1 = sela8ccThin(NULL);
+        selaFindSelByName(sela1, "sel_8_1", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_8_5", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_8_6", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        break;
+    case 8:
+        sela1 = sela8ccThin(NULL);
+        selaFindSelByName(sela1, "sel_8_2", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_8_3", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_8_8", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_8_9", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        break;
+    case 9:
+        sela1 = sela8ccThin(NULL);
+        selaFindSelByName(sela1, "sel_8_5", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_8_6", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_8_7", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
         sel = selRotateOrth(sel, 1);
-        selaAddSel(sela, sel, "sel_8_7_rot", 0);
+        selaAddSel(sela2, sel, "sel_8_7_rot", L_INSERT);
         break;
-    case 8:  /* thicken for this one; just a few iterations */
-        sela = selaCreate(2);
-        sel = selCreateFromString(sel_4_2, 3, 3, "sel_4_2");
-        selaAddSel(sela, sel, NULL, 0);
-        sel = selCreateFromString(sel_4_3, 3, 3, "sel_4_3");
-        selaAddSel(sela, sel, NULL, 0);
-        pixt = pixThinGeneral(pixs, type, sela, maxiters);
-        pixd = pixRemoveBorderConnComps(pixt, 4);
-        pixDestroy(&pixt);
+    case 10:  /* thicken for this one; use just a few iterations */
+        sela1 = sela4ccThin(NULL);
+        selaFindSelByName(sela1, "sel_4_2", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
+        selaFindSelByName(sela1, "sel_4_3", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
         break;
-    case 9:  /* thicken for this one; just a few iterations */
-        sela = selaCreate(1);
-        sel = selCreateFromString(sel_8_4, 3, 3, "sel_8_4");
-        selaAddSel(sela, sel, NULL, 0);
-        pixt = pixThinGeneral(pixs, type, sela, maxiters);
-        pixd = pixRemoveBorderConnComps(pixt, 4);
-        pixDestroy(&pixt);
+    case 11:  /* thicken for this one; use just a few iterations */
+        sela1 = sela8ccThin(NULL);
+        selaFindSelByName(sela1, "sel_8_4", NULL, &sel);
+        selaAddSel(sela2, sel, NULL, L_COPY);
         break;
-    default:
-        return (PIX *)ERROR_PTR("invalid index", procName, NULL);
     }
 
-    if (index <= 7)
-        pixd = pixThinGeneral(pixs, type, sela, maxiters);
-
-        /* Optionally display the sels */
-    if (selfile) {
-        pixt = selaDisplayInPix(sela, 35, 3, 15, 4);
-        pixWrite(selfile, pixt, IFF_PNG);
-        pixDestroy(&pixt);
+        /* Optionally display the sel set */
+    if (debug) {
+        PIX  *pix1;
+        char  buf[32];
+        lept_mkdir("/lept/sels");
+        pix1 = selaDisplayInPix(sela2, 35, 3, 15, 4);
+        snprintf(buf, sizeof(buf), "/tmp/lept/sels/set%d.png", index);
+        pixWrite(buf, pix1, IFF_PNG);
+        pixDisplay(pix1, 100, 100);
+        pixDestroy(&pix1);
     }
 
-    selaDestroy(&sela);
-    return pixd;
+    selaDestroy(&sela1);
+    return sela2;
 }
+

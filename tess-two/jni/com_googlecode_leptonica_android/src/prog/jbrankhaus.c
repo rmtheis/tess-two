@@ -143,7 +143,7 @@ static char  mainName[] = "jbrankhaus";
     }
 
 #if  DISPLAY_DIFFERENCE
-    fname = sarrayGetString(safiles, 0, 0);
+    fname = sarrayGetString(safiles, 0, L_NOCOPY);
     pixt = pixRead(fname);
     pix = pixaGetPix(pixa, 0, L_CLONE);
     pixXor(pixt, pixt, pix);

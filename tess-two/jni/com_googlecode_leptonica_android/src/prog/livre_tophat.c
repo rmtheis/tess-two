@@ -26,7 +26,6 @@
 
 /*
  * livre_tophat.c
- *
  */
 
 #include "allheaders.h"
@@ -34,7 +33,7 @@
 int main(int    argc,
          char **argv)
 {
-PIX         *pixs, *pixsg, *pixg, *pixd;
+PIX         *pixs, *pixsg, *pix1, *pix2;
 PIXA        *pixa;
 static char  mainName[] = "livre_tophat";
 
@@ -42,32 +41,29 @@ static char  mainName[] = "livre_tophat";
 	return ERROR_INT(" Syntax: livre_tophat", mainName, 1);
 
         /* Read the image in at 150 ppi. */
-    if ((pixs = pixRead("brothers.150.jpg")) == NULL)
-	return ERROR_INT("pix not made", mainName, 1);
-    pixDisplayWrite(NULL, -1);
-    pixDisplayWriteFormat(pixs, 2, IFF_JFIF_JPEG);
+    pixs = pixRead("brothers.150.jpg");
+    pixa = pixaCreate(0);
+    pixaAddPix(pixa, pixs, L_INSERT);
 
     pixsg = pixConvertRGBToLuminance(pixs);
 
         /* Black tophat (closing - original-image) and invert */
-    pixg = pixTophat(pixsg, 15, 15, L_TOPHAT_BLACK);
-    pixInvert(pixg, pixg);
-    pixDisplayWriteFormat(pixg, 2, IFF_JFIF_JPEG);
+    pix1 = pixTophat(pixsg, 15, 15, L_TOPHAT_BLACK);
+    pixInvert(pix1, pix1);
+    pixaAddPix(pixa, pix1, L_INSERT);
 
         /* Set black point at 200, white point at 245. */
-    pixd = pixGammaTRC(NULL, pixg, 1.0, 200, 245);
-    pixDisplayWriteFormat(pixd, 2, IFF_JFIF_JPEG);
-    pixDestroy(&pixg);
-    pixDestroy(&pixd);
+    pix2 = pixGammaTRC(NULL, pix1, 1.0, 200, 245);
+    pixaAddPix(pixa, pix2, L_INSERT);
 
         /* Generate the output image */
-    pixa = pixaReadFiles("/tmp/display", "file");
-    pixd = pixaDisplayTiledAndScaled(pixa, 8, 350, 3, 0, 25, 2);
-    pixWrite("/tmp/tophat.jpg", pixd, IFF_JFIF_JPEG);
-    pixDisplay(pixd, 0, 0);
-    pixDestroy(&pixd);
-
-    pixDestroy(&pixs);
+    lept_mkdir("lept/livre");
+    fprintf(stderr, "Writing to: /tmp/lept/livre/tophat.jpg\n");
+    pix1 = pixaDisplayTiledAndScaled(pixa, 8, 350, 3, 0, 25, 2);
+    pixWrite("/tmp/lept/livre/tophat.jpg", pix1, IFF_JFIF_JPEG);
+    pixDisplay(pix1, 1200, 800);
+    pixDestroy(&pix1);
+    pixaDestroy(&pixa);
     pixDestroy(&pixsg);
     return 0;
 }

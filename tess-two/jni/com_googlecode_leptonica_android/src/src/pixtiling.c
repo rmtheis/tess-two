@@ -25,8 +25,9 @@
  *====================================================================*/
 
 
-/*
- *   pixtiling.c
+/*!
+ * \file  pixtiling.c
+ * <pre>
  *
  *        PIXTILING       *pixTilingCreate()
  *        void            *pixTilingDestroy()
@@ -55,50 +56,52 @@
  *
  *     PIX *pixd = pixCreateTemplateNoInit(pixs);  // output
  *     PIXTILING  *pt = pixTilingCreate(pixs, 0, 1, 256, 30, 0);
- *     pixTilingGetCount(pt, &nx, NULL);
- *     for (j = 0; j < nx; j++) {
+ *     pixTilingGetCount(pt, \&nx, NULL);
+ *     for (j = 0; j \< nx; j++) {
  *         PIX *pixt = pixTilingGetTile(pt, 0, j);
  *         SomeInPlaceOperation(pixt, 30, 0, ...);
  *         pixTilingPaintTile(pixd, 0, j, pixt, pt);
- *         pixDestroy(&pixt);
+ *         pixDestroy(\&pixt);
  *     }
  *
  *   In this example, note the following:
- *    - The unspecfified in-place operation could instead generate
+ *    ~ The unspecfified in-place operation could instead generate
  *      a new pix.  If this is done, the resulting pix must be the
  *      same size as pixt, because pixTilingPaintTile() makes that
  *      assumption, removing the overlap pixels before painting
  *      into the destination.
- *    - The 'overlap' parameters have been included in your function,
+ *    ~ The 'overlap' parameters have been included in your function,
  *      to indicate which pixels are not in the exterior overlap region.
  *      You will need to change only pixels that are not in the overlap
  *      region, because those are the pixels that will be painted
  *      into the destination.
- *    - For tiles on the outside of the image, mirrored pixels are
+ *    ~ For tiles on the outside of the image, mirrored pixels are
  *      added to substitute for the overlap that is added to interior
  *      tiles.  This allows you to implement your function without
  *      reference to which tile it is; no special coding is necessary
  *      for pixels that are near the image boundary.
- *    - The tiles are labeled by (i, j) = (row, column),
+ *    ~ The tiles are labeled by (i, j) = (row, column),
  *      and in this example there is one row and nx columns.
+ * </pre>
  */
 
 #include "allheaders.h"
 
 
 /*!
- *  pixTilingCreate()
+ * \brief   pixTilingCreate()
  *
- *      Input:  pixs  (pix to be tiled; any depth; colormap OK)
- *              nx    (number of tiles across image)
- *              ny    (number of tiles down image)
- *              w     (desired width of each tile)
- *              h     (desired height of each tile)
- *              xoverlap (overlap into neighboring tiles on each side)
- *              yoverlap (overlap into neighboring tiles above and below)
- *      Return: pixtiling, or null on error
+ * \param[in]    pixs  pix to be tiled; any depth; colormap OK
+ * \param[in]    nx    number of tiles across image
+ * \param[in]    ny    number of tiles down image
+ * \param[in]    w     desired width of each tile
+ * \param[in]    h     desired height of each tile
+ * \param[in]    xoverlap overlap into neighboring tiles on each side
+ * \param[in]    yoverlap overlap into neighboring tiles above and below
+ * \return  pixtiling, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) We put a clone of pixs in the PixTiling.
  *      (2) The input to pixTilingCreate() for horizontal tiling can be
  *          either the number of tiles across the image or the approximate
@@ -112,6 +115,7 @@
  *          vertical strips and nx = 1 for horizontal strips.
  *      (4) The overlap must not be larger than the width or height of
  *          the leftmost or topmost tile(s).
+ * </pre>
  */
 PIXTILING *
 pixTilingCreate(PIX     *pixs,
@@ -165,10 +169,10 @@ PIXTILING  *pt;
 
 
 /*!
- *  pixTilingDestroy()
+ * \brief   pixTilingDestroy()
  *
- *      Input:  &pt (<will be set to null before returning>)
- *      Return: void
+ * \param[in,out]   ppt will be set to null before returning
+ * \return  void
  */
 void
 pixTilingDestroy(PIXTILING  **ppt)
@@ -193,12 +197,12 @@ PIXTILING  *pt;
 
 
 /*!
- *  pixTilingGetCount()
+ * \brief   pixTilingGetCount()
  *
- *      Input:  pt (pixtiling)
- *              &nx (<optional return> nx; can be null)
- *              &ny (<optional return> ny; can be null)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pt pixtiling
+ * \param[out]   pnx [optional] nx; can be null
+ * \param[out]   pny [optional] ny; can be null
+ * \return  0 if OK, 1 on error
  */
 l_int32
 pixTilingGetCount(PIXTILING  *pt,
@@ -216,12 +220,12 @@ pixTilingGetCount(PIXTILING  *pt,
 
 
 /*!
- *  pixTilingGetSize()
+ * \brief   pixTilingGetSize()
  *
- *      Input:  pt (pixtiling)
- *              &w (<optional return> tile width; can be null)
- *              &h (<optional return> tile height; can be null)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pt pixtiling
+ * \param[out]   pw [optional] tile width; can be null
+ * \param[out]   ph [optional] tile height; can be null
+ * \return  0 if OK, 1 on error
  */
 l_int32
 pixTilingGetSize(PIXTILING  *pt,
@@ -239,13 +243,13 @@ pixTilingGetSize(PIXTILING  *pt,
 
 
 /*!
- *  pixTilingGetTile()
+ * \brief   pixTilingGetTile()
  *
- *      Input:  pt (pixtiling)
- *              i (tile row index)
- *              j (tile column index)
- *      Return: pixd (tile with appropriate boundary (overlap) pixels added),
- *                    or null on error
+ * \param[in]    pt pixtiling
+ * \param[in]    i tile row index
+ * \param[in]    j tile column index
+ * \return  pixd tile with appropriate boundary (overlap) pixels added,
+ *                    or NULL on error
  */
 PIX *
 pixTilingGetTile(PIXTILING  *pt,
@@ -346,17 +350,19 @@ PIX     *pixs, *pixt, *pixd;
 
 
 /*!
- *  pixTilingNoStripOnPaint()
+ * \brief   pixTilingNoStripOnPaint()
  *
- *      Input:  pt (pixtiling)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pt pixtiling
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The default for paint is to strip out the overlap pixels
  *          that are added by pixTilingGetTile().  However, some
  *          operations will generate an image with these pixels
  *          stripped off.  This tells the paint operation not
  *          to strip the added boundary pixels when painting.
+ * </pre>
  */
 l_int32
 pixTilingNoStripOnPaint(PIXTILING  *pt)
@@ -371,14 +377,14 @@ pixTilingNoStripOnPaint(PIXTILING  *pt)
 
 
 /*!
- *  pixTilingPaintTile()
+ * \brief   pixTilingPaintTile()
  *
- *      Input:  pixd (dest: paint tile onto this, without overlap)
- *              i (tile row index)
- *              j (tile column index)
- *              pixs (source: tile to be painted from)
- *              pt (pixtiling struct)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixd dest: paint tile onto this, without overlap
+ * \param[in]    i tile row index
+ * \param[in]    j tile column index
+ * \param[in]    pixs source: tile to be painted from
+ * \param[in]    pt pixtiling struct
+ * \return  0 if OK, 1 on error
  */
 l_int32
 pixTilingPaintTile(PIX        *pixd,
@@ -414,4 +420,3 @@ l_int32  w, h;
 
     return 0;
 }
-

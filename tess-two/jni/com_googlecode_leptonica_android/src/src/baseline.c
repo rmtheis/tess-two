@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  baseline.c
+/*!
+ * \file baseline.c
+ * <pre>
  *
  *      Locate text baselines in an image
  *           NUMA     *pixFindBaselines()
@@ -38,11 +39,12 @@
  *           NUMA     *pixGetLocalSkewAngles()
  *
  *  We have two apparently different functions here:
- *    - finding baselines
- *    - finding a projective transform to remove keystone warping
+ *    ~ finding baselines
+ *    ~ finding a projective transform to remove keystone warping
  *  The function pixGetLocalSkewAngles() returns an array of angles,
  *  one for each raster line, and the baselines of the text lines
  *  should intersect the left edge of the image with that angle.
+ * </pre>
  */
 
 #include <math.h>
@@ -78,20 +80,21 @@ static const l_float32  MIN_ALLOWED_CONFIDENCE = 3.0;
  *                    Locate text baselines in an image                *
  *---------------------------------------------------------------------*/
 /*!
- *  pixFindBaselines()
+ * \brief   pixFindBaselines()
  *
- *      Input:  pixs (1 bpp)
- *              &pta (<optional return> pairs of pts corresponding to
- *                    approx. ends of each text line)
- *              debug (usually 0; set to 1 for debugging output)
- *      Return: na (of baseline y values), or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[out]   ppta [optional] pairs of pts corresponding to
+ *                    approx. ends of each text line
+ * \param[in]    debug usually 0; set to 1 for debugging output
+ * \return  na of baseline y values, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Input binary image must have text lines already aligned
  *          horizontally.  This can be done by either rotating the
  *          image with pixDeskew(), or, if a projective transform
  *          is required, by doing pixDeskewLocal() first.
- *      (2) Input null for &pta if you don't want this returned.
+ *      (2) Input null for \&pta if you don't want this returned.
  *          The pta will come in pairs of points (left and right end
  *          of each baseline).
  *      (3) Caution: this will not work properly on text with multiple
@@ -110,6 +113,7 @@ static const l_float32  MIN_ALLOWED_CONFIDENCE = 3.0;
  *          by the inverse of the width of the text line found there.
  *      (6) There are various debug sections that can be turned on
  *          with the debug flag.
+ * </pre>
  */
 NUMA *
 pixFindBaselines(PIX     *pixs,
@@ -153,8 +157,10 @@ PTA       *pta;
         numaAddNumber(nadiff, val1 - val2);
     }
 
-    if (debug)  /* show the difference signal */
-        gplotSimple1(nadiff, GPLOT_X11, "junkdiff", "difference");
+    if (debug) {  /* show the difference signal */
+        lept_mkdir("/lept/baseline");
+        gplotSimple1(nadiff, GPLOT_PNG, "/tmp/lept/baseline/diff", "Diff Sig");
+    }
 
         /* Use the zeroes of the profile to locate each baseline. */
     array = numaGetIArray(nadiff);
@@ -197,7 +203,7 @@ PTA       *pta;
     LEPT_FREE(array);
 
     if (debug) {  /* show the raster locations for the peaks */
-        gplot = gplotCreate("junkloc", GPLOT_X11, "Peak locations",
+        gplot = gplotCreate("/tmp/lept/baseline/loc", GPLOT_PNG, "Peak locs",
                             "rasterline", "height");
         gplotAddPlot(gplot, naloc, naval, GPLOT_POINTS, "locs");
         gplotMakeOutput(gplot);
@@ -241,7 +247,7 @@ PTA       *pta;
                 pixRenderLineArb(pixd, x1, y1, x2, y2, 1, 255, 0, 0);
             }
             pixDisplay(pixd, 200, 200);
-            pixWrite("junkbaselines", pixd, IFF_PNG);
+            pixWrite("/tmp/lept/baseline/baselines.png", pixd, IFF_PNG);
             pixDestroy(&pixd);
         }
     }
@@ -262,24 +268,25 @@ PTA       *pta;
  *               Projective transform to remove local skew             *
  *---------------------------------------------------------------------*/
 /*!
- *  pixDeskewLocal()
+ * \brief   pixDeskewLocal()
  *
- *      Input:  pixs
- *              nslices  (the number of horizontal overlapping slices; must
- *                  be larger than 1 and not exceed 20; use 0 for default)
- *              redsweep (sweep reduction factor: 1, 2, 4 or 8;
- *                        use 0 for default value)
- *              redsearch (search reduction factor: 1, 2, 4 or 8, and
- *                         not larger than redsweep; use 0 for default value)
- *              sweeprange (half the full range, assumed about 0; in degrees;
- *                          use 0.0 for default value)
- *              sweepdelta (angle increment of sweep; in degrees;
- *                          use 0.0 for default value)
- *              minbsdelta (min binary search increment angle; in degrees;
- *                          use 0.0 for default value)
- *      Return: pixd, or null on error
+ * \param[in]    pixs
+ * \param[in]    nslices  the number of horizontal overlapping slices; must
+ *                  be larger than 1 and not exceed 20; use 0 for default
+ * \param[in]    redsweep sweep reduction factor: 1, 2, 4 or 8;
+ *                        use 0 for default value
+ * \param[in]    redsearch search reduction factor: 1, 2, 4 or 8, and
+ *                         not larger than redsweep; use 0 for default value
+ * \param[in]    sweeprange half the full range, assumed about 0; in degrees;
+ *                          use 0.0 for default value
+ * \param[in]    sweepdelta angle increment of sweep; in degrees;
+ *                          use 0.0 for default value
+ * \param[in]    minbsdelta min binary search increment angle; in degrees;
+ *                          use 0.0 for default value
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function allows deskew of a page whose skew changes
  *          approximately linearly with vertical position.  It uses
  *          a projective transform that in effect does a differential
@@ -296,6 +303,7 @@ PTA       *pta;
  *          by rotating or horizontally shearing it.
  *          Typically, this can be achieved by vertically aligning
  *          the page edge.
+ * </pre>
  */
 PIX *
 pixDeskewLocal(PIX       *pixs,
@@ -336,32 +344,34 @@ PTA       *ptas, *ptad;
  *                       Determine the local skew                      *
  *---------------------------------------------------------------------*/
 /*!
- *  pixGetLocalSkewTransform()
+ * \brief   pixGetLocalSkewTransform()
  *
- *      Input:  pixs
- *              nslices  (the number of horizontal overlapping slices; must
- *                  be larger than 1 and not exceed 20; use 0 for default)
- *              redsweep (sweep reduction factor: 1, 2, 4 or 8;
- *                        use 0 for default value)
- *              redsearch (search reduction factor: 1, 2, 4 or 8, and
- *                         not larger than redsweep; use 0 for default value)
- *              sweeprange (half the full range, assumed about 0; in degrees;
- *                          use 0.0 for default value)
- *              sweepdelta (angle increment of sweep; in degrees;
- *                          use 0.0 for default value)
- *              minbsdelta (min binary search increment angle; in degrees;
- *                          use 0.0 for default value)
- *              &ptas  (<return> 4 points in the source)
- *              &ptad  (<return> the corresponding 4 pts in the dest)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs
+ * \param[in]    nslices  the number of horizontal overlapping slices; must
+ *                  be larger than 1 and not exceed 20; use 0 for default
+ * \param[in]    redsweep sweep reduction factor: 1, 2, 4 or 8;
+ *                        use 0 for default value
+ * \param[in]    redsearch search reduction factor: 1, 2, 4 or 8, and
+ *                         not larger than redsweep; use 0 for default value
+ * \param[in]    sweeprange half the full range, assumed about 0; in degrees;
+ *                          use 0.0 for default value
+ * \param[in]    sweepdelta angle increment of sweep; in degrees;
+ *                          use 0.0 for default value
+ * \param[in]    minbsdelta min binary search increment angle; in degrees;
+ *                          use 0.0 for default value
+ * \param[out]   pptas  4 points in the source
+ * \param[out]   pptad  the corresponding 4 pts in the dest
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This generates two pairs of points in the src, each pair
  *          corresponding to a pair of points that would lie along
  *          the same raster line in a transformed (dewarped) image.
  *      (2) The sets of 4 src and 4 dest points returned by this function
  *          can then be used, in a projective or bilinear transform,
  *          to remove keystoning in the src.
+ * </pre>
  */
 l_int32
 pixGetLocalSkewTransform(PIX       *pixs,
@@ -445,26 +455,27 @@ PTA       *ptas, *ptad;
 
 
 /*!
- *  pixGetLocalSkewAngles()
+ * \brief   pixGetLocalSkewAngles()
  *
- *      Input:  pixs
- *              nslices  (the number of horizontal overlapping slices; must
- *                  be larger than 1 and not exceed 20; use 0 for default)
- *              redsweep (sweep reduction factor: 1, 2, 4 or 8;
- *                        use 0 for default value)
- *              redsearch (search reduction factor: 1, 2, 4 or 8, and
- *                         not larger than redsweep; use 0 for default value)
- *              sweeprange (half the full range, assumed about 0; in degrees;
- *                          use 0.0 for default value)
- *              sweepdelta (angle increment of sweep; in degrees;
- *                          use 0.0 for default value)
- *              minbsdelta (min binary search increment angle; in degrees;
- *                          use 0.0 for default value)
- *              &a (<optional return> slope of skew as fctn of y)
- *              &b (<optional return> intercept at y=0 of skew as fctn of y)
- *      Return: naskew, or null on error
+ * \param[in]    pixs
+ * \param[in]    nslices  the number of horizontal overlapping slices; must
+ *                  be larger than 1 and not exceed 20; use 0 for default
+ * \param[in]    redsweep sweep reduction factor: 1, 2, 4 or 8;
+ *                        use 0 for default value
+ * \param[in]    redsearch search reduction factor: 1, 2, 4 or 8, and
+ *                         not larger than redsweep; use 0 for default value
+ * \param[in]    sweeprange half the full range, assumed about 0; in degrees;
+ *                          use 0.0 for default value
+ * \param[in]    sweepdelta angle increment of sweep; in degrees;
+ *                          use 0.0 for default value
+ * \param[in]    minbsdelta min binary search increment angle; in degrees;
+ *                          use 0.0 for default value
+ * \param[out]   pa [optional] slope of skew as fctn of y
+ * \param[out]   pb [optional] intercept at y=0 of skew as fctn of y
+ * \return  naskew, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The local skew is measured in a set of overlapping strips.
  *          We then do a least square linear fit parameters to get
  *          the slope and intercept parameters a and b in
@@ -477,6 +488,7 @@ PTA       *ptas, *ptad;
  *          each text line has a baseline that should intersect
  *          the left edge of the image with the angle given by this
  *          array, evaluated at the raster line of intersection.
+ * </pre>
  */
 NUMA *
 pixGetLocalSkewAngles(PIX        *pixs,
@@ -553,8 +565,9 @@ PTA       *pta;
 { NUMA   *nax, *nay;
   GPLOT  *gplot;
     ptaGetArrays(pta, &nax, &nay);
-    gplot = gplotCreate("junkskew", GPLOT_X11, "skew as fctn of y",
-                        "y (in raster lines from top)", "angle (in degrees)");
+    gplot = gplotCreate("/tmp/lept/baseline/kew", GPLOT_PNG,
+                        "skew as fctn of y", "y (in raster lines from top)",
+                        "angle (in degrees)");
     gplotAddPlot(gplot, NULL, naskew, GPLOT_POINTS, "linear lsf");
     gplotAddPlot(gplot, nax, nay, GPLOT_POINTS, "actual data pts");
     gplotMakeOutput(gplot);

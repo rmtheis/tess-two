@@ -27,13 +27,16 @@
 /*
  * cleanpdf.c
  *
- *    This program takes as input pdf files that have been constructed
- *    from poorly compressed images -- typically images that have been
- *    scanned in grayscale or color but should be rendered in black
- *    and white (1 bpp).  It cleans and compresses them, and generates
- *    a pdf composed of tiff-g4 compressed images.
+ *    This program is intended to take as input pdf files that have
+ *    been constructed from poorly compressed images -- typically images
+ *    that have been scanned in grayscale or color but should be rendered
+ *    in black and white (1 bpp).  It cleans and compresses them, and
+ *    generates a pdf composed of tiff-g4 compressed images.
  *
- *     Syntax:  cleanpdf basedir threshold resolution
+ *    It will also take as input clean, orthographically-generated pdfs,
+ *    and concatenate them into a single pdf file of images.
+ *
+ *     Syntax:  cleanpdf basedir threshold resolution [rotation]
  *
  *    The basedir is a directory where the input pdf files are located.
  *    The program will operate on every file in this directory with
@@ -46,6 +49,12 @@
  *
  *    The resolution should be the scanned resolution.  This is typically
  *    300 ppi, which for an 8.5 x 11 page would be 2550 x 3300 pixels.
+ *
+ *    The optional rotation is an integer:
+ *       0      no rotation
+ *       1      90 degrees cw
+ *       1      180 degrees cw
+ *       1      270 degrees cw
  *
  *    Whenever possible, the images have been deskewed.
  *
@@ -73,18 +82,28 @@ l_int32 main(int    argc,
 {
 char         buf[256];
 char        *basedir, *fname, *tail, *basename, *imagedir;
-l_int32      thresh, res, i, n, ret;
-PIX         *pixs, *pix1, *pix2, *pix3, *pix4;
+l_int32      thresh, res, rotation, i, n, ret;
+PIX         *pixs, *pix1, *pix2, *pix3, *pix4, *pix5;
 SARRAY      *sa;
 static char  mainName[] = "cleanpdf";
 
-    if (argc != 4)
+    if (argc != 4 && argc != 5)
         return ERROR_INT(
-            "Syntax: cleanpdf basedir threshold resolution", mainName, 1);
+            "Syntax: cleanpdf basedir threshold resolution [rotation]",
+            mainName, 1);
 
     basedir = argv[1];
     thresh = atoi(argv[2]);
     res = atoi(argv[3]);
+    if (argc == 5)
+        rotation = atoi(argv[4]);
+    else
+        rotation = 0;
+
+    if (rotation < 0 || rotation > 3) {
+        L_ERROR("rotation not in valid set {0,1,2,3}; setting to 0", mainName);
+        rotation = 0;
+    }
 
 #if 1
         /* Get the names of the pdf files */
@@ -125,21 +144,25 @@ static char  mainName[] = "cleanpdf";
         fname = sarrayGetString(sa, i, L_NOCOPY);
         pixs = pixRead(fname);
         pix1 = pixConvertTo8(pixs, FALSE);
-        pix2 = pixFindSkewAndDeskew(pix1, 2, NULL, NULL);
-        pix3 = pixBackgroundNormSimple(pix2, NULL, NULL);
-        pixGammaTRC(pix3, pix3, 2.0, 50, 250);
-        pix4 = pixThresholdToBinary(pix3, thresh);
-        if (0) pixRotate180(pix4, pix4);  /* remove this usually!! */
+        if (rotation > 0)
+            pix2 = pixRotateOrth(pix1, rotation);
+        else
+            pix2 = pixClone(pix1);
+        pix3 = pixFindSkewAndDeskew(pix2, 2, NULL, NULL);
+        pix4 = pixBackgroundNormSimple(pix3, NULL, NULL);
+        pixGammaTRC(pix4, pix4, 2.0, 50, 250);
+        pix5 = pixThresholdToBinary(pix4, thresh);
         splitPathAtDirectory(fname, NULL, &tail);
         splitPathAtExtension(tail, &basename, NULL);
         snprintf(buf, sizeof(buf), "%s/%s.tif", imagedir, basename);
         fprintf(stderr, "%s\n", buf);
-        pixWrite(buf, pix4, IFF_TIFF_G4);
+        pixWrite(buf, pix5, IFF_TIFF_G4);
         pixDestroy(&pixs);
         pixDestroy(&pix1);
         pixDestroy(&pix2);
         pixDestroy(&pix3);
         pixDestroy(&pix4);
+        pixDestroy(&pix5);
         lept_free(tail);
         lept_free(basename);
     }

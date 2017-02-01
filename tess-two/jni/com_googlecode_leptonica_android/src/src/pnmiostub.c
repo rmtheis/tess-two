@@ -24,10 +24,12 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  pnmiostub.c
+/*!
+ * \file pnmiostub.c
+ * <pre>
  *
  *     Stubs for pnmio.c functions
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -74,6 +76,13 @@ l_int32 pixWriteStreamAsciiPnm(FILE *fp, PIX *pix)
 
 /* ----------------------------------------------------------------------*/
 
+l_int32 pixWriteStreamPam(FILE *fp, PIX *pix)
+{
+    return ERROR_INT("function not present", "pixWriteStreamPam", 1);
+}
+
+/* ----------------------------------------------------------------------*/
+
 PIX * pixReadMemPnm(const l_uint8 *cdata, size_t size)
 {
     return (PIX * )ERROR_PTR("function not present", "pixReadMemPnm", NULL);
@@ -94,6 +103,13 @@ l_int32 pixWriteMemPnm(l_uint8 **pdata, size_t *psize, PIX *pix)
 {
     return ERROR_INT("function not present", "pixWriteMemPnm", 1);
 }
+/* ----------------------------------------------------------------------*/
+
+l_int32 pixWriteMemPam(l_uint8 **pdata, size_t *psize, PIX *pix)
+{
+    return ERROR_INT("function not present", "pixWriteMemPam", 1);
+}
+
 
 /* --------------------------------------------*/
 #endif  /* !USE_PNMIO */

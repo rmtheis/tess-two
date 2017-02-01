@@ -36,7 +36,7 @@
 int main(int    argc,
          char **argv)
 {
-PIX          *pixs, *pixt1, *pixt2, *pixd;
+PIX          *pixs, *pix1, *pix2, *pixd;
 PIXA         *pixa;
 L_REGPARAMS  *rp;
 
@@ -48,29 +48,29 @@ L_REGPARAMS  *rp;
         /* Dilation */
     pixa = pixaCreate(0);
     pixSaveTiled(pixs, pixa, 1.0, 1, 20, 8);
-    pixt1 = pixDilateGray3(pixs, 3, 1);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixDilateGray(pixs, 3, 1);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 0 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixDilateGray3(pixs, 3, 1);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixDilateGray(pixs, 3, 1);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 0 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
-    pixt1 = pixDilateGray3(pixs, 1, 3);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixDilateGray(pixs, 1, 3);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 1 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixDilateGray3(pixs, 1, 3);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixDilateGray(pixs, 1, 3);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 1 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
-    pixt1 = pixDilateGray3(pixs, 3, 3);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixDilateGray(pixs, 3, 3);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 2 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixDilateGray3(pixs, 3, 3);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixDilateGray(pixs, 3, 3);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 2 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
     pixd = pixaDisplay(pixa, 0, 0);
     pixDisplayWithTitle(pixd, 0, 100, "Dilation", rp->display);
@@ -80,29 +80,29 @@ L_REGPARAMS  *rp;
         /* Erosion */
     pixa = pixaCreate(0);
     pixSaveTiled(pixs, pixa, 1.0, 1, 20, 8);
-    pixt1 = pixErodeGray3(pixs, 3, 1);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixErodeGray(pixs, 3, 1);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 3 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixErodeGray3(pixs, 3, 1);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixErodeGray(pixs, 3, 1);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 3 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
-    pixt1 = pixErodeGray3(pixs, 1, 3);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixErodeGray(pixs, 1, 3);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 4 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixErodeGray3(pixs, 1, 3);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixErodeGray(pixs, 1, 3);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 4 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
-    pixt1 = pixErodeGray3(pixs, 3, 3);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixErodeGray(pixs, 3, 3);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 5 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixErodeGray3(pixs, 3, 3);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixErodeGray(pixs, 3, 3);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 5 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
     pixd = pixaDisplay(pixa, 0, 0);
     pixDisplayWithTitle(pixd, 250, 100, "Erosion", rp->display);
@@ -112,29 +112,29 @@ L_REGPARAMS  *rp;
         /* Opening */
     pixa = pixaCreate(0);
     pixSaveTiled(pixs, pixa, 1.0, 1, 20, 8);
-    pixt1 = pixOpenGray3(pixs, 3, 1);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixOpenGray(pixs, 3, 1);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 6 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixOpenGray3(pixs, 3, 1);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixOpenGray(pixs, 3, 1);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 6 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
-    pixt1 = pixOpenGray3(pixs, 1, 3);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixOpenGray(pixs, 1, 3);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 7 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixOpenGray3(pixs, 1, 3);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixOpenGray(pixs, 1, 3);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 7 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
-    pixt1 = pixOpenGray3(pixs, 3, 3);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixOpenGray(pixs, 3, 3);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 8 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixOpenGray3(pixs, 3, 3);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixOpenGray(pixs, 3, 3);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 8 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
     pixd = pixaDisplay(pixa, 0, 0);
     pixDisplayWithTitle(pixd, 500, 100, "Opening", rp->display);
@@ -144,29 +144,29 @@ L_REGPARAMS  *rp;
         /* Closing */
     pixa = pixaCreate(0);
     pixSaveTiled(pixs, pixa, 1.0, 1, 20, 8);
-    pixt1 = pixCloseGray3(pixs, 3, 1);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixCloseGray(pixs, 3, 1);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 9 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixCloseGray3(pixs, 3, 1);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixCloseGray(pixs, 3, 1);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 9 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
-    pixt1 = pixCloseGray3(pixs, 1, 3);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixCloseGray(pixs, 1, 3);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 10 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixCloseGray3(pixs, 1, 3);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixCloseGray(pixs, 1, 3);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 10 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
-    pixt1 = pixCloseGray3(pixs, 3, 3);
-    pixSaveTiled(pixt1, pixa, 1.0, 1, 20, 8);
-    pixt2 = pixCloseGray(pixs, 3, 3);
-    pixSaveTiled(pixt2, pixa, 1.0, 0, 20, 8);
-    regTestComparePix(rp, pixt1, pixt2);  /* 11 */
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixCloseGray3(pixs, 3, 3);
+    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+    pix2 = pixCloseGray(pixs, 3, 3);
+    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
+    regTestComparePix(rp, pix1, pix2);  /* 11 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
     pixd = pixaDisplay(pixa, 0, 0);
     pixDisplayWithTitle(pixd, 750, 100, "Closing", rp->display);

@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  arrayaccess.c
+/*!
+ * \file arrayaccess.c
+ * <pre>
  *
  *     Access within an array of 32-bit words
  *
@@ -53,6 +54,7 @@
  *     It is then necessary to cast internally within each function
  *     because ptr arithmetic requires knowing the size of the units
  *     being referenced.
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -62,11 +64,11 @@
  *                 Access within an array of 32-bit words               *
  *----------------------------------------------------------------------*/
 /*!
- *  l_getDataBit()
+ * \brief   l_getDataBit()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *      Return: val of the nth (1-bit) pixel.
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \return  val of the nth 1-bit pixel.
  */
 l_int32
 l_getDataBit(void    *line,
@@ -77,11 +79,11 @@ l_getDataBit(void    *line,
 
 
 /*!
- *  l_setDataBit()
+ * \brief   l_setDataBit()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *      Return: void
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \return  void
  *
  *  Action: sets the pixel to 1
  */
@@ -94,13 +96,13 @@ l_setDataBit(void    *line,
 
 
 /*!
- *  l_clearDataBit()
+ * \brief   l_clearDataBit()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *      Return: void
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \return  void
  *
- *  Action: sets the (1-bit) pixel to 0
+ *  Action: sets the 1-bit pixel to 0
  */
 void
 l_clearDataBit(void    *line,
@@ -111,20 +113,22 @@ l_clearDataBit(void    *line,
 
 
 /*!
- *  l_setDataBitVal()
+ * \brief   l_setDataBitVal()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *              val   (val to be inserted: 0 or 1)
- *      Return: void
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \param[in]    val   val to be inserted: 0 or 1
+ * \return  void
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an accessor for a 1 bpp pix.
  *      (2) It is actually a little slower than using:
  *            if (val == 0)
  *                l_ClearDataBit(line, n);
  *            else
  *                l_SetDataBit(line, n);
+ * </pre>
  */
 void
 l_setDataBitVal(void    *line,
@@ -141,11 +145,11 @@ l_uint32    *pword;
 
 
 /*!
- *  l_getDataDibit()
+ * \brief   l_getDataDibit()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *      Return: val of the nth (2-bit) pixel.
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \return  val of the nth 2-bit pixel.
  */
 l_int32
 l_getDataDibit(void    *line,
@@ -156,12 +160,12 @@ l_getDataDibit(void    *line,
 
 
 /*!
- *  l_setDataDibit()
+ * \brief   l_setDataDibit()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *              val   (val to be inserted: 0 - 3)
- *      Return: void
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \param[in]    val   val to be inserted: 0 - 3
+ * \return  void
  */
 void
 l_setDataDibit(void    *line,
@@ -178,13 +182,13 @@ l_uint32    *pword;
 
 
 /*!
- *  l_clearDataDibit()
+ * \brief   l_clearDataDibit()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *      Return: void
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \return  void
  *
- *  Action: sets the (2-bit) pixel to 0
+ *  Action: sets the 2-bit pixel to 0
  */
 void
 l_clearDataDibit(void    *line,
@@ -195,11 +199,11 @@ l_clearDataDibit(void    *line,
 
 
 /*!
- *  l_getDataQbit()
+ * \brief   l_getDataQbit()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *      Return: val of the nth (4-bit) pixel.
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \return  val of the nth 4-bit pixel.
  */
 l_int32
 l_getDataQbit(void    *line,
@@ -210,12 +214,12 @@ l_getDataQbit(void    *line,
 
 
 /*!
- *  l_setDataQbit()
+ * \brief   l_setDataQbit()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *              val   (val to be inserted: 0 - 0xf)
- *      Return: void
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \param[in]    val   val to be inserted: 0 - 0xf
+ * \return  void
  */
 void
 l_setDataQbit(void    *line,
@@ -232,13 +236,13 @@ l_uint32    *pword;
 
 
 /*!
- *  l_clearDataQbit()
+ * \brief   l_clearDataQbit()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *      Return: void
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \return  void
  *
- *  Action: sets the (4-bit) pixel to 0
+ *  Action: sets the 4-bit pixel to 0
  */
 void
 l_clearDataQbit(void    *line,
@@ -249,11 +253,11 @@ l_clearDataQbit(void    *line,
 
 
 /*!
- *  l_getDataByte()
+ * \brief   l_getDataByte()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *      Return: value of the n-th (byte) pixel
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \return  value of the n-th byte pixel
  */
 l_int32
 l_getDataByte(void    *line,
@@ -268,12 +272,12 @@ l_getDataByte(void    *line,
 
 
 /*!
- *  l_setDataByte()
+ * \brief   l_setDataByte()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *              val   (val to be inserted: 0 - 0xff)
- *      Return: void
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \param[in]    val   val to be inserted: 0 - 0xff
+ * \return  void
  */
 void
 l_setDataByte(void    *line,
@@ -289,11 +293,11 @@ l_setDataByte(void    *line,
 
 
 /*!
- *  l_getDataTwoBytes()
+ * \brief   l_getDataTwoBytes()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *      Return: value of the n-th (2-byte) pixel
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \return  value of the n-th 2-byte pixel
  */
 l_int32
 l_getDataTwoBytes(void    *line,
@@ -308,12 +312,12 @@ l_getDataTwoBytes(void    *line,
 
 
 /*!
- *  l_setDataTwoBytes()
+ * \brief   l_setDataTwoBytes()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *              val   (val to be inserted: 0 - 0xffff)
- *      Return: void
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \param[in]    val   val to be inserted: 0 - 0xffff
+ * \return  void
  */
 void
 l_setDataTwoBytes(void    *line,
@@ -329,11 +333,11 @@ l_setDataTwoBytes(void    *line,
 
 
 /*!
- *  l_getDataFourBytes()
+ * \brief   l_getDataFourBytes()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *      Return: value of the n-th (4-byte) pixel
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \return  value of the n-th 4-byte pixel
  */
 l_int32
 l_getDataFourBytes(void    *line,
@@ -344,12 +348,12 @@ l_getDataFourBytes(void    *line,
 
 
 /*!
- *  l_setDataFourBytes()
+ * \brief   l_setDataFourBytes()
  *
- *      Input:  line  (ptr to beginning of data line)
- *              n     (pixel index)
- *              val   (val to be inserted: 0 - 0xffffffff)
- *      Return: void
+ * \param[in]    line  ptr to beginning of data line
+ * \param[in]    n     pixel index
+ * \param[in]    val   val to be inserted: 0 - 0xffffffff
+ * \return  void
  */
 void
 l_setDataFourBytes(void    *line,

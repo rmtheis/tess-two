@@ -75,9 +75,19 @@ set(functions_list
 )
 check_functions(functions_list)
 
-test_big_endian(WORDS_BIGENDIAN)
+test_big_endian(BIG_ENDIAN)
 
-set(STDC_HEADERS 1)
+if(BIG_ENDIAN)
+  set(ENDIANNESS L_BIG_ENDIAN)
+else()
+  set(ENDIANNESS L_LITTLE_ENDIAN)
+endif()
+
+set(APPLE_UNIVERSAL_BUILD "defined (__APPLE_CC__)")
+configure_file(
+    ${PROJECT_SOURCE_DIR}/src/endianness.h.in
+    ${PROJECT_BINARY_DIR}/src/endianness.h
+    @ONLY)
 
 if (GIF_FOUND)
     set(HAVE_LIBGIF 1)
@@ -85,6 +95,10 @@ endif()
 
 if (JPEG_FOUND)
     set(HAVE_LIBJPEG 1)
+endif()
+
+if (JP2K_FOUND)
+    set(HAVE_LIBJP2K 1)
 endif()
 
 if (PNG_FOUND)
@@ -95,14 +109,15 @@ if (TIFF_FOUND)
     set(HAVE_LIBTIFF 1)
 endif()
 
+if (WEBP_FOUND)
+    set(HAVE_LIBWEBP 1)
+endif()
+
 if (ZLIB_FOUND)
     set(HAVE_LIBZ 1)
 endif()
 
 file(APPEND ${AUTOCONFIG_SRC} "
-/* Define to 1 if you have the ANSI C header files. */
-#cmakedefine STDC_HEADERS 1
-
 /* Define to 1 if you have giflib. */
 #cmakedefine HAVE_LIBGIF 1
 
@@ -124,9 +139,17 @@ file(APPEND ${AUTOCONFIG_SRC} "
 /* Define to 1 if you have zlib. */
 #cmakedefine HAVE_LIBZ 1
 
-/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
-   significant byte first (like Motorola and SPARC, unlike Intel). */
-#cmakedefine WORDS_BIGENDIAN 1
+#ifdef HAVE_OPENJPEG_2_0_OPENJPEG_H
+#define LIBJP2K_HEADER <openjpeg-2.0/openjpeg.h>
+#endif
+
+#ifdef HAVE_OPENJPEG_2_1_OPENJPEG_H
+#define LIBJP2K_HEADER <openjpeg-2.1/openjpeg.h>
+#endif
+
+#ifdef HAVE_OPENJPEG_2_2_OPENJPEG_H
+#define LIBJP2K_HEADER <openjpeg-2.2/openjpeg.h>
+#endif
 ")
 
 ########################################

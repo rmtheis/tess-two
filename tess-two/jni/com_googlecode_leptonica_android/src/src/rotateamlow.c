@@ -25,8 +25,9 @@
  *====================================================================*/
 
 
-/*
- *  rotateamlow.c
+/*!
+ * \file rotateamlow.c
+ * <pre>
  *
  *      Grayscale and color rotation (area mapped)
  *
@@ -45,6 +46,7 @@
  *          Fast RGB color rotation about center:
  *               void    rotateAMColorFastLow()
  *
+ * </pre>
  */
 
 #include <string.h>
@@ -331,7 +333,7 @@ l_float32  sina, cosa;
  *               Fast RGB color rotation about center               *
  *------------------------------------------------------------------*/
 /*!
- *  rotateAMColorFastLow()
+ * \brief   rotateAMColorFastLow()
  *
  *     This is a special simplification of area mapping with division
  *     of each pixel into 16 sub-pixels.  The exact coefficients that

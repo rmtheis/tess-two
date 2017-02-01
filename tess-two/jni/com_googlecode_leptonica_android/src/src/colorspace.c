@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  colorspace.c
+/*!
+ * \file colorspace.c
+ * <pre>
  *
  *      Colorspace conversion between RGB and HSV
  *           PIX        *pixConvertRGBToHSV()
@@ -75,6 +76,7 @@
  *           PIX        *fpixaConvertLABToRGB()
  *           l_int32     convertRGBToLAB()
  *           l_int32     convertLABToRGB()
+ * </pre>
  */
 
 #include <string.h>
@@ -95,13 +97,14 @@ static l_float32 lab_reverse(l_float32 v);
  *                  Colorspace conversion between RGB and HSB                *
  *---------------------------------------------------------------------------*/
 /*!
- *  pixConvertRGBToHSV()
+ * \brief   pixConvertRGBToHSV()
  *
- *      Input:  pixd (can be NULL; if not NULL, must == pixs)
- *              pixs
- *      Return: pixd always
+ * \param[in]    pixd can be NULL; if not NULL, must == pixs
+ * \param[in]    pixs
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For pixs = pixd, this is in-place; otherwise pixd must be NULL.
  *      (2) The definition of our HSV space is given in convertRGBToHSV().
  *      (3) The h, s and v values are stored in the same places as
@@ -109,22 +112,23 @@ static l_float32 lab_reverse(l_float32 v);
  *          placed in the 3 MS bytes in the pixel.
  *      (4) Normalizing to 1 and considering the r,g,b components,
  *          a simple way to understand the HSV space is:
- *           - v = max(r,g,b)
- *           - s = (max - min) / max
- *           - h ~ (mid - min) / (max - min)  [apart from signs and constants]
+ *           ~ v = max(r,g,b)
+ *           ~ s = (max - min) / max
+ *           ~ h ~ (mid - min) / (max - min)  [apart from signs and constants]
  *      (5) Normalizing to 1, some properties of the HSV space are:
- *           - For gray values (r = g = b) along the continuum between
+ *           ~ For gray values (r = g = b) along the continuum between
  *             black and white:
  *                s = 0  (becoming undefined as you approach black)
  *                h is undefined everywhere
- *           - Where one component is saturated and the others are zero:
+ *           ~ Where one component is saturated and the others are zero:
  *                v = 1
  *                s = 1
  *                h = 0 (r = max), 1/3 (g = max), 2/3 (b = max)
- *           - Where two components are saturated and the other is zero:
+ *           ~ Where two components are saturated and the other is zero:
  *                v = 1
  *                s = 1
  *                h = 1/2 (if r = 0), 5/6 (if g = 0), 1/6 (if b = 0)
+ * </pre>
  */
 PIX *
 pixConvertRGBToHSV(PIX  *pixd,
@@ -173,13 +177,14 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  pixConvertHSVToRGB()
+ * \brief   pixConvertHSVToRGB()
  *
- *      Input:  pixd (can be NULL; if not NULL, must == pixs)
- *              pixs
- *      Return: pixd always
+ * \param[in]    pixd can be NULL; if not NULL, must == pixs
+ * \param[in]    pixs
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For pixs = pixd, this is in-place; otherwise pixd must be NULL.
  *      (2) The user takes responsibility for making sure that pixs is
  *          in our HSV space.  The definition of our HSV space is given
@@ -187,6 +192,7 @@ PIXCMAP   *cmap;
  *      (3) The h, s and v values are stored in the same places as
  *          the r, g and b values, respectively.  Here, they are explicitly
  *          placed in the 3 MS bytes in the pixel.
+ * </pre>
  */
 PIX *
 pixConvertHSVToRGB(PIX  *pixd,
@@ -239,13 +245,14 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  convertRGBToHSV()
+ * \brief   convertRGBToHSV()
  *
- *      Input:  rval, gval, bval (RGB input)
- *              &hval, &sval, &vval (<return> HSV values)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    rval, gval, bval RGB input
+ * \param[out]   phval, psval, pvval HSV values
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The range of returned values is:
  *            h [0 ... 239]
  *            s [0 ... 255]
@@ -260,6 +267,7 @@ PIXCMAP   *cmap;
  *            h = 120       green
  *            h = 160       cyan
  *            h = 200       blue
+ * </pre>
  */
 l_int32
 convertRGBToHSV(l_int32   rval,
@@ -311,15 +319,17 @@ l_float32  h;
 
 
 /*!
- *  convertHSVToRGB()
+ * \brief   convertHSVToRGB()
  *
- *      Input:  hval, sval, vval
- *              &rval, &gval, &bval (<return> RGB values)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    hval, sval, vval
+ * \param[out]   prval, pgval, pbval RGB values
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See convertRGBToHSV() for valid input range of HSV values
  *          and their interpretation in color space.
+ * </pre>
  */
 l_int32
 convertHSVToRGB(l_int32   hval,
@@ -398,15 +408,17 @@ l_float32 h, f, s;
 
 
 /*!
- *  pixcmapConvertRGBToHSV()
+ * \brief   pixcmapConvertRGBToHSV()
  *
- *      Input:  colormap
- *      Return: 0 if OK; 1 on error
+ * \param[in]    cmap colormap
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
- *      - in-place transform
- *      - See convertRGBToHSV() for def'n of HSV space.
- *      - replaces: r --> h, g --> s, b --> v
+ * <pre>
+ * Notes:
+ *      ~ in-place transform
+ *      ~ See convertRGBToHSV() for def'n of HSV space.
+ *      ~ replaces: r --\> h, g --\> s, b --\> v
+ * </pre>
  */
 l_int32
 pixcmapConvertRGBToHSV(PIXCMAP  *cmap)
@@ -429,15 +441,17 @@ l_int32   i, ncolors, rval, gval, bval, hval, sval, vval;
 
 
 /*!
- *  pixcmapConvertHSVToRGB()
+ * \brief   pixcmapConvertHSVToRGB()
  *
- *      Input:  colormap
- *      Return: 0 if OK; 1 on error
+ * \param[in]    cmap colormap
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
- *      - in-place transform
- *      - See convertRGBToHSV() for def'n of HSV space.
- *      - replaces: h --> r, s --> g, v --> b
+ * <pre>
+ * Notes:
+ *      ~ in-place transform
+ *      ~ See convertRGBToHSV() for def'n of HSV space.
+ *      ~ replaces: h --\> r, s --\> g, v --\> b
+ * </pre>
  */
 l_int32
 pixcmapConvertHSVToRGB(PIXCMAP  *cmap)
@@ -460,17 +474,19 @@ l_int32   i, ncolors, rval, gval, bval, hval, sval, vval;
 
 
 /*!
- *  pixConvertRGBToHue()
+ * \brief   pixConvertRGBToHue()
  *
- *      Input:  pixs (32 bpp RGB or 8 bpp with colormap)
- *      Return: pixd (8 bpp hue of HSV), or null on error
+ * \param[in]    pixs 32 bpp RGB or 8 bpp with colormap
+ * \return  pixd 8 bpp hue of HSV, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The conversion to HSV hue is in-lined here.
  *      (2) If there is a colormap, it is removed.
  *      (3) If you just want the hue component, this does it
  *          at about 10 Mpixels/sec/GHz, which is about
  *          2x faster than using pixConvertRGBToHSV()
+ * </pre>
  */
 PIX *
 pixConvertRGBToHue(PIX  *pixs)
@@ -535,16 +551,18 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixConvertRGBToSaturation()
+ * \brief   pixConvertRGBToSaturation()
  *
- *      Input:  pixs (32 bpp RGB or 8 bpp with colormap)
- *      Return: pixd (8 bpp sat of HSV), or null on error
+ * \param[in]    pixs 32 bpp RGB or 8 bpp with colormap
+ * \return  pixd 8 bpp sat of HSV, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The conversion to HSV sat is in-lined here.
  *      (2) If there is a colormap, it is removed.
  *      (3) If you just want the saturation component, this does it
  *          at about 12 Mpixels/sec/GHz.
+ * </pre>
  */
 PIX *
 pixConvertRGBToSaturation(PIX  *pixs)
@@ -598,16 +616,18 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixConvertRGBToValue()
+ * \brief   pixConvertRGBToValue()
  *
- *      Input:  pixs (32 bpp RGB or 8 bpp with colormap)
- *      Return: pixd (8 bpp max component intensity of HSV), or null on error
+ * \param[in]    pixs 32 bpp RGB or 8 bpp with colormap
+ * \return  pixd 8 bpp max component intensity of HSV, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The conversion to HSV sat is in-lined here.
  *      (2) If there is a colormap, it is removed.
  *      (3) If you just want the value component, this does it
  *          at about 35 Mpixels/sec/GHz.
+ * </pre>
  */
 PIX *
 pixConvertRGBToValue(PIX  *pixs)
@@ -656,25 +676,27 @@ PIX       *pixt, *pixd;
  *            Selection and display of range of colors in HSV space          *
  *---------------------------------------------------------------------------*/
 /*!
- *  pixMakeRangeMaskHS()
+ * \brief   pixMakeRangeMaskHS()
  *
- *      Input:  pixs  (32 bpp rgb)
- *              huecenter (center value of hue range)
- *              huehw (half-width of hue range)
- *              satcenter (center value of saturation range)
- *              sathw (half-width of saturation range)
- *              regionflag (L_INCLUDE_REGION, L_EXCLUDE_REGION)
- *      Return: pixd (1 bpp mask over selected pixels), or null on error
+ * \param[in]    pixs  32 bpp rgb
+ * \param[in]    huecenter center value of hue range
+ * \param[in]    huehw half-width of hue range
+ * \param[in]    satcenter center value of saturation range
+ * \param[in]    sathw half-width of saturation range
+ * \param[in]    regionflag L_INCLUDE_REGION, L_EXCLUDE_REGION
+ * \return  pixd 1 bpp mask over selected pixels, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The pixels are selected based on the specified ranges of
  *          hue and saturation.  For selection or exclusion, the pixel
  *          HS component values must be within both ranges.  Care must
  *          be taken in finding the hue range because of wrap-around.
- *      (2) Use @regionflag == L_INCLUDE_REGION to take only those
+ *      (2) Use %regionflag == L_INCLUDE_REGION to take only those
  *          pixels within the rectangular region specified in HS space.
- *          Use @regionflag == L_EXCLUDE_REGION to take all pixels except
+ *          Use %regionflag == L_EXCLUDE_REGION to take all pixels except
  *          those within the rectangular region specified in HS space.
+ * </pre>
  */
 PIX *
 pixMakeRangeMaskHS(PIX     *pixs,
@@ -753,25 +775,27 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixMakeRangeMaskHV()
+ * \brief   pixMakeRangeMaskHV()
  *
- *      Input:  pixs  (32 bpp rgb)
- *              huecenter (center value of hue range)
- *              huehw (half-width of hue range)
- *              valcenter (center value of max intensity range)
- *              valhw (half-width of max intensity range)
- *              regionflag (L_INCLUDE_REGION, L_EXCLUDE_REGION)
- *      Return: pixd (1 bpp mask over selected pixels), or null on error
+ * \param[in]    pixs  32 bpp rgb
+ * \param[in]    huecenter center value of hue range
+ * \param[in]    huehw half-width of hue range
+ * \param[in]    valcenter center value of max intensity range
+ * \param[in]    valhw half-width of max intensity range
+ * \param[in]    regionflag L_INCLUDE_REGION, L_EXCLUDE_REGION
+ * \return  pixd 1 bpp mask over selected pixels, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The pixels are selected based on the specified ranges of
  *          hue and max intensity values.  For selection or exclusion,
  *          the pixel HV component values must be within both ranges.
  *          Care must be taken in finding the hue range because of wrap-around.
- *      (2) Use @regionflag == L_INCLUDE_REGION to take only those
+ *      (2) Use %regionflag == L_INCLUDE_REGION to take only those
  *          pixels within the rectangular region specified in HV space.
- *          Use @regionflag == L_EXCLUDE_REGION to take all pixels except
+ *          Use %regionflag == L_EXCLUDE_REGION to take all pixels except
  *          those within the rectangular region specified in HV space.
+ * </pre>
  */
 PIX *
 pixMakeRangeMaskHV(PIX     *pixs,
@@ -850,24 +874,26 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixMakeRangeMaskSV()
+ * \brief   pixMakeRangeMaskSV()
  *
- *      Input:  pixs  (32 bpp rgb)
- *              satcenter (center value of saturation range)
- *              sathw (half-width of saturation range)
- *              valcenter (center value of max intensity range)
- *              valhw (half-width of max intensity range)
- *              regionflag (L_INCLUDE_REGION, L_EXCLUDE_REGION)
- *      Return: pixd (1 bpp mask over selected pixels), or null on error
+ * \param[in]    pixs  32 bpp rgb
+ * \param[in]    satcenter center value of saturation range
+ * \param[in]    sathw half-width of saturation range
+ * \param[in]    valcenter center value of max intensity range
+ * \param[in]    valhw half-width of max intensity range
+ * \param[in]    regionflag L_INCLUDE_REGION, L_EXCLUDE_REGION
+ * \return  pixd 1 bpp mask over selected pixels, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The pixels are selected based on the specified ranges of
  *          saturation and max intensity (val).  For selection or
  *          exclusion, the pixel SV component values must be within both ranges.
- *      (2) Use @regionflag == L_INCLUDE_REGION to take only those
+ *      (2) Use %regionflag == L_INCLUDE_REGION to take only those
  *          pixels within the rectangular region specified in SV space.
- *          Use @regionflag == L_EXCLUDE_REGION to take all pixels except
+ *          Use %regionflag == L_EXCLUDE_REGION to take all pixels except
  *          those within the rectangular region specified in SV space.
+ * </pre>
  */
 PIX *
 pixMakeRangeMaskSV(PIX     *pixs,
@@ -940,21 +966,23 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixMakeHistoHS()
+ * \brief   pixMakeHistoHS()
  *
- *      Input:  pixs  (HSV colorspace)
- *              factor (subsampling factor; integer)
- *              &nahue (<optional return> hue histogram)
- *              &nasat (<optional return> saturation histogram)
- *      Return: pixd (32 bpp histogram in hue and saturation), or null on error
+ * \param[in]    pixs  HSV colorspace
+ * \param[in]    factor subsampling factor; integer
+ * \param[out]   pnahue [optional] hue histogram
+ * \param[out]   pnasat [optional] saturation histogram
+ * \return  pixd 32 bpp histogram in hue and saturation, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) pixs is a 32 bpp image in HSV colorspace; hue is in the "red"
  *          byte, saturation is in the "green" byte.
  *      (2) In pixd, hue is displayed vertically; saturation horizontally.
  *          The dimensions of pixd are w = 256, h = 240, and the depth
  *          is 32 bpp.  The value at each point is simply the number
  *          of pixels found at that value of hue and saturation.
+ * </pre>
  */
 PIX *
 pixMakeHistoHS(PIX     *pixs,
@@ -1029,21 +1057,23 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixMakeHistoHV()
+ * \brief   pixMakeHistoHV()
  *
- *      Input:  pixs  (HSV colorspace)
- *              factor (subsampling factor; integer)
- *              &nahue (<optional return> hue histogram)
- *              &naval (<optional return> max intensity (value) histogram)
- *      Return: pixd (32 bpp histogram in hue and value), or null on error
+ * \param[in]    pixs  HSV colorspace
+ * \param[in]    factor subsampling factor; integer
+ * \param[out]   pnahue [optional] hue histogram
+ * \param[out]   pnaval [optional] max intensity (value) histogram
+ * \return  pixd 32 bpp histogram in hue and value, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) pixs is a 32 bpp image in HSV colorspace; hue is in the "red"
  *          byte, max intensity ("value") is in the "blue" byte.
  *      (2) In pixd, hue is displayed vertically; intensity horizontally.
  *          The dimensions of pixd are w = 256, h = 240, and the depth
  *          is 32 bpp.  The value at each point is simply the number
  *          of pixels found at that value of hue and intensity.
+ * </pre>
  */
 PIX *
 pixMakeHistoHV(PIX     *pixs,
@@ -1110,21 +1140,23 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixMakeHistoSV()
+ * \brief   pixMakeHistoSV()
  *
- *      Input:  pixs  (HSV colorspace)
- *              factor (subsampling factor; integer)
- *              &nasat (<optional return> sat histogram)
- *              &naval (<optional return> max intensity (value) histogram)
- *      Return: pixd (32 bpp histogram in sat and value), or null on error
+ * \param[in]    pixs  HSV colorspace
+ * \param[in]    factor subsampling factor; integer
+ * \param[out]   pnasat [optional] sat histogram
+ * \param[out]   pnaval [optional] max intensity (value) histogram
+ * \return  pixd 32 bpp histogram in sat and value, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) pixs is a 32 bpp image in HSV colorspace; sat is in the "green"
  *          byte, max intensity ("value") is in the "blue" byte.
  *      (2) In pixd, sat is displayed vertically; intensity horizontally.
  *          The dimensions of pixd are w = 256, h = 256, and the depth
  *          is 32 bpp.  The value at each point is simply the number
  *          of pixels found at that value of saturation and intensity.
+ * </pre>
  */
 PIX *
 pixMakeHistoSV(PIX     *pixs,
@@ -1191,29 +1223,31 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixFindHistoPeaksHSV()
+ * \brief   pixFindHistoPeaksHSV()
  *
- *      Input:  pixs (32 bpp; HS, HV or SV histogram; not changed)
- *              type (L_HS_HISTO, L_HV_HISTO or L_SV_HISTO)
- *              width (half width of sliding window)
- *              height (half height of sliding window)
- *              npeaks (number of peaks to look for)
- *              erasefactor (ratio of erase window size to sliding window size)
- *              &pta (<return> locations of max for each integrated peak area)
- *              &natot (<return> integrated peak areas)
- *              &pixa (<optional return> pixa for debugging; NULL to skip)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 32 bpp; HS, HV or SV histogram; not changed
+ * \param[in]    type L_HS_HISTO, L_HV_HISTO or L_SV_HISTO
+ * \param[in]    width half width of sliding window
+ * \param[in]    height half height of sliding window
+ * \param[in]    npeaks number of peaks to look for
+ * \param[in]    erasefactor ratio of erase window size to sliding window size
+ * \param[out]   ppta locations of max for each integrated peak area
+ * \param[out]   pnatot integrated peak areas
+ * \param[out]   ppixa [optional] pixa for debugging; NULL to skip
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) pixs is a 32 bpp histogram in a pair of HSV colorspace.  It
  *          should be thought of as a single sample with 32 bps (bits/sample).
  *      (2) After each peak is found, the peak is erased with a window
  *          that is centered on the peak and scaled from the sliding
- *          window by @erasefactor.  Typically, @erasefactor is chosen
- *          to be > 1.0.
- *      (3) Data for a maximum of @npeaks is returned in @pta and @natot.
+ *          window by %erasefactor.  Typically, %erasefactor is chosen
+ *          to be \> 1.0.
+ *      (3) Data for a maximum of %npeaks is returned in %pta and %natot.
  *      (4) For debugging, after the pixa is returned, display with:
  *          pixd = pixaDisplayTiledInRows(pixa, 32, 1000, 1.0, 0, 30, 2);
+ * </pre>
  */
 l_int32
 pixFindHistoPeaksHSV(PIX       *pixs,
@@ -1230,7 +1264,7 @@ l_int32   i, xmax, ymax, ewidth, eheight;
 l_uint32  maxval;
 BOX      *box;
 NUMA     *natot;
-PIX      *pixh, *pixw, *pixt1, *pixt2, *pixt3;
+PIX      *pixh, *pixw, *pix1, *pix2, *pix3;
 PTA      *pta;
 
     PROCNAME("pixFindHistoPeaksHSV");
@@ -1282,18 +1316,18 @@ PTA      *pta;
                         2 * eheight + 1);
 
         if (ppixa) {
-            pixt1 = pixMaxDynamicRange(pixw, L_LINEAR_SCALE);
-            pixaAddPix(*ppixa, pixt1, L_INSERT);
-            pixt2 = pixConvertGrayToFalseColor(pixt1, 1.0);
-            pixaAddPix(*ppixa, pixt2, L_INSERT);
-            pixt1 = pixMaxDynamicRange(pixw, L_LOG_SCALE);
-            pixt2 = pixConvertGrayToFalseColor(pixt1, 1.0);
-            pixaAddPix(*ppixa, pixt2, L_INSERT);
-            pixt3 = pixConvertTo32(pixt1);
-            pixRenderHashBoxArb(pixt3, box, 6, 2, L_NEG_SLOPE_LINE,
+            pix1 = pixMaxDynamicRange(pixw, L_LINEAR_SCALE);
+            pixaAddPix(*ppixa, pix1, L_INSERT);
+            pix2 = pixConvertGrayToFalseColor(pix1, 1.0);
+            pixaAddPix(*ppixa, pix2, L_INSERT);
+            pix1 = pixMaxDynamicRange(pixw, L_LOG_SCALE);
+            pix2 = pixConvertGrayToFalseColor(pix1, 1.0);
+            pixaAddPix(*ppixa, pix2, L_INSERT);
+            pix3 = pixConvertTo32(pix1);
+            pixRenderHashBoxArb(pix3, box, 6, 2, L_NEG_SLOPE_LINE,
                                 1, 255, 100, 100);
-            pixaAddPix(*ppixa, pixt3, L_INSERT);
-            pixDestroy(&pixt1);
+            pixaAddPix(*ppixa, pix3, L_INSERT);
+            pixDestroy(&pix1);
         }
 
         pixClearInRect(pixw, box);
@@ -1322,21 +1356,23 @@ PTA      *pta;
 
 
 /*!
- *  displayHSVColorRange()
+ * \brief   displayHSVColorRange()
  *
- *      Input:  hval (hue center value; in range [0 ... 240]
- *              sval (saturation center value; in range [0 ... 255]
- *              vval (max intensity value; in range [0 ... 255]
- *              huehw (half-width of hue range; > 0)
- *              sathw (half-width of saturation range; > 0)
- *              nsamp (number of samplings in each half-width in hue and sat)
- *              factor (linear size of each color square, in pixels; > 3)
- *      Return: pixd (32 bpp set of color squares over input range),
- *                     or null on error
+ * \param[in]    hval hue center value; in range [0 ... 240]
+ * \param[in]    sval saturation center value; in range [0 ... 255]
+ * \param[in]    vval max intensity value; in range [0 ... 255]
+ * \param[in]    huehw half-width of hue range; > 0
+ * \param[in]    sathw half-width of saturation range; > 0
+ * \param[in]    nsamp number of samplings in each half-width in hue and sat
+ * \param[in]    factor linear size of each color square, in pixels; > 3
+ * \return  pixd 32 bpp set of color squares over input range,
+ *                     or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The total number of color samplings in each of the hue
  *          and saturation directions is 2 * nsamp + 1.
+ * </pre>
  */
 PIX *
 displayHSVColorRange(l_int32  hval,
@@ -1388,22 +1424,23 @@ PIX     *pixt, *pixd;
  *                Colorspace conversion between RGB and YUV                  *
  *---------------------------------------------------------------------------*/
 /*!
- *  pixConvertRGBToYUV()
+ * \brief   pixConvertRGBToYUV()
  *
- *      Input:  pixd (can be NULL; if not NULL, must == pixs)
- *              pixs
- *      Return: pixd always
+ * \param[in]    pixd can be NULL; if not NULL, must == pixs
+ * \param[in]    pixs
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For pixs = pixd, this is in-place; otherwise pixd must be NULL.
  *      (2) The Y, U and V values are stored in the same places as
  *          the r, g and b values, respectively.  Here, they are explicitly
  *          placed in the 3 MS bytes in the pixel.
  *      (3) Normalizing to 1 and considering the r,g,b components,
  *          a simple way to understand the YUV space is:
- *           - Y = weighted sum of (r,g,b)
- *           - U = weighted difference between Y and B
- *           - V = weighted difference between Y and R
+ *           ~ Y = weighted sum of (r,g,b)
+ *           ~ U = weighted difference between Y and B
+ *           ~ V = weighted difference between Y and R
  *      (4) Following video conventions, Y, U and V are in the range:
  *             Y: [16, 235]
  *             U: [16, 240]
@@ -1411,6 +1448,7 @@ PIX     *pixt, *pixd;
  *      (5) For the coefficients in the transform matrices, see eq. 4 in
  *          "Frequently Asked Questions about Color" by Charles Poynton,
  *          //http://user.engineering.uiowa.edu/~aip/Misc/ColorFAQ.html
+ * </pre>
  */
 PIX *
 pixConvertRGBToYUV(PIX  *pixd,
@@ -1459,19 +1497,21 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  pixConvertYUVToRGB()
+ * \brief   pixConvertYUVToRGB()
  *
- *      Input:  pixd (can be NULL; if not NULL, must == pixs)
- *              pixs
- *      Return: pixd always
+ * \param[in]    pixd can be NULL; if not NULL, must == pixs
+ * \param[in]    pixs
+ * \return  pixd always
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For pixs = pixd, this is in-place; otherwise pixd must be NULL.
  *      (2) The user takes responsibility for making sure that pixs is
  *          in YUV space.
  *      (3) The Y, U and V values are stored in the same places as
  *          the r, g and b values, respectively.  Here, they are explicitly
  *          placed in the 3 MS bytes in the pixel.
+ * </pre>
  */
 PIX *
 pixConvertYUVToRGB(PIX  *pixd,
@@ -1524,17 +1564,19 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  convertRGBToYUV()
+ * \brief   convertRGBToYUV()
  *
- *      Input:  rval, gval, bval (RGB input)
- *              &yval, &uval, &vval (<return> YUV values)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    rval, gval, bval RGB input
+ * \param[out]   pyval, puval, pvval YUV values
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The range of returned values is:
  *            Y [16 ... 235]
  *            U [16 ... 240]
  *            V [16 ... 240]
+ * </pre>
  */
 l_int32
 convertRGBToYUV(l_int32   rval,
@@ -1566,21 +1608,23 @@ l_float32  norm;
 
 
 /*!
- *  convertYUVToRGB()
+ * \brief   convertYUVToRGB()
  *
- *      Input:  yval, uval, vval
- *              &rval, &gval, &bval (<return> RGB values)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    yval, uval, vval
+ * \param[out]   prval, pgval, pbval RGB values
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The range of valid input values is:
  *            Y [16 ... 235]
  *            U [16 ... 240]
  *            V [16 ... 240]
- *      (2) Conversion of RGB --> YUV --> RGB leaves the image unchanged.
+ *      (2) Conversion of RGB --\> YUV --\> RGB leaves the image unchanged.
  *      (3) The YUV gamut is larger than the RBG gamut; many YUV values
  *          will result in an invalid RGB value.  We clip individual
  *          r,g,b components to the range [0, 255], and do not test input.
+ * </pre>
  */
 l_int32
 convertYUVToRGB(l_int32   yval,
@@ -1618,15 +1662,17 @@ l_float32  norm, ym, um, vm;
 
 
 /*!
- *  pixcmapConvertRGBToYUV()
+ * \brief   pixcmapConvertRGBToYUV()
  *
- *      Input:  colormap
- *      Return: 0 if OK; 1 on error
+ * \param[in]    cmap colormap
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
- *      - in-place transform
- *      - See convertRGBToYUV() for def'n of YUV space.
- *      - replaces: r --> y, g --> u, b --> v
+ * <pre>
+ * Notes:
+ *      ~ in-place transform
+ *      ~ See convertRGBToYUV() for def'n of YUV space.
+ *      ~ replaces: r --\> y, g --\> u, b --\> v
+ * </pre>
  */
 l_int32
 pixcmapConvertRGBToYUV(PIXCMAP  *cmap)
@@ -1649,15 +1695,17 @@ l_int32   i, ncolors, rval, gval, bval, yval, uval, vval;
 
 
 /*!
- *  pixcmapConvertYUVToRGB()
+ * \brief   pixcmapConvertYUVToRGB()
  *
- *      Input:  colormap
- *      Return: 0 if OK; 1 on error
+ * \param[in]    cmap colormap
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
- *      - in-place transform
- *      - See convertRGBToYUV() for def'n of YUV space.
- *      - replaces: y --> r, u --> g, v --> b
+ * <pre>
+ * Notes:
+ *      ~ in-place transform
+ *      ~ See convertRGBToYUV() for def'n of YUV space.
+ *      ~ replaces: y --\> r, u --\> g, v --\> b
+ * </pre>
  */
 l_int32
 pixcmapConvertYUVToRGB(PIXCMAP  *cmap)
@@ -1683,12 +1731,13 @@ l_int32   i, ncolors, rval, gval, bval, yval, uval, vval;
  *                Colorspace conversion between RGB and XYZ                  *
  *---------------------------------------------------------------------------*/
 /*!
- *  pixConvertRGBToXYZ()
+ * \brief   pixConvertRGBToXYZ()
  *
- *      Input:  pixs (rgb)
- *      Return: fpixa (xyz)
+ * \param[in]    pixs rgb
+ * \return  fpixa xyz
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The [x,y,z] values are stored as float values in three fpix
  *          that are returned in a fpixa.
  *      (2) The XYZ color space was defined in 1931 as a reference model that
@@ -1707,6 +1756,7 @@ l_int32   i, ncolors, rval, gval, bval, yval, uval, vval;
  *             http://www.brucelindbloom.com/
  *             http://user.engineering.uiowa.edu/~aip/Misc/ColorFAQ.html
  *             http://en.wikipedia.org/wiki/CIE_1931_color_space
+ * </pre>
  */
 FPIXA *
 pixConvertRGBToXYZ(PIX  *pixs)
@@ -1755,15 +1805,17 @@ FPIXA      *fpixa;
 
 
 /*!
- *  fpixaConvertXYZToRGB()
+ * \brief   fpixaConvertXYZToRGB()
  *
- *      Input:  fpixa (three fpix: x,y,z)
- *      Return: pixd (rgb)
+ * \param[in]    fpixa three fpix: x,y,z
+ * \return  pixd rgb
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The xyz image is stored in three fpix.
  *      (2) For values of xyz that are out of gamut for rgb, the rgb
  *          components are set to the closest valid color.
+ * </pre>
  */
 PIX *
 fpixaConvertXYZToRGB(FPIXA  *fpixa)
@@ -1811,15 +1863,17 @@ FPIX       *fpix;
 
 
 /*!
- *  convertRGBToXYZ()
+ * \brief   convertRGBToXYZ()
  *
- *      Input:  rval, gval, bval (rgb input)
- *              &fxval, &fyval, &fzval (<return> xyz values)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    rval, gval, bval rgb input
+ * \param[out]   pfxval, pfyval, pfzval xyz values
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) These conversions are for illuminant D65 acting on linear sRGB
  *          values.
+ * </pre>
  */
 l_int32
 convertRGBToXYZ(l_int32     rval,
@@ -1845,21 +1899,23 @@ convertRGBToXYZ(l_int32     rval,
 
 
 /*!
- *  convertXYZToRGB()
+ * \brief   convertXYZToRGB()
  *
- *      Input:  fxval, fyval, fzval
- *              blackout (0 to output nearest color if out of gamut;
- *                        1 to output black)
- *              &rval, &gval, &bval (<return> rgb values)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fxval, fyval, fzval
+ * \param[in]    blackout 0 to output nearest color if out of gamut;
+ *                        1 to output black
+ * \param[out]   prval, pgval, pbval rgb values
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For values of xyz that are out of gamut for rgb, at least
  *          one of the r, g or b components will be either less than 0
  *          or greater than 255.  For that situation:
  *            * if blackout == 0, the individual component(s) that are out
  *              of gamut will be set to 0 or 255, respectively.
  *            * if blackout == 1, the output color will be set to black
+ * </pre>
  */
 l_int32
 convertXYZToRGB(l_float32  fxval,
@@ -1904,12 +1960,13 @@ l_int32  rval, gval, bval;
  *               Colorspace conversion between XYZ and LAB                   *
  *---------------------------------------------------------------------------*/
 /*!
- *  fpixaConvertXYZToLAB()
+ * \brief   fpixaConvertXYZToLAB()
  *
- *      Input:  fpixa (xyz)
- *      Return: fpixa (lab)
+ * \param[in]    fpixas xyz
+ * \return  fpixa lab
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The input [x,y,z] and output [l,a,b] values are stored as
  *          float values, each set in three fpix.
  *      (2) The CIE LAB color space was invented in 1976, as an
@@ -1919,6 +1976,7 @@ l_int32  rval, gval, bval;
  *          For information, see:
  *             http://www.brucelindbloom.com/
  *             http://en.wikipedia.org/wiki/Lab_color_space
+ * </pre>
  */
 FPIXA *
 fpixaConvertXYZToLAB(FPIXA  *fpixas)
@@ -1975,14 +2033,16 @@ FPIXA      *fpixad;
 
 
 /*!
- *  fpixaConvertLABToXYZ()
+ * \brief   fpixaConvertLABToXYZ()
  *
- *      Input:  fpixa (lab)
- *      Return: fpixa (xyz)
+ * \param[in]    fpixas lab
+ * \return  fpixa xyz
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The input [l,a,b] and output [x,y,z] values are stored as
  *          float values, each set in three fpix.
+ * </pre>
  */
 FPIXA *
 fpixaConvertLABToXYZ(FPIXA  *fpixas)
@@ -2039,11 +2099,11 @@ FPIXA      *fpixad;
 
 
 /*!
- *  convertXYZToLAB()
+ * \brief   convertXYZToLAB()
  *
- *      Input:  xval, yval, zval (xyz input)
- *              &lval, &aval, &bval (<return> lab values)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    xval, yval, zval xyz input
+ * \param[out]   plval, paval, pbval lab values
+ * \return  0 if OK, 1 on error
  */
 l_int32
 convertXYZToLAB(l_float32   xval,
@@ -2079,11 +2139,11 @@ l_float32  xn, yn, zn, fx, fy, fz;
 
 
 /*!
- *  convertLABToXYZ()
+ * \brief   convertLABToXYZ()
  *
- *      Input:  lval, aval, bval
- *              &xval, &yval, &zval (<return> xyz values)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    lval, aval, bval
+ * \param[out]   pxval, pyval, pzval xyz values
+ * \return  0 if OK, 1 on error
  */
 l_int32
 convertLABToXYZ(l_float32   lval,
@@ -2168,14 +2228,16 @@ const l_float32  r_offset = 0.13793;  /* 4/29 */
  *               Colorspace conversion between RGB and LAB                   *
  *---------------------------------------------------------------------------*/
 /*!
- *  pixConvertRGBToLAB()
+ * \brief   pixConvertRGBToLAB()
  *
- *      Input:  pixs (rgb)
- *      Return: fpixa (lab)
+ * \param[in]    pixs rgb
+ * \return  fpixa lab
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The [l,a,b] values are stored as float values in three fpix
  *          that are returned in a fpixa.
+ * </pre>
  */
 FPIXA *
 pixConvertRGBToLAB(PIX  *pixs)
@@ -2224,13 +2286,15 @@ FPIXA      *fpixa;
 
 
 /*!
- *  fpixaConvertLABToRGB()
+ * \brief   fpixaConvertLABToRGB()
  *
- *      Input:  fpixa (three fpix: l,a,b)
- *      Return: pixd (rgb)
+ * \param[in]    fpixa three fpix: l,a,b
+ * \return  pixd rgb
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The lab image is stored in three fpix.
+ * </pre>
  */
 PIX *
 fpixaConvertLABToRGB(FPIXA  *fpixa)
@@ -2278,15 +2342,17 @@ FPIX       *fpix;
 
 
 /*!
- *  convertRGBToLAB()
+ * \brief   convertRGBToLAB()
  *
- *      Input:  rval, gval, bval (rgb input)
- *              &flval, &faval, &fbval (<return> lab values)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    rval, gval, bval rgb input
+ * \param[out]   pflval, pfaval, pfbval lab values
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) These conversions are for illuminant D65 acting on linear sRGB
  *          values.
+ * </pre>
  */
 l_int32
 convertRGBToLAB(l_int32     rval,
@@ -2313,15 +2379,17 @@ l_float32  fxval, fyval, fzval;
 
 
 /*!
- *  convertLABToRGB()
+ * \brief   convertLABToRGB()
  *
- *      Input:  flval, faval, fbval
- *              &rval, &gval, &bval (<return> rgb values)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    flval, faval, fbval
+ * \param[out]   prval, pgval, pbval rgb values
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For values of lab that are out of gamut for rgb, the rgb
  *          components are set to the closest valid color.
+ * </pre>
  */
 l_int32
 convertLABToRGB(l_float32  flval,
@@ -2345,4 +2413,3 @@ l_float32  fxval, fyval, fzval;
     convertXYZToRGB(fxval, fyval, fzval, 0, prval, pgval, pbval);
     return 0;
 }
-

@@ -24,10 +24,12 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *   bmpiostub.c
+/*!
+ * \file  bmpiostub.c
+ * <pre>
  *
  *      Stubs for bmpio.c functions
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -64,4 +66,3 @@ l_int32 pixWriteMemBmp(l_uint8 **pdata, size_t *psize, PIX *pix)
 
 /* --------------------------------------------*/
 #endif  /* !USE_BMPIO */
-/* --------------------------------------------*/

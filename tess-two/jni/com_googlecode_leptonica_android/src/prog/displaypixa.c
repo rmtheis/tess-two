@@ -27,17 +27,18 @@
 /*
  * displaypixa.c
  *
- *        displaypixa filein fileout [showtext]
- *        displaypixa filein scalefact border lossless disp fileout [showtext]
+ *        displaypixa filein fileout showtext
+ *        displaypixa filein scalefact border lossless disp fileout showtext
  *
- *   where disp = 1 to display on the screen; 0 to skip
+ *   where:
+ *         showtext = 1 to print text in the text field of each pix below
+ *                    the image; 0 to skip
+ *         disp = 1 to display on the screen; 0 to skip
  *         lossless = 1 for tiff or png
  *
  *   This reads a pixa or a pixacomp from file and generates a composite of the
  *   images tiled in rows.  It also optionally displays on the screen.
  *   No scaling is done if @scalefact == 0.0 or @scalefact == 1.0.
- *   If showtext = 1, the text field for all pix with text is written
- *   out below the image.
  */
 
 #include <string.h>
@@ -47,47 +48,33 @@ int main(int    argc,
          char **argv)
 {
 char         buf[32];
-char        *filein, *fileout, *sn, *fontdir, *textstr;
+char        *fileout, *fontdir, *textstr;
 l_int32      n, i, maxdepth, ntext, border, lossless, display, showtext;
 l_float32    scalefact;
 L_BMF       *bmf;
 PIX         *pix1, *pix2, *pix3, *pix4, *pixd;
 PIXA        *pixa, *pixad;
-PIXAC       *pac;
 static char  mainName[] = "displaypixa";
 
-    if (argc != 3 && argc != 4 && argc != 7 && argc != 8) {
+    if (argc != 4 && argc != 8) {
         fprintf(stderr, "Syntax error in displaypixa:\n"
-           "   displaypixa filein fileout [showtext]\n"
+           "   displaypixa filein fileout showtext\n"
            "   displaypixa filein scalefact border"
-                 " lossless disp fileout [showtext]\n");
+                 " lossless disp fileout showtext\n");
          return 1;
     }
 
         /* Input file can be either pixa or pixacomp */
-    filein = argv[1];
-    l_getStructnameFromFile(filein, &sn);
-    if (strcmp(sn, "Pixa") == 0) {
-        if ((pixa = pixaRead(filein)) == NULL)
-            return ERROR_INT("pixa not made", mainName, 1);
-    } else if (strcmp(sn, "Pixacomp") == 0) {
-        if ((pac = pixacompRead(filein)) == NULL)
-            return ERROR_INT("pac not made", mainName, 1);
-        pixa = pixaCreateFromPixacomp(pac, L_COPY);
-        pixacompDestroy(&pac);
-    } else {
-        return ERROR_INT("invalid file type", mainName, 1);
-    }
+    pixa = pixaReadBoth(argv[1]);
     pixaCountText(pixa, &ntext);
 
-    if (argc == 3 || argc == 4)
+    if (argc == 4) {
         fileout = argv[2];
-    if (argc == 4)
         showtext = atoi(argv[3]);
+    }
 
         /* Simple specification; no output text */
-    if (argc == 3 ||
-        (argc == 4 && (ntext == 0 || showtext == 0))) {  /* no text output */
+    if (argc == 4 && (showtext == 0 || ntext == 0)) {  /* no text output */
         pixaVerifyDepth(pixa, &maxdepth);
         pixd = pixaDisplayTiledInRows(pixa, maxdepth, 1400, 1.0, 0, 10, 0);
         pixDisplay(pixd, 100, 100);
@@ -103,7 +90,7 @@ static char  mainName[] = "displaypixa";
         /* Simple specification with output text */
     if (argc == 4) {  /* showtext == 1 && ntext > 0 */
         n = pixaGetCount(pixa);
-        bmf = bmfCreate(NULL, 6);
+        bmf = bmfCreate(NULL, 10);
         pixad = pixaCreate(n);
         for (i = 0; i < n; i++) {
             pix1 = pixaGetPix(pixa, i, L_CLONE);
@@ -142,10 +129,10 @@ static char  mainName[] = "displaypixa";
     lossless = atoi(argv[4]);
     display = atoi(argv[5]);
     fileout = argv[6];
-    showtext = (argc == 8) ? atoi(argv[7]) : 0;
-    if (showtext  && ntext == 0)
+    showtext = atoi(argv[7]);
+    if (showtext && ntext == 0)
         L_INFO("No text found in any of the pix\n", mainName);
-    bmf = (showtext && ntext > 0) ?  bmfCreate(NULL, 6) : NULL;
+    bmf = (showtext && ntext > 0) ?  bmfCreate(NULL, 10) : NULL;
     n = pixaGetCount(pixa);
     pixad = pixaCreate(n);
     for (i = 0; i < n; i++) {
@@ -181,3 +168,4 @@ static char  mainName[] = "displaypixa";
     pixaDestroy(&pixad);
     return 0;
 }
+

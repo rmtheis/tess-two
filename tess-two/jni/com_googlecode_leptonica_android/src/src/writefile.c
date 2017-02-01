@@ -1,5 +1,5 @@
 /*====================================================================*
- -  Copyright (C) 2001 Leptonica.  All rights reserved.
+ -  Copyright (C) 2001-2016 Leptonica.  All rights reserved.
  -
  -  Redistribution and use in source and binary forms, with or without
  -  modification, are permitted provided that the following conditions
@@ -33,7 +33,6 @@
  *        l_int32     pixWriteAutoFormat()
  *        l_int32     pixWriteStream()
  *        l_int32     pixWriteImpliedFormat()
- *        l_int32     pixWriteTempfile()
  *
  *     Selection of output format if default is requested
  *        l_int32     pixChooseOutputFormat()
@@ -45,15 +44,18 @@
  *        l_int32     pixWriteMem()
  *
  *     Image display for debugging
+ *        l_int32     l_fileDisplay()
  *        l_int32     pixDisplay()
  *        l_int32     pixDisplayWithTitle()
- *        l_int32     pixDisplayMultiple()
- *        l_int32     pixDisplayWrite()
- *        l_int32     pixDisplayWriteFormat()
  *        l_int32     pixSaveTiled()
  *        l_int32     pixSaveTiledOutline()
  *        l_int32     pixSaveTiledWithText()
  *        void        l_chooseDisplayProg()
+ *
+ *     Deprecated pix output for debugging
+ *        l_int32     pixDisplayWrite()
+ *        l_int32     pixDisplayWriteFormat()
+ *        l_int32     pixDisplayMultiple()
  *
  *  Supported file formats:
  *  (1) Writing is supported without any external libraries:
@@ -158,16 +160,18 @@ static const struct ExtensionMap extension_map[] =
  *           Top-level procedures for writing images to file           *
  *---------------------------------------------------------------------*/
 /*!
- *  pixaWriteFiles()
+ * \brief   pixaWriteFiles()
  *
- *      Input:  rootname
- *              pixa
- *              format  (defined in imageio.h; see notes for default)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    rootname
+ * \param[in]    pixa
+ * \param[in]    format  defined in imageio.h; see notes for default
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
- *      (1) Use @format = IFF_DEFAULT to decide the output format
+ * <pre>
+ * Notes:
+ *      (1) Use %format = IFF_DEFAULT to decide the output format
  *          individually for each pix.
+ * </pre>
  */
 l_int32
 pixaWriteFiles(const char  *rootname,
@@ -206,14 +210,15 @@ PIX     *pix;
 
 
 /*!
- *  pixWrite()
+ * \brief   pixWrite()
  *
- *      Input:  filename
- *              pix
- *              format  (defined in imageio.h)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    fname
+ * \param[in]    pix
+ * \param[in]    format  defined in imageio.h
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Open for write using binary mode (with the "b" flag)
  *          to avoid having Windows automatically translate the NL
  *          into CRLF, which corrupts image files.  On non-windows
@@ -222,37 +227,33 @@ PIX     *pix;
  *      (2) If the default image format IFF_DEFAULT is requested:
  *          use the input format if known; otherwise, use a lossless format.
  *      (3) There are two modes with respect to file naming.
- *          (a) The default code writes to @filename.
+ *          (a) The default code writes to %fname.
  *          (b) If WRITE_AS_NAMED is defined to 0, it's a bit fancier.
- *              Then, if @filename does not have a file extension, one is
+ *              Then, if %fname does not have a file extension, one is
  *              automatically appended, depending on the requested format.
  *          The original intent for providing option (b) was to insure
  *          that filenames on Windows have an extension that matches
  *          the image compression.  However, this is not the default.
+ * </pre>
  */
 l_int32
-pixWrite(const char  *filename,
+pixWrite(const char  *fname,
          PIX         *pix,
          l_int32      format)
 {
-char  *fname;
 FILE  *fp;
 
     PROCNAME("pixWrite");
 
     if (!pix)
         return ERROR_INT("pix not defined", procName, 1);
-    if (!filename)
-        return ERROR_INT("filename not defined", procName, 1);
-
-    fname = genPathname(filename, NULL);
+    if (!fname)
+        return ERROR_INT("fname not defined", procName, 1);
 
 #if  WRITE_AS_NAMED  /* Default */
 
-    if ((fp = fopenWriteStream(fname, "wb+")) == NULL) {
-        LEPT_FREE(fname);
+    if ((fp = fopenWriteStream(fname, "wb+")) == NULL)
         return ERROR_INT("stream not opened", procName, 1);
-    }
 
 #else  /* Add an extension to the output name if none exists */
 
@@ -266,10 +267,8 @@ FILE  *fp;
                 format = pixChooseOutputFormat(pix);
 
             filebuf = (char *)LEPT_CALLOC(strlen(fname) + 10, sizeof(char));
-            if (!filebuf) {
+            if (!filebuf)
                 return ERROR_INT("filebuf not made", procName, 1);
-                LEPT_FREE(fname);
-            }
             strncpy(filebuf, fname, strlen(fname));
             strcat(filebuf, ".");
             strcat(filebuf, ImageFileFormatExtensions[format]);
@@ -280,31 +279,27 @@ FILE  *fp;
         fp = fopenWriteStream(filebuf, "wb+");
         if (filebuf != fname)
             LEPT_FREE(filebuf);
-        if (fp == NULL) {
-            LEPT_FREE(fname);
+        if (fp == NULL)
             return ERROR_INT("stream not opened", procName, 1);
-        }
     }
 
 #endif  /* WRITE_AS_NAMED */
 
-    LEPT_FREE(fname);
     if (pixWriteStream(fp, pix, format)) {
         fclose(fp);
         return ERROR_INT("pix not written to stream", procName, 1);
     }
     fclose(fp);
-
     return 0;
 }
 
 
 /*!
- *  pixWriteAutoFormat()
+ * \brief   pixWriteAutoFormat()
  *
- *      Input:  filename
- *              pix
- *      Return: 0 if OK; 1 on error
+ * \param[in]    filename
+ * \param[in]    pix
+ * \return  0 if OK; 1 on error
  */
 l_int32
 pixWriteAutoFormat(const char  *filename,
@@ -326,12 +321,12 @@ l_int32  format;
 
 
 /*!
- *  pixWriteStream()
+ * \brief   pixWriteStream()
  *
- *      Input:  stream
- *              pix
- *              format
- *      Return: 0 if OK; 1 on error.
+ * \param[in]    fp file stream
+ * \param[in]    pix
+ * \param[in]    format
+ * \return  0 if OK; 1 on error.
  */
 l_int32
 pixWriteStream(FILE    *fp,
@@ -410,18 +405,20 @@ pixWriteStream(FILE    *fp,
 
 
 /*!
- *  pixWriteImpliedFormat()
+ * \brief   pixWriteImpliedFormat()
  *
- *      Input:  filename
- *              pix
- *              quality (iff JPEG; 1 - 100, 0 for default)
- *              progressive (iff JPEG; 0 for baseline seq., 1 for progressive)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    filename
+ * \param[in]    pix
+ * \param[in]    quality iff JPEG; 1 - 100, 0 for default
+ * \param[in]    progressive iff JPEG; 0 for baseline seq., 1 for progressive
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This determines the output format from the filename extension.
  *      (2) The last two args are ignored except for requests for jpeg files.
  *      (3) The jpeg default quality is 75.
+ * </pre>
  */
 l_int32
 pixWriteImpliedFormat(const char  *filename,
@@ -471,69 +468,22 @@ l_int32  format;
 }
 
 
-/*!
- *  pixWriteTempfile()
- *
- *      Input:  dir (directory name; use '.' for local dir; no trailing '/')
- *              tail (<optional> tailname, including extension if any)
- *              pix
- *              format
- *              &filename (<optional> return actual filename used; use
- *                         null to skip)
- *      Return: 0 if OK; 1 on error
- *
- *  Notes:
- *      (1) This generates a temp filename, writes the pix to it,
- *          and optionally returns the temp filename.
- *      (2) If the filename is returned to a windows program from a DLL,
- *          use lept_free() to free it.
- *      (3) See genTempFilename() for details.  We omit the time and pid
- *          here.
- */
-l_int32
-pixWriteTempfile(const char  *dir,
-                 const char  *tail,
-                 PIX         *pix,
-                 l_int32      format,
-                 char       **pfilename)
-{
-char    *filename;
-l_int32  ret;
-
-    PROCNAME("pixWriteTempfile");
-
-    if (!dir)
-        return ERROR_INT("filename not defined", procName, 1);
-    if (!pix)
-        return ERROR_INT("pix not defined", procName, 1);
-
-    if ((filename = genTempFilename(dir, tail, 0, 0)) == NULL)
-        return ERROR_INT("temp filename not made", procName, 1);
-
-    ret = pixWrite(filename, pix, format);
-    if (pfilename)
-        *pfilename = filename;
-    else
-        LEPT_FREE(filename);
-
-    return ret;
-}
-
-
 /*---------------------------------------------------------------------*
  *          Selection of output format if default is requested         *
  *---------------------------------------------------------------------*/
 /*!
- *  pixChooseOutputFormat()
+ * \brief   pixChooseOutputFormat()
  *
- *      Input:  pix
- *      Return: output format, or 0 on error
+ * \param[in]    pix
+ * \return  output format, or 0 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This should only be called if the requested format is IFF_DEFAULT.
  *      (2) If the pix wasn't read from a file, its input format value
  *          will be IFF_UNKNOWN, and in that case it is written out
  *          in a compressed but lossless format.
+ * </pre>
  */
 l_int32
 pixChooseOutputFormat(PIX  *pix)
@@ -559,14 +509,16 @@ l_int32  d, format;
 
 
 /*!
- *  getImpliedFileFormat()
+ * \brief   getImpliedFileFormat()
  *
- *      Input:  filename
- *      Return: output format, or IFF_UNKNOWN on error or invalid extension.
+ * \param[in]    filename
+ * \return  output format, or IFF_UNKNOWN on error or invalid extension.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This determines the output file format from the extension
  *          of the input filename.
+ * </pre>
  */
 l_int32
 getImpliedFileFormat(const char  *filename)
@@ -592,13 +544,14 @@ l_int32  format = IFF_UNKNOWN;
 
 
 /*!
- *  pixGetAutoFormat()
+ * \brief   pixGetAutoFormat()
  *
- *      Input:  pix
- *              &format
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix
+ * \param[in]    &format
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The output formats are restricted to tiff, jpeg and png
  *          because these are the most commonly used image formats and
  *          the ones that are typically installed with leptonica.
@@ -606,6 +559,7 @@ l_int32  format = IFF_UNKNOWN;
  *          It chooses tiff-g4 if 1 bpp without a colormap, jpeg with
  *          quality 75 if grayscale, rgb or rgba (where it loses
  *          the alpha layer), and lossless png for all other situations.
+ * </pre>
  */
 l_int32
 pixGetAutoFormat(PIX      *pix,
@@ -637,14 +591,16 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  getFormatExtension()
+ * \brief   getFormatExtension()
  *
- *      Input:  format (integer)
- *      Return: extension (string), or null if format is out of range
+ * \param[in]    format integer
+ * \return  extension string, or NULL if format is out of range
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This string is NOT owned by the caller; it is just a pointer
  *          to a global string.  Do not free it.
+ * </pre>
  */
 const char *
 getFormatExtension(l_int32  format)
@@ -662,20 +618,22 @@ getFormatExtension(l_int32  format)
  *                            Write to memory                          *
  *---------------------------------------------------------------------*/
 /*!
- *  pixWriteMem()
+ * \brief   pixWriteMem()
  *
- *      Input:  &data (<return> data of tiff compressed image)
- *              &size (<return> size of returned data)
- *              pix
- *              format  (defined in imageio.h)
- *      Return: 0 if OK, 1 on error
+ * \param[out]   pdata data of tiff compressed image
+ * \param[out]   psize size of returned data
+ * \param[in]    pix
+ * \param[in]    format  defined in imageio.h
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) On windows, this will only write tiff and PostScript to memory.
  *          For other formats, it requires open_memstream(3).
  *      (2) PostScript output is uncompressed, in hex ascii.
  *          Most printers support level 2 compression (tiff_g4 for 1 bpp,
  *          jpeg for 8 and 32 bpp).
+ * </pre>
  */
 l_int32
 pixWriteMem(l_uint8  **pdata,
@@ -759,22 +717,76 @@ l_int32  ret;
 
 
 /*---------------------------------------------------------------------*
- *                       Image display for debugging                   *
+ *                      Image display for debugging                    *
  *---------------------------------------------------------------------*/
 /*!
- *  pixDisplay()
+ * \brief   l_fileDisplay()
  *
- *      Input:  pix (1, 2, 4, 8, 16, 32 bpp)
- *              x, y  (location of display frame on the screen)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    fname
+ * \param[in]    x, y  location of display frame on the screen
+ * \param[in]    scale  scale factor (use 0 to skip display)
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
- *      (1) This displays the image using xzgv, xli or xv on Unix,
- *          or i_view on Windows.  The display program must be on
- *          your $PATH variable.  It is chosen by setting the global
- *          var_DISPLAY_PROG, using l_chooseDisplayProg().
- *          Default on Unix is xzgv.
- *      (2) Images with dimensions larger than MAX_DISPLAY_WIDTH or
+ * <pre>
+ * Notes:
+ *      (1) This is a convenient wrapper for displaying image files.
+ *      (2) Set %scale = 0 to disable display.
+ *      (3) This downscales 1 bpp to gray.
+ * </pre>
+ */
+l_int32
+l_fileDisplay(const char  *fname,
+              l_int32      x,
+              l_int32      y,
+              l_float32    scale)
+{
+PIX  *pixs, *pixd;
+
+    PROCNAME("l_fileDisplay");
+
+    if (scale == 0.0)
+        return 0;
+
+    if (scale < 0.0)
+        return ERROR_INT("invalid scale factor", procName, 1);
+    if ((pixs = pixRead(fname)) == NULL)
+        return ERROR_INT("pixs not read", procName, 1);
+
+    if (scale == 1.0) {
+        pixd = pixClone(pixs);
+    } else {
+        if (scale < 1.0 && pixGetDepth(pixs) == 1)
+            pixd = pixScaleToGray(pixs, scale);
+        else
+            pixd = pixScale(pixs, scale, scale);
+    }
+    pixDisplay(pixd, x, y);
+    pixDestroy(&pixs);
+    pixDestroy(&pixd);
+    return 0;
+}
+
+
+/*!
+ * \brief   pixDisplay()
+ *
+ * \param[in]    pix 1, 2, 4, 8, 16, 32 bpp
+ * \param[in]    x, y  location of display frame on the screen
+ * \return  0 if OK; 1 on error
+ *
+ * <pre>
+ * Notes:
+ *      (1) This is debugging code that displays an image on the screen.
+ *          It uses a static internal variable to number the output files
+ *          written by a single process.  Behavior with a shared library
+ *          may be unpredictable.
+ *      (2) It uses these programs to display the image:
+ *             On Unix: xzgv, xli or xv
+ *             On Windows: i_view
+ *          The display program must be on your $PATH variable.  It is
+ *          chosen by setting the global var_DISPLAY_PROG, using
+ *          l_chooseDisplayProg().  Default on Unix is xzgv.
+ *      (3) Images with dimensions larger than MAX_DISPLAY_WIDTH or
  *          MAX_DISPLAY_HEIGHT are downscaled to fit those constraints.
  *          This is particularly important for displaying 1 bpp images
  *          with xv, because xv automatically downscales large images
@@ -782,13 +794,16 @@ l_int32  ret;
  *          scale-to-gray to get decent-looking anti-aliased images.
  *          In all cases, we write a temporary file to /tmp/lept/disp,
  *          that is read by the display program.
- *      (3) For spp == 4, we call pixDisplayLayersRGBA() to show 3
+ *      (4) The temporary file is written as png if, after initial
+ *          processing for special cases, any of these obtain:
+ *            * pix dimensions are smaller than some thresholds
+ *            * pix depth is less than 8 bpp
+ *            * pix is colormapped
+ *      (5) For spp == 4, we call pixDisplayLayersRGBA() to show 3
  *          versions of the image: the image with a fully opaque
  *          alpha, the alpha, and the image as it would appear with
  *          a white background.
- *      (4) Note: this function uses a static internal variable to number
- *          output files written by a single process.  Behavior with a
- *          shared library may be unpredictable.
+ * </pre>
  */
 l_int32
 pixDisplay(PIX     *pixs,
@@ -800,17 +815,19 @@ pixDisplay(PIX     *pixs,
 
 
 /*!
- *  pixDisplayWithTitle()
+ * \brief   pixDisplayWithTitle()
  *
- *      Input:  pix (1, 2, 4, 8, 16, 32 bpp)
- *              x, y  (location of display frame)
- *              title (<optional> on frame; can be NULL);
- *              dispflag (1 to write, else disabled)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix 1, 2, 4, 8, 16, 32 bpp
+ * \param[in]    x, y  location of display frame
+ * \param[in]    title [optional] on frame; can be NULL;
+ * \param[in]    dispflag 1 to write, else disabled
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See notes for pixDisplay().
- *      (2) This displays the image if dispflag == 1.
+ *      (2) This displays the image if dispflag == 1; otherwise it punts.
+ * </pre>
  */
 l_int32
 pixDisplayWithTitle(PIX         *pixs,
@@ -893,13 +910,13 @@ char            fullpath[_MAX_PATH];
     else
         pix2 = pixClone(pix1);
 
-    if (index == 0) {
+    if (index == 0) {  /* erase any existing images */
         lept_rmdir("lept/disp");
         lept_mkdir("lept/disp");
     }
 
     index++;
-    if (pixGetDepth(pix2) < 8 ||
+    if (pixGetDepth(pix2) < 8 || pixGetColormap(pix2) ||
         (w < MAX_SIZE_FOR_PNG && h < MAX_SIZE_FOR_PNG)) {
         snprintf(buffer, L_BUF_SIZE, "/tmp/lept/disp/write.%03d.png", index);
         pixWrite(buffer, pix2, IFF_PNG);
@@ -968,180 +985,15 @@ char            fullpath[_MAX_PATH];
 
 
 /*!
- *  pixDisplayMultiple()
+ * \brief   pixSaveTiled()
  *
- *      Input:  filepattern
- *      Return: 0 if OK; 1 on error
- *
- *  Notes:
- *      (1) This allows display of multiple images using gthumb on unix
- *          and i_view32 on windows.  The @filepattern is a regular
- *          expression that is expanded by the shell.
- *      (2) _fullpath automatically changes '/' to '\' if necessary.
- */
-l_int32
-pixDisplayMultiple(const char  *filepattern)
-{
-char     buffer[L_BUF_SIZE];
-l_int32  ignore;
-#ifdef _WIN32
-char    *pathname;
-char    *dir, *tail;
-char     fullpath[_MAX_PATH];
-#endif  /* _WIN32 */
-
-    PROCNAME("pixDisplayMultiple");
-
-    if (!filepattern || strlen(filepattern) == 0)
-        return ERROR_INT("filepattern not defined", procName, 1);
-
-#ifndef _WIN32
-    snprintf(buffer, L_BUF_SIZE, "gthumb %s &", filepattern);
-#else
-        /* irFanView wants absolute path for directory */
-    pathname = genPathname(filepattern, NULL);
-    splitPathAtDirectory(pathname, &dir, &tail);
-    _fullpath(fullpath, dir, sizeof(fullpath));
-
-    snprintf(buffer, L_BUF_SIZE,
-             "i_view32.exe \"%s\" /filepattern=\"%s\" /thumbs", fullpath, tail);
-    LEPT_FREE(pathname);
-    LEPT_FREE(dir);
-    LEPT_FREE(tail);
-#endif  /* _WIN32 */
-
-    ignore = system(buffer);  /* gthumb || i_view32.exe */
-    return 0;
-}
-
-
-/*!
- *  pixDisplayWrite()
- *
- *      Input:  pix (1, 2, 4, 8, 16, 32 bpp)
- *              reduction (-1 to reset/erase; 0 to disable;
- *                         otherwise this is a reduction factor)
- *      Return: 0 if OK; 1 on error
- *
- *  Notes:
- *      (1) This defaults to jpeg output for pix that are 32 bpp or
- *          8 bpp without a colormap.  If you want to write all images
- *          losslessly, use format == IFF_PNG in pixDisplayWriteFormat().
- *      (2) See pixDisplayWriteFormat() for usage details.
- */
-l_int32
-pixDisplayWrite(PIX     *pixs,
-                l_int32  reduction)
-{
-    return pixDisplayWriteFormat(pixs, reduction, IFF_JFIF_JPEG);
-}
-
-
-/*!
- *  pixDisplayWriteFormat()
- *
- *      Input:  pix (1, 2, 4, 8, 16, 32 bpp)
- *              reduction (-1 to reset/erase; 0 to disable;
- *                         otherwise this is a reduction factor)
- *              format (IFF_PNG or IFF_JFIF_JPEG)
- *      Return: 0 if OK; 1 on error
- *
- *  Notes:
- *      (1) This writes files if reduction > 0.  These can be displayed using
- *            pixDisplayMultiple("/tmp/lept/display/file*");
- *      (2) All previously written files can be erased by calling with
- *          reduction < 0; the value of pixs is ignored.
- *      (3) If reduction > 1 and depth == 1, this does a scale-to-gray
- *          reduction.
- *      (4) This function uses a static internal variable to number
- *          output files written by a single process.  Behavior
- *          with a shared library may be unpredictable.
- *      (5) Output file format is as follows:
- *            format == IFF_JFIF_JPEG:
- *                png if d < 8 or d == 16 or if the output pix
- *                has a colormap.   Otherwise, output is jpg.
- *            format == IFF_PNG:
- *                png (lossless) on all images.
- *      (6) For 16 bpp, the choice of full dynamic range with log scale
- *          is the best for displaying these images.  Alternative outputs are
- *             pix8 = pixMaxDynamicRange(pixt, L_LINEAR_SCALE);
- *             pix8 = pixConvert16To8(pixt, 0);  // low order byte
- *             pix8 = pixConvert16To8(pixt, 1);  // high order byte
- */
-l_int32
-pixDisplayWriteFormat(PIX     *pixs,
-                      l_int32  reduction,
-                      l_int32  format)
-{
-char            buf[L_BUF_SIZE];
-char           *fname;
-l_float32       scale;
-PIX            *pixt, *pix8;
-static l_int32  index = 0;  /* caution: not .so or thread safe */
-
-    PROCNAME("pixDisplayWriteFormat");
-
-    if (reduction == 0) return 0;
-
-    if (reduction < 0) {
-        index = 0;  /* reset; this will cause erasure at next call to write */
-        return 0;
-    }
-
-    if (format != IFF_JFIF_JPEG && format != IFF_PNG)
-        return ERROR_INT("invalid format", procName, 1);
-    if (!pixs)
-        return ERROR_INT("pixs not defined", procName, 1);
-
-    if (index == 0) {
-        lept_rmdir("lept/display");
-        lept_mkdir("lept/display");
-    }
-    index++;
-
-    if (reduction == 1) {
-        pixt = pixClone(pixs);
-    } else {
-        scale = 1. / (l_float32)reduction;
-        if (pixGetDepth(pixs) == 1)
-            pixt = pixScaleToGray(pixs, scale);
-        else
-            pixt = pixScale(pixs, scale, scale);
-    }
-
-    if (pixGetDepth(pixt) == 16) {
-        pix8 = pixMaxDynamicRange(pixt, L_LOG_SCALE);
-        snprintf(buf, L_BUF_SIZE, "file.%03d.png", index);
-        fname = genPathname("/tmp/lept/display", buf);
-        pixWrite(fname, pix8, IFF_PNG);
-        pixDestroy(&pix8);
-    } else if (pixGetDepth(pixt) < 8 || pixGetColormap(pixt) ||
-             format == IFF_PNG) {
-        snprintf(buf, L_BUF_SIZE, "file.%03d.png", index);
-        fname = genPathname("/tmp/lept/display", buf);
-        pixWrite(fname, pixt, IFF_PNG);
-    } else {
-        snprintf(buf, L_BUF_SIZE, "file.%03d.jpg", index);
-        fname = genPathname("/tmp/lept/display", buf);
-        pixWrite(fname, pixt, format);
-    }
-    LEPT_FREE(fname);
-    pixDestroy(&pixt);
-
-    return 0;
-}
-
-
-/*!
- *  pixSaveTiled()
- *
- *      Input:  pixs (1, 2, 4, 8, 32 bpp)
- *              pixa (the pix are accumulated here)
- *              scalefactor (0.0 to disable; otherwise this is a scale factor)
- *              newrow (0 if placed on the same row as previous; 1 otherwise)
- *              space (horizontal and vertical spacing, in pixels)
- *              dp (depth of pixa; 8 or 32 bpp; only used on first call)
- *      Return: 0 if OK, 1 on error.
+ * \param[in]    pixs 1, 2, 4, 8, 32 bpp
+ * \param[in]    pixa the pix are accumulated here
+ * \param[in]    scalefactor 0.0 to disable; otherwise this is a scale factor
+ * \param[in]    newrow 0 if placed on the same row as previous; 1 otherwise
+ * \param[in]    space horizontal and vertical spacing, in pixels
+ * \param[in]    dp depth of pixa; 8 or 32 bpp; only used on first call
+ * \return  0 if OK, 1 on error.
  */
 l_int32
 pixSaveTiled(PIX       *pixs,
@@ -1157,29 +1009,30 @@ pixSaveTiled(PIX       *pixs,
 
 
 /*!
- *  pixSaveTiledOutline()
+ * \brief   pixSaveTiledOutline()
  *
- *      Input:  pixs (1, 2, 4, 8, 32 bpp)
- *              pixa (the pix are accumulated here)
- *              scalefactor (0.0 to disable; otherwise this is a scale factor)
- *              newrow (0 if placed on the same row as previous; 1 otherwise)
- *              space (horizontal and vertical spacing, in pixels)
- *              linewidth (width of added outline for image; 0 for no outline)
- *              dp (depth of pixa; 8 or 32 bpp; only used on first call)
- *      Return: 0 if OK, 1 on error.
+ * \param[in]    pixs 1, 2, 4, 8, 32 bpp
+ * \param[in]    pixa the pix are accumulated here
+ * \param[in]    scalefactor 0.0 to disable; otherwise this is a scale factor
+ * \param[in]    newrow 0 if placed on the same row as previous; 1 otherwise
+ * \param[in]    space horizontal and vertical spacing, in pixels
+ * \param[in]    linewidth width of added outline for image; 0 for no outline
+ * \param[in]    dp depth of pixa; 8 or 32 bpp; only used on first call
+ * \return  0 if OK, 1 on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Before calling this function for the first time, use
- *          pixaCreate() to make the @pixa that will accumulate the pix.
+ *          pixaCreate() to make the %pixa that will accumulate the pix.
  *          This is passed in each time pixSaveTiled() is called.
- *      (2) @scalefactor scales the input image.  After scaling and
+ *      (2) %scalefactor scales the input image.  After scaling and
  *          possible depth conversion, the image is saved in the input
  *          pixa, along with a box that specifies the location to
  *          place it when tiled later.  Disable saving the pix by
- *          setting @scalefactor == 0.0.
- *      (3) @newrow and @space specify the location of the new pix
+ *          setting %scalefactor == 0.0.
+ *      (3) %newrow and %space specify the location of the new pix
  *          with respect to the last one(s) that were entered.
- *      (4) @dp specifies the depth at which all pix are saved.  It can
+ *      (4) %dp specifies the depth at which all pix are saved.  It can
  *          be only 8 or 32 bpp.  Any colormap is removed.  This is only
  *          used at the first invocation.
  *      (5) This function uses two variables from call to call.
@@ -1191,6 +1044,7 @@ pixSaveTiled(PIX       *pixs,
  *          below the lowest image raster line when laid out using
  *          the boxa).  The bottom variable is stored in the input format
  *          field, which is the only field available for storing an int.
+ * </pre>
  */
 l_int32
 pixSaveTiledOutline(PIX       *pixs,
@@ -1287,38 +1141,40 @@ PIX     *pix1, *pix2, *pix3, *pix4;
 
 
 /*!
- *  pixSaveTiledWithText()
+ * \brief   pixSaveTiledWithText()
  *
- *      Input:  pixs (1, 2, 4, 8, 32 bpp)
- *              pixa (the pix are accumulated here; as 32 bpp)
- *              outwidth (in pixels; use 0 to disable entirely)
- *              newrow (1 to start a new row; 0 to go on same row as previous)
- *              space (horizontal and vertical spacing, in pixels)
- *              linewidth (width of added outline for image; 0 for no outline)
- *              bmf (<optional> font struct)
- *              textstr (<optional> text string to be added)
- *              val (color to set the text)
- *              location (L_ADD_ABOVE, L_ADD_AT_TOP, L_ADD_AT_BOT, L_ADD_BELOW)
- *      Return: 0 if OK, 1 on error.
+ * \param[in]    pixs 1, 2, 4, 8, 32 bpp
+ * \param[in]    pixa the pix are accumulated here; as 32 bpp
+ * \param[in]    outwidth in pixels; use 0 to disable entirely
+ * \param[in]    newrow 1 to start a new row; 0 to go on same row as previous
+ * \param[in]    space horizontal and vertical spacing, in pixels
+ * \param[in]    linewidth width of added outline for image; 0 for no outline
+ * \param[in]    bmf [optional] font struct
+ * \param[in]    textstr [optional] text string to be added
+ * \param[in]    val color to set the text
+ * \param[in]    location L_ADD_ABOVE, L_ADD_AT_TOP, L_ADD_AT_BOT, L_ADD_BELOW
+ * \return  0 if OK, 1 on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Before calling this function for the first time, use
- *          pixaCreate() to make the @pixa that will accumulate the pix.
+ *          pixaCreate() to make the %pixa that will accumulate the pix.
  *          This is passed in each time pixSaveTiled() is called.
- *      (2) @outwidth is the scaled width.  After scaling, the image is
+ *      (2) %outwidth is the scaled width.  After scaling, the image is
  *          saved in the input pixa, along with a box that specifies
  *          the location to place it when tiled later.  Disable saving
- *          the pix by setting @outwidth == 0.
- *      (3) @newrow and @space specify the location of the new pix
+ *          the pix by setting %outwidth == 0.
+ *      (3) %newrow and %space specify the location of the new pix
  *          with respect to the last one(s) that were entered.
  *      (4) All pix are saved as 32 bpp RGB.
- *      (5) If both @bmf and @textstr are defined, this generates a pix
+ *      (5) If both %bmf and %textstr are defined, this generates a pix
  *          with the additional text; otherwise, no text is written.
  *      (6) The text is written before scaling, so it is properly
  *          antialiased in the scaled pix.  However, if the pix on
  *          different calls have different widths, the size of the
  *          text will vary.
  *      (7) See pixSaveTiledOutline() for other implementation details.
+ * </pre>
  */
 l_int32
 pixSaveTiledWithText(PIX         *pixs,
@@ -1375,4 +1231,170 @@ l_chooseDisplayProg(l_int32  selection)
         L_ERROR("invalid display program\n", "l_chooseDisplayProg");
     }
     return;
+}
+
+
+/*---------------------------------------------------------------------*
+ *                Deprecated pix output for debugging                  *
+ *---------------------------------------------------------------------*/
+/*!
+ * \brief   pixDisplayWrite()
+ *
+ * \param[in]    pix 1, 2, 4, 8, 16, 32 bpp
+ * \param[in]    reduction -1 to reset/erase; 0 to disable;
+ *                         otherwise this is a reduction factor
+ * \return  0 if OK; 1 on error
+ *
+ * <pre>
+ * Notes:
+ *      (0) Deprecated.
+ *      (1) This is a simple interface for writing a set of files that can
+ *          be either looked at individually or saved in a pdf for viewing.
+ *      (2) This defaults to jpeg output for pix that are 32 bpp or
+ *          8 bpp without a colormap.  If you want to write all images
+ *          losslessly, use format == IFF_PNG in pixDisplayWriteFormat().
+ *      (3) See pixDisplayWriteFormat() for usage details.
+ * </pre>
+ */
+l_int32
+pixDisplayWrite(PIX     *pixs,
+                l_int32  reduction)
+{
+    return pixDisplayWriteFormat(pixs, reduction, IFF_DEFAULT);
+}
+
+
+/*!
+ * \brief   pixDisplayWriteFormat()
+ *
+ * \param[in]    pix 1, 2, 4, 8, 16, 32 bpp
+ * \param[in]    reduction -1 to erase and reset; 0 to disable;
+ *                         otherwise this is an integer reduction factor
+ * \param[in]    format IFF_DEFAULT or IFF_PNG
+ * \return  0 if OK; 1 on error
+ *
+ * <pre>
+ * Notes:
+ *      (0) Deprecated.
+ *      (1) This writes files with pathnames "/tmp/lept/display/file.*"
+ *          if reduction > 0.  These can be collected into a pdf using
+ *          pixDisplayMultiple();
+ *      (2) To erase any previously written files in the output directory:
+ *             pixDisplayWrite(NULL, -1);
+ *      (3) If reduction > 1 and depth == 1, this does a scale-to-gray
+ *          reduction.
+ *      (4) This function uses a static internal variable to number
+ *          output files written by a single process.  Behavior
+ *          with a shared library may be unpredictable.
+ *      (5) Output file format choices are:
+ *            format == IFF_DEFAULT:
+ *                png if d < 8 or d == 16 or if the output pix
+ *                has a colormap.   Otherwise, output is jpg.
+ *            format == IFF_PNG:
+ *                png (lossless) on all images.
+ *      (6) For 16 bpp, the choice of full dynamic range with log scale
+ *          is usually best for displaying these images.  Alternative
+ *          image transforms to generate 8 bpp pix are:
+ *             pix8 = pixMaxDynamicRange(pixt, L_LINEAR_SCALE);
+ *             pix8 = pixConvert16To8(pixt, 0);  // low order byte
+ *             pix8 = pixConvert16To8(pixt, 1);  // high order byte
+ * </pre>
+ */
+l_int32
+pixDisplayWriteFormat(PIX     *pixs,
+                      l_int32  reduction,
+                      l_int32  format)
+{
+char            buf[L_BUF_SIZE];
+char           *fname;
+l_float32       scale;
+PIX            *pix1, *pix2;
+static l_int32  index = 0;  /* caution: not .so or thread safe */
+
+    PROCNAME("pixDisplayWriteFormat");
+
+    if (reduction == 0) return 0;
+
+    if (reduction < 0) {  /* initialize */
+        lept_rmdir("lept/display");
+        index = 0;
+        return 0;
+    }
+
+    if (!pixs)
+        return ERROR_INT("pixs not defined", procName, 1);
+    if (format != IFF_DEFAULT && format != IFF_PNG) {
+        L_INFO("invalid format; using default\n", procName);
+        format = IFF_DEFAULT;
+    }
+
+    if (index == 0)
+        lept_mkdir("lept/display");
+    index++;
+
+    if (reduction == 1) {
+        pix1 = pixClone(pixs);
+    } else {
+        scale = 1. / (l_float32)reduction;
+        if (pixGetDepth(pixs) == 1)
+            pix1 = pixScaleToGray(pixs, scale);
+        else
+            pix1 = pixScale(pixs, scale, scale);
+    }
+
+    if (pixGetDepth(pix1) == 16) {
+        pix2 = pixMaxDynamicRange(pix1, L_LOG_SCALE);
+        snprintf(buf, L_BUF_SIZE, "file.%03d.png", index);
+        fname = pathJoin("/tmp/lept/display", buf);
+        pixWrite(fname, pix2, IFF_PNG);
+        pixDestroy(&pix2);
+    } else if (pixGetDepth(pix1) < 8 || pixGetColormap(pix1) ||
+               format == IFF_PNG) {
+        snprintf(buf, L_BUF_SIZE, "file.%03d.png", index);
+        fname = pathJoin("/tmp/lept/display", buf);
+        pixWrite(fname, pix1, IFF_PNG);
+    } else {
+        snprintf(buf, L_BUF_SIZE, "file.%03d.jpg", index);
+        fname = pathJoin("/tmp/lept/display", buf);
+        pixWrite(fname, pix1, format);
+    }
+    LEPT_FREE(fname);
+    pixDestroy(&pix1);
+
+    return 0;
+}
+
+
+/*!
+ * \brief   pixDisplayMultiple()
+ *
+ * \param[in]    res input resolution in ppi; > 0
+ * \param[in]    scalefactor scaling factor applied to each image; > 0.0
+ * \param[in]    fileout pdf output file
+ * \return  0 if OK; 1 on error
+ *
+ * <pre>
+ * Notes:
+ *      (0) Deprecated.
+ *      (1) This is a wrapper for generating a pdf of images that have
+ *          been written with pixDisplayWrite() or pixDisplayWriteFormat().
+ * </pre>
+ */
+l_int32
+pixDisplayMultiple(l_int32      res,
+                   l_float32    scalefactor,
+                   const char  *fileout)
+{
+    PROCNAME("pixDisplayMultiple");
+
+    if (res <= 0)
+        return ERROR_INT("invalid res", procName, 1);
+    if (scalefactor <= 0.0)
+        return ERROR_INT("invalid scalefactor", procName, 1);
+    if (!fileout)
+        return ERROR_INT("fileout not defined", procName, 1);
+
+    convertFilesToPdf("/tmp/lept/display", "file.", res, scalefactor, 0, 0,
+                      NULL, fileout);
+    return 0;
 }

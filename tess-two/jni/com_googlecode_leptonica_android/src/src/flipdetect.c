@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  flipdetect.c
+/*!
+ * \file flipdetect.c
+ * <pre>
  *
  *      Page orientation detection (pure rotation by 90 degree increments):
  *          l_int32      pixOrientDetect()
@@ -160,6 +161,7 @@
  *      In the normal situation the confidence confidence will be
  *      large and positive.  However, if mirror flipped, the
  *      confidence will be large and negative.
+ * </pre>
  */
 
 #include <math.h>
@@ -209,16 +211,17 @@ static void pixDebugFlipDetect(const char *filename, PIX *pixs,
  *                      Rasterop implementation                   *
  *----------------------------------------------------------------*/
 /*!
- *  pixOrientDetect()
+ * \brief   pixOrientDetect()
  *
- *      Input:  pixs (1 bpp, deskewed, English text, 150 - 300 ppi)
- *              &upconf (<optional return> ; may be null)
- *              &leftconf (<optional return> ; may be null)
- *              mincount (min number of up + down; use 0 for default)
- *              debug (1 for debug output; 0 otherwise)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 1 bpp, deskewed, English text, 150 - 300 ppi
+ * \param[out]   pupconf [optional] ; may be NULL
+ * \param[out]   pleftconf [optional] ; may be NULL
+ * \param[in]    mincount min number of up + down; use 0 for default
+ * \param[in]    debug 1 for debug output; 0 otherwise
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See "Measuring document image skew and orientation"
  *          Dan S. Bloomberg, Gary E. Kopec and Lakshmi Dasari
  *          IS&T/SPIE EI'95, Conference 2422: Document Recognition II
@@ -263,6 +266,7 @@ static void pixDebugFlipDetect(const char *filename, PIX *pixs,
  *          there are a sufficient number of counts for both orientations,
  *          in which case neither upconf nor leftconf will be 0.0.
  *      (7) Uses rasterop implementation of HMT.
+ * </pre>
  */
 l_int32
 pixOrientDetect(PIX        *pixs,
@@ -297,17 +301,18 @@ PIX  *pixt;
 
 
 /*!
- *  makeOrientDecision()
+ * \brief   makeOrientDecision()
  *
- *      Input:  upconf (nonzero)
- *              leftconf (nonzero)
- *              minupconf (minimum value for which a decision can be made)
- *              minratio (minimum conf ratio required for a decision)
- *              &orient (<return> text orientation enum {0,1,2,3,4})
- *              debug (1 for debug output; 0 otherwise)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    upconf nonzero
+ * \param[in]    leftconf nonzero
+ * \param[in]    minupconf minimum value for which a decision can be made
+ * \param[in]    minratio minimum conf ratio required for a decision
+ * \param[out]   porient text orientation enum {0,1,2,3,4}
+ * \param[in]    debug 1 for debug output; 0 otherwise
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This can be run after pixOrientDetect()
  *      (2) Both upconf and leftconf must be nonzero; otherwise the
  *          orientation cannot be determined.
@@ -322,6 +327,7 @@ PIX  *pixt;
  *            L_TEXT_ORIENT_LEFT:     landscape, text up facing left
  *            L_TEXT_ORIENT_DOWN:     text upside-down
  *            L_TEXT_ORIENT_RIGHT:    landscape, text up facing right
+ * </pre>
  */
 l_int32
 makeOrientDecision(l_float32  upconf,
@@ -378,15 +384,16 @@ l_float32  absupconf, absleftconf;
 
 
 /*!
- *  pixUpDownDetect()
+ * \brief   pixUpDownDetect()
  *
- *      Input:  pixs (1 bpp, deskewed, English text, 150 - 300 ppi)
- *              &conf (<return> confidence that text is rightside-up)
- *              mincount (min number of up + down; use 0 for default)
- *              debug (1 for debug output; 0 otherwise)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 1 bpp, deskewed, English text, 150 - 300 ppi
+ * \param[out]   pconf confidence that text is rightside-up
+ * \param[in]    mincount min number of up + down; use 0 for default
+ * \param[in]    debug 1 for debug output; 0 otherwise
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Special (typical, slightly faster) case, where the pixels
  *          identified through the HMT (hit-miss transform) are not
  *          clipped by a truncated word mask pixm.  See pixOrientDetect()
@@ -395,6 +402,7 @@ l_float32  absupconf, absleftconf;
  *          between the number of detected up and down ascenders,
  *          assuming that the text is either rightside-up or upside-down
  *          and not rotated at a 90 degree angle.
+ * </pre>
  */
 l_int32
 pixUpDownDetect(PIX        *pixs,
@@ -407,23 +415,24 @@ pixUpDownDetect(PIX        *pixs,
 
 
 /*!
- *  pixUpDownDetectGeneral()
+ * \brief   pixUpDownDetectGeneral()
  *
- *      Input:  pixs (1 bpp, deskewed, English text, 150 - 300 ppi)
- *              &conf (<return> confidence that text is rightside-up)
- *              mincount (min number of up + down; use 0 for default)
- *              npixels (number of pixels removed from each side of word box)
- *              debug (1 for debug output; 0 otherwise)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 1 bpp, deskewed, English text, 150 - 300 ppi
+ * \param[out]   pconf confidence that text is rightside-up
+ * \param[in]    mincount min number of up + down; use 0 for default
+ * \param[in]    npixels number of pixels removed from each side of word box
+ * \param[in]    debug 1 for debug output; 0 otherwise
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixOrientDetect() for other details.
- *      (2) @conf is the normalized difference between the number of
+ *      (2) %conf is the normalized difference between the number of
  *          detected up and down ascenders, assuming that the text
  *          is either rightside-up or upside-down and not rotated
  *          at a 90 degree angle.
- *      (3) The typical mode of operation is @npixels == 0.
- *          If @npixels > 0, this removes HMT matches at the
+ *      (3) The typical mode of operation is %npixels == 0.
+ *          If %npixels > 0, this removes HMT matches at the
  *          beginning and ending of "words."  This is useful for
  *          pages that may have mostly digits, because if npixels == 0,
  *          leading "1" and "3" digits can register as having
@@ -441,6 +450,7 @@ pixUpDownDetect(PIX        *pixs,
  *          this function is designed to work for input pix between
  *          150 and 300 ppi, and an 8x reduction on a 150 ppi image
  *          is going too far -- components will get merged.
+ * </pre>
  */
 l_int32
 pixUpDownDetectGeneral(PIX        *pixs,
@@ -561,16 +571,17 @@ SEL       *sel1, *sel2, *sel3, *sel4;
  *                         DWA implementation                     *
  *----------------------------------------------------------------*/
 /*!
- *  pixOrientDetectDwa()
+ * \brief   pixOrientDetectDwa()
  *
- *      Input:  pixs (1 bpp, deskewed, English text)
- *              &upconf (<optional return> ; may be null)
- *              &leftconf (<optional return> ; may be null)
- *              mincount (min number of up + down; use 0 for default)
- *              debug (1 for debug output; 0 otherwise)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 1 bpp, deskewed, English text
+ * \param[out]   pupconf [optional] ; may be NULL
+ * \param[out]   pleftconf [optional] ; may be NULL
+ * \param[in]    mincount min number of up + down; use 0 for default
+ * \param[in]    debug 1 for debug output; 0 otherwise
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Same interface as for pixOrientDetect().  See notes
  *          there for usage.
  *      (2) Uses auto-gen'd code for the Sels defined at the
@@ -578,6 +589,7 @@ SEL       *sel1, *sel2, *sel3, *sel4;
  *          The auto-gen'd code is in fliphmtgen.c, and can
  *          be generated by a simple executable; see prog/flipselgen.c.
  *      (3) This runs about 2.5 times faster than the pixOrientDetect().
+ * </pre>
  */
 l_int32
 pixOrientDetectDwa(PIX        *pixs,
@@ -612,15 +624,16 @@ PIX  *pixt;
 
 
 /*!
- *  pixUpDownDetectDwa()
+ * \brief   pixUpDownDetectDwa()
  *
- *      Input:  pixs (1 bpp, deskewed, English text, 150 - 300 ppi)
- *              &conf (<return> confidence that text is rightside-up)
- *              mincount (min number of up + down; use 0 for default)
- *              debug (1 for debug output; 0 otherwise)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 1 bpp, deskewed, English text, 150 - 300 ppi
+ * \param[out]   pconf confidence that text is rightside-up
+ * \param[in]    mincount min number of up + down; use 0 for default
+ * \param[in]    debug 1 for debug output; 0 otherwise
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Faster (DWA) version of pixUpDownDetect().
  *      (2) This is a special case (but typical and slightly faster) of
  *          pixUpDownDetectGeneralDwa(), where the pixels identified
@@ -631,6 +644,7 @@ PIX  *pixt;
  *          between the number of detected up and down ascenders,
  *          assuming that the text is either rightside-up or upside-down
  *          and not rotated at a 90 degree angle.
+ * </pre>
  */
 l_int32
 pixUpDownDetectDwa(PIX        *pixs,
@@ -643,17 +657,19 @@ pixUpDownDetectDwa(PIX        *pixs,
 
 
 /*!
- *  pixUpDownDetectGeneralDwa()
+ * \brief   pixUpDownDetectGeneralDwa()
  *
- *      Input:  pixs (1 bpp, deskewed, English text)
- *              &conf (<return> confidence that text is rightside-up)
- *              mincount (min number of up + down; use 0 for default)
- *              npixels (number of pixels removed from each side of word box)
- *              debug (1 for debug output; 0 otherwise)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 1 bpp, deskewed, English text
+ * \param[out]   pconf confidence that text is rightside-up
+ * \param[in]    mincount min number of up + down; use 0 for default
+ * \param[in]    npixels number of pixels removed from each side of word box
+ * \param[in]    debug 1 for debug output; 0 otherwise
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See the notes in pixUpDownDetectGeneral() for usage.
+ * </pre>
  */
 l_int32
 pixUpDownDetectGeneralDwa(PIX        *pixs,
@@ -772,15 +788,16 @@ PIX       *pixt, *pixt0, *pixt1, *pixt2, *pixt3, *pixm;
  *                       Rasterop implementation                  *
  *----------------------------------------------------------------*/
 /*!
- *  pixMirrorDetect()
+ * \brief   pixMirrorDetect()
  *
- *      Input:  pixs (1 bpp, deskewed, English text)
- *              &conf (<return> confidence that text is not LR mirror reversed)
- *              mincount (min number of left + right; use 0 for default)
- *              debug (1 for debug output; 0 otherwise)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 1 bpp, deskewed, English text
+ * \param[out]   pconf confidence that text is not LR mirror reversed
+ * \param[in]    mincount min number of left + right; use 0 for default
+ * \param[in]    debug 1 for debug output; 0 otherwise
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For this test, it is necessary that the text is horizontally
  *          oriented, with ascenders going up.
  *      (2) conf is the normalized difference between the number of
@@ -807,6 +824,7 @@ PIX       *pixt, *pixt0, *pixt1, *pixt2, *pixt3, *pixm;
  *          parts of the characters are purposely weakened sufficiently
  *          to allow these characters to remain open.  The wonders
  *          of morphology!
+ * </pre>
  */
 l_int32
 pixMirrorDetect(PIX        *pixs,
@@ -840,7 +858,6 @@ SEL       *sel1, *sel2;
     pixAnd(pixt0, pixt0, pixt3);
     pixOr(pixt0, pixt0, pixs);
     pixDestroy(&pixt3);
-/*    pixDisplayWrite(pixt0, 1); */
 
         /* Filter the right-facing characters. */
     pixt1 = pixHMT(NULL, pixt0, sel1);
@@ -885,18 +902,20 @@ SEL       *sel1, *sel2;
  *                          DWA implementation                    *
  *----------------------------------------------------------------*/
 /*!
- *  pixMirrorDetectDwa()
+ * \brief   pixMirrorDetectDwa()
  *
- *      Input:  pixs (1 bpp, deskewed, English text)
- *              &conf (<return> confidence that text is not LR mirror reversed)
- *              mincount (min number of left + right; use 0 for default)
- *              debug (1 for debug output; 0 otherwise)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 1 bpp, deskewed, English text
+ * \param[out]   pconf confidence that text is not LR mirror reversed
+ * \param[in]    mincount min number of left + right; use 0 for default
+ * \param[in]    debug 1 for debug output; 0 otherwise
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) We assume the text is horizontally oriented, with
  *          ascenders going up.
  *      (2) See notes in pixMirrorDetect().
+ * </pre>
  */
 l_int32
 pixMirrorDetectDwa(PIX        *pixs,

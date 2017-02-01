@@ -27,20 +27,21 @@
 /*
  *  autogentest1.c
  *
- *  This generates /tmp/auto/autogen.137.c and /tmp/auto/autogen.137.h.
+ *  This makes /tmp/lept/auto/autogen.137.c and /tmp/lept/auto/autogen.137.h.
  *  It shows how to use the stringcode facility.
  *
  *  In general use, you compile and run the code generator before
- *  compiling and running the code, in autogentest2.c.
+ *  compiling and running the generated code, in autogentest2.c.
  *
  *  But here, because we compile both autogentest1.c and autogentest2.c
  *  at the same time, it is necessary to put the generated code
  *  in this directory.  Running autogentest1 will simply regenerate
- *  this code.
+ *  this code, but in the /tmp/lept/auto/ directory.
  *
- *  This also generates /tmp/auto/autogen.138.c and /tmp/auto/autogen.138.h,
- *  which contain the same data, using the function strcodeCreateFromFile().
- *  With this method, you don't need to specify the file type (e.g., "PIXA")
+ *  As part of the test, this makes /tmp/lept/auto/autogen.138.c and
+ *  /tmp/lept/auto/autogen.138.h, which contain the same data, using
+ *  the function strcodeCreateFromFile().  With this method, you do not
+ *  need to specify the file type (e.g., "PIXA")
  */
 
 #include "allheaders.h"

@@ -24,32 +24,41 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  gifio.c
+/*!
+ * \file gifio.c
+ * <pre>
  *
- *    Read gif from file
- *          PIX        *pixReadStreamGif()
- *          static PIX *pixUninterlaceGIF()
+ *    Read gif file
+ *          PIX            *pixReadStreamGif()
+ *          static PIX     *gifToPix()
+ *          static PIX     *pixUninterlaceGIF()
  *
- *    Write gif to file
- *          l_int32     pixWriteStreamGif()
+ *    Write gif file
+ *          l_int32         pixWriteStreamGif()
+ *          static l_int32  pixToGif()
  *
- *    Read/write from/to memory (see warning)
- *          PIX        *pixReadMemGif()
- *          l_int32     pixWriteMemGif()
+ *    Read/write gif from/to memory
+ *          PIX            *pixReadMemGif()
+ *          static l_int32  gifReadFunc()
+ *          l_int32         pixWriteMemGif()
+ *          static l_int32  gifWriteFunc()
  *
  *    The initial version of this module was generously contribued by
  *    Antony Dovgal.  He can be contacted at:  tony *AT* daylessday.org
+ *
+ *    The functions that read and write from pix to gif-compressed memory,
+ *    using gif internal functions DGifOpen() and EGifOpen() that are
+ *    available in 5.1 and later, were contributed by Tobias Peirick.
  *
  *    Important version information:
  *
  *    (1) This uses the gif library, version 4.1.6 or later.
  *        Do not use 4.1.4.  It has serious problems handling 1 bpp images.
  *    (2) There are some issues with version 5.0:
- *        - valgrind detects uninitialized values used used for writing
+ *        ~ valgrind detects uninitialized values used used for writing
  *          and conditionally jumping in EGifPutScreenDesc().  This has
  *          not been fixed as of 1/20/2016.
- *        - DGifSlurp() crashes on some images, apparently triggered by
+ *        ~ DGifSlurp() crashes on some images, apparently triggered by
  *          by some GIF extension records.  This has been fixed as of 5.1.
  *    (3) E. Raymond has changed the high-level interface with 5.0
  *        and again with 5.1, and to keep up we have used macros
@@ -62,6 +71,9 @@
  *        DGifSlurp() gets an internal error from an uninitialized array
  *        and returns failure.  E. Raymond fixed the problem for 5.1.3,
  *        and we disable leptonica with 5.1.2.
+ *    (5) For Version 5.1 and later, the gif read-from-mem and write-to-mem
+ *        now work without writing temporary files.
+ * </pre>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -89,6 +101,11 @@ static PIX * pixUninterlaceGIF(PIX  *pixs);
 static const l_int32 InterlacedOffset[] = {0, 4, 2, 1};
 static const l_int32 InterlacedJumps[] = {8, 8, 4, 2};
 
+    /* Interface that enables low-level GIF support for reading from memory */
+static PIX * gifToPix(GifFileType *gif);
+    /* Interface that enables low-level GIF support for writing to memory */
+static l_int32 pixToGif(PIX *pix, GifFileType *gif);
+
     /* Basic interface changed in 5.0 (!).  We have to do this for
      * backward compatibililty with 4.1.6. */
 #if GIFLIB_MAJOR < 5
@@ -96,37 +113,46 @@ static const l_int32 InterlacedJumps[] = {8, 8, 4, 2};
 #define GifFreeMapObject         FreeMapObject
 #define DGifOpenFileHandle(a,b)  DGifOpenFileHandle(a)
 #define EGifOpenFileHandle(a,b)  EGifOpenFileHandle(a)
-#endif  /* GIFLIB_MAJOR */
+#endif  /* before 5.0 */
 
     /* Basic interface changed again in 5.1 (!) */
 #if GIFLIB_MAJOR < 5 || (GIFLIB_MAJOR == 5 && GIFLIB_MINOR == 0)
 #define DGifCloseFile(a,b)       DGifCloseFile(a)
 #define EGifCloseFile(a,b)       EGifCloseFile(a)
-#endif
+#endif  /* 4.1.6 or 5.0 */
+
+    /*! For in-memory decoding of GIF; 5.1+ */
+#if (GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1) || GIFLIB_MAJOR > 5
+typedef struct GifReadBuffer
+{
+    size_t            size;    /*!< size of buffer                           */
+    size_t            pos;     /*!< position relative to beginning of buffer */
+    const l_uint8    *cdata;   /*!< data in the buffer                       */
+} GifReadBuffer;
+
+    /*! Low-level callback for in-memory decoding */
+static l_int32  gifReadFunc(GifFileType *gif, GifByteType *dest,
+                            l_int32 bytesToRead);
+    /*! Low-level callback for in-memory encoding */
+static l_int32  gifWriteFunc(GifFileType *gif, const GifByteType *src,
+                             l_int32 bytesToWrite);
+#endif  /* 5.1 and beyond */
+
 
 /*---------------------------------------------------------------------*
  *                       Reading gif from file                         *
  *---------------------------------------------------------------------*/
 /*!
- *  pixReadStreamGif()
+ * \brief   pixReadStreamGif()
  *
- *      Input:  stream
- *      Return: pix, or null on error
+ * \param[in]    fp file stream
+ * \return  pix, or NULL on error
  */
 PIX *
 pixReadStreamGif(FILE  *fp)
 {
-l_int32          fd, wpl, i, j, w, h, d, cindex, ncolors;
-l_int32          rval, gval, bval;
-l_uint32        *data, *line;
+l_int32          fd;
 GifFileType     *gif;
-PIX             *pixd, *pixdi;
-PIXCMAP         *cmap;
-ColorMapObject  *gif_cmap;
-SavedImage       si;
-#if GIFLIB_MAJOR == 5 && GIFLIB_MINOR > 0
-int              giferr;
-#endif
 
     PROCNAME("pixReadStreamGif");
 
@@ -150,6 +176,39 @@ int              giferr;
     if ((gif = DGifOpenFileHandle(fd, NULL)) == NULL)
         return (PIX *)ERROR_PTR("invalid file or file not found",
                                 procName, NULL);
+
+    return gifToPix(gif);
+}
+
+
+/*!
+ * \brief   gifToPix()
+ *
+ * \param[in]    gif  opened gif stream
+ * \return  pix, or NULL on error
+ *
+ * <pre>
+ * Notes:
+ *      (1) This decodes the pix from the compressed gif stream and
+ *          closes the stream.
+ *      (2) It is static so that the stream is not exposed to clients.
+ * </pre>
+ */
+static PIX *
+gifToPix(GifFileType  *gif)
+{
+l_int32          wpl, i, j, w, h, d, cindex, ncolors;
+l_int32          rval, gval, bval;
+l_uint32        *data, *line;
+PIX             *pixd, *pixdi;
+PIXCMAP         *cmap;
+ColorMapObject  *gif_cmap;
+SavedImage       si;
+#if (GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1) || GIFLIB_MAJOR > 5
+int              giferr;
+#endif  /* 5.1 and beyond */
+
+    PROCNAME("gifToPix");
 
         /* Read all the data, but use only the first image found */
     if (DGifSlurp(gif) != GIF_OK) {
@@ -284,36 +343,32 @@ PIX       *pixd;
  *                         Writing gif to file                         *
  *---------------------------------------------------------------------*/
 /*!
- *  pixWriteStreamGif()
+ * \brief   pixWriteStreamGif()
  *
- *      Input:  stream
- *              pix (1, 2, 4, 8, 16 or 32 bpp)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fp file stream
+ * \param[in]    pix 1, 2, 4, 8, 16 or 32 bpp
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) All output gif have colormaps.  If the pix is 32 bpp rgb,
  *          this quantizes the colors and writes out 8 bpp.
  *          If the pix is 16 bpp grayscale, it converts to 8 bpp first.
  *      (2) We can't write to memory using open_memstream() because
  *          the gif functions write through a file descriptor, not a
  *          file stream.
+ * </pre>
  */
 l_int32
 pixWriteStreamGif(FILE  *fp,
                   PIX   *pix)
 {
-char            *text;
-l_int32          fd, wpl, i, j, w, h, d, ncolor, rval, gval, bval;
-l_int32          gif_ncolor = 0;
-l_uint32        *data, *line;
-PIX             *pixd;
-PIXCMAP         *cmap;
-GifFileType     *gif;
-ColorMapObject  *gif_cmap;
-GifByteType     *gif_line;
-#if GIFLIB_MAJOR == 5 && GIFLIB_MINOR > 0
-int              giferr;
-#endif
+l_int32      result;
+l_int32      fd;
+GifFileType  *gif;
+#if (GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1) || GIFLIB_MAJOR > 5
+int           giferr;
+#endif  /* 5.1 and beyond */
 
     PROCNAME("pixWriteStreamGif");
 
@@ -334,6 +389,52 @@ int              giferr;
 #ifdef _WIN32
     fd = _dup(fd);
 #endif /* _WIN32 */
+
+        /* Get the gif file handle */
+    if ((gif = EGifOpenFileHandle(fd, NULL)) == NULL) {
+        return ERROR_INT("failed to create GIF image handle", procName, 1);
+    }
+
+    result = pixToGif(pix, gif);
+    EGifCloseFile(gif, &giferr);
+    return result;
+}
+
+/*!
+ * \brief   pixToGif()
+ *
+ * \param[in]    pix 1, 2, 4, 8, 16 or 32 bpp
+ * \param[in]    gif  opened gif stream
+ * \return  0 if OK, 1 on error
+ *
+ * <pre>
+ * Notes:
+ *      (1) This encodes the pix to the gif stream. The stream is not
+ *          closes by this function.
+ *      (2) It is static to make this function private.
+ * </pre>
+ */
+static l_int32
+pixToGif(PIX *pix, GifFileType *gif)
+{
+char            *text;
+l_int32          wpl, i, j, w, h, d, ncolor, rval, gval, bval;
+l_int32          gif_ncolor = 0;
+l_uint32        *data, *line;
+PIX             *pixd;
+PIXCMAP         *cmap;
+ColorMapObject  *gif_cmap;
+GifByteType     *gif_line;
+#if (GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1) || GIFLIB_MAJOR > 5
+int              giferr;
+#endif  /* 5.1 and beyond */
+
+    PROCNAME("pixToGif");
+
+    if (!pix)
+        return ERROR_INT("pix not defined", procName, 1);
+    if (!gif)
+        return ERROR_INT("gif not defined", procName, 1);
 
     d = pixGetDepth(pix);
     if (d == 32) {
@@ -393,26 +494,17 @@ int              giferr;
         gif_cmap->Colors[i].Blue = bval;
     }
 
-        /* Get the gif file handle */
-    if ((gif = EGifOpenFileHandle(fd, NULL)) == NULL) {
-        GifFreeMapObject(gif_cmap);
-        pixDestroy(&pixd);
-        return ERROR_INT("failed to create GIF image handle", procName, 1);
-    }
-
     pixGetDimensions(pixd, &w, &h, NULL);
     if (EGifPutScreenDesc(gif, w, h, gif_cmap->BitsPerPixel, 0, gif_cmap)
         != GIF_OK) {
         pixDestroy(&pixd);
         GifFreeMapObject(gif_cmap);
-        EGifCloseFile(gif, &giferr);
         return ERROR_INT("failed to write screen description", procName, 1);
     }
     GifFreeMapObject(gif_cmap); /* not needed after this point */
 
     if (EGifPutImageDesc(gif, 0, 0, w, h, FALSE, NULL) != GIF_OK) {
         pixDestroy(&pixd);
-        EGifCloseFile(gif, &giferr);
         return ERROR_INT("failed to image screen description", procName, 1);
     }
 
@@ -420,14 +512,12 @@ int              giferr;
     wpl = pixGetWpl(pixd);
     if (d != 1 && d != 2 && d != 4 && d != 8) {
         pixDestroy(&pixd);
-        EGifCloseFile(gif, &giferr);
         return ERROR_INT("image depth is not in {1, 2, 4, 8}", procName, 1);
     }
 
     if ((gif_line = (GifByteType *)LEPT_CALLOC(sizeof(GifByteType), w))
         == NULL) {
         pixDestroy(&pixd);
-        EGifCloseFile(gif, &giferr);
         return ERROR_INT("mem alloc fail for data line", procName, 1);
     }
 
@@ -456,7 +546,6 @@ int              giferr;
         if (EGifPutLine(gif, gif_line, w) != GIF_OK) {
             LEPT_FREE(gif_line);
             pixDestroy(&pixd);
-            EGifCloseFile(gif, &giferr);
             return ERROR_INT("failed to write data line into GIF", procName, 1);
         }
     }
@@ -472,7 +561,6 @@ int              giferr;
 
     LEPT_FREE(gif_line);
     pixDestroy(&pixd);
-    EGifCloseFile(gif, &giferr);
     return 0;
 }
 
@@ -481,76 +569,128 @@ int              giferr;
  *                      Read/write from/to memory                      *
  *---------------------------------------------------------------------*/
 /*!
- *  pixReadMemGif()
+ * \brief   pixReadMemGif()
  *
- *      Input:  data (const; gif-encoded)
- *              size (of data)
- *      Return: pix, or null on error
+ * \param[in]    data const; gif-encoded
+ * \param[in]    size of data
+ * \return  pix, or NULL on error
  *
- *  Notes:
- *      (1) Of course, we are cheating here -- writing the data to file
- *          in gif format and reading it back in.  We can't use the
- *          GNU runtime extension fmemopen() to avoid writing to a file
- *          because libgif doesn't have a file stream interface!
- *      (2) This should not be assumed to be safe from a sophisticated
- *          attack, even though we have attempted to make the filename
- *          difficult to guess by embedding the process number and the
- *          current time in microseconds.  The best way to handle
- *          temporary files is to use file descriptors (capabilities)
- *          or file handles.  However, I know of no way to do this
- *          for gif files because of the way that libgif handles the
- *          file descriptors.  The canonical approach would be to do this:
- *              char templ[] = "hiddenfilenameXXXXXX";
- *              l_int32 fd = mkstemp(templ);
- *              FILE *fp = fdopen(fd, "w+b");
- *              fwrite(data, 1, size, fp);
- *              rewind(fp);
- *              Pix *pix = pixReadStreamGif(fp);
- *          but this fails because fp is in a bad state after writing.
+ * <pre>
+ * Notes:
+ *   * For Giflib version >= 5.1, this uses the DGifOpen() buffer
+ *     interface.  No temp files are required.
+ *   * For Giflib version < 5.1:
+ *       (1) Write the gif compressed data to file and read it back.
+ *           Note: we can't use the GNU runtime extension fmemopen()
+ *           because libgif doesn't have a file stream interface.
+ *       (2) This should be relatively safe from a sophisticated attack,
+ *           because we use mkstemp (or its Windows equivalent) to generate
+ *           a filename and link the file.  It would be nice to go further
+ *           and do this:
+ *               l_int32 fd = mkstemp(template);
+ *               FILE *fp = fdopen(fd, "w+b");
+ *               fwrite(data, 1, size, fp);
+ *               rewind(fp);
+ *               Pix *pix = pixReadStreamGif(fp);
+ *           but this can't be done with gif files because of the way
+ *           that libgif handles the file descriptors: fp is in a
+ *           bad state after writing.
+ * </pre>
  */
 PIX *
 pixReadMemGif(const l_uint8  *cdata,
               size_t          size)
 {
-char  *fname;
-PIX   *pix;
+#if (GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1) || GIFLIB_MAJOR > 5
+GifFileType   *gif;
+GifReadBuffer  buffer;
+#else
+char          *fname;
+PIX           *pix;
+#endif  /* 5.1 and beyond */
 
     PROCNAME("pixReadMemGif");
 
     if (!cdata)
         return (PIX *)ERROR_PTR("cdata not defined", procName, NULL);
-    L_WARNING("writing to a temp file, not directly to memory\n", procName);
 
+#if (GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1) || GIFLIB_MAJOR > 5
+    buffer.cdata = cdata;
+    buffer.size = size;
+    buffer.pos = 0;
+    if ((gif = DGifOpen((void*)&buffer, gifReadFunc, NULL)) == NULL)
+        return (PIX *)ERROR_PTR("could not open gif stream from memory",
+                                procName, NULL);
+
+    return gifToPix(gif);
+#else
+    L_INFO("using a temp file; not reading from memory\n", procName); 
         /* Write to a temp file */
-    fname = genTempFilename("/tmp/", "mem.gif", 1, 1);
+    fname = l_makeTempFilename();
     l_binaryWrite(fname, "w", (l_uint8 *)cdata, size);
 
         /* Read back from the file */
     pix = pixRead(fname);
     lept_rmfile(fname);
-    lept_free(fname);
+    LEPT_FREE(fname);
     if (!pix) L_ERROR("pix not read\n", procName);
     return pix;
+#endif  /* 5.1 and beyond */
 }
 
 
+#if (GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1) || GIFLIB_MAJOR > 5
+static l_int32
+gifReadFunc(GifFileType *gif, GifByteType *dest, l_int32 bytesToRead) 
+{
+GifReadBuffer  *buffer;
+l_int32         bytesRead;
+
+    PROCNAME("gifReadFunc");
+
+    if ((buffer = (GifReadBuffer*)gif->UserData) == NULL)
+        return ERROR_INT("UserData not set", procName, -1);
+
+    if(buffer->pos >= buffer->size)
+        return -1;
+
+    bytesRead = (buffer->pos < buffer->size - bytesToRead)
+              ? bytesToRead : buffer->size - buffer->pos;
+    memcpy(dest, buffer->cdata + buffer->pos, bytesRead);
+    buffer->pos += bytesRead;
+    return bytesRead;
+}
+#endif  /* 5.1 and beyond */
+
+
 /*!
- *  pixWriteMemGif()
+ * \brief   pixWriteMemGif()
  *
- *      Input:  &data (<return> data of gif compressed image)
- *              &size (<return> size of returned data)
- *              pix
- *      Return: 0 if OK, 1 on error
+ * \param[out]   pdata data of gif compressed image
+ * \param[out]   psize size of returned data
+ * \param[in]    pix
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See comments in pixReadMemGif()
+ *      (2) For Giflib version >= 5.1, this uses the EGifOpen() buffer
+ *          interface.  No temp files are required.
+ * </pre>
  */
 l_int32
 pixWriteMemGif(l_uint8  **pdata,
                size_t    *psize,
                PIX       *pix)
 {
-char  *fname;
+#if (GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1) || GIFLIB_MAJOR > 5
+int           giferr;
+l_int32       result;
+GifFileType  *gif;
+L_BBUFFER     *buffer;
+#else
+char         *fname;
+#endif  /* 5.1 and beyond */
 
     PROCNAME("pixWriteMemGif");
 
@@ -562,20 +702,59 @@ char  *fname;
     *psize = 0;
     if (!pix)
         return ERROR_INT("&pix not defined", procName, 1 );
-    L_WARNING("writing to a temp file, not directly to memory\n", procName);
+
+#if (GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1) || GIFLIB_MAJOR > 5
+    if((buffer = bbufferCreate(NULL, 0)) == NULL) {
+        return ERROR_INT("failed to create buffer", procName, 1);
+    }
+
+    if ((gif = EGifOpen((void*)buffer, gifWriteFunc, NULL)) == NULL) {
+        bbufferDestroy(&buffer);
+        return ERROR_INT("failed to create GIF image handle", procName, 1);
+    }
+
+    result = pixToGif(pix, gif);
+    EGifCloseFile(gif, &giferr);
+
+    if(result == 0) {
+        *pdata = bbufferDestroyAndSaveData(&buffer, psize);
+    } else {
+        bbufferDestroy(&buffer);
+    }
+    return result;
+#else
+    L_INFO("writing to a temp file, not directly to memory\n", procName);
 
         /* Write to a temp file */
-    fname = genTempFilename("/tmp/", "mem.gif", 1, 1);
+    fname = l_makeTempFilename();
     pixWrite(fname, pix, IFF_GIF);
 
         /* Read back into memory */
     *pdata = l_binaryRead(fname, psize);
     lept_rmfile(fname);
-    lept_free(fname);
+    LEPT_FREE(fname);
+    return 0;
+#endif
+}
+
+
+#if (GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1) || GIFLIB_MAJOR > 5
+static l_int32
+gifWriteFunc(GifFileType *gif, const GifByteType *src, l_int32 bytesToWrite) 
+{
+L_BBUFFER  *buffer;
+
+    PROCNAME("gifWriteFunc");
+
+    if ((buffer = (L_BBUFFER*)gif->UserData) == NULL)
+        return ERROR_INT("UserData not set", procName, -1);
+
+    if(bbufferRead(buffer, (l_uint8*)src, bytesToWrite) == 0)
+        return bytesToWrite;
     return 0;
 }
+#endif  /* 5.1 and beyond */
 
 
 /* -----------------------------------------------------------------*/
 #endif    /* HAVE_LIBGIF || HAVE_LIBUNGIF  */
-/* -----------------------------------------------------------------*/

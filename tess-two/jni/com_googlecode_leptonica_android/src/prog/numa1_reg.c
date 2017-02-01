@@ -36,11 +36,6 @@
  */
 
 #include <math.h>
-#ifndef  _WIN32
-#include <unistd.h>
-#else
-#include <windows.h>   /* for Sleep() */
-#endif  /* _WIN32 */
 #include "allheaders.h"
 
 #define   DO_ALL     1
@@ -55,14 +50,14 @@ l_float32    minval, maxval, meanval, median, variance, rankval;
 GPLOT       *gplot;
 NUMA        *na, *nahisto, *nax, *nay, *nap, *nasx, *nasy;
 NUMA        *nadx, *nady, *nafx, *nafy, *na1, *na2, *na3, *na4;
-PIX         *pixs, *pix1, *pix2, *pix3, *pix4, *pix5, *pixd;
+PIX         *pixs, *pix1, *pix2, *pix3, *pix4, *pix5, *pix6, *pix7, *pixd;
 PIXA        *pixa;
 static char  mainName[] = "numa1_reg";
 
     if (argc != 1)
         return ERROR_INT(" Syntax:  numa1_reg", mainName, 1);
 
-    lept_mkdir("lept");
+    lept_mkdir("lept/numa1");
 
     /* -------------------------------------------------------------------*
      *                            Histograms                              *
@@ -79,7 +74,7 @@ static char  mainName[] = "numa1_reg";
     nahisto = numaMakeHistogramClipped(na, 6, 2000);
     nbins = numaGetCount(nahisto);
     nax = numaMakeSequence(0, 1, nbins);
-    gplot = gplotCreate("/tmp/lept/numa_histo1", GPLOT_X11, "example histo 1",
+    gplot = gplotCreate("/tmp/lept/numa1/histo1", GPLOT_PNG, "example histo 1",
                         "i", "histo[i]");
     gplotAddPlot(gplot, nax, nahisto, GPLOT_LINES, "sine");
     gplotMakeOutput(gplot);
@@ -91,7 +86,7 @@ static char  mainName[] = "numa1_reg";
     nbins = numaGetCount(nahisto);
     nax = numaMakeSequence(binstart, binsize, nbins);
     fprintf(stderr, " binsize = %d, binstart = %d\n", binsize, binstart);
-    gplot = gplotCreate("/tmp/lept/numa_histo2", GPLOT_X11, "example histo 2",
+    gplot = gplotCreate("/tmp/lept/numa1/histo2", GPLOT_PNG, "example histo 2",
                         "i", "histo[i]");
     gplotAddPlot(gplot, nax, nahisto, GPLOT_LINES, "sine");
     gplotMakeOutput(gplot);
@@ -103,7 +98,7 @@ static char  mainName[] = "numa1_reg";
     nbins = numaGetCount(nahisto);
     nax = numaMakeSequence(0, binsize, nbins);
     fprintf(stderr, " binsize = %d, binstart = %d\n", binsize, 0);
-    gplot = gplotCreate("/tmp/lept/numa_histo3", GPLOT_X11, "example histo 3",
+    gplot = gplotCreate("/tmp/lept/numa1/histo3", GPLOT_PNG, "example histo 3",
                         "i", "histo[i]");
     gplotAddPlot(gplot, nax, nahisto, GPLOT_LINES, "sine");
     gplotMakeOutput(gplot);
@@ -117,11 +112,25 @@ static char  mainName[] = "numa1_reg";
     nax = numaMakeSequence(startval, fbinsize, nbins);
     fprintf(stderr, " binsize = %7.4f, binstart = %8.3f\n",
             fbinsize, startval);
-    gplot = gplotCreate("/tmp/lept/numa_histo4", GPLOT_X11, "example histo 4",
+    gplot = gplotCreate("/tmp/lept/numa1/histo4", GPLOT_PNG, "example histo 4",
                         "i", "histo[i]");
     gplotAddPlot(gplot, nax, nahisto, GPLOT_LINES, "sine");
     gplotMakeOutput(gplot);
     gplotDestroy(&gplot);
+    pixa = pixaCreate(4);
+    pix1 = pixRead("/tmp/lept/numa1/histo1.png");
+    pix2 = pixRead("/tmp/lept/numa1/histo2.png");
+    pix3 = pixRead("/tmp/lept/numa1/histo3.png");
+    pix4 = pixRead("/tmp/lept/numa1/histo4.png");
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixaAddPix(pixa, pix3, L_INSERT);
+    pixaAddPix(pixa, pix4, L_INSERT);
+    pixd = pixaDisplayTiledInRows(pixa, 32, 1500, 1.0, 0, 20, 2);
+    pixDisplay(pixd, 600, 0);
+    pixWrite("/tmp/lept/numa1/histo.png", pixd, IFF_PNG);
+    pixDestroy(&pixd);
+    pixaDestroy(&pixa);
     numaDestroy(&nax);
     numaDestroy(&nahisto);
 
@@ -151,11 +160,11 @@ static char  mainName[] = "numa1_reg";
     na = pixGetGrayHistogramMasked(pixs, NULL, 0, 0, 1);
 /*    numaWriteStream(stderr, na); */
     nasy = numaGetPartialSums(na);
-    gplotSimple1(nasy, GPLOT_X11, "/tmp/lept/numa_int1", "partial sums");
-    gplotSimple1(na, GPLOT_X11, "/tmp/lept/numa_int2", "simple test");
+    gplotSimple1(nasy, GPLOT_PNG, "/tmp/lept/numa1/int1", "partial sums");
+    gplotSimple1(na, GPLOT_PNG, "/tmp/lept/numa1/int2", "simple test");
     numaInterpolateEqxInterval(0.0, 1.0, na, L_LINEAR_INTERP,
                                0.0, 255.0, 15, &nax, &nay);
-    gplot = gplotCreate("/tmp/lept/numa_int3", GPLOT_X11, "test interpolation",
+    gplot = gplotCreate("/tmp/lept/numa1/int3", GPLOT_PNG, "test interpolation",
                         "pix val", "num pix");
     gplotAddPlot(gplot, nax, nay, GPLOT_LINES, "plot 1");
     gplotMakeOutput(gplot);
@@ -174,10 +183,10 @@ static char  mainName[] = "numa1_reg";
     nasy = numaGetPartialSums(na);
     numaInsertNumber(nasy, 0, 0.0);
     nasx = numaMakeSequence(0.0, 1.0, 257);
-/*    gplotSimple1(nasy, GPLOT_X11, "/tmp/numa/nasy", "partial sums"); */
+/*    gplotSimple1(nasy, GPLOT_PNG, "/tmp/numa/nasy", "partial sums"); */
     numaInterpolateArbxInterval(nasx, nasy, L_LINEAR_INTERP,
                                 10.0, 250.0, 23, &nax, &nay);
-    gplot = gplotCreate("/tmp/lept/numa_int4", GPLOT_X11, "arbx interpolation",
+    gplot = gplotCreate("/tmp/lept/numa1/int4", GPLOT_PNG, "arbx interpolation",
                         "pix val", "cum num pix");
     gplotAddPlot(gplot, nax, nay, GPLOT_LINES, "plot 1");
     gplotMakeOutput(gplot);
@@ -197,7 +206,7 @@ static char  mainName[] = "numa1_reg";
     nasy = numaGetPartialSums(na);
     numaInsertNumber(nasy, 0, 0.0);
     nasx = numaMakeSequence(0.0, 1.0, 257);
-/*    gplotSimple1(nasy, GPLOT_X11, "/tmp/numa/nasy", "partial sums"); */
+/*    gplotSimple1(nasy, GPLOT_PNG, "/tmp/numa/nasy", "partial sums"); */
     nax = numaMakeSequence(15.0, (250.0 - 15.0) / 23.0, 24);
     n = numaGetCount(nax);
     nay = numaCreate(n);
@@ -206,7 +215,7 @@ static char  mainName[] = "numa1_reg";
         numaInterpolateArbxVal(nasx, nasy, L_QUADRATIC_INTERP, xval, &yval);
         numaAddNumber(nay, yval);
     }
-    gplot = gplotCreate("/tmp/lept/numa_int5", GPLOT_X11, "arbx interpolation",
+    gplot = gplotCreate("/tmp/lept/numa1/int5", GPLOT_PNG, "arbx interpolation",
                         "pix val", "cum num pix");
     gplotAddPlot(gplot, nax, nay, GPLOT_LINES, "plot 1");
     gplotMakeOutput(gplot);
@@ -223,7 +232,7 @@ static char  mainName[] = "numa1_reg";
         /* Test interpolation */
     nasx = numaRead("testangle.na");
     nasy = numaRead("testscore.na");
-    gplot = gplotCreate("/tmp/lept/numa_int6", GPLOT_X11, "arbx interpolation",
+    gplot = gplotCreate("/tmp/lept/numa1/int6", GPLOT_PNG, "arbx interpolation",
                         "angle", "score");
     numaInterpolateArbxInterval(nasx, nasy, L_LINEAR_INTERP,
                                 -2.00, 0.0, 50, &nax, &nay);
@@ -237,7 +246,7 @@ static char  mainName[] = "numa1_reg";
     numaDestroy(&nay);
     gplotMakeOutput(gplot);
     gplotDestroy(&gplot);
-    gplot = gplotCreate("/tmp/lept/numa_int7", GPLOT_X11, "arbx interpolation",
+    gplot = gplotCreate("/tmp/lept/numa1/int7", GPLOT_PNG, "arbx interpolation",
                         "angle", "score");
     numaInterpolateArbxInterval(nasx, nasy, L_LINEAR_INTERP,
                                 -1.2, -0.8, 50, &nax, &nay);
@@ -246,6 +255,26 @@ static char  mainName[] = "numa1_reg";
     gplotDestroy(&gplot);
     numaFitMax(nay, &yval, nax, &xval);
     fprintf(stderr, "max = %f at loc = %f\n", yval, xval);
+    pixa = pixaCreate(7);
+    pix1 = pixRead("/tmp/lept/numa1/int1.png");
+    pix2 = pixRead("/tmp/lept/numa1/int2.png");
+    pix3 = pixRead("/tmp/lept/numa1/int3.png");
+    pix4 = pixRead("/tmp/lept/numa1/int4.png");
+    pix5 = pixRead("/tmp/lept/numa1/int5.png");
+    pix6 = pixRead("/tmp/lept/numa1/int6.png");
+    pix7 = pixRead("/tmp/lept/numa1/int7.png");
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixaAddPix(pixa, pix3, L_INSERT);
+    pixaAddPix(pixa, pix4, L_INSERT);
+    pixaAddPix(pixa, pix5, L_INSERT);
+    pixaAddPix(pixa, pix6, L_INSERT);
+    pixaAddPix(pixa, pix7, L_INSERT);
+    pixd = pixaDisplayTiledInRows(pixa, 32, 1500, 1.0, 0, 20, 2);
+    pixDisplay(pixd, 100, 900);
+    pixWrite("/tmp/lept/numa1/int.png", pixd, IFF_PNG);
+    pixDestroy(&pixd);
+    pixaDestroy(&pixa);
     numaDestroy(&nasx);
     numaDestroy(&nasy);
     numaDestroy(&nax);
@@ -261,7 +290,7 @@ static char  mainName[] = "numa1_reg";
     nasy = numaRead("testscore.na");
         /* ---------- Plot the derivative ---------- */
     numaDifferentiateInterval(nasx, nasy, -2.0, 0.0, 50, &nadx, &nady);
-    gplot = gplotCreate("/tmp/lept/numa_diff1", GPLOT_X11, "derivative",
+    gplot = gplotCreate("/tmp/lept/numa1/diff1", GPLOT_PNG, "derivative",
                         "angle", "slope");
     gplotAddPlot(gplot, nadx, nady, GPLOT_LINES, "derivative");
     gplotMakeOutput(gplot);
@@ -269,7 +298,7 @@ static char  mainName[] = "numa1_reg";
         /*  ---------- Plot the original function ----------- */
         /*  and the integral of the derivative; the two       */
         /*  should be approximately the same.                 */
-    gplot = gplotCreate("/tmp/lept/numa_diff2", GPLOT_X11, "integ-diff",
+    gplot = gplotCreate("/tmp/lept/numa1/diff2", GPLOT_PNG, "integ-diff",
                         "angle", "val");
     numaInterpolateArbxInterval(nasx, nasy, L_LINEAR_INTERP,
                                 -2.00, 0.0, 50, &nafx, &nafy);
@@ -290,6 +319,16 @@ static char  mainName[] = "numa1_reg";
     gplotAddPlot(gplot, nafx, nay, GPLOT_LINES, "anti-derivative");
     gplotMakeOutput(gplot);
     gplotDestroy(&gplot);
+    pixa = pixaCreate(2);
+    pix1 = pixRead("/tmp/lept/numa1/diff1.png");
+    pix2 = pixRead("/tmp/lept/numa1/diff2.png");
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixd = pixaDisplayTiledInRows(pixa, 32, 1500, 1.0, 0, 20, 2);
+    pixDisplay(pixd, 100, 450);
+    pixWrite("/tmp/lept/numa1/diff.png", pixd, IFF_PNG);
+    pixDestroy(&pixd);
+    pixaDestroy(&pixa);
     numaDestroy(&nasx);
     numaDestroy(&nasy);
     numaDestroy(&nafx);
@@ -307,7 +346,7 @@ static char  mainName[] = "numa1_reg";
     pixs = pixRead("test8.jpg");
     nasy= pixGetGrayHistogramMasked(pixs, NULL, 0, 0, 1);
     numaMakeRankFromHistogram(0.0, 1.0, nasy, 350, &nax, &nay);
-    gplot = gplotCreate("/tmp/lept/numa_rank1", GPLOT_X11,
+    gplot = gplotCreate("/tmp/lept/numa1/rank1", GPLOT_PNG,
                         "test rank extractor", "pix val", "rank val");
     gplotAddPlot(gplot, nax, nay, GPLOT_LINES, "plot 1");
     gplotMakeOutput(gplot);
@@ -328,7 +367,17 @@ static char  mainName[] = "numa1_reg";
       numaHistogramGetValFromRank(na, rank, &val);
       numaAddNumber(nap, val);
     }
-    gplotSimple1(nap, GPLOT_X11, "/tmp/lept/numa_rank2", "rank value");
+    gplotSimple1(nap, GPLOT_PNG, "/tmp/lept/numa1/rank2", "rank value");
+    pixa = pixaCreate(2);
+    pix1 = pixRead("/tmp/lept/numa1/rank1.png");
+    pix2 = pixRead("/tmp/lept/numa1/rank2.png");
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixd = pixaDisplayTiledInRows(pixa, 32, 1500, 1.0, 0, 20, 2);
+    pixDisplay(pixd, 100, 0);
+    pixWrite("/tmp/lept/numa1/rank.png", pixd, IFF_PNG);
+    pixDestroy(&pixd);
+    pixaDestroy(&pixa);
     numaDestroy(&na);
     numaDestroy(&nap);
     pixDestroy(&pixs);
@@ -339,46 +388,37 @@ static char  mainName[] = "numa1_reg";
      * -------------------------------------------------------------------*/
 #if  DO_ALL
     na = numaRead("lyra.5.na");
-    gplotSimple1(na, GPLOT_PNG, "/tmp/lept/numa_lyra1", "Original");
+    gplotSimple1(na, GPLOT_PNG, "/tmp/lept/numa1/lyra1", "Original");
     na1 = numaErode(na, 21);
-    gplotSimple1(na1, GPLOT_PNG, "/tmp/lept/numa_lyra2", "Erosion");
+    gplotSimple1(na1, GPLOT_PNG, "/tmp/lept/numa1/lyra2", "Erosion");
     na2 = numaDilate(na, 21);
-    gplotSimple1(na2, GPLOT_PNG, "/tmp/lept/numa_lyra3", "Dilation");
+    gplotSimple1(na2, GPLOT_PNG, "/tmp/lept/numa1/lyra3", "Dilation");
     na3 = numaOpen(na, 21);
-    gplotSimple1(na3, GPLOT_PNG, "/tmp/lept/numa_lyra4", "Opening");
+    gplotSimple1(na3, GPLOT_PNG, "/tmp/lept/numa1/lyra4", "Opening");
     na4 = numaClose(na, 21);
-    gplotSimple1(na4, GPLOT_PNG, "/tmp/lept/numa_lyra5", "Closing");
-#ifndef  _WIN32
-    sleep(1);
-#else
-    Sleep(1000);
-#endif  /* _WIN32 */
-    pixa = pixaCreate(5);
-    pix1 = pixRead("/tmp/lept/numa_lyra1.png");
-    pix2 = pixRead("/tmp/lept/numa_lyra2.png");
-    pix3 = pixRead("/tmp/lept/numa_lyra3.png");
-    pix4 = pixRead("/tmp/lept/numa_lyra4.png");
-    pix5 = pixRead("/tmp/lept/numa_lyra5.png");
-    pixSaveTiled(pix1, pixa, 1.0, 1, 25, 32);
-    pixSaveTiled(pix2, pixa, 1.0, 1, 25, 32);
-    pixSaveTiled(pix3, pixa, 1.0, 0, 25, 32);
-    pixSaveTiled(pix4, pixa, 1.0, 1, 25, 32);
-    pixSaveTiled(pix5, pixa, 1.0, 0, 25, 32);
-    pixd = pixaDisplay(pixa, 0, 0);
-    pixDisplay(pixd, 100, 100);
-    pixWrite("/tmp/lept/numa_morph.png", pixd, IFF_PNG);
+    gplotSimple1(na4, GPLOT_PNG, "/tmp/lept/numa1/lyra5", "Closing");
+    pixa = pixaCreate(2);
+    pix1 = pixRead("/tmp/lept/numa1/lyra1.png");
+    pix2 = pixRead("/tmp/lept/numa1/lyra2.png");
+    pix3 = pixRead("/tmp/lept/numa1/lyra3.png");
+    pix4 = pixRead("/tmp/lept/numa1/lyra4.png");
+    pix5 = pixRead("/tmp/lept/numa1/lyra5.png");
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixaAddPix(pixa, pix3, L_INSERT);
+    pixaAddPix(pixa, pix4, L_INSERT);
+    pixaAddPix(pixa, pix5, L_INSERT);
+    pixd = pixaDisplayTiledInRows(pixa, 32, 1500, 1.0, 0, 20, 2);
+    pixDisplay(pixd, 600, 450);
+    pixWrite("/tmp/lept/numa1/morph.png", pixd, IFF_PNG);
+    pixDestroy(&pixd);
+    pixaDestroy(&pixa);
     numaDestroy(&na);
     numaDestroy(&na1);
     numaDestroy(&na2);
     numaDestroy(&na3);
     numaDestroy(&na4);
     pixaDestroy(&pixa);
-    pixDestroy(&pix1);
-    pixDestroy(&pix2);
-    pixDestroy(&pix3);
-    pixDestroy(&pix4);
-    pixDestroy(&pix5);
-    pixDestroy(&pixd);
 #endif
 
     return 0;

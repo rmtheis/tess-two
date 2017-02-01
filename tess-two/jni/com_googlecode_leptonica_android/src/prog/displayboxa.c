@@ -45,23 +45,22 @@
 int main(int    argc,
          char **argv)
 {
-char        *filein, *fileout, *fontdir;
+char        *filein, *fileout;
 l_int32      w, h, width, sep;
 l_float32    scalefact;
 BOXA        *boxa1, *boxa2;
 PIX         *pixd;
 static char  mainName[] = "displayboxa";
 
-    if (argc != 4 && argc != 5) {
+    if (argc != 4) {
         fprintf(stderr, "Syntax error in displayboxa:\n"
-           "   displayboxa filein width fileout [fontdir]\n");
+           "   displayboxa filein width fileout\n");
          return 1;
     }
 
     filein = argv[1];
-    fileout = argv[3];
-    fontdir = (argc == 4) ? NULL : argv[4];
     width = atoi(argv[2]);
+    fileout = argv[3];
     if (width < 30) {
         L_ERROR("width too small; setting to 100\n", mainName);
         width = 100;
@@ -73,7 +72,7 @@ static char  mainName[] = "displayboxa";
     scalefact = (l_float32)width / (l_float32)w;
     boxa2 = boxaTransform(boxa1, 0, 0, scalefact, scalefact);
     sep = L_MIN(width / 5, 20);
-    pixd = boxaDisplayTiled(boxa2, NULL, 1500, 2, 1.0, 0, sep, 2, fontdir);
+    pixd = boxaDisplayTiled(boxa2, NULL, 1500, 2, 1.0, 0, sep, 2);
     pixWrite(fileout, pixd, IFF_PNG);
     pixDisplay(pixd, 100, 100);
 

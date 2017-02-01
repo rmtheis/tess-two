@@ -30,162 +30,168 @@
  *    Regression test for compressed pix and compressed pix arrays
  *    in memory.
  *
- *    Most of the functions tested here require the ability to write
- *    a pix to a compressed string in memory, and conversely to
- *    read a compressed image string from memory to generate a pix.
- *    The gnu runtime provides fmemopen() and open_memstream().  If
- *    these are not available, we work around this by writing data
- *    to a temp file.
+ *    We also show some other ways to accumulate and display pixa.
  */
 
 #include <math.h>
 #include "allheaders.h"
 
+static const char *fnames[] = {"weasel32.png", "weasel2.4c.png",
+                               "weasel4.16c.png", "weasel4.8g.png",
+                               "weasel8.149g.png", "weasel8.16g.png"};
 
 LEPT_DLL extern const char *ImageFileFormatExtensions[];
 static void get_format_data(l_int32 i, l_uint8 *data, size_t size);
 
-#define  DO_PNG     1  /* set to 0 for valgrind to remove most png errors */
-
 int main(int    argc,
          char **argv)
 {
-l_int32     i, n;
-BOX        *box;
-PIX        *pix, *pixs, *pixd, *pixd2;
-PIXA       *pixad, *pixa1, *pixa2, *pixa3;
-PIXC       *pixc;
-PIXAC      *pixac, *pixac1, *pixac2;
+l_uint8      *data1, *data2;
+l_int32       i, n;
+size_t        size1, size2;
+BOX          *box;
+PIX          *pix, *pix1, *pix2, *pix3;
+PIXA         *pixa, *pixa1;
+PIXC         *pixc, *pixc1, *pixc2;
+PIXAC        *pixac, *pixac1, *pixac2;
+L_REGPARAMS  *rp;
+SARRAY       *sa;
 
-    pixad = pixaCreate(0);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
+
+    lept_mkdir("lept/comp");
+
+    pixac = pixacompCreate(1);
+    pixa = pixaCreate(0);
 
         /* --- Read in the images --- */
-    pixac = pixacompCreate(1);
-    pixs = pixRead("marge.jpg");
-    pixc = pixcompCreateFromPix(pixs, IFF_JFIF_JPEG);
-    pixd = pixCreateFromPixcomp(pixc);
-    pixSaveTiledOutline(pixd, pixad, 1, 1, 30, 2, 32);
-    pixDestroy(&pixd);
-    pixcompDestroy(&pixc);
-    pixacompAddPix(pixac, pixs, IFF_DEFAULT);
-    pixDestroy(&pixs);
+    pix1 = pixRead("marge.jpg");
+    pixc1 = pixcompCreateFromPix(pix1, IFF_JFIF_JPEG);
+    pix2 = pixCreateFromPixcomp(pixc1);
+    pixc2 = pixcompCreateFromPix(pix2, IFF_JFIF_JPEG);
+    pix3 = pixCreateFromPixcomp(pixc2);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 0 */
+    pixSaveTiledOutline(pix3, pixa, 1.0, 1, 30, 2, 32);
+    pixacompAddPix(pixac, pix1, IFF_DEFAULT);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixcompDestroy(&pixc1);
+    pixcompDestroy(&pixc2);
 
     pix = pixRead("feyn.tif");
-    pixs = pixScaleToGray6(pix);
-    pixc = pixcompCreateFromPix(pixs, IFF_JFIF_JPEG);
-    pixd = pixCreateFromPixcomp(pixc);
-    pixSaveTiledOutline(pixd, pixad, 1.0, 0, 30, 2, 32);
-    pixDestroy(&pixd);
-    pixcompDestroy(&pixc);
-    pixacompAddPix(pixac, pixs, IFF_DEFAULT);
-    pixDestroy(&pixs);
+    pix1 = pixScaleToGray6(pix);
+    pixc1 = pixcompCreateFromPix(pix1, IFF_JFIF_JPEG);
+    pix2 = pixCreateFromPixcomp(pixc1);
+    pixc2 = pixcompCreateFromPix(pix2, IFF_JFIF_JPEG);
+    pix3 = pixCreateFromPixcomp(pixc2);
+    regTestWritePixAndCheck(rp, pix3, IFF_JFIF_JPEG);  /* 1 */
+    pixSaveTiledOutline(pix3, pixa, 1.0, 1, 30, 2, 32);
+    pixacompAddPix(pixac, pix1, IFF_DEFAULT);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixcompDestroy(&pixc1);
+    pixcompDestroy(&pixc2);
 
     box = boxCreate(1144, 611, 690, 180);
-    pixs = pixClipRectangle(pix, box, NULL);
-    pixc = pixcompCreateFromPix(pixs, IFF_TIFF_G4);
-    pixd = pixCreateFromPixcomp(pixc);
-    pixSaveTiledOutline(pixd, pixad, 1.0, 0, 30, 2, 32);
-    pixDestroy(&pixd);
-    pixcompDestroy(&pixc);
-    pixacompAddPix(pixac, pixs, IFF_DEFAULT);
-    pixDestroy(&pixs);
+    pix1 = pixClipRectangle(pix, box, NULL);
+    pixc1 = pixcompCreateFromPix(pix1, IFF_TIFF_G4);
+    pix2 = pixCreateFromPixcomp(pixc1);
+    pixc2 = pixcompCreateFromPix(pix2, IFF_TIFF_G4);
+    pix3 = pixCreateFromPixcomp(pixc2);
+    regTestWritePixAndCheck(rp, pix3, IFF_TIFF_G4);  /* 2 */
+    pixSaveTiledOutline(pix3, pixa, 1.0, 0, 30, 2, 32);
+    pixacompAddPix(pixac, pix1, IFF_DEFAULT);
     boxDestroy(&box);
     pixDestroy(&pix);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixcompDestroy(&pixc1);
+    pixcompDestroy(&pixc2);
 
-#if DO_PNG
-    pixs = pixRead("weasel4.11c.png");
-    pixc = pixcompCreateFromPix(pixs, IFF_PNG);
-    pixd = pixCreateFromPixcomp(pixc);
-    pixSaveTiledOutline(pixd, pixad, 1.0, 0, 30, 2, 32);
-    pixDestroy(&pixd);
-    pixcompDestroy(&pixc);
-    pixacompAddPix(pixac, pixs, IFF_DEFAULT);
-    pixDestroy(&pixs);
-#endif
-
-        /* --- Retrieve to pix --- */
-    n = pixacompGetCount(pixac);
-    for (i = 0; i < n; i++) {
-        pixs = pixacompGetPix(pixac, i);
-        pixSaveTiledOutline(pixs, pixad, 1.0, i == 0 ? 1 : 0, 30, 2, 32);
-        pixDestroy(&pixs);
-    }
-
-        /* --- Retrieve to pixa --- */
-    pixa1 = pixaCreateFromPixacomp(pixac, L_CLONE);
-    for (i = 0; i < n; i++) {
-        pixs = pixaGetPix(pixa1, i, L_CLONE);
-        pixSaveTiledOutline(pixs, pixad, 1.0, i == 0 ? 1 : 0, 30, 2, 32);
-        pixDestroy(&pixs);
-    }
-
-        /* --- Do (pixa <==> pixac) conversions --- */
-    pixaWrite("/tmp/junkpixa1.pa", pixa1);
-    pixac1 = pixacompCreateFromPixa(pixa1, IFF_DEFAULT, L_CLONE);
-    pixa2 = pixaCreateFromPixacomp(pixac1, L_CLONE);
-    pixaWrite("/tmp/junkpixa2.pa", pixa2);
-    pixac2 = pixacompCreateFromPixa(pixa2, IFF_DEFAULT, L_CLONE);
-    pixa3 = pixaCreateFromPixacomp(pixac2, L_CLONE);
-    pixaWrite("/tmp/junkpixa3.pa", pixa3);
+    pix1 = pixRead("weasel4.11c.png");
+    pixc1 = pixcompCreateFromPix(pix1, IFF_PNG);
+    pix2 = pixCreateFromPixcomp(pixc1);
+    pixc2 = pixcompCreateFromPix(pix2, IFF_PNG);
+    pix3 = pixCreateFromPixcomp(pixc2);
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 3 */
+    pixSaveTiledOutline(pix3, pixa, 1.0, 0, 30, 2, 32);
+    pixacompAddPix(pixac, pix1, IFF_DEFAULT);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixcompDestroy(&pixc1);
+    pixcompDestroy(&pixc2);
 
         /* --- Extract formatting info from compressed strings --- */
-    for (i = 0; i < n; i++) {
-        pixc = pixacompGetPixcomp(pixac1, i);
+    for (i = 0; i < 4; i++) {
+        pixc = pixacompGetPixcomp(pixac, i, L_NOCOPY);
         get_format_data(i, pixc->data, pixc->size);
     }
 
-        /* --- Display results --- */
-    pixd = pixaDisplay(pixad, 0, 0);
-    pixDisplay(pixd, 100, 100);
-    pixWrite("/tmp/junkcomp.jpg", pixd, IFF_JFIF_JPEG);
-    pixDestroy(&pixd);
-    pixaDestroy(&pixad);
+        /* Save a tiled composite from the pixa */
+    pix1 = pixaDisplayTiledAndScaled(pixa, 32, 400, 4, 0, 20, 2);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 4 */
+    pixDestroy(&pix1);
 
+        /* Convert the pixac --> pixa and save a tiled composite */
+    pixa1 = pixaCreateFromPixacomp(pixac, L_COPY);
+    pix1 = pixaDisplayTiledAndScaled(pixa1, 32, 400, 4, 0, 20, 2);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 5 */
     pixaDestroy(&pixa1);
-    pixaDestroy(&pixa2);
-    pixaDestroy(&pixa3);
-    pixacompDestroy(&pixac);
+    pixDestroy(&pix1);
+
+        /* Make a pixacomp from files, and join */
+    sa = sarrayCreate(0);
+    for (i = 0; i < 6; i++)
+        sarrayAddString(sa, (char *)fnames[i], L_COPY);
+    pixac1 = pixacompCreateFromSA(sa, IFF_DEFAULT);
+    pixacompJoin(pixac1, pixac, 0, -1);
+    pixa1 = pixaCreateFromPixacomp(pixac1, L_COPY);
+    pix1 = pixaDisplayTiledAndScaled(pixa1, 32, 250, 10, 0, 20, 2);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 6 */
+    pixacompDestroy(&pixac1);
+    pixaDestroy(&pixa1);
+    pixDestroy(&pix1);
+    sarrayDestroy(&sa);
+
+        /* Test serialized I/O */
+    pixacompWrite("/tmp/lept/comp/file1.pac", pixac);
+    regTestCheckFile(rp, "/tmp/lept/comp/file1.pac");  /* 7 */
+    pixac1 = pixacompRead("/tmp/lept/comp/file1.pac");
+    pixacompWrite("/tmp/lept/comp/file2.pac", pixac1);
+    regTestCheckFile(rp, "/tmp/lept/comp/file2.pac");  /* 8 */
+    regTestCompareFiles(rp, 7, 8);  /* 9 */
+    pixac2 = pixacompRead("/tmp/lept/comp/file2.pac");
+    pixa1 = pixaCreateFromPixacomp(pixac2, L_COPY);
+    pix1 = pixaDisplayTiledAndScaled(pixa1, 32, 250, 4, 0, 20, 2);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 10 */
     pixacompDestroy(&pixac1);
     pixacompDestroy(&pixac2);
+    pixaDestroy(&pixa1);
+    pixDestroy(&pix1);
 
-        /* --- Read all the 'weasel' files and display results --- */
-    pixac = pixacompCreateFromFiles(".", "weasel", IFF_DEFAULT);
-    fprintf(stderr, "found %d weasel files\n", pixacompGetCount(pixac));
-    pixcompWriteStreamInfo(stderr, pixac->pixc[7], NULL);
-    pixd = pixacompDisplayTiledAndScaled(pixac, 32, 100, 8, 0, 15, 2);
-    pixWrite("/tmp/junkweasel.jpg", pixd, IFF_JFIF_JPEG);
-    pixDisplay(pixd, 100, 100);
-    pixacompDestroy(&pixac);
-    pixDestroy(&pixd);
-
-        /* --- Use serialized I/O on the pixacomp --- */
-    pixac = pixacompCreateFromFiles(".", "hardlight", IFF_DEFAULT);
-    fprintf(stderr, "found %d jpg files\n", pixacompGetCount(pixac));
-    pixd = pixacompDisplayTiledAndScaled(pixac, 32, 200, 6, 0, 15, 2);
-    pixWrite("/tmp/junkhardlight.png", pixd, IFF_PNG);
-    pixDisplay(pixd, 100, 300);
-    pixacompWrite("/tmp/junkpixac1.pa", pixac);
-    pixac2 = pixacompRead("/tmp/junkpixac1.pa");
-    pixacompWrite("/tmp/junkpixac2.pa", pixac2);
-    pixd2 = pixacompDisplayTiledAndScaled(pixac2, 32, 1200, 4, 0, 30, 2);
-    pixDisplay(pixd2, 500, 300);
-    pixacompWriteStreamInfo(stderr, pixac2, NULL);
-    pixacompDestroy(&pixac);
+        /* Test serialized pixacomp I/O to and from memory */
+    pixacompWriteMem(&data1, &size1, pixac);
+    pixac1 = pixacompReadMem(data1, size1);
+    pixacompWriteMem(&data2, &size2, pixac1);
+    pixac2 = pixacompReadMem(data2, size2);
+    pixacompWrite("/tmp/lept/comp/file3.pac", pixac1);
+    regTestCheckFile(rp, "/tmp/lept/comp/file3.pac");  /* 11 */
+    pixacompWrite("/tmp/lept/comp/file4.pac", pixac2);
+    regTestCheckFile(rp, "/tmp/lept/comp/file4.pac");  /* 12 */
+    regTestCompareFiles(rp, 11, 12);  /* 13 */
+    pixacompDestroy(&pixac1);
     pixacompDestroy(&pixac2);
-    pixDestroy(&pixd);
-    pixDestroy(&pixd2);
+    lept_free(data1);
+    lept_free(data2);
 
-        /* --- Read all the 'tif' files and display results --- */
-    pixac = pixacompCreateFromFiles(".", ".tif", IFF_DEFAULT);
-    fprintf(stderr, "found %d tiff files\n", pixacompGetCount(pixac));
-    pixcompWriteStreamInfo(stderr, pixac->pixc[0], NULL);
-    pixd = pixacompDisplayTiledAndScaled(pixac, 32, 200, 6, 0, 15, 2);
-    pixWrite("/tmp/junktiffs.png", pixd, IFF_PNG);
-    pixDisplay(pixd, 100, 500);
+    pixaDestroy(&pixa);
     pixacompDestroy(&pixac);
-    pixDestroy(&pixd);
-
-    return 0;
+    return regTestCleanup(rp);
 }
 
 

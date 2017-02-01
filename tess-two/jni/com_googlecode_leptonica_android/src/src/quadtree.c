@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  quadtree.c
+/*!
+ * \file quadtree.c
+ * <pre>
  *
  *      Top level quadtree linear statistics
  *          l_int32   pixQuadtreeMean()
@@ -57,6 +58,7 @@
  *  are generated; the results are saved in a (reduced size) pix.
  *  Because the tile dimensions are integers, it is usually not possible
  *  to obtain tilings that are a power of 2, as required for quadtrees.
+ * </pre>
  */
 
 #include <math.h>
@@ -71,18 +73,20 @@
  *                  Top-level quadtree linear statistics                *
  *----------------------------------------------------------------------*/
 /*!
- *  pixQuadtreeMean()
+ * \brief   pixQuadtreeMean()
  *
- *      Input:  pixs (8 bpp, no colormap)
- *              nlevels (in quadtree; max allowed depends on image size)
- *             *pix_ma (input mean accumulator; can be null)
- *             *pfpixa (<return> mean values in quadtree)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp, no colormap
+ * \param[in]    nlevels in quadtree; max allowed depends on image size
+ * \param[in]   *pix_ma input mean accumulator; can be null
+ * \param[out]  *pfpixa mean values in quadtree
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
- *      (1) The returned fpixa has @nlevels of fpix, each containing
+ * <pre>
+ * Notes:
+ *      (1) The returned fpixa has %nlevels of fpix, each containing
  *          the mean values at its level.  Level 0 has a
  *          single value; level 1 has 4 values; level 2 has 16; etc.
+ * </pre>
  */
 l_int32
 pixQuadtreeMean(PIX     *pixs,
@@ -144,20 +148,22 @@ PIX       *pix_mac;
 
 
 /*!
- *  pixQuadtreeVariance()
+ * \brief   pixQuadtreeVariance()
  *
- *      Input:  pixs (8 bpp, no colormap)
- *              nlevels (in quadtree)
- *             *pix_ma (input mean accumulator; can be null)
- *             *dpix_msa (input mean square accumulator; can be null)
- *             *pfpixa_v (<optional return> variance values in quadtree)
- *             *pfpixa_rv (<optional return> root variance values in quadtree)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp, no colormap
+ * \param[in]    nlevels in quadtree
+ * \param[in]   *pix_ma input mean accumulator; can be null
+ * \param[in]   *dpix_msa input mean square accumulator; can be null
+ * \param[out]  *pfpixa_v [optional] variance values in quadtree
+ * \param[out]  *pfpixa_rv [optional] root variance values in quadtree
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
- *      (1) The returned fpixav and fpixarv have @nlevels of fpix,
+ * <pre>
+ * Notes:
+ *      (1) The returned fpixav and fpixarv have %nlevels of fpix,
  *          each containing at the respective levels the variance
  *          and root variance values.
+ * </pre>
  */
 l_int32
 pixQuadtreeVariance(PIX     *pixs,
@@ -238,18 +244,20 @@ DPIX      *dpix_msac;  /* msa clone */
  *                  Statistics in an arbitrary rectangle                *
  *----------------------------------------------------------------------*/
 /*!
- *  pixMeanInRectangle()
+ * \brief   pixMeanInRectangle()
  *
- *      Input:  pix (8 bpp)
- *              box (region to compute mean value)
- *              pixma (mean accumulator)
- *              &val (<return> mean value
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    box region to compute mean value
+ * \param[in]    pixma mean accumulator
+ * \param[out]   pval mean value
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function is intended to be used for many rectangles
  *          on the same image.  It can find the mean within a
  *          rectangle in O(1), independent of the size of the rectangle.
+ * </pre>
  */
 l_int32
 pixMeanInRectangle(PIX        *pixs,
@@ -309,21 +317,23 @@ BOX       *boxc;
 
 
 /*!
- *  pixVarianceInRectangle()
+ * \brief   pixVarianceInRectangle()
  *
- *      Input:  pix (8 bpp)
- *              box (region to compute variance and/or root variance)
- *              pix_ma (mean accumulator)
- *              dpix_msa (mean square accumulator)
- *              &var (<optional return> variance)
- *              &rvar (<optional return> root variance)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    box region to compute variance and/or root variance
+ * \param[in]    pix_ma mean accumulator
+ * \param[in]    dpix_msa mean square accumulator
+ * \param[out]   pvar [optional] variance
+ * \param[out]   prvar [optional] root variance
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function is intended to be used for many rectangles
  *          on the same image.  It can find the variance and/or the
  *          square root of the variance within a rectangle in O(1),
  *          independent of the size of the rectangle.
+ * </pre>
  */
 l_int32
 pixVarianceInRectangle(PIX        *pixs,
@@ -416,20 +426,22 @@ BOX       *boxc;
  *                            Quadtree regions                          *
  *----------------------------------------------------------------------*/
 /*!
- *  boxaaQuadtreeRegions()
+ * \brief   boxaaQuadtreeRegions()
  *
- *      Input:  w, h (of pix that is being quadtree-ized)
- *              nlevels (in quadtree)
- *      Return: baa (for quadtree regions at each level), or null on error
+ * \param[in]    w, h of pix that is being quadtree-ized
+ * \param[in]    nlevels in quadtree
+ * \return  baa for quadtree regions at each level, or NULL on error
  *
- *  Notes:
- *      (1) The returned boxaa has @nlevels of boxa, each containing
+ * <pre>
+ * Notes:
+ *      (1) The returned boxaa has %nlevels of boxa, each containing
  *          the set of rectangles at that level.  The rectangle at
  *          level 0 is the entire region; at level 1 the region is
  *          divided into 4 rectangles, and at level n there are n^4
  *          rectangles.
  *      (2) At each level, the rectangles in the boxa are in "raster"
  *          order, with LR (fast scan) and TB (slow scan).
+ * </pre>
  */
 BOXAA *
 boxaaQuadtreeRegions(l_int32  w,
@@ -497,18 +509,20 @@ BOXAA    *baa;
  *                            Quadtree access                           *
  *----------------------------------------------------------------------*/
 /*!
- *  quadtreeGetParent()
+ * \brief   quadtreeGetParent()
  *
- *      Input:  fpixa (mean, variance or root variance)
- *              level, x, y (of current pixel)
- *              &val (<return> parent pixel value), or 0.0 on error.
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fpixa mean, variance or root variance
+ * \param[in]    level, x, y of current pixel
+ * \param[out]   pval parent pixel value, or 0.0 on error.
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Check return value for error.  On error, val is returned as 0.0.
  *      (2) The parent is located at:
  *             level - 1
  *             (x/2, y/2)
+ * </pre>
  */
 l_int32
 quadtreeGetParent(FPIXA      *fpixa,
@@ -537,18 +551,20 @@ l_int32  n;
 
 
 /*!
- *  quadtreeGetChildren()
+ * \brief   quadtreeGetChildren()
  *
- *      Input:  fpixa (mean, variance or root variance)
- *              level, x, y (of current pixel)
- *              &val00, val01, val10, val11  (<return> child pixel values)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fpixa mean, variance or root variance
+ * \param[in]    level, x, y of current pixel
+ * \param[out]   pval00, pval01, pval10, pval11  child pixel values
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Check return value for error.  On error, all return vals are 0.0.
  *      (2) The returned child pixels are located at:
  *             level + 1
  *             (2x, 2y), (2x+1, 2y), (2x, 2y+1), (2x+1, 2y+1)
+ * </pre>
  */
 l_int32
 quadtreeGetChildren(FPIXA      *fpixa,
@@ -583,16 +599,18 @@ l_int32  n;
 
 
 /*!
- *  quadtreeMaxLevels()
+ * \brief   quadtreeMaxLevels()
  *
- *      Input:  w, h (of image)
- *      Return: maxlevels (maximum number of levels allowed), or -1 on error
+ * \param[in]    w, h of image
+ * \return  maxlevels maximum number of levels allowed, or -1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The criterion for maxlevels is that the subdivision not
  *          go down below the single pixel level.  The 1.5 factor
  *          is intended to keep any rectangle from accidentally
  *          having zero dimension due to integer truncation.
+ * </pre>
  */
 l_int32
 quadtreeMaxLevels(l_int32  w,
@@ -614,23 +632,25 @@ l_int32  i, minside;
  *                            Display quadtree                          *
  *----------------------------------------------------------------------*/
 /*!
- *  fpixaDisplayQuadtree()
+ * \brief   fpixaDisplayQuadtree()
  *
- *      Input:  fpixa (mean, variance or root variance)
- *              factor (replication factor at lowest level)
- *              fontdir (directory for text fonts; e.g., ./fonts)
- *      Return: pixd (8 bpp, mosaic of quadtree images), or null on error
+ * \param[in]    fpixa mean, variance or root variance
+ * \param[in]    factor replication factor at lowest level
+ * \param[in]    fontsize 4, ... 20
+ * \return  pixd 8 bpp, mosaic of quadtree images, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The mean and root variance fall naturally in the 8 bpp range,
  *          but the variance is typically outside the range.  This
  *          function displays 8 bpp pix clipped to 255, so the image
  *          pixels will mostly be 255 (white).
+ * </pre>
  */
 PIX *
-fpixaDisplayQuadtree(FPIXA       *fpixa,
-                     l_int32      factor,
-                     const char  *fontdir)
+fpixaDisplayQuadtree(FPIXA   *fpixa,
+                     l_int32  factor,
+                     l_int32  fontsize)
 {
 char       buf[256];
 l_int32    nlevels, i, mag, w;
@@ -647,7 +667,7 @@ PIXA      *pixat;
     if ((nlevels = fpixaGetCount(fpixa)) == 0)
         return (PIX *)ERROR_PTR("pixas empty", procName, NULL);
 
-    if ((bmf = bmfCreate(fontdir, 6)) == NULL)
+    if ((bmf = bmfCreate(NULL, fontsize)) == NULL)
         L_ERROR("bmf not made; text will not be added", procName);
     pixat = pixaCreate(nlevels);
     for (i = 0; i < nlevels; i++) {

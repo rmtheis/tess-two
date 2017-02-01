@@ -56,170 +56,149 @@ static const l_int32  yp3[] = { 200,  300,  250,  325,   83};
 static const l_int32  xp4[] = {1250, 1200,  240, 1250,  412};
 static const l_int32  yp4[] = { 300,  300,  250,  350,   83};
 
-#define   ADDED_BORDER_PIXELS       500
+#define   ADDED_BORDER_PIXELS       250
 #define   ALL     1
 
 
 int main(int    argc,
          char **argv)
 {
-l_int32      i;
-PIX         *pixs, *pixsc, *pixb, *pixg, *pixc, *pixcs, *pix1, *pix2, *pixd;
-PIXA        *pixa;
-PTA         *ptas, *ptad;
-static char  mainName[] = "projective_reg";
+l_int32       i;
+PIX          *pixs, *pixsc, *pixb, *pixg, *pixc, *pixcs, *pix1, *pix2, *pixd;
+PIXA         *pixa;
+PTA          *ptas, *ptad;
+L_REGPARAMS  *rp;
 
-    if (argc != 1)
-        return ERROR_INT(" Syntax:  projective_reg", mainName, 1);
-    if ((pixs = pixRead("feyn.tif")) == NULL)
-        return ERROR_INT("pixs not made", mainName, 1);
-    pixsc = pixScale(pixs, 0.5, 0.5);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
+
+    pixs = pixRead("feyn.tif");
+    pixsc = pixScale(pixs, 0.3, 0.3);
 
 #if ALL
         /* Test invertability of sampling */
+    fprintf(stderr, "Test invertability of sampling\n");
     pixa = pixaCreate(0);
     for (i = 0; i < 3; i++) {
         pixb = pixAddBorder(pixsc, ADDED_BORDER_PIXELS, 0);
         MakePtas(i, &ptas, &ptad);
         pix1 = pixProjectiveSampledPta(pixb, ptad, ptas, L_BRING_IN_WHITE);
-        pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+        regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 0,3,6 */
+        pixaAddPix(pixa, pix1, L_INSERT);
         pix2 = pixProjectiveSampledPta(pix1, ptas, ptad, L_BRING_IN_WHITE);
-        pixSaveTiled(pix2, pixa, 1.0, 0, 20, 0);
+        regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 1,4,7 */
+        pixaAddPix(pixa, pix2, L_INSERT);
         pixd = pixRemoveBorder(pix2, ADDED_BORDER_PIXELS);
         pixXor(pixd, pixd, pixsc);
-        pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
-        if (i == 0) pixWrite("/tmp/samp.png", pix1, IFF_PNG);
+        regTestWritePixAndCheck(rp, pixd, IFF_PNG);  /* 2,5,8 */
+        pixaAddPix(pixa, pixd, L_INSERT);
         pixDestroy(&pixb);
-        pixDestroy(&pix1);
-        pixDestroy(&pix2);
-        pixDestroy(&pixd);
         ptaDestroy(&ptas);
         ptaDestroy(&ptad);
     }
 
-    pix1 = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/proj1.png", pix1, IFF_PNG);
-    pixDisplay(pix1, 100, 300);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 0.5, 20, 3);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 9 */
+    pixDisplayWithTitle(pix1, 0, 100, NULL, rp->display);
     pixDestroy(&pix1);
+    pixDestroy(&pixsc);
     pixaDestroy(&pixa);
 #endif
 
 #if ALL
         /* Test invertability of interpolation on grayscale */
+    fprintf(stderr, "Test invertability of grayscale interpolation\n");
     pixa = pixaCreate(0);
-    pixg = pixScaleToGray3(pixs);
-    for (i = 0; i < 3; i++) {
+    pixg = pixScaleToGray(pixs, 0.2);
+    for (i = 0; i < 2; i++) {
         pixb = pixAddBorder(pixg, ADDED_BORDER_PIXELS / 2, 255);
         MakePtas(i, &ptas, &ptad);
         pix1 = pixProjectivePta(pixb, ptad, ptas, L_BRING_IN_WHITE);
-        pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
+        regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 10,13 */
+        pixaAddPix(pixa, pix1, L_INSERT);
         pix2 = pixProjectivePta(pix1, ptas, ptad, L_BRING_IN_WHITE);
-        pixSaveTiled(pix2, pixa, 1.0, 0, 20, 0);
+        regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 11,14 */
+        pixaAddPix(pixa, pix2, L_INSERT);
         pixd = pixRemoveBorder(pix2, ADDED_BORDER_PIXELS / 2);
         pixXor(pixd, pixd, pixg);
-        pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
-        if (i == 0) pixWrite("/tmp/interp.png", pix1, IFF_PNG);
+        pixInvert(pixd, pixd);
+        regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 12,15 */
+        pixaAddPix(pixa, pixd, L_INSERT);
         pixDestroy(&pixb);
-        pixDestroy(&pix1);
-        pixDestroy(&pix2);
-        pixDestroy(&pixd);
         ptaDestroy(&ptas);
         ptaDestroy(&ptad);
     }
 
-    pix1 = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/proj2.png", pix1, IFF_PNG);
-    pixDisplay(pix1, 100, 500);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 0.5, 20, 3);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 16 */
+    pixDisplayWithTitle(pix1, 300, 100, NULL, rp->display);
     pixDestroy(&pix1);
-    pixaDestroy(&pixa);
     pixDestroy(&pixg);
+    pixaDestroy(&pixa);
 #endif
 
 #if ALL
         /* Test invertability of interpolation on color */
+    fprintf(stderr, "Test invertability of color interpolation\n");
     pixa = pixaCreate(0);
     pixc = pixRead("test24.jpg");
     pixcs = pixScale(pixc, 0.3, 0.3);
     for (i = 0; i < 5; i++) {
-        pixb = pixAddBorder(pixcs, ADDED_BORDER_PIXELS, 0xffffff00);
+        if (i == 2) continue;
+        pixb = pixAddBorder(pixcs, ADDED_BORDER_PIXELS / 2, 0xffffff00);
         MakePtas(i, &ptas, &ptad);
         pix1 = pixProjectivePta(pixb, ptad, ptas, L_BRING_IN_WHITE);
-        pixSaveTiled(pix1, pixa, 1.0, 1, 20, 32);
+        regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 17,20,23,26 */
+        pixaAddPix(pixa, pix1, L_INSERT);
         pix2 = pixProjectivePta(pix1, ptas, ptad, L_BRING_IN_WHITE);
-        pixSaveTiled(pix2, pixa, 1.0, 0, 20, 0);
-        pixd = pixRemoveBorder(pix2, ADDED_BORDER_PIXELS);
+        regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 18,21,24,27 */
+        pixaAddPix(pixa, pix2, L_INSERT);
+        pixd = pixRemoveBorder(pix2, ADDED_BORDER_PIXELS / 2);
         pixXor(pixd, pixd, pixcs);
-        pixSaveTiled(pixd, pixa, 1.0, 0, 20, 0);
+        pixInvert(pixd, pixd);
+        regTestWritePixAndCheck(rp, pixd, IFF_JFIF_JPEG);  /* 19,22,25,28 */
+        pixaAddPix(pixa, pixd, L_INSERT);
         pixDestroy(&pixb);
-        pixDestroy(&pix1);
-        pixDestroy(&pix2);
-        pixDestroy(&pixd);
         ptaDestroy(&ptas);
         ptaDestroy(&ptad);
     }
 
-    pix1 = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/proj3.png", pix1, IFF_PNG);
-    pixDisplay(pix1, 100, 500);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 0.5, 20, 3);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 29 */
+    pixDisplayWithTitle(pix1, 600, 100, NULL, rp->display);
     pixDestroy(&pix1);
-    pixaDestroy(&pixa);
     pixDestroy(&pixc);
     pixDestroy(&pixcs);
+    pixaDestroy(&pixa);
 #endif
 
-#if ALL
+#if ALL 
        /* Comparison between sampling and interpolated */
+    fprintf(stderr, "Compare sampling with interpolated\n");
     MakePtas(3, &ptas, &ptad);
     pixa = pixaCreate(0);
+    pixg = pixScaleToGray(pixs, 0.2);
 
         /* Use sampled transform */
-    pix1 = pixProjectiveSampledPta(pixs, ptas, ptad, L_BRING_IN_WHITE);
-    pixSaveTiled(pix1, pixa, 0.5, 1, 20, 8);
+    pix1 = pixProjectiveSampledPta(pixg, ptas, ptad, L_BRING_IN_WHITE);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 30 */
+    pixaAddPix(pixa, pix1, L_INSERT);
 
         /* Use interpolated transforms */
-    pix2 = pixProjectivePta(pixs, ptas, ptad, L_BRING_IN_WHITE);
-    pixSaveTiled(pix2, pixa, 0.5, 0, 20, 8);
+    pix2 = pixProjectivePta(pixg, ptas, ptad, L_BRING_IN_WHITE);
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 31 */
+    pixaAddPix(pixa, pix2, L_COPY);
 
         /* Compare the results */
     pixXor(pix2, pix2, pix1);
-    pixSaveTiled(pix2, pixa, 0.5, 0, 20, 8);
+    pixInvert(pix2, pix2);
+    regTestWritePixAndCheck(rp, pix2, IFF_JFIF_JPEG);  /* 32 */
+    pixaAddPix(pixa, pix2, L_INSERT);
 
-    pixd = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/proj4.png", pixd, IFF_PNG);
-    pixDisplay(pixd, 100, 700);
+    pix1 = pixaDisplayTiledInColumns(pixa, 3, 0.5, 20, 3);
+    regTestWritePixAndCheck(rp, pix1, IFF_JFIF_JPEG);  /* 33 */
+    pixDisplayWithTitle(pix1, 900, 100, NULL, rp->display);
     pixDestroy(&pix1);
-    pixDestroy(&pix2);
-    pixDestroy(&pixd);
-    pixaDestroy(&pixa);
-    ptaDestroy(&ptas);
-    ptaDestroy(&ptad);
-#endif
-
-#if ALL
-       /* Get timings */
-    MakePtas(4, &ptas, &ptad);
-    pixa = pixaCreate(0);
-    pixg = pixScaleToGray3(pixs);
-
-    startTimer();
-    pix1 = pixProjectiveSampledPta(pixg, ptas, ptad, L_BRING_IN_WHITE);
-    fprintf(stderr, " Time for pixProjectiveSampledPta(): %6.2f sec\n", stopTimer());
-    pixSaveTiled(pix1, pixa, 1.0, 1, 20, 8);
-
-    startTimer();
-    pix2 = pixProjectivePta(pixg, ptas, ptad, L_BRING_IN_WHITE);
-    fprintf(stderr, " Time for pixProjectivePta(): %6.2f sec\n", stopTimer());
-    pixSaveTiled(pix2, pixa, 1.0, 0, 20, 8);
-
-    pixXor(pix1, pix1, pix2);
-    pixSaveTiled(pix1, pixa, 1.0, 0, 20, 8);
-    pixDestroy(&pix1);
-    pixDestroy(&pix2);
-
-    pixd = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/proj5.png", pixd, IFF_PNG);
-    pixDisplay(pixd, 100, 900);
-    pixDestroy(&pixd);
     pixDestroy(&pixg);
     pixaDestroy(&pixa);
     ptaDestroy(&ptas);
@@ -227,8 +206,7 @@ static char  mainName[] = "projective_reg";
 #endif
 
     pixDestroy(&pixs);
-    pixDestroy(&pixsc);
-    return 0;
+    return regTestCleanup(rp);
 }
 
 static void

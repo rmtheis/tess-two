@@ -334,7 +334,6 @@ L_REGPARAMS  *rp;
 
     /* ---------------- Part 4: Test non-tiff r/w to memory ---------------- */
 
-    pixDisplayWrite(NULL, -1);
     success = (n < 6) ? FALSE : TRUE;
     for (i = 0; i < n; i++) {
         if ((pix = pixaGetPix(pixa, i, L_CLONE)) == NULL) {
@@ -485,15 +484,11 @@ part6:
     if (get_header_data(FILE_32BPP_ALPHA, IFF_PNG)) success = FALSE;
 
     pix = pixRead(FILE_8BPP_1);
-    tempname = genTempFilename((const char *)"/tmp/lept/regout",
-                               (const char *)".pnm", 1, 1);
+    tempname = l_makeTempFilename();
     pixWrite(tempname, pix, IFF_PNM);
     if (get_header_data(tempname, IFF_PNM)) success = FALSE;
     pixDestroy(&pix);
-    lept_free(tempname);
     pix = pixRead(FILE_1BPP);
-    tempname = genTempFilename((const char *)"/tmp/lept/regout",
-                               (const char *)".tif", 1, 1);
     pixWrite(tempname, pix, IFF_TIFF_G3);
     if (get_header_data(tempname, IFF_TIFF_G3)) success = FALSE;
     pixWrite(tempname, pix, IFF_TIFF_G4);
@@ -509,6 +504,7 @@ part6:
     pixWrite(tempname, pix, IFF_TIFF);
     if (get_header_data(tempname, IFF_TIFF)) success = FALSE;
     pixDestroy(&pix);
+    lept_rmfile(tempname);
     lept_free(tempname);
 
     if (success)
@@ -664,7 +660,6 @@ PIX       *pixd = NULL;
             fprintf(stderr, "Mem write/read fail for format %d, diff = %5.2f\n",
                     format, diff);
         }
-        pixDisplayWrite(pixd, 1);
     } else {
         pixEqual(pixs, pixd, &same);
         if (!same)

@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  roplow.c
+/*!
+ * \file roplow.c
+ * <pre>
  *
  *      Low level dest-only
  *           void            rasteropUniLow()
@@ -38,6 +39,7 @@
  *           static void     rasteropVAlignedLow()
  *           static void     rasteropGeneralLow()
  *
+ * </pre>
  */
 
 #include <string.h>
@@ -97,19 +99,19 @@ static const l_uint32 rmask32[] = {0x0,
  *                     Low-level dest-only rasterops                  *
  *--------------------------------------------------------------------*/
 /*!
- *  rasteropUniLow()
+ * \brief   rasteropUniLow()
  *
- *      Input:  datad  (ptr to dest image data)
- *              dpixw  (width of dest)
- *              dpixh  (height of dest)
- *              depth  (depth of src and dest)
- *              dwpl   (wpl of dest)
- *              dx     (x val of UL corner of dest rectangle)
- *              dy     (y val of UL corner of dest rectangle)
- *              dw     (width of dest rectangle)
- *              dh     (height of dest rectangle)
- *              op     (op code)
- *      Return: void
+ * \param[in]    datad  ptr to dest image data
+ * \param[in]    dpixw  width of dest
+ * \param[in]    dpixh  height of dest
+ * \param[in]    depth  depth of src and dest
+ * \param[in]    dwpl   wpl of dest
+ * \param[in]    dx     x val of UL corner of dest rectangle
+ * \param[in]    dy     y val of UL corner of dest rectangle
+ * \param[in]    dw     width of dest rectangle
+ * \param[in]    dh     height of dest rectangle
+ * \param[in]    op     op code
+ * \return  void
  *
  *  Action: scales width, performs clipping, checks alignment, and
  *          dispatches for the rasterop.
@@ -178,19 +180,19 @@ l_int32  dhangw, dhangh;
  *           Static low-level uni rasterop with word alignment        *
  *--------------------------------------------------------------------*/
 /*!
- *  rasteropUniWordAlignedLow()
+ * \brief   rasteropUniWordAlignedLow()
  *
- *      Input:  datad  (ptr to dest image data)
- *              dwpl   (wpl of dest)
- *              dx     (x val of UL corner of dest rectangle)
- *              dy     (y val of UL corner of dest rectangle)
- *              dw     (width of dest rectangle)
- *              dh     (height of dest rectangle)
- *              op     (op code)
- *      Return: void
+ * \param[in]    datad  ptr to dest image data
+ * \param[in]    dwpl   wpl of dest
+ * \param[in]    dx     x val of UL corner of dest rectangle
+ * \param[in]    dy     y val of UL corner of dest rectangle
+ * \param[in]    dw     width of dest rectangle
+ * \param[in]    dh     height of dest rectangle
+ * \param[in]    op     op code
+ * \return  void
  *
  *  This is called when the dest rect is left aligned
- *  on (32-bit) word boundaries.   That is: dx & 31 == 0.
+ *  on 32-bit word boundaries.   That is: dx & 31 == 0.
  *
  *  We make an optimized implementation of this because
  *  it is a common case: e.g., operating on a full dest image.
@@ -267,16 +269,16 @@ l_int32    i, j;
  *        Static low-level uni rasterop without word alignment        *
  *--------------------------------------------------------------------*/
 /*!
- *  rasteropUniGeneralLow()
+ * \brief   rasteropUniGeneralLow()
  *
- *      Input:  datad  (ptr to dest image data)
- *              dwpl   (wpl of dest)
- *              dx     (x val of UL corner of dest rectangle)
- *              dy     (y val of UL corner of dest rectangle)
- *              dw     (width of dest rectangle)
- *              dh     (height of dest rectangle)
- *              op     (op code)
- *      Return: void
+ * \param[in]    datad  ptr to dest image data
+ * \param[in]    dwpl   wpl of dest
+ * \param[in]    dx     x val of UL corner of dest rectangle
+ * \param[in]    dy     y val of UL corner of dest rectangle
+ * \param[in]    dw     width of dest rectangle
+ * \param[in]    dh     height of dest rectangle
+ * \param[in]    op     op code
+ * \return  void
  */
 static void
 rasteropUniGeneralLow(l_uint32  *datad,
@@ -451,25 +453,25 @@ l_int32    i, j;
  *                   Low-level src and dest rasterops                 *
  *--------------------------------------------------------------------*/
 /*!
- *  rasteropLow()
+ * \brief   rasteropLow()
  *
- *      Input:  datad  (ptr to dest image data)
- *              dpixw  (width of dest)
- *              dpixh  (height of dest)
- *              depth  (depth of src and dest)
- *              dwpl   (wpl of dest)
- *              dx     (x val of UL corner of dest rectangle)
- *              dy     (y val of UL corner of dest rectangle)
- *              dw     (width of dest rectangle)
- *              dh     (height of dest rectangle)
- *              op     (op code)
- *              datas  (ptr to src image data)
- *              spixw  (width of src)
- *              spixh  (height of src)
- *              swpl   (wpl of src)
- *              sx     (x val of UL corner of src rectangle)
- *              sy     (y val of UL corner of src rectangle)
- *      Return: void
+ * \param[in]    datad  ptr to dest image data
+ * \param[in]    dpixw  width of dest
+ * \param[in]    dpixh  height of dest
+ * \param[in]    depth  depth of src and dest
+ * \param[in]    dwpl   wpl of dest
+ * \param[in]    dx     x val of UL corner of dest rectangle
+ * \param[in]    dy     y val of UL corner of dest rectangle
+ * \param[in]    dw     width of dest rectangle
+ * \param[in]    dh     height of dest rectangle
+ * \param[in]    op     op code
+ * \param[in]    datas  ptr to src image data
+ * \param[in]    spixw  width of src
+ * \param[in]    spixh  height of src
+ * \param[in]    swpl   wpl of src
+ * \param[in]    sx     x val of UL corner of src rectangle
+ * \param[in]    sy     y val of UL corner of src rectangle
+ * \return  void
  *
  *  Action: Scales width, performs clipping, checks alignment, and
  *          dispatches for the rasterop.
@@ -572,28 +574,28 @@ l_int32  dhangw, shangw, dhangh, shangh;
  *        Static low-level rasterop with vertical word alignment      *
  *--------------------------------------------------------------------*/
 /*!
- *  rasteropWordAlignedLow()
+ * \brief   rasteropWordAlignedLow()
  *
- *      Input:  datad  (ptr to dest image data)
- *              dwpl   (wpl of dest)
- *              dx     (x val of UL corner of dest rectangle)
- *              dy     (y val of UL corner of dest rectangle)
- *              dw     (width of dest rectangle)
- *              dh     (height of dest rectangle)
- *              op     (op code)
- *              datas  (ptr to src image data)
- *              swpl   (wpl of src)
- *              sx     (x val of UL corner of src rectangle)
- *              sy     (y val of UL corner of src rectangle)
- *      Return: void
+ * \param[in]    datad  ptr to dest image data
+ * \param[in]    dwpl   wpl of dest
+ * \param[in]    dx     x val of UL corner of dest rectangle
+ * \param[in]    dy     y val of UL corner of dest rectangle
+ * \param[in]    dw     width of dest rectangle
+ * \param[in]    dh     height of dest rectangle
+ * \param[in]    op     op code
+ * \param[in]    datas  ptr to src image data
+ * \param[in]    swpl   wpl of src
+ * \param[in]    sx     x val of UL corner of src rectangle
+ * \param[in]    sy     y val of UL corner of src rectangle
+ * \return  void
  *
  *  This is called when both the src and dest rects
- *  are left aligned on (32-bit) word boundaries.
+ *  are left aligned on 32-bit word boundaries.
  *  That is: dx & 31 == 0 and sx & 31 == 0
  *
  *  We make an optimized implementation of this because
  *  it is a common case: e.g., two images are rasterop'd
- *  starting from their UL corners (0,0).
+ *  starting from their UL corners 0,0.
  */
 static void
 rasteropWordAlignedLow(l_uint32  *datad,
@@ -802,24 +804,24 @@ l_int32    i, j;
  *        Static low-level rasterop with vertical word alignment      *
  *--------------------------------------------------------------------*/
 /*!
- *  rasteropVAlignedLow()
+ * \brief   rasteropVAlignedLow()
  *
- *      Input:  datad  (ptr to dest image data)
- *              dwpl   (wpl of dest)
- *              dx     (x val of UL corner of dest rectangle)
- *              dy     (y val of UL corner of dest rectangle)
- *              dw     (width of dest rectangle)
- *              dh     (height of dest rectangle)
- *              op     (op code)
- *              datas  (ptr to src image data)
- *              swpl   (wpl of src)
- *              sx     (x val of UL corner of src rectangle)
- *              sy     (y val of UL corner of src rectangle)
- *      Return: void
+ * \param[in]    datad  ptr to dest image data
+ * \param[in]    dwpl   wpl of dest
+ * \param[in]    dx     x val of UL corner of dest rectangle
+ * \param[in]    dy     y val of UL corner of dest rectangle
+ * \param[in]    dw     width of dest rectangle
+ * \param[in]    dh     height of dest rectangle
+ * \param[in]    op     op code
+ * \param[in]    datas  ptr to src image data
+ * \param[in]    swpl   wpl of src
+ * \param[in]    sx     x val of UL corner of src rectangle
+ * \param[in]    sy     y val of UL corner of src rectangle
+ * \return  void
  *
  *  This is called when the left side of the src and dest
- *  rects have the same alignment relative to (32-bit) word
- *  boundaries; i.e., (dx & 31) == (sx & 31)
+ *  rects have the same alignment relative to 32-bit word
+ *  boundaries; i.e., dx & 31) == (sx & 31
  */
 static void
 rasteropVAlignedLow(l_uint32  *datad,
@@ -1298,30 +1300,30 @@ l_int32    i, j;
  *     Static low-level rasterop without vertical word alignment      *
  *--------------------------------------------------------------------*/
 /*!
- *  rasteropGeneralLow()
+ * \brief   rasteropGeneralLow()
  *
- *      Input:  datad  (ptr to dest image data)
- *              dwpl   (wpl of dest)
- *              dx     (x val of UL corner of dest rectangle)
- *              dy     (y val of UL corner of dest rectangle)
- *              dw     (width of dest rectangle)
- *              dh     (height of dest rectangle)
- *              op     (op code)
- *              datas  (ptr to src image data)
- *              swpl   (wpl of src)
- *              sx     (x val of UL corner of src rectangle)
- *              sy     (y val of UL corner of src rectangle)
- *      Return: void
+ * \param[in]    datad  ptr to dest image data
+ * \param[in]    dwpl   wpl of dest
+ * \param[in]    dx     x val of UL corner of dest rectangle
+ * \param[in]    dy     y val of UL corner of dest rectangle
+ * \param[in]    dw     width of dest rectangle
+ * \param[in]    dh     height of dest rectangle
+ * \param[in]    op     op code
+ * \param[in]    datas  ptr to src image data
+ * \param[in]    swpl   wpl of src
+ * \param[in]    sx     x val of UL corner of src rectangle
+ * \param[in]    sy     y val of UL corner of src rectangle
+ * \return  void
  *
  *  This is called when the src and dest rects are
- *  do not have the same (32-bit) word alignment.
+ *  do not have the same 32-bit word alignment.
  *
- *  The method is a generalization of rasteropVAlignLow().
+ *  The method is a generalization of rasteropVAlignLow.
  *  There, the src image pieces were directly merged
  *  with the dest.  Here, we shift the source bits
  *  to fill words that are aligned with the dest, and
  *  then use those "source words" exactly in place
- *  of the source words that were used in rasteropVAlignLow().
+ *  of the source words that were used in rasteropVAlignLow.
  *
  *  The critical parameter is thus the shift required
  *  for the src.  Consider the left edge of the rectangle.
@@ -1336,7 +1338,7 @@ l_int32    i, j;
  *  the src is shifted to the left, and it may also be
  *  necessary to shift an equal number of pixels in from
  *  the next src word.  However, in both cases, after
- *  the first partial (or complete) dest word has been
+ *  the first partial or complete dest word has been
  *  filled, the next src pixels will come from a left
  *  shift that exhausts the pixels in the src word.
  */

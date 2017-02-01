@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  pix2.c
+/*!
+ * \file pix2.c
+ * <pre>
  *
  *    This file has these basic operations:
  *
@@ -123,6 +124,7 @@
  *           void        l_setAlphaMaskBorder()
  *
  *      *** indicates implicit assumption about RGB component ordering
+ * </pre>
  */
 
 
@@ -154,14 +156,15 @@ LEPT_DLL l_float32  AlphaMaskBorderVals[2] = {0.0, 0.5};
  *                         Pixel poking                        *
  *-------------------------------------------------------------*/
 /*!
- *  pixGetPixel()
+ * \brief   pixGetPixel()
  *
- *      Input:  pix
- *              (x,y) pixel coords
- *              &val (<return> pixel value)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix
+ * \param[in]    x,y pixel coords
+ * \param[out]   pval pixel value
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This returns the value in the data array.  If the pix is
  *          colormapped, it returns the colormap index, not the rgb value.
  *      (2) Because of the function overhead and the parameter checking,
@@ -171,6 +174,9 @@ LEPT_DLL l_float32  AlphaMaskBorderVals[2] = {0.0, 0.5};
  *            * GET_DATA/SET_DATA: ~350 MPix/sec
  *          If speed is important and you're doing random access into
  *          the pix, use pixGetLinePtrs() and the array access macros.
+ *      (3) If the point is outside the image, this returns an error (1),
+ *          with 0 in %pval.  To avoid spamming output, it fails silently.
+ * </pre>
  */
 l_int32
 pixGetPixel(PIX       *pix,
@@ -190,10 +196,8 @@ l_uint32  *line, *data;
         return ERROR_INT("pix not defined", procName, 1);
 
     pixGetDimensions(pix, &w, &h, &d);
-    if (x < 0 || x >= w)
-        return ERROR_INT("x out of bounds", procName, 1);
-    if (y < 0 || y >= h)
-        return ERROR_INT("y out of bounds", procName, 1);
+    if (x < 0 || x >= w || y < 0 || y >= h)
+        return 1;
 
     wpl = pixGetWpl(pix);
     data = pixGetData(pix);
@@ -228,20 +232,22 @@ l_uint32  *line, *data;
 
 
 /*!
- *  pixSetPixel()
+ * \brief   pixSetPixel()
  *
- *      Input:  pix
- *              (x,y) pixel coords
- *              val (value to be inserted)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix
+ * \param[in]    x,y pixel coords
+ * \param[in]    val value to be inserted
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Warning: the input value is not checked for overflow with respect
- *          the the depth of @pix, and the sign bit (if any) is ignored.
- *          * For d == 1, @val > 0 sets the bit on.
- *          * For d == 2, 4, 8 and 16, @val is masked to the maximum allowable
+ *          the the depth of %pix, and the sign bit (if any) is ignored.
+ *          * For d == 1, %val > 0 sets the bit on.
+ *          * For d == 2, 4, 8 and 16, %val is masked to the maximum allowable
  *            pixel value, and any (invalid) higher order bits are discarded.
  *      (2) See pixGetPixel() for information on performance.
+ * </pre>
  */
 l_int32
 pixSetPixel(PIX      *pix,
@@ -297,14 +303,14 @@ l_uint32  *line, *data;
 
 
 /*!
- *  pixGetRGBPixel()
+ * \brief   pixGetRGBPixel()
  *
- *      Input:  pix (32 bpp rgb, not colormapped)
- *              (x,y) pixel coords
- *              &rval (<optional return> red component)
- *              &gval (<optional return> green component)
- *              &bval (<optional return> blue component)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix 32 bpp rgb, not colormapped
+ * \param[in]    x,y pixel coords
+ * \param[out]   prval [optional] red component
+ * \param[out]   pgval [optional] green component
+ * \param[out]   pbval [optional] blue component
+ * \return  0 if OK; 1 on error
  */
 l_int32
 pixGetRGBPixel(PIX      *pix,
@@ -345,14 +351,14 @@ l_uint32  *data, *ppixel;
 
 
 /*!
- *  pixSetRGBPixel()
+ * \brief   pixSetRGBPixel()
  *
- *      Input:  pix (32 bpp rgb)
- *              (x,y) pixel coords
- *              rval (red component)
- *              gval (green component)
- *              bval (blue component)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix 32 bpp rgb
+ * \param[in]    x,y pixel coords
+ * \param[in]    rval red component
+ * \param[in]    gval green component
+ * \param[in]    bval blue component
+ * \return  0 if OK; 1 on error
  */
 l_int32
 pixSetRGBPixel(PIX     *pix,
@@ -388,16 +394,18 @@ l_uint32  *data, *line;
 
 
 /*!
- *  pixGetRandomPixel()
+ * \brief   pixGetRandomPixel()
  *
- *      Input:  pix (any depth; can be colormapped)
- *              &val (<optional return> pixel value)
- *              &x (<optional return> x coordinate chosen; can be null)
- *              &y (<optional return> y coordinate chosen; can be null)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix any depth; can be colormapped
+ * \param[out]   pval [optional] pixel value
+ * \param[out]   px [optional] x coordinate chosen; can be null
+ * \param[out]   py [optional] y coordinate chosen; can be null
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If the pix is colormapped, it returns the rgb value.
+ * </pre>
  */
 l_int32
 pixGetRandomPixel(PIX       *pix,
@@ -439,11 +447,11 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  pixClearPixel()
+ * \brief   pixClearPixel()
  *
- *      Input:  pix
- *              (x,y) pixel coords
- *      Return: 0 if OK; 1 on error.
+ * \param[in]    pix
+ * \param[in]    x,y pixel coords
+ * \return  0 if OK; 1 on error.
  */
 l_int32
 pixClearPixel(PIX     *pix,
@@ -495,11 +503,11 @@ l_uint32  *line, *data;
 
 
 /*!
- *  pixFlipPixel()
+ * \brief   pixFlipPixel()
  *
- *      Input:  pix
- *              (x,y) pixel coords
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix
+ * \param[in]    x,y pixel coords
+ * \return  0 if OK; 1 on error
  */
 l_int32
 pixFlipPixel(PIX     *pix,
@@ -565,16 +573,18 @@ l_uint32  *line, *data;
 
 
 /*!
- *  setPixelLow()
+ * \brief   setPixelLow()
  *
- *      Input:  line (ptr to beginning of line),
- *              x (pixel location in line)
- *              depth (bpp)
- *              val (to be inserted)
- *      Return: void
+ * \param[in]    line ptr to beginning of line,
+ * \param[in]    x pixel location in line
+ * \param[in]    depth bpp
+ * \param[in]    val to be inserted
+ * \return  void
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Caution: input variables are not checked!
+ * </pre>
  */
 void
 setPixelLow(l_uint32  *line,
@@ -617,18 +627,20 @@ setPixelLow(l_uint32  *line,
  *                     Find black or white value               *
  *-------------------------------------------------------------*/
 /*!
- *  pixGetBlackOrWhiteVal()
+ * \brief   pixGetBlackOrWhiteVal()
  *
- *      Input:  pixs (all depths; cmap ok)
- *              op (L_GET_BLACK_VAL, L_GET_WHITE_VAL)
- *              &val (<return> pixel value)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixs all depths; cmap ok
+ * \param[in]    op L_GET_BLACK_VAL, L_GET_WHITE_VAL
+ * \param[out]   pval pixel value
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Side effect.  For a colormapped image, if the requested
  *          color is not present and there is room to add it in the cmap,
  *          it is added and the new index is returned.  If there is no room,
  *          the index of the closest color in intensity is returned.
+ * </pre>
  */
 l_int32
 pixGetBlackOrWhiteVal(PIX       *pixs,
@@ -673,16 +685,18 @@ PIXCMAP  *cmap;
  *     Full image clear/set/set-to-arbitrary-value/invert      *
  *-------------------------------------------------------------*/
 /*!
- *  pixClearAll()
+ * \brief   pixClearAll()
  *
- *      Input:  pix (all depths; use cmapped with caution)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix all depths; use cmapped with caution
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Clears all data to 0.  For 1 bpp, this is white; for grayscale
  *          or color, this is black.
  *      (2) Caution: for colormapped pix, this sets the color to the first
  *          one in the colormap.  Be sure that this is the intended color!
+ * </pre>
  */
 l_int32
 pixClearAll(PIX  *pix)
@@ -699,17 +713,19 @@ pixClearAll(PIX  *pix)
 
 
 /*!
- *  pixSetAll()
+ * \brief   pixSetAll()
  *
- *      Input:  pix (all depths; use cmapped with caution)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix all depths; use cmapped with caution
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sets all data to 1.  For 1 bpp, this is black; for grayscale
  *          or color, this is white.
  *      (2) Caution: for colormapped pix, this sets the pixel value to the
  *          maximum value supported by the colormap: 2^d - 1.  However, this
  *          color may not be defined, because the colormap may not be full.
+ * </pre>
  */
 l_int32
 pixSetAll(PIX  *pix)
@@ -734,23 +750,25 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  pixSetAllGray()
+ * \brief   pixSetAllGray()
  *
- *      Input:  pix (all depths, cmap ok)
- *              grayval (in range 0 ... 255)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix all depths, cmap ok
+ * \param[in]    grayval in range 0 ... 255
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
- *      (1) N.B.  For all images, @grayval == 0 represents black and
- *          @grayval == 255 represents white.
+ * <pre>
+ * Notes:
+ *      (1) N.B.  For all images, %grayval == 0 represents black and
+ *          %grayval == 255 represents white.
  *      (2) For depth < 8, we do our best to approximate the gray level.
- *          For 1 bpp images, any @grayval < 128 is black; >= 128 is white.
- *          For 32 bpp images, each r,g,b component is set to @grayval,
+ *          For 1 bpp images, any %grayval < 128 is black; >= 128 is white.
+ *          For 32 bpp images, each r,g,b component is set to %grayval,
  *          and the alpha component is preserved.
  *      (3) If pix is colormapped, it adds the gray value, replicated in
  *          all components, to the colormap if it's not there and there
  *          is room.  If the colormap is full, it finds the closest color in
  *          L2 distance of components.  This index is written to all pixels.
+ * </pre>
  */
 l_int32
 pixSetAllGray(PIX     *pix,
@@ -816,17 +834,33 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  pixSetAllArbitrary()
+ * \brief   pixSetAllArbitrary()
  *
- *      Input:  pix (all depths; use cmapped with caution)
- *              val  (value to set all pixels)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix all depths; use cmapped with caution
+ * \param[in]    val  value to set all pixels
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
- *      (1) Caution!  For colormapped pix, @val is used as an index
+ * <pre>
+ * Notes:
+ *      (1) Caution 1!  For colormapped pix, %val is used as an index
  *          into a colormap.  Be sure that index refers to the intended color.
  *          If the color is not in the colormap, you should first add it
  *          and then call this function.
+ *      (2) Caution 2!  For 32 bpp pix, the interpretation of the LSB
+ *          of %val depends on whether spp == 3 (RGB) or spp == 4 (RGBA).
+ *          For RGB, the LSB is ignored in image transformations.
+ *          For RGBA, the LSB is interpreted as the alpha (transparency)
+ *          component; full transparency has alpha == 0x0, whereas
+ *          full opacity has alpha = 0xff.  An RGBA image with full
+ *          opacity behaves like an RGB image. 
+ *      (3) As an example of (2), suppose you want to initialize a 32 bpp
+ *          pix with partial opacity, say 0xee337788.  If the pix is 3 spp,
+ *          the 0x88 alpha component will be ignored and may be changed
+ *          in subsequent processing.  However, if the pix is 4 spp, the
+ *          alpha component will be retained and used. The function
+ *          pixCreate(w, h, 32) makes an RGB image by default, and
+ *          pixSetSpp(pix, 4) can be used to promote an RGB image to RGBA.
+ * </pre>
  */
 l_int32
 pixSetAllArbitrary(PIX      *pix,
@@ -855,10 +889,13 @@ PIXCMAP   *cmap;
         /* Make sure val isn't too large for the pixel depth.
          * If it is too large, set the pixel color to white.  */
     pixGetDimensions(pix, &w, &h, &d);
-    maxval = (d == 32) ? 0xffffff00 : (1 << d) - 1;
-    if (val > maxval) {
-        L_WARNING("val too large for depth; using maxval\n", procName);
-        val = maxval;
+    if (d < 32) {
+        maxval = (1 << d) - 1;
+        if (val > maxval) {
+            L_WARNING("val = %d too large for depth; using maxval = %d\n",
+                      procName, val, maxval);
+            val = maxval;
+        }
     }
 
         /* Set up word to tile with */
@@ -879,19 +916,21 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  pixSetBlackOrWhite()
+ * \brief   pixSetBlackOrWhite()
  *
- *      Input:  pixs (all depths; cmap ok)
- *              op (L_SET_BLACK, L_SET_WHITE)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixs all depths; cmap ok
+ * \param[in]    op L_SET_BLACK, L_SET_WHITE
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Function for setting all pixels in an image to either black
  *          or white.
  *      (2) If pixs is colormapped, it adds black or white to the
  *          colormap if it's not there and there is room.  If the colormap
  *          is full, it finds the closest color in intensity.
  *          This index is written to all pixels.
+ * </pre>
  */
 l_int32
 pixSetBlackOrWhite(PIX     *pixs,
@@ -927,16 +966,18 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  pixSetComponentArbitrary()
+ * \brief   pixSetComponentArbitrary()
  *
- *      Input:  pix (32 bpp)
- *              comp (COLOR_RED, COLOR_GREEN, COLOR_BLUE, L_ALPHA_CHANNEL)
- *              val  (value to set this component)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix 32 bpp
+ * \param[in]    comp COLOR_RED, COLOR_GREEN, COLOR_BLUE, L_ALPHA_CHANNEL
+ * \param[in]    val  value to set this component
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For example, this can be used to set the alpha component to opaque:
  *              pixSetComponentArbitrary(pix, L_ALPHA_CHANNEL, 255)
+ * </pre>
  */
 l_int32
 pixSetComponentArbitrary(PIX     *pix,
@@ -974,17 +1015,19 @@ l_uint32  *data;
  *     Rectangular region clear/set/set-to-arbitrary-value     *
  *-------------------------------------------------------------*/
 /*!
- *  pixClearInRect()
+ * \brief   pixClearInRect()
  *
- *      Input:  pix (all depths; can be cmapped)
- *              box (in which all pixels will be cleared)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix all depths; can be cmapped
+ * \param[in]    box in which all pixels will be cleared
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Clears all data in rect to 0.  For 1 bpp, this is white;
  *          for grayscale or color, this is black.
  *      (2) Caution: for colormapped pix, this sets the color to the first
  *          one in the colormap.  Be sure that this is the intended color!
+ * </pre>
  */
 l_int32
 pixClearInRect(PIX  *pix,
@@ -1006,18 +1049,20 @@ l_int32  x, y, w, h;
 
 
 /*!
- *  pixSetInRect()
+ * \brief   pixSetInRect()
  *
- *      Input:  pix (all depths, can be cmapped)
- *              box (in which all pixels will be set)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix all depths, can be cmapped
+ * \param[in]    box in which all pixels will be set
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Sets all data in rect to 1.  For 1 bpp, this is black;
  *          for grayscale or color, this is white.
  *      (2) Caution: for colormapped pix, this sets the pixel value to the
  *          maximum value supported by the colormap: 2^d - 1.  However, this
  *          color may not be defined, because the colormap may not be full.
+ * </pre>
  */
 l_int32
 pixSetInRect(PIX  *pix,
@@ -1045,19 +1090,21 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  pixSetInRectArbitrary()
+ * \brief   pixSetInRectArbitrary()
  *
- *      Input:  pix (all depths; can be cmapped)
- *              box (in which all pixels will be set to val)
- *              val  (value to set all pixels)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix all depths; can be cmapped
+ * \param[in]    box in which all pixels will be set to val
+ * \param[in]    val  value to set all pixels
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For colormapped pix, be sure the value is the intended
  *          one in the colormap.
  *      (2) Caution: for colormapped pix, this sets each pixel in the
  *          rect to the color at the index equal to val.  Be sure that
  *          this index exists in the colormap and that it is the intended one!
+ * </pre>
  */
 l_int32
 pixSetInRectArbitrary(PIX      *pix,
@@ -1145,18 +1192,20 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  pixBlendInRect()
+ * \brief   pixBlendInRect()
  *
- *      Input:  pixs (32 bpp rgb)
- *              box (<optional> in which all pixels will be blended)
- *              val  (blend value; 0xrrggbb00)
- *              fract (fraction of color to be blended with each pixel in pixs)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    box [optional] in which all pixels will be blended
+ * \param[in]    val  blend value; 0xrrggbb00
+ * \param[in]    fract fraction of color to be blended with each pixel in pixs
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
- *      (1) This is an in-place function.  It blends the input color @val
+ * <pre>
+ * Notes:
+ *      (1) This is an in-place function.  It blends the input color %val
  *          with the pixels in pixs in the specified rectangle.
  *          If no rectangle is specified, it blends over the entire image.
+ * </pre>
  */
 l_int32
 pixBlendInRect(PIX       *pixs,
@@ -1217,13 +1266,14 @@ l_uint32  *datas, *lines;
  *                         Set pad bits                        *
  *-------------------------------------------------------------*/
 /*!
- *  pixSetPadBits()
+ * \brief   pixSetPadBits()
  *
- *      Input:  pix (1, 2, 4, 8, 16, 32 bpp)
- *              val  (0 or 1)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix 1, 2, 4, 8, 16, 32 bpp
+ * \param[in]    val  0 or 1
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The pad bits are the bits that expand each scanline to a
  *          multiple of 32 bits.  They are usually not used in
  *          image processing operations.  When boundary conditions
@@ -1231,6 +1281,7 @@ l_uint32  *datas, *lines;
  *      (2) This sets the value of the pad bits (if any) in the last
  *          32-bit word in each scanline.
  *      (3) For 32 bpp pix, there are no pad bits, so this is a no-op.
+ * </pre>
  */
 l_int32
 pixSetPadBits(PIX     *pix,
@@ -1272,15 +1323,16 @@ l_uint32  *data, *pword;
 
 
 /*!
- *  pixSetPadBitsBand()
+ * \brief   pixSetPadBitsBand()
  *
- *      Input:  pix (1, 2, 4, 8, 16, 32 bpp)
- *              by  (starting y value of band)
- *              bh  (height of band)
- *              val  (0 or 1)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pix 1, 2, 4, 8, 16, 32 bpp
+ * \param[in]    by  starting y value of band
+ * \param[in]    bh  height of band
+ * \param[in]    val  0 or 1
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The pad bits are the bits that expand each scanline to a
  *          multiple of 32 bits.  They are usually not used in
  *          image processing operations.  When boundary conditions
@@ -1289,6 +1341,7 @@ l_uint32  *data, *pword;
  *          32-bit word in each scanline, within the specified
  *          band of raster lines.
  *      (3) For 32 bpp pix, there are no pad bits, so this is a no-op.
+ * </pre>
  */
 l_int32
 pixSetPadBitsBand(PIX     *pix,
@@ -1343,14 +1396,15 @@ l_uint32  *data, *pword;
  *                       Set border pixels                     *
  *-------------------------------------------------------------*/
 /*!
- *  pixSetOrClearBorder()
+ * \brief   pixSetOrClearBorder()
  *
- *      Input:  pixs (all depths)
- *              left, right, top, bot (amount to set or clear)
- *              operation (PIX_SET or PIX_CLR)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixs all depths
+ * \param[in]    left, right, top, bot amount to set or clear
+ * \param[in]    op operation PIX_SET or PIX_CLR
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The border region is defined to be the region in the
  *          image within a specific distance of each edge.  Here, we
  *          allow the pixels within a specified distance of each
@@ -1359,6 +1413,7 @@ l_uint32  *data, *pword;
  *      (2) For binary images, use PIX_SET for black and PIX_CLR for white.
  *      (3) For grayscale or color images, use PIX_SET for white
  *          and PIX_CLR for black.
+ * </pre>
  */
 l_int32
 pixSetOrClearBorder(PIX     *pixs,
@@ -1388,14 +1443,15 @@ l_int32  w, h;
 
 
 /*!
- *  pixSetBorderVal()
+ * \brief   pixSetBorderVal()
  *
- *      Input:  pixs (8, 16 or 32 bpp)
- *              left, right, top, bot (amount to set)
- *              val (value to set at each border pixel)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixs 8, 16 or 32 bpp
+ * \param[in]    left, right, top, bot amount to set
+ * \param[in]    val value to set at each border pixel
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The border region is defined to be the region in the
  *          image within a specific distance of each edge.  Here, we
  *          allow the pixels within a specified distance of each
@@ -1406,6 +1462,7 @@ l_int32  w, h;
  *      (3) If d != 32, the input value should be masked off
  *          to the appropriate number of least significant bits.
  *      (4) The code is easily generalized for 2 or 4 bpp.
+ * </pre>
  */
 l_int32
 pixSetBorderVal(PIX      *pixs,
@@ -1497,17 +1554,19 @@ l_uint32  *datas, *lines;
 
 
 /*!
- *  pixSetBorderRingVal()
+ * \brief   pixSetBorderRingVal()
  *
- *      Input:  pixs (any depth; cmap OK)
- *              dist (distance from outside; must be > 0; first ring is 1)
- *              val (value to set at each border pixel)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixs any depth; cmap OK
+ * \param[in]    dist distance from outside; must be > 0; first ring is 1
+ * \param[in]    val value to set at each border pixel
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The rings are single-pixel-wide rectangular sets of
  *          pixels at a given distance from the edge of the pix.
  *          This sets all pixels in a given ring to a value.
+ * </pre>
  */
 l_int32
 pixSetBorderRingVal(PIX      *pixs,
@@ -1544,19 +1603,21 @@ l_int32  w, h, d, i, j, xend, yend;
 
 
 /*!
- *  pixSetMirroredBorder()
+ * \brief   pixSetMirroredBorder()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              left, right, top, bot (number of pixels to set)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    left, right, top, bot number of pixels to set
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This applies what is effectively mirror boundary conditions
  *          to a border region in the image.  It is in-place.
  *      (2) This is useful for setting pixels near the border to a
  *          value representative of the near pixels to the interior.
  *      (3) The general pixRasterop() is used for an in-place operation here
  *          because there is no overlap between the src and dest rectangles.
+ * </pre>
  */
 l_int32
 pixSetMirroredBorder(PIX     *pixs,
@@ -1591,19 +1652,21 @@ l_int32  i, j, w, h;
 
 
 /*!
- *  pixCopyBorder()
+ * \brief   pixCopyBorder()
  *
- *      Input:  pixd (all depths; colormap ok; can be NULL)
- *              pixs (same depth and size as pixd)
- *              left, right, top, bot (number of pixels to copy)
- *      Return: pixd, or null on error if pixd is not defined
+ * \param[in]    pixd all depths; colormap ok; can be NULL
+ * \param[in]    pixs same depth and size as pixd
+ * \param[in]    left, right, top, bot number of pixels to copy
+ * \return  pixd, or NULL on error if pixd is not defined
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) pixd can be null, but otherwise it must be the same size
  *          and depth as pixs.  Always returns pixd.
  *      (1) This is useful in situations where by setting a few border
  *          pixels we can avoid having to copy all pixels in pixs into
  *          pixd as an initialization step for some operation.
+ * </pre>
  */
 PIX *
 pixCopyBorder(PIX     *pixd,
@@ -1648,15 +1711,17 @@ l_int32  w, h;
  *                     Add and remove border                   *
  *-------------------------------------------------------------*/
 /*!
- *  pixAddBorder()
+ * \brief   pixAddBorder()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              npix (number of pixels to be added to each side)
- *              val  (value of added border pixels)
- *      Return: pixd (with the added exterior pixels), or null on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    npix number of pixels to be added to each side
+ * \param[in]    val  value of added border pixels
+ * \return  pixd with the added exterior pixels, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixGetBlackOrWhiteVal() for values of black and white pixels.
+ * </pre>
  */
 PIX *
 pixAddBorder(PIX      *pixs,
@@ -1674,14 +1739,15 @@ pixAddBorder(PIX      *pixs,
 
 
 /*!
- *  pixAddBlackOrWhiteBorder()
+ * \brief   pixAddBlackOrWhiteBorder()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              left, right, top, bot  (number of pixels added)
- *              op (L_GET_BLACK_VAL, L_GET_WHITE_VAL)
- *      Return: pixd (with the added exterior pixels), or null on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    left, right, top, bot  number of pixels added
+ * \param[in]    op L_GET_BLACK_VAL, L_GET_WHITE_VAL
+ * \return  pixd with the added exterior pixels, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixGetBlackOrWhiteVal() for possible side effect (adding
  *          a color to a colormap).
  *      (2) The only complication is that pixs may have a colormap.
@@ -1695,6 +1761,7 @@ pixAddBorder(PIX      *pixs,
  *                  pixSetColormap(pixd, pixcmapCopy(cmap));
  *              pixSetBlackOrWhite(pixd, L_SET_WHITE);  // uses cmap
  *              pixRasterop(pixd, left, top, ws, hs, PIX_SET, pixs, 0, 0);
+ * </pre>
  */
 PIX *
 pixAddBlackOrWhiteBorder(PIX     *pixs,
@@ -1719,14 +1786,15 @@ l_uint32  val;
 
 
 /*!
- *  pixAddBorderGeneral()
+ * \brief   pixAddBorderGeneral()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              left, right, top, bot  (number of pixels added)
- *              val   (value of added border pixels)
- *      Return: pixd (with the added exterior pixels), or null on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    left, right, top, bot  number of pixels added
+ * \param[in]    val   value of added border pixels
+ * \return  pixd with the added exterior pixels, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For binary images:
  *             white:  val = 0
  *             black:  val = 1
@@ -1747,6 +1815,7 @@ l_uint32  val;
  *             white: pixcmapGetRankIntensity(cmap, 1.0, &index);
  *             black: pixcmapGetRankIntensity(cmap, 0.0, &index);
  *          and use that for val.
+ * </pre>
  */
 PIX *
 pixAddBorderGeneral(PIX      *pixs,
@@ -1797,11 +1866,11 @@ PIX     *pixd;
 
 
 /*!
- *  pixRemoveBorder()
+ * \brief   pixRemoveBorder()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              npix (number to be removed from each of the 4 sides)
- *      Return: pixd (with pixels removed around border), or null on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    npix number to be removed from each of the 4 sides
+ * \return  pixd with pixels removed around border, or NULL on error
  */
 PIX *
 pixRemoveBorder(PIX     *pixs,
@@ -1818,11 +1887,11 @@ pixRemoveBorder(PIX     *pixs,
 
 
 /*!
- *  pixRemoveBorderGeneral()
+ * \brief   pixRemoveBorderGeneral()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              left, right, top, bot  (number of pixels removed)
- *      Return: pixd (with pixels removed around border), or null on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    left, right, top, bot  number of pixels removed
+ * \return  pixd with pixels removed around border, or NULL on error
  */
 PIX *
 pixRemoveBorderGeneral(PIX     *pixs,
@@ -1862,18 +1931,20 @@ PIX     *pixd;
 
 
 /*!
- *  pixRemoveBorderToSize()
+ * \brief   pixRemoveBorderToSize()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              wd  (target width; use 0 if only removing from height)
- *              hd  (target height; use 0 if only removing from width)
- *      Return: pixd (with pixels removed around border), or null on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    wd  target width; use 0 if only removing from height
+ * \param[in]    hd  target height; use 0 if only removing from width
+ * \return  pixd with pixels removed around border, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Removes pixels as evenly as possible from the sides of the
  *          image, leaving the central part.
  *      (2) Returns clone if no pixels requested removed, or the target
  *          sizes are larger than the image.
+ * </pre>
  */
 PIX *
 pixRemoveBorderToSize(PIX     *pixs,
@@ -1907,13 +1978,14 @@ l_int32  w, h, top, bot, left, right, delta;
 
 
 /*!
- *  pixAddMirroredBorder()
+ * \brief   pixAddMirroredBorder()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              left, right, top, bot (number of pixels added)
- *      Return: pixd, or null on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    left, right, top, bot number of pixels added
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This applies what is effectively mirror boundary conditions.
  *          For the added border pixels in pixd, the pixels in pixs
  *          near the border are mirror-copied into the border region.
@@ -1927,6 +1999,7 @@ l_int32  w, h, top, bot, left, right, delta;
  *          write directly into a dest pix of the same size as pixs.
  *      (3) The general pixRasterop() is used for an in-place operation here
  *          because there is no overlap between the src and dest rectangles.
+ * </pre>
  */
 PIX  *
 pixAddMirroredBorder(PIX      *pixs,
@@ -1966,18 +2039,20 @@ PIX     *pixd;
 
 
 /*!
- *  pixAddRepeatedBorder()
+ * \brief   pixAddRepeatedBorder()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              left, right, top, bot (number of pixels added)
- *      Return: pixd, or null on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    left, right, top, bot number of pixels added
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This applies a repeated border, as if the central part of
  *          the image is tiled over the plane.  So, for example, the
  *          pixels in the left border come from the right side of the image.
  *      (2) The general pixRasterop() is used for an in-place operation here
  *          because there is no overlap between the src and dest rectangles.
+ * </pre>
  */
 PIX  *
 pixAddRepeatedBorder(PIX      *pixs,
@@ -2010,13 +2085,14 @@ PIX     *pixd;
 
 
 /*!
- *  pixAddMixedBorder()
+ * \brief   pixAddMixedBorder()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              left, right, top, bot (number of pixels added)
- *      Return: pixd, or null on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    left, right, top, bot number of pixels added
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This applies mirrored boundary conditions horizontally
  *          and repeated b.c. vertically.
  *      (2) It is specifically used for avoiding special operations
@@ -2032,6 +2108,7 @@ PIX     *pixd;
  *      (3) The general pixRasterop() can be used for an in-place
  *          operation here because there is no overlap between the
  *          src and dest rectangles.
+ * </pre>
  */
 PIX  *
 pixAddMixedBorder(PIX      *pixs,
@@ -2068,15 +2145,17 @@ PIX     *pixd;
 
 
 /*!
- *  pixAddContinuedBorder()
+ * \brief   pixAddContinuedBorder()
  *
- *      Input:  pixs
- *              left, right, top, bot (pixels on each side to be added)
- *      Return: pixd, or null on error
+ * \param[in]    pixs
+ * \param[in]    left, right, top, bot pixels on each side to be added
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This adds pixels on each side whose values are equal to
  *          the value on the closest boundary pixel.
+ * </pre>
  */
 PIX *
 pixAddContinuedBorder(PIX     *pixs,
@@ -2114,12 +2193,12 @@ PIX     *pixd;
  *                     Helper functions using alpha                  *
  *-------------------------------------------------------------------*/
 /*!
- *  pixShiftAndTransferAlpha()
+ * \brief   pixShiftAndTransferAlpha()
  *
- *      Input:  pixd  (32 bpp)
- *              pixs  (32 bpp)
- *              shiftx, shifty
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixd  32 bpp
+ * \param[in]    pixs  32 bpp
+ * \param[in]    shiftx, shifty
+ * \return  0 if OK; 1 on error
  */
 l_int32
 pixShiftAndTransferAlpha(PIX       *pixd,
@@ -2156,19 +2235,21 @@ PIX     *pix1, *pix2;
 
 
 /*!
- *  pixDisplayLayersRGBA()
+ * \brief   pixDisplayLayersRGBA()
  *
- *      Input:  pixs (cmap or 32 bpp rgba)
- *              val (32 bit unsigned color to use as background)
- *              maxw (max output image width; 0 for no scaling)
- *      Return: pixd (showing various image views), or null on error
+ * \param[in]    pixs cmap or 32 bpp rgba
+ * \param[in]    val 32 bit unsigned color to use as background
+ * \param[in]    maxw max output image width; 0 for no scaling
+ * \return  pixd showing various image views, or NULL on error
  *
- *  Notes:
- *      (1) Use @val == 0xffffff00 for white background.
+ * <pre>
+ * Notes:
+ *      (1) Use %val == 0xffffff00 for white background.
  *      (2) Three views are given:
- *           - the image with a fully opaque alpha
- *           - the alpha layer
- *           - the image as it would appear with a white background.
+ *           ~ the image with a fully opaque alpha
+ *           ~ the alpha layer
+ *           ~ the image as it would appear with a white background.
+ * </pre>
  */
 PIX *
 pixDisplayLayersRGBA(PIX      *pixs,
@@ -2209,7 +2290,7 @@ PIXCMAP   *cmap;
     pixaAddPix(pixa, pix2, L_INSERT);  /* show the alpha channel */
     pixDestroy(&pix1);
     pix1 = pixAlphaBlendUniform(pixs, (val & 0xffffff00));
-    pixaAddPix(pixa, pix1, L_INSERT);  /* with @val color bg showing */
+    pixaAddPix(pixa, pix1, L_INSERT);  /* with %val color bg showing */
     pixd = pixaDisplayTiledInRows(pixa, 32, width, scalefact, 0, 25, 2);
     pixaDestroy(&pixa);
     return pixd;
@@ -2220,15 +2301,16 @@ PIXCMAP   *cmap;
  *                Color sample setting and extraction          *
  *-------------------------------------------------------------*/
 /*!
- *  pixCreateRGBImage()
+ * \brief   pixCreateRGBImage()
  *
- *      Input:  8 bpp red pix
- *              8 bpp green pix
- *              8 bpp blue pix
- *      Return: 32 bpp pix, interleaved with 4 samples/pixel,
- *              or null on error
+ * \param[in]    pixr 8 bpp red pix
+ * \param[in]    pixg 8 bpp green pix
+ * \param[in]    pixb 8 bpp blue pix
+ * \return  32 bpp pix, interleaved with 4 samples/pixel,
+ *              or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) the 4th byte, sometimes called the "alpha channel",
  *          and which is often used for blending between different
  *          images, is left with 0 value.
@@ -2239,6 +2321,7 @@ PIXCMAP   *cmap;
  *          by constructing an RGB dest pixel and writing it to dest.
  *          The reason is there are many more cache misses when reading
  *          from 3 input images simultaneously.
+ * </pre>
  */
 PIX *
 pixCreateRGBImage(PIX  *pixr,
@@ -2278,21 +2361,23 @@ PIX     *pixd;
 
 
 /*!
- *  pixGetRGBComponent()
+ * \brief   pixGetRGBComponent()
  *
- *      Input:  pixs (32 bpp, or colormapped)
- *              comp (one of {COLOR_RED, COLOR_GREEN, COLOR_BLUE,
- *                    L_ALPHA_CHANNEL})
- *      Return: pixd (the selected 8 bpp component image of the
- *                    input 32 bpp image) or null on error
+ * \param[in]    pixs 32 bpp, or colormapped
+ * \param[in]    comp one of {COLOR_RED, COLOR_GREEN, COLOR_BLUE,
+ *                    L_ALPHA_CHANNEL}
+ * \return  pixd the selected 8 bpp component image of the
+ *                    input 32 bpp image or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Three calls to this function generate the r, g and b 8 bpp
  *          component images.  This is much faster than generating the
  *          three images in parallel, by extracting a src pixel and setting
  *          the pixels of each component image from it.  The reason is
  *          there are many more cache misses when writing to three
  *          output images simultaneously.
+ * </pre>
  */
 PIX *
 pixGetRGBComponent(PIX     *pixs,
@@ -2337,19 +2422,21 @@ PIX       *pixd;
 
 
 /*!
- *  pixSetRGBComponent()
+ * \brief   pixSetRGBComponent()
  *
- *      Input:  pixd  (32 bpp)
- *              pixs  (8 bpp)
- *              comp  (one of the set: {COLOR_RED, COLOR_GREEN,
- *                                      COLOR_BLUE, L_ALPHA_CHANNEL})
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixd  32 bpp
+ * \param[in]    pixs  8 bpp
+ * \param[in]    comp  one of the set: {COLOR_RED, COLOR_GREEN,
+ *                                      COLOR_BLUE, L_ALPHA_CHANNEL}
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This places the 8 bpp pixel in pixs into the
  *          specified component (properly interleaved) in pixd,
  *      (2) The two images are registered to the UL corner; the sizes
  *          need not be the same, but a warning is issued if they differ.
+ * </pre>
  */
 l_int32
 pixSetRGBComponent(PIX     *pixd,
@@ -2401,15 +2488,17 @@ l_uint32  *datas, *datad;
 
 
 /*!
- *  pixGetRGBComponentCmap()
+ * \brief   pixGetRGBComponentCmap()
  *
- *      Input:  pixs  (colormapped)
- *              comp  (one of the set: {COLOR_RED, COLOR_GREEN, COLOR_BLUE})
- *      Return: pixd  (the selected 8 bpp component image of the
- *                     input cmapped image), or null on error
+ * \param[in]    pixs  colormapped
+ * \param[in]    comp  one of the set: {COLOR_RED, COLOR_GREEN, COLOR_BLUE}
+ * \return  pixd  the selected 8 bpp component image of the
+ *                     input cmapped image, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) In leptonica, we do not support alpha in colormaps.
+ * </pre>
  */
 PIX *
 pixGetRGBComponentCmap(PIX     *pixs,
@@ -2480,17 +2569,19 @@ RGBA_QUAD  *cta;
 
 
 /*!
- *  pixCopyRGBComponent()
+ * \brief   pixCopyRGBComponent()
  *
- *      Input:  pixd (32 bpp)
- *              pixs (32 bpp)
- *              comp (one of the set: {COLOR_RED, COLOR_GREEN,
- *                                     COLOR_BLUE, L_ALPHA_CHANNEL})
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixd 32 bpp
+ * \param[in]    pixs 32 bpp
+ * \param[in]    comp one of the set: {COLOR_RED, COLOR_GREEN,
+ *                                     COLOR_BLUE, L_ALPHA_CHANNEL}
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The two images are registered to the UL corner.  The sizes
  *          are usually the same, and a warning is issued if they differ.
+ * </pre>
  */
 l_int32
 pixCopyRGBComponent(PIX     *pixd,
@@ -2536,13 +2627,14 @@ l_uint32  *datas, *datad;
 
 
 /*!
- *  composeRGBPixel()
+ * \brief   composeRGBPixel()
  *
- *      Input:  rval, gval, bval
- *              &pixel  (<return> 32-bit pixel)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    rval, gval, bval
+ * \param[out]   ppixel  32-bit pixel
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) All channels are 8 bits: the input values must be between
  *          0 and 255.  For speed, this is not enforced by masking
  *          with 0xff before shifting.
@@ -2550,6 +2642,7 @@ l_uint32  *datas, *datad;
  *            SET_DATA_BYTE(ppixel, COLOR_RED, rval);
  *            SET_DATA_BYTE(ppixel, COLOR_GREEN, gval);
  *            SET_DATA_BYTE(ppixel, COLOR_BLUE, bval);
+ * </pre>
  */
 l_int32
 composeRGBPixel(l_int32    rval,
@@ -2569,16 +2662,18 @@ composeRGBPixel(l_int32    rval,
 
 
 /*!
- *  composeRGBAPixel()
+ * \brief   composeRGBAPixel()
  *
- *      Input:  rval, gval, bval, aval
- *              &pixel  (<return> 32-bit pixel)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    rval, gval, bval, aval
+ * \param[out]   ppixel  32-bit pixel
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) All channels are 8 bits: the input values must be between
  *          0 and 255.  For speed, this is not enforced by masking
  *          with 0xff before shifting.
+ * </pre>
  */
 l_int32
 composeRGBAPixel(l_int32    rval,
@@ -2599,19 +2694,21 @@ composeRGBAPixel(l_int32    rval,
 
 
 /*!
- *  extractRGBValues()
+ * \brief   extractRGBValues()
  *
- *      Input:  pixel (32 bit)
- *              &rval (<optional return> red component)
- *              &gval (<optional return> green component)
- *              &bval (<optional return> blue component)
- *      Return: void
+ * \param[in]    pixel 32 bit
+ * \param[out]   prval [optional] red component
+ * \param[out]   pgval [optional] green component
+ * \param[out]   pbval [optional] blue component
+ * \return  void
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) A slower implementation uses macros:
  *             *prval = GET_DATA_BYTE(&pixel, COLOR_RED);
  *             *pgval = GET_DATA_BYTE(&pixel, COLOR_GREEN);
  *             *pbval = GET_DATA_BYTE(&pixel, COLOR_BLUE);
+ * </pre>
  */
 void
 extractRGBValues(l_uint32  pixel,
@@ -2627,14 +2724,14 @@ extractRGBValues(l_uint32  pixel,
 
 
 /*!
- *  extractRGBAValues()
+ * \brief   extractRGBAValues()
  *
- *      Input:  pixel (32 bit)
- *              &rval (<optional return> red component)
- *              &gval (<optional return> green component)
- *              &bval (<optional return> blue component)
- *              &aval (<optional return> alpha component)
- *      Return: void
+ * \param[in]    pixel 32 bit
+ * \param[out]   prval [optional] red component
+ * \param[out]   pgval [optional] green component
+ * \param[out]   pbval [optional] blue component
+ * \param[out]   paval [optional] alpha component
+ * \return  void
  */
 void
 extractRGBAValues(l_uint32  pixel,
@@ -2652,11 +2749,11 @@ extractRGBAValues(l_uint32  pixel,
 
 
 /*!
- *  extractMinMaxComponent()
+ * \brief   extractMinMaxComponent()
  *
- *      Input:  pixel (32 bpp RGB)
- *              type (L_CHOOSE_MIN or L_CHOOSE_MAX)
- *      Return: component (in range [0 ... 255], or null on error
+ * \param[in]    pixel 32 bpp RGB
+ * \param[in]    type L_CHOOSE_MIN or L_CHOOSE_MAX
+ * \return  component in range [0 ... 255], or NULL on error
  */
 l_int32
 extractMinMaxComponent(l_uint32  pixel,
@@ -2677,18 +2774,20 @@ l_int32  rval, gval, bval, val;
 
 
 /*!
- *  pixGetRGBLine()
+ * \brief   pixGetRGBLine()
  *
- *      Input:  pixs  (32 bpp)
- *              row
- *              bufr  (array of red samples; size w bytes)
- *              bufg  (array of green samples; size w bytes)
- *              bufb  (array of blue samples; size w bytes)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixs  32 bpp
+ * \param[in]    row
+ * \param[in]    bufr  array of red samples; size w bytes
+ * \param[in]    bufg  array of green samples; size w bytes
+ * \param[in]    bufb  array of blue samples; size w bytes
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This puts rgb components from the input line in pixs
  *          into the given buffers.
+ * </pre>
  */
 l_int32
 pixGetRGBLine(PIX      *pixs,
@@ -2730,12 +2829,13 @@ l_int32    wpls;
  *                    Pixel endian conversion                  *
  *-------------------------------------------------------------*/
 /*!
- *  pixEndianByteSwapNew()
+ * \brief   pixEndianByteSwapNew()
  *
- *      Input:  pixs
- *      Return: pixd, or null on error
+ * \param[in]    pixs
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is used to convert the data in a pix to a
  *          serialized byte buffer in raster order, and, for RGB,
  *          in order RGBA.  This requires flipping bytes within
@@ -2750,6 +2850,7 @@ l_int32    wpls;
  *          and this requires a second byte swap.  In such a situation,
  *          it is twice as fast to make a new pix in big-endian order,
  *          use it, and destroy it.
+ * </pre>
  */
 PIX *
 pixEndianByteSwapNew(PIX  *pixs)
@@ -2793,12 +2894,13 @@ PIX       *pixd;
 
 
 /*!
- *  pixEndianByteSwap()
+ * \brief   pixEndianByteSwap()
  *
- *      Input:  pixs
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is used on little-endian platforms to swap
  *          the bytes within a word; bytes 0 and 3 are swapped,
  *          and bytes 1 and 2 are swapped.
@@ -2811,6 +2913,7 @@ PIX       *pixd;
  *          and big-endian platforms.   For big-endians, the
  *          MSB-to-the-left word order has the bytes in raster
  *          order when serialized, so no byte flipping is required.
+ * </pre>
  */
 l_int32
 pixEndianByteSwap(PIX  *pixs)
@@ -2851,7 +2954,7 @@ l_uint32   word;
 
 
 /*!
- *  lineEndianByteSwap()
+ * \brief   lineEndianByteSwap()
  *
  *      Input   datad (dest byte array data, reordered on little-endians)
  *              datas (a src line of pix data)
@@ -2903,12 +3006,13 @@ l_uint32  word;
 
 
 /*!
- *  pixEndianTwoByteSwapNew()
+ * \brief   pixEndianTwoByteSwapNew()
  *
- *      Input:  pixs
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is used on little-endian platforms to swap the
  *          2-byte entities within a 32-bit word.
  *      (2) This is equivalent to a full byte swap, as performed
@@ -2918,6 +3022,7 @@ l_uint32  word;
  *          this returns a new pix (or a clone).  We provide this
  *          to avoid having to swap twice in situations where the input
  *          pix must be restored to canonical little-endian order.
+ * </pre>
  */
 PIX *
 pixEndianTwoByteSwapNew(PIX  *pixs)
@@ -2958,17 +3063,19 @@ PIX       *pixd;
 
 
 /*!
- *  pixEndianTwoByteSwap()
+ * \brief   pixEndianTwoByteSwap()
  *
- *      Input:  pixs
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is used on little-endian platforms to swap the
  *          2-byte entities within a 32-bit word.
  *      (2) This is equivalent to a full byte swap, as performed
  *          by pixEndianByteSwap(), followed by byte swaps in
  *          each of the 16-bit entities separately.
+ * </pre>
  */
 l_int32
 pixEndianTwoByteSwap(PIX  *pixs)
@@ -3009,18 +3116,20 @@ l_uint32   word;
  *             Extract raster data as binary string            *
  *-------------------------------------------------------------*/
 /*!
- *  pixGetRasterData()
+ * \brief   pixGetRasterData()
  *
- *      Input:  pixs (1, 8, 32 bpp)
- *              &data (<return> raster data in memory)
- *              &nbytes (<return> number of bytes in data string)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 1, 8, 32 bpp
+ * \param[out]   pdata raster data in memory
+ * \param[out]   pnbytes number of bytes in data string
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This returns the raster data as a byte string, padded to the
  *          byte.  For 1 bpp, the first pixel is the MSbit in the first byte.
  *          For rgb, the bytes are in (rgb) order.  This is the format
  *          required for flate encoding of pixels in a PostScript file.
+ * </pre>
  */
 l_int32
 pixGetRasterData(PIX       *pixs,
@@ -3087,14 +3196,14 @@ l_uint32  *rline, *rdata;  /* data in pix raster */
  *                 Test alpha component opaqueness             *
  *-------------------------------------------------------------*/
 /*!
- *  pixAlphaIsOpaque()
+ * \brief   pixAlphaIsOpaque()
  *
- *      Input:  pix (32 bpp, spp == 4)
- *              &opaque (<return> 1 if spp == 4 and all alpha component
- *                       values are 255 (opaque); 0 otherwise)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix 32 bpp, spp == 4
+ * \param[out]   popaque 1 if spp == 4 and all alpha component
+ *                       values are 255 (opaque); 0 otherwise
+ * \return  0 if OK, 1 on error
  *      Notes:
- *          (1) On error, opaque is returned as 0 (FALSE).
+ *          1) On error, opaque is returned as 0 (FALSE).
  */
 l_int32
 pixAlphaIsOpaque(PIX      *pix,
@@ -3136,14 +3245,15 @@ l_uint32  *data, *line;
  *             Setup helpers for 8 bpp byte processing         *
  *-------------------------------------------------------------*/
 /*!
- *  pixSetupByteProcessing()
+ * \brief   pixSetupByteProcessing()
  *
- *      Input:  pix (8 bpp, no colormap)
- *              &w (<optional return> width)
- *              &h (<optional return> height)
- *      Return: line ptr array, or null on error
+ * \param[in]    pix 8 bpp, no colormap
+ * \param[out]   pw [optional] width
+ * \param[out]   ph [optional] height
+ * \return  line ptr array, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a simple helper for processing 8 bpp images with
  *          direct byte access.  It can swap byte order within each word.
  *      (2) After processing, you must call pixCleanupByteProcessing(),
@@ -3158,6 +3268,7 @@ l_uint32  *data, *line;
  *                  }
  *              }
  *              pixCleanupByteProcessing(pix, lineptrs);
+ * </pre>
  */
 l_uint8 **
 pixSetupByteProcessing(PIX      *pix,
@@ -3185,15 +3296,17 @@ l_int32  w, h;
 
 
 /*!
- *  pixCleanupByteProcessing()
+ * \brief   pixCleanupByteProcessing()
  *
- *      Input:  pix (8 bpp, no colormap)
- *              lineptrs (ptrs to the beginning of each raster line of data)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix 8 bpp, no colormap
+ * \param[in]    lineptrs ptrs to the beginning of each raster line of data
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This must be called after processing that was initiated
  *          by pixSetupByteProcessing() has finished.
+ * </pre>
  */
 l_int32
 pixCleanupByteProcessing(PIX      *pix,
@@ -3216,12 +3329,13 @@ pixCleanupByteProcessing(PIX      *pix,
  *      Setting parameters for antialias masking with alpha transforms    *
  *------------------------------------------------------------------------*/
 /*!
- *  l_setAlphaMaskBorder()
+ * \brief   l_setAlphaMaskBorder()
  *
- *      Input:  val1, val2 (in [0.0 ... 1.0])
- *      Return: void
+ * \param[in]    val1, val2 in [0.0 ... 1.0]
+ * \return  void
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This sets the opacity values used to generate the two outer
  *          boundary rings in the alpha mask associated with geometric
  *          transforms such as pixRotateWithAlpha().
@@ -3234,6 +3348,7 @@ pixCleanupByteProcessing(PIX      *pix,
  *          blurred border, with no perceptual difference at screen resolution.
  *      (3) The actual mask values are found by multiplying these
  *          normalized opacity values by 255.
+ * </pre>
  */
 void
 l_setAlphaMaskBorder(l_float32  val1,

@@ -46,276 +46,285 @@
  *
  *      (6) Playing around: extract the feynman diagrams from
  *          the stamp, using the tophat.
- *
- *   For input, use e.g., aneurisms8.jpg
  */
 
 #include "allheaders.h"
 
 #define     WSIZE              7
 #define     HSIZE              7
-#define     BUF_SIZE           512
-#define     HORIZ_SEP          0  /* set to 50 to display each image */
-
-
-static void pixCompare(PIX *pix, PIX *pix2, const char *msg1, const char *msg2);
-
 
 int main(int    argc,
          char **argv)
 {
-char         dilateseq[BUF_SIZE], erodeseq[BUF_SIZE];
-char         openseq[BUF_SIZE], closeseq[BUF_SIZE];
-char         wtophatseq[BUF_SIZE], btophatseq[BUF_SIZE];
-char        *filein;
-l_int32      w, h, d;
-PIX         *pixs, *pixt, *pixt2, *pixt3, *pixt3a, *pixt4;
-PIX         *pixg, *pixd, *pixd1, *pixd2, *pixd3;
-PIXACC      *pacc;
-PIXCMAP     *cmap;
-static char  mainName[] = "graymorph1_reg";
+char          dilateseq[512], erodeseq[512];
+char          openseq[512], closeseq[512];
+char          wtophatseq[512], btophatseq[512];
+l_int32       w, h;
+PIX          *pixs, *pix1, *pix2, *pix3, *pix4, *pix5;
+PIXA         *pixa;
+PIXACC       *pacc;
+PIXCMAP      *cmap;
+L_REGPARAMS  *rp;
 
-    if (argc != 2)
-        return ERROR_INT(" Syntax:  graymorph1_reg filein", mainName, 1);
+    if (regTestSetup(argc, argv, &rp))
+        return 1;
 
-    filein = argv[1];
-    if ((pixs = pixRead(filein)) == NULL)
-        return ERROR_INT("pixs not made", mainName, 1);
-    pixGetDimensions(pixs, &w, &h, &d);
-    if (d != 8)
-        return ERROR_INT("pixs not 8 bpp", mainName, 1);
+    pixs = pixRead("aneurisms8.jpg");
+    pixa = pixaCreate(0);
+
+    /* =========================================================== */
 
     /* -------- Test gray morph, including interpreter ------------ */
-    pixd = pixDilateGray(pixs, WSIZE, HSIZE);
+    pix1 = pixDilateGray(pixs, WSIZE, HSIZE);
     sprintf(dilateseq, "D%d.%d", WSIZE, HSIZE);
-    pixg = pixGrayMorphSequence(pixs, dilateseq, HORIZ_SEP, 0);
-    pixCompare(pixd, pixg, "results are the same", "results are different" );
-    pixDestroy(&pixg);
-    pixDestroy(&pixd);
+    pix2 = pixGrayMorphSequence(pixs, dilateseq, 0, 0);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 0 */
+    regTestComparePix(rp, pix1, pix2);  /* 1 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
 
-    pixd = pixErodeGray(pixs, WSIZE, HSIZE);
+    pix1 = pixErodeGray(pixs, WSIZE, HSIZE);
     sprintf(erodeseq, "E%d.%d", WSIZE, HSIZE);
-    pixg = pixGrayMorphSequence(pixs, erodeseq, HORIZ_SEP, 100);
-    pixCompare(pixd, pixg, "results are the same", "results are different" );
-    pixDestroy(&pixg);
-    pixDestroy(&pixd);
+    pix2 = pixGrayMorphSequence(pixs, erodeseq, 0, 100);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 2 */
+    regTestComparePix(rp, pix1, pix2);  /* 3 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
 
-    pixd = pixOpenGray(pixs, WSIZE, HSIZE);
+    pix1 = pixOpenGray(pixs, WSIZE, HSIZE);
     sprintf(openseq, "O%d.%d", WSIZE, HSIZE);
-    pixg = pixGrayMorphSequence(pixs, openseq, HORIZ_SEP, 200);
-    pixCompare(pixd, pixg, "results are the same", "results are different" );
-    pixDestroy(&pixg);
-    pixDestroy(&pixd);
+    pix2 = pixGrayMorphSequence(pixs, openseq, 0, 200);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 4 */
+    regTestComparePix(rp, pix1, pix2);  /* 5 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
 
-    pixd = pixCloseGray(pixs, WSIZE, HSIZE);
+    pix1 = pixCloseGray(pixs, WSIZE, HSIZE);
     sprintf(closeseq, "C%d.%d", WSIZE, HSIZE);
-    pixg = pixGrayMorphSequence(pixs, closeseq, HORIZ_SEP, 300);
-    pixCompare(pixd, pixg, "results are the same", "results are different" );
-    pixDestroy(&pixg);
-    pixDestroy(&pixd);
+    pix2 = pixGrayMorphSequence(pixs, closeseq, 0, 300);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 6 */
+    regTestComparePix(rp, pix1, pix2);  /* 7 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
 
-    pixd = pixTophat(pixs, WSIZE, HSIZE, L_TOPHAT_WHITE);
+    pix1 = pixTophat(pixs, WSIZE, HSIZE, L_TOPHAT_WHITE);
     sprintf(wtophatseq, "Tw%d.%d", WSIZE, HSIZE);
-    pixg = pixGrayMorphSequence(pixs, wtophatseq, HORIZ_SEP, 400);
-    pixCompare(pixd, pixg, "results are the same", "results are different" );
-    pixDestroy(&pixg);
-    pixDestroy(&pixd);
+    pix2 = pixGrayMorphSequence(pixs, wtophatseq, 0, 400);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 8 */
+    regTestComparePix(rp, pix1, pix2);  /* 9 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
 
-    pixd = pixTophat(pixs, WSIZE, HSIZE, L_TOPHAT_BLACK);
+    pix1 = pixTophat(pixs, WSIZE, HSIZE, L_TOPHAT_BLACK);
     sprintf(btophatseq, "Tb%d.%d", WSIZE, HSIZE);
-    pixg = pixGrayMorphSequence(pixs, btophatseq, HORIZ_SEP, 500);
-    pixCompare(pixd, pixg, "results are the same", "results are different" );
-    pixDestroy(&pixg);
+    pix2 = pixGrayMorphSequence(pixs, btophatseq, 0, 500);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 10 */
+    regTestComparePix(rp, pix1, pix2);  /* 11 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
 
     /* ------------- Test erode/dilate duality -------------- */
-    pixd = pixDilateGray(pixs, WSIZE, HSIZE);
-    pixInvert(pixs, pixs);
-    pixd2 = pixErodeGray(pixs, WSIZE, HSIZE);
-    pixInvert(pixd2, pixd2);
-    pixCompare(pixd, pixd2, "results are the same", "results are different" );
-    pixDestroy(&pixd);
-    pixDestroy(&pixd2);
+    pix1 = pixDilateGray(pixs, WSIZE, HSIZE);
+    pix2 = pixInvert(NULL, pixs);
+    pix3 = pixErodeGray(pix2, WSIZE, HSIZE);
+    pixInvert(pix3, pix3);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 12 */
+    regTestComparePix(rp, pix1, pix3);  /* 13 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
 
     /* ------------- Test open/close duality -------------- */
-    pixd = pixOpenGray(pixs, WSIZE, HSIZE);
-    pixInvert(pixs, pixs);
-    pixd2 = pixCloseGray(pixs, WSIZE, HSIZE);
-    pixInvert(pixd2, pixd2);
-    pixCompare(pixd, pixd2, "results are the same", "results are different" );
-    pixDestroy(&pixd);
-    pixDestroy(&pixd2);
+    pix1 = pixOpenGray(pixs, WSIZE, HSIZE);
+    pix2 = pixInvert(NULL, pixs);
+    pix3 = pixCloseGray(pix2, WSIZE, HSIZE);
+    pixInvert(pix3, pix3);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 14 */
+    regTestComparePix(rp, pix1, pix3);  /* 15 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
 
     /* ------------- Test tophat duality -------------- */
-    pixd = pixTophat(pixs, WSIZE, HSIZE, L_TOPHAT_WHITE);
-    pixInvert(pixs, pixs);
-    pixd2 = pixTophat(pixs, WSIZE, HSIZE, L_TOPHAT_BLACK);
-    pixCompare(pixd, pixd2, "Correct: images are duals",
-               "Error: images are not duals" );
-    pixDestroy(&pixd);
-    pixDestroy(&pixd2);
-    pixInvert(pixs, pixs);
+    pix1 = pixTophat(pixs, WSIZE, HSIZE, L_TOPHAT_WHITE);
+    pix2 = pixInvert(NULL, pixs);
+    pix3 = pixTophat(pix2, WSIZE, HSIZE, L_TOPHAT_BLACK);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 16 */
+    regTestComparePix(rp, pix1, pix3);  /* 17 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
 
-    pixd = pixGrayMorphSequence(pixs, "Tw9.5", HORIZ_SEP, 100);
-    pixInvert(pixs, pixs);
-    pixd2 = pixGrayMorphSequence(pixs, "Tb9.5", HORIZ_SEP, 300);
-    pixCompare(pixd, pixd2, "Correct: images are duals",
-               "Error: images are not duals" );
-    pixDestroy(&pixd);
-    pixDestroy(&pixd2);
+    pix1 = pixGrayMorphSequence(pixs, "Tw9.5", 0, 100);
+    pix2 = pixInvert(NULL, pixs);
+    pix3 = pixGrayMorphSequence(pix2, "Tb9.5", 0, 300);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 18 */
+    regTestComparePix(rp, pix1, pix3);  /* 19 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+
 
     /* ------------- Test opening/closing for large sels -------------- */
-    pixd = pixGrayMorphSequence(pixs,
-            "C9.9 + C19.19 + C29.29 + C39.39 + C49.49", HORIZ_SEP, 100);
-    pixDestroy(&pixd);
-    pixd = pixGrayMorphSequence(pixs,
-            "O9.9 + O19.19 + O29.29 + O39.39 + O49.49", HORIZ_SEP, 400);
-    pixDestroy(&pixd);
+    pix1 = pixGrayMorphSequence(pixs,
+            "C9.9 + C19.19 + C29.29 + C39.39 + C49.49", 0, 100);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 20 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pix1 = pixGrayMorphSequence(pixs,
+            "O9.9 + O19.19 + O29.29 + O39.39 + O49.49", 0, 400);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 21 */
+    pixaAddPix(pixa, pix1, L_INSERT);
 
+    pix1 = pixaDisplayTiledInColumns(pixa, 4, 1.0, 20, 2);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 22 */
+    pixDisplayWithTitle(pix1, 0, 0, NULL, rp->display);
+    pixaDestroy(&pixa);
+    pixDestroy(&pix1);
+
+    /* =========================================================== */
+
+    pixa = pixaCreate(0);
     /* ---------- Closing plus white tophat result ------------ *
      *            Parameters: wsize, hsize = 9, 29             *
      * ---------------------------------------------------------*/
-    pixd = pixCloseGray(pixs, 9, 9);
-    pixd1 = pixTophat(pixd, 9, 9, L_TOPHAT_WHITE);
-    pixd2 = pixGrayMorphSequence(pixs, "C9.9 + TW9.9", HORIZ_SEP, 0);
-    pixCompare(pixd1, pixd2, "correct: same", "wrong: different");
-    pixd3 = pixMaxDynamicRange(pixd1, L_LINEAR_SCALE);
-    pixDisplayWrite(pixd3, 1);
-    pixDestroy(&pixd);
-    pixDestroy(&pixd1);
-    pixDestroy(&pixd2);
-    pixDestroy(&pixd3);
-    pixd = pixCloseGray(pixs, 29, 29);
-    pixd1 = pixTophat(pixd, 29, 29, L_TOPHAT_WHITE);
-    pixd2 = pixGrayMorphSequence(pixs, "C29.29 + Tw29.29", HORIZ_SEP, 0);
-    pixCompare(pixd1, pixd2, "correct: same", "wrong: different");
-    pixd3 = pixMaxDynamicRange(pixd1, L_LINEAR_SCALE);
-    pixDisplayWrite(pixd3, 1);
-    pixDestroy(&pixd);
-    pixDestroy(&pixd1);
-    pixDestroy(&pixd2);
-    pixDestroy(&pixd3);
+    pix1 = pixCloseGray(pixs, 9, 9);
+    pix2 = pixTophat(pix1, 9, 9, L_TOPHAT_WHITE);
+    pix3 = pixGrayMorphSequence(pixs, "C9.9 + TW9.9", 0, 0);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 23 */
+    regTestComparePix(rp, pix2, pix3);  /* 24 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pix1 = pixMaxDynamicRange(pix2, L_LINEAR_SCALE);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 25 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+
+    pix1 = pixCloseGray(pixs, 29, 29);
+    pix2 = pixTophat(pix1, 29, 29, L_TOPHAT_WHITE);
+    pix3 = pixGrayMorphSequence(pixs, "C29.29 + Tw29.29", 0, 0);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 26 */
+    regTestComparePix(rp, pix2, pix3);  /* 27 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pix1 = pixMaxDynamicRange(pix2, L_LINEAR_SCALE);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 28 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
 
     /* --------- hdome with parameter height = 100 ------------*/
-    pixd = pixHDome(pixs, 100, 4);
-    pixd2 = pixMaxDynamicRange(pixd, L_LINEAR_SCALE);
-    pixDisplayWrite(pixd2, 1);
-    pixDestroy(&pixd2);
+    pix1 = pixHDome(pixs, 100, 4);
+    pix2 = pixMaxDynamicRange(pix1, L_LINEAR_SCALE);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 29 */
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 30 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixaAddPix(pixa, pix2, L_INSERT);
 
     /* ----- Contrast enhancement with morph parameters 9, 9 -------*/
-    pixd1 = pixInitAccumulate(w, h, 0x8000);
-    pixAccumulate(pixd1, pixs, L_ARITH_ADD);
-    pixMultConstAccumulate(pixd1, 3., 0x8000);
-    pixd2 = pixOpenGray(pixs, 9, 9);
-    pixAccumulate(pixd1, pixd2, L_ARITH_SUBTRACT);
-    pixDestroy(&pixd2);
-    pixd2 = pixCloseGray(pixs, 9, 9);
-    pixAccumulate(pixd1, pixd2, L_ARITH_SUBTRACT);
-    pixDestroy(&pixd2);
-    pixd = pixFinalAccumulate(pixd1, 0x8000, 8);
-    pixDisplayWrite(pixd, 1);
-    pixDestroy(&pixd1);
+    pixGetDimensions(pixs, &w, &h, NULL);
+    pix1 = pixInitAccumulate(w, h, 0x8000);
+    pixAccumulate(pix1, pixs, L_ARITH_ADD);
+    pixMultConstAccumulate(pix1, 3., 0x8000);
+    pix2 = pixOpenGray(pixs, 9, 9);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 31 */
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixAccumulate(pix1, pix2, L_ARITH_SUBTRACT);
+
+    pix2 = pixCloseGray(pixs, 9, 9);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 32 */
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixAccumulate(pix1, pix2, L_ARITH_SUBTRACT);
+    pix2 = pixFinalAccumulate(pix1, 0x8000, 8);
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 33 */
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixDestroy(&pix1);
 
         /* Do the same thing with the Pixacc */
     pacc = pixaccCreate(w, h, 1);
     pixaccAdd(pacc, pixs);
     pixaccMultConst(pacc, 3.);
-    pixd1 = pixOpenGray(pixs, 9, 9);
-    pixaccSubtract(pacc, pixd1);
-    pixDestroy(&pixd1);
-    pixd1 = pixCloseGray(pixs, 9, 9);
-    pixaccSubtract(pacc, pixd1);
-    pixDestroy(&pixd1);
-    pixd2 = pixaccFinal(pacc, 8);
+    pix1 = pixOpenGray(pixs, 9, 9);
+    pixaccSubtract(pacc, pix1);
+    pixDestroy(&pix1);
+    pix1 = pixCloseGray(pixs, 9, 9);
+    pixaccSubtract(pacc, pix1);
+    pixDestroy(&pix1);
+    pix1 = pixaccFinal(pacc, 8);
     pixaccDestroy(&pacc);
-    pixDisplayWrite(pixd2, 1);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 34 */
+    pixaAddPix(pixa, pix1, L_INSERT);
+    regTestComparePix(rp, pix1, pix2);  /* 35 */
 
-    pixCompare(pixd, pixd2, "Correct: same", "Wrong: different");
-    pixDestroy(&pixd);
-    pixDestroy(&pixd2);
+    pix1 = pixaDisplayTiledInColumns(pixa, 4, 1.0, 20, 2);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 36 */
+    pixDisplayWithTitle(pix1, 1100, 0, NULL, rp->display);
+    pixaDestroy(&pixa);
+    pixDestroy(&pix1);
+    pixDestroy(&pixs);
 
+    /* =========================================================== */
+
+    pixa = pixaCreate(0);
 
     /* ----  Tophat result on feynman stamp, to extract diagrams ----- */
-    pixDestroy(&pixs);
     pixs = pixRead("feynman-stamp.jpg");
+    pixGetDimensions(pixs, &w, &h, NULL);
 
         /* Make output image to hold five intermediate images */
-    w = pixGetWidth(pixs);
-    h = pixGetHeight(pixs);
-    pixd = pixCreate(5 * w + 18, h + 6, 32);  /* composite output image */
-    pixSetAllArbitrary(pixd, 0x0000ff00);  /* set to blue */
+    pix1 = pixCreate(5 * w + 18, h + 6, 32);  /* composite output image */
+    pixSetAllArbitrary(pix1, 0x0000ff00);  /* set to blue */
 
         /* Paste in the input image */
-    pixt = pixRemoveColormap(pixs, REMOVE_CMAP_TO_FULL_COLOR);
-    pixRasterop(pixd, 3, 3, w, h, PIX_SRC, pixt, 0, 0);  /* 1st one */
-/*    pixWrite("/tmp/junkgray.jpg", pixt, IFF_JFIF_JPEG); */
-    pixDestroy(&pixt);
+    pix2 = pixRemoveColormap(pixs, REMOVE_CMAP_TO_FULL_COLOR);
+    pixRasterop(pix1, 3, 3, w, h, PIX_SRC, pix2, 0, 0);  /* 1st one */
+    regTestWritePixAndCheck(rp, pix2, IFF_PNG);  /* 37 */
+    pixaAddPix(pixa, pix2, L_INSERT);
 
         /* Paste in the grayscale version */
     cmap = pixGetColormap(pixs);
     if (cmap)
-        pixt = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
+        pix2 = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
     else
-        pixt = pixConvertRGBToGray(pixs, 0.33, 0.34, 0.33);
-    pixt2 = pixConvertTo32(pixt);  /* 8 --> 32 bpp */
-    pixRasterop(pixd, w + 6, 3, w, h, PIX_SRC, pixt2, 0, 0);  /* 2nd one */
-    pixDestroy(&pixt2);
+        pix2 = pixConvertRGBToGray(pixs, 0.33, 0.34, 0.33);
+    pix3 = pixConvertTo32(pix2);  /* 8 --> 32 bpp */
+    pixRasterop(pix1, w + 6, 3, w, h, PIX_SRC, pix3, 0, 0);  /* 2nd one */
+    regTestWritePixAndCheck(rp, pix3, IFF_PNG);  /* 38 */
+    pixaAddPix(pixa, pix3, L_INSERT);
 
          /* Paste in a log dynamic range scaled version of the white tophat */
-    pixt2 = pixTophat(pixt, 3, 3, L_TOPHAT_WHITE);
-    pixt3a = pixMaxDynamicRange(pixt2, L_LOG_SCALE);
-    pixt3 = pixConvertTo32(pixt3a);
-    pixRasterop(pixd, 2 * w + 9, 3, w, h, PIX_SRC, pixt3, 0, 0);  /* 3rd */
-/*    pixWrite("/tmp/junktophat.jpg", pixt2, IFF_JFIF_JPEG); */
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt3a);
-    pixDestroy(&pixt);
+    pix3 = pixTophat(pix2, 3, 3, L_TOPHAT_WHITE);
+    pix4 = pixMaxDynamicRange(pix3, L_LOG_SCALE);
+    pix5 = pixConvertTo32(pix4);
+    pixRasterop(pix1, 2 * w + 9, 3, w, h, PIX_SRC, pix5, 0, 0);  /* 3rd */
+    regTestWritePixAndCheck(rp, pix5, IFF_PNG);  /* 39 */
+    pixaAddPix(pixa, pix5, L_INSERT);
+    pixDestroy(&pix2);
+    pixDestroy(&pix4);
 
         /* Stretch the range and threshold to binary; paste it in */
-    pixt3a = pixGammaTRC(NULL, pixt2, 1.0, 0, 80);
-    pixt3 = pixThresholdToBinary(pixt3a, 70);
-    pixt4 = pixConvertTo32(pixt3);
-    pixRasterop(pixd, 3 * w + 12, 3, w, h, PIX_SRC, pixt4, 0, 0);  /* 4th */
-/*    pixWrite("/tmp/junkbin.png", pixt3, IFF_PNG); */
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3a);
-    pixDestroy(&pixt4);
+    pix2 = pixGammaTRC(NULL, pix3, 1.0, 0, 80);
+    pix4 = pixThresholdToBinary(pix2, 70);
+    pix5 = pixConvertTo32(pix4);
+    pixRasterop(pix1, 3 * w + 12, 3, w, h, PIX_SRC, pix5, 0, 0);  /* 4th */
+    regTestWritePixAndCheck(rp, pix5, IFF_PNG);  /* 40 */
+    pixaAddPix(pixa, pix5, L_INSERT);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
 
         /* Invert; this is the final result */
-    pixInvert(pixt3, pixt3);
-    pixt4 = pixConvertTo32(pixt3);
-    pixRasterop(pixd, 4 * w + 15, 3, w, h, PIX_SRC, pixt4, 0, 0);  /* 5th */
-    pixWrite("/tmp/junkbininvert.png", pixt3, IFF_PNG);
-    pixDisplayWrite(pixd, 1);
-/*    pixWrite("/tmp/junkall.jpg", pixd, IFF_JFIF_JPEG); */
-    pixDestroy(&pixt3);
-    pixDestroy(&pixt4);
-    pixDestroy(&pixd);
+    pixInvert(pix4, pix4);
+    pix5 = pixConvertTo32(pix4);
+    pixRasterop(pix1, 4 * w + 15, 3, w, h, PIX_SRC, pix5, 0, 0);  /* 5th */
+    regTestWritePixAndCheck(rp, pix5, IFF_PNG);  /* 41 */
+    pixaAddPix(pixa, pix5, L_INSERT);
+    pixDestroy(&pix1);
+    pixDestroy(&pix4);
 
-    pixDisplayMultiple("/tmp/display/file*");
+    pix1 = pixaDisplayTiledInRows(pixa, 32, 1700, 1.0, 0, 20, 2);
+    regTestWritePixAndCheck(rp, pix1, IFF_PNG);  /* 42 */
+    pixDisplayWithTitle(pix1, 0, 800, NULL, rp->display);
+    pixaDestroy(&pixa);
+    pixDestroy(&pix1);
     pixDestroy(&pixs);
-    return 0;
+
+    return regTestCleanup(rp);
 }
-
-
-
-    /* simple comparison function */
-static void pixCompare(PIX         *pix1,
-                       PIX         *pix2,
-                       const char  *msg1,
-                       const char  *msg2)
-{
-l_int32  same;
-    pixEqual(pix1, pix2, &same);
-    if (same) {
-        fprintf(stderr, "%s\n", msg1);
-        pixDisplayWrite(pix1, 1);
-    }
-    else {
-        fprintf(stderr, "%s\n", msg2);
-        pixDisplayWrite(pix1, 1);
-        pixDisplayWrite(pix2, 1);
-    }
-    return;
-}
-
-

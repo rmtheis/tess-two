@@ -118,7 +118,7 @@ static char  mainName[] = "adaptnorm_reg";
     pixSaveTiled(pixt, pixac, 1.0, 1, 20, 8);
     pixDestroy(&pixt);
     pixLocalExtrema(pixt8, 0, 0, &pixmin, NULL);  /* 1's at minima */
-    pixt9 = pixExpandBinaryReplicate(pixmin, 7);
+    pixt9 = pixExpandBinaryReplicate(pixmin, 7, 7);
     pixSaveTiled(pixt9, pixac, 1.0, 0, 20, 8);
     pixt10 = pixSeedfillGrayBasin(pixmin, pixt8, 10, 4);
     pixt11 = pixExtendByReplication(pixt10, 1, 1);

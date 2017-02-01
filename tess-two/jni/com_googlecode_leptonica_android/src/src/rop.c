@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  rop.c
+/*!
+ * \file rop.c
+ * <pre>
  *
  *      General rasterop
  *           l_int32    pixRasterop()
@@ -40,6 +41,7 @@
  *
  *      Full image rasterop with no translation
  *           l_int32    pixRasteropFullImage()
+ * </pre>
  */
 
 
@@ -50,20 +52,21 @@
  *                General rasterop (basic pix interface)              *
  *--------------------------------------------------------------------*/
 /*!
- *  pixRasterop()
+ * \brief   pixRasterop()
  *
- *      Input:  pixd   (dest pix)
- *              dx     (x val of UL corner of dest rectangle)
- *              dy     (y val of UL corner of dest rectangle)
- *              dw     (width of dest rectangle)
- *              dh     (height of dest rectangle)
- *              op     (op code)
- *              pixs   (src pix)
- *              sx     (x val of UL corner of src rectangle)
- *              sy     (y val of UL corner of src rectangle)
- *      Return: 0 if OK; 1 on error.
+ * \param[in]    pixd   dest pix
+ * \param[in]    dx     x val of UL corner of dest rectangle
+ * \param[in]    dy     y val of UL corner of dest rectangle
+ * \param[in]    dw     width of dest rectangle
+ * \param[in]    dh     height of dest rectangle
+ * \param[in]    op     op code
+ * \param[in]    pixs   src pix
+ * \param[in]    sx     x val of UL corner of src rectangle
+ * \param[in]    sy     y val of UL corner of src rectangle
+ * \return  0 if OK; 1 on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This has the standard set of 9 args for rasterop.
  *          This function is your friend; it is worth memorizing!
  *      (2) If the operation involves only dest, this calls
@@ -95,16 +98,16 @@
  *          PIX_SRC                             s
  *          PIX_NOT(PIX_SRC)                   ~s
  *          PIX_SRC | PIX_DST                   s | d
- *          PIX_SRC & PIX_DST                   s & d
+ *          PIX_SRC \& PIX_DST                   s \& d
  *          PIX_SRC ^ PIX_DST                   s ^ d
  *          PIX_NOT(PIX_SRC) | PIX_DST         ~s | d
- *          PIX_NOT(PIX_SRC) & PIX_DST         ~s & d
+ *          PIX_NOT(PIX_SRC) \& PIX_DST         ~s \& d
  *          PIX_NOT(PIX_SRC) ^ PIX_DST         ~s ^ d
  *          PIX_SRC | PIX_NOT(PIX_DST)          s | ~d
- *          PIX_SRC & PIX_NOT(PIX_DST)          s & ~d
+ *          PIX_SRC \& PIX_NOT(PIX_DST)          s \& ~d
  *          PIX_SRC ^ PIX_NOT(PIX_DST)          s ^ ~d
  *          PIX_NOT(PIX_SRC | PIX_DST)         ~(s | d)
- *          PIX_NOT(PIX_SRC & PIX_DST)         ~(s & d)
+ *          PIX_NOT(PIX_SRC \& PIX_DST)         ~(s \& d)
  *          PIX_NOT(PIX_SRC ^ PIX_DST)         ~(s ^ d)
  *
  *  Each of these is implemented with one of three low-level
@@ -126,16 +129,16 @@
  *         s            1      1      0      0
  *        ~s            0      1      0      1
  *       s | d          1      1      1      0
- *       s & d          1      0      0      0
+ *       s \& d          1      0      0      0
  *       s ^ d          0      1      1      0
  *      ~s | d          1      0      1      1
- *      ~s & d          0      0      1      0
+ *      ~s \& d          0      0      1      0
  *      ~s ^ d          1      0      0      1
  *       s | ~d         1      1      0      1
- *       s & ~d         0      1      0      0
+ *       s \& ~d         0      1      0      0
  *       s ^ ~d         1      0      0      1
  *      ~(s | d)        0      0      0      1
- *      ~(s & d)        0      1      1      1
+ *      ~(s \& d)        0      1      1      1
  *      ~(s ^ d)        1      0      0      1
  *
  *  Note that the following three operations are equivalent:
@@ -152,8 +155,8 @@
  *
  *         d            1      0      1      0    (indep. of s)
  *        ~d            0      1      0      1    (indep. of s)
- *        CLR           0      0      0      0    (indep. of both s & d)
- *        SET           1      1      1      1    (indep. of both s & d)
+ *        CLR           0      0      0      0    (indep. of both s \& d)
+ *        SET           1      1      1      1    (indep. of both s \& d)
  *
  *  As mentioned above, three of these are implemented by
  *  rasteropUniLow(), and one is a no-op.
@@ -186,6 +189,7 @@
  *  in the first position, any of the remaining 3 pairs can go
  *  in the second; and one of the remaining 2 pairs can go the the third.
  *  There is a total of 4*3*2 = 24 ways these pairs can be permuted.
+ * </pre>
  */
 l_int32
 pixRasterop(PIX     *pixd,
@@ -244,22 +248,24 @@ l_int32  dd;
  *                    In-place full band translation                  *
  *--------------------------------------------------------------------*/
 /*!
- *  pixRasteropVip()
+ * \brief   pixRasteropVip()
  *
- *      Input:  pixd (in-place)
- *              bx  (left edge of vertical band)
- *              bw  (width of vertical band)
- *              vshift (vertical shift of band; vshift > 0 is down)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixd in-place
+ * \param[in]    bx  left edge of vertical band
+ * \param[in]    bw  width of vertical band
+ * \param[in]    vshift vertical shift of band; vshift > 0 is down
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This rasterop translates a vertical band of the
  *          image either up or down, bringing in either white
  *          or black pixels from outside the image.
  *      (2) The vertical band extends the full height of pixd.
  *      (3) If a colormap exists, the nearest color to white or black
  *          is brought in.
+ * </pre>
  */
 l_int32
 pixRasteropVip(PIX     *pixd,
@@ -320,22 +326,24 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  pixRasteropHip()
+ * \brief   pixRasteropHip()
  *
- *      Input:  pixd (in-place operation)
- *              by  (top of horizontal band)
- *              bh  (height of horizontal band)
- *              hshift (horizontal shift of band; hshift > 0 is to right)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixd in-place operation
+ * \param[in]    by  top of horizontal band
+ * \param[in]    bh  height of horizontal band
+ * \param[in]    hshift horizontal shift of band; hshift > 0 is to right
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This rasterop translates a horizontal band of the
  *          image either left or right, bringing in either white
  *          or black pixels from outside the image.
  *      (2) The horizontal band extends the full width of pixd.
  *      (3) If a colormap exists, the nearest color to white or black
  *          is brought in.
+ * </pre>
  */
 l_int32
 pixRasteropHip(PIX     *pixd,
@@ -399,17 +407,18 @@ PIXCMAP  *cmap;
  *             Full image translation (general and in-place)          *
  *--------------------------------------------------------------------*/
 /*!
- *  pixTranslate()
+ * \brief   pixTranslate()
  *
- *      Input:  pixd (<optional> destination: this can be null,
- *                    equal to pixs, or different from pixs)
- *              pixs
- *              hshift (horizontal shift; hshift > 0 is to right)
- *              vshift (vertical shift; vshift > 0 is down)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: pixd, or null on error.
+ * \param[in]    pixd [optional] destination: this can be null,
+ *                    equal to pixs, or different from pixs
+ * \param[in]    pixs
+ * \param[in]    hshift horizontal shift; hshift > 0 is to right
+ * \param[in]    vshift vertical shift; vshift > 0 is down
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  pixd, or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The general pattern is:
  *            pixd = pixTranslate(pixd, pixs, ...);
  *          For clarity, when you know the case, use one of these:
@@ -418,6 +427,7 @@ PIXCMAP  *cmap;
  *            pixTranslate(pixd, pixs, ...);         // to existing pixd
  *      (2) If an existing pixd is not the same size as pixs, the
  *          image data will be reallocated.
+ * </pre>
  */
 PIX *
 pixTranslate(PIX     *pixd,
@@ -441,13 +451,13 @@ pixTranslate(PIX     *pixd,
 
 
 /*!
- *  pixRasteropIP()
+ * \brief   pixRasteropIP()
  *
- *      Input:  pixd (in-place translation)
- *              hshift (horizontal shift; hshift > 0 is to right)
- *              vshift (vertical shift; vshift > 0 is down)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixd in-place translation
+ * \param[in]    hshift horizontal shift; hshift > 0 is to right
+ * \param[in]    vshift vertical shift; vshift > 0 is down
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  0 if OK; 1 on error
  */
 l_int32
 pixRasteropIP(PIX     *pixd,
@@ -474,19 +484,21 @@ l_int32  w, h;
  *                 Full image rasterop with no shifts                 *
  *--------------------------------------------------------------------*/
 /*!
- *  pixRasteropFullImage()
+ * \brief   pixRasteropFullImage()
  *
- *      Input:  pixd
- *              pixs
- *              op (any of the op-codes)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixd
+ * \param[in]    pixs
+ * \param[in]    op any of the op-codes
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
- *      - this is a wrapper for a common 2-image raster operation
- *      - both pixs and pixd must be defined
- *      - the operation is performed with aligned UL corners of pixs and pixd
- *      - the operation clips to the smallest pix; if the width or height
+ * <pre>
+ * Notes:
+ *      ~ this is a wrapper for a common 2-image raster operation
+ *      ~ both pixs and pixd must be defined
+ *      ~ the operation is performed with aligned UL corners of pixs and pixd
+ *      ~ the operation clips to the smallest pix; if the width or height
  *        of pixd is larger than pixs, some pixels in pixd will be unchanged
+ * </pre>
  */
 l_int32
 pixRasteropFullImage(PIX     *pixd,

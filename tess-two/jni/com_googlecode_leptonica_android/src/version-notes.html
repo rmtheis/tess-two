@@ -9,8 +9,75 @@
 </form>
 ----- JS Window Closer -->
 
+<!-- Creative Commons License -->
+<a rel="license" href="http://creativecommons.org/licenses/by/2.5/"><img alt="Creative Commons License" border="0" src="http://creativecommons.org/images/public/somerights20.gif" /></a>
+This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/2.5/">Creative Commons Attribution 2.5 License</a>.
+<!-- /Creative Commons License -->
+
+
+<!--
+
+<rdf:RDF xmlns="http://web.resource.org/cc/"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<Work rdf:about="">
+  <dc:title>leptonica</dc:title>
+  <dc:date>2001</dc:date>
+  <dc:description>An open source C library for efficient image processing and image analysis operations</dc:description>
+  <dc:creator><Agent>
+    <dc:title>Dan S. Bloomberg</dc:title>
+  </Agent></dc:creator>
+  <dc:rights><Agent>
+    <dc:title>Dan S. Bloomberg</dc:title>
+  </Agent></dc:rights>
+  <dc:type rdf:resource="http://purl.org/dc/dcmitype/Text" />
+  <dc:source rdf:resource="www.leptonica.com"/>
+  <license rdf:resource="http://creativecommons.org/licenses/by/2.5/" />
+</Work>
+
+<License rdf:about="http://creativecommons.org/licenses/by/2.5/">
+  <permits rdf:resource="http://web.resource.org/cc/Reproduction" />
+  <permits rdf:resource="http://web.resource.org/cc/Distribution" />
+  <requires rdf:resource="http://web.resource.org/cc/Notice" />
+  <requires rdf:resource="http://web.resource.org/cc/Attribution" />
+  <permits rdf:resource="http://web.resource.org/cc/DerivativeWorks" />
+</License>
+
+</rdf:RDF>
+
+-->
+
+<pre>
+/*====================================================================*
+ -  Copyright (C) 2001 Leptonica.  All rights reserved.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *====================================================================*/
+</pre>
+
 
 <h2 align=center>Version Notes for Leptonica</h2>
+<h3 align=center>25 Jan 2016</h3>
 
 <hr>
 <h2 align=center>  <IMG SRC="moller52.jpg" border=1 ALIGN_MIDDLE> </h2>
@@ -22,6 +89,64 @@ They are <i>not</i> a complete listing of the modifications.
 
 <pre>
 
+1.74.1  3 Jan 17
+        Configuration changes to support the patch number in the
+        version (major.minor.patch).
+        Removed all remaining pixDisplayWrite() calls in prog/.
+        Cleaned up and/or promoted about 15 programs to full regression
+        tests.  There are now 95 tests in the regression set.
+        Over half the initial coverity scan warnings have been removed.
+
+1.74.0 10 Dec 16
+       Leptonica development was moved to github.  The master is at:
+          github.com/danbloomberg/leptonica
+       Egor Pugin is the maintainer of the site.
+       A very large number of changes have been made.  Some of them follow;
+       details can be found in the git commit messages.
+       Static makefiles modified to work with gnu*9 and c*9.
+       Modify SET macros to work on windows.
+       New modes for RGB --> gray conversion.
+       New functions added for displaying a pix from a pixa.
+       Split out sort/hash/set/map functions for dna, sarray and pta.
+       More robust horizontal deskew on multi-column page images.
+       Improve webpio_reg test.
+       Remove X11 display for gplot; it is no longer supported.
+       Remove most sleep calls, which were put in for gplot; no longer needed.
+       Removed use of gthumb in library.
+       Removed use of pixDisplayWrite() in the library; still in some progs.
+       Improved test for endianness in makefile.static; no longer requires
+       any local files or building and running a program.
+       Modified all files for doxygen output (spearheaded by Jurgen Buchmuller)
+       Improved plotting of the boxes in a boxa.
+       Replaced the slow point hash function with a simple fast one.
+       Added pam (4 component) format writing to pnmio.c (Jurgen Buchmuller)
+       Improved rendering of pixa in side/by/sides.
+       Better utilities for pixa and pixacomp.
+       Add read/write serialization functions from/to memory for all
+       the major data structures that do not already have them.
+       More serialized boot recognizers stored as self-generating code.
+       Cleaned up generating an adapted recognizer from the boot recognizer.
+       Simplified temp file naming; removed most instances of named
+       temp files from non-debug code; use tmpfile() and a wrapper
+       l_makeTempFilename().
+       Simplify and streamline multipage tiff reading (Jeff Breidenbach).
+       Improvement of Otsu thresholding.
+       Recognize outstanding contributors to leptonica over the years.
+       New gif mem read/write interface that avoids writing a temp file,
+       contributed by Tobias Peirick.
+       Use double arrays (dna) instead of float (numa) for set ops.
+       Enrolled in coverity scan to find potential bugs (Stefan Weil
+       managed it). Fixed about 200 of them, mostly potential memory
+       leaks from early function exit.
+       Cleanup of gray quantization functions and tests.
+       Refactored connectivity-conserving operations, to make them more useful.
+       Provided methods for measuring and regularizing the width of strokes.
+       Removed viewfiles.c from library; code is now in prog htmlviewer.c.
+       Better debugging in page segmentation (pageseg.c)
+       Deprecated the pixDisplayWrite*() debugging methods.
+       Added about 15 regression tests to the framework in alltests_reg.c
+       Final mods for compatibility with tesseract 4.00.
+           
 1.73   25 Jan 16
        All lept_* functions have been rewritten to avoid path rewrites for
        output to temp files, which were introduced in 1.72.
@@ -84,7 +209,7 @@ They are <i>not</i> a complete listing of the modifications.
        alltests_reg now has 66 tests.
 
 1.71   18 Jun 14
-       This version supports tesseract 3.0.4.  In particular, 3.0.4
+       This version supports tesseract 3.04.  In particular, 3.04
         has automatic conversion of a set of scanned images, either in a
         directory or coming directly from a scanner, into pdf with injected
         text.  This is something we've wanted to do for several years!

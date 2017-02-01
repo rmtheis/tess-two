@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  grayquant.c
+/*!
+ * \file grayquant.c
+ * <pre>
  *
  *      Thresholding from 8 bpp to 1 bpp
  *
@@ -42,9 +43,6 @@
  *          Binarization by adaptive mapping
  *              PIX    *pixAdaptThresholdToBinary()
  *              PIX    *pixAdaptThresholdToBinaryGen()
- *
- *          Slower implementation of Floyd-Steinberg dithering, using LUTs
- *              PIX    *pixDitherToBinaryLUT()
  *
  *          Generate a binary mask from pixels of particular values
  *              PIX    *pixGenerateMaskByValue()
@@ -87,6 +85,7 @@
  *
  *      Color quantize grayscale image using existing colormap
  *              PIX      *pixGrayQuantFromCmap()
+ * </pre>
  */
 
 #include <string.h>
@@ -103,17 +102,17 @@ static l_int32 numaFillCmapFromHisto(NUMA *na, PIXCMAP *cmap,
  *             Binarization by Floyd-Steinberg dithering            *
  *------------------------------------------------------------------*/
 /*!
- *  pixDitherToBinary()
+ * \brief   pixDitherToBinary()
  *
- *      Input:  pixs
- *      Return: pixd (dithered binary), or null on error
+ * \param[in]    pixs
+ * \return  pixd dithered binary, or NULL on error
  *
  *  The Floyd-Steinberg error diffusion dithering algorithm
  *  binarizes an 8 bpp grayscale image to a threshold of 128.
  *  If a pixel has a value above 127, it is binarized to white
- *  and the excess (below 255) is subtracted from three
- *  neighboring pixels in the fractions 3/8 to (i, j+1),
- *  3/8 to (i+1, j) and 1/4 to (i+1,j+1), truncating to 0
+ *  and the excess below 255 is subtracted from three
+ *  neighboring pixels in the fractions 3/8 to i, j+1,
+ *  3/8 to i+1, j) and 1/4 to (i+1,j+1, truncating to 0
  *  if necessary.  Likewise, if it the pixel has a value
  *  below 128, it is binarized to black and the excess above 0
  *  is added to the neighboring pixels, truncating to 255 if necessary.
@@ -122,15 +121,15 @@ static l_int32 numaFillCmapFromHisto(NUMA *na, PIXCMAP *cmap,
  *  clipping of grayscale to 0 or 255 if the values are
  *  sufficiently close, without distribution of the excess.
  *  This uses default values to specify the range of lower
- *  and upper values (near 0 and 255, rsp) that are clipped
+ *  and upper values near 0 and 255, rsp that are clipped
  *  to black and white without propagating the excess.
  *  Not propagating the excess has the effect of reducing the
  *  snake patterns in parts of the image that are nearly black or white;
  *  however, it also prevents the attempt to reproduce gray for those values.
  *
  *  The implementation is straightforward.  It uses a pair of
- *  line buffers to avoid changing pixs.  It is about 2x faster
- *  than the implementation using LUTs.
+ *  line buffers to avoid changing pixs.  It is about the same speed
+ *  as pixDitherToBinaryLUT(), which uses three LUTs.
  */
 PIX *
 pixDitherToBinary(PIX  *pixs)
@@ -148,19 +147,21 @@ pixDitherToBinary(PIX  *pixs)
 
 
 /*!
- *  pixDitherToBinarySpec()
+ * \brief   pixDitherToBinarySpec()
  *
- *      Input:  pixs
- *              lowerclip (lower clip distance to black; use 0 for default)
- *              upperclip (upper clip distance to white; use 0 for default)
- *      Return: pixd (dithered binary), or null on error
+ * \param[in]    pixs
+ * \param[in]    lowerclip lower clip distance to black; use 0 for default
+ * \param[in]    upperclip upper clip distance to white; use 0 for default
+ * \return  pixd dithered binary, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See comments above in pixDitherToBinary() for details.
  *      (2) The input parameters lowerclip and upperclip specify the range
  *          of lower and upper values (near 0 and 255, rsp) that are
  *          clipped to black and white without propagating the excess.
  *          For that reason, lowerclip and upperclip should be small numbers.
+ * </pre>
  */
 PIX *
 pixDitherToBinarySpec(PIX     *pixs,
@@ -192,15 +193,23 @@ PIX       *pixt, *pixd;
     wpld = pixGetWpl(pixd);
 
         /* Remove colormap if it exists */
-    pixt = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
+    if ((pixt = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE)) == NULL) {
+        pixDestroy(&pixd);
+        return (PIX *)ERROR_PTR("pixt not made", procName, NULL);
+    }
     datat = pixGetData(pixt);
     wplt = pixGetWpl(pixt);
 
         /* Two line buffers, 1 for current line and 2 for next line */
-    if ((bufs1 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
-        return (PIX *)ERROR_PTR("bufs1 not made", procName, NULL);
-    if ((bufs2 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
-        return (PIX *)ERROR_PTR("bufs2 not made", procName, NULL);
+    bufs1 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32));
+    bufs2 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32));
+    if (!bufs1 || !bufs2) {
+        LEPT_FREE(bufs1);
+        LEPT_FREE(bufs2);
+        pixDestroy(&pixd);
+        pixDestroy(&pixt);
+        return (PIX *)ERROR_PTR("bufs1, bufs2 not both made", procName, NULL);
+    }
 
     ditherToBinaryLow(datad, w, h, wpld, datat, wplt, bufs1, bufs2,
                       lowerclip, upperclip);
@@ -208,7 +217,6 @@ PIX       *pixt, *pixd;
     LEPT_FREE(bufs1);
     LEPT_FREE(bufs2);
     pixDestroy(&pixt);
-
     return pixd;
 }
 
@@ -217,15 +225,21 @@ PIX       *pixt, *pixd;
  *       Simple (pixelwise) binarization with fixed threshold       *
  *------------------------------------------------------------------*/
 /*!
- *  pixThresholdToBinary()
+ * \brief   pixThresholdToBinary()
  *
- *      Input:  pixs (4 or 8 bpp)
- *              threshold value
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 4 or 8 bpp
+ * \param[in]    thresh threshold value
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If the source pixel is less than the threshold value,
- *          the dest will be 1; otherwise, it will be 0
+ *          the dest will be 1; otherwise, it will be 0.
+ *      (2) For example, for 8 bpp src pix, if %thresh == 256, the dest
+ *          1 bpp pix is all ones (fg), and if %thresh == 0, the dest
+ *          pix is all zeros (bg).
+ *
+ * </pre>
  */
 PIX *
 pixThresholdToBinary(PIX     *pixs,
@@ -276,15 +290,17 @@ PIX       *pixt, *pixd;
  *                Binarization with variable threshold              *
  *------------------------------------------------------------------*/
 /*!
- *  pixVarThresholdToBinary()
+ * \brief   pixVarThresholdToBinary()
  *
- *      Input:  pixs (8 bpp)
- *              pixg (8 bpp; contains threshold values for each pixel)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    pixg 8 bpp; contains threshold values for each pixel
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If the pixel in pixs is less than the corresponding pixel
  *          in pixg, the dest will be 1; otherwise it will be 0.
+ * </pre>
  */
 PIX *
 pixVarThresholdToBinary(PIX  *pixs,
@@ -335,29 +351,31 @@ PIX       *pixd;
  *                  Binarization by adaptive mapping                *
  *------------------------------------------------------------------*/
 /*!
- *  pixAdaptThresholdToBinary()
+ * \brief   pixAdaptThresholdToBinary()
  *
- *      Input:  pixs (8 bpp)
- *              pixm (<optional> 1 bpp image mask; can be null)
- *              gamma (gamma correction; must be > 0.0; typically ~1.0)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    pixm [optional] 1 bpp image mask; can be null
+ * \param[in]    gamma gamma correction; must be > 0.0; typically ~1.0
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a simple convenience function for doing adaptive
  *          thresholding on a grayscale image with variable background.
  *          It uses default parameters appropriate for typical text images.
- *      (2) @pixm is a 1 bpp mask over "image" regions, which are not
+ *      (2) %pixm is a 1 bpp mask over "image" regions, which are not
  *          expected to have a white background.  The mask inhibits
  *          background finding under the fg pixels of the mask.  For
  *          images with both text and image, the image regions would
  *          be binarized (or quantized) by a different set of operations.
- *      (3) As @gamma is increased, the foreground pixels are reduced.
+ *      (3) As %gamma is increased, the foreground pixels are reduced.
  *      (4) Under the covers:  The default background value for normalization
  *          is 200, so we choose 170 for 'maxval' in pixGammaTRC.  Likewise,
  *          the default foreground threshold for normalization is 60,
  *          so we choose 50 for 'minval' in pixGammaTRC.  Because
  *          170 was mapped to 255, choosing 200 for the threshold is
  *          quite safe for avoiding speckle noise from the background.
+ * </pre>
  */
 PIX *
 pixAdaptThresholdToBinary(PIX       *pixs,
@@ -374,21 +392,22 @@ pixAdaptThresholdToBinary(PIX       *pixs,
 
 
 /*!
- *  pixAdaptThresholdToBinaryGen()
+ * \brief   pixAdaptThresholdToBinaryGen()
  *
- *      Input:  pixs (8 bpp)
- *              pixm (<optional> 1 bpp image mask; can be null)
- *              gamma (gamma correction; must be > 0.0; typically ~1.0)
- *              blackval (dark value to set to black (0))
- *              whiteval (light value to set to white (255))
- *              thresh (final threshold for binarization)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    pixm [optional] 1 bpp image mask; can be null
+ * \param[in]    gamma gamma correction; must be > 0.0; typically ~1.0
+ * \param[in]    blackval dark value to set to black (0)
+ * \param[in]    whiteval light value to set to white (255)
+ * \param[in]    thresh final threshold for binarization
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a convenience function for doing adaptive thresholding
  *          on a grayscale image with variable background.  Also see notes
  *          in pixAdaptThresholdToBinary().
- *      (2) Reducing @gamma increases the foreground (text) pixels.
+ *      (2) Reducing %gamma increases the foreground (text) pixels.
  *          Use a low value (e.g., 0.5) for images with light text.
  *      (3) For normal images, see default args in pixAdaptThresholdToBinary().
  *          For images with very light text, these values are appropriate:
@@ -396,6 +415,7 @@ pixAdaptThresholdToBinary(PIX       *pixs,
  *             blackval  ~70
  *             whiteval  ~190
  *             thresh    ~200
+ * </pre>
  */
 PIX *
 pixAdaptThresholdToBinaryGen(PIX       *pixs,
@@ -421,101 +441,26 @@ PIX  *pix1, *pixd;
 
 
 /*--------------------------------------------------------------------*
- *    Slower implementation of binarization by dithering using LUTs   *
- *--------------------------------------------------------------------*/
-/*!
- *  pixDitherToBinaryLUT()
- *
- *      Input:  pixs
- *              lowerclip (lower clip distance to black; use -1 for default)
- *              upperclip (upper clip distance to white; use -1 for default)
- *      Return: pixd (dithered binary), or null on error
- *
- *  This implementation is deprecated.  You should use pixDitherToBinary().
- *
- *  See comments in pixDitherToBinary()
- *
- *  This implementation additionally uses three lookup tables to
- *  generate the output pixel value and the excess or deficit
- *  carried over to the neighboring pixels.
- */
-PIX *
-pixDitherToBinaryLUT(PIX     *pixs,
-                     l_int32  lowerclip,
-                     l_int32  upperclip)
-{
-l_int32    w, h, d, wplt, wpld;
-l_int32   *tabval, *tab38, *tab14;
-l_uint32  *datat, *datad;
-l_uint32  *bufs1, *bufs2;
-PIX       *pixt, *pixd;
-
-    PROCNAME("pixDitherToBinaryLUT");
-
-    if (!pixs)
-        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
-    pixGetDimensions(pixs, &w, &h, &d);
-    if (d != 8)
-        return (PIX *)ERROR_PTR("must be 8 bpp for dithering", procName, NULL);
-    if (lowerclip < 0)
-        lowerclip = DEFAULT_CLIP_LOWER_1;
-    if (upperclip < 0)
-        upperclip = DEFAULT_CLIP_UPPER_1;
-
-    if ((pixd = pixCreate(w, h, 1)) == NULL)
-        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
-    pixCopyResolution(pixd, pixs);
-    pixCopyInputFormat(pixd, pixs);
-    datad = pixGetData(pixd);
-    wpld = pixGetWpl(pixd);
-
-        /* Remove colormap if it exists */
-    pixt = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
-    datat = pixGetData(pixt);
-    wplt = pixGetWpl(pixt);
-
-        /* Two line buffers, 1 for current line and 2 for next line */
-    if ((bufs1 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
-        return (PIX *)ERROR_PTR("bufs1 not made", procName, NULL);
-    if ((bufs2 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
-        return (PIX *)ERROR_PTR("bufs2 not made", procName, NULL);
-
-        /* 3 lookup tables: 1-bit value, (3/8)excess, and (1/4)excess */
-    make8To1DitherTables(&tabval, &tab38, &tab14, lowerclip, upperclip);
-
-    ditherToBinaryLUTLow(datad, w, h, wpld, datat, wplt, bufs1, bufs2,
-                         tabval, tab38, tab14);
-
-    LEPT_FREE(bufs1);
-    LEPT_FREE(bufs2);
-    LEPT_FREE(tabval);
-    LEPT_FREE(tab38);
-    LEPT_FREE(tab14);
-    pixDestroy(&pixt);
-
-    return pixd;
-}
-
-
-/*--------------------------------------------------------------------*
  *       Generate a binary mask from pixels of particular value(s)    *
  *--------------------------------------------------------------------*/
 /*!
- *  pixGenerateMaskByValue()
+ * \brief   pixGenerateMaskByValue()
  *
- *      Input:  pixs (2, 4 or 8 bpp, or colormapped)
- *              val (of pixels for which we set 1 in dest)
- *              usecmap (1 to retain cmap values; 0 to convert to gray)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 2, 4 or 8 bpp, or colormapped
+ * \param[in]    val of pixels for which we set 1 in dest
+ * \param[in]    usecmap 1 to retain cmap values; 0 to convert to gray
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
- *      (1) @val is the pixel value that we are selecting.  It can be
+ * <pre>
+ * Notes:
+ *      (1) %val is the pixel value that we are selecting.  It can be
  *          either a gray value or a colormap index.
- *      (2) If pixs is colormapped, @usecmap determines if the colormap
+ *      (2) If pixs is colormapped, %usecmap determines if the colormap
  *          index values are used, or if the colormap is removed to gray and
  *          the gray values are used.  For the latter, it generates
  *          an approximate grayscale value for each pixel, and then looks
- *          for gray pixels with the value @val.
+ *          for gray pixels with the value %val.
+ * </pre>
  */
 PIX *
 pixGenerateMaskByValue(PIX     *pixs,
@@ -582,28 +527,30 @@ PIX       *pixg, *pixd;
 
 
 /*!
- *  pixGenerateMaskByBand()
+ * \brief   pixGenerateMaskByBand()
  *
- *      Input:  pixs (2, 4 or 8 bpp, or colormapped)
- *              lower, upper (two pixel values from which a range, either
+ * \param[in]    pixs 2, 4 or 8 bpp, or colormapped
+ * \param[in]    lower, upper two pixel values from which a range, either
  *                            between (inband) or outside of (!inband),
  *                            determines which pixels in pixs cause us to
- *                            set a 1 in the dest mask)
- *              inband (1 for finding pixels in [lower, upper];
- *                      0 for finding pixels in [0, lower) union (upper, 255])
- *              usecmap (1 to retain cmap values; 0 to convert to gray)
- *      Return: pixd (1 bpp), or null on error
+ *                            set a 1 in the dest mask
+ * \param[in]    inband 1 for finding pixels in [lower, upper];
+ *                      0 for finding pixels in [0, lower) union (upper, 255]
+ * \param[in]    usecmap 1 to retain cmap values; 0 to convert to gray
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Generates a 1 bpp mask pixd, the same size as pixs, where
  *          the fg pixels in the mask are those either within the specified
  *          band (for inband == 1) or outside the specified band
  *          (for inband == 0).
- *      (2) If pixs is colormapped, @usecmap determines if the colormap
+ *      (2) If pixs is colormapped, %usecmap determines if the colormap
  *          values are used, or if the colormap is removed to gray and
  *          the gray values are used.  For the latter, it generates
  *          an approximate grayscale value for each pixel, and then looks
- *          for gray pixels with the value @val.
+ *          for gray pixels with the value %val.
+ * </pre>
  */
 PIX *
 pixGenerateMaskByBand(PIX     *pixs,
@@ -680,11 +627,11 @@ PIX       *pixg, *pixd;
  *                Thresholding to 2 bpp by dithering                *
  *------------------------------------------------------------------*/
 /*!
- *  pixDitherTo2bpp()
+ * \brief   pixDitherTo2bpp()
  *
- *      Input:  pixs (8 bpp)
- *              cmapflag (1 to generate a colormap)
- *      Return: pixd (dithered 2 bpp), or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    cmapflag 1 to generate a colormap
+ * \return  pixd dithered 2 bpp, or NULL on error
  *
  *  An analog of the Floyd-Steinberg error diffusion dithering
  *  algorithm is used to "dibitize" an 8 bpp grayscale image
@@ -692,24 +639,24 @@ PIX       *pixg, *pixd;
  *  which are served by thresholds of 43, 128 and 213.
  *  If cmapflag == 1, the colormap values are set to 0, 85, 170 and 255.
  *  If a pixel has a value between 0 and 42, it is dibitized
- *  to 0, and the excess (above 0) is added to the
- *  three neighboring pixels, in the fractions 3/8 to (i, j+1),
- *  3/8 to (i+1, j) and 1/4 to (i+1, j+1), truncating to 255 if
+ *  to 0, and the excess above 0 is added to the
+ *  three neighboring pixels, in the fractions 3/8 to i, j+1,
+ *  3/8 to i+1, j) and 1/4 to (i+1, j+1, truncating to 255 if
  *  necessary.  If a pixel has a value between 43 and 127, it is
- *  dibitized to 1, and the excess (above 85) is added to the three
+ *  dibitized to 1, and the excess above 85 is added to the three
  *  neighboring pixels as before.  If the value is below 85, the
  *  excess is subtracted.  With a value between 128
  *  and 212, it is dibitized to 2, with the excess on either side
  *  of 170 distributed as before.  Finally, with a value between
- *  213 and 255, it is dibitized to 3, with the excess (below 255)
+ *  213 and 255, it is dibitized to 3, with the excess below 255
  *  subtracted from the neighbors.  We always truncate to 0 or 255.
  *  The details can be seen in the lookup table generation.
  *
  *  This function differs from straight dithering in that it allows
  *  clipping of grayscale to 0 or 255 if the values are
  *  sufficiently close, without distribution of the excess.
- *  This uses default values (from pix.h) to specify the range of lower
- *  and upper values (near 0 and 255, rsp) that are clipped to black
+ *  This uses default values from pix.h to specify the range of lower
+ *  and upper values near 0 and 255, rsp that are clipped to black
  *  and white without propagating the excess.
  *  Not propagating the excess has the effect of reducing the snake
  *  patterns in parts of the image that are nearly black or white;
@@ -735,20 +682,22 @@ pixDitherTo2bpp(PIX     *pixs,
 
 
 /*!
- *  pixDitherTo2bppSpec()
+ * \brief   pixDitherTo2bppSpec()
  *
- *      Input:  pixs (8 bpp)
- *              lowerclip (lower clip distance to black; use 0 for default)
- *              upperclip (upper clip distance to white; use 0 for default)
- *              cmapflag (1 to generate a colormap)
- *      Return: pixd (dithered 2 bpp), or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    lowerclip lower clip distance to black; use 0 for default
+ * \param[in]    upperclip upper clip distance to white; use 0 for default
+ * \param[in]    cmapflag 1 to generate a colormap
+ * \return  pixd dithered 2 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See comments above in pixDitherTo2bpp() for details.
  *      (2) The input parameters lowerclip and upperclip specify the range
  *          of lower and upper values (near 0 and 255, rsp) that are
  *          clipped to black and white without propagating the excess.
  *          For that reason, lowerclip and upperclip should be small numbers.
+ * </pre>
  */
 PIX *
 pixDitherTo2bppSpec(PIX     *pixs,
@@ -788,10 +737,15 @@ PIXCMAP   *cmap;
     wplt = pixGetWpl(pixt);
 
         /* Two line buffers, 1 for current line and 2 for next line */
-    if ((bufs1 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
-        return (PIX *)ERROR_PTR("bufs1 not made", procName, NULL);
-    if ((bufs2 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32))) == NULL)
-        return (PIX *)ERROR_PTR("bufs2 not made", procName, NULL);
+    bufs1 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32));
+    bufs2 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32));
+    if (!bufs1 || !bufs2) {
+        LEPT_FREE(bufs1);
+        LEPT_FREE(bufs2);
+        pixDestroy(&pixd);
+        pixDestroy(&pixt);
+        return (PIX *)ERROR_PTR("bufs1, bufs2 not both made", procName, NULL);
+    }
 
         /* 3 lookup tables: 2-bit value, (3/8)excess, and (1/4)excess */
     make8To2DitherTables(&tabval, &tab38, &tab14, lowerclip, upperclip);
@@ -810,7 +764,6 @@ PIXCMAP   *cmap;
     LEPT_FREE(tab38);
     LEPT_FREE(tab14);
     pixDestroy(&pixt);
-
     return pixd;
 }
 
@@ -819,14 +772,15 @@ PIXCMAP   *cmap;
  *  Simple (pixelwise) thresholding to 2 bpp with optional colormap   *
  *--------------------------------------------------------------------*/
 /*!
- *  pixThresholdTo2bpp()
+ * \brief   pixThresholdTo2bpp()
  *
- *      Input:  pixs (8 bpp)
- *              nlevels (equally spaced; must be between 2 and 4)
- *              cmapflag (1 to build colormap; 0 otherwise)
- *      Return: pixd (2 bpp, optionally with colormap), or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    nlevels equally spaced; must be between 2 and 4
+ * \param[in]    cmapflag 1 to build colormap; 0 otherwise
+ * \return  pixd 2 bpp, optionally with colormap, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Valid values for nlevels is the set {2, 3, 4}.
  *      (2) Any colormap on the input pixs is removed to 8 bpp grayscale.
  *      (3) This function is typically invoked with cmapflag == 1.
@@ -859,6 +813,7 @@ PIXCMAP   *cmap;
  *          get compression far better than that of jpeg, because the
  *          quantization to 4 levels will remove the jpeg ringing in the
  *          background near character edges.
+ * </pre>
  */
 PIX *
 pixThresholdTo2bpp(PIX     *pixs,
@@ -881,12 +836,6 @@ PIXCMAP   *cmap;
     if (nlevels < 2 || nlevels > 4)
         return (PIX *)ERROR_PTR("nlevels not in {2, 3, 4}", procName, NULL);
 
-        /* Make the appropriate table */
-    if (cmapflag)
-        qtab = makeGrayQuantIndexTable(nlevels);
-    else
-        qtab = makeGrayQuantTargetTable(4, 2);
-
     if ((pixd = pixCreate(w, h, 2)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
@@ -904,9 +853,15 @@ PIXCMAP   *cmap;
     datat = pixGetData(pixt);
     wplt = pixGetWpl(pixt);
 
+        /* Make the appropriate table */
+    if (cmapflag)
+        qtab = makeGrayQuantIndexTable(nlevels);
+    else
+        qtab = makeGrayQuantTargetTable(4, 2);
+
     thresholdTo2bppLow(datad, h, wpld, datat, wplt, qtab);
 
-    if (qtab) LEPT_FREE(qtab);
+    LEPT_FREE(qtab);
     pixDestroy(&pixt);
     return pixd;
 }
@@ -916,14 +871,15 @@ PIXCMAP   *cmap;
  *               Simple (pixelwise) thresholding to 4 bpp               *
  *----------------------------------------------------------------------*/
 /*!
- *  pixThresholdTo4bpp()
+ * \brief   pixThresholdTo4bpp()
  *
- *      Input:  pixs (8 bpp, can have colormap)
- *              nlevels (equally spaced; must be between 2 and 16)
- *              cmapflag (1 to build colormap; 0 otherwise)
- *      Return: pixd (4 bpp, optionally with colormap), or null on error
+ * \param[in]    pixs 8 bpp, can have colormap
+ * \param[in]    nlevels equally spaced; must be between 2 and 16
+ * \param[in]    cmapflag 1 to build colormap; 0 otherwise
+ * \return  pixd 4 bpp, optionally with colormap, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Valid values for nlevels is the set {2, ... 16}.
  *      (2) Any colormap on the input pixs is removed to 8 bpp grayscale.
  *      (3) This function is typically invoked with cmapflag == 1.
@@ -958,6 +914,7 @@ PIXCMAP   *cmap;
  *          the jpeg ringing that is typically introduced near sharp edges
  *          of text.  This filtering is partly responsible for the improved
  *          compression.
+ * </pre>
  */
 PIX *
 pixThresholdTo4bpp(PIX     *pixs,
@@ -980,12 +937,6 @@ PIXCMAP   *cmap;
     if (nlevels < 2 || nlevels > 16)
         return (PIX *)ERROR_PTR("nlevels not in [2,...,16]", procName, NULL);
 
-        /* Make the appropriate table */
-    if (cmapflag)
-        qtab = makeGrayQuantIndexTable(nlevels);
-    else
-        qtab = makeGrayQuantTargetTable(16, 4);
-
     if ((pixd = pixCreate(w, h, 4)) == NULL)
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
     pixCopyResolution(pixd, pixs);
@@ -1003,9 +954,15 @@ PIXCMAP   *cmap;
     datat = pixGetData(pixt);
     wplt = pixGetWpl(pixt);
 
+        /* Make the appropriate table */
+    if (cmapflag)
+        qtab = makeGrayQuantIndexTable(nlevels);
+    else
+        qtab = makeGrayQuantTargetTable(16, 4);
+
     thresholdTo4bppLow(datad, h, wpld, datat, wplt, qtab);
 
-    if (qtab) LEPT_FREE(qtab);
+    LEPT_FREE(qtab);
     pixDestroy(&pixt);
     return pixd;
 }
@@ -1015,14 +972,15 @@ PIXCMAP   *cmap;
  *    Simple (pixelwise) thresholding on 8 bpp with optional colormap   *
  *----------------------------------------------------------------------*/
 /*!
- *  pixThresholdOn8bpp()
+ * \brief   pixThresholdOn8bpp()
  *
- *      Input:  pixs (8 bpp, can have colormap)
- *              nlevels (equally spaced; must be between 2 and 256)
- *              cmapflag (1 to build colormap; 0 otherwise)
- *      Return: pixd (8 bpp, optionally with colormap), or null on error
+ * \param[in]    pixs 8 bpp, can have colormap
+ * \param[in]    nlevels equally spaced; must be between 2 and 256
+ * \param[in]    cmapflag 1 to build colormap; 0 otherwise
+ * \return  pixd 8 bpp, optionally with colormap, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Valid values for nlevels is the set {2,...,256}.
  *      (2) Any colormap on the input pixs is removed to 8 bpp grayscale.
  *      (3) If cmapflag == 1, a colormap of size 'nlevels' is made,
@@ -1031,6 +989,7 @@ PIXCMAP   *cmap;
  *          are the actual thresholded (i.e., quantized) grayscale values.
  *      (4) If you don't want the thresholding to be equally spaced,
  *          first transform the input 8 bpp src using pixGammaTRC().
+ * </pre>
  */
 PIX *
 pixThresholdOn8bpp(PIX     *pixs,
@@ -1052,11 +1011,6 @@ PIXCMAP   *cmap;
     if (nlevels < 2 || nlevels > 256)
         return (PIX *)ERROR_PTR("nlevels not in [2,...,256]", procName, NULL);
 
-    if (cmapflag)
-        qtab = makeGrayQuantIndexTable(nlevels);
-    else
-        qtab = makeGrayQuantTargetTable(nlevels, 8);
-
         /* Get a new pixd; if there is a colormap in the src, remove it */
     if (pixGetColormap(pixs))
         pixd = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
@@ -1067,6 +1021,11 @@ PIXCMAP   *cmap;
         cmap = pixcmapCreateLinear(8, nlevels);
         pixSetColormap(pixd, cmap);
     }
+
+    if (cmapflag)
+        qtab = makeGrayQuantIndexTable(nlevels);
+    else
+        qtab = makeGrayQuantTargetTable(nlevels, 8);
 
     pixGetDimensions(pixd, &w, &h, NULL);
     pixCopyResolution(pixd, pixs);
@@ -1082,7 +1041,7 @@ PIXCMAP   *cmap;
         }
     }
 
-    if (qtab) LEPT_FREE(qtab);
+    LEPT_FREE(qtab);
     return pixd;
 }
 
@@ -1091,45 +1050,47 @@ PIXCMAP   *cmap;
  *    Arbitrary (pixelwise) thresholding from 8 bpp to 2, 4 or 8 bpp    *
  *----------------------------------------------------------------------*/
 /*!
- *  pixThresholdGrayArb()
+ * \brief   pixThresholdGrayArb()
  *
- *      Input:  pixs (8 bpp grayscale; can have colormap)
- *              edgevals (string giving edge value of each bin)
- *              outdepth (0, 2, 4 or 8 bpp; 0 is default for min depth)
- *              use_average (1 if use the average pixel value in colormap)
- *              setblack (1 if darkest color is set to black)
- *              setwhite (1 if lightest color is set to white)
- *      Return: pixd (2, 4 or 8 bpp quantized image with colormap),
- *                    or null on error
+ * \param[in]    pixs 8 bpp grayscale; can have colormap
+ * \param[in]    edgevals string giving edge value of each bin
+ * \param[in]    outdepth 0, 2, 4 or 8 bpp; 0 is default for min depth
+ * \param[in]    use_average 1 if use the average pixel value in colormap
+ * \param[in]    setblack 1 if darkest color is set to black
+ * \param[in]    setwhite 1 if lightest color is set to white
+ * \return  pixd 2, 4 or 8 bpp quantized image with colormap,
+ *                    or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This function allows exact specification of the quantization bins.
- *          The string @edgevals is a space-separated set of values
+ *          The string %edgevals is a space-separated set of values
  *          specifying the dividing points between output quantization bins.
  *          These threshold values are assigned to the bin with higher
  *          values, so that each of them is the smallest value in their bin.
- *      (2) The output image (pixd) depth is specified by @outdepth.  The
+ *      (2) The output image (pixd) depth is specified by %outdepth.  The
  *          number of bins is the number of edgevals + 1.  The
  *          relation between outdepth and the number of bins is:
  *               outdepth = 2       nbins <= 4
  *               outdepth = 4       nbins <= 16
  *               outdepth = 8       nbins <= 256
- *          With @outdepth == 0, the minimum required depth for the
+ *          With %outdepth == 0, the minimum required depth for the
  *          given number of bins is used.
  *          The output pixd has a colormap.
  *      (3) The last 3 args determine the specific values that go into
  *          the colormap.
- *      (4) For @use_average:
- *            - if TRUE, the average value of pixels falling in the bin is
+ *      (4) For %use_average:
+ *            ~ if TRUE, the average value of pixels falling in the bin is
  *              chosen as the representative gray value.  Otherwise,
- *            - if FALSE, the central value of each bin is chosen as
+ *            ~ if FALSE, the central value of each bin is chosen as
  *              the representative value.
  *          The colormap holds the representative value.
- *      (5) For @setblack, if TRUE the darkest color is set to (0,0,0).
- *      (6) For @setwhite, if TRUE the lightest color is set to (255,255,255).
+ *      (5) For %setblack, if TRUE the darkest color is set to (0,0,0).
+ *      (6) For %setwhite, if TRUE the lightest color is set to (255,255,255).
  *      (7) An alternative to using this function to quantize to
  *          unequally-spaced bins is to first transform the 8 bpp pixs
  *          using pixGammaTRC(), and follow this with pixThresholdTo4bpp().
+ * </pre>
  */
 PIX *
 pixThresholdGrayArb(PIX         *pixs,
@@ -1161,8 +1122,10 @@ PIXCMAP   *cmap;
         /* Parse and sort (if required) the bin edge values */
     na = parseStringForNumbers(edgevals, " \t\n,");
     n = numaGetCount(na);
-    if (n > 255)
+    if (n > 255) {
+        numaDestroy(&na);
         return (PIX *)ERROR_PTR("more than 256 levels", procName, NULL);
+    }
     if (outdepth == 0) {
         if (n <= 3)
             outdepth = 2;
@@ -1185,8 +1148,11 @@ PIXCMAP   *cmap;
     pixcmapSetBlackAndWhite(cmap, setblack, setwhite);
     numaDestroy(&na);
 
-    if ((pixd = pixCreate(w, h, outdepth)) == NULL)
+    if ((pixd = pixCreate(w, h, outdepth)) == NULL) {
+        LEPT_FREE(qtab);
+        pixcmapDestroy(&cmap);
         return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    }
     pixCopyResolution(pixd, pixs);
     pixCopyInputFormat(pixd, pixs);
     pixSetColormap(pixd, cmap);
@@ -1224,15 +1190,17 @@ PIXCMAP   *cmap;
  *     Quantization tables for linear thresholds of grayscale images    *
  *----------------------------------------------------------------------*/
 /*!
- *  makeGrayQuantIndexTable()
+ * \brief   makeGrayQuantIndexTable()
  *
- *      Input:  nlevels (number of output levels)
- *      Return: table (maps input gray level to colormap index,
- *                     or null on error)
- *  Notes:
+ * \param[in]    nlevels number of output levels
+ * \return  table maps input gray level to colormap index,
+ *                     or NULL on error
+ * <pre>
+ * Notes:
  *      (1) 'nlevels' is some number between 2 and 256 (typically 8 or less).
  *      (2) The table is typically used for quantizing 2, 4 and 8 bpp
  *          grayscale src pix, and generating a colormapped dest pix.
+ * </pre>
  */
 l_int32 *
 makeGrayQuantIndexTable(l_int32  nlevels)
@@ -1259,18 +1227,19 @@ l_int32    i, j, thresh;
 
 
 /*!
- *  makeGrayQuantTargetTable()
+ * \brief   makeGrayQuantTargetTable()
  *
- *      Input:  nlevels (number of output levels)
- *              depth (of dest pix, in bpp; 2, 4 or 8 bpp)
- *      Return: table (maps input gray level to thresholded gray level,
- *                     or null on error)
+ * \param[in]    nlevels number of output levels
+ * \param[in]    depth of dest pix, in bpp; 2, 4 or 8 bpp
+ * \return  table maps input gray level to thresholded gray level,
+ *                     or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) nlevels is some number between 2 and 2^(depth)
  *      (2) The table is used in two similar ways:
- *           - for 8 bpp, it quantizes to a given number of target levels
- *           - for 2 and 4 bpp, it thresholds to appropriate target values
+ *           ~ for 8 bpp, it quantizes to a given number of target levels
+ *           ~ for 2 and 4 bpp, it thresholds to appropriate target values
  *             that will use the full dynamic range of the dest pix.
  *      (3) For depth = 8, the number of thresholds chosen is
  *          ('nlevels' - 1), and the 'nlevels' values stored in the
@@ -1283,6 +1252,7 @@ l_int32    i, j, thresh;
  *          number of levels, which is 2^(depth).
  *          If you want nlevels < the maximum number, you should always
  *          use a colormap.
+ * </pre>
  */
 l_int32 *
 makeGrayQuantTargetTable(l_int32  nlevels,
@@ -1317,16 +1287,17 @@ l_int32    i, j, thresh, maxval, quantval;
  *   Quantization table for arbitrary thresholding of grayscale images  *
  *----------------------------------------------------------------------*/
 /*!
- *  makeGrayQuantTableArb()
+ * \brief   makeGrayQuantTableArb()
  *
- *      Input:  na (numa of bin boundaries)
- *              outdepth (of colormap: 1, 2, 4 or 8)
- *              &tab (<return> table mapping input gray level to cmap index)
- *              &cmap (<return> colormap)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    na numa of bin boundaries
+ * \param[in]    outdepth of colormap: 1, 2, 4 or 8
+ * \param[out]   ptab table mapping input gray level to cmap index
+ * \param[out]   pcmap colormap
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
- *      (1) The number of bins is the count of @na + 1.
+ * <pre>
+ * Notes:
+ *      (1) The number of bins is the count of %na + 1.
  *      (2) The bin boundaries in na must be sorted in increasing order.
  *      (3) The table is an inverse colormap: it maps input gray level
  *          to colormap index (the bin number).
@@ -1337,6 +1308,7 @@ l_int32    i, j, thresh, maxval, quantval;
  *      (5) Returns an error if there are not enough levels in the
  *          output colormap for the number of bins.  The number
  *          of bins must not exceed 2^outdepth.
+ * </pre>
  */
 l_int32
 makeGrayQuantTableArb(NUMA      *na,
@@ -1362,10 +1334,9 @@ PIXCMAP  *cmap;
     if (n + 1 > (1 << outdepth))
         return ERROR_INT("more bins than cmap levels", procName, 1);
 
-    if ((tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
-        return ERROR_INT("calloc fail for tab", procName, 1);
     if ((cmap = pixcmapCreate(outdepth)) == NULL)
         return ERROR_INT("cmap not made", procName, 1);
+    tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     *ptab = tab;
     *pcmap = cmap;
 
@@ -1391,15 +1362,16 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  makeGrayQuantColormapArb()
+ * \brief   makeGrayQuantColormapArb()
  *
- *      Input:  pixs (8 bpp)
- *              tab (table mapping input gray level to cmap index)
- *              outdepth (of colormap: 1, 2, 4 or 8)
- *              &cmap (<return> colormap)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    tab table mapping input gray level to cmap index
+ * \param[in]    outdepth of colormap: 1, 2, 4 or 8
+ * \param[out]   pcmap colormap
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The table is a 256-entry inverse colormap: it maps input gray
  *          level to colormap index (the bin number).  It is computed
  *          using makeGrayQuantTableArb().
@@ -1408,6 +1380,7 @@ PIXCMAP  *cmap;
  *      (3) Returns an error if there are not enough levels in the
  *          output colormap for the number of bins.  The number
  *          of bins must not exceed 2^outdepth.
+ * </pre>
  */
 l_int32
 makeGrayQuantColormapArb(PIX       *pixs,
@@ -1488,28 +1461,30 @@ l_uint32  *line, *data;
  *                 Thresholding from 32 bpp rgb to 1 bpp              *
  *--------------------------------------------------------------------*/
 /*!
- *  pixGenerateMaskByBand32()
+ * \brief   pixGenerateMaskByBand32()
  *
- *      Input:  pixs (32 bpp)
- *              refval (reference rgb value)
- *              delm (max amount below the ref value for any component)
- *              delp (max amount above the ref value for any component)
- *              fractm (fractional amount below ref value for all components)
- *              fractp (fractional amount above ref value for all components)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 32 bpp
+ * \param[in]    refval reference rgb value
+ * \param[in]    delm max amount below the ref value for any component
+ * \param[in]    delp max amount above the ref value for any component
+ * \param[in]    fractm fractional amount below ref value for all components
+ * \param[in]    fractp fractional amount above ref value for all components
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Generates a 1 bpp mask pixd, the same size as pixs, where
  *          the fg pixels in the mask within a band of rgb values
- *          surrounding @refval.  The band can be chosen in two ways
+ *          surrounding %refval.  The band can be chosen in two ways
  *          for each component:
- *          (a) Use (@delm, @delp) to specify how many levels down and up
- *          (b) Use (@fractm, @fractp) to specify the fractional
+ *          (a) Use (%delm, %delp) to specify how many levels down and up
+ *          (b) Use (%fractm, %fractp) to specify the fractional
  *              distance toward 0 and 255, respectively.
- *          Note that @delm and @delp must be in [0 ... 255], whereas
- *          @fractm and @fractp must be in [0.0 - 1.0].
- *      (2) Either (@delm, @delp) or (@fractm, @fractp) can be used.
+ *          Note that %delm and %delp must be in [0 ... 255], whereas
+ *          %fractm and %fractp must be in [0.0 - 1.0].
+ *      (2) Either (%delm, %delp) or (%fractm, %fractp) can be used.
  *          Set each value in the other pair to 0.
+ * </pre>
  */
 PIX *
 pixGenerateMaskByBand32(PIX       *pixs,
@@ -1589,23 +1564,25 @@ PIX       *pixd;
 
 
 /*!
- *  pixGenerateMaskByDiscr32()
+ * \brief   pixGenerateMaskByDiscr32()
  *
- *      Input:  pixs (32 bpp)
- *              refval1 (reference rgb value)
- *              refval2 (reference rgb value)
- *              distflag (L_MANHATTAN_DISTANCE, L_EUCLIDEAN_DISTANCE)
- *      Return: pixd (1 bpp), or null on error
+ * \param[in]    pixs 32 bpp
+ * \param[in]    refval1 reference rgb value
+ * \param[in]    refval2 reference rgb value
+ * \param[in]    distflag L_MANHATTAN_DISTANCE, L_EUCLIDEAN_DISTANCE
+ * \return  pixd 1 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Generates a 1 bpp mask pixd, the same size as pixs, where
  *          the fg pixels in the mask are those where the pixel in pixs
  *          is "closer" to refval1 than to refval2.
  *      (2) "Closer" can be defined in several ways, such as:
- *            - manhattan distance (L1)
- *            - euclidean distance (L2)
- *            - majority vote of the individual components
+ *            ~ manhattan distance (L1)
+ *            ~ euclidean distance (L2)
+ *            ~ majority vote of the individual components
  *          Here, we have a choice of L1 or L2.
+ * </pre>
  */
 PIX *
 pixGenerateMaskByDiscr32(PIX      *pixs,
@@ -1672,28 +1649,29 @@ PIX       *pixd;
  *                Histogram-based grayscale quantization                *
  *----------------------------------------------------------------------*/
 /*!
- *  pixGrayQuantFromHisto()
+ * \brief   pixGrayQuantFromHisto()
  *
- *      Input:  pixd (<optional> quantized pix with cmap; can be null)
- *              pixs (8 bpp gray input pix; not cmapped)
- *              pixm (<optional> mask over pixels in pixs to quantize)
- *              minfract (minimum fraction of pixels in a set of adjacent
+ * \param[in]    pixd [optional] quantized pix with cmap; can be null
+ * \param[in]    pixs 8 bpp gray input pix; not cmapped
+ * \param[in]    pixm [optional] mask over pixels in pixs to quantize
+ * \param[in]    minfract minimum fraction of pixels in a set of adjacent
  *                        histo bins that causes the set to be automatically
  *                        set aside as a color in the colormap; must be
- *                        at least 0.01)
- *              maxsize (maximum number of adjacent bins allowed to represent
+ *                        at least 0.01
+ * \param[in]    maxsize maximum number of adjacent bins allowed to represent
  *                       a color, regardless of the population of pixels
- *                       in the bins; must be at least 2)
- *      Return: pixd (8 bpp, cmapped), or null on error
+ *                       in the bins; must be at least 2
+ * \return  pixd 8 bpp, cmapped, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is useful for quantizing images with relatively few
  *          colors, but which may have both color and gray pixels.
  *          If there are color pixels, it is assumed that an input
  *          rgb image has been color quantized first so that:
- *            - pixd has a colormap describing the color pixels
- *            - pixm is a mask over the non-color pixels in pixd
- *            - the colormap in pixd, and the color pixels in pixd,
+ *            ~ pixd has a colormap describing the color pixels
+ *            ~ pixm is a mask over the non-color pixels in pixd
+ *            ~ the colormap in pixd, and the color pixels in pixd,
  *              have been repacked to go from 0 to n-1 (n colors)
  *          If there are no color pixels, pixd and pixm are both null,
  *          and all pixels in pixs are quantized to gray.
@@ -1703,8 +1681,8 @@ PIX       *pixd;
  *          from this histogram.  We break up the array into a set
  *          of intervals, each one constituting a color in the colormap:
  *          An interval is identified by summing histogram bins until
- *          either the sum equals or exceeds the @minfract of the total
- *          number of pixels, or the span itself equals or exceeds @maxsize.
+ *          either the sum equals or exceeds the %minfract of the total
+ *          number of pixels, or the span itself equals or exceeds %maxsize.
  *          The color of each bin is always an average of the pixels
  *          that constitute it.
  *      (3) Note that we do not specify the number of gray colors in
@@ -1718,6 +1696,7 @@ PIX       *pixd;
  *          in pixd to be set as gray.
  *      (5) We estimate the total number of colors (color plus gray);
  *          if it exceeds 255, return null.
+ * </pre>
  */
 PIX *
 pixGrayQuantFromHisto(PIX       *pixd,
@@ -1832,22 +1811,24 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  numaFillCmapFromHisto()
+ * \brief   numaFillCmapFromHisto()
  *
- *      Input:  na (histogram of gray values)
- *              cmap (8 bpp cmap, possibly initialized with color value)
- *              minfract (minimum fraction of pixels in a set of adjacent
+ * \param[in]    na histogram of gray values
+ * \param[in]    cmap 8 bpp cmap, possibly initialized with color value
+ * \param[in]    minfract minimum fraction of pixels in a set of adjacent
  *                        histo bins that causes the set to be automatically
  *                        set aside as a color in the colormap; must be
- *                        at least 0.01)
- *              maxsize (maximum number of adjacent bins allowed to represent
+ *                        at least 0.01
+ * \param[in]    maxsize maximum number of adjacent bins allowed to represent
  *                       a color, regardless of the population of pixels
- *                       in the bins; must be at least 2)
- *             &lut (<return> lookup table from gray value to colormap index)
- *      Return: 0 if OK, 1 on error
+ *                       in the bins; must be at least 2
+ * \param[out]  plut lookup table from gray value to colormap index
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This static function must be called from pixGrayQuantFromHisto()
+ * </pre>
  */
 static l_int32
 numaFillCmapFromHisto(NUMA      *na,
@@ -1873,8 +1854,7 @@ l_float32  total;
     numaGetSum(na, &total);
     mincount = (l_int32)(minfract * total);
     iahisto = numaGetIArray(na);
-    if ((lut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
-        return ERROR_INT("lut not made", procName, 1);
+    lut = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     *plut = lut;
     index = pixcmapGetCount(cmap);  /* start with number of colors
                                      * already reserved */
@@ -1883,8 +1863,8 @@ l_float32  total;
          * gray levels.  During the process, the LUT that gives
          * the colormap index for each gray level is computed.
          * To complete a color, either the total count must equal
-         * or exceed @mincount, or the current span of colors must
-         * equal or exceed @maxsize.  An empty span is not converted
+         * or exceed %mincount, or the current span of colors must
+         * equal or exceed %maxsize.  An empty span is not converted
          * into a color; it is simply ignored.  When a span is completed for a
          * color, the weighted color in the span is added to the colormap. */
     sum = 0;
@@ -1927,17 +1907,19 @@ l_float32  total;
  *        Color quantize grayscale image using existing colormap        *
  *----------------------------------------------------------------------*/
 /*!
- *  pixGrayQuantFromCmap()
+ * \brief   pixGrayQuantFromCmap()
  *
- *      Input:  pixs (8 bpp grayscale without cmap)
- *              cmap (to quantize to; of dest pix)
- *              mindepth (minimum depth of pixd: can be 2, 4 or 8 bpp)
- *      Return: pixd (2, 4 or 8 bpp, colormapped), or null on error
+ * \param[in]    pixs 8 bpp grayscale without cmap
+ * \param[in]    cmap to quantize to; of dest pix
+ * \param[in]    mindepth minimum depth of pixd: can be 2, 4 or 8 bpp
+ * \return  pixd 2, 4 or 8 bpp, colormapped, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) In use, pixs is an 8 bpp grayscale image without a colormap.
  *          If there is an existing colormap, a warning is issued and
  *          a copy of the input pixs is returned.
+ * </pre>
  */
 PIX *
 pixGrayQuantFromCmap(PIX      *pixs,
@@ -1977,8 +1959,7 @@ PIX       *pixd;
     }
 
         /* Make LUT into colormap */
-    if ((tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
-        return (PIX *)ERROR_PTR("tab not made", procName, NULL);
+    tab = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
     for (i = 0; i < 256; i++) {
         pixcmapGetNearestGrayIndex(cmapd, i, &index);
         tab[i] = index;
@@ -2012,3 +1993,85 @@ PIX       *pixd;
     LEPT_FREE(tab);
     return pixd;
 }
+
+
+#if 0   /* Documentation */
+/*--------------------------------------------------------------------*
+ *        Implementation of binarization by dithering using LUTs      *
+ *   It is archived here.  The low-level functions are also archived  *
+ *--------------------------------------------------------------------*/
+/*!
+ * \brief   pixDitherToBinaryLUT()
+ *
+ * \param[in]    pixs
+ * \param[in]    lowerclip lower clip distance to black; use -1 for default
+ * \param[in]    upperclip upper clip distance to white; use -1 for default
+ * \return  pixd dithered binary, or NULL on error
+ *
+ *  We don't need two implementations of Floyd-Steinberg dithering,
+ *  and this one with LUTs is a little more complicated than
+ *  pixDitherToBinary().  It uses three lookup tables to generate the
+ *  output pixel value and the excess or deficit carried over to the
+ *  neighboring pixels.  It's here for pedagogical reasons only.
+ */
+PIX *
+pixDitherToBinaryLUT(PIX     *pixs,
+                     l_int32  lowerclip,
+                     l_int32  upperclip)
+{
+l_int32    w, h, d, wplt, wpld;
+l_int32   *tabval, *tab38, *tab14;
+l_uint32  *datat, *datad;
+l_uint32  *bufs1, *bufs2;
+PIX       *pixt, *pixd;
+
+    PROCNAME("pixDitherToBinaryLUT");
+
+    if (!pixs)
+        return (PIX *)ERROR_PTR("pixs not defined", procName, NULL);
+    pixGetDimensions(pixs, &w, &h, &d);
+    if (d != 8)
+        return (PIX *)ERROR_PTR("must be 8 bpp for dithering", procName, NULL);
+    if (lowerclip < 0)
+        lowerclip = DEFAULT_CLIP_LOWER_1;
+    if (upperclip < 0)
+        upperclip = DEFAULT_CLIP_UPPER_1;
+
+    if ((pixd = pixCreate(w, h, 1)) == NULL)
+        return (PIX *)ERROR_PTR("pixd not made", procName, NULL);
+    pixCopyResolution(pixd, pixs);
+    pixCopyInputFormat(pixd, pixs);
+    datad = pixGetData(pixd);
+    wpld = pixGetWpl(pixd);
+
+        /* Remove colormap if it exists */
+    pixt = pixRemoveColormap(pixs, REMOVE_CMAP_TO_GRAYSCALE);
+    datat = pixGetData(pixt);
+    wplt = pixGetWpl(pixt);
+
+        /* Two line buffers, 1 for current line and 2 for next line */
+    bufs1 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32));
+    bufs2 = (l_uint32 *)LEPT_CALLOC(wplt, sizeof(l_uint32));
+    if (!bufs1 || !bufs2) {
+        LEPT_FREE(bufs1);
+        LEPT_FREE(bufs2);
+        pixDestroy(&pixd);
+        pixDestroy(&pixt);
+        return (PIX *)ERROR_PTR("bufs1, bufs2 not both made", procName, NULL);
+    }
+
+        /* 3 lookup tables: 1-bit value, (3/8)excess, and (1/4)excess */
+    make8To1DitherTables(&tabval, &tab38, &tab14, lowerclip, upperclip);
+
+    ditherToBinaryLUTLow(datad, w, h, wpld, datat, wplt, bufs1, bufs2,
+                         tabval, tab38, tab14);
+
+    LEPT_FREE(bufs1);
+    LEPT_FREE(bufs2);
+    LEPT_FREE(tabval);
+    LEPT_FREE(tab38);
+    LEPT_FREE(tab14);
+    pixDestroy(&pixt);
+    return pixd;
+}
+#endif   /* Documentation */

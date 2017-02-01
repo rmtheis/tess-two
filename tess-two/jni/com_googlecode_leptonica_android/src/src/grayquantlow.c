@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  grayquantlow.c
+/*!
+ * \file grayquantlow.c
+ * <pre>
  *
  *      Thresholding from 8 bpp to 1 bpp
  *
@@ -36,11 +37,6 @@
  *          Simple (pixelwise) binarization
  *              void       thresholdToBinaryLow()
  *              void       thresholdToBinaryLineLow()
- *
- *          A slower version of Floyd-Steinberg dithering that uses LUTs
- *              void       ditherToBinaryLUTLow()
- *              void       ditherToBinaryLineLUTLow()
- *              l_int32    make8To1DitherTables()
  *
  *      Thresholding from 8 bpp to 2 bpp
  *
@@ -56,6 +52,7 @@
  *
  *          Simple thresholding to 4 bpp
  *              void       thresholdTo4bppLow()
+ * </pre>
  */
 
 #include <string.h>
@@ -69,8 +66,8 @@
 /*------------------------------------------------------------------*
  *             Binarization by Floyd-Steinberg Dithering            *
  *------------------------------------------------------------------*/
-/*
- *  ditherToBinaryLow()
+/*!
+ * \brief   ditherToBinaryLow()
  *
  *  See comments in pixDitherToBinary() in binarize.c
  */
@@ -106,17 +103,17 @@ l_uint32    *lined;
 }
 
 
-/*
- *  ditherToBinaryLineLow()
+/*!
+ * \brief   ditherToBinaryLineLow()
  *
- *      Input:  lined  (ptr to beginning of dest line
- *              w   (width of image in pixels)
- *              bufs1 (buffer of current source line)
- *              bufs2 (buffer of next source line)
- *              lowerclip (lower clip distance to black)
- *              upperclip (upper clip distance to white)
- *              lastlineflag  (0 if not last dest line, 1 if last dest line)
- *      Return: void
+ * \param[in]    lined  ptr to beginning of dest line
+ *              w   (width of image in pixels
+ * \param[in]    bufs1 buffer of current source line
+ * \param[in]    bufs2 buffer of next source line
+ * \param[in]    lowerclip lower clip distance to black
+ * \param[in]    upperclip upper clip distance to white
+ * \param[in]    lastlineflag  0 if not last dest line, 1 if last dest line
+ * \return  void
  *
  *  Dispatches FS error diffusion dithering for
  *  a single line of the image.  If lastlineflag == 0,
@@ -238,8 +235,8 @@ l_uint8   fval1, fval2, rval, bval, dval;
 /*------------------------------------------------------------------*
  *             Simple binarization with fixed threshold             *
  *------------------------------------------------------------------*/
-/*
- *  thresholdToBinaryLow()
+/*!
+ * \brief   thresholdToBinaryLow()
  *
  *  If the source pixel is less than thresh,
  *  the dest will be 1; otherwise, it will be 0
@@ -386,215 +383,11 @@ l_uint32 sword, dword;
 }
 
 
-/*---------------------------------------------------------------------*
- *    Alternate implementation of dithering that uses lookup tables.   *
- *    This is analogous to the method used in dithering to 2 bpp.      *
- *---------------------------------------------------------------------*/
-/*!
- *  ditherToBinaryLUTLow()
- *
- *  Low-level function for doing Floyd-Steinberg error diffusion
- *  dithering from 8 bpp (datas) to 1 bpp (datad).  Two source
- *  line buffers, bufs1 and bufs2, are provided, along with three
- *  256-entry lookup tables: tabval gives the output pixel value,
- *  tab38 gives the extra (plus or minus) transferred to the pixels
- *  directly to the left and below, and tab14 gives the extra
- *  transferred to the diagonal below.  The choice of 3/8 and 1/4
- *  is traditional but arbitrary when you use a lookup table; the
- *  only constraint is that the sum is 1.  See other comments below.
- */
-void
-ditherToBinaryLUTLow(l_uint32  *datad,
-                     l_int32    w,
-                     l_int32    h,
-                     l_int32    wpld,
-                     l_uint32  *datas,
-                     l_int32    wpls,
-                     l_uint32  *bufs1,
-                     l_uint32  *bufs2,
-                     l_int32   *tabval,
-                     l_int32   *tab38,
-                     l_int32   *tab14)
-{
-l_int32      i;
-l_uint32    *lined;
-
-        /* do all lines except last line */
-    memcpy(bufs2, datas, 4 * wpls);  /* prime the buffer */
-    for (i = 0; i < h - 1; i++) {
-        memcpy(bufs1, bufs2, 4 * wpls);
-        memcpy(bufs2, datas + (i + 1) * wpls, 4 * wpls);
-        lined = datad + i * wpld;
-        ditherToBinaryLineLUTLow(lined, w, bufs1, bufs2,
-                                 tabval, tab38, tab14, 0);
-    }
-
-        /* do last line */
-    memcpy(bufs1, bufs2, 4 * wpls);
-    lined = datad + (h - 1) * wpld;
-    ditherToBinaryLineLUTLow(lined, w, bufs1, bufs2, tabval, tab38, tab14,  1);
-    return;
-}
-
-
-/*!
- *  ditherToBinaryLineLUTLow()
- *
- *      Input:  lined  (ptr to beginning of dest line
- *              w   (width of image in pixels)
- *              bufs1 (buffer of current source line)
- *              bufs2 (buffer of next source line)
- *              tabval (value to assign for current pixel)
- *              tab38 (excess value to give to neighboring 3/8 pixels)
- *              tab14 (excess value to give to neighboring 1/4 pixel)
- *              lastlineflag  (0 if not last dest line, 1 if last dest line)
- *      Return: void
- */
-void
-ditherToBinaryLineLUTLow(l_uint32  *lined,
-                         l_int32    w,
-                         l_uint32  *bufs1,
-                         l_uint32  *bufs2,
-                         l_int32   *tabval,
-                         l_int32   *tab38,
-                         l_int32   *tab14,
-                         l_int32    lastlineflag)
-{
-l_int32  j;
-l_int32  oval, tab38val, tab14val;
-l_uint8  rval, bval, dval;
-
-    if (lastlineflag == 0) {
-        for (j = 0; j < w - 1; j++) {
-            oval = GET_DATA_BYTE(bufs1, j);
-            if (tabval[oval])
-                SET_DATA_BIT(lined, j);
-            rval = GET_DATA_BYTE(bufs1, j + 1);
-            bval = GET_DATA_BYTE(bufs2, j);
-            dval = GET_DATA_BYTE(bufs2, j + 1);
-            tab38val = tab38[oval];
-            if (tab38val == 0)
-                continue;
-            tab14val = tab14[oval];
-            if (tab38val < 0) {
-                rval = L_MAX(0, rval + tab38val);
-                bval = L_MAX(0, bval + tab38val);
-                dval = L_MAX(0, dval + tab14val);
-            } else {
-                rval = L_MIN(255, rval + tab38val);
-                bval = L_MIN(255, bval + tab38val);
-                dval = L_MIN(255, dval + tab14val);
-            }
-            SET_DATA_BYTE(bufs1, j + 1, rval);
-            SET_DATA_BYTE(bufs2, j, bval);
-            SET_DATA_BYTE(bufs2, j + 1, dval);
-        }
-
-            /* do last column: j = w - 1 */
-        oval = GET_DATA_BYTE(bufs1, j);
-        if (tabval[oval])
-            SET_DATA_BIT(lined, j);
-        bval = GET_DATA_BYTE(bufs2, j);
-        tab38val = tab38[oval];
-        if (tab38val < 0) {
-            bval = L_MAX(0, bval + tab38val);
-            SET_DATA_BYTE(bufs2, j, bval);
-        } else if (tab38val > 0 ) {
-            bval = L_MIN(255, bval + tab38val);
-            SET_DATA_BYTE(bufs2, j, bval);
-        }
-    } else {   /* lastlineflag == 1 */
-        for (j = 0; j < w - 1; j++) {
-            oval = GET_DATA_BYTE(bufs1, j);
-            if (tabval[oval])
-                SET_DATA_BIT(lined, j);
-            rval = GET_DATA_BYTE(bufs1, j + 1);
-            tab38val = tab38[oval];
-            if (tab38val == 0)
-                continue;
-            if (tab38val < 0)
-                rval = L_MAX(0, rval + tab38val);
-            else
-                rval = L_MIN(255, rval + tab38val);
-            SET_DATA_BYTE(bufs1, j + 1, rval);
-        }
-
-            /* do last pixel: (i, j) = (h - 1, w - 1) */
-        oval = GET_DATA_BYTE(bufs1, j);
-        if (tabval[oval])
-            SET_DATA_BIT(lined, j);
-    }
-
-    return;
-}
-
-
-/*!
- *  make8To1DitherTables()
- *
- *      Input: &tabval (value assigned to output pixel; 0 or 1)
- *             &tab38  (amount propagated to pixels left and below)
- *             &tab14  (amount propagated to pixel to left and down)
- *             lowerclip (values near 0 where the excess is not propagated)
- *             upperclip (values near 255 where the deficit is not propagated)
- *
- *      Return: 0 if OK, 1 on error
- */
-l_int32
-make8To1DitherTables(l_int32 **ptabval,
-                     l_int32 **ptab38,
-                     l_int32 **ptab14,
-                     l_int32   lowerclip,
-                     l_int32   upperclip)
-{
-l_int32   i;
-l_int32  *tabval, *tab38, *tab14;
-
-    PROCNAME("make8To1DitherTables");
-
-    if (!ptabval || !ptab38 || !ptab14)
-        return ERROR_INT("table ptrs not all defined", procName, 1);
-
-        /* 3 lookup tables: 1-bit value, (3/8)excess, and (1/4)excess */
-    if ((tabval = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
-        return ERROR_INT("tabval not made", procName, 1);
-    if ((tab38 = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
-        return ERROR_INT("tab38 not made", procName, 1);
-    if ((tab14 = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32))) == NULL)
-        return ERROR_INT("tab14 not made", procName, 1);
-    *ptabval = tabval;
-    *ptab38 = tab38;
-    *ptab14 = tab14;
-
-    for (i = 0; i < 256; i++) {
-        if (i <= lowerclip) {
-            tabval[i] = 1;
-            tab38[i] = 0;
-            tab14[i] = 0;
-        } else if (i < 128) {
-            tabval[i] = 1;
-            tab38[i] = (3 * i + 4) / 8;
-            tab14[i] = (i + 2) / 4;
-        } else if (i < 255 - upperclip) {
-            tabval[i] = 0;
-            tab38[i] = (3 * (i - 255) + 4) / 8;
-            tab14[i] = ((i - 255) + 2) / 4;
-        } else {  /* i >= 255 - upperclip */
-            tabval[i] = 0;
-            tab38[i] = 0;
-            tab14[i] = 0;
-        }
-    }
-
-    return 0;
-}
-
-
 /*------------------------------------------------------------------*
  *                         Dithering to 2 bpp                       *
  *------------------------------------------------------------------*/
-/*
- *  ditherTo2bppLow()
+/*!
+ * \brief   ditherTo2bppLow()
  *
  *  Low-level function for doing Floyd-Steinberg error diffusion
  *  dithering from 8 bpp (datas) to 2 bpp (datad).  Two source
@@ -640,18 +433,18 @@ l_uint32    *lined;
 }
 
 
-/*
- *  ditherTo2bppLineLow()
+/*!
+ * \brief   ditherTo2bppLineLow()
  *
- *      Input:  lined  (ptr to beginning of dest line
- *              w   (width of image in pixels)
- *              bufs1 (buffer of current source line)
- *              bufs2 (buffer of next source line)
- *              tabval (value to assign for current pixel)
- *              tab38 (excess value to give to neighboring 3/8 pixels)
- *              tab14 (excess value to give to neighboring 1/4 pixel)
- *              lastlineflag  (0 if not last dest line, 1 if last dest line)
- *      Return: void
+ * \param[in]    lined  ptr to beginning of dest line
+ *              w   (width of image in pixels
+ * \param[in]    bufs1 buffer of current source line
+ * \param[in]    bufs2 buffer of next source line
+ * \param[in]    tabval value to assign for current pixel
+ * \param[in]    tab38 excess value to give to neighboring 3/8 pixels
+ * \param[in]    tab14 excess value to give to neighboring 1/4 pixel
+ * \param[in]    lastlineflag  0 if not last dest line, 1 if last dest line
+ * \return  void
  *
  *  Dispatches error diffusion dithering for
  *  a single line of the image.  If lastlineflag == 0,
@@ -736,15 +529,15 @@ l_uint8  rval, bval, dval;
 
 
 /*!
- *  make8To2DitherTables()
+ * \brief   make8To2DitherTables()
  *
- *      Input: &tabval (value assigned to output pixel; 0, 1, 2 or 3)
- *             &tab38  (amount propagated to pixels left and below)
- *             &tab14  (amount propagated to pixel to left and down)
- *             cliptoblack (values near 0 where the excess is not propagated)
- *             cliptowhite (values near 255 where the deficit is not propagated)
+ * \param[out]  ptabval value assigned to output pixel; 0, 1, 2 or 3
+ * \param[out]  ptab38  amount propagated to pixels left and below
+ * \param[out]  ptab14  amount propagated to pixel to left and down
+ * \param[in]   cliptoblack values near 0 where the excess is not propagated
+ * \param[in]   cliptowhite values near 255 where the deficit is not propagated
  *
- *      Return: 0 if OK, 1 on error
+ * \return  0 if OK, 1 on error
  */
 l_int32
 make8To2DitherTables(l_int32 **ptabval,
@@ -812,11 +605,11 @@ l_int32  *tabval, *tab38, *tab14;
 /*------------------------------------------------------------------*
  *                   Simple thresholding to 2 bpp                   *
  *------------------------------------------------------------------*/
-/*
- *  thresholdTo2bppLow()
+/*!
+ * \brief   thresholdTo2bppLow()
  *
  *  Low-level function for thresholding from 8 bpp (datas) to
- *  2 bpp (datad), using thresholds implicitly defined through @tab,
+ *  2 bpp (datad), using thresholds implicitly defined through %tab,
  *  a 256-entry lookup table that gives a 2-bit output value
  *  for each possible input.
  *
@@ -857,11 +650,11 @@ l_uint32  *lines, *lined;
 /*------------------------------------------------------------------*
  *                   Simple thresholding to 4 bpp                   *
  *------------------------------------------------------------------*/
-/*
- *  thresholdTo4bppLow()
+/*!
+ * \brief   thresholdTo4bppLow()
  *
  *  Low-level function for thresholding from 8 bpp (datas) to
- *  4 bpp (datad), using thresholds implicitly defined through @tab,
+ *  4 bpp (datad), using thresholds implicitly defined through %tab,
  *  a 256-entry lookup table that gives a 4-bit output value
  *  for each possible input.
  *
@@ -898,3 +691,206 @@ l_uint32  *lines, *lined;
     }
     return;
 }
+
+
+#if 0   /* Documentation */
+/*--------------------------------------------------------------------*
+ *       Implementation of binarization by dithering using LUTs       *
+ *                        It is archived here.                        *
+ *--------------------------------------------------------------------*/
+/*!
+ * \brief   ditherToBinaryLUTLow()
+ *
+ *  Low-level function for doing Floyd-Steinberg error diffusion
+ *  dithering from 8 bpp (datas) to 1 bpp (datad).  Two source
+ *  line buffers, bufs1 and bufs2, are provided, along with three
+ *  256-entry lookup tables: tabval gives the output pixel value,
+ *  tab38 gives the extra (plus or minus) transferred to the pixels
+ *  directly to the left and below, and tab14 gives the extra
+ *  transferred to the diagonal below.  The choice of 3/8 and 1/4
+ *  is traditional but arbitrary when you use a lookup table; the
+ *  only constraint is that the sum is 1.  See other comments below.
+ */
+void
+ditherToBinaryLUTLow(l_uint32  *datad,
+                     l_int32    w,
+                     l_int32    h,
+                     l_int32    wpld,
+                     l_uint32  *datas,
+                     l_int32    wpls,
+                     l_uint32  *bufs1,
+                     l_uint32  *bufs2,
+                     l_int32   *tabval,
+                     l_int32   *tab38,
+                     l_int32   *tab14)
+{
+l_int32      i;
+l_uint32    *lined;
+
+        /* do all lines except last line */
+    memcpy(bufs2, datas, 4 * wpls);  /* prime the buffer */
+    for (i = 0; i < h - 1; i++) {
+        memcpy(bufs1, bufs2, 4 * wpls);
+        memcpy(bufs2, datas + (i + 1) * wpls, 4 * wpls);
+        lined = datad + i * wpld;
+        ditherToBinaryLineLUTLow(lined, w, bufs1, bufs2,
+                                 tabval, tab38, tab14, 0);
+    }
+
+        /* do last line */
+    memcpy(bufs1, bufs2, 4 * wpls);
+    lined = datad + (h - 1) * wpld;
+    ditherToBinaryLineLUTLow(lined, w, bufs1, bufs2, tabval, tab38, tab14,  1);
+    return;
+}
+
+
+/*!
+ * \brief   ditherToBinaryLineLUTLow()
+ *
+ * \param[in]    lined  ptr to beginning of dest line
+ *              w   (width of image in pixels
+ * \param[in]    bufs1 buffer of current source line
+ * \param[in]    bufs2 buffer of next source line
+ * \param[in]    tabval value to assign for current pixel
+ * \param[in]    tab38 excess value to give to neighboring 3/8 pixels
+ * \param[in]    tab14 excess value to give to neighboring 1/4 pixel
+ * \param[in]    lastlineflag  0 if not last dest line, 1 if last dest line
+ * \return  void
+ */
+void
+ditherToBinaryLineLUTLow(l_uint32  *lined,
+                         l_int32    w,
+                         l_uint32  *bufs1,
+                         l_uint32  *bufs2,
+                         l_int32   *tabval,
+                         l_int32   *tab38,
+                         l_int32   *tab14,
+                         l_int32    lastlineflag)
+{
+l_int32  j;
+l_int32  oval, tab38val, tab14val;
+l_uint8  rval, bval, dval;
+
+    if (lastlineflag == 0) {
+        for (j = 0; j < w - 1; j++) {
+            oval = GET_DATA_BYTE(bufs1, j);
+            if (tabval[oval])
+                SET_DATA_BIT(lined, j);
+            rval = GET_DATA_BYTE(bufs1, j + 1);
+            bval = GET_DATA_BYTE(bufs2, j);
+            dval = GET_DATA_BYTE(bufs2, j + 1);
+            tab38val = tab38[oval];
+            if (tab38val == 0)
+                continue;
+            tab14val = tab14[oval];
+            if (tab38val < 0) {
+                rval = L_MAX(0, rval + tab38val);
+                bval = L_MAX(0, bval + tab38val);
+                dval = L_MAX(0, dval + tab14val);
+            } else {
+                rval = L_MIN(255, rval + tab38val);
+                bval = L_MIN(255, bval + tab38val);
+                dval = L_MIN(255, dval + tab14val);
+            }
+            SET_DATA_BYTE(bufs1, j + 1, rval);
+            SET_DATA_BYTE(bufs2, j, bval);
+            SET_DATA_BYTE(bufs2, j + 1, dval);
+        }
+
+            /* do last column: j = w - 1 */
+        oval = GET_DATA_BYTE(bufs1, j);
+        if (tabval[oval])
+            SET_DATA_BIT(lined, j);
+        bval = GET_DATA_BYTE(bufs2, j);
+        tab38val = tab38[oval];
+        if (tab38val < 0) {
+            bval = L_MAX(0, bval + tab38val);
+            SET_DATA_BYTE(bufs2, j, bval);
+        } else if (tab38val > 0 ) {
+            bval = L_MIN(255, bval + tab38val);
+            SET_DATA_BYTE(bufs2, j, bval);
+        }
+    } else {   /* lastlineflag == 1 */
+        for (j = 0; j < w - 1; j++) {
+            oval = GET_DATA_BYTE(bufs1, j);
+            if (tabval[oval])
+                SET_DATA_BIT(lined, j);
+            rval = GET_DATA_BYTE(bufs1, j + 1);
+            tab38val = tab38[oval];
+            if (tab38val == 0)
+                continue;
+            if (tab38val < 0)
+                rval = L_MAX(0, rval + tab38val);
+            else
+                rval = L_MIN(255, rval + tab38val);
+            SET_DATA_BYTE(bufs1, j + 1, rval);
+        }
+
+            /* do last pixel: (i, j) = (h - 1, w - 1) */
+        oval = GET_DATA_BYTE(bufs1, j);
+        if (tabval[oval])
+            SET_DATA_BIT(lined, j);
+    }
+
+    return;
+}
+
+
+/*!
+ * \brief   make8To1DitherTables()
+ *
+ * \param[out]  ptabval value assigned to output pixel; 0 or 1
+ * \param[out]  ptab38  amount propagated to pixels left and below
+ * \param[out]  ptab14  amount propagated to pixel to left and down
+ * \param[in]   lowerclip values near 0 where the excess is not propagated
+ * \param[in]   upperclip values near 255 where the deficit is not propagated
+ *
+ * \return  0 if OK, 1 on error
+ */
+l_int32
+make8To1DitherTables(l_int32 **ptabval,
+                     l_int32 **ptab38,
+                     l_int32 **ptab14,
+                     l_int32   lowerclip,
+                     l_int32   upperclip)
+{
+l_int32   i;
+l_int32  *tabval, *tab38, *tab14;
+
+    PROCNAME("make8To1DitherTables");
+
+    if (!ptabval || !ptab38 || !ptab14)
+        return ERROR_INT("table ptrs not all defined", procName, 1);
+
+        /* 3 lookup tables: 1-bit value, (3/8)excess, and (1/4)excess */
+    tabval = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
+    tab38 = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
+    tab14 = (l_int32 *)LEPT_CALLOC(256, sizeof(l_int32));
+    *ptabval = tabval;
+    *ptab38 = tab38;
+    *ptab14 = tab14;
+
+    for (i = 0; i < 256; i++) {
+        if (i <= lowerclip) {
+            tabval[i] = 1;
+            tab38[i] = 0;
+            tab14[i] = 0;
+        } else if (i < 128) {
+            tabval[i] = 1;
+            tab38[i] = (3 * i + 4) / 8;
+            tab14[i] = (i + 2) / 4;
+        } else if (i < 255 - upperclip) {
+            tabval[i] = 0;
+            tab38[i] = (3 * (i - 255) + 4) / 8;
+            tab14[i] = ((i - 255) + 2) / 4;
+        } else {  /* i >= 255 - upperclip */
+            tabval[i] = 0;
+            tab38[i] = 0;
+            tab14[i] = 0;
+        }
+    }
+
+    return 0;
+}
+#endif   /* Documentation */

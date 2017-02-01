@@ -38,6 +38,8 @@
  *    "Mathematical morphology: from theory to applications",
  *    edited by Laurent Najman and Hugues Talbot.  Published by
  *    Hermes Scientific Publishing, Ltd, 2010.
+ *
+ *    Use pageseg*.tif input images.
  */
 
 #include "allheaders.h"
@@ -86,13 +88,13 @@ PIX         *pixht;  /* image of halftone components, 150 ppi */
 PIX         *pixnht; /* image without halftone components, 150 ppi */
 PIX         *pixi;   /* inverted image, 150 ppi */
 PIX         *pixvws; /* image of vertical whitespace, 150 ppi */
-PIX         *pixtm1; /* image of closed textlines, 150 ppi */
-PIX         *pixtm2; /* image of refined text line mask, 150 ppi */
-PIX         *pixtm3; /* image of refined text line mask, 300 ppi */
-PIX         *pixtb1; /* image of text block mask, 150 ppi */
-PIX         *pixtb2; /* image of text block mask, 300 ppi */
+PIX         *pixm1;  /* image of closed textlines, 150 ppi */
+PIX         *pixm2;  /* image of refined text line mask, 150 ppi */
+PIX         *pixm3;  /* image of refined text line mask, 300 ppi */
+PIX         *pixb1;  /* image of text block mask, 150 ppi */
+PIX         *pixb2;  /* image of text block mask, 300 ppi */
 PIX         *pixnon; /* image of non-text or halftone, 150 ppi */
-PIX         *pixt1, *pixt2, *pixt3;
+PIX         *pix1, *pix2, *pix3, *pix4;
 PIXA        *pixa;
 PIXCMAP     *cmap;
 PTAA        *ptaa;
@@ -113,44 +115,48 @@ l_int32      block_flag = 0;
         block_flag = 1;
     else
         return ERROR_INT("invalid parameter: not in [1...4]", procName, 1);
-    pixDisplayWrite(NULL, -1);
+
+    pixa = pixaCreate(0);
+    lept_mkdir("lept/livre");
 
         /* Reduce to 150 ppi */
-    pixt1 = pixScaleToGray2(pixs);
-    pixDisplayWriteFormat(pixt1, L_MAX(ws_flag, L_MAX(ht_flag, block_flag)),
-                          IFF_PNG);
-    if (which == 1) pixWrite("/tmp/orig.gray.150.png", pixt1, IFF_PNG);
-    pixDestroy(&pixt1);
+    pix1 = pixScaleToGray2(pixs);
+    if (ws_flag || ht_flag || block_flag) pixaAddPix(pixa, pix1, L_COPY);
+    if (which == 1)
+        pixWrite("/tmp/lept/livre/orig.gray.150.png", pix1, IFF_PNG);
+    pixDestroy(&pix1);
     pixr = pixReduceRankBinaryCascade(pixs, 1, 0, 0, 0);
 
         /* Get seed for halftone parts */
-    pixt1 = pixReduceRankBinaryCascade(pixr, 4, 4, 3, 0);
-    pixt2 = pixOpenBrick(NULL, pixt1, 5, 5);
-    pixhs = pixExpandBinaryPower2(pixt2, 8);
-    pixDisplayWriteFormat(pixhs, ht_flag, IFF_PNG);
-    if (which == 1) pixWrite("/tmp/htseed.150.png", pixhs, IFF_PNG);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
+    pix1 = pixReduceRankBinaryCascade(pixr, 4, 4, 3, 0);
+    pix2 = pixOpenBrick(NULL, pix1, 5, 5);
+    pixhs = pixExpandBinaryPower2(pix2, 8);
+    if (ht_flag) pixaAddPix(pixa, pixhs, L_COPY);
+    if (which == 1)
+        pixWrite("/tmp/lept/livre/htseed.150.png", pixhs, IFF_PNG);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
 
         /* Get mask for connected regions */
     pixm = pixCloseSafeBrick(NULL, pixr, 4, 4);
-    pixDisplayWriteFormat(pixm, ht_flag, IFF_PNG);
-    if (which == 1) pixWrite("/tmp/ccmask.150.png", pixm, IFF_PNG);
+    if (ht_flag) pixaAddPix(pixa, pixm, L_COPY);
+    if (which == 1)
+        pixWrite("/tmp/lept/livre/ccmask.150.png", pixm, IFF_PNG);
 
         /* Fill seed into mask to get halftone mask */
     pixhm1 = pixSeedfillBinary(NULL, pixhs, pixm, 4);
-    pixDisplayWriteFormat(pixhm1, ht_flag, IFF_PNG);
-    if (which == 1) pixWrite("/tmp/htmask.150.png", pixhm1, IFF_PNG);
+    if (ht_flag) pixaAddPix(pixa, pixhm1, L_COPY);
+    if (which == 1) pixWrite("/tmp/lept/livre/htmask.150.png", pixhm1, IFF_PNG);
     pixhm2 = pixExpandBinaryPower2(pixhm1, 2);
 
         /* Extract halftone stuff */
     pixht = pixAnd(NULL, pixhm1, pixr);
-    if (which == 1) pixWrite("/tmp/ht.150.png", pixht, IFF_PNG);
+    if (which == 1) pixWrite("/tmp/lept/livre/ht.150.png", pixht, IFF_PNG);
 
         /* Extract non-halftone stuff */
     pixnht = pixXor(NULL, pixht, pixr);
-    pixDisplayWriteFormat(pixnht, text_flag, IFF_PNG);
-    if (which == 1) pixWrite("/tmp/text.150.png", pixnht, IFF_PNG);
+    if (text_flag) pixaAddPix(pixa, pixnht, L_COPY);
+    if (which == 1) pixWrite("/tmp/lept/livre/text.150.png", pixnht, IFF_PNG);
     pixZero(pixht, &zero);
     if (zero)
         fprintf(stderr, "No halftone parts found\n");
@@ -159,8 +165,8 @@ l_int32      block_flag = 0;
 
         /* Get bit-inverted image */
     pixi = pixInvert(NULL, pixnht);
-    if (which == 1) pixWrite("/tmp/invert.150.png", pixi, IFF_PNG);
-    pixDisplayWriteFormat(pixi, ws_flag, IFF_PNG);
+    if (ws_flag) pixaAddPix(pixa, pixi, L_COPY);
+    if (which == 1) pixWrite("/tmp/lept/livre/invert.150.png", pixi, IFF_PNG);
 
         /* The whitespace mask will break textlines where there
          * is a large amount of white space below or above.
@@ -169,39 +175,43 @@ l_int32      block_flag = 0;
          * the separation between columns) and significant
          * vertical extent (bigger than the separation between
          * textlines), and subtracting this from the whitespace mask. */
-    pixt1 = pixMorphCompSequence(pixi, "o80.60", 0);
-    pixt2 = pixSubtract(NULL, pixi, pixt1);
-    pixDisplayWriteFormat(pixt2, ws_flag, IFF_PNG);
-    pixDestroy(&pixt1);
+    pix1 = pixMorphCompSequence(pixi, "o80.60", 0);
+    pix2 = pixSubtract(NULL, pixi, pix1);
+    if (ws_flag) pixaAddPix(pixa, pix2, L_COPY);
+    pixDestroy(&pix1);
 
         /* Identify vertical whitespace by opening inverted image */
-    pixt3 = pixOpenBrick(NULL, pixt2, 5, 1);  /* removes thin vertical lines */
-    pixvws = pixOpenBrick(NULL, pixt3, 1, 200);  /* gets long vertical lines */
-    pixDisplayWriteFormat(pixvws, L_MAX(text_flag, ws_flag), IFF_PNG);
-    if (which == 1) pixWrite("/tmp/vertws.150.png", pixvws, IFF_PNG);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
+    pix3 = pixOpenBrick(NULL, pix2, 5, 1);  /* removes thin vertical lines */
+    pixvws = pixOpenBrick(NULL, pix3, 1, 200);  /* gets long vertical lines */
+    if (text_flag || ws_flag) pixaAddPix(pixa, pixvws, L_COPY);
+    if (which == 1) pixWrite("/tmp/lept/livre/vertws.150.png", pixvws, IFF_PNG);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
 
         /* Get proto (early processed) text line mask. */
         /* First close the characters and words in the textlines */
-    pixtm1 = pixCloseSafeBrick(NULL, pixnht, 30, 1);
-    pixDisplayWriteFormat(pixtm1, text_flag, IFF_PNG);
-    if (which == 1) pixWrite("/tmp/textmask1.150.png", pixtm1, IFF_PNG);
+    pixm1 = pixCloseSafeBrick(NULL, pixnht, 30, 1);
+    if (text_flag) pixaAddPix(pixa, pixm1, L_COPY);
+    if (which == 1)
+        pixWrite("/tmp/lept/livre/textmask1.150.png", pixm1, IFF_PNG);
 
         /* Next open back up the vertical whitespace corridors */
-    pixtm2 = pixSubtract(NULL, pixtm1, pixvws);
-    if (which == 1) pixWrite("/tmp/textmask2.150.png", pixtm2, IFF_PNG);
+    pixm2 = pixSubtract(NULL, pixm1, pixvws);
+    if (which == 1)
+        pixWrite("/tmp/lept/livre/textmask2.150.png", pixm2, IFF_PNG);
 
         /* Do a small opening to remove noise */
-    pixOpenBrick(pixtm2, pixtm2, 3, 3);
-    pixDisplayWriteFormat(pixtm2, text_flag, IFF_PNG);
-    if (which == 1) pixWrite("/tmp/textmask3.150.png", pixtm2, IFF_PNG);
-    pixtm3 = pixExpandBinaryPower2(pixtm2, 2);
+    pixOpenBrick(pixm2, pixm2, 3, 3);
+    if (text_flag) pixaAddPix(pixa, pixm2, L_COPY);
+    if (which == 1)
+         pixWrite("/tmp/lept/livre/textmask3.150.png", pixm2, IFF_PNG);
+    pixm3 = pixExpandBinaryPower2(pixm2, 2);
 
         /* Join pixels vertically to make text block mask */
-    pixtb1 = pixMorphSequence(pixtm2, "c1.10 + o4.1", 0);
-    pixDisplayWriteFormat(pixtb1, block_flag, IFF_PNG);
-    if (which == 1) pixWrite("/tmp/textblock1.150.png", pixtb1, IFF_PNG);
+    pixb1 = pixMorphSequence(pixm2, "c1.10 + o4.1", 0);
+    if (block_flag) pixaAddPix(pixa, pixb1, L_COPY);
+    if (which == 1)
+        pixWrite("/tmp/lept/livre/textblock1.150.png", pixb1, IFF_PNG);
 
         /* Solidify the textblock mask and remove noise:
          *  (1) For each c.c., close the blocks and dilate slightly
@@ -209,61 +219,66 @@ l_int32      block_flag = 0;
          *  (2) Small horizontal closing between components
          *  (3) Open the white space between columns, again
          *  (4) Remove small components */
-    pixt1 = pixMorphSequenceByComponent(pixtb1, "c30.30 + d3.3", 8, 0, 0, NULL);
-    pixCloseSafeBrick(pixt1, pixt1, 10, 1);
-    pixDisplayWriteFormat(pixt1, block_flag, IFF_PNG);
-    pixt2 = pixSubtract(NULL, pixt1, pixvws);
-    pixt3 = pixSelectBySize(pixt2, 25, 5, 8, L_SELECT_IF_BOTH,
+    pix1 = pixMorphSequenceByComponent(pixb1, "c30.30 + d3.3", 8, 0, 0, NULL);
+    pixCloseSafeBrick(pix1, pix1, 10, 1);
+    if (block_flag) pixaAddPix(pixa, pix1, L_COPY);
+    pix2 = pixSubtract(NULL, pix1, pixvws);
+    pix3 = pixSelectBySize(pix2, 25, 5, 8, L_SELECT_IF_BOTH,
                             L_SELECT_IF_GTE, NULL);
-    pixDisplayWriteFormat(pixt3, block_flag, IFF_PNG);
-    if (which == 1) pixWrite("/tmp/textblock2.150.png", pixt3, IFF_PNG);
-    pixtb2 = pixExpandBinaryPower2(pixt3, 2);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
+    if (block_flag) pixaAddPix(pixa, pix3, L_COPY);
+    if (which == 1)
+        pixWrite("/tmp/lept/livre/textblock2.150.png", pix3, IFF_PNG);
+    pixb2 = pixExpandBinaryPower2(pix3, 2);
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
 
         /* Identify the outlines of each textblock */
-    ptaa = pixGetOuterBordersPtaa(pixtb2);
-    pixt1 = pixRenderRandomCmapPtaa(pixtb2, ptaa, 1, 8, 1);
-    cmap = pixGetColormap(pixt1);
+    ptaa = pixGetOuterBordersPtaa(pixb2);
+    pix1 = pixRenderRandomCmapPtaa(pixb2, ptaa, 1, 8, 1);
+    cmap = pixGetColormap(pix1);
     pixcmapResetColor(cmap, 0, 130, 130, 130);  /* set interior to gray */
-    if (which == 1) pixWrite("/tmp/textblock3.300.png", pixt1, IFF_PNG);
-    pixDisplayWithTitle(pixt1, 480, 360, "textblock mask with outlines", DFLAG);
+    if (which == 1)
+        pixWrite("/tmp/lept/livre/textblock3.300.png", pix1, IFF_PNG);
+    pixDisplayWithTitle(pix1, 480, 360, "textblock mask with outlines", DFLAG);
     ptaaDestroy(&ptaa);
-    pixDestroy(&pixt1);
+    pixDestroy(&pix1);
 
         /* Fill line mask (as seed) into the original */
-    pixt1 = pixSeedfillBinary(NULL, pixtm3, pixs, 8);
-    pixOr(pixtm3, pixtm3, pixt1);
-    pixDestroy(&pixt1);
-    if (which == 1) pixWrite("/tmp/textmask.300.png", pixtm3, IFF_PNG);
-    pixDisplayWithTitle(pixtm3, 480, 360, "textline mask 4", DFLAG);
+    pix1 = pixSeedfillBinary(NULL, pixm3, pixs, 8);
+    pixOr(pixm3, pixm3, pix1);
+    pixDestroy(&pix1);
+    if (which == 1)
+        pixWrite("/tmp/lept/livre/textmask.300.png", pixm3, IFF_PNG);
+    pixDisplayWithTitle(pixm3, 480, 360, "textline mask 4", DFLAG);
 
         /* Fill halftone mask (as seed) into the original */
-    pixt1 = pixSeedfillBinary(NULL, pixhm2, pixs, 8);
-    pixOr(pixhm2, pixhm2, pixt1);
-    pixDestroy(&pixt1);
-    if (which == 1) pixWrite("/tmp/htmask.300.png", pixhm2, IFF_PNG);
+    pix1 = pixSeedfillBinary(NULL, pixhm2, pixs, 8);
+    pixOr(pixhm2, pixhm2, pix1);
+    pixDestroy(&pix1);
+    if (which == 1)
+        pixWrite("/tmp/lept/livre/htmask.300.png", pixhm2, IFF_PNG);
     pixDisplayWithTitle(pixhm2, 520, 390, "halftonemask 2", DFLAG);
 
         /* Find objects that are neither text nor halftones */
-    pixt1 = pixSubtract(NULL, pixs, pixtm3);  /* remove text pixels */
-    pixnon = pixSubtract(NULL, pixt1, pixhm2);  /* remove halftone pixels */
-    if (which == 1) pixWrite("/tmp/other.300.png", pixnon, IFF_PNG);
+    pix1 = pixSubtract(NULL, pixs, pixm3);  /* remove text pixels */
+    pixnon = pixSubtract(NULL, pix1, pixhm2);  /* remove halftone pixels */
+    pixDestroy(&pix1);
+    if (which == 1)
+        pixWrite("/tmp/lept/livre/other.300.png", pixnon, IFF_PNG);
     pixDisplayWithTitle(pixnon, 540, 420, "other stuff", DFLAG);
-    pixDestroy(&pixt1);
 
         /* Write out b.b. for text line mask and halftone mask components */
-    boxatm = pixConnComp(pixtm3, NULL, 4);
+    boxatm = pixConnComp(pixm3, NULL, 4);
     boxahm = pixConnComp(pixhm2, NULL, 8);
-    if (which == 1) boxaWrite("/tmp/textmask.boxa", boxatm);
-    if (which == 1) boxaWrite("/tmp/htmask.boxa", boxahm);
+    if (which == 1) boxaWrite("/tmp/lept/livre/textmask.boxa", boxatm);
+    if (which == 1) boxaWrite("/tmp/lept/livre/htmask.boxa", boxahm);
 
-    pixa = pixaReadFiles("/tmp/display", "file");
-    pixt1 = pixaDisplayTiledAndScaled(pixa, 8, 250, 4, 0, 25, 2);
-    snprintf(buf, sizeof(buf), "/tmp/segout.%d.png", which);
-    pixWrite(buf, pixt1, IFF_PNG);
-    pixDestroy(&pixt1);
+    pix1 = pixaDisplayTiledAndScaled(pixa, 8, 250, 4, 0, 25, 2);
+    pixDisplay(pix1, 0, 375 * (which - 1));
+    snprintf(buf, sizeof(buf), "/tmp/lept/livre/segout.%d.png", which);
+    pixWrite(buf, pix1, IFF_PNG);
+    pixDestroy(&pix1);
     pixaDestroy(&pixa);
 
         /* clean up to test with valgrind */
@@ -273,14 +288,14 @@ l_int32      block_flag = 0;
     pixDestroy(&pixhm1);
     pixDestroy(&pixhm2);
     pixDestroy(&pixht);
-    pixDestroy(&pixnht);
     pixDestroy(&pixi);
+    pixDestroy(&pixnht);
     pixDestroy(&pixvws);
-    pixDestroy(&pixtm1);
-    pixDestroy(&pixtm2);
-    pixDestroy(&pixtm3);
-    pixDestroy(&pixtb1);
-    pixDestroy(&pixtb2);
+    pixDestroy(&pixm1);
+    pixDestroy(&pixm2);
+    pixDestroy(&pixm3);
+    pixDestroy(&pixb1);
+    pixDestroy(&pixb2);
     pixDestroy(&pixnon);
     boxaDestroy(&boxatm);
     boxaDestroy(&boxahm);

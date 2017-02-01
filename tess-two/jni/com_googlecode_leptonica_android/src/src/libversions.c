@@ -24,11 +24,13 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  libversions.c
+/*!
+ * \file libversions.c
+ * <pre>
  *
  *       Image library version number
  *           char      *getImagelibVersions()
+ * </pre>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -77,7 +79,7 @@
  *                    Image Library Version number                     *
  *---------------------------------------------------------------------*/
 /*!
- *  getImagelibVersions()
+ * \brief   getImagelibVersions()
  *
  *      Return: string of version numbers; e.g.,
  *               libgif 5.0.3

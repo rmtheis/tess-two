@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  pix4.c
+/*!
+ * \file pix4.c
+ * <pre>
  *
  *    This file has these operations:
  *
@@ -53,7 +54,7 @@
  *           PIX        *pixGetAverageTiled()
  *           NUMA       *pixRowStats()
  *           NUMA       *pixColumnStats()
- *           l_int32     pixGetComponentRange()
+ *           l_int32     pixGetRangeValues()
  *           l_int32     pixGetExtremeValue()
  *           l_int32     pixGetMaxValueInRect()
  *           l_int32     pixGetBinnedComponentRange()
@@ -72,6 +73,7 @@
  *    Foreground/background estimation
  *           l_int32     pixThresholdForFgBg()
  *           l_int32     pixSplitDistributionFgBg()
+ * </pre>
  */
 
 #include <string.h>
@@ -83,20 +85,21 @@
  *                  Pixel histogram and averaging                   *
  *------------------------------------------------------------------*/
 /*!
- *  pixGetGrayHistogram()
+ * \brief   pixGetGrayHistogram()
  *
- *      Input:  pixs (1, 2, 4, 8, 16 bpp; can be colormapped)
- *              factor (subsampling factor; integer >= 1)
- *      Return: na (histogram), or null on error
+ * \param[in]    pixs 1, 2, 4, 8, 16 bpp; can be colormapped
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \return  na histogram, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If pixs has a colormap, it is converted to 8 bpp gray.
  *          If you want a histogram of the colormap indices, use
  *          pixGetCmapHistogram().
  *      (2) If pixs does not have a colormap, the output histogram is
  *          of size 2^d, where d is the depth of pixs.
- *      (3) This always returns a 256-value histogram of pixel values.
- *      (4) Set the subsampling factor > 1 to reduce the amount of computation.
+ *      (3) Set the subsampling factor > 1 to reduce the amount of computation.
+ * </pre>
  */
 NUMA *
 pixGetGrayHistogram(PIX     *pixs,
@@ -142,35 +145,26 @@ PIX        *pixg;
     data = pixGetData(pixg);
     for (i = 0; i < h; i += factor) {
         line = data + i * wpl;
-        switch (d)
-        {
-        case 2:
+        if (d == 2) {
             for (j = 0; j < w; j += factor) {
                 val = GET_DATA_DIBIT(line, j);
                 array[val] += 1.0;
             }
-            break;
-        case 4:
+        } else if (d == 4) {
             for (j = 0; j < w; j += factor) {
                 val = GET_DATA_QBIT(line, j);
                 array[val] += 1.0;
             }
-            break;
-        case 8:
+        } else if (d == 8) {
             for (j = 0; j < w; j += factor) {
                 val = GET_DATA_BYTE(line, j);
                 array[val] += 1.0;
             }
-            break;
-        case 16:
+        } else {  /* d == 16 */
             for (j = 0; j < w; j += factor) {
                 val = GET_DATA_TWO_BYTES(line, j);
                 array[val] += 1.0;
             }
-            break;
-        default:
-            numaDestroy(&na);
-            return (NUMA *)ERROR_PTR("illegal depth", procName, NULL);
         }
     }
 
@@ -180,17 +174,18 @@ PIX        *pixg;
 
 
 /*!
- *  pixGetGrayHistogramMasked()
+ * \brief   pixGetGrayHistogramMasked()
  *
- *      Input:  pixs (8 bpp, or colormapped)
- *              pixm (<optional> 1 bpp mask over which histogram is
- *                    to be computed; use all pixels if null)
- *              x, y (UL corner of pixm relative to the UL corner of pixs;
- *                    can be < 0; these values are ignored if pixm is null)
- *              factor (subsampling factor; integer >= 1)
- *      Return: na (histogram), or null on error
+ * \param[in]    pixs 8 bpp, or colormapped
+ * \param[in]    pixm [optional] 1 bpp mask over which histogram is
+ *                    to be computed; use all pixels if null
+ * \param[in]    x, y UL corner of pixm relative to the UL corner of pixs;
+ *                    can be < 0; these values are ignored if pixm is null
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \return  na histogram, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If pixs is cmapped, it is converted to 8 bpp gray.
  *          If you want a histogram of the colormap indices, use
  *          pixGetCmapHistogramMasked().
@@ -198,6 +193,7 @@ PIX        *pixg;
  *      (3) Set the subsampling factor > 1 to reduce the amount of computation.
  *      (4) Clipping of pixm (if it exists) to pixs is done in the inner loop.
  *      (5) Input x,y are ignored unless pixm exists.
+ * </pre>
  */
 NUMA *
 pixGetGrayHistogramMasked(PIX        *pixs,
@@ -262,20 +258,22 @@ PIX        *pixg;
 
 
 /*!
- *  pixGetGrayHistogramInRect()
+ * \brief   pixGetGrayHistogramInRect()
  *
- *      Input:  pixs (8 bpp, or colormapped)
- *              box (<optional>) over which histogram is to be computed;
- *                   use full image if null)
- *              factor (subsampling factor; integer >= 1)
- *      Return: na (histogram), or null on error
+ * \param[in]    pixs 8 bpp, or colormapped
+ * \param[in]    box [optional] over which histogram is to be computed;
+ *                    use full image if NULL
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \return  na histogram, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If pixs is cmapped, it is converted to 8 bpp gray.
  *          If you want a histogram of the colormap indices, use
  *          pixGetCmapHistogramInRect().
  *      (2) This always returns a 256-value histogram of pixel values.
- *      (3) Set the subsampling @factor > 1 to reduce the amount of computation.
+ *      (3) Set the subsampling %factor > 1 to reduce the amount of computation.
+ * </pre>
  */
 NUMA *
 pixGetGrayHistogramInRect(PIX     *pixs,
@@ -331,17 +329,19 @@ PIX        *pixg;
 
 
 /*!
- *  pixGetGrayHistogramTiled()
+ * \brief   pixGetGrayHistogramTiled()
  *
- *      Input:  pixs (any depth, colormap OK)
- *              factor (subsampling factor; integer >= 1)
- *              nx, ny (tiling; >= 1; typically small)
- *      Return: naa (set of histograms), or null on error
+ * \param[in]    pixs any depth, colormap OK
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[in]    nx, ny tiling; >= 1; typically small
+ * \return  naa set of histograms, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If pixs is cmapped, it is converted to 8 bpp gray.
  *      (2) This returns a set of 256-value histograms of pixel values.
  *      (3) Set the subsampling factor > 1 to reduce the amount of computation.
+ * </pre>
  */
 NUMAA *
 pixGetGrayHistogramTiled(PIX     *pixs,
@@ -384,19 +384,21 @@ PIXA    *pixa;
 
 
 /*!
- *  pixGetColorHistogram()
+ * \brief   pixGetColorHistogram()
  *
- *      Input:  pixs (rgb or colormapped)
- *              factor (subsampling factor; integer >= 1)
- *              &nar (<return> red histogram)
- *              &nag (<return> green histogram)
- *              &nab (<return> blue histogram)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs rgb or colormapped
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[out]   pnar red histogram
+ * \param[out]   pnag green histogram
+ * \param[out]   pnab blue histogram
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This generates a set of three 256 entry histograms,
  *          one for each color component (r,g,b).
- *      (2) Set the subsampling @factor > 1 to reduce the amount of computation.
+ *      (2) Set the subsampling %factor > 1 to reduce the amount of computation.
+ * </pre>
  */
 l_int32
 pixGetColorHistogram(PIX     *pixs,
@@ -479,24 +481,26 @@ PIXCMAP    *cmap;
 
 
 /*!
- *  pixGetColorHistogramMasked()
+ * \brief   pixGetColorHistogramMasked()
  *
- *      Input:  pixs (32 bpp rgb, or colormapped)
- *              pixm (<optional> 1 bpp mask over which histogram is
- *                    to be computed; use all pixels if null)
- *              x, y (UL corner of pixm relative to the UL corner of pixs;
- *                    can be < 0; these values are ignored if pixm is null)
- *              factor (subsampling factor; integer >= 1)
- *              &nar (<return> red histogram)
- *              &nag (<return> green histogram)
- *              &nab (<return> blue histogram)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 32 bpp rgb, or colormapped
+ * \param[in]    pixm [optional] 1 bpp mask over which histogram is
+ *                    to be computed; use all pixels if null
+ * \param[in]    x, y UL corner of pixm relative to the UL corner of pixs;
+ *                    can be < 0; these values are ignored if pixm is null
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[out]   pnar red histogram
+ * \param[out]   pnag green histogram
+ * \param[out]   pnab blue histogram
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This generates a set of three 256 entry histograms,
- *      (2) Set the subsampling @factor > 1 to reduce the amount of computation.
+ *      (2) Set the subsampling %factor > 1 to reduce the amount of computation.
  *      (3) Clipping of pixm (if it exists) to pixs is done in the inner loop.
  *      (4) Input x,y are ignored unless pixm exists.
+ * </pre>
  */
 l_int32
 pixGetColorHistogramMasked(PIX        *pixs,
@@ -600,16 +604,18 @@ PIXCMAP    *cmap;
 
 
 /*!
- *  pixGetCmapHistogram()
+ * \brief   pixGetCmapHistogram()
  *
- *      Input:  pixs (colormapped: d = 2, 4 or 8)
- *              factor (subsampling factor; integer >= 1)
- *      Return: na (histogram of cmap indices), or null on error
+ * \param[in]    pixs colormapped: d = 2, 4 or 8
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \return  na histogram of cmap indices, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This generates a histogram of colormap pixel indices,
  *          and is of size 2^d.
- *      (2) Set the subsampling @factor > 1 to reduce the amount of computation.
+ *      (2) Set the subsampling %factor > 1 to reduce the amount of computation.
+ * </pre>
  */
 NUMA *
 pixGetCmapHistogram(PIX     *pixs,
@@ -658,21 +664,23 @@ NUMA       *na;
 
 
 /*!
- *  pixGetCmapHistogramMasked()
+ * \brief   pixGetCmapHistogramMasked()
  *
- *      Input:  pixs (colormapped: d = 2, 4 or 8)
- *              pixm (<optional> 1 bpp mask over which histogram is
- *                    to be computed; use all pixels if null)
- *              x, y (UL corner of pixm relative to the UL corner of pixs;
- *                    can be < 0; these values are ignored if pixm is null)
- *              factor (subsampling factor; integer >= 1)
- *      Return: na (histogram), or null on error
+ * \param[in]    pixs colormapped: d = 2, 4 or 8
+ * \param[in]    pixm [optional] 1 bpp mask over which histogram is
+ *                    to be computed; use all pixels if null
+ * \param[in]    x, y UL corner of pixm relative to the UL corner of pixs;
+ *                    can be < 0; these values are ignored if pixm is null
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \return  na histogram, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This generates a histogram of colormap pixel indices,
  *          and is of size 2^d.
- *      (2) Set the subsampling @factor > 1 to reduce the amount of computation.
+ *      (2) Set the subsampling %factor > 1 to reduce the amount of computation.
  *      (3) Clipping of pixm to pixs is done in the inner loop.
+ * </pre>
  */
 NUMA *
 pixGetCmapHistogramMasked(PIX     *pixs,
@@ -738,19 +746,21 @@ NUMA       *na;
 
 
 /*!
- *  pixGetCmapHistogramInRect()
+ * \brief   pixGetCmapHistogramInRect()
  *
- *      Input:  pixs (colormapped: d = 2, 4 or 8)
- *              box (<optional>) over which histogram is to be computed;
- *                   use full image if null)
- *              factor (subsampling factor; integer >= 1)
- *      Return: na (histogram), or null on error
+ * \param[in]    pixs colormapped: d = 2, 4 or 8
+ * \param[in]    box [optional] over which histogram is to be computed;
+ *                    use full image if NULL
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \return  na histogram, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This generates a histogram of colormap pixel indices,
  *          and is of size 2^d.
- *      (2) Set the subsampling @factor > 1 to reduce the amount of computation.
+ *      (2) Set the subsampling %factor > 1 to reduce the amount of computation.
  *      (3) Clipping to the box is done in the inner loop.
+ * </pre>
  */
 NUMA *
 pixGetCmapHistogramInRect(PIX     *pixs,
@@ -806,19 +816,21 @@ NUMA       *na;
 
 
 /*!
- *  pixGetRankValue()
+ * \brief   pixGetRankValue()
  *
- *      Input:  pixs (8 bpp, 32 bpp or colormapped)
- *              factor (subsampling factor; integer >= 1)
- *              rank (between 0.0 and 1.0; 1.0 is brightest, 0.0 is darkest)
- *              &value (<return> pixel value corresponding to input rank)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp, 32 bpp or colormapped
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[in]    rank between 0.0 and 1.0; 1.0 is brightest, 0.0 is darkest
+ * \param[out]   pvalue pixel value corresponding to input rank
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Simple function to get rank values of an image.
  *          For a color image, the median value (rank = 0.5) can be
  *          used to linearly remap the colors based on the median
  *          of a target image, using pixLinearMapToTargetColor().
+ * </pre>
  */
 l_int32
 pixGetRankValue(PIX       *pixs,
@@ -864,29 +876,31 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  pixGetRankValueMaskedRGB()
+ * \brief   pixGetRankValueMaskedRGB()
  *
- *      Input:  pixs (32 bpp)
- *              pixm (<optional> 1 bpp mask over which rank val is to be taken;
- *                    use all pixels if null)
- *              x, y (UL corner of pixm relative to the UL corner of pixs;
- *                    can be < 0; these values are ignored if pixm is null)
- *              factor (subsampling factor; integer >= 1)
- *              rank (between 0.0 and 1.0; 1.0 is brightest, 0.0 is darkest)
- *              &rval (<optional return> red component val for input rank)
- *              &gval (<optional return> green component val for input rank)
- *              &bval (<optional return> blue component val for input rank)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 32 bpp
+ * \param[in]    pixm [optional] 1 bpp mask over which rank val is to be taken;
+ *                    use all pixels if null
+ * \param[in]    x, y UL corner of pixm relative to the UL corner of pixs;
+ *                    can be < 0; these values are ignored if pixm is null
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[in]    rank between 0.0 and 1.0; 1.0 is brightest, 0.0 is darkest
+ * \param[out]   prval [optional] red component val for input rank
+ * \param[out]   pgval [optional] green component val for input rank
+ * \param[out]   pbval [optional] blue component val for input rank
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Computes the rank component values of pixels in pixs that
  *          are under the fg of the optional mask.  If the mask is null, it
  *          computes the average of the pixels in pixs.
- *      (2) Set the subsampling @factor > 1 to reduce the amount of
+ *      (2) Set the subsampling %factor > 1 to reduce the amount of
  *          computation.
  *      (4) Input x,y are ignored unless pixm exists.
  *      (5) The rank must be in [0.0 ... 1.0], where the brightest pixel
  *          has rank 1.0.  For the median pixel value, use 0.5.
+ * </pre>
  */
 l_int32
 pixGetRankValueMaskedRGB(PIX        *pixs,
@@ -949,24 +963,25 @@ PIX       *pixmt, *pixt;
 
 
 /*!
- *  pixGetRankValueMasked()
+ * \brief   pixGetRankValueMasked()
  *
- *      Input:  pixs (8 bpp, or colormapped)
- *              pixm (<optional> 1 bpp mask over which rank val is to be taken;
- *                    use all pixels if null)
- *              x, y (UL corner of pixm relative to the UL corner of pixs;
- *                    can be < 0; these values are ignored if pixm is null)
- *              factor (subsampling factor; integer >= 1)
- *              rank (between 0.0 and 1.0; 1.0 is brightest, 0.0 is darkest)
- *              &val (<return> pixel value corresponding to input rank)
- *              &na (<optional return> of histogram)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp, or colormapped
+ * \param[in]    pixm [optional] 1 bpp mask over which rank val is to be taken;
+ *                    use all pixels if null
+ * \param[in]    x, y UL corner of pixm relative to the UL corner of pixs;
+ *                    can be < 0; these values are ignored if pixm is null
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[in]    rank between 0.0 and 1.0; 1.0 is brightest, 0.0 is darkest
+ * \param[out]   pval pixel value corresponding to input rank
+ * \param[out]   pna [optional] of histogram
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Computes the rank value of pixels in pixs that are under
  *          the fg of the optional mask.  If the mask is null, it
  *          computes the average of the pixels in pixs.
- *      (2) Set the subsampling @factor > 1 to reduce the amount of
+ *      (2) Set the subsampling %factor > 1 to reduce the amount of
  *          computation.
  *      (3) Clipping of pixm (if it exists) to pixs is done in the inner loop.
  *      (4) Input x,y are ignored unless pixm exists.
@@ -977,6 +992,7 @@ PIX       *pixmt, *pixt;
  *          In that case, just use
  *              numaHistogramGetValFromRank(na, rank, &val);
  *          on the returned Numa for additional rank values.
+ * </pre>
  */
 l_int32
 pixGetRankValueMasked(PIX        *pixs,
@@ -1020,17 +1036,19 @@ NUMA  *na;
 
 
 /*!
- *  pixGetAverageValue()
+ * \brief   pixGetAverageValue()
  *
- *      Input:  pixs (8 bpp, 32 bpp or colormapped)
- *              factor (subsampling factor; integer >= 1)
- *              type (L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE,
- *                    L_STANDARD_DEVIATION, L_VARIANCE)
- *              &value (<return> pixel value corresponding to input type)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp, 32 bpp or colormapped
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[in]    type L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE,
+ *                    L_STANDARD_DEVIATION, L_VARIANCE
+ * \param[out]   pvalue pixel value corresponding to input type
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Simple function to get average statistical values of an image.
+ * </pre>
  */
 l_int32
 pixGetAverageValue(PIX       *pixs,
@@ -1076,25 +1094,27 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  pixGetAverageMaskedRGB()
+ * \brief   pixGetAverageMaskedRGB()
  *
- *      Input:  pixs (32 bpp, or colormapped)
- *              pixm (<optional> 1 bpp mask over which average is to be taken;
- *                    use all pixels if null)
- *              x, y (UL corner of pixm relative to the UL corner of pixs;
- *                    can be < 0)
- *              factor (subsampling factor; >= 1)
- *              type (L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE,
- *                    L_STANDARD_DEVIATION, L_VARIANCE)
- *              &rval (<return optional> measured red value of given 'type')
- *              &gval (<return optional> measured green value of given 'type')
- *              &bval (<return optional> measured blue value of given 'type')
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 32 bpp, or colormapped
+ * \param[in]    pixm [optional] 1 bpp mask over which average is to be taken;
+ *                    use all pixels if null
+ * \param[in]    x, y UL corner of pixm relative to the UL corner of pixs;
+ *                    can be < 0
+ * \param[in]    factor subsampling factor; >= 1
+ * \param[in]    type L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE,
+ *                    L_STANDARD_DEVIATION, L_VARIANCE
+ * \param[out]   prval [optional] measured red value of given 'type'
+ * \param[out]   pgval [optional] measured green value of given 'type'
+ * \param[out]   pbval [optional] measured blue value of given 'type'
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For usage, see pixGetAverageMasked().
  *      (2) If there is a colormap, it is removed before the 8 bpp
  *          component images are extracted.
+ * </pre>
  */
 l_int32
 pixGetAverageMaskedRGB(PIX        *pixs,
@@ -1160,20 +1180,21 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  pixGetAverageMasked()
+ * \brief   pixGetAverageMasked()
  *
- *      Input:  pixs (8 or 16 bpp, or colormapped)
- *              pixm (<optional> 1 bpp mask over which average is to be taken;
- *                    use all pixels if null)
- *              x, y (UL corner of pixm relative to the UL corner of pixs;
- *                    can be < 0)
- *              factor (subsampling factor; >= 1)
- *              type (L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE,
- *                    L_STANDARD_DEVIATION, L_VARIANCE)
- *              &val (<return> measured value of given 'type')
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 or 16 bpp, or colormapped
+ * \param[in]    pixm [optional] 1 bpp mask over which average is to be taken;
+ *                    use all pixels if null
+ * \param[in]    x, y UL corner of pixm relative to the UL corner of pixs;
+ *                    can be < 0
+ * \param[in]    factor subsampling factor; >= 1
+ * \param[in]    type L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE,
+ *                    L_STANDARD_DEVIATION, L_VARIANCE
+ * \param[out]   pval measured value of given 'type'
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Use L_MEAN_ABSVAL to get the average value of pixels in pixs
  *          that are under the fg of the optional mask.  If the mask
  *          is null, it finds the average of the pixels in pixs.
@@ -1184,10 +1205,11 @@ PIXCMAP  *cmap;
  *          expected value.  The variance is the square of the stdev.
  *          For the standard deviation, we use
  *              sqrt(<(<x> - x)>^2) = sqrt(<x^2> - <x>^2)
- *      (3) Set the subsampling @factor > 1 to reduce the amount of
+ *      (3) Set the subsampling %factor > 1 to reduce the amount of
  *          computation.
  *      (4) Clipping of pixm (if it exists) to pixs is done in the inner loop.
  *      (5) Input x,y are ignored unless pixm exists.
+ * </pre>
  */
 l_int32
 pixGetAverageMasked(PIX        *pixs,
@@ -1291,20 +1313,22 @@ PIX       *pixg;
 
 
 /*!
- *  pixGetAverageTiledRGB()
+ * \brief   pixGetAverageTiledRGB()
  *
- *      Input:  pixs (32 bpp, or colormapped)
- *              sx, sy (tile size; must be at least 2 x 2)
- *              type (L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE, L_STANDARD_DEVIATION)
- *              &pixr (<optional return> tiled 'average' of red component)
- *              &pixg (<optional return> tiled 'average' of green component)
- *              &pixb (<optional return> tiled 'average' of blue component)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 32 bpp, or colormapped
+ * \param[in]    sx, sy tile size; must be at least 2 x 2
+ * \param[in]    type L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE, L_STANDARD_DEVIATION
+ * \param[out]   ppixr [optional] tiled 'average' of red component
+ * \param[out]   ppixg [optional] tiled 'average' of green component
+ * \param[out]   ppixb [optional] tiled 'average' of blue component
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For usage, see pixGetAverageTiled().
  *      (2) If there is a colormap, it is removed before the 8 bpp
  *          component images are extracted.
+ * </pre>
  */
 l_int32
 pixGetAverageTiledRGB(PIX     *pixs,
@@ -1366,20 +1390,22 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  pixGetAverageTiled()
+ * \brief   pixGetAverageTiled()
  *
- *      Input:  pixs (8 bpp, or colormapped)
- *              sx, sy (tile size; must be at least 2 x 2)
- *              type (L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE, L_STANDARD_DEVIATION)
- *      Return: pixd (average values in each tile), or null on error
+ * \param[in]    pixs 8 bpp, or colormapped
+ * \param[in]    sx, sy tile size; must be at least 2 x 2
+ * \param[in]    type L_MEAN_ABSVAL, L_ROOT_MEAN_SQUARE, L_STANDARD_DEVIATION
+ * \return  pixd average values in each tile, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Only computes for tiles that are entirely contained in pixs.
  *      (2) Use L_MEAN_ABSVAL to get the average abs value within the tile;
  *          L_ROOT_MEAN_SQUARE to get the rms value within each tile;
  *          L_STANDARD_DEVIATION to get the standard dev. from the average
  *          within each tile.
  *      (3) If colormapped, converts to 8 bpp gray.
+ * </pre>
  */
 PIX *
 pixGetAverageTiled(PIX     *pixs,
@@ -1460,19 +1486,20 @@ PIX       *pixt, *pixd;
 
 
 /*!
- *  pixRowStats()
+ * \brief   pixRowStats()
  *
- *      Input:  pixs (8 bpp; not cmapped)
- *              box (<optional> clipping box; can be null)
- *              &namean (<optional return> numa of mean values)
- *              &namedian (<optional return> numa of median values)
- *              &namode (<optional return> numa of mode intensity values)
- *              &namodecount (<optional return> numa of mode counts)
- *              &navar (<optional return> numa of variance)
- *              &narootvar (<optional return> numa of square root of variance)
- *      Return: na (numa of requested statistic for each row), or null on error
+ * \param[in]    pixs 8 bpp; not cmapped
+ * \param[in]    box [optional] clipping box; can be null
+ * \param[out]   pnamean [optional] numa of mean values
+ * \param[out]   pnamedian [optional] numa of median values
+ * \param[out]   pnamode [optional] numa of mode intensity values
+ * \param[out]   pnamodecount [optional] numa of mode counts
+ * \param[out]   pnavar [optional] numa of variance
+ * \param[out]   pnarootvar [optional] numa of square root of variance
+ * \return  na numa of requested statistic for each row, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This computes numas that represent column vectors of statistics,
  *          with each of its values derived from the corresponding row of a Pix.
  *      (2) Use NULL on input to prevent computation of any of the 5 numas.
@@ -1481,6 +1508,7 @@ PIX       *pixt, *pixd;
  *             pixAverageByRow()
  *             pixVarianceByRow()
  *             pixGetRowStats()
+ * </pre>
  */
 l_int32
 pixRowStats(PIX    *pixs,
@@ -1617,20 +1645,21 @@ l_float32  *famedian, *famode, *famodecount;
 
 
 /*!
- *  pixColumnStats()
+ * \brief   pixColumnStats()
  *
- *      Input:  pixs (8 bpp; not cmapped)
- *              box (<optional> clipping box; can be null)
- *              &namean (<optional return> numa of mean values)
- *              &namedian (<optional return> numa of median values)
- *              &namode (<optional return> numa of mode intensity values)
- *              &namodecount (<optional return> numa of mode counts)
- *              &navar (<optional return> numa of variance)
- *              &narootvar (<optional return> numa of square root of variance)
- *      Return: na (numa of requested statistic for each column),
- *                  or null on error
+ * \param[in]    pixs 8 bpp; not cmapped
+ * \param[in]    box [optional] clipping box; can be null
+ * \param[out]   pnamean [optional] numa of mean values
+ * \param[out]   pnamedian [optional] numa of median values
+ * \param[out]   pnamode [optional] numa of mode intensity values
+ * \param[out]   pnamodecount [optional] numa of mode counts
+ * \param[out]   pnavar [optional] numa of variance
+ * \param[out]   pnarootvar [optional] numa of square root of variance
+ * \return  na numa of requested statistic for each column,
+ *                  or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This computes numas that represent row vectors of statistics,
  *          with each of its values derived from the corresponding col of a Pix.
  *      (2) Use NULL on input to prevent computation of any of the 5 numas.
@@ -1639,6 +1668,7 @@ l_float32  *famedian, *famode, *famodecount;
  *             pixAverageByColumn()
  *             pixVarianceByColumn()
  *             pixGetColumnStats()
+ * </pre>
  */
 l_int32
 pixColumnStats(PIX    *pixs,
@@ -1773,29 +1803,31 @@ l_float32  *famedian, *famode, *famodecount;
 
 
 /*!
- *  pixGetComponentRange()
+ * \brief   pixGetRangeValues()
  *
- *      Input:  pixs (8 bpp grayscale, 32 bpp rgb, or colormapped)
- *              factor (subsampling factor; >= 1; ignored if colormapped)
- *              color (L_SELECT_RED, L_SELECT_GREEN or L_SELECT_BLUE)
- *              &minval (<optional return> minimum value of component)
- *              &maxval (<optional return> maximum value of component)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp grayscale, 32 bpp rgb, or colormapped
+ * \param[in]    factor subsampling factor; >= 1; ignored if colormapped
+ * \param[in]    color L_SELECT_RED, L_SELECT_GREEN or L_SELECT_BLUE
+ * \param[out]   pminval [optional] minimum value of component
+ * \param[out]   pmaxval [optional] maximum value of component
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If pixs is 8 bpp grayscale, the color selection type is ignored.
+ * </pre>
  */
 l_int32
-pixGetComponentRange(PIX      *pixs,
-                     l_int32   factor,
-                     l_int32   color,
-                     l_int32  *pminval,
-                     l_int32  *pmaxval)
+pixGetRangeValues(PIX      *pixs,
+                  l_int32   factor,
+                  l_int32   color,
+                  l_int32  *pminval,
+                  l_int32  *pmaxval)
 {
 l_int32   d;
 PIXCMAP  *cmap;
 
-    PROCNAME("pixGetComponentRange");
+    PROCNAME("pixGetRangeValues");
 
     if (pminval) *pminval = 0;
     if (pmaxval) *pmaxval = 0;
@@ -1806,7 +1838,8 @@ PIXCMAP  *cmap;
 
     cmap = pixGetColormap(pixs);
     if (cmap)
-        return pixcmapGetComponentRange(cmap, color, pminval, pmaxval);
+        return pixcmapGetRangeValues(cmap, color, pminval, pmaxval,
+                                     NULL, NULL);
 
     if (factor < 1)
         return ERROR_INT("sampling factor must be >= 1", procName, 1);
@@ -1843,22 +1876,24 @@ PIXCMAP  *cmap;
 
 
 /*!
- *  pixGetExtremeValue()
+ * \brief   pixGetExtremeValue()
  *
- *      Input:  pixs (8 bpp grayscale, 32 bpp rgb, or colormapped)
- *              factor (subsampling factor; >= 1; ignored if colormapped)
- *              type (L_SELECT_MIN or L_SELECT_MAX)
- *              &rval (<optional return> red component)
- *              &gval (<optional return> green component)
- *              &bval (<optional return> blue component)
- *              &grayval (<optional return> min or max gray value)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp grayscale, 32 bpp rgb, or colormapped
+ * \param[in]    factor subsampling factor; >= 1; ignored if colormapped
+ * \param[in]    type L_SELECT_MIN or L_SELECT_MAX
+ * \param[out]   prval [optional] red component
+ * \param[out]   pgval [optional] green component
+ * \param[out]   pbval [optional] blue component
+ * \param[out]   pgrayval [optional] min or max gray value
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) If pixs is grayscale, the result is returned in &grayval.
  *          Otherwise, if there is a colormap or d == 32,
  *          each requested color component is returned.  At least
  *          one color component (address) must be input.
+ * </pre>
  */
 l_int32
 pixGetExtremeValue(PIX      *pixs,
@@ -1877,18 +1912,36 @@ PIXCMAP   *cmap;
 
     PROCNAME("pixGetExtremeValue");
 
-    if (prval) *prval = 0;
-    if (pgval) *pgval = 0;
-    if (pbval) *pbval = 0;
-    if (pgrayval) *pgrayval = 0;
+    if (prval) *prval = -1;
+    if (pgval) *pgval = -1;
+    if (pbval) *pbval = -1;
+    if (pgrayval) *pgrayval = -1;
     if (!pixs)
         return ERROR_INT("pixs not defined", procName, 1);
-    cmap = pixGetColormap(pixs);
-    if (cmap)
-        return pixcmapGetExtremeValue(cmap, type, prval, pgval, pbval);
-    pixGetDimensions(pixs, &w, &h, &d);
     if (type != L_SELECT_MIN && type != L_SELECT_MAX)
         return ERROR_INT("invalid type", procName, 1);
+
+    cmap = pixGetColormap(pixs);
+    if (cmap) {
+        if (type == L_SELECT_MIN) {
+            if (prval) pixcmapGetRangeValues(cmap, L_SELECT_RED, prval, NULL,
+                                             NULL, NULL);
+            if (pgval) pixcmapGetRangeValues(cmap, L_SELECT_GREEN, pgval, NULL,
+                                             NULL, NULL);
+            if (pbval) pixcmapGetRangeValues(cmap, L_SELECT_BLUE, pbval, NULL,
+                                             NULL, NULL);
+        } else {  /* type == L_SELECT_MAX */
+            if (prval) pixcmapGetRangeValues(cmap, L_SELECT_RED, NULL, prval,
+                                             NULL, NULL);
+            if (pgval) pixcmapGetRangeValues(cmap, L_SELECT_GREEN, NULL, pgval,
+                                             NULL, NULL);
+            if (pbval) pixcmapGetRangeValues(cmap, L_SELECT_BLUE, NULL, pbval,
+                                             NULL, NULL);
+        }
+        return 0;
+    }
+
+    pixGetDimensions(pixs, &w, &h, &d);
     if (factor < 1)
         return ERROR_INT("sampling factor must be >= 1", procName, 1);
     if (d != 8 && d != 32)
@@ -1904,7 +1957,7 @@ PIXCMAP   *cmap;
         if (type == L_SELECT_MIN)
             extval = 100000;
         else  /* get max */
-            extval = 0;
+            extval = -1;
 
         for (i = 0; i < h; i += factor) {
             line = data + i * wpl;
@@ -1925,9 +1978,9 @@ PIXCMAP   *cmap;
         extgval = 100000;
         extbval = 100000;
     } else {
-        extrval = 0;
-        extgval = 0;
-        extbval = 0;
+        extrval = -1;
+        extgval = -1;
+        extbval = -1;
     }
     for (i = 0; i < h; i += factor) {
         line = data + i * wpl;
@@ -1961,21 +2014,23 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  pixGetMaxValueInRect()
+ * \brief   pixGetMaxValueInRect()
  *
- *      Input:  pixs (8, 16 or 32 bpp grayscale; no color space components)
- *              box (<optional> region; set box = NULL to use entire pixs)
- *              &maxval (<optional return> max value in region)
- *              &xmax (<optional return> x location of max value)
- *              &ymax (<optional return> y location of max value)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8, 16 or 32 bpp grayscale; no color space components
+ * \param[in]    box [optional] region; set box = NULL to use entire pixs
+ * \param[out]   pmaxval [optional] max value in region
+ * \param[out]   pxmax [optional] x location of max value
+ * \param[out]   pymax [optional] y location of max value
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This can be used to find the maximum and its location
  *          in a 2-dimensional histogram, where the x and y directions
  *          represent two color components (e.g., saturation and hue).
  *      (2) Note that here a 32 bpp pixs has pixel values that are simply
  *          numbers.  They are not 8 bpp components in a colorspace.
+ * </pre>
  */
 l_int32
 pixGetMaxValueInRect(PIX       *pixs,
@@ -2046,23 +2101,25 @@ l_uint32  *data, *line;
 
 
 /*!
- *  pixGetBinnedComponentRange()
+ * \brief   pixGetBinnedComponentRange()
  *
- *      Input:  pixs (32 bpp rgb)
- *              nbins (number of equal population bins; must be > 1)
- *              factor (subsampling factor; >= 1)
- *              color (L_SELECT_RED, L_SELECT_GREEN or L_SELECT_BLUE)
- *              &minval (<optional return> minimum value of component)
- *              &maxval (<optional return> maximum value of component)
- *              &carray (<optional return> color array of bins)
- *              fontsize (<optional> 0 for no debug; for debug, valid set
- *                        is {4,6,8,10,12,14,16,18,20}.)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    nbins number of equal population bins; must be > 1
+ * \param[in]    factor subsampling factor; >= 1
+ * \param[in]    color L_SELECT_RED, L_SELECT_GREEN or L_SELECT_BLUE
+ * \param[out]   pminval [optional] minimum value of component
+ * \param[out]   pmaxval [optional] maximum value of component
+ * \param[out]   pcarray [optional] color array of bins
+ * \param[in]    fontsize [optional] 0 for no debug; for debug, valid set
+ *                        is {4,6,8,10,12,14,16,18,20}.
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This returns the min and max average values of the
  *          selected color component in the set of rank bins,
  *          where the ranking is done using the specified component.
+ * </pre>
  */
 l_int32
 pixGetBinnedComponentRange(PIX        *pixs,
@@ -2128,28 +2185,29 @@ PIX       *pixt;
 
 
 /*!
- *  pixGetRankColorArray()
+ * \brief   pixGetRankColorArray()
  *
- *      Input:  pixs (32 bpp or cmapped)
- *              nbins (number of equal population bins; must be > 1)
- *              type (color selection flag)
- *              factor (subsampling factor; integer >= 1)
- *              &carray (<return> array of colors, ranked by intensity)
- *              debugflag (1 to display color squares and plots of color
- *                         components; 2 to write them as png to file)
- *              fontsize (<optional> 0 for no debug; for debug, valid set
+ * \param[in]    pixs 32 bpp or cmapped
+ * \param[in]    nbins number of equal population bins; must be > 1
+ * \param[in]    type color selection flag
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[out]   pcarray array of colors, ranked by intensity
+ * \param[in]    debugflag 1 to display color squares and plots of color
+ *                         components; 2 to write them as png to file
+ * \param[in]    fontsize [optional] 0 for no debug; for debug, valid set
  *                        is {4,6,8,10,12,14,16,18,20}.  Ignored if
- *                        debugflag == 0.  fontsize == 6 is typical.)
- *      Return: 0 if OK, 1 on error
+ *                        debugflag == 0.  fontsize == 6 is typical.
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The color selection flag is one of: L_SELECT_RED, L_SELECT_GREEN,
  *          L_SELECT_BLUE, L_SELECT_MIN, L_SELECT_MAX, L_SELECT_AVERAGE.
  *      (2) Then it finds the histogram of the selected component in each
- *          RGB pixel.  For each of the @nbins sets of pixels,
+ *          RGB pixel.  For each of the %nbins sets of pixels,
  *          ordered by this component value, find the average color,
  *          and return this as a "rank color" array.  The output array
- *          has @nbins colors.
+ *          has %nbins colors.
  *      (3) Set the subsampling factor > 1 to reduce the amount of
  *          computation.  Typically you want at least 10,000 pixels
  *          for reasonable statistics.
@@ -2160,6 +2218,7 @@ PIX       *pixt;
  *          This function is meant to be simple and approximate.
  *      (5) Compare this with pixGetBinnedColor(), which generates equal
  *          width intensity bins and finds the average color in each bin.
+ * </pre>
  */
 l_int32
 pixGetRankColorArray(PIX        *pixs,
@@ -2231,28 +2290,26 @@ PIXCMAP   *cmap;
          * (1) nar: cumulative normalized histogram (rank vs intensity value).
          *     With 256 intensity values, we have 257 rank values.
          * (2) nai: "average" intensity as function of rank bin, for
-         *     @nbins equally spaced in rank between 0.0 and 1.0.
+         *     %nbins equally spaced in rank between 0.0 and 1.0.
          * (3) narbin: bin number of discretized rank as a function of
          *     intensity.  This is the 'inverse' of nai.
          * (4) nabb: intensity value of the right bin boundary, for each
-         *     of the @nbins discretized rank bins. */
+         *     of the %nbins discretized rank bins. */
     if (!debugflag) {
         numaDiscretizeRankAndIntensity(nan, nbins, &narbin, NULL, NULL, NULL);
     } else {
-        l_int32  type;
-        NUMA    *nai, *nar, *nabb;
+        NUMA  *nai, *nar, *nabb;
         numaDiscretizeRankAndIntensity(nan, nbins, &narbin, &nai, &nar, &nabb);
-        type = (debugflag == 1) ? GPLOT_X11 : GPLOT_PNG;
         lept_mkdir("lept/regout");
-        gplotSimple1(nan, type, "/tmp/lept/regout/rtnan",
+        gplotSimple1(nan, GPLOT_PNG, "/tmp/lept/regout/rtnan",
                      "Normalized Histogram");
-        gplotSimple1(nar, type, "/tmp/lept/regout/rtnar",
+        gplotSimple1(nar, GPLOT_PNG, "/tmp/lept/regout/rtnar",
                      "Cumulative Histogram");
-        gplotSimple1(nai, type, "/tmp/lept/regout/rtnai",
+        gplotSimple1(nai, GPLOT_PNG, "/tmp/lept/regout/rtnai",
                      "Intensity vs. rank bin");
-        gplotSimple1(narbin, type, "/tmp/lept/regout/rtnarbin",
+        gplotSimple1(narbin, GPLOT_PNG, "/tmp/lept/regout/rtnarbin",
                      "LUT: rank bin vs. Intensity");
-        gplotSimple1(nabb, type, "/tmp/lept/regout/rtnabb",
+        gplotSimple1(nabb, GPLOT_PNG, "/tmp/lept/regout/rtnabb",
                      "Intensity of right edge vs. rank bin");
         numaDestroy(&nai);
         numaDestroy(&nar);
@@ -2260,7 +2317,7 @@ PIXCMAP   *cmap;
     }
 
         /* Get the average color in each bin for pixels whose grayscale
-         * values fall in the bin range.  @narbin is the LUT that
+         * values fall in the bin range.  %narbin is the LUT that
          * determines the bin number from the grayscale version of
          * the image.  Because this mapping may not be unique,
          * some bins may not be represented in the LUT. In use, to get fair
@@ -2293,19 +2350,20 @@ PIXCMAP   *cmap;
 
 
 /*!
- *  pixGetBinnedColor()
+ * \brief   pixGetBinnedColor()
  *
- *      Input:  pixs (32 bpp)
- *              pixg (8 bpp grayscale version of pixs)
- *              factor (sampling factor along pixel counting direction)
- *              nbins (number of intensity bins)
- *              nalut (LUT for mapping from intensity to bin number)
- *              &carray (<return> array of average color values in each bin)
- *              debugflag (1 to display output debug plots of color
- *                         components; 2 to write them as png to file)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    pixs 32 bpp
+ * \param[in]    pixg 8 bpp grayscale version of pixs
+ * \param[in]    factor sampling factor along pixel counting direction
+ * \param[in]    nbins number of intensity bins
+ * \param[in]    nalut LUT for mapping from intensity to bin number
+ * \param[out]   pcarray array of average color values in each bin
+ * \param[in]    debugflag 1 to display output debug plots of color
+ *                         components; 2 to write them as png to file
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This takes a color image, a grayscale (intensity) version,
  *          a LUT from intensity to bin number, and the number of bins.
  *          It computes the average color for pixels whose intensity
@@ -2317,6 +2375,7 @@ PIXCMAP   *cmap;
  *          by the value of the selected component in each pixel,
  *          sets up bins with equal population (not intensity width!),
  *          and gets the average color in each bin.
+ * </pre>
  */
 l_int32
 pixGetBinnedColor(PIX        *pixs,
@@ -2327,7 +2386,7 @@ pixGetBinnedColor(PIX        *pixs,
                   l_uint32  **pcarray,
                   l_int32     debugflag)
 {
-l_int32     i, j, w, h, wpls, wplg, grayval, bin, rval, gval, bval;
+l_int32     i, j, w, h, wpls, wplg, grayval, bin, rval, gval, bval, success;
 l_int32     npts, avepts, maxpts;
 l_uint32   *datas, *datag, *lines, *lineg, *carray;
 l_float64   norm;
@@ -2392,7 +2451,6 @@ l_float64  *rarray, *garray, *barray, *narray;
     }
 
     if (debugflag) {
-        l_int32  type;
         NUMA *nared, *nagreen, *nablue;
         nared = numaCreate(nbins);
         nagreen = numaCreate(nbins);
@@ -2402,13 +2460,12 @@ l_float64  *rarray, *garray, *barray, *narray;
             numaAddNumber(nagreen, garray[i]);
             numaAddNumber(nablue, barray[i]);
         }
-        type = (debugflag == 1) ? GPLOT_X11 : GPLOT_PNG;
         lept_mkdir("lept/regout");
-        gplotSimple1(nared, type, "/tmp/lept/regout/rtnared",
+        gplotSimple1(nared, GPLOT_PNG, "/tmp/lept/regout/rtnared",
                      "Average red val vs. rank bin");
-        gplotSimple1(nagreen, type, "/tmp/lept/regout/rtnagreen",
+        gplotSimple1(nagreen, GPLOT_PNG, "/tmp/lept/regout/rtnagreen",
                      "Average green val vs. rank bin");
-        gplotSimple1(nablue, type, "/tmp/lept/regout/rtnablue",
+        gplotSimple1(nablue, GPLOT_PNG, "/tmp/lept/regout/rtnablue",
                      "Average blue val vs. rank bin");
         numaDestroy(&nared);
         numaDestroy(&nagreen);
@@ -2416,8 +2473,12 @@ l_float64  *rarray, *garray, *barray, *narray;
     }
 
         /* Save colors for all bins  in a single array */
-    if ((carray = (l_uint32 *)LEPT_CALLOC(nbins, sizeof(l_uint32))) == NULL)
-        return ERROR_INT("rankcolor not made", procName, 1);
+    success = TRUE;
+    if ((carray = (l_uint32 *)LEPT_CALLOC(nbins, sizeof(l_uint32))) == NULL) {
+        success = FALSE;
+        L_ERROR("carray not made\n", procName);
+        goto cleanup_arrays;
+    }
     *pcarray = carray;
     for (i = 0; i < nbins; i++) {
         rval = (l_int32)(rarray[i] + 0.5);
@@ -2426,24 +2487,25 @@ l_float64  *rarray, *garray, *barray, *narray;
         composeRGBPixel(rval, gval, bval, carray + i);
     }
 
+cleanup_arrays:
     LEPT_FREE(rarray);
     LEPT_FREE(garray);
     LEPT_FREE(barray);
     LEPT_FREE(narray);
-    return 0;
+    return (success) ? 0 : 1;
 }
 
 
 /*!
- *  pixDisplayColorArray()
+ * \brief   pixDisplayColorArray()
  *
- *      Input:  carray (array of colors: 0xrrggbb00)
- *              ncolors (size of array)
- *              side (size of each color square; suggest 200)
- *              ncols (number of columns in output color matrix)
- *              fontsize (to label each square with text.  Valid set is
- *                        {4,6,8,10,12,14,16,18,20}.  Use 0 to disable.)
- *      Return: pixd (color array), or null on error
+ * \param[in]    carray array of colors: 0xrrggbb00
+ * \param[in]    ncolors size of array
+ * \param[in]    side size of each color square; suggest 200
+ * \param[in]    ncols number of columns in output color matrix
+ * \param[in]    fontsize to label each square with text.  Valid set is
+ *                        {4,6,8,10,12,14,16,18,20}.  Use 0 to disable.
+ * \return  pixd color array, or NULL on error
  */
 PIX *
 pixDisplayColorArray(l_uint32  *carray,
@@ -2490,30 +2552,32 @@ PIXA    *pixa;
 
 
 /*!
- *  pixRankBinByStrip()
+ * \brief   pixRankBinByStrip()
  *
- *      Input:  pixs (32 bpp or cmapped)
- *              direction (L_SCAN_HORIZONTAL or L_SCAN_VERTICAL)
- *              size (of strips in scan direction)
- *              nbins (number of equal population bins; must be > 1)
- *              type (color selection flag)
- *      Return: pixd (result), or null on error
+ * \param[in]    pixs 32 bpp or cmapped
+ * \param[in]    direction L_SCAN_HORIZONTAL or L_SCAN_VERTICAL
+ * \param[in]    size of strips in scan direction
+ * \param[in]    nbins number of equal population bins; must be > 1
+ * \param[in]    type color selection flag
+ * \return  pixd result, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This generates a pix where each column represents a strip of
- *          the input image.  If @direction == L_SCAN_HORIZONTAL, the
- *          input impage is tiled into vertical strips of width @size,
- *          where @size is a compromise between getting better spatial
- *          columnwise resolution (small @size) and getting better
- *          columnwise statistical information (larger @size).  Likewise
- *          with rows of the image if @direction == L_SCAN_VERTICAL.
+ *          the input image.  If %direction == L_SCAN_HORIZONTAL, the
+ *          input impage is tiled into vertical strips of width %size,
+ *          where %size is a compromise between getting better spatial
+ *          columnwise resolution (small %size) and getting better
+ *          columnwise statistical information (larger %size).  Likewise
+ *          with rows of the image if %direction == L_SCAN_VERTICAL.
  *      (2) For L_HORIZONTAL_SCAN, the output pix contains rank binned
  *          median colors in each column that correspond to a vertical
- *          strip of width @size in the input image.
+ *          strip of width %size in the input image.
  *      (3) The color selection flag is one of: L_SELECT_RED, L_SELECT_GREEN,
  *          L_SELECT_BLUE, L_SELECT_MIN, L_SELECT_MAX, L_SELECT_AVERAGE.
  *          It determines how the rank ordering is done.
- *      (4) Typical input values might be @size = 5, @nbins = 10.
+ *      (4) Typical input values might be %size = 5, %nbins = 10.
+ * </pre>
  */
 PIX *
 pixRankBinByStrip(PIX     *pixs,
@@ -2592,23 +2656,25 @@ PIXCMAP   *cmap;
  *                 Pixelwise aligned statistics                *
  *-------------------------------------------------------------*/
 /*!
- *  pixaGetAlignedStats()
+ * \brief   pixaGetAlignedStats()
  *
- *      Input:  pixa (of identically sized, 8 bpp pix; not cmapped)
- *              type (L_MEAN_ABSVAL, L_MEDIAN_VAL, L_MODE_VAL, L_MODE_COUNT)
- *              nbins (of histogram for median and mode; ignored for mean)
- *              thresh (on histogram for mode val; ignored for all other types)
- *      Return: pix (with pixelwise aligned stats), or null on error.
+ * \param[in]    pixa of identically sized, 8 bpp pix; not cmapped
+ * \param[in]    type L_MEAN_ABSVAL, L_MEDIAN_VAL, L_MODE_VAL, L_MODE_COUNT
+ * \param[in]    nbins of histogram for median and mode; ignored for mean
+ * \param[in]    thresh on histogram for mode val; ignored for all other types
+ * \return  pix with pixelwise aligned stats, or NULL on error.
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Each pixel in the returned pix represents an average
  *          (or median, or mode) over the corresponding pixels in each
  *          pix in the pixa.
- *      (2) The @thresh parameter works with L_MODE_VAL only, and
+ *      (2) The %thresh parameter works with L_MODE_VAL only, and
  *          sets a minimum occupancy of the mode bin.
- *          If the occupancy of the mode bin is less than @thresh, the
+ *          If the occupancy of the mode bin is less than %thresh, the
  *          mode value is returned as 0.  To always return the actual
- *          mode value, set @thresh = 0.  See pixGetRowStats().
+ *          mode value, set %thresh = 0.  See pixGetRowStats().
+ * </pre>
  */
 PIX *
 pixaGetAlignedStats(PIXA     *pixa,
@@ -2650,12 +2716,12 @@ PIX        *pixt, *pixd;
 
 
 /*!
- *  pixaExtractColumnFromEachPix()
+ * \brief   pixaExtractColumnFromEachPix()
  *
- *      Input:  pixa (of identically sized, 8 bpp; not cmapped)
- *              col (column index)
- *              pixd (pix into which each column is inserted)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixa of identically sized, 8 bpp; not cmapped
+ * \param[in]    col column index
+ * \param[in]    pixd pix into which each column is inserted
+ * \return  0 if OK, 1 on error
  */
 l_int32
 pixaExtractColumnFromEachPix(PIXA    *pixa,
@@ -2701,34 +2767,36 @@ PIX       *pixt;
 
 
 /*!
- *  pixGetRowStats()
+ * \brief   pixGetRowStats()
  *
- *      Input:  pixs (8 bpp; not cmapped)
- *              type (L_MEAN_ABSVAL, L_MEDIAN_VAL, L_MODE_VAL, L_MODE_COUNT)
- *              nbins (of histogram for median and mode; ignored for mean)
- *              thresh (on histogram for mode; ignored for mean and median)
- *              colvect (vector of results gathered across the rows of pixs)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp; not cmapped
+ * \param[in]    type L_MEAN_ABSVAL, L_MEDIAN_VAL, L_MODE_VAL, L_MODE_COUNT
+ * \param[in]    nbins of histogram for median and mode; ignored for mean
+ * \param[in]    thresh on histogram for mode; ignored for mean and median
+ * \param[in]    colvect vector of results gathered across the rows of pixs
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This computes a column vector of statistics using each
- *          row of a Pix.  The result is put in @colvect.
- *      (2) The @thresh parameter works with L_MODE_VAL only, and
+ *          row of a Pix.  The result is put in %colvect.
+ *      (2) The %thresh parameter works with L_MODE_VAL only, and
  *          sets a minimum occupancy of the mode bin.
- *          If the occupancy of the mode bin is less than @thresh, the
+ *          If the occupancy of the mode bin is less than %thresh, the
  *          mode value is returned as 0.  To always return the actual
- *          mode value, set @thresh = 0.
- *      (3) What is the meaning of this @thresh parameter?
+ *          mode value, set %thresh = 0.
+ *      (3) What is the meaning of this %thresh parameter?
  *          For each row, the total count in the histogram is w, the
- *          image width.  So @thresh, relative to w, gives a measure
+ *          image width.  So %thresh, relative to w, gives a measure
  *          of the ratio of the bin width to the width of the distribution.
- *          The larger @thresh, the narrower the distribution must be
+ *          The larger %thresh, the narrower the distribution must be
  *          for the mode value to be returned (instead of returning 0).
  *      (4) If the Pix consists of a set of corresponding columns,
  *          one for each Pix in a Pixa, the width of the Pix is the
  *          number of Pix in the Pixa and the column vector can
  *          be stored as a column in a Pix of the same size as
  *          each Pix in the Pixa.
+ * </pre>
  */
 l_int32
 pixGetRowStats(PIX        *pixs,
@@ -2810,12 +2878,9 @@ l_uint32  *lines, *datas;
                 colvect[i] = bin2gray[modeval];
         } else {  /* type == L_MODE_COUNT */
             max = 0;
-            modeval = 0;
             for (k = 0; k < nbins; k++) {
-                if (histo[k] > max) {
+                if (histo[k] > max)
                     max = histo[k];
-                    modeval = k;
-                }
             }
             colvect[i] = max;
         }
@@ -2829,29 +2894,31 @@ l_uint32  *lines, *datas;
 
 
 /*!
- *  pixGetColumnStats()
+ * \brief   pixGetColumnStats()
  *
- *      Input:  pixs (8 bpp; not cmapped)
- *              type (L_MEAN_ABSVAL, L_MEDIAN_VAL, L_MODE_VAL, L_MODE_COUNT)
- *              nbins (of histogram for median and mode; ignored for mean)
- *              thresh (on histogram for mode val; ignored for all other types)
- *              rowvect (vector of results gathered down the columns of pixs)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs 8 bpp; not cmapped
+ * \param[in]    type L_MEAN_ABSVAL, L_MEDIAN_VAL, L_MODE_VAL, L_MODE_COUNT
+ * \param[in]    nbins of histogram for median and mode; ignored for mean
+ * \param[in]    thresh on histogram for mode val; ignored for all other types
+ * \param[in]    rowvect vector of results gathered down the columns of pixs
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This computes a row vector of statistics using each
- *          column of a Pix.  The result is put in @rowvect.
- *      (2) The @thresh parameter works with L_MODE_VAL only, and
+ *          column of a Pix.  The result is put in %rowvect.
+ *      (2) The %thresh parameter works with L_MODE_VAL only, and
  *          sets a minimum occupancy of the mode bin.
- *          If the occupancy of the mode bin is less than @thresh, the
+ *          If the occupancy of the mode bin is less than %thresh, the
  *          mode value is returned as 0.  To always return the actual
- *          mode value, set @thresh = 0.
- *      (3) What is the meaning of this @thresh parameter?
+ *          mode value, set %thresh = 0.
+ *      (3) What is the meaning of this %thresh parameter?
  *          For each column, the total count in the histogram is h, the
- *          image height.  So @thresh, relative to h, gives a measure
+ *          image height.  So %thresh, relative to h, gives a measure
  *          of the ratio of the bin width to the width of the distribution.
- *          The larger @thresh, the narrower the distribution must be
+ *          The larger %thresh, the narrower the distribution must be
  *          for the mode value to be returned (instead of returning 0).
+ * </pre>
  */
 l_int32
 pixGetColumnStats(PIX        *pixs,
@@ -2929,12 +2996,9 @@ l_uint32  *datas;
                 rowvect[j] = bin2gray[modeval];
         } else {  /* type == L_MODE_COUNT */
             max = 0;
-            modeval = 0;
             for (k = 0; k < nbins; k++) {
-                if (histo[k] > max) {
+                if (histo[k] > max)
                     max = histo[k];
-                    modeval = k;
-                }
             }
             rowvect[j] = max;
         }
@@ -2950,12 +3014,12 @@ l_uint32  *datas;
 
 
 /*!
- *  pixSetPixelColumn()
+ * \brief   pixSetPixelColumn()
  *
- *      Input:  pix (8 bpp; not cmapped)
- *              col (column index)
- *              colvect (vector of floats)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pix 8 bpp; not cmapped
+ * \param[in]    col column index
+ * \param[in]    colvect vector of floats
+ * \return  0 if OK, 1 on error
  */
 l_int32
 pixSetPixelColumn(PIX        *pix,
@@ -2988,14 +3052,14 @@ l_uint32  *data;
  *              Foreground/background estimation               *
  *-------------------------------------------------------------*/
 /*!
- *  pixThresholdForFgBg()
+ * \brief   pixThresholdForFgBg()
  *
- *      Input:  pixs (any depth; cmapped ok)
- *              factor (subsampling factor; integer >= 1)
- *              thresh (threshold for generating foreground mask)
- *              &fgval (<optional return> average foreground value)
- *              &bgval (<optional return> average background value)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs any depth; cmapped ok
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[in]    thresh threshold for generating foreground mask
+ * \param[out]   pfgval [optional] average foreground value
+ * \param[out]   pbgval [optional] average background value
+ * \return  0 if OK, 1 on error
  */
 l_int32
 pixThresholdForFgBg(PIX      *pixs,
@@ -3038,21 +3102,23 @@ PIX       *pixg, *pixm;
 
 
 /*!
- *  pixSplitDistributionFgBg()
+ * \brief   pixSplitDistributionFgBg()
  *
- *      Input:  pixs (any depth; cmapped ok)
- *              scorefract (fraction of the max score, used to determine
- *                          the range over which the histogram min is searched)
- *              factor (subsampling factor; integer >= 1)
- *              &thresh (<optional return> best threshold for separating)
- *              &fgval (<optional return> average foreground value)
- *              &bgval (<optional return> average background value)
- *              debugflag (1 for plotting of distribution and split point)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixs any depth; cmapped ok
+ * \param[in]    scorefract fraction of the max score, used to determine
+ *                          the range over which the histogram min is searched
+ * \param[in]    factor subsampling factor; integer >= 1
+ * \param[out]   pthresh [optional] best threshold for separating
+ * \param[out]   pfgval [optional] average foreground value
+ * \param[out]   pbgval [optional] average background value
+ * \param[out]   ppixdb [optional] plot of distribution and split point
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See numaSplitDistribution() for details on the underlying
  *          method of choosing a threshold.
+ * </pre>
  */
 l_int32
 pixSplitDistributionFgBg(PIX       *pixs,
@@ -3061,7 +3127,7 @@ pixSplitDistributionFgBg(PIX       *pixs,
                          l_int32   *pthresh,
                          l_int32   *pfgval,
                          l_int32   *pbgval,
-                         l_int32    debugflag)
+                         PIX      **ppixdb)
 {
 char       buf[256];
 l_int32    thresh;
@@ -3075,6 +3141,7 @@ PIX       *pixg;
     if (pthresh) *pthresh = 0;
     if (pfgval) *pfgval = 0;
     if (pbgval) *pbgval = 0;
+    if (ppixdb) *ppixdb = NULL;
     if (!pthresh && !pfgval && !pbgval)
         return ERROR_INT("no data requested", procName, 1);
     if (!pixs)
@@ -3085,7 +3152,7 @@ PIX       *pixg;
 
         /* Make the fg/bg estimates */
     na = pixGetGrayHistogram(pixg, 1);
-    if (debugflag) {
+    if (ppixdb) {
         numaSplitDistribution(na, scorefract, &thresh, &avefg, &avebg,
                               NULL, NULL, &nascore);
         numaDestroy(&nascore);
@@ -3098,9 +3165,9 @@ PIX       *pixg;
     if (pfgval) *pfgval = (l_int32)(avefg + 0.5);
     if (pbgval) *pbgval = (l_int32)(avebg + 0.5);
 
-    if (debugflag) {
-        lept_mkdir("redout");
-        gplot = gplotCreate("/tmp/redout/histplot", GPLOT_PNG, "Histogram",
+    if (ppixdb) {
+        lept_mkdir("lept/redout");
+        gplot = gplotCreate("/tmp/lept/redout/histplot", GPLOT_PNG, "Histogram",
                             "Grayscale value", "Number of pixels");
         gplotAddPlot(gplot, NULL, na, GPLOT_LINES, NULL);
         nax = numaMakeConstant(thresh, 2);
@@ -3113,6 +3180,7 @@ PIX       *pixg;
         gplotDestroy(&gplot);
         numaDestroy(&nax);
         numaDestroy(&nay);
+        *ppixdb = pixRead("/tmp/lept/redout/histplot.png");
     }
 
     pixDestroy(&pixg);

@@ -43,7 +43,6 @@ static l_int32  GenerateSplitPlot(l_int32 i);
 static NUMA *MakeGaussian(l_int32 mean, l_int32 stdev, l_float32 fract);
 
 
-
 int main(int    argc,
          char **argv)
 {
@@ -51,19 +50,18 @@ l_int32  i;
 PIX     *pix;
 PIXA    *pixa;
 
+    lept_mkdir("lept/otsu");
     for (i = 0; i < NTests; i++)
         GenerateSplitPlot(i);
-
-    lept_mkdir("lept");
 
        /* Read the results back in ...  */
     pixa = pixaCreate(0);
     for (i = 0; i < NTests; i++) {
-        sprintf(buf, "/tmp/lept/junkplot.%d.png", i);
+        sprintf(buf, "/tmp/lept/otsu/plot.%d.png", i);
         pix = pixRead(buf);
         pixSaveTiled(pix, pixa, 1.0, 1, 25, 32);
         pixDestroy(&pix);
-        sprintf(buf, "/tmp/lept/junkplots.%d.png", i);
+        sprintf(buf, "/tmp/lept/otsu/plots.%d.png", i);
         pix = pixRead(buf);
         pixSaveTiled(pix, pixa, 1.0, 0, 25, 32);
         pixDestroy(&pix);
@@ -71,7 +69,7 @@ PIXA    *pixa;
 
         /* ... and save into a tiled pix  */
     pix = pixaDisplay(pixa, 0, 0);
-    pixWrite("/tmp/lept/junkotsuplot.png", pix, IFF_PNG);
+    pixWrite("/tmp/lept/otsu/plot.png", pix, IFF_PNG);
     pixDisplay(pix, 100, 100);
     pixaDestroy(&pixa);
     pixDestroy(&pix);
@@ -88,7 +86,7 @@ l_float32  ave1, ave2, num1, num2, maxnum, maxscore;
 GPLOT     *gplot;
 NUMA      *na1, *na2, *nascore, *nax, *nay;
 
-        /* Generate */
+        /* Generate a fake histogram composed of 2 gaussians */
     na1 = MakeGaussian(gaussmean1[i], gaussstdev1[i], gaussfract1[i]);
     na2 = MakeGaussian(gaussmean2[i], gaussstdev1[i], 1.0 - gaussfract1[i]);
     numaArithOp(na1, na1, na2, L_ARITH_ADD);
@@ -107,7 +105,7 @@ NUMA      *na1, *na2, *nascore, *nax, *nay;
     numaReplaceNumber(nay, 1, (l_int32)(0.5 * maxnum));
 
         /* Plot the input histogram with the split location */
-    sprintf(buf, "/tmp/lept/junkplot.%d", i);
+    sprintf(buf, "/tmp/lept/otsu/plot.%d", i);
     sprintf(title, "Plot %d", i);
     gplot = gplotCreate(buf, GPLOT_PNG,
                         "Histogram: mixture of 2 gaussians",
@@ -120,7 +118,7 @@ NUMA      *na1, *na2, *nascore, *nax, *nay;
     numaDestroy(&na2);
 
         /* Plot the score function */
-    sprintf(buf, "/tmp/lept/junkplots.%d", i);
+    sprintf(buf, "/tmp/lept/otsu/plots.%d", i);
     sprintf(title, "Plot %d", i);
     gplot = gplotCreate(buf, GPLOT_PNG,
                         "Otsu score function for splitting",
@@ -158,5 +156,4 @@ NUMA      *na;
 
     return na;
 }
-
 

@@ -128,7 +128,6 @@ L_REGPARAMS  *rp;
     if (!success) failure = TRUE;
 
     /* ------------ Part 2: Test lossless r/w to memory ------------ */
-    pixDisplayWrite(NULL, -1);
     success = TRUE;
     if (test_mem_png(FILE_1BPP)) success = FALSE;
     if (test_mem_png(FILE_2BPP)) success = FALSE;
@@ -322,7 +321,7 @@ PIXCMAP  *cmap;
     pixDestroy(&pix2);
     fp = fopenReadStream("/tmp/lept/regout/1bpp-trans.png");
     fgetPngColormapInfo(fp, &cmap, &transp);
-    fclose(fp);
+    if (fp) fclose(fp);
     if (transp)
         fprintf(stderr, "1bpp_trans: correct -- transparency found\n");
     else
@@ -357,7 +356,7 @@ PIXCMAP  *cmap;
     pixDestroy(&pix2);
     fp = fopenReadStream("/tmp/lept/regout/1bpp-color.png");
     fgetPngColormapInfo(fp, &cmap, &transp);
-    fclose(fp);
+    if (fp) fclose(fp);
     if (transp)
         fprintf(stderr, "1bpp_color: error -- transparency found!\n");
     else
@@ -451,7 +450,7 @@ PIX      *pix1, *pix2, *pix3;
 PIXCMAP  *cmap;
 
     pix1 = pixRead("wyom.jpg");
-    pix2 = pixColorSegment(pix1, 75, 10, 8, 7);
+    pix2 = pixColorSegment(pix1, 75, 10, 8, 7, 0);
     cmap = pixGetColormap(pix2);
     pixcmapSetAlpha(cmap, 0, 0);  /* set blueish sky color to transparent */
     pixWrite("/tmp/lept/regout/8bpp-trans.png", pix2, IFF_PNG);
@@ -467,7 +466,7 @@ PIXCMAP  *cmap;
     pixDestroy(&pix3);
     fp = fopenReadStream("/tmp/lept/regout/8bpp-trans.png");
     fgetPngColormapInfo(fp, &cmap, &transp);
-    fclose(fp);
+    if (fp) fclose(fp);
     if (transp)
         fprintf(stderr, "8bpp_trans: correct -- transparency found\n");
     else

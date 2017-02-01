@@ -25,8 +25,9 @@
  *====================================================================*/
 
 
-/*
- *  scalelow.c
+/*!
+ * \file scalelow.c
+ * <pre>
  *
  *         Color (interpolated) scaling: general case
  *                  void       scaleColorLILow()
@@ -90,6 +91,7 @@
  *         Grayscale mipmap
  *                  l_int32    scaleMipmapLow()
  *
+ * </pre>
  */
 
 #include <string.h>
@@ -105,7 +107,7 @@
  *            General linear interpolated color scaling             *
  *------------------------------------------------------------------*/
 /*!
- *  scaleColorLILow()
+ * \brief   scaleColorLILow()
  *
  *  We choose to divide each pixel into 16 x 16 sub-pixels.
  *  Linear interpolation is equivalent to finding the
@@ -211,7 +213,7 @@ l_float32  scx, scy;
  *            General linear interpolated gray scaling              *
  *------------------------------------------------------------------*/
 /*!
- *  scaleGrayLILow()
+ * \brief   scaleGrayLILow()
  *
  *  We choose to divide each pixel into 16 x 16 sub-pixels.
  *  Linear interpolation is equivalent to finding the
@@ -299,7 +301,7 @@ l_float32  scx, scy;
  *                2x linear interpolated color scaling              *
  *------------------------------------------------------------------*/
 /*!
- *  scaleColor2xLILow()
+ * \brief   scaleColor2xLILow()
  *
  *  This is a special case of 2x expansion by linear
  *  interpolation.  Each src pixel contains 4 dest pixels.
@@ -377,15 +379,15 @@ l_uint32  *lines, *lined;
 
 
 /*!
- *  scaleColor2xLILineLow()
+ * \brief   scaleColor2xLILineLow()
  *
- *      Input:  lined   (ptr to top destline, to be made from current src line)
- *              wpld
- *              lines   (ptr to current src line)
- *              ws
- *              wpls
- *              lastlineflag  (1 if last src line; 0 otherwise)
- *      Return: void
+ * \param[in]    lined   ptr to top destline, to be made from current src line
+ * \param[in]    wpld
+ * \param[in]    lines   ptr to current src line
+ * \param[in]    ws
+ * \param[in]    wpls
+ * \param[in]    lastlineflag  1 if last src line; 0 otherwise
+ * \return  void
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
  */
@@ -508,7 +510,7 @@ l_uint32  *linesp, *linedp;
  *                2x linear interpolated gray scaling               *
  *------------------------------------------------------------------*/
 /*!
- *  scaleGray2xLILow()
+ * \brief   scaleGray2xLILow()
  *
  *  This is a special case of 2x expansion by linear
  *  interpolation.  Each src pixel contains 4 dest pixels.
@@ -581,15 +583,15 @@ l_uint32  *lines, *lined;
 
 
 /*!
- *  scaleGray2xLILineLow()
+ * \brief   scaleGray2xLILineLow()
  *
- *      Input:  lined   (ptr to top destline, to be made from current src line)
- *              wpld
- *              lines   (ptr to current src line)
- *              ws
- *              wpls
- *              lastlineflag  (1 if last src line; 0 otherwise)
- *      Return: void
+ * \param[in]    lined   ptr to top destline, to be made from current src line
+ * \param[in]    wpld
+ * \param[in]    lines   ptr to current src line
+ * \param[in]    ws
+ * \param[in]    wpls
+ * \param[in]    lastlineflag  1 if last src line; 0 otherwise
+ * \return  void
  */
 void
 scaleGray2xLILineLow(l_uint32  *lined,
@@ -733,7 +735,7 @@ l_uint32   words, wordsp, wordd, worddp;
  *               4x linear interpolated gray scaling                *
  *------------------------------------------------------------------*/
 /*!
- *  scaleGray4xLILow()
+ * \brief   scaleGray4xLILow()
  *
  *  This is a special case of 4x expansion by linear
  *  interpolation.  Each src pixel contains 16 dest pixels.
@@ -820,15 +822,15 @@ l_uint32  *lines, *lined;
 
 
 /*!
- *  scaleGray4xLILineLow()
+ * \brief   scaleGray4xLILineLow()
  *
- *      Input:  lined   (ptr to top destline, to be made from current src line)
- *              wpld
- *              lines   (ptr to current src line)
- *              ws
- *              wpls
- *              lastlineflag  (1 if last src line; 0 otherwise)
- *      Return: void
+ * \param[in]    lined   ptr to top destline, to be made from current src line
+ * \param[in]    wpld
+ * \param[in]    lines   ptr to current src line
+ * \param[in]    ws
+ * \param[in]    wpls
+ * \param[in]    lastlineflag  1 if last src line; 0 otherwise
+ * \return  void
  */
 void
 scaleGray4xLILineLow(l_uint32  *lined,
@@ -952,7 +954,7 @@ l_uint32  *linesp, *linedp1, *linedp2, *linedp3;
  *       Grayscale and color scaling by closest pixel sampling      *
  *------------------------------------------------------------------*/
 /*!
- *  scaleBySamplingLow()
+ * \brief   scaleBySamplingLow()
  *
  *  Notes:
  *      (1) The dest must be cleared prior to this operation,
@@ -1086,7 +1088,7 @@ l_float32  wratio, hratio;
  *    Color and grayscale downsampling with (antialias) smoothing   *
  *------------------------------------------------------------------*/
 /*!
- *  scaleSmoothLow()
+ * \brief   scaleSmoothLow()
  *
  *  Notes:
  *      (1) This function is called on 8 or 32 bpp src and dest images.
@@ -1187,7 +1189,7 @@ l_float32  wratio, hratio, norm;
 
 
 /*!
- *  scaleRGBToGray2Low()
+ * \brief   scaleRGBToGray2Low()
  *
  *  Notes:
  *      (1) This function is called with 32 bpp RGB src and 8 bpp,
@@ -1244,7 +1246,7 @@ l_uint32   pixel;
  *                  General area mapped gray scaling                *
  *------------------------------------------------------------------*/
 /*!
- *  scaleColorAreaMapLow()
+ * \brief   scaleColorAreaMapLow()
  *
  *  This should only be used for downscaling.
  *  We choose to divide each pixel into 16 x 16 sub-pixels.
@@ -1402,7 +1404,7 @@ l_float32  scx, scy;
 
 
 /*!
- *  scaleGrayAreaMapLow()
+ * \brief   scaleGrayAreaMapLow()
  *
  *  This should only be used for downscaling.
  *  We choose to divide each pixel into 16 x 16 sub-pixels.
@@ -1513,9 +1515,10 @@ l_float32  scx, scy;
  *                     2x area mapped downscaling                   *
  *------------------------------------------------------------------*/
 /*!
- *  scaleAreaMapLow2()
+ * \brief   scaleAreaMapLow2()
  *
- *  Note: This function is called with either 8 bpp gray or 32 bpp RGB.
+ *  Notes:
+ *        This function is called with either 8 bpp gray or 32 bpp RGB.
  *        The result is a 2x reduced dest.
  */
 void
@@ -1660,12 +1663,16 @@ l_float32  wratio, hratio;
  *                         Scale-to-gray 2x                         *
  *------------------------------------------------------------------*/
 /*!
- *  scaleToGray2Low()
+ * \brief   scaleToGray2Low()
  *
- *      Input:  usual image variables
- *              sumtab  (made from makeSumTabSG2())
- *              valtab  (made from makeValTabSG2())
- *      Return: 0 if OK; 1 on error.
+ * \param[in]    datad   dest data
+ * \param[in]    wd, hd  dest width, height
+ * \param[in]    wpld    dest words/line
+ * \param[in]    datas   src data
+ * \param[in]    wpls    src words/line
+ * \param[in]    sumtab  made from makeSumTabSG2()
+ * \param[in]    valtab  made from makeValTabSG2()
+ * \return  0 if OK; 1 on error.
  *
  *  The output is processed in sets of 4 output bytes on a row,
  *  corresponding to 4 2x2 bit-blocks in the input image.
@@ -1674,8 +1681,8 @@ l_float32  wratio, hratio;
  *  storing the result in 4 adjacent bytes.  After sums from
  *  two rows have been added, the second table, valtab,
  *  converts from the sum of ON pixels in the 2x2 block to
- *  an 8 bpp grayscale value between 0 (for 4 bits ON)
- *  and 255 (for 0 bits ON).
+ *  an 8 bpp grayscale value between 0 for 4 bits ON
+ *  and 255 for 0 bits ON.
  */
 void
 scaleToGray2Low(l_uint32  *datad,
@@ -1728,7 +1735,7 @@ l_uint32  *lines, *lined;
 
 
 /*!
- *  makeSumTabSG2()
+ * \brief   makeSumTabSG2()
  *
  *  Returns a table of 256 l_uint32s, giving the four output
  *  8-bit grayscale sums corresponding to 8 input bits of a binary
@@ -1759,7 +1766,7 @@ l_uint32  *tab;
 
 
 /*!
- *  makeValTabSG2()
+ * \brief   makeValTabSG2()
  *
  *  Returns an 8 bit value for the sum of ON pixels
  *  in a 2x2 square, according to
@@ -1790,13 +1797,19 @@ l_uint8  *tab;
  *                         Scale-to-gray 3x                         *
  *------------------------------------------------------------------*/
 /*!
- *  scaleToGray3Low()
+ * \brief   scaleToGray3Low()
  *
- *      Input:  usual image variables
- *              sumtab  (made from makeSumTabSG3())
- *              valtab  (made from makeValTabSG3())
- *      Return: 0 if OK; 1 on error
+ * \param[in]    datad   dest data
+ * \param[in]    wd, hd  dest width, height
+ * \param[in]    wpld    dest words/line
+ * \param[in]    datas   src data
+ * \param[in]    wpls    src words/line
+ * \param[in]    sumtab  made from makeSumTabSG3()
+ * \param[in]    valtab  made from makeValTabSG3()
+ * \return  0 if OK; 1 on error
  *
+ * <pre>
+ * Notes:
  *  Each set of 8 3x3 bit-blocks in the source image, which
  *  consist of 72 pixels arranged 24 pixels wide by 3 scanlines,
  *  is converted to a row of 8 8-bit pixels in the dest image.
@@ -1816,6 +1829,7 @@ l_uint8  *tab;
  *  Note: because the input image is processed in groups of
  *        24 x 3 pixels, the process clips the input height to
  *        (h - h % 3) and the input width to (w - w % 24).
+ * </pre>
  */
 void
 scaleToGray3Low(l_uint32  *datad,
@@ -1884,7 +1898,7 @@ l_uint32  *lines, *lined;
 
 
 /*!
- *  makeSumTabSG3()
+ * \brief   makeSumTabSG3()
  *
  *  Returns a table of 64 l_uint32s, giving the two output
  *  8-bit grayscale sums corresponding to 6 input bits of a binary
@@ -1915,7 +1929,7 @@ l_uint32  *tab;
 
 
 /*!
- *  makeValTabSG3()
+ * \brief   makeValTabSG3()
  *
  *  Returns an 8 bit value for the sum of ON pixels
  *  in a 3x3 square, according to
@@ -1944,12 +1958,16 @@ l_uint8  *tab;
  *                         Scale-to-gray 4x                         *
  *------------------------------------------------------------------*/
 /*!
- *  scaleToGray4Low()
+ * \brief   scaleToGray4Low()
  *
- *      Input:  usual image variables
- *              sumtab  (made from makeSumTabSG4())
- *              valtab  (made from makeValTabSG4())
- *      Return: 0 if OK; 1 on error.
+ * \param[in]    datad   dest data
+ * \param[in]    wd, hd  dest width, height
+ * \param[in]    wpld    dest words/line
+ * \param[in]    datas   src data
+ * \param[in]    wpls    src words/line
+ * \param[in]    sumtab  made from makeSumTabSG4()
+ * \param[in]    valtab  made from makeValTabSG4()
+ * \return  0 if OK; 1 on error.
  *
  *  The output is processed in sets of 2 output bytes on a row,
  *  corresponding to 2 4x4 bit-blocks in the input image.
@@ -1958,8 +1976,8 @@ l_uint8  *tab;
  *  storing the result in 2 adjacent bytes.  After sums from
  *  four rows have been added, the second table, valtab,
  *  converts from the sum of ON pixels in the 4x4 block to
- *  an 8 bpp grayscale value between 0 (for 16 bits ON)
- *  and 255 (for 0 bits ON).
+ *  an 8 bpp grayscale value between 0 for 16 bits ON
+ *  and 255 for 0 bits ON.
  */
 void
 scaleToGray4Low(l_uint32  *datad,
@@ -2001,7 +2019,7 @@ l_uint32  *lines, *lined;
 
 
 /*!
- *  makeSumTabSG4()
+ * \brief   makeSumTabSG4()
  *
  *  Returns a table of 256 l_uint32s, giving the two output
  *  8-bit grayscale sums corresponding to 8 input bits of a binary
@@ -2031,7 +2049,7 @@ l_uint32  *tab;
 
 
 /*!
- *  makeValTabSG4()
+ * \brief   makeValTabSG4()
  *
  *  Returns an 8 bit value for the sum of ON pixels
  *  in a 4x4 square, according to
@@ -2062,13 +2080,19 @@ l_uint8  *tab;
  *                         Scale-to-gray 6x                         *
  *------------------------------------------------------------------*/
 /*!
- *  scaleToGray6Low()
+ * \brief   scaleToGray6Low()
  *
- *      Input:  usual image variables
- *              tab8  (made from makePixelSumTab8())
- *              valtab  (made from makeValTabSG6())
- *      Return: 0 if OK; 1 on error
+ * \param[in]    datad   dest data
+ * \param[in]    wd, hd  dest width, height
+ * \param[in]    wpld    dest words/line
+ * \param[in]    datas   src data
+ * \param[in]    wpls    src words/line
+ * \param[in]    tab8  made from makePixelSumTab8()
+ * \param[in]    valtab  made from makeValTabSG6()
+ * \return  0 if OK; 1 on error
  *
+ * <pre>
+ * Notes:
  *  Each set of 4 6x6 bit-blocks in the source image, which
  *  consist of 144 pixels arranged 24 pixels wide by 6 scanlines,
  *  is converted to a row of 4 8-bit pixels in the dest image.
@@ -2088,6 +2112,7 @@ l_uint8  *tab;
  *        24 x 6 pixels, the process clips the input height to
  *        (h - h % 6) and the input width to (w - w % 24).
  *
+ * </pre>
  */
 void
 scaleToGray6Low(l_uint32  *datad,
@@ -2177,7 +2202,7 @@ l_uint32  *lines, *lined;
 
 
 /*!
- *  makeValTabSG6()
+ * \brief   makeValTabSG6()
  *
  *  Returns an 8 bit value for the sum of ON pixels
  *  in a 6x6 square, according to
@@ -2206,20 +2231,24 @@ l_uint8  *tab;
  *                         Scale-to-gray 8x                         *
  *------------------------------------------------------------------*/
 /*!
- *  scaleToGray8Low()
+ * \brief   scaleToGray8Low()
  *
- *      Input:  usual image variables
- *              tab8  (made from makePixelSumTab8())
- *              valtab  (made from makeValTabSG8())
- *      Return: 0 if OK; 1 on error.
+ * \param[in]    datad   dest data
+ * \param[in]    wd, hd  dest width, height
+ * \param[in]    wpld    dest words/line
+ * \param[in]    datas   src data
+ * \param[in]    wpls    src words/line
+ * \param[in]    tab8  made from makePixelSumTab8()
+ * \param[in]    valtab  made from makeValTabSG8()
+ * \return  0 if OK; 1 on error.
  *
  *  The output is processed one dest byte at a time,
  *  corresponding to 8 rows of src bytes in the input image.
  *  Two lookup tables are used.  The first, tab8, gets the
  *  sum of ON pixels in a byte.  After sums from 8 rows have
  *  been added, the second table, valtab, converts from this
- *  value (which is between 0 and 64) to an 8 bpp grayscale
- *  value between 0 (for all 64 bits ON) and 255 (for 0 bits ON).
+ *  value which is between 0 and 64 to an 8 bpp grayscale
+ *  value between 0 for all 64 bits ON) and 255 (for 0 bits ON.
  */
 void
 scaleToGray8Low(l_uint32  *datad,
@@ -2265,7 +2294,7 @@ l_uint32  *lines, *lined;
 
 
 /*!
- *  makeValTabSG8()
+ * \brief   makeValTabSG8()
  *
  *  Returns an 8 bit value for the sum of ON pixels
  *  in an 8x8 square, according to
@@ -2293,19 +2322,23 @@ l_uint8  *tab;
  *                         Scale-to-gray 16x                        *
  *------------------------------------------------------------------*/
 /*!
- *  scaleToGray16Low()
+ * \brief   scaleToGray16Low()
  *
- *      Input:  usual image variables
- *              tab8  (made from makePixelSumTab8())
- *      Return: 0 if OK; 1 on error.
+ * \param[in]    datad   dest data
+ * \param[in]    wd, hd  dest width, height
+ * \param[in]    wpld    dest words/line
+ * \param[in]    datas   src data
+ * \param[in]    wpls    src words/line
+ * \param[in]    tab8    made from makePixelSumTab8()
+ * \return  0 if OK; 1 on error.
  *
  *  The output is processed one dest byte at a time, corresponding
  *  to 16 rows consisting each of 2 src bytes in the input image.
  *  This uses one lookup table, tab8, which gives the sum of
  *  ON pixels in a byte.  After summing for all ON pixels in the
  *  32 src bytes, which is between 0 and 256, this is converted
- *  to an 8 bpp grayscale value between 0 (for 255 or 256 bits ON)
- *  and 255 (for 0 bits ON).
+ *  to an 8 bpp grayscale value between 0 for 255 or 256 bits ON
+ *  and 255 for 0 bits ON.
  */
 void
 scaleToGray16Low(l_uint32  *datad,
@@ -2377,7 +2410,7 @@ l_uint32  *lines, *lined;
  *                         Grayscale mipmap                         *
  *------------------------------------------------------------------*/
 /*!
- *  scaleMipmapLow()
+ * \brief   scaleMipmapLow()
  *
  *  See notes in scale.c for pixScaleToGrayMipmap().  This function
  *  is here for pedagogical reasons.  It gives poor results on document

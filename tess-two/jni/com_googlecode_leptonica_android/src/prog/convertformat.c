@@ -53,6 +53,9 @@
  *         PNM       .pnm
  *         GIF       .gif
  *         WEBP      .webp
+ *
+ *   If the requested output format does not support the image type,
+ *   the image is written in png format, with filename extension 'png'.
  */
 
 #include <string.h>
@@ -61,11 +64,10 @@
 int main(int    argc,
          char **argv)
 {
-PIX         *pixs;
 char        *filein, *fileout, *base, *ext;
 const char  *formatstr;
-l_int32      format;
-l_int32      d;
+l_int32      format, d, change;
+PIX         *pixs;
 static char  mainName[] = "convertformat";
 
     if (argc != 3 && argc != 4) {
@@ -130,19 +132,22 @@ static char  mainName[] = "convertformat";
         return 1;
     }
 
+        /* Change output format if necessary */
+    change = FALSE;
     d = pixGetDepth(pixs);
     if (d != 1 && format == IFF_TIFF_G4) {
         L_WARNING("can't convert to tiff_g4; converting to png\n", mainName);
-        format = IFF_PNG;
+        change = TRUE;
     }
     if (d < 8 && format == IFF_JFIF_JPEG) {
         L_WARNING("can't convert to jpeg; converting to png\n", mainName);
-        splitPathAtExtension(fileout, &base, &ext);
-        fileout = stringJoin(base, ".png");
-        format = IFF_PNG;
+        change = TRUE;
     }
     if (d < 8 && format == IFF_WEBP) {
         L_WARNING("can't convert to webp; converting to png\n", mainName);
+        change = TRUE;
+    }
+    if (change) {
         splitPathAtExtension(fileout, &base, &ext);
         fileout = stringJoin(base, ".png");
         format = IFF_PNG;

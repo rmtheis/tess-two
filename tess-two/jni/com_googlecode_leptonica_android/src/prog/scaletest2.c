@@ -42,11 +42,13 @@ l_int32      d;
 static char  mainName[] = "scaletest2";
 
     if (argc != 2)
-	return ERROR_INT(" Syntax:  scaletest2 filein", mainName, 1);
+        return ERROR_INT(" Syntax:  scaletest2 filein", mainName, 1);
 
     if ((pixs = pixRead(argv[1])) == NULL)
-	return ERROR_INT("pixs not made", mainName, 1);
+       	return ERROR_INT("pixs not made", mainName, 1);
     d = pixGetDepth(pixs);
+
+    lept_mkdir("lept/scale");
 
 #if 1
         /* Integer scale-to-gray functions */
@@ -55,22 +57,22 @@ static char  mainName[] = "scaletest2";
     PIX  *pixd;
 
         pixd = pixScaleToGray2(pixs);
-        pixWrite("/tmp/s2g_2x", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_2x", pixd, IFF_PNG);
         pixDestroy(&pixd);
         pixd = pixScaleToGray3(pixs);
-        pixWrite("/tmp/s2g_3x", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_3x", pixd, IFF_PNG);
         pixDestroy(&pixd);
         pixd = pixScaleToGray4(pixs);
-        pixWrite("/tmp/s2g_4x", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_4x", pixd, IFF_PNG);
         pixDestroy(&pixd);
         pixd = pixScaleToGray6(pixs);
-        pixWrite("/tmp/s2g_6x", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_6x", pixd, IFF_PNG);
         pixDestroy(&pixd);
         pixd = pixScaleToGray8(pixs);
-        pixWrite("/tmp/s2g_8x", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_8x", pixd, IFF_PNG);
         pixDestroy(&pixd);
         pixd = pixScaleToGray16(pixs);
-        pixWrite("/tmp/s2g_16x", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_16x", pixd, IFF_PNG);
         pixDestroy(&pixd);
     }
 #endif
@@ -83,55 +85,55 @@ static char  mainName[] = "scaletest2";
     PIX  *pixt, *pixd;
 
         pixd = pixScaleToGray8(pixs);
-        pixWrite("/tmp/s2g_8.png", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_8.png", pixd, IFF_PNG);
         pixDestroy(&pixd);
 
         pixd = pixScaleToGray(pixs, 0.124);
-        pixWrite("/tmp/s2g_124.png", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_124.png", pixd, IFF_PNG);
         pixDestroy(&pixd);
 
         pixd = pixScaleToGray(pixs, 0.284);
-        pixWrite("/tmp/s2g_284.png", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_284.png", pixd, IFF_PNG);
         pixDestroy(&pixd);
 
         pixt = pixScaleToGray4(pixs);
         pixd = pixScaleBySampling(pixt, 284./250., 284./250.);
-        pixWrite("/tmp/s2g_284.2.png", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_284.2.png", pixd, IFF_PNG);
         pixDestroy(&pixt);
         pixDestroy(&pixd);
 
         pixt = pixScaleToGray4(pixs);
         pixd = pixScaleGrayLI(pixt, 284./250., 284./250.);
-        pixWrite("/tmp/s2g_284.3.png", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_284.3.png", pixd, IFF_PNG);
         pixDestroy(&pixt);
         pixDestroy(&pixd);
 
         pixt = pixScaleBinary(pixs, 284./250., 284./250.);
         pixd = pixScaleToGray4(pixt);
-        pixWrite("/tmp/s2g_284.4.png", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_284.4.png", pixd, IFF_PNG);
         pixDestroy(&pixt);
         pixDestroy(&pixd);
 
         pixt = pixScaleToGray4(pixs);
         pixd = pixScaleGrayLI(pixt, 0.49, 0.49);
-        pixWrite("/tmp/s2g_42.png", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_42.png", pixd, IFF_PNG);
         pixDestroy(&pixt);
         pixDestroy(&pixd);
 
         pixt = pixScaleToGray4(pixs);
         pixd = pixScaleSmooth(pixt, 0.49, 0.49);
-        pixWrite("/tmp/s2g_4sm.png", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_4sm.png", pixd, IFF_PNG);
         pixDestroy(&pixt);
         pixDestroy(&pixd);
 
         pixt = pixScaleBinary(pixs, .16/.125, .16/.125);
         pixd = pixScaleToGray8(pixt);
-        pixWrite("/tmp/s2g_16.png", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_16.png", pixd, IFF_PNG);
         pixDestroy(&pixt);
         pixDestroy(&pixd);
 
         pixd = pixScaleToGray(pixs, .16);
-        pixWrite("/tmp/s2g_16.2.png", pixd, IFF_PNG);
+        pixWrite("/tmp/lept/scale/s2g_16.2.png", pixd, IFF_PNG);
         pixDestroy(&pixd);
     }
 #endif
@@ -145,9 +147,9 @@ static char  mainName[] = "scaletest2";
         pixt1 = pixScaleSmooth(pixs, 0.154, 0.154);
         fprintf(stderr, "fast scale: %5.3f sec\n", stopTimer());
         pixDisplayWithTitle(pixt1, 0, 0, "smooth scaling", DISPLAY);
-        pixWrite("/tmp/smooth1.png", pixt1, IFF_PNG);
+        pixWrite("/tmp/lept/scale/smooth1.png", pixt1, IFF_PNG);
         pixt2 = pixUnsharpMasking(pixt1, 1, 0.3);
-        pixWrite("/tmp/smooth2.png", pixt2, IFF_PNG);
+        pixWrite("/tmp/lept/scale/smooth2.png", pixt2, IFF_PNG);
         pixDisplayWithTitle(pixt2, 200, 0, "sharp scaling", DISPLAY);
         pixDestroy(&pixt1);
         pixDestroy(&pixt2);
@@ -214,7 +216,7 @@ static char  mainName[] = "scaletest2";
 
 #if 1
         /* Test several methods for antialiased reduction,
-	 * along with sharpening */
+         * along with sharpening */
     if (d != 1)
     {
         PIX *pixt1, *pixt2, *pixt3, *pixt4, *pixt5, *pixt6, *pixt7;
@@ -229,7 +231,7 @@ static char  mainName[] = "scaletest2";
         pixt1 = pixScaleSmooth(pixs, SCALING, SCALING);
         fprintf(stderr, "fast scale: %5.3f sec\n", stopTimer());
         pixDisplayWithTitle(pixt1, 0, 0, "smooth scaling", DISPLAY);
-        pixWrite("/tmp/sm_1.png", pixt1, IFF_PNG);
+        pixWrite("/tmp/lept/scale/sm_1.png", pixt1, IFF_PNG);
         pixt2 = pixUnsharpMasking(pixt1, 1, 0.3);
         pixDisplayWithTitle(pixt2, 150, 0, "sharpened scaling", DISPLAY);
 
@@ -238,7 +240,7 @@ static char  mainName[] = "scaletest2";
         pixt4 = pixScaleBySampling(pixt3, SCALING, SCALING);
         fprintf(stderr, "slow scale: %5.3f sec\n", stopTimer());
         pixDisplayWithTitle(pixt4, 200, 200, "sampled scaling", DISPLAY);
-        pixWrite("/tmp/sm_2.png", pixt4, IFF_PNG);
+        pixWrite("/tmp/lept/scale/sm_2.png", pixt4, IFF_PNG);
 
         startTimer();
         pixt5 = pixUnsharpMasking(pixs, smooth, FRACT);
@@ -246,7 +248,7 @@ static char  mainName[] = "scaletest2";
         pixt7 = pixScaleBySampling(pixt6, SCALING, SCALING);
         fprintf(stderr, "very slow scale + sharp: %5.3f sec\n", stopTimer());
         pixDisplayWithTitle(pixt7, 500, 200, "sampled scaling", DISPLAY);
-        pixWrite("/tmp/sm_3.jpg", pixt7, IFF_JFIF_JPEG);
+        pixWrite("/tmp/lept/scale/sm_3.jpg", pixt7, IFF_JFIF_JPEG);
 
         pixDestroy(&pixt1);
         pixDestroy(&pixt2);
@@ -261,8 +263,8 @@ static char  mainName[] = "scaletest2";
 
 #if 1
         /* Test the color scaling function, comparing the
-	 * special case of scaling factor 2.0 with the
-	 * general case. */
+         * special case of scaling factor 2.0 with the
+         * general case. */
     if (d == 32)
     {
     PIX    *pix1, *pix2, *pixd;
@@ -272,22 +274,23 @@ static char  mainName[] = "scaletest2";
         startTimer();
         pix1 = pixScaleColorLI(pixs, 2.00001, 2.0);
         fprintf(stderr, " Time with regular LI: %7.3f\n", stopTimer());
-        pixWrite("/tmp/color1.jpg", pix1, IFF_JFIF_JPEG);
+        pixWrite("/tmp/lept/scale/color1.jpg", pix1, IFF_JFIF_JPEG);
         startTimer();
         pix2 = pixScaleColorLI(pixs, 2.0, 2.0);
         fprintf(stderr, " Time with 2x LI: %7.3f\n", stopTimer());
-        pixWrite("/tmp/color2.jpg", pix2, IFF_JFIF_JPEG);
+        pixWrite("/tmp/lept/scale/color2.jpg", pix2, IFF_JFIF_JPEG);
 
         pixd = pixAbsDifference(pix1, pix2);
         pixGetColorHistogram(pixd, 1, &nar, &nag, &nab);
         naseq = numaMakeSequence(0., 1., 256);
-        gplot = gplotCreate("/tmp/plot_absdiff", GPLOT_X11, "Number vs diff",
-                            "diff", "number");
+        gplot = gplotCreate("/tmp/lept/scale/c_absdiff", GPLOT_PNG,
+                            "Number vs diff", "diff", "number");
         gplotSetScaling(gplot, GPLOT_LOG_SCALE_Y);
         gplotAddPlot(gplot, naseq, nar, GPLOT_POINTS, "red");
         gplotAddPlot(gplot, naseq, nag, GPLOT_POINTS, "green");
         gplotAddPlot(gplot, naseq, nab, GPLOT_POINTS, "blue");
         gplotMakeOutput(gplot);
+        l_fileDisplay("/tmp/lept/scale/c_absdiff.png", 0, 100, 1.0);
         pixDestroy(&pix1);
         pixDestroy(&pix2);
         pixDestroy(&pixd);
@@ -302,8 +305,8 @@ static char  mainName[] = "scaletest2";
 
 #if 1
         /* Test the gray LI scaling function, comparing the
-	 * special cases of scaling factor 2.0 and 4.0 with the
-	 * general case */
+         * special cases of scaling factor 2.0 and 4.0 with the
+         * general case */
     if (d == 8 || d == 32)
     {
     PIX    *pixt, *pix0, *pix1, *pix2, *pixd;
@@ -331,17 +334,18 @@ static char  mainName[] = "scaletest2";
         pix2 = pixScaleGrayLI(pix0, 4.0, 4.0);
         fprintf(stderr, " Time with 2x LI: %7.3f\n", stopTimer());
 #endif
-        pixWrite("/tmp/gray1", pix1, IFF_JFIF_JPEG);
-        pixWrite("/tmp/gray2", pix2, IFF_JFIF_JPEG);
+        pixWrite("/tmp/lept/scale/gray1", pix1, IFF_JFIF_JPEG);
+        pixWrite("/tmp/lept/scale/gray2", pix2, IFF_JFIF_JPEG);
 
         pixd = pixAbsDifference(pix1, pix2);
         nagray = pixGetGrayHistogram(pixd, 1);
         naseq = numaMakeSequence(0., 1., 256);
-        gplot = gplotCreate("/tmp/g_absdiff", GPLOT_X11, "Number vs diff",
-                            "diff", "number");
+        gplot = gplotCreate("/tmp/lept/scale/g_absdiff", GPLOT_PNG,
+                            "Number vs diff", "diff", "number");
         gplotSetScaling(gplot, GPLOT_LOG_SCALE_Y);
         gplotAddPlot(gplot, naseq, nagray, GPLOT_POINTS, "gray");
         gplotMakeOutput(gplot);
+        l_fileDisplay("/tmp/lept/scale/g_absdiff.png", 750, 100, 1.0);
         pixDestroy(&pixt);
         pixDestroy(&pix0);
         pixDestroy(&pix1);

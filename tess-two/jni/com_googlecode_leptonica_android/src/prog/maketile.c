@@ -77,7 +77,7 @@ static char  mainName[] = "maketile";
     nfiles = sarrayGetCount(safiles);
     pixa = pixaCreate(nfiles);
     for (i = 0; i < nfiles; i++) {
-        fname = sarrayGetString(safiles, i, 0);
+        fname = sarrayGetString(safiles, i, L_NOCOPY);
         fullname = genPathname(dirin, fname);
         pix = pixRead(fullname);
         lept_free(fullname);

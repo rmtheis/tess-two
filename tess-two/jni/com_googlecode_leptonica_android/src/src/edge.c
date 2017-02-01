@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  edge.c
+/*!
+ * \file edge.c
+ * <pre>
  *
  *      Sobel edge detecting filter
  *          PIX      *pixSobelEdgeFilter()
@@ -54,6 +55,7 @@
  *
  *  See comments below for displaying the resulting image with
  *  the edges dark, both for 8 bpp and 1 bpp.
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -63,13 +65,14 @@
  *                    Sobel edge detecting filter                       *
  *----------------------------------------------------------------------*/
 /*!
- *  pixSobelEdgeFilter()
+ * \brief   pixSobelEdgeFilter()
  *
- *      Input:  pixs (8 bpp; no colormap)
- *              orientflag (L_HORIZONTAL_EDGES, L_VERTICAL_EDGES, L_ALL_EDGES)
- *      Return: pixd (8 bpp, edges are brighter), or null on error
+ * \param[in]    pixs 8 bpp; no colormap
+ * \param[in]    orientflag L_HORIZONTAL_EDGES, L_VERTICAL_EDGES, L_ALL_EDGES
+ * \return  pixd 8 bpp, edges are brighter, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Invert pixd to see larger gradients as darker (grayscale).
  *      (2) To generate a binary image of the edges, threshold
  *          the result using pixThresholdToBinary().  If the high
@@ -82,6 +85,7 @@
  *          Read the data incrementally across the image and unroll
  *          the loop.
  *      (4) This runs at about 45 Mpix/sec on a 3 GHz processor.
+ * </pre>
  */
 PIX *
 pixSobelEdgeFilter(PIX     *pixs,
@@ -164,13 +168,14 @@ PIX       *pixt, *pixd;
  *                   Two-sided edge gradient filter                     *
  *----------------------------------------------------------------------*/
 /*!
- *  pixTwoSidedEdgeFilter()
+ * \brief   pixTwoSidedEdgeFilter()
  *
- *      Input:  pixs (8 bpp; no colormap)
- *              orientflag (L_HORIZONTAL_EDGES, L_VERTICAL_EDGES)
- *      Return: pixd (8 bpp, edges are brighter), or null on error
+ * \param[in]    pixs 8 bpp; no colormap
+ * \param[in]    orientflag L_HORIZONTAL_EDGES, L_VERTICAL_EDGES
+ * \return  pixd 8 bpp, edges are brighter, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) For detecting vertical edges, this considers the
  *          difference of the central pixel from those on the left
  *          and right.  For situations where the gradient is the same
@@ -188,6 +193,7 @@ PIX       *pixt, *pixd;
  *      (3) This runs at about 60 Mpix/sec on a 3 GHz processor.
  *          It is about 30% faster than Sobel, and the results are
  *          similar.
+ * </pre>
  */
 PIX *
 pixTwoSidedEdgeFilter(PIX     *pixs,
@@ -265,37 +271,39 @@ PIX       *pixd;
  *                   Measurement of edge smoothness                     *
  *----------------------------------------------------------------------*/
 /*!
- *  pixMeasureEdgeSmoothness()
+ * \brief   pixMeasureEdgeSmoothness()
  *
- *      Input:  pixs (1 bpp)
- *              side (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOT)
- *              minjump (minimum jump to be counted; >= 1)
- *              minreversal (minimum reversal size for new peak or valley)
- *              &jpl (<optional return> jumps/length: number of jumps,
- *                    normalized to length of component side)
- *              &jspl (<optional return> jumpsum/length: sum of all
+ * \param[in]    pixs 1 bpp
+ * \param[in]    side L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOT
+ * \param[in]    minjump minimum jump to be counted; >= 1
+ * \param[in]    minreversal minimum reversal size for new peak or valley
+ * \param[out]   pjpl [optional] jumps/length: number of jumps,
+ *                    normalized to length of component side
+ * \param[out]   pjspl [optional] jumpsum/length: sum of all
  *                     sufficiently large jumps, normalized to length
- *                     of component side)
- *              &rpl (<optional return> reversals/length: number of
+ *                     of component side
+ * \param[out]   prpl [optional] reversals/length: number of
  *                    peak-to-valley or valley-to-peak reversals,
- *                    normalized to length of component side)
- *              debugfile (<optional> displays constructed edge; use NULL
- *                         for no output)
- *      Return: 0 if OK, 1 on error
+ *                    normalized to length of component side
+ * \param[in]    debugfile [optional] displays constructed edge; use NULL
+ *                         for no output
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This computes three measures of smoothness of the edge of a
  *          connected component:
- *            * jumps/length: (jpl) the number of jumps of size >= @minjump,
+ *            * jumps/length: (jpl) the number of jumps of size \>= %minjump,
  *              normalized to the length of the side
  *            * jump sum/length: (jspl) the sum of all jump lengths of
- *              size >= @minjump, normalized to the length of the side
- *            * reversals/length: (rpl) the number of peak <--> valley
- *              reversals, using @minreverse as a minimum deviation of
+ *              size \>= %minjump, normalized to the length of the side
+ *            * reversals/length: (rpl) the number of peak \<--\> valley
+ *              reversals, using %minreverse as a minimum deviation of
  *              the peak or valley from its preceding extremum,
  *              normalized to the length of the side
  *      (2) The input pix should be a single connected component, but
  *          this is not required.
+ * </pre>
  */
 l_int32
 pixMeasureEdgeSmoothness(PIX         *pixs,
@@ -354,7 +362,7 @@ NUMA    *na, *nae;
     }
 
     if (prpl) {
-        nae = numaFindExtrema(na, minreversal);
+        nae = numaFindExtrema(na, minreversal, NULL);
         nreversal = numaGetCount(nae) - 1;
         *prpl = (l_float32)nreversal / (l_float32)(n - 1);
         numaDestroy(&nae);
@@ -366,13 +374,13 @@ NUMA    *na, *nae;
 
 
 /*!
- *  pixGetEdgeProfile()
+ * \brief   pixGetEdgeProfile()
  *
- *      Input:  pixs (1 bpp)
- *              side (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOT)
- *              debugfile (<optional> displays constructed edge; use NULL
- *                         for no output)
- *      Return: na (of fg edge pixel locations), or null on error
+ * \param[in]    pixs 1 bpp
+ * \param[in]    side L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOT
+ * \param[in]    debugfile [optional] displays constructed edge; use NULL
+ *                         for no output
+ * \return  na of fg edge pixel locations, or NULL on error
  */
 NUMA *
 pixGetEdgeProfile(PIX         *pixs,
@@ -491,7 +499,7 @@ PIXCMAP  *cmap;
  *              direction (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOT)
  *              &loc (<return> location in scan direction coordinate
  *                    of last OFF pixel found)
- *      Return: na (of fg edge pixel locations), or null on error
+ *      Return: na (of fg edge pixel locations), or NULL on error
  *
  *  Notes:
  *      (1) Search starts from the pixel at (x, y), which is OFF.
@@ -568,7 +576,7 @@ l_uint32  val;
  *              direction (L_FROM_LEFT, L_FROM_RIGHT, L_FROM_TOP, L_FROM_BOT)
  *              &loc (<return> location in scan direction coordinate
  *                    of first ON pixel found)
- *      Return: na (of fg edge pixel locations), or null on error
+ *      Return: na (of fg edge pixel locations), or NULL on error
  *
  *  Notes:
  *      (1) Search starts from the pixel at (x, y), which is ON.

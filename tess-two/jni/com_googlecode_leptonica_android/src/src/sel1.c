@@ -25,8 +25,9 @@
  *====================================================================*/
 
 
-/*
- *  sel1.c
+/*!
+ * \file sel1.c
+ * <pre>
  *
  *      Basic ops on Sels and Selas
  *
@@ -134,6 +135,7 @@
  *        When we set specific elements in a sel, we likewise use
  *        (row, col) ordering:
  *             selSetElement(), with input (row, col, type)
+ * </pre>
  */
 
 #include <string.h>
@@ -228,10 +230,10 @@ static const struct CompParameterMap  comp_parameter_map[] =
  *                      Create / Destroy / Copy                           *
  *------------------------------------------------------------------------*/
 /*!
- *  selaCreate()
+ * \brief   selaCreate()
  *
- *      Input:  n (initial number of sel ptrs; use 0 for default)
- *      Return: sela, or null on error
+ * \param[in]    n initial number of sel ptrs; use 0 for default
+ * \return  sela, or NULL on error
  */
 SELA *
 selaCreate(l_int32  n)
@@ -252,18 +254,19 @@ SELA  *sela;
     sela->n = 0;
 
         /* make array of se ptrs */
-    if ((sela->sel = (SEL **)LEPT_CALLOC(n, sizeof(SEL *))) == NULL)
+    if ((sela->sel = (SEL **)LEPT_CALLOC(n, sizeof(SEL *))) == NULL) {
+        LEPT_FREE(sela);
         return (SELA *)ERROR_PTR("sel ptrs not made", procName, NULL);
-
+    }
     return sela;
 }
 
 
 /*!
- *  selaDestroy()
+ * \brief   selaDestroy()
  *
- *      Input:  &sela (<to be nulled>)
- *      Return: void
+ * \param[in,out]   psela to be nulled
+ * \return  void
  */
 void
 selaDestroy(SELA  **psela)
@@ -285,17 +288,19 @@ l_int32  i;
 
 
 /*!
- *  selCreate()
+ * \brief   selCreate()
  *
- *      Input:  height, width
- *              name (<optional> sel name; can be null)
- *      Return: sel, or null on error
+ * \param[in]    height, width
+ * \param[in]    name [optional] sel name; can be null
+ * \return  sel, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) selCreate() initializes all values to 0.
  *      (2) After this call, (cy,cx) and nonzero data values must be
  *          assigned.  If a text name is not assigned here, it will
  *          be needed later when the sel is put into a sela.
+ * </pre>
  */
 SEL *
 selCreate(l_int32      height,
@@ -312,18 +317,21 @@ SEL  *sel;
         sel->name = stringNew(name);
     sel->sy = height;
     sel->sx = width;
-    if ((sel->data = create2dIntArray(height, width)) == NULL)
+    if ((sel->data = create2dIntArray(height, width)) == NULL) {
+        LEPT_FREE(sel->name);
+        LEPT_FREE(sel);
         return (SEL *)ERROR_PTR("data not allocated", procName, NULL);
+    }
 
     return sel;
 }
 
 
 /*!
- *  selDestroy()
+ * \brief   selDestroy()
  *
- *      Input:  &sel (<to be nulled>)
- *      Return: void
+ * \param[in,out]   psel to be nulled
+ * \return  void
  */
 void
 selDestroy(SEL  **psel)
@@ -353,10 +361,10 @@ SEL     *sel;
 
 
 /*!
- *  selCopy()
+ * \brief   selCopy()
  *
- *      Input:  sel
- *      Return: a copy of the sel, or null on error
+ * \param[in]    sel
+ * \return  a copy of the sel, or NULL on error
  */
 SEL *
 selCopy(SEL  *sel)
@@ -377,8 +385,10 @@ SEL     *csel;
     csel->cy = cy;
     csel->cx = cx;
 
-    if ((csel->data = create2dIntArray(sy, sx)) == NULL)
+    if ((csel->data = create2dIntArray(sy, sx)) == NULL) {
+        LEPT_FREE(csel);
         return (SEL *)ERROR_PTR("sel data not made", procName, NULL);
+    }
 
     for (i = 0; i < sy; i++)
         for (j = 0; j < sx; j++)
@@ -392,15 +402,17 @@ SEL     *csel;
 
 
 /*!
- *  selCreateBrick()
+ * \brief   selCreateBrick()
  *
- *      Input:  height, width
- *              cy, cx  (origin, relative to UL corner at 0,0)
- *              type  (SEL_HIT, SEL_MISS, or SEL_DONT_CARE)
- *      Return: sel, or null on error
+ * \param[in]    h, w    height, width
+ * \param[in]    cy, cx  origin, relative to UL corner at 0,0
+ * \param[in]    type    SEL_HIT, SEL_MISS, or SEL_DONT_CARE
+ * \return  sel, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a rectangular sel of all hits, misses or don't cares.
+ * </pre>
  */
 SEL *
 selCreateBrick(l_int32  h,
@@ -431,16 +443,20 @@ SEL     *sel;
 
 
 /*!
- *  selCreateComb()
+ * \brief   selCreateComb()
  *
- *      Input:  factor1 (contiguous space between comb tines)
- *              factor2 (number of comb tines)
- *              direction (L_HORIZ, L_VERT)
- *      Return: sel, or null on error
+ * \param[in]    factor1 contiguous space between comb tines
+ * \param[in]    factor2 number of comb tines
+ * \param[in]    direction L_HORIZ, L_VERT
+ * \return  sel, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This generates a comb Sel of hits with the origin as
  *          near the center as possible.
+ *      (2) In use, this is complemented by a brick sel of size %factor1,
+ *          Both brick and comb sels are made by selectComposableSels().
+ * </pre>
  */
 SEL *
 selCreateComb(l_int32  factor1,
@@ -466,11 +482,9 @@ SEL     *sel;
         selSetOrigin(sel, size / 2, 0);
     }
 
+        /* Lay down the elements of the comb */
     for (i = 0; i < factor2; i++) {
-        if (factor2 & 1)  /* odd */
-            z = factor1 / 2 + i * factor1;
-        else
-            z = factor1 / 2 + i * factor1;
+        z = factor1 / 2 + i * factor1;
 /*        fprintf(stderr, "i = %d, factor1 = %d, factor2 = %d, z = %d\n",
                         i, factor1, factor2, z); */
         if (direction == L_HORIZ)
@@ -484,22 +498,24 @@ SEL     *sel;
 
 
 /*!
- *  create2dIntArray()
+ * \brief   create2dIntArray()
  *
- *      Input:  sy (rows == height)
- *              sx (columns == width)
- *      Return: doubly indexed array (i.e., an array of sy row pointers,
- *              each of which points to an array of sx ints)
+ * \param[in]    sy rows == height
+ * \param[in]    sx columns == width
+ * \return  doubly indexed array i.e., an array of sy row pointers,
+ *              each of which points to an array of sx ints
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The array[sy][sx] is indexed in standard "matrix notation",
  *          with the row index first.
+ * </pre>
  */
 l_int32 **
 create2dIntArray(l_int32  sy,
                  l_int32  sx)
 {
-l_int32    i;
+l_int32    i, j, success;
 l_int32  **array;
 
     PROCNAME("create2dIntArray");
@@ -507,12 +523,20 @@ l_int32  **array;
     if ((array = (l_int32 **)LEPT_CALLOC(sy, sizeof(l_int32 *))) == NULL)
         return (l_int32 **)ERROR_PTR("ptr array not made", procName, NULL);
 
+    success = TRUE;
     for (i = 0; i < sy; i++) {
-        if ((array[i] = (l_int32 *)LEPT_CALLOC(sx, sizeof(l_int32))) == NULL)
-            return (l_int32 **)ERROR_PTR("array not made", procName, NULL);
+        if ((array[i] = (l_int32 *)LEPT_CALLOC(sx, sizeof(l_int32))) == NULL) {
+            success = FALSE;
+            break;
+        }
     }
+    if (success) return array;
 
-    return array;
+        /* Cleanup after error */
+    for (j = 0; j < i; j++)
+        LEPT_FREE(array[j]);
+    LEPT_FREE(array);
+    return (l_int32 **)ERROR_PTR("array not made", procName, NULL);
 }
 
 
@@ -521,20 +545,22 @@ l_int32  **array;
  *                           Extension of sela                            *
  *------------------------------------------------------------------------*/
 /*!
- *  selaAddSel()
+ * \brief   selaAddSel()
  *
- *      Input:  sela
- *              sel to be added
- *              selname (ignored if already defined in sel;
- *                       req'd in sel when added to a sela)
- *              copyflag (for sel: 0 inserts, 1 copies)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    sela
+ * \param[in]    sel to be added
+ * \param[in]    selname ignored if already defined in sel;
+ *                       req'd in sel when added to a sela
+ * \param[in]    copyflag  L_INSERT or L_COPY
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This adds a sel, either inserting or making a copy.
  *      (2) Because every sel in a sela must have a name, it copies
  *          the input name if necessary.  You can input NULL for
  *          selname if the sel already has a name.
+ * </pre>
  */
 l_int32
 selaAddSel(SELA        *sela,
@@ -553,11 +579,13 @@ SEL     *csel;
         return ERROR_INT("sel not defined", procName, 1);
     if (!sel->name && !selname)
         return ERROR_INT("added sel must have name", procName, 1);
+    if (copyflag != L_INSERT && copyflag != L_COPY)
+        return ERROR_INT("invalid copyflag", procName, 1);
 
-    if (copyflag == TRUE) {
+    if (copyflag == L_COPY) {
         if ((csel = selCopy(sel)) == NULL)
             return ERROR_INT("csel not made", procName, 1);
-    } else {  /* copyflag is false; insert directly */
+    } else {  /* copyflag == L_INSERT */
         csel = sel;
     }
     if (!csel->name)
@@ -574,10 +602,10 @@ SEL     *csel;
 
 
 /*!
- *  selaExtendArray()
+ * \brief   selaExtendArray()
  *
- *      Input:  sela
- *      Return: 0 if OK; 1 on error
+ * \param[in]    sela
+ * \return  0 if OK; 1 on error
  */
 static l_int32
 selaExtendArray(SELA  *sela)
@@ -602,10 +630,10 @@ selaExtendArray(SELA  *sela)
  *                               Accessors                              *
  *----------------------------------------------------------------------*/
 /*!
- *  selaGetCount()
+ * \brief   selaGetCount()
  *
- *      Input:  sela
- *      Return: count, or 0 on error
+ * \param[in]    sela
+ * \return  count, or 0 on error
  */
 l_int32
 selaGetCount(SELA  *sela)
@@ -620,15 +648,17 @@ selaGetCount(SELA  *sela)
 
 
 /*!
- *  selaGetSel()
+ * \brief   selaGetSel()
  *
- *      Input:  sela
- *              index of sel to be retrieved (not copied)
- *      Return: sel, or null on error
+ * \param[in]    sela
+ * \param[in]    i index of sel to be retrieved not copied
+ * \return  sel, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This returns a ptr to the sel, not a copy, so the caller
  *          must not destroy it!
+ * </pre>
  */
 SEL *
 selaGetSel(SELA    *sela,
@@ -646,10 +676,10 @@ selaGetSel(SELA    *sela,
 
 
 /*!
- *  selGetName()
+ * \brief   selGetName()
  *
- *      Input:  sel
- *      Return: sel name (not copied), or null if no name or on error
+ * \param[in]    sel
+ * \return  sel name not copied, or NULL if no name or on error
  */
 char *
 selGetName(SEL  *sel)
@@ -664,15 +694,17 @@ selGetName(SEL  *sel)
 
 
 /*!
- *  selSetName()
+ * \brief   selSetName()
  *
- *      Input:  sel
- *              name (<optional>; can be null)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    sel
+ * \param[in]    name [optional]; can be null
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Always frees the existing sel name, if defined.
  *      (2) If name is not defined, just clears any existing sel name.
+ * </pre>
  */
 l_int32
 selSetName(SEL         *sel,
@@ -688,13 +720,13 @@ selSetName(SEL         *sel,
 
 
 /*!
- *  selaFindSelByName()
+ * \brief   selaFindSelByName()
  *
- *      Input:  sela
- *              sel name
- *              &index (<optional, return>)
- *              &sel  (<optional, return> sel (not a copy))
- *      Return: 0 if OK; 1 on error
+ * \param[in]    sela
+ * \param[in]    name sel name
+ * \param[out]   pindex [optional]
+ * \param[in]    psel   [optional] sel (not a copy)
+ * \return  0 if OK; 1 on error
  */
 l_int32
 selaFindSelByName(SELA        *sela,
@@ -737,13 +769,13 @@ SEL     *sel;
 
 
 /*!
- *  selGetElement()
+ * \brief   selGetElement()
  *
- *      Input:  sel
- *              row
- *              col
- *              &type  (<return> SEL_HIT, SEL_MISS, SEL_DONT_CARE)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    sel
+ * \param[in]    row
+ * \param[in]    col
+ * \param[out]   ptype  SEL_HIT, SEL_MISS, SEL_DONT_CARE
+ * \return  0 if OK; 1 on error
  */
 l_int32
 selGetElement(SEL      *sel,
@@ -769,19 +801,21 @@ selGetElement(SEL      *sel,
 
 
 /*!
- *  selSetElement()
+ * \brief   selSetElement()
  *
- *      Input:  sel
- *              row
- *              col
- *              type  (SEL_HIT, SEL_MISS, SEL_DONT_CARE)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    sel
+ * \param[in]    row
+ * \param[in]    col
+ * \param[in]    type  SEL_HIT, SEL_MISS, SEL_DONT_CARE
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Because we use row and column to index into an array,
  *          they are always non-negative.  The location of the origin
  *          (and the type of operation) determine the actual
  *          direction of the rasterop.
+ * </pre>
  */
 l_int32
 selSetElement(SEL     *sel,
@@ -806,11 +840,11 @@ selSetElement(SEL     *sel,
 
 
 /*!
- *  selGetParameters()
+ * \brief   selGetParameters()
  *
- *      Input:  sel
- *              &sy, &sx, &cy, &cx (<optional return>; each can be null)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    sel
+ * \param[out]   psy, psx, pcy, pcx [optional]  each can be null
+ * \return  0 if OK, 1 on error
  */
 l_int32
 selGetParameters(SEL      *sel,
@@ -836,11 +870,11 @@ selGetParameters(SEL      *sel,
 
 
 /*!
- *  selSetOrigin()
+ * \brief   selSetOrigin()
  *
- *      Input:  sel
- *              cy, cx
- *      Return: 0 if OK; 1 on error
+ * \param[in]    sel
+ * \param[in]    cy, cx
+ * \return  0 if OK; 1 on error
  */
 l_int32
 selSetOrigin(SEL     *sel,
@@ -858,11 +892,11 @@ selSetOrigin(SEL     *sel,
 
 
 /*!
- *  selGetTypeAtOrigin()
+ * \brief   selGetTypeAtOrigin()
  *
- *      Input:  sel
- *              &type  (<return> SEL_HIT, SEL_MISS, SEL_DONT_CARE)
- *      Return: 0 if OK; 1 on error or if origin is not found
+ * \param[in]    sel
+ * \param[out]   ptype  SEL_HIT, SEL_MISS, SEL_DONT_CARE
+ * \return  0 if OK; 1 on error or if origin is not found
  */
 l_int32
 selGetTypeAtOrigin(SEL      *sel,
@@ -893,11 +927,11 @@ l_int32  sx, sy, cx, cy, i, j;
 
 
 /*!
- *  selaGetBrickName()
+ * \brief   selaGetBrickName()
  *
- *      Input:  sela
- *              hsize, vsize (of brick sel)
- *      Return: sel name (new string), or null if no name or on error
+ * \param[in]    sela
+ * \param[in]    hsize, vsize of brick sel
+ * \return  sel name new string, or NULL if no name or on error
  */
 char *
 selaGetBrickName(SELA    *sela,
@@ -925,16 +959,18 @@ SEL     *sel;
 
 
 /*!
- *  selaGetCombName()
+ * \brief   selaGetCombName()
  *
- *      Input:  sela
- *              size (the product of sizes of the brick and comb parts)
- *              direction (L_HORIZ, L_VERT)
- *      Return: sel name (new string), or null if name not found or on error
+ * \param[in]    sela
+ * \param[in]    size the product of sizes of the brick and comb parts
+ * \param[in]    direction L_HORIZ, L_VERT
+ * \return  sel name new string, or NULL if name not found or on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Combs are by definition 1-dimensional, either horiz or vert.
  *      (2) Use this with comb Sels; e.g., from selaAddDwaCombs().
+ * </pre>
  */
 char *
 selaGetCombName(SELA    *sela,
@@ -985,12 +1021,13 @@ SEL     *sel;
 static void selaComputeCompositeParameters(const char *fileout);
 
 /*!
- *  selaComputeCompParameters()
+ * \brief   selaComputeCompParameters()
  *
- *      Input:  output filename
- *      Return: void
+ * \param[in]    output filename
+ * \return  void
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This static function was used to construct the comp_parameter_map[]
  *          array at the top of this file.  It is static because it does
  *          not need to be called again.  It remains here to show how
@@ -998,6 +1035,7 @@ static void selaComputeCompositeParameters(const char *fileout);
  *      (2) The output file was pasted directly into comp_parameter_map[].
  *          The composite parameter map is used to quickly determine
  *          the linear decomposition parameters and sel names.
+ * </pre>
  */
 static void
 selaComputeCompositeParameters(const char  *fileout)
@@ -1045,20 +1083,22 @@ SELA    *selabasic, *selacomb;
 
 
 /*!
- *  getCompositeParameters()
+ * \brief   getCompositeParameters()
  *
- *      Input:  size
- *              &size1 (<optional return> brick factor size)
- *              &size2 (<optional return> comb factor size)
- *              &nameh1 (<optional return> name of horiz brick)
- *              &nameh2 (<optional return> name of horiz comb)
- *              &namev1 (<optional return> name of vert brick)
- *              &namev2 (<optional return> name of vert comb)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    size
+ * \param[out]   psize1 [optional] brick factor size
+ * \param[out]   psize2 [optional] comb factor size
+ * \param[out]   pnameh1 [optional] name of horiz brick
+ * \param[out]   pnameh2 [optional] name of horiz comb
+ * \param[out]   pnamev1 [optional] name of vert brick
+ * \param[out]   pnamev2 [optional] name of vert comb
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This uses the big lookup table at the top of this file.
  *      (2) All returned strings are copies that must be freed.
+ * </pre>
  */
 l_int32
 getCompositeParameters(l_int32   size,
@@ -1099,10 +1139,10 @@ l_int32  index;
 
 
 /*!
- *  selaGetSelnames()
+ * \brief   selaGetSelnames()
  *
- *      Input:  sela
- *      Return: sa (of all sel names), or null on error
+ * \param[in]    sela
+ * \return  sa of all sel names, or NULL on error
  */
 SARRAY *
 selaGetSelnames(SELA  *sela)
@@ -1136,15 +1176,18 @@ SARRAY  *sa;
  *                Max translations for erosion and hmt                  *
  *----------------------------------------------------------------------*/
 /*!
- *  selFindMaxTranslations()
+ * \brief   selFindMaxTranslations()
  *
- *      Input:  sel
- *              &xp, &yp, &xn, &yn  (<return> max shifts)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    sel
+ * \param[out]   pxp, pyp, pxn, pyn  max shifts
+ * \return  0 if OK; 1 on error
  *
- *  Note: these are the maximum shifts for the erosion operation.
- *        For example, when j < cx, the shift of the image
+ * <pre>
+ * Notes:
+          These are the maximum shifts for the erosion operation.
+ *        For example, when j \< cx, the shift of the image
  *        is +x to the cx.  This is a positive xp shift.
+ * </pre>
  */
 l_int32
 selFindMaxTranslations(SEL      *sel,
@@ -1190,11 +1233,11 @@ l_int32  maxxp, maxyp, maxxn, maxyn;
  *                   Rotation by multiples of 90 degrees                *
  *----------------------------------------------------------------------*/
 /*!
- *  selRotateOrth()
+ * \brief   selRotateOrth()
  *
- *      Input:  sel
- *              quads (0 - 4; number of 90 degree cw rotations)
- *      Return: seld, or null on error
+ * \param[in]    sel
+ * \param[in]    quads 0 - 4; number of 90 degree cw rotations
+ * \return  seld, or NULL on error
  */
 SEL  *
 selRotateOrth(SEL     *sel,
@@ -1258,10 +1301,10 @@ SEL     *seld;
  *                       Sela and Sel serialized I/O                    *
  *----------------------------------------------------------------------*/
 /*!
- *  selaRead()
+ * \brief   selaRead()
  *
- *      Input:  filename
- *      Return: sela, or null on error
+ * \param[in]    fname filename
+ * \return  sela, or NULL on error
  */
 SELA  *
 selaRead(const char  *fname)
@@ -1276,8 +1319,10 @@ SELA  *sela;
 
     if ((fp = fopenReadStream(fname)) == NULL)
         return (SELA *)ERROR_PTR("stream not opened", procName, NULL);
-    if ((sela = selaReadStream(fp)) == NULL)
+    if ((sela = selaReadStream(fp)) == NULL) {
+        fclose(fp);
         return (SELA *)ERROR_PTR("sela not returned", procName, NULL);
+    }
     fclose(fp);
 
     return sela;
@@ -1285,10 +1330,10 @@ SELA  *sela;
 
 
 /*!
- *  selaReadStream()
+ * \brief   selaReadStream()
  *
- *      Input:  stream
- *      Return: sela, or null on error
+ * \param[in]    fp file stream
+ * \return  sela, or NULL on error
  */
 SELA  *
 selaReadStream(FILE  *fp)
@@ -1313,10 +1358,11 @@ SELA    *sela;
         return (SELA *)ERROR_PTR("sela not made", procName, NULL);
     sela->nalloc = n;
 
-    for (i = 0; i < n; i++)
-    {
-        if ((sel = selReadStream(fp)) == NULL)
-            return (SELA *)ERROR_PTR("sel not made", procName, NULL);
+    for (i = 0; i < n; i++) {
+        if ((sel = selReadStream(fp)) == NULL) {
+            selaDestroy(&sela);
+            return (SELA *)ERROR_PTR("sel not read", procName, NULL);
+        }
         selaAddSel(sela, sel, NULL, 0);
     }
 
@@ -1325,10 +1371,10 @@ SELA    *sela;
 
 
 /*!
- *  selRead()
+ * \brief   selRead()
  *
- *      Input:  filename
- *      Return: sel, or null on error
+ * \param[in]    fname filename
+ * \return  sel, or NULL on error
  */
 SEL  *
 selRead(const char  *fname)
@@ -1343,8 +1389,10 @@ SEL   *sel;
 
     if ((fp = fopenReadStream(fname)) == NULL)
         return (SEL *)ERROR_PTR("stream not opened", procName, NULL);
-    if ((sel = selReadStream(fp)) == NULL)
+    if ((sel = selReadStream(fp)) == NULL) {
+        fclose(fp);
         return (SEL *)ERROR_PTR("sela not returned", procName, NULL);
+    }
     fclose(fp);
 
     return sel;
@@ -1352,10 +1400,10 @@ SEL   *sel;
 
 
 /*!
- *  selReadStream()
+ * \brief   selReadStream()
  *
- *      Input:  stream
- *      Return: sel, or null on error
+ * \param[in]    fp file stream
+ * \return  sel, or NULL on error
  */
 SEL  *
 selReadStream(FILE  *fp)
@@ -1381,11 +1429,15 @@ SEL     *sel;
     sscanf(linebuf, "  ------  %s  ------", selname);
 
     if (fscanf(fp, "  sy = %d, sx = %d, cy = %d, cx = %d\n",
-            &sy, &sx, &cy, &cx) != 4)
+            &sy, &sx, &cy, &cx) != 4) {
+        LEPT_FREE(selname);
         return (SEL *)ERROR_PTR("dimensions not read", procName, NULL);
+    }
 
-    if ((sel = selCreate(sy, sx, selname)) == NULL)
+    if ((sel = selCreate(sy, sx, selname)) == NULL) {
+        LEPT_FREE(selname);
         return (SEL *)ERROR_PTR("sel not made", procName, NULL);
+    }
     selSetOrigin(sel, cy, cx);
 
     for (i = 0; i < sy; i++) {
@@ -1402,11 +1454,11 @@ SEL     *sel;
 
 
 /*!
- *  selaWrite()
+ * \brief   selaWrite()
  *
- *      Input:  filename
- *              sela
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fname filename
+ * \param[in]    sela
+ * \return  0 if OK, 1 on error
  */
 l_int32
 selaWrite(const char  *fname,
@@ -1431,11 +1483,11 @@ FILE  *fp;
 
 
 /*!
- *  selaWriteStream()
+ * \brief   selaWriteStream()
  *
- *      Input:  stream
- *              sela
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fp file stream
+ * \param[in]    sela
+ * \return  0 if OK, 1 on error
  */
 l_int32
 selaWriteStream(FILE  *fp,
@@ -1464,11 +1516,11 @@ SEL     *sel;
 
 
 /*!
- *  selWrite()
+ * \brief   selWrite()
  *
- *      Input:  filename
- *              sel
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fname filename
+ * \param[in]    sel
+ * \return  0 if OK, 1 on error
  */
 l_int32
 selWrite(const char  *fname,
@@ -1493,11 +1545,11 @@ FILE  *fp;
 
 
 /*!
- *  selWriteStream()
+ * \brief   selWriteStream()
  *
- *      Input:  stream
- *              sel
- *      Return: 0 if OK, 1 on error
+ * \param[in]    fp file stream
+ * \param[in]    sel
+ * \return  0 if OK, 1 on error
  */
 l_int32
 selWriteStream(FILE  *fp,
@@ -1532,14 +1584,15 @@ l_int32  sx, sy, cx, cy, i, j;
  *           Building custom hit-miss sels from compiled strings        *
  *----------------------------------------------------------------------*/
 /*!
- *  selCreateFromString()
+ * \brief   selCreateFromString()
  *
- *      Input:  text
- *              height, width
- *              name (<optional> sel name; can be null)
- *      Return: sel of the given size, or null on error
+ * \param[in]    text
+ * \param[in]    h, w  height, width
+ * \param[in]    name  [optional] sel name; can be null
+ * \return  sel of the given size, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The text is an array of chars (in row-major order) where
  *          each char can be one of the following:
  *             'x': hit
@@ -1549,10 +1602,13 @@ l_int32  sx, sy, cx, cy, i, j;
  *          When the origin falls on a don't-care, use 'C' as the uppecase
  *          for ' '.
  *      (3) The text can be input in a format that shows the 2D layout; e.g.,
+ * \code
  *              static const char *seltext = "x    "
  *                                           "x Oo "
  *                                           "x    "
  *                                           "xxxxx";
+ * \endcode
+ * </pre>
  */
 SEL *
 selCreateFromString(const char  *text,
@@ -1612,12 +1668,13 @@ char     ch;
 
 
 /*!
- *  selPrintToString()
+ * \brief   selPrintToString()
  *
- *      Input:  sel
- *      Return: str (string; caller must free)
+ * \param[in]    sel
+ * \return  str string; caller must free
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is an inverse function of selCreateFromString.
  *          It prints a textual representation of the SEL to a malloc'd
  *          string.  The format is the same as selCreateFromString
@@ -1627,6 +1684,7 @@ char     ch;
  *          save some Sels in a file, put them in a Sela and write
  *          them out with selaWrite().  They can then be read in
  *          with selaRead().
+ * </pre>
  */
 char *
 selPrintToString(SEL  *sel)
@@ -1673,21 +1731,22 @@ l_int32  sx, sy, cx, cy, x, y;
  *         Building custom hit-miss sels from a simple file format      *
  *----------------------------------------------------------------------*/
 /*!
- *  selaCreateFromFile()
+ * \brief   selaCreateFromFile()
  *
- *      Input:  filename
- *      Return: sela, or null on error
+ * \param[in]    filename
+ * \return  sela, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The file contains a sequence of Sel descriptions.
  *      (2) Each Sel is formatted as follows:
- *           - Any number of comment lines starting with '#' are ignored
- *           - The next line contains the selname
- *           - The next lines contain the Sel data.  They must be
+ *           ~ Any number of comment lines starting with '#' are ignored
+ *           ~ The next line contains the selname
+ *           ~ The next lines contain the Sel data.  They must be
  *             formatted similarly to the string format in
  *             selCreateFromString(), with each line beginning and
  *             ending with a double-quote, and showing the 2D layout.
- *           - Each Sel ends when a blank line, a comment line, or
+ *           ~ Each Sel ends when a blank line, a comment line, or
  *             the end of file is reached.
  *      (3) See selCreateFromString() for a description of the string
  *          format for the Sel data.  As an example, here are the lines
@@ -1700,6 +1759,7 @@ l_int32  sx, sy, cx, cy, x, y;
  *                    "  X  "
  *                    "   x "
  *                    "    x"
+ * </pre>
  */
 SELA *
 selaCreateFromFile(const char  *filename)
@@ -1773,21 +1833,22 @@ SELA    *sela;
 
 
 /*!
- *  selCreateFromSArray()
+ * \brief   selCreateFromSArray()
  *
- *      Input:  sa
- *              first (line of sarray where Sel begins)
- *              last (line of sarray where Sel ends)
- *      Return: sela, or null on error
+ * \param[in]    sa
+ * \param[in]    first line of sarray where Sel begins
+ * \param[in]    last line of sarray where Sel ends
+ * \return  sela, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The Sel contains the following lines:
- *          - The first line is the selname
- *          - The remaining lines contain the Sel data.  They must
+ *          ~ The first line is the selname
+ *          ~ The remaining lines contain the Sel data.  They must
  *            be formatted similarly to the string format in
  *            selCreateFromString(), with each line beginning and
  *            ending with a double-quote, and showing the 2D layout.
- *          - 'last' gives the last line in the Sel data.
+ *          ~ 'last' gives the last line in the Sel data.
  *      (2) See selCreateFromString() for a description of the string
  *          format for the Sel data.  As an example, here are the lines
  *          of is a valid file for a single Sel.  In the file, all lines
@@ -1799,6 +1860,7 @@ SELA    *sela;
  *                    "  X  "
  *                    "   x "
  *                    "    x"
+ * </pre>
  */
 static SEL *
 selCreateFromSArray(SARRAY  *sa,
@@ -1835,22 +1897,23 @@ SEL     *sel;
             switch (ch)
             {
                 case 'X':
-                    selSetOrigin(sel, y, x);
+                    selSetOrigin(sel, y, x);  /* set origin and hit */
                 case 'x':
                     selSetElement(sel, y, x, SEL_HIT);
                     break;
 
                 case 'O':
-                    selSetOrigin(sel, y, x);
+                    selSetOrigin(sel, y, x);  /* set origin and miss */
                 case 'o':
                     selSetElement(sel, y, x, SEL_MISS);
                     break;
 
                 case 'C':
-                    selSetOrigin(sel, y, x);
+                    selSetOrigin(sel, y, x);  /* set origin and don't-care */
                 case ' ':
                     selSetElement(sel, y, x, SEL_DONT_CARE);
                     break;
+
                 default:
                     selDestroy(&sel);
                     return (SEL *)ERROR_PTR("unknown char", procName, NULL);
@@ -1866,15 +1929,17 @@ SEL     *sel;
  *               Making hit-only SELs from Pta and Pix                  *
  *----------------------------------------------------------------------*/
 /*!
- *  selCreateFromPta()
+ * \brief   selCreateFromPta()
  *
- *      Input:  pta
- *              cy, cx (origin of sel)
- *              name (<optional> sel name; can be null)
- *      Return: sel (of minimum required size), or null on error
+ * \param[in]    pta
+ * \param[in]    cy, cx origin of sel
+ * \param[in]    name [optional] sel name; can be null
+ * \return  sel of minimum required size, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The origin and all points in the pta must be positive.
+ * </pre>
  */
 SEL *
 selCreateFromPta(PTA         *pta,
@@ -1914,15 +1979,17 @@ SEL     *sel;
 
 
 /*!
- *  selCreateFromPix()
+ * \brief   selCreateFromPix()
  *
- *      Input:  pix
- *              cy, cx (origin of sel)
- *              name (<optional> sel name; can be null)
- *      Return: sel, or null on error
+ * \param[in]    pix
+ * \param[in]    cy, cx origin of sel
+ * \param[in]    name [optional] sel name; can be null
+ * \return  sel, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The origin must be positive.
+ * </pre>
  */
 SEL *
 selCreateFromPix(PIX         *pix,
@@ -1965,13 +2032,15 @@ l_uint32  val;
  *
  *  selReadFromColorImage()
  *
- *      Input:  pathname
- *      Return: sel if OK; null on error
+ * \param[in]    pathname
+ * \return  sel if OK; NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Loads an image from a file and creates a (hit-miss) sel.
  *      (2) The sel name is taken from the pathname without the directory
  *          and extension.
+ * </pre>
  */
 SEL *
 selReadFromColorImage(const char  *pathname)
@@ -1986,13 +2055,15 @@ char  *basename, *selname;
     splitPathAtDirectory (basename, NULL, &selname);
     LEPT_FREE(basename);
 
-    if ((pix = pixRead(pathname)) == NULL)
+    if ((pix = pixRead(pathname)) == NULL) {
+        LEPT_FREE(selname);
         return (SEL *)ERROR_PTR("pix not returned", procName, NULL);
+    }
     if ((sel = selCreateFromColorPix(pix, selname)) == NULL)
-        return (SEL *)ERROR_PTR("sel not made", procName, NULL);
+        L_ERROR("sel not made\n", procName);
+
     LEPT_FREE(selname);
     pixDestroy(&pix);
-
     return sel;
 }
 
@@ -2001,11 +2072,12 @@ char  *basename, *selname;
  *
  *  selCreateFromColorPix()
  *
- *      Input:  pixs (cmapped or rgb)
- *              selname (<optional> sel name; can be null)
- *      Return: sel if OK, null on error
+ * \param[in]    pixs cmapped or rgb
+ * \param[in]    selname [optional] sel name; can be null
+ * \return  sel if OK, NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The sel size is given by the size of pixs.
  *      (2) In pixs, hits are represented by green pixels, misses by red
  *          pixels, and don't-cares by white pixels.
@@ -2017,6 +2089,7 @@ char  *basename, *selname;
  *            if a don't care: gray
  *          If there is no such pixel, the origin defaults to the approximate
  *          center of the sel.
+ * </pre>
  */
 SEL *
 selCreateFromColorPix(PIX   *pixs,
@@ -2092,20 +2165,22 @@ l_uint32  pixval;
  *                     Printable display of sel                         *
  *----------------------------------------------------------------------*/
 /*!
- *  selDisplayInPix()
+ * \brief   selDisplayInPix()
  *
- *      Input:  sel
- *              size (of grid interiors; odd; minimum size of 13 is enforced)
- *              gthick (grid thickness; minimum size of 2 is enforced)
- *      Return: pix (display of sel), or null on error
+ * \param[in]    sel
+ * \param[in]    size of grid interiors; odd; minimum size of 13 is enforced
+ * \param[in]    gthick grid thickness; minimum size of 2 is enforced
+ * \return  pix display of sel, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This gives a visual representation of a general (hit-miss) sel.
  *      (2) The empty sel is represented by a grid of intersecting lines.
  *      (3) Three different patterns are generated for the sel elements:
- *          - hit (solid black circle)
- *          - miss (black ring; inner radius is radius2)
- *          - origin (cross, XORed with whatever is there)
+ *          ~ hit (solid black circle)
+ *          ~ miss (black ring; inner radius is radius2)
+ *          ~ origin (cross, XORed with whatever is there)
+ * </pre>
  */
 PIX *
 selDisplayInPix(SEL     *sel,
@@ -2147,8 +2222,8 @@ PTA     *pta1, *pta2, *pta1t, *pta2t;
                       gthick, L_SET_PIXELS);
 
         /* Generate hit and miss patterns */
-    radius1 = (l_int32)(0.85 * ((size - 1) / 2) + 0.5);  /* of hit */
-    radius2 = (l_int32)(0.65 * ((size - 1) / 2) + 0.5);  /* inner miss radius */
+    radius1 = (l_int32)(0.85 * ((size - 1) / 2.0) + 0.5);  /* of hit */
+    radius2 = (l_int32)(0.65 * ((size - 1) / 2.0) + 0.5);  /* of inner miss */
     pta1 = generatePtaFilledCircle(radius1);
     pta2 = generatePtaFilledCircle(radius2);
     shift1 = (size - 1) / 2 - radius1;  /* center circle in square */
@@ -2208,20 +2283,22 @@ PTA     *pta1, *pta2, *pta1t, *pta2t;
 
 
 /*!
- *  selaDisplayInPix()
+ * \brief   selaDisplayInPix()
  *
- *      Input:  sela
- *              size (of grid interiors; odd; minimum size of 13 is enforced)
- *              gthick (grid thickness; minimum size of 2 is enforced)
- *              spacing (between sels, both horizontally and vertically)
- *              ncols (number of sels per "line")
- *      Return: pix (display of all sels in sela), or null on error
+ * \param[in]    sela
+ * \param[in]    size of grid interiors; odd; minimum size of 13 is enforced
+ * \param[in]    gthick grid thickness; minimum size of 2 is enforced
+ * \param[in]    spacing between sels, both horizontally and vertically
+ * \param[in]    ncols number of sels per "line"
+ * \return  pix display of all sels in sela, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This gives a visual representation of all the sels in a sela.
  *      (2) See notes in selDisplayInPix() for display params of each sel.
  *      (3) This gives the nicest results when all sels in the sela
  *          are the same size.
+ * </pre>
  */
 PIX *
 selaDisplayInPix(SELA    *sela,

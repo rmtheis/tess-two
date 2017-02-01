@@ -102,7 +102,6 @@ static char  mainName[] = "cctest1";
         pixRenderBox(pixs, box, 3, L_FLIP_PIXELS);
         boxDestroy(&box);   /* remember, clones need to be destroyed */
     }
-    pixDisplayWrite(pixs, 1);
     boxaDestroy(&boxa);
 
         /* Display each component as a random color in cmapped 8 bpp.
@@ -112,7 +111,6 @@ static char  mainName[] = "cctest1";
     cmap = pixGetColormap(pixd);
     pixcmapResetColor(cmap, 0, 255, 255, 255);  /* reset background to white */
     pixDisplay(pixd, 100, 100);
-    pixDisplayWrite(pixd, 1);
     boxaDestroy(&boxa);
     pixDestroy(&pixd);
     pixaDestroy(&pixa);

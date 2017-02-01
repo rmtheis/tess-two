@@ -56,6 +56,8 @@ static char  mainName[] = "histotest";
     filein = argv[1];
     sigbits = atoi(argv[2]);
 
+    lept_mkdir("lept/histo");
+
     if ((pixs = pixRead(filein)) == NULL)
         return ERROR_INT("pixs not made", mainName, 1);
     d = pixGetDepth(pixs);
@@ -67,23 +69,26 @@ static char  mainName[] = "histotest";
         if ((na = pixOctcubeHistogram(pixs, sigbits, NULL)) == NULL)
             return ERROR_INT("na not made", mainName, 1);
         fprintf(stderr, "histo time = %7.3f sec\n", stopTimer());
-        gplot = gplotCreate("/tmp/junkrootc", GPLOT_X11,
-                "color histogram with octcube indexing",
-                "octcube index", "number of pixels in cube");
+        gplot = gplotCreate("/tmp/lept/histo/color", GPLOT_PNG,
+                            "color histogram with octcube indexing",
+                            "octcube index", "number of pixels in cube");
         gplotAddPlot(gplot, NULL, na, GPLOT_LINES, "input pix");
         gplotMakeOutput(gplot);
         gplotDestroy(&gplot);
+        l_fileDisplay("/tmp/lept/histo/color.png", 100, 100, 1.0);
     }
     else {
         if ((na = pixGetGrayHistogram(pixs, 1)) == NULL)
             return ERROR_INT("na not made", mainName, 1);
         numaWrite("/tmp/junkna", na);
-        gplot = gplotCreate("/tmp/junkrootg", GPLOT_X11, "grayscale histogram",
-                            "gray value", "number of pixels");
+        gplot = gplotCreate("/tmp/lept/histo/gray", GPLOT_PNG,
+                            "grayscale histogram", "gray value",
+                            "number of pixels");
         gplotSetScaling(gplot, GPLOT_LOG_SCALE_Y);
         gplotAddPlot(gplot, NULL, na, GPLOT_LINES, "input pix");
         gplotMakeOutput(gplot);
         gplotDestroy(&gplot);
+        l_fileDisplay("/tmp/lept/histo/gray.png", 100, 100, 1.0);
     }
 
     pixDestroy(&pixs);

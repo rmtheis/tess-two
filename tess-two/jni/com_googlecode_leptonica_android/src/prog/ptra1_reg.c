@@ -37,8 +37,6 @@ static void MakePtrasFromPixa(PIXA *pixa, L_PTRA **ppapix, L_PTRA **ppabox,
 static PIXA *ReconstructPixa(L_PTRA *papix, L_PTRA *pabox, l_int32 choose);
 static PIXA *ReconstructPixa1(L_PTRA *papix, L_PTRA *pabox);
 static PIXA *ReconstructPixa2(L_PTRA *papix, L_PTRA *pabox);
-static void CopyPtras(L_PTRA *papixs, L_PTRA *paboxs,
-                      L_PTRA **ppapixd, L_PTRA **ppaboxd);
 static void DisplayResult(PIXA *pixac, PIXA **ppixa, l_int32 w, l_int32 h,
                           l_int32 newline);
 
@@ -353,29 +351,6 @@ PIXA    *pixat;
 
 
 static void
-CopyPtras(L_PTRA   *papixs,
-          L_PTRA   *paboxs,
-          L_PTRA  **ppapixd,
-          L_PTRA  **ppaboxd)
-{
-l_int32  i, imax;
-BOX     *box;
-PIX     *pix;
-
-    ptraGetMaxIndex(papixs, &imax);
-    *ppapixd = ptraCreate(imax + 1);
-    *ppaboxd = ptraCreate(imax + 1);
-    for (i = 0; i <= imax; i++) {
-        pix = pixCopy(NULL, (PIX *)ptraGetPtrToItem(papixs, i));
-        box = boxCopy((BOX *)ptraGetPtrToItem(paboxs, i));
-        ptraAdd(*ppapixd, pix);
-        ptraAdd(*ppaboxd, box);
-    }
-    return;
-}
-
-
-static void
 DisplayResult(PIXA   *pixac,
               PIXA  **ppixa,
               l_int32  w,
@@ -390,4 +365,3 @@ PIX   *pixd;
     pixaDestroy(ppixa);
     return;
 }
-

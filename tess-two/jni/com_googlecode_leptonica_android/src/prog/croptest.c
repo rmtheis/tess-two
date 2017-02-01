@@ -25,14 +25,9 @@
  *====================================================================*/
 
 /*
- * croptest.c
+ *  croptest.c
  */
 
-#ifndef  _WIN32
-#include <unistd.h>
-#else
-#include <windows.h>   /* for Sleep() */
-#endif  /* _WIN32 */
 #include "allheaders.h"
 
 static const l_int32  mindif = 60;
@@ -47,15 +42,16 @@ const char *fnames[] = {"lyra.005.jpg", "lyra.036.jpg"};
 int main(int    argc,
          char **argv)
 {
-#if 1
 l_int32      i, pageno, w, h, left, right;
-NUMA        *nar, *naro, *narl, *nart, *nai, *naio, *nait;
+NUMA        *na1, *nar, *naro, *narl, *nart, *nai, *naio, *nait;
 PIX         *pixs, *pixr, *pixg, *pixgi, *pixd, *pix1, *pix2;
 PIXA        *pixa1, *pixa2;
 static char  mainName[] = "croptest";
 
     if (argc != 1)
         return ERROR_INT("syntax: croptest", mainName, 1);
+
+    lept_mkdir("lept/crop");
 
     pixa1 = pixaCreate(2);
     for (i = 0; i < 2; i++) {
@@ -70,7 +66,8 @@ static char  mainName[] = "croptest";
         nar = pixReversalProfile(pixg, 0.8, L_VERTICAL_LINE,
                                  0, h - 1, mindif, 1, 1);
         naro = numaOpen(nar, 11);
-        gplotSimple1(naro, GPLOT_PNG, "/tmp/root1", "Reversals Opened");
+        gplotSimple1(naro, GPLOT_PNG, "/tmp/lept/crop/reversals",
+                     "Reversals Opened");
         narl = numaLowPassIntervals(naro, 0.1, 0.0);
         fprintf(stderr, "narl:");
         numaWriteStream(stderr, narl);
@@ -85,7 +82,8 @@ static char  mainName[] = "croptest";
         nai = pixAverageIntensityProfile(pixgi, 0.8, L_VERTICAL_LINE,
                                          0, h - 1, 1, 1);
         naio = numaOpen(nai, 11);
-        gplotSimple1(naio, GPLOT_PNG, "/tmp/root2", "Intensities Opened");
+        gplotSimple1(naio, GPLOT_PNG, "/tmp/lept/crop/intensities",
+                     "Intensities Opened");
         nait = numaThresholdEdges(naio, 0.4, 0.6, 0.0);
         fprintf(stderr, "nait:");
         numaWriteStream(stderr, nait);
@@ -98,15 +96,10 @@ static char  mainName[] = "croptest";
         fprintf(stderr, "left = %d, right = %d\n", left, right);
 
             /* Output visuals */
-#ifndef  _WIN32
-        sleep(1);
-#else
-        Sleep(1000);
-#endif  /* _WIN32 */
         pixa2 = pixaCreate(3);
         pixSaveTiled(pixr, pixa2, 1.0, 1, 25, 32);
-        pix1 = pixRead("/tmp/root1.png");
-        pix2 = pixRead("/tmp/root2.png");
+        pix1 = pixRead("/tmp/lept/crop/reversals.png");
+        pix2 = pixRead("/tmp/lept/crop/intensities.png");
         pixSaveTiled(pix1, pixa2, 1.0, 1, 25, 32);
         pixSaveTiled(pix2, pixa2, 1.0, 0, 25, 32);
         pixd = pixaDisplay(pixa2, 0, 0);
@@ -124,37 +117,38 @@ static char  mainName[] = "croptest";
         numaDestroy(&nait);
     }
 
+    fprintf(stderr, "Writing profiles to /tmp/lept/crop/croptest.pdf\n");
     pixaConvertToPdf(pixa1, 75, 1.0, L_JPEG_ENCODE, 0, "Profiles",
-                     "/tmp/croptest.pdf");
+                     "/tmp/lept/crop/croptest.pdf");
+    pixaDestroy(&pixa1);
+
+        /* Now plot the profiles from text lines */
+    pixs = pixRead("1555.007.jpg");
+    pixGetDimensions(pixs, &w, &h, NULL);
+    na1 = pixReversalProfile(pixs, 0.98, L_HORIZONTAL_LINE,
+                                  0, h - 1, 40, 3, 3);
+    gplotSimple1(na1, GPLOT_PNG, "/tmp/lept/crop/rev", "Reversals");
+    numaDestroy(&na1);
+
+    na1 = pixAverageIntensityProfile(pixs, 0.98, L_HORIZONTAL_LINE,
+                                    0, h - 1, 1, 1);
+    gplotSimple1(na1, GPLOT_PNG, "/tmp/lept/crop/inten", "Intensities");
+    numaDestroy(&na1);
+    pixa1 = pixaCreate(3);
+    pixaAddPix(pixa1, pixScale(pixs, 0.5, 0.5), L_INSERT);
+    pix1 = pixRead("/tmp/lept/crop/rev.png");
+    pixaAddPix(pixa1, pix1, L_INSERT);
+    pix1 = pixRead("/tmp/lept/crop/inten.png");
+    pixaAddPix(pixa1, pix1, L_INSERT);
+    pixd = pixaDisplayTiledInRows(pixa1, 32, 1000, 1.0, 0, 30, 2);
+    pixWrite("/tmp/lept/crop/profiles.png", pixd, IFF_PNG);
+    pixDisplay(pixd, 100, 100);
+    pixDestroy(&pixs);
+    pixDestroy(&pixd);
     pixaDestroy(&pixa1);
     return 0;
 }
-#endif
 
-#if 0
-/*    pixs = pixRead("lucasta-cropped.jpg"); */
-    Pix *pixs = pixRead("1555.007.jpg");
-/*    pixs = pixRead("feyn.tif"); */
-    int w, h, d, minrev;
-    pixGetDimensions(pixs, &w, &h, &d);
-    if (d == 1)
-        minrev = 1;
-    else
-        minrev = 40;
-
-    Numa *na = pixReversalProfile(pixs, 0.98, L_HORIZONTAL_LINE,
-                                  0, h - 1, minrev, 3, 3);
-    gplotSimple1(na, GPLOT_X11, "/tmp/junkroot1", "Reversals");
-    numaDestroy(&na);
-
-    na = pixAverageIntensityProfile(pixs, 0.98, L_HORIZONTAL_LINE,
-                                    0, h - 1, 1, 1);
-    gplotSimple1(na, GPLOT_X11, "/tmp/junkroot2", "Intensities");
-    numaDestroy(&na);
-    pixDestroy(&pixs);
-    }
-
-#endif
 
 /*
  * Use these variable abbreviations:
@@ -263,6 +257,4 @@ l_int32  nrt, ntrans, start, end, sign, txt2, pap2, found, trans;
     *pright = pap2;
     return 0;
 }
-
-
 

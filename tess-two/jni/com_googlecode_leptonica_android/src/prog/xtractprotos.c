@@ -79,24 +79,22 @@
  *   The xtractprotos version number, defined below, is incremented
  *   whenever a new version is made.
  *
- *   N.B. This uses cpp to preprocess the input.
+ *   Note: this uses cpp to preprocess the input.  (The name of the cpp
+ *   tempfile is constructed below.  It has a "." in the tail, which
+ *   Cygwin needs to prevent it from appending ".exe" to the filename.)
  */
 
 #include <string.h>
 #include "allheaders.h"
 
 static const l_int32  L_BUF_SIZE = 512;
-
-    /* Cygwin needs an extension to prevent it from appending
-     * ".exe" to the filename */
-static const char *tempfile = "/tmp/temp_cpp_output.txt";
 static const char *version = "1.5";
 
 
 int main(int    argc,
          char **argv)
 {
-char        *filein, *str, *prestring, *outprotos, *protostr;
+char        *filein, *str, *tempfile, *prestring, *outprotos, *protostr;
 const char  *spacestr = " ";
 char         buf[L_BUF_SIZE];
 l_uint8     *allheaders;
@@ -183,6 +181,10 @@ static char  mainName[] = "xtractprotos";
         /* Then the prototypes */
     firstfile = 1 + nflags;
     protos_added = FALSE;
+    if ((tempfile = l_makeTempFilename()) == NULL) {
+        fprintf(stderr, "failure to make a writeable temp file\n");
+        return 1;
+    }
     for (i = firstfile; i < argc; i++) {
         filein = argv[i];
         len = strlen(filein);
@@ -206,6 +208,8 @@ static char  mainName[] = "xtractprotos";
         }
         lept_free(str);
     }
+    lept_rmfile(tempfile);
+    lept_free(tempfile);
 
         /* Lastly the extern C tail */
     sa = sarrayCreate(0);

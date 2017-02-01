@@ -25,8 +25,9 @@
  *====================================================================*/
 
 
-/*
- *   pixacc.c
+/*!
+ * \file  pixacc.c
+ * <pre>
  *
  *      Pixacc creation, destruction
  *           PIXACC   *pixaccCreate()
@@ -57,7 +58,8 @@
  *     pixaccMultConst(pacc, 0.4);
  *     pixaccMultConstAccumulate(pacc, pix2, 0.6);  // Add in 0.6 of the second
  *     pixd = pixaccFinal(pacc, d);  // Get the result
- *     pixaccDestroy(&pacc);
+ *     pixaccDestroy(\&pacc);
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -67,20 +69,22 @@
  *                     Pixacc creation, destruction                    *
  *---------------------------------------------------------------------*/
 /*!
- *  pixaccCreate()
+ * \brief   pixaccCreate()
  *
- *      Input:  w, h (of 32 bpp internal Pix)
- *              negflag (0 if only positive numbers are involved;
- *                       1 if there will be negative numbers)
- *      Return: pixacc, or null on error
+ * \param[in]    w, h of 32 bpp internal Pix
+ * \param[in]    negflag 0 if only positive numbers are involved;
+ *                       1 if there will be negative numbers
+ * \return  pixacc, or NULL on error
  *
- *  Notes:
- *      (1) Use @negflag = 1 for safety if any negative numbers are going
+ * <pre>
+ * Notes:
+ *      (1) Use %negflag = 1 for safety if any negative numbers are going
  *          to be used in the chain of operations.  Negative numbers
  *          arise, e.g., by subtracting a pix, or by adding a pix
  *          that has been pre-multiplied by a negative number.
  *      (2) Initializes the internal 32 bpp pix, similarly to the
  *          initialization in pixInitAccumulate().
+ * </pre>
  */
 PIXACC *
 pixaccCreate(l_int32  w,
@@ -109,15 +113,17 @@ PIXACC  *pixacc;
 
 
 /*!
- *  pixaccCreateFromPix()
+ * \brief   pixaccCreateFromPix()
  *
- *      Input:  pix
- *              negflag (0 if only positive numbers are involved;
- *                       1 if there will be negative numbers)
- *      Return: pixacc, or null on error
+ * \param[in]    pix
+ * \param[in]    negflag 0 if only positive numbers are involved;
+ *                       1 if there will be negative numbers
+ * \return  pixacc, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) See pixaccCreate()
+ * </pre>
  */
 PIXACC *
 pixaccCreateFromPix(PIX     *pix,
@@ -139,13 +145,14 @@ PIXACC  *pixacc;
 
 
 /*!
- *  pixaccDestroy()
+ * \brief   pixaccDestroy()
  *
- *      Input:  &pixacc (<can be null>)
- *      Return: void
+ * \param[in,out] ppixacc to be nulled
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Always nulls the input ptr.
+ * </pre>
  */
 void
 pixaccDestroy(PIXACC  **ppixacc)
@@ -173,11 +180,11 @@ PIXACC  *pixacc;
  *                            Pixacc finalization                      *
  *---------------------------------------------------------------------*/
 /*!
- *  pixaccFinal()
+ * \brief   pixaccFinal()
  *
- *      Input:  pixacc
- *              outdepth (8, 16 or 32 bpp)
- *      Return: pixd (8 , 16 or 32 bpp), or null on error
+ * \param[in]    pixacc
+ * \param[in]    outdepth 8, 16 or 32 bpp
+ * \return  pixd 8 , 16 or 32 bpp, or NULL on error
  */
 PIX *
 pixaccFinal(PIXACC  *pixacc,
@@ -197,10 +204,10 @@ pixaccFinal(PIXACC  *pixacc,
  *                            Pixacc accessors                         *
  *---------------------------------------------------------------------*/
 /*!
- *  pixaccGetPix()
+ * \brief   pixaccGetPix()
  *
- *      Input:  pixacc
- *      Return: pix, or null on error
+ * \param[in]    pixacc
+ * \return  pix, or NULL on error
  */
 PIX *
 pixaccGetPix(PIXACC  *pixacc)
@@ -214,10 +221,10 @@ pixaccGetPix(PIXACC  *pixacc)
 
 
 /*!
- *  pixaccGetOffset()
+ * \brief   pixaccGetOffset()
  *
- *      Input:  pixacc
- *      Return: offset, or -1 on error
+ * \param[in]    pixacc
+ * \return  offset, or -1 on error
  */
 l_int32
 pixaccGetOffset(PIXACC  *pixacc)
@@ -234,11 +241,11 @@ pixaccGetOffset(PIXACC  *pixacc)
  *                          Pixacc accumulators                        *
  *---------------------------------------------------------------------*/
 /*!
- *  pixaccAdd()
+ * \brief   pixaccAdd()
  *
- *      Input:  pixacc
- *              pix (to be added)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixacc
+ * \param[in]    pix to be added
+ * \return  0 if OK, 1 on error
  */
 l_int32
 pixaccAdd(PIXACC  *pixacc,
@@ -256,11 +263,11 @@ pixaccAdd(PIXACC  *pixacc,
 
 
 /*!
- *  pixaccSubtract()
+ * \brief   pixaccSubtract()
  *
- *      Input:  pixacc
- *              pix (to be subtracted)
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixacc
+ * \param[in]    pix to be subtracted
+ * \return  0 if OK, 1 on error
  */
 l_int32
 pixaccSubtract(PIXACC  *pixacc,
@@ -278,11 +285,11 @@ pixaccSubtract(PIXACC  *pixacc,
 
 
 /*!
- *  pixaccMultConst()
+ * \brief   pixaccMultConst()
  *
- *      Input:  pixacc
- *              factor
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixacc
+ * \param[in]    factor
+ * \return  0 if OK, 1 on error
  */
 l_int32
 pixaccMultConst(PIXACC    *pixacc,
@@ -299,16 +306,18 @@ pixaccMultConst(PIXACC    *pixacc,
 
 
 /*!
- *  pixaccMultConstAccumulate()
+ * \brief   pixaccMultConstAccumulate()
  *
- *      Input:  pixacc
- *              pix
- *              factor
- *      Return: 0 if OK, 1 on error
+ * \param[in]    pixacc
+ * \param[in]    pix
+ * \param[in]    factor
+ * \return  0 if OK, 1 on error
  *
- *  Notes:
- *      (1) This creates a temp pix that is @pix multiplied by the
- *          constant @factor.  It then adds that into @pixacc.
+ * <pre>
+ * Notes:
+ *      (1) This creates a temp pix that is %pix multiplied by the
+ *          constant %factor.  It then adds that into %pixacc.
+ * </pre>
  */
 l_int32
 pixaccMultConstAccumulate(PIXACC    *pixacc,

@@ -108,7 +108,7 @@ static char  mainName[] = "printsplitimage";
 
     if (argc == 5) {
         for (i = 0; i < n; i++) {
-            fname = sarrayGetString(sa, i, 0);
+            fname = sarrayGetString(sa, i, L_NOCOPY);
             sprintf(buf, "lpr -P%s %s &", printer, fname);
             ignore = system(buf);
         }

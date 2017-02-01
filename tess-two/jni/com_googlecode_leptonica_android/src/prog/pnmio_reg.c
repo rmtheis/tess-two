@@ -37,7 +37,7 @@ l_int32 main(l_int32  argc,
              char   **argv)
 {
 FILE         *fp;
-PIX          *pix1, *pix2, *pix3, *pix4;
+PIX          *pix1, *pix2, *pix3, *pix4, *pix5;
 L_REGPARAMS  *rp;
 
     if (regTestSetup(argc, argv, &rp))
@@ -55,9 +55,16 @@ L_REGPARAMS  *rp;
     pixWrite("/tmp/lept/pnm/pix2.1.pnm", pix2, IFF_PNM);
     pix3 = pixRead("/tmp/lept/pnm/pix2.1.pnm");
     regTestComparePix(rp, pix1, pix3);  /* 0 */
+        /* write PAM */
+    fp = lept_fopen("/tmp/lept/pnm/pix3.1.pnm", "wb");
+    pixWriteStreamPam(fp, pix1);
+    lept_fclose(fp);
+    pix4 = pixRead("/tmp/lept/pnm/pix3.1.pnm");
+    regTestComparePix(rp, pix1, pix4);  /* 1 */
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
         /* Test 2, 4 and 8 bpp (pgm) read/write */
     pix1 = pixRead("weasel8.png");
@@ -68,10 +75,17 @@ L_REGPARAMS  *rp;
     pix3 = pixRead("/tmp/lept/pnm/pix2.2.pnm");
     pixWrite("/tmp/lept/pnm/pix3.2.pnm", pix3, IFF_PNM);
     pix4 = pixRead("/tmp/lept/pnm/pix3.2.pnm");
-    regTestComparePix(rp, pix2, pix4);  /* 1 */
+    regTestComparePix(rp, pix2, pix4);  /* 2 */
+        /* write PAM */
+    fp = lept_fopen("/tmp/lept/pnm/pix4.2.pnm", "wb");
+    pixWriteStreamPam(fp, pix2);
+    lept_fclose(fp);
+    pix5 = pixRead("/tmp/lept/pnm/pix4.2.pnm");
+    regTestComparePix(rp, pix2, pix5);  /* 3 */
     pixDestroy(&pix2);
     pixDestroy(&pix3);
     pixDestroy(&pix4);
+    pixDestroy(&pix5);
 
     pix2 = pixThresholdTo4bpp(pix1, 16, 0);
     fp = lept_fopen("/tmp/lept/pnm/pix2.4.pnm", "wb");
@@ -80,10 +94,17 @@ L_REGPARAMS  *rp;
     pix3 = pixRead("/tmp/lept/pnm/pix2.4.pnm");
     pixWrite("/tmp/lept/pnm/pix3.4.pnm", pix3, IFF_PNM);
     pix4 = pixRead("/tmp/lept/pnm/pix3.4.pnm");
-    regTestComparePix(rp, pix2, pix4);  /* 2 */
+    regTestComparePix(rp, pix2, pix4);  /* 4 */
+        /* write PAM */
+    fp = lept_fopen("/tmp/lept/pnm/pix4.4.pnm", "wb");
+    pixWriteStreamPam(fp, pix2);
+    lept_fclose(fp);
+    pix5 = pixRead("/tmp/lept/pnm/pix4.4.pnm");
+    regTestComparePix(rp, pix2, pix5);  /* 5 */
     pixDestroy(&pix2);
     pixDestroy(&pix3);
     pixDestroy(&pix4);
+    pixDestroy(&pix5);
 
     fp = lept_fopen("/tmp/lept/pnm/pix1.8.pnm", "wb");
     pixWriteStreamAsciiPnm(fp, pix1);
@@ -91,10 +112,17 @@ L_REGPARAMS  *rp;
     pix2 = pixRead("/tmp/lept/pnm/pix1.8.pnm");
     pixWrite("/tmp/lept/pnm/pix2.8.pnm", pix2, IFF_PNM);
     pix3 = pixRead("/tmp/lept/pnm/pix2.8.pnm");
-    regTestComparePix(rp, pix1, pix3);  /* 3 */
+    regTestComparePix(rp, pix1, pix3);  /* 6 */
+        /* write PAM */
+    fp = lept_fopen("/tmp/lept/pnm/pix3.8.pnm", "wb");
+    pixWriteStreamPam(fp, pix1);
+    lept_fclose(fp);
+    pix4 = pixRead("/tmp/lept/pnm/pix3.8.pnm");
+    regTestComparePix(rp, pix1, pix4);  /* 7 */
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixDestroy(&pix3);
+    pixDestroy(&pix4);
 
         /* Test ppm (24 bpp rgb) read/write */
     pix1 = pixRead("marge.jpg");
@@ -104,7 +132,27 @@ L_REGPARAMS  *rp;
     pix2 = pixRead("/tmp/lept/pnm/pix1.24.pnm");
     pixWrite("/tmp/lept/pnm/pix2.24.pnm", pix2, IFF_PNM);
     pix3 = pixRead("/tmp/lept/pnm/pix2.24.pnm");
-    regTestComparePix(rp, pix1, pix3);  /* 4 */
+    regTestComparePix(rp, pix1, pix3);  /* 8 */
+        /* write PAM */
+    fp = lept_fopen("/tmp/lept/pnm/pix3.24.pnm", "wb");
+    pixWriteStreamPam(fp, pix1);
+    lept_fclose(fp);
+    pix4 = pixRead("/tmp/lept/pnm/pix3.24.pnm");
+    regTestComparePix(rp, pix1, pix4);  /* 9 */
+    pixDestroy(&pix1);
+    pixDestroy(&pix2);
+    pixDestroy(&pix3);
+    pixDestroy(&pix4);
+
+        /* Test pam (32 bpp rgba) read/write */
+    pix1 = pixRead("test32-alpha.png");
+    fp = lept_fopen("/tmp/lept/pnm/pix1.32.pnm", "wb");
+    pixWriteStreamPam(fp, pix1);
+    lept_fclose(fp);
+    pix2 = pixRead("/tmp/lept/pnm/pix1.32.pnm");
+    pixWrite("/tmp/lept/pnm/pix2.32.pnm", pix2, IFF_PNM);
+    pix3 = pixRead("/tmp/lept/pnm/pix2.32.pnm");
+    regTestComparePix(rp, pix1, pix3);  /* 10 */
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixDestroy(&pix3);

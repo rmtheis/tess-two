@@ -25,8 +25,9 @@
  *====================================================================*/
 
 
-/*
- *  bilinear.c
+/*!
+ * \file bilinear.c
+ * <pre>
  *
  *      Bilinear (4 pt) image transformation using a sampled
  *      (to nearest integer) transform on each dest point
@@ -89,9 +90,9 @@
  *      (x',y') in the src.  That computed point in the src is then used
  *      to determine the corresponding dest pixel value in one of two ways:
  *
- *       - sampling: simply take the value of the src pixel in which this
+ *       ~ sampling: simply take the value of the src pixel in which this
  *                   point falls
- *       - interpolation: take appropriate linear combinations of the
+ *       ~ interpolation: take appropriate linear combinations of the
  *                        four src pixels that this dest pixel would
  *                        overlap, with the coefficients proportional
  *                        to the amount of overlap
@@ -106,6 +107,7 @@
  *               interpolated   1.8
  *      Additionally, the computation time/pixel is nearly the same
  *      for 8 bpp and 32 bpp, for both sampled and interpolated.
+ * </pre>
  */
 
 #include <string.h>
@@ -119,21 +121,23 @@ extern l_float32  AlphaMaskBorderVals[2];
  *             Sampled bilinear image transformation           *
  *-------------------------------------------------------------*/
 /*!
- *  pixBilinearSampledPta()
+ * \brief   pixBilinearSampledPta()
  *
- *      Input:  pixs (all depths)
- *              ptad  (4 pts of final coordinate space)
- *              ptas  (4 pts of initial coordinate space)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: pixd, or null on error
+ * \param[in]    pixs all depths
+ * \param[in]    ptad  4 pts of final coordinate space
+ * \param[in]    ptas  4 pts of initial coordinate space
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Brings in either black or white pixels from the boundary.
  *      (2) Retains colormap, which you can do for a sampled transform..
  *      (3) No 3 of the 4 points may be collinear.
  *      (4) For 8 and 32 bpp pix, better quality is obtained by the
  *          somewhat slower pixBilinearPta().  See that
  *          function for relative timings between sampled and interpolated.
+ * </pre>
  */
 PIX *
 pixBilinearSampledPta(PIX     *pixs,
@@ -169,19 +173,21 @@ PIX        *pixd;
 
 
 /*!
- *  pixBilinearSampled()
+ * \brief   pixBilinearSampled()
  *
- *      Input:  pixs (all depths)
- *              vc  (vector of 8 coefficients for bilinear transformation)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: pixd, or null on error
+ * \param[in]    pixs all depths
+ * \param[in]    vc  vector of 8 coefficients for bilinear transformation
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Brings in either black or white pixels from the boundary.
  *      (2) Retains colormap, which you can do for a sampled transform..
  *      (3) For 8 or 32 bpp, much better quality is obtained by the
  *          somewhat slower pixBilinear().  See that function
  *          for relative timings between sampled and interpolated.
+ * </pre>
  */
 PIX *
 pixBilinearSampled(PIX        *pixs,
@@ -262,17 +268,19 @@ PIXCMAP    *cmap;
  *            Interpolated bilinear image transformation             *
  *---------------------------------------------------------------------*/
 /*!
- *  pixBilinearPta()
+ * \brief   pixBilinearPta()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              ptad  (4 pts of final coordinate space)
- *              ptas  (4 pts of initial coordinate space)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: pixd, or null on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    ptad  4 pts of final coordinate space
+ * \param[in]    ptas  4 pts of initial coordinate space
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Brings in either black or white pixels from the boundary
  *      (2) Removes any existing colormap, if necessary, before transforming
+ * </pre>
  */
 PIX *
 pixBilinearPta(PIX     *pixs,
@@ -331,16 +339,18 @@ PIX      *pixt1, *pixt2, *pixd;
 
 
 /*!
- *  pixBilinear()
+ * \brief   pixBilinear()
  *
- *      Input:  pixs (all depths; colormap ok)
- *              vc  (vector of 8 coefficients for bilinear transformation)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: pixd, or null on error
+ * \param[in]    pixs all depths; colormap ok
+ * \param[in]    vc  vector of 8 coefficients for bilinear transformation
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Brings in either black or white pixels from the boundary
  *      (2) Removes any existing colormap, if necessary, before transforming
+ * </pre>
  */
 PIX *
 pixBilinear(PIX        *pixs,
@@ -390,13 +400,13 @@ PIX      *pixt1, *pixt2, *pixd;
 
 
 /*!
- *  pixBilinearPtaColor()
+ * \brief   pixBilinearPtaColor()
  *
- *      Input:  pixs (32 bpp)
- *              ptad  (4 pts of final coordinate space)
- *              ptas  (4 pts of initial coordinate space)
- *              colorval (e.g., 0 to bring in BLACK, 0xffffff00 for WHITE)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 32 bpp
+ * \param[in]    ptad  4 pts of final coordinate space
+ * \param[in]    ptas  4 pts of initial coordinate space
+ * \param[in]    colorval e.g., 0 to bring in BLACK, 0xffffff00 for WHITE
+ * \return  pixd, or NULL on error
  */
 PIX *
 pixBilinearPtaColor(PIX      *pixs,
@@ -432,12 +442,12 @@ PIX        *pixd;
 
 
 /*!
- *  pixBilinearColor()
+ * \brief   pixBilinearColor()
  *
- *      Input:  pixs (32 bpp)
- *              vc  (vector of 8 coefficients for bilinear transformation)
- *              colorval (e.g., 0 to bring in BLACK, 0xffffff00 for WHITE)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 32 bpp
+ * \param[in]    vc  vector of 8 coefficients for bilinear transformation
+ * \param[in]    colorval e.g., 0 to bring in BLACK, 0xffffff00 for WHITE
+ * \return  pixd, or NULL on error
  */
 PIX *
 pixBilinearColor(PIX        *pixs,
@@ -493,13 +503,13 @@ PIX       *pix1, *pix2, *pixd;
 
 
 /*!
- *  pixBilinearPtaGray()
+ * \brief   pixBilinearPtaGray()
  *
- *      Input:  pixs (8 bpp)
- *              ptad  (4 pts of final coordinate space)
- *              ptas  (4 pts of initial coordinate space)
- *              grayval (0 to bring in BLACK, 255 for WHITE)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    ptad  4 pts of final coordinate space
+ * \param[in]    ptas  4 pts of initial coordinate space
+ * \param[in]    grayval 0 to bring in BLACK, 255 for WHITE
+ * \return  pixd, or NULL on error
  */
 PIX *
 pixBilinearPtaGray(PIX     *pixs,
@@ -535,12 +545,12 @@ PIX        *pixd;
 
 
 /*!
- *  pixBilinearGray()
+ * \brief   pixBilinearGray()
  *
- *      Input:  pixs (8 bpp)
- *              vc  (vector of 8 coefficients for bilinear transformation)
- *              grayval (0 to bring in BLACK, 255 for WHITE)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    vc  vector of 8 coefficients for bilinear transformation
+ * \param[in]    grayval 0 to bring in BLACK, 255 for WHITE
+ * \return  pixd, or NULL on error
  */
 PIX *
 pixBilinearGray(PIX        *pixs,
@@ -588,26 +598,27 @@ PIX       *pixd;
  *           Bilinear transform including alpha (blend) component          *
  *-------------------------------------------------------------------------*/
 /*!
- *  pixBilinearPtaWithAlpha()
+ * \brief   pixBilinearPtaWithAlpha()
  *
- *      Input:  pixs (32 bpp rgb)
- *              ptad  (4 pts of final coordinate space)
- *              ptas  (4 pts of initial coordinate space)
- *              pixg (<optional> 8 bpp, can be null)
- *              fract (between 0.0 and 1.0, with 0.0 fully transparent
- *                     and 1.0 fully opaque)
- *              border (of pixels added to capture transformed source pixels)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 32 bpp rgb
+ * \param[in]    ptad  4 pts of final coordinate space
+ * \param[in]    ptas  4 pts of initial coordinate space
+ * \param[in]    pixg [optional] 8 bpp, can be null
+ * \param[in]    fract between 0.0 and 1.0, with 0.0 fully transparent
+ *                     and 1.0 fully opaque
+ * \param[in]    border of pixels added to capture transformed source pixels
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The alpha channel is transformed separately from pixs,
  *          and aligns with it, being fully transparent outside the
  *          boundary of the transformed pixs.  For pixels that are fully
  *          transparent, a blending function like pixBlendWithGrayMask()
  *          will give zero weight to corresponding pixels in pixs.
  *      (2) If pixg is NULL, it is generated as an alpha layer that is
- *          partially opaque, using @fract.  Otherwise, it is cropped
- *          to pixs if required and @fract is ignored.  The alpha channel
+ *          partially opaque, using %fract.  Otherwise, it is cropped
+ *          to pixs if required and %fract is ignored.  The alpha channel
  *          in pixs is never used.
  *      (3) Colormaps are removed.
  *      (4) When pixs is transformed, it doesn't matter what color is brought
@@ -615,7 +626,7 @@ PIX       *pixd;
  *      (5) To avoid losing source pixels in the destination, it may be
  *          necessary to add a border to the source pix before doing
  *          the bilinear transformation.  This can be any non-negative number.
- *      (6) The input @ptad and @ptas are in a coordinate space before
+ *      (6) The input %ptad and %ptas are in a coordinate space before
  *          the border is added.  Internally, we compensate for this
  *          before doing the bilinear transform on the image after
  *          the border is added.
@@ -627,6 +638,7 @@ PIX       *pixd;
  *              with an image below, and
  *          (b) softens the edges by weakening the aliasing there.
  *          Use l_setAlphaMaskBorder() to change these values.
+ * </pre>
  */
 PIX *
 pixBilinearPtaWithAlpha(PIX       *pixs,
@@ -648,7 +660,8 @@ PTA     *ptad2, *ptas2;
     if (d != 32 && pixGetColormap(pixs) == NULL)
         return (PIX *)ERROR_PTR("pixs not cmapped or 32 bpp", procName, NULL);
     if (pixg && pixGetDepth(pixg) != 8) {
-        L_WARNING("pixg not 8 bpp; using @fract transparent alpha\n", procName);
+        L_WARNING("pixg not 8 bpp; using 'fract' transparent alpha\n",
+                  procName);
         pixg = NULL;
     }
     if (!pixg && (fract < 0.0 || fract > 1.0)) {
@@ -706,16 +719,17 @@ PTA     *ptad2, *ptas2;
  *                Bilinear coordinate transformation           *
  *-------------------------------------------------------------*/
 /*!
- *  getBilinearXformCoeffs()
+ * \brief   getBilinearXformCoeffs()
  *
- *      Input:  ptas  (source 4 points; unprimed)
- *              ptad  (transformed 4 points; primed)
- *              &vc   (<return> vector of coefficients of transform)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    ptas  source 4 points; unprimed
+ * \param[in]    ptad  transformed 4 points; primed
+ * \param[out]   pvc   vector of coefficients of transform
+ * \return  0 if OK; 1 on error
  *
- *  We have a set of 8 equations, describing the bilinear
- *  transformation that takes 4 points (ptas) into 4 other
- *  points (ptad).  These equations are:
+ * <pre>
+ * We have a set of 8 equations, describing the bilinear
+ * transformation that takes 4 points ptas into 4 other
+ * points ptad.  These equations are:
  *
  *          x1' = c[0]*x1 + c[1]*y1 + c[2]*x1*y1 + c[3]
  *          y1' = c[4]*x1 + c[5]*y1 + c[6]*x1*y1 + c[7]
@@ -726,16 +740,16 @@ PTA     *ptad2, *ptas2;
  *          x4' = c[0]*x4 + c[1]*y4 + c[2]*x4*y4 + c[3]
  *          y4' = c[4]*x4 + c[5]*y4 + c[6]*x4*y4 + c[7]
  *
- *  This can be represented as
+ * This can be represented as
  *
  *           AC = B
  *
- *  where B and C are column vectors
+ * where B and C are column vectors
  *
  *         B = [ x1' y1' x2' y2' x3' y3' x4' y4' ]
  *         C = [ c[0] c[1] c[2] c[3] c[4] c[5] c[6] c[7] ]
  *
- *  and A is the 8x8 matrix
+ * and A is the 8x8 matrix
  *
  *             x1   y1   x1*y1   1   0    0      0     0
  *              0    0     0     0   x1   y1   x1*y1   1
@@ -746,16 +760,17 @@ PTA     *ptad2, *ptas2;
  *             x4   y4   x4*y4   1   0    0      0     0
  *              0    0     0     0   x4   y4   x4*y4   1
  *
- *  These eight equations are solved here for the coefficients C.
+ * These eight equations are solved here for the coefficients C.
  *
- *  These eight coefficients can then be used to find the mapping
- *  (x,y) --> (x',y'):
+ * These eight coefficients can then be used to find the mapping
+ * x,y) --> (x',y':
  *
  *           x' = c[0]x + c[1]y + c[2]xy + c[3]
  *           y' = c[4]x + c[5]y + c[6]xy + c[7]
  *
- *  that are implemented in bilinearXformSampledPt() and
- *  bilinearXFormPt().
+ * that are implemented in bilinearXformSampledPt and
+ * bilinearXFormPt.
+ * </pre>
  */
 l_int32
 getBilinearXformCoeffs(PTA         *ptas,
@@ -837,16 +852,18 @@ l_float32  *a[8];  /* 8x8 matrix A  */
 
 
 /*!
- *  bilinearXformSampledPt()
+ * \brief   bilinearXformSampledPt()
  *
- *      Input:  vc (vector of 8 coefficients)
- *              (x, y)  (initial point)
- *              (&xp, &yp)   (<return> transformed point)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    vc vector of 8 coefficients
+ * \param[in]    x, y  initial point
+ * \param[out]   pxp, pyp   transformed point
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This finds the nearest pixel coordinates of the transformed point.
  *      (2) It does not check ptrs for returned data!
+ * </pre>
  */
 l_int32
 bilinearXformSampledPt(l_float32  *vc,
@@ -868,16 +885,18 @@ bilinearXformSampledPt(l_float32  *vc,
 
 
 /*!
- *  bilinearXformPt()
+ * \brief   bilinearXformPt()
  *
- *      Input:  vc (vector of 8 coefficients)
- *              (x, y)  (initial point)
- *              (&xp, &yp)   (<return> transformed point)
- *      Return: 0 if OK; 1 on error
+ * \param[in]    vc vector of 8 coefficients
+ * \param[in]    x, y  initial point
+ * \param[out]   pxp, pyp   transformed point
+ * \return  0 if OK; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This computes the floating point location of the transformed point.
  *      (2) It does not check ptrs for returned data!
+ * </pre>
  */
 l_int32
 bilinearXformPt(l_float32  *vc,

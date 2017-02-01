@@ -75,11 +75,11 @@ This work is licensed under a <a rel="license" href="http://creativecommons.org/
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-README  (1.73: 25 Jan 2016)
+README  (1.74.1: 3 Jan 2017)
 ---------------------------
 
-gunzip leptonica-1.73.tar.gz
-tar -xvf leptonica-1.73.tar
+gunzip leptonica-1.74.1.tar.gz
+tar -xvf leptonica-1.74.1.tar
 
 </pre>
 
@@ -115,7 +115,7 @@ Building leptonica
   Libraries, executables and prototypes are easily made, as described below.
 
   When you extract from the archive, all files are put in a
-  subdirectory 'leptonica-1.73'.  In that directory you will
+  subdirectory 'leptonica-1.74'.  In that directory you will
   find a src directory containing the source files for the library,
   and a prog directory containing source files for various
   testing and example programs.
@@ -138,23 +138,22 @@ Building leptonica
             * enabling Leptonica I/O image read/write functions that
               depend on external libraries (if the libraries exist)
             * enabling functions for redirecting formatted image stream
-              I/O to memory (on linux only)
+              I/O to memory (on Linux only)
         After running ./configure: make; make install.  There's also
         a 'make check' for testing.
 
     (3) Using cmake (supported by Egor Pugin).
         The build must always be in a different directory from the root
         of the source (here).  It is common to build in a subdirectory
-        of the root.  From here:
-          mkdir build
-          cd build
-          cmake ..
-          make
-        Alternatively, from here:
-          mkdir build
-          cmake -H . -Bbuild   (-H means the source directory,
-                                -B means the director for the build
-          make
+        of the root.  From the root directory, do this:
+            mkdir build
+            cd build
+          Then to make only the library:
+            cmake ..
+            make
+          To make both the library and the programs:
+            cmake .. -DBUILD_PROG=1
+            make
         To clean out the current build, just remove everything in
         the build subdirectory.
 
@@ -236,8 +235,22 @@ Building leptonica
                              should not exceed half the number of cores.
                              If the test fails, just run with 'make check']
 
+       Configure supports installing in a local directory (e.g., one that
+       doesn't require root access).  For example, to install in $HOME/local,
+           ./configure --prefix=$HOME/local/
+           make install
+       For different ways to build and link leptonica with tesseract, see
+           https://github.com/tesseract-ocr/tesseract/wiki/Compiling
+       In brief, using autotools to build tesseract and then install it
+       in $HOME/local (after installing leptonica there), do the
+       following from your tesseract root source directory:
+            ./autogen.sh
+            LIBLEPT_HEADERSDIR=$HOME/local/include ./configure \
+               --prefix=$HOME/local/ --with-extra-libraries=$HOME/local/lib
+            make install
+
        Configure also supports building in a separate directory from the
-       source.  Run "/(path-to)/leptonica-1.73/configure" and then "make"
+       source.  Run "/(path-to)/leptonica-1.74.1/configure" and then "make"
        from the desired build directory.
 
        Configure has a number of useful options; run "configure --help" for
@@ -260,7 +273,7 @@ Building leptonica
            LDFLAGS="-Wl,-rpath -Wl,/usr/local/lib" ./configure
        which causes the compiler to pass those options through to the linker.
 
-       For the debian distribution, out of all the programs in the prog
+       For the Debian distribution, out of all the programs in the prog
        directory, we only build a small subset of general purpose
        utility programs.  This subset is the same set of programs that
        'make install' puts into /usr/local/bin.  It has no dependency on
@@ -268,21 +281,36 @@ Building leptonica
 
     (3) Using cmake
 
-       There are a couple of flags you can use on the cmake line to
-       determine what is built here.
+       The usual method is to build in a directory that is a subdirectory
+       of the root.  First do this from the root directory:
+            mkdir build
+            cd build
+
+       Then, there are two useful flags you can use on the cmake line to
+       determine what is built.
 
        * By default, cmake builds a shared library.  To make a static
          library: 
             cmake .. -DSTATIC=1
 
        * By default, cmake only builds the library, not the programs.
-         To make progs from the build subdirectory:
+         To make both the library and the programs:
             cmake .. -DBUILD_PROG=1
+         The programs are put in build/bin/
+         To run these (e.g., for testing), move them to the prog
+         directory and run them from there:
+            cd bin
+            mv * ../../prog/
+            cd ../../prog
+            alltests_reg generate
+            alltests_reg compare
 
-    (4) Cross-compiling for windows
-
-        You can use src/makefile.mingw for cross-compiling in linux.
-
+       To build the library directly from the root directory instead of
+       the build subdirectory:
+            mkdir build
+            cmake -H . -Bbuild   (-H means the source directory,
+                                  -B means the directory for the build
+            make
 
 3. Building on Windows
 
@@ -312,38 +340,42 @@ Building leptonica
        You can download Tom's vs2008 package either from the download
        page or from code.google.com/p/leptonica.
 
-   (b) Building for mingw with <a href="http://www.mingw.org/">MSYS</a>
+   (b) Building for mingw32 with <a href="http://www.mingw.org/">MSYS</a>
        (Thanks to David Bryan)
 
-       MSYS is a Unix-compatible build environment for the mingw compiler.
-       Installing the "MSYS Base System" and "MinGW Compiler Suite" will allow
+       MSYS is a Unix-compatible build environment for the Windows-native
+       mingw32 compiler.  Selecting the "mingw-developer-toolkit",
+       "mingw32-base", and "msys-base" packages during installation will allow
        building the library with autoconf as in (2) above.  It will also allow
-       building with the static makefile as in (1) above if this option
-       is added to the make command:
+       building with the static makefile as in (1) above if this option is used
+       in the make command line:
 
-         CC="gcc -D_BSD_SOURCE -DANSI"
+         CC='gcc -std=c99 -U__STRICT_ANSI__'
 
        Only the static library may be built this way; the autoconf method must
        be used if a shared (DLL) library is desired.
 
        External image libraries (see below) must be downloaded separately,
        built, and installed before building the library.  Pre-built libraries
-       are available from
-          <a href="http://sourceforge.net/projects/ezwinports/">ezwinports project</a>.
+       are available from the <a
+       href="http://sourceforge.net/projects/ezwinports/">ezwinports</a> project.
 
    (c) Building for <a href="http://www.cygwin.com/">Cygwin</a>
        (Thanks to David Bryan)
 
-       Cygwin is a Unix-compatible build and runtime environment.  Installing
-       the "Base" and "Devel" packages, plus the desired graphics libraries
-       from the "Graphics" and "Libs" packages, will allow building the
-       library with autoconf as in (2) above.  If the graphics libraries
-       are not present in the /lib, /usr/lib, or /usr/local/lib directories,
-       you must run make with the "LDFLAGS=-L/(path-to-image)/lib" option.
-       It will also allow building with the static makefile as in (1)
-       above if this option is added to the make command:
+       Cygwin is a Unix-compatible build and runtime environment.  Adding the
+       "binutils", "gcc-core", and "make" packages from the "Devel" category and
+       the "diffutils" package from the "Utils" category to the packages
+       installed by default will allow building the library with autoconf as in
+       (2) above.  Pre-built external image libraries are available in the
+       "Graphics" and "Libs" categories and may be selected for installation.
+       If the libraries are not installed into the /lib, /usr/lib, or
+       /usr/local/lib directories, you must run make with the
+       "LDFLAGS=-L/(path-to-image)/lib" option.  Building may also be performed
+       with the static makefile as in (1) above if this option is used in the
+       make command:
 
-         CC="gcc -ansi -D_BSD_SOURCE -DANSI"
+         CC='gcc -std=c99 -U__STRICT_ANSI__'
 
        Only the static library may be built this way; the autoconf method must
        be used if a shared (DLL) library is desired.
@@ -359,7 +391,7 @@ I/O libraries leptonica is dependent on
    libraries: libjpeg, libtiff, libpng, libz, libgif, libwebp, libopenjp2
 
    These libraries are easy to obtain.  For example, using the
-   debian package manager:
+   Debian package manager:
        sudo apt-get install <package>
    where <package> = {libpng12-dev, libjpeg62-dev, libtiff4-dev}.
 
@@ -411,9 +443,7 @@ I/O libraries leptonica is dependent on
           add that path to the LD_LIBRARY_PATH environment variable.
 
    To read and write jpeg2000 files:
-      (1) Download libopenjp2, version 2.X, from their distribution,
-          along with cmake.  There is no debian version of openjpeg 2.X
-          as of 12/26/2014.
+      (1) Download libopenjp2, version 2.X, from their distribution.
       (2) #define HAVE_LIBJP2K   1  (in environ.h)
       (2a) If you have version 2.X, X != 1, edit LIBJP2K_HEADER  (in environ.h)
       (3) In prog/makefile, edit ALL_LIBS to include -lopenjp2
@@ -465,13 +495,13 @@ that you are using the static makefiles and customizing environ.h.
              xtractprotos -prestring=[string] <cfile>
      (3) The source for xtractprotos has been packaged up into a tar
          containing just the Leptonica files necessary for building it
-         in linux.  The tar file is available at:
+         in Linux.  The tar file is available at:
              www.leptonica.com/source/xtractlib-1.5.tar.gz
 
 2. GNU runtime functions for stream redirection to memory
 
    There are two non-standard gnu functions, fmemopen() and open_memstream(),
-   that only work on linux and conveniently allow memory I/O with a file
+   that only work on Linux and conveniently allow memory I/O with a file
    stream interface.  This is convenient for compressing and decompressing
    image data to memory rather than to file.  Stubs are provided
    for all these I/O functions.  Default is to enable them; OSX developers
@@ -1046,23 +1076,31 @@ What's in leptonica?
 
    New versions of the Leptonica library are released several times
    a year, and version numbers are provided for each release in
-   the makefile and in allheaders.h.  All even versions from 1.42 to 1.60
-   have been archived at http://code.google.com/p/leptonica, as well as all
-   versions after 1.60.  However, code.google.com no longer supports
-   uploads of new distributions, which you can get at the leptonica.org
-   web site.
+   src/makefile.static and in allheaders.h.  All even versions from
+   1.42 to 1.60 were originally archived at http://code.google.com/p/leptonica,
+   as well as all versions after 1.60.  These have now been transferred
+   by Egor Pugin to github:
+       github.com/danbloomberg/leptonica
+   Recent releases (1.67 - 1.74.1) are available both at
+       leptonica.org/download.html
+   and through github; e.g.,
+       https://github.com/DanBloomberg/leptonica/releases/tag/v1.74.1
+   Note that if you are downloading from github, the releases are more
+   likely to be stable than the master.  Also, if you download from
+   the master you need to run the autobuild script to generate the
+   configure program and the Makefiles.
 
    The number of downloads of leptonica increased by nearly an order
    of magnitude with 1.69, due to bundling with tesseract and
-   incorporation in ubuntu 12-04.  Leptonica has about 2400 functions,
-   and the binary API changed slightly with the new 1.71 release.  Having
-   a proper binary release version is required for all debian packages.
-   The binary release versions are:
+   incorporation in ubuntu 12-04.  Jeff Breidenbach has built all
+   the Debian releases, which require release version numbers.
+   The Debian binary release versions are:
         1.69 : 3.0.0
         1.70 : 4.0.0
         1.71 : 4.2.0
         1.72 : 4.3.0
-        1.73 : 4.4.0
+        1.73 : 5.0.0
+        1.74 : 5.1.0
 
    A brief version chronology is maintained in version-notes.html.
    Starting with gcc 4.3.3, error warnings (-Werror) are given for

@@ -1,0 +1,43 @@
+language: c
+
+notifications:
+  email: false
+  
+sudo: required
+dist: trusty
+
+os:
+  - linux
+  #- osx
+
+branches:
+  only:
+    - master
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - libwebp-dev
+    #- libpng12-dev
+    #- libjpeg8-dev
+    #- libtiff5-dev
+    #- libgif-dev
+    #- libopenjp2-7-dev
+
+before_install:
+  - if [[ $TRAVIS_OS_NAME == linux   ]]; then LINUX=true; fi
+  - if [[ $TRAVIS_OS_NAME == osx     ]]; then OSX=true; fi
+  
+install:
+  - if [[ $LINUX ]]; then sudo apt-get update; fi
+  - if [[ $LINUX ]]; then sudo apt-get install -y libwebp-dev libpng12-dev libjpeg8-dev libtiff5-dev libgif-dev libopenjpeg-dev; fi
+  - wget https://www.cmake.org/files/v3.6/cmake-3.6.1-Linux-x86_64.sh
+  - sudo sh cmake-3.6.1-Linux-x86_64.sh --skip-license --prefix=/usr
+
+script:
+  - mkdir build
+  - cd build
+  - cmake .. -DBUILD_PROG=1
+  - make

@@ -33,40 +33,37 @@
 int main(int    argc,
          char **argv)
 {
-l_int32      i;
-PIX         *pixs, *pixt1, *pixt2, *pixt3, *pixd;
-PIXA        *pixa;
+l_int32  i;
+PIX     *pixs, *pix1, *pix2, *pix3;
+PIXA    *pixa;
 
     pixs = pixRead("pageseg2.tif");
 
     startTimer();
     for (i = 0; i < 100; i++) {
-        pixt1 = pixReduceRankBinaryCascade(pixs, 1, 4, 4, 3);
-        pixDestroy(&pixt1);
+        pix1 = pixReduceRankBinaryCascade(pixs, 1, 4, 4, 3);
+        pixDestroy(&pix1);
     }
     fprintf(stderr, "Time: %8.4f sec\n", stopTimer() / 100.);
 
         /* 4 2x rank reductions (levels 1, 4, 4, 3), followed by 5x5 opening */
-    pixDisplayWrite(NULL, -1);
-    pixDisplayWriteFormat(pixs, 4, IFF_PNG);
-    pixt1 = pixReduceRankBinaryCascade(pixs, 1, 4, 0, 0);
-    pixDisplayWriteFormat(pixt1, 1, IFF_PNG);
-    pixt2 = pixReduceRankBinaryCascade(pixt1, 4, 3, 0, 0);
-    pixDisplayWriteFormat(pixt2, 1, IFF_PNG);
-    pixOpenBrick(pixt2, pixt2, 5, 5);
-    pixt3 = pixExpandBinaryReplicate(pixt2, 2);
-    pixDisplayWriteFormat(pixt3, 1, IFF_PNG);
+    pixa = pixaCreate(0);
+    pixaAddPix(pixa, pixs, L_INSERT);
+    pix1 = pixReduceRankBinaryCascade(pixs, 1, 4, 0, 0);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pix2 = pixReduceRankBinaryCascade(pix1, 4, 3, 0, 0);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixOpenBrick(pix2, pix2, 5, 5);
+    pix3 = pixExpandBinaryReplicate(pix2, 2, 2);
+    pixaAddPix(pixa, pix3, L_INSERT);
 
         /* Generate the output image */
-    pixa = pixaReadFiles("/tmp/display", "file");
-    pixd = pixaDisplayTiledAndScaled(pixa, 8, 250, 4, 0, 25, 2);
-    pixWrite("/tmp/seedgen.png", pixd, IFF_PNG);
-
-    pixDestroy(&pixs);
-    pixDestroy(&pixt1);
-    pixDestroy(&pixt2);
-    pixDestroy(&pixt3);
-    pixDestroy(&pixd);
+    lept_mkdir("lept/livre");
+    fprintf(stderr, "Writing to: /tmp/lept/livre/seedgen.png\n");
+    pix1 = pixaDisplayTiledAndScaled(pixa, 8, 350, 4, 0, 25, 2);
+    pixWrite("/tmp/lept/livre/seedgen.png", pix1, IFF_PNG);
+    pixDisplay(pix1, 1100, 0);
+    pixDestroy(&pix1);
     pixaDestroy(&pixa);
     return 0;
 }

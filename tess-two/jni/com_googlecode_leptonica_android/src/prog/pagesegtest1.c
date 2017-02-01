@@ -37,7 +37,7 @@ int main(int    argc,
          char **argv)
 {
 PIX         *pixs, *pixhm, *pixtm, *pixtb, *pixd;
-PIXA        *pixa;
+PIXA        *pixadb;
 char        *filein;
 static char  mainName[] = "pagesegtest1";
 
@@ -48,17 +48,18 @@ static char  mainName[] = "pagesegtest1";
     if ((pixs = pixRead(filein)) == NULL)
         return ERROR_INT("pixs not made", mainName, 1);
 
-    pixGetRegionsBinary(pixs, &pixhm, &pixtm, &pixtb, 1);
+    pixadb = pixaCreate(0);
+    pixGetRegionsBinary(pixs, &pixhm, &pixtm, &pixtb, pixadb);
     pixDestroy(&pixhm);
     pixDestroy(&pixtm);
     pixDestroy(&pixtb);
     pixDestroy(&pixs);
 
         /* Display intermediate images in a single image */
-    pixa = pixaReadFiles("/tmp", "junk_write");
-    pixd = pixaDisplayTiledAndScaled(pixa, 32, 400, 4, 0, 20, 3);
-    pixWrite("/tmp/segstuff.png", pixd, IFF_PNG);
-    pixaDestroy(&pixa);
+    lept_mkdir("lept/pagseg");
+    pixd = pixaDisplayTiledAndScaled(pixadb, 32, 400, 4, 0, 20, 3);
+    pixWrite("/tmp/lept/pageseg/debug.png", pixd, IFF_PNG);
+    pixaDestroy(&pixadb);
     pixDestroy(&pixd);
     return 0;
 }

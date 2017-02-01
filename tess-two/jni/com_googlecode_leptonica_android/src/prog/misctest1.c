@@ -32,6 +32,7 @@
  *        * Colorize a grayscale image
  *        * Convert color to gray
  *        * Extract text lines
+ *        * Plot box side locations and dimension of a boxa
  */
 
 #include "allheaders.h"
@@ -42,7 +43,7 @@ int main(int    argc,
          char **argv)
 {
 l_int32   w, h;
-BOXA     *boxa;
+BOXA     *boxa, *boxae, *boxao;
 PIX      *pixs, *pix1, *pix2, *pixg, *pixb, *pixd, *pixc;
 PIX      *pixm, *pixm2, *pixd2, *pixs2;
 PIXA     *pixa, *pixac;
@@ -67,7 +68,7 @@ PIXCMAP  *cmap, *cmapg;
     pixDestroy(&pixs2);
 
         /* Combine two binary images using a mask */
-    pixm2 = pixExpandBinaryReplicate(pixm, 2);
+    pixm2 = pixExpandBinaryReplicate(pixm, 2, 2);
     pix1 = pixCopy(NULL, pixd);
     pixCombineMaskedGeneral(pixd, pixs, pixm2, 200, 200);
     pixSaveTiled(pixd, pixac, 0.25, 0, 40, 0);
@@ -113,7 +114,7 @@ PIXCMAP  *cmap, *cmapg;
     pixs = pixRead("weasel4.16c.png");
     pixSaveTiled(pixs, pixac, 1.0, 1, 20, 0);
     pixc = pixConvertTo32(pixs);
-    pix1 = pixConvertRGBToGray(pixc, 3., 7., 5.);
+    pix1 = pixConvertRGBToGray(pixc, 3., 7., 5.);  /* bad weights */
     pixSaveTiled(pix1, pixac, 1.0, 0, 20, 0);
     pix2 = pixConvertRGBToGrayFast(pixc);
     pixSaveTiled(pix2, pixac, 1.0, 0, 20, 0);
@@ -140,12 +141,46 @@ PIXCMAP  *cmap, *cmapg;
     boxa = pixaGetBoxa(pixa, L_CLONE);
     boxaWrite("/tmp/lept/misc/lines.ba", boxa);
     pix2 = pixaDisplayRandomCmap(pixa, 0, 0);
+    pixcmapResetColor(pixGetColormap(pix2), 0, 255, 255, 255);
     pixDisplay(pix2, 400, 0);
     pixWrite("/tmp/lept/misc/lines.png", pix2, IFF_PNG);
     boxaDestroy(&boxa);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixaDestroy(&pixa);
+
+        /* Plot box side locations and dimensions of a boxa */
+    pixa = pixaCreate(0);
+    boxa = boxaRead("boxa2.ba");
+    boxaSplitEvenOdd(boxa, 0, &boxae, &boxao);
+    boxaPlotSides(boxae, "1-sides-even", NULL, NULL, NULL, NULL, &pix1);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    boxaPlotSides(boxao, "1-sides-odd", NULL, NULL, NULL, NULL, &pix1);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    boxaPlotSizes(boxae, "1-sizes-even", NULL, NULL, &pix1);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    boxaPlotSizes(boxao, "1-sizes-odd", NULL, NULL, &pix1);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    boxaDestroy(&boxae);
+    boxaDestroy(&boxao);
+    boxaDestroy(&boxa);
+    boxa = boxaRead("boxa3.ba");
+    boxaSplitEvenOdd(boxa, 0, &boxae, &boxao);
+    boxaPlotSides(boxae, "2-sides-even", NULL, NULL, NULL, NULL, &pix1);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    boxaPlotSides(boxao, "2-sides-odd", NULL, NULL, NULL, NULL, &pix1);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    boxaPlotSizes(boxae, "2-sizes-even", NULL, NULL, &pix1);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    boxaPlotSizes(boxao, "2-sizes-odd", NULL, NULL, &pix1);
+    pixaAddPix(pixa, pix1, L_INSERT);
+    boxaDestroy(&boxae);
+    boxaDestroy(&boxao);
+    boxaDestroy(&boxa);
+    pix1 = pixaDisplayTiledInRows(pixa, 32, 1500, 1.0, 0, 30, 2);
+    pixWrite("/tmp/lept/misc/boxaplots.png", pix1, IFF_PNG);
+    pixDisplay(pix1, 800, 0);
+    pixDestroy(&pix1);
 
     return 0;
 }

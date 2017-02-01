@@ -3,7 +3,7 @@ AM_CFLAGS = $(DEBUG_FLAGS)
 lib_LTLIBRARIES = liblept.la
 liblept_la_LIBADD = $(LIBM) $(ZLIB_LIBS) $(LIBPNG_LIBS) $(JPEG_LIBS) $(GIFLIB_LIBS) $(LIBTIFF_LIBS) $(LIBWEBP_LIBS) $(LIBJP2K_LIBS) $(GDI_LIBS)
 
-liblept_la_LDFLAGS = -no-undefined -version-info 5:0:0
+liblept_la_LDFLAGS = -no-undefined -version-info 5:1:0
 
 liblept_la_SOURCES = adaptmap.c affine.c                        \
  affinecompose.c arrayaccess.c                                  \
@@ -11,7 +11,7 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  bilateral.c bilinear.c binarize.c                              \
  binexpand.c binreduce.c                                        \
  blend.c bmf.c bmpio.c bmpiostub.c                              \
- bootnumgen1.c bootnumgen2.c                                    \
+ bootnumgen1.c bootnumgen2.c bootnumgen3.c                      \
  boxbasic.c boxfunc1.c boxfunc2.c boxfunc3.c boxfunc4.c         \
  bytearray.c ccbord.c ccthin.c classapp.c                       \
  colorcontent.c coloring.c                                      \
@@ -21,7 +21,8 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  compare.c conncomp.c convertfiles.c                            \
  convolve.c correlscore.c                                       \
  dewarp1.c dewarp2.c dewarp3.c dewarp4.c                        \
- dnabasic.c dwacomb.2.c dwacomblow.2.c                          \
+ dnabasic.c dnafunc1.c dnahash.c                                \
+ dwacomb.2.c dwacomblow.2.c                                     \
  edge.c encoding.c enhance.c                                    \
  fhmtauto.c fhmtgen.1.c fhmtgenlow.1.c			        \
  finditalic.c flipdetect.c fliphmtgen.c                         \
@@ -43,7 +44,7 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  pixlabel.c pixtiling.c pngio.c pngiostub.c                     \
  pnmio.c pnmiostub.c projective.c	                        \
  psio1.c psio1stub.c psio2.c psio2stub.c                        \
- ptabasic.c ptafunc1.c ptra.c	                                \
+ ptabasic.c ptafunc1.c ptafunc2.c ptra.c	                \
  quadtree.c queue.c rank.c rbtree.c                             \
  readbarcode.c readfile.c                                       \
  recogbasic.c recogdid.c recogident.c                           \
@@ -51,15 +52,15 @@ liblept_la_SOURCES = adaptmap.c affine.c                        \
  rop.c ropiplow.c roplow.c                                      \
  rotate.c rotateam.c rotateamlow.c                              \
  rotateorth.c rotateshear.c                                     \
- runlength.c sarray.c                                           \
+ runlength.c sarray1.c sarray2.c                                \
  scale.c scalelow.c	                                        \
  seedfill.c seedfilllow.c                                       \
  sel1.c sel2.c selgen.c                                         \
  shear.c skew.c	spixio.c                                        \
- stack.c stringcode.c sudoku.c textops.c                        \
+ stack.c stringcode.c                                           \
+ strokes.c sudoku.c textops.c                                   \
  tiffio.c tiffiostub.c 		                                \
- utils.c viewfiles.c                                            \
- warper.c watershed.c                                           \
+ utils1.c utils2.c warper.c watershed.c                         \
  webpio.c webpiostub.c		                                \
  writefile.c zlibmem.c zlibmemstub.c
 
@@ -73,19 +74,15 @@ pkginclude_HEADERS = allheaders.h alltypes.h                    \
  readbarcode.h recog.h regutils.h stack.h                       \
  stringcode.h sudoku.h watershed.h
 
-noinst_PROGRAMS = xtractprotos
 LDADD = liblept.la
 
-EXTRA_DIST = arrayaccess.h.vc                                   \
- endiantest.c endianness.h.dist	                                \
- hmttemplate1.txt hmttemplate2.txt                              \
+EXTRA_DIST = hmttemplate1.txt hmttemplate2.txt                  \
  leptonica-license.txt		                                \
  morphtemplate1.txt morphtemplate2.txt                          \
  stringtemplate1.txt stringtemplate2.txt
 
-allheaders: $(liblept_la_SOURCES)
-	@test -x xtractprotos || echo "First run 'make xtractprotos'"
-	./xtractprotos -prestring=LEPT_DLL -protos=inline $(liblept_la_SOURCES)
+$(top_builddir)/prog/xtractprotos$(EXEEXT): liblept.la
+	$(MAKE) -C $(top_builddir)/prog xtractprotos$(EXEEXT)
 
-dist-hook: 
-	cp "$(distdir)"/endianness.h{.dist,}
+allheaders: $(top_builddir)/prog/xtractprotos$(EXEEXT) $(liblept_la_SOURCES)
+	cd $(srcdir) && $(abs_top_builddir)/prog/xtractprotos$(EXEEXT) -prestring=LEPT_DLL -protos=inline $(liblept_la_SOURCES)

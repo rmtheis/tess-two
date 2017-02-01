@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  pixlabel.c
+/*!
+ * \file pixlabel.c
+ * <pre>
  *
  *     Label pixels by an index for connected component membership
  *           PIX         *pixConnCompTransform()
@@ -75,6 +76,7 @@
  *    seedfill.c:
  *       This file has pixDistanceFunction(), that labels each pixel with
  *       its distance from either the foreground or the background.
+ * </pre>
  */
 
 #include <string.h>
@@ -87,24 +89,26 @@
  *      Label pixels by an index for connected component membership      *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixConnCompTransform()
+ * \brief   pixConnCompTransform()
  *
- *      Input:   pixs (1 bpp)
- *               connect (connectivity: 4 or 8)
- *               depth (of pixd: 8 or 16 bpp; use 0 for auto determination)
- *      Return:  pixd (8, 16 or 32 bpp), or null on error
+ * \param[in]     pixs 1 bpp
+ * \param[in]     connect connectivity: 4 or 8
+ * \param[in]     depth of pixd: 8 or 16 bpp; use 0 for auto determination
+ * \return   pixd 8, 16 or 32 bpp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) pixd is 8, 16 or 32 bpp, and the pixel values label the
  *          fg component, starting with 1.  Pixels in the bg are labelled 0.
- *      (2) If @depth = 0, the depth of pixd is 8 if the number of c.c.
+ *      (2) If %depth = 0, the depth of pixd is 8 if the number of c.c.
  *          is less than 254, 16 if the number of c.c is less than 0xfffe,
  *          and 32 otherwise.
- *      (3) If @depth = 8, the assigned label for the n-th component is
+ *      (3) If %depth = 8, the assigned label for the n-th component is
  *          1 + n % 254.  We use mod 254 because 0 is uniquely assigned
  *          to black: e.g., see pixcmapCreateRandom().  Likewise,
- *          if @depth = 16, the assigned label uses mod(2^16 - 2), and
- *          if @depth = 32, no mod is taken.
+ *          if %depth = 16, the assigned label uses mod(2^16 - 2), and
+ *          if %depth = 32, no mod is taken.
+ * </pre>
  */
 PIX *
 pixConnCompTransform(PIX     *pixs,
@@ -172,17 +176,19 @@ PIXA    *pixa;
  *         Label pixels by the area of their connected component         *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixConnCompAreaTransform()
+ * \brief   pixConnCompAreaTransform()
  *
- *      Input:   pixs (1 bpp)
- *               connect (connectivity: 4 or 8)
- *      Return:  pixd (32 bpp, 1 spp), or null on error
+ * \param[in]     pixs 1 bpp
+ * \param[in]     connect connectivity: 4 or 8
+ * \return   pixd 32 bpp, 1 spp, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) The pixel values in pixd label the area of the fg component
  *          to which the pixel belongs.  Pixels in the bg are labelled 0.
  *      (2) For purposes of visualization, the output can be converted
  *          to 8 bpp, using pixConvert32To8() or pixMaxDynamicRange().
+ * </pre>
  */
 PIX *
 pixConnCompAreaTransform(PIX     *pixs,
@@ -234,16 +240,17 @@ PIXA     *pixa;
  *  Label pixels to allow incremental computation of connected components  *
  *-------------------------------------------------------------------------*/
 /*!
- *  pixConnCompIncrInit()
+ * \brief   pixConnCompIncrInit()
  *
- *      Input:   pixs (1 bpp)
- *               conn (connectivity: 4 or 8)
- *               &pixd (<return> 32 bpp, with c.c. labelled)
- *               &ptaa (<return> with pixel locations indexed by c.c.)
- *               &ncc (<return> initial number of c.c.)
- *      Return:  0 if OK, 1 on error
+ * \param[in]     pixs 1 bpp
+ * \param[in]     conn connectivity: 4 or 8
+ * \param[out]    ppixd 32 bpp, with c.c. labelled
+ * \param[out]    pptaa with pixel locations indexed by c.c.
+ * \param[out]    pncc initial number of c.c.
+ * \return   0 if OK, 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This labels the connected components in a 1 bpp pix, and
  *          additionally sets up a ptaa that lists the locations of pixels
  *          in each of the components.
@@ -251,9 +258,10 @@ PIXA     *pixa;
  *          an application that maintains information about connected
  *          components incrementally as pixels are added.
  *      (3) pixs can be empty or have some foreground pixels.
- *      (4) The connectivity is stored in pixd->special.
+ *      (4) The connectivity is stored in pixd-\>special.
  *      (5) Always initialize with the first pta in ptaa being empty
  *          and representing the background value (index 0) in the pix.
+ * </pre>
  */
 l_int32
 pixConnCompIncrInit(PIX     *pixs,
@@ -305,17 +313,18 @@ PTAA    *ptaa;
 
 
 /*!
- *  pixConnCompIncrAdd()
+ * \brief   pixConnCompIncrAdd()
  *
- *      Input:   pixs (32 bpp, with pixels labelled by c.c.)
- *               ptaa (with each pta of pixel locations indexed by c.c.)
- *               &ncc (number of c.c)
- *               x,y (location of added pixel)
- *               debug (0 for no output; otherwise output whenever
- *                      debug <= nvals, up to debug == 3)
- *      Return:  -1 if nothing happens; 0 if a pixel is added; 1 on error
+ * \param[in]     pixs 32 bpp, with pixels labelled by c.c.
+ * \param[in]     ptaa with each pta of pixel locations indexed by c.c.
+ * \param[out]    pncc number of c.c
+ * \param[in]     x,y location of added pixel
+ * \param[in]     debug 0 for no output; otherwise output whenever
+ *                      debug <= nvals, up to debug == 3
+ * \return   -1 if nothing happens; 0 if a pixel is added; 1 on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This adds a pixel and updates the labelled connected components.
  *          Before calling this function, initialize the process using
  *          pixConnCompIncrInit().
@@ -336,6 +345,7 @@ PTAA    *ptaa;
  *          which supports the generation and merging of disjoint sets
  *          of pixels.  This function can be called about 1.3 million times
  *          per second.
+ * </pre>
  */
 l_int32
 pixConnCompIncrAdd(PIX       *pixs,
@@ -372,8 +382,8 @@ PTA      *ptas, *ptad;
         return -1;
 
         /* Find unique neighbor pixel values in increasing order of value.
-         * If @nvals > 0, these are returned in the @neigh array, which
-         * is of size @nvals.  Note that the pixel values in each
+         * If %nvals > 0, these are returned in the %neigh array, which
+         * is of size %nvals.  Note that the pixel values in each
          * connected component are used as the index into the pta
          * array of the ptaa, giving the pixel locations. */
     pixGetSortedNeighborValues(pixs, x, y, conn, &neigh, &nvals);
@@ -444,25 +454,27 @@ PTA      *ptas, *ptad;
 
 
 /*!
- *  pixGetSortedNeighborValues()
+ * \brief   pixGetSortedNeighborValues()
  *
- *      Input:   pixs (8, 16 or 32 bpp, with pixels labelled by c.c.)
- *               x, y (location of pixel)
- *               conn (4 or 8 connected neighbors)
- *               &neigh (<return> array of integers, to be filled with
- *                      the values of the neighbors, if any)
- *               &nvals (<return> the number of unique neighbor values found)
- *      Return:  0 if OK, 1 on error
+ * \param[in]     pixs 8, 16 or 32 bpp, with pixels labelled by c.c.
+ * \param[in]     x, y location of pixel
+ * \param[in]     conn 4 or 8 connected neighbors
+ * \param[out]    pneigh array of integers, to be filled with
+ *                      the values of the neighbors, if any
+ * \param[out]    pnvals the number of unique neighbor values found
+ * \return   0 if OK, 1 on error
  *
- *  Notes:
- *      (1) The returned @neigh array is the unique set of neighboring
+ * <pre>
+ * Notes:
+ *      (1) The returned %neigh array is the unique set of neighboring
  *          pixel values, of size nvals, sorted from smallest to largest.
  *          The value 0, which represents background pixels that do
  *          not belong to any set of connected components, is discarded.
- *      (2) If there are no neighbors, this returns @neigh = NULL; otherwise,
+ *      (2) If there are no neighbors, this returns %neigh = NULL; otherwise,
  *          the caller must free the array.
  *      (3) For either 4 or 8 connectivity, the maximum number of unique
  *          neighbor values is 4.
+ * </pre>
  */
 l_int32
 pixGetSortedNeighborValues(PIX       *pixs,
@@ -504,7 +516,7 @@ RB_TYPE       key;
         l_asetInsert(aset, key);
     }
 
-        /* Extract the set keys and put them into the @neigh array.
+        /* Extract the set keys and put them into the %neigh array.
          * Omit the value 0, which indicates the pixel doesn't
          * belong to one of the sets of connected components. */
     node = l_asetGetFirst(aset);
@@ -532,12 +544,13 @@ RB_TYPE       key;
  *          Label pixels with spatially-dependent color coding           *
  *-----------------------------------------------------------------------*/
 /*!
- *  pixLocToColorTransform()
+ * \brief   pixLocToColorTransform()
  *
- *      Input:   pixs (1 bpp)
- *      Return:  pixd (32 bpp rgb), or null on error
+ * \param[in]     pixs 1 bpp
+ * \return   pixd 32 bpp rgb, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This generates an RGB image where each component value
  *          is coded depending on the (x.y) location and the size
  *          of the fg connected component that the pixel in pixs belongs to.
@@ -547,6 +560,7 @@ RB_TYPE       key;
  *      (2) Such encodings can be compared between two 1 bpp images
  *          by performing this transform and calculating the
  *          "earth-mover" distance on the resulting R,G,B histograms.
+ * </pre>
  */
 PIX *
 pixLocToColorTransform(PIX  *pixs)
@@ -618,4 +632,3 @@ PIX       *pix1, *pixcc, *pixr, *pixg, *pixb, *pixd;
     pixDestroy(&pixb);
     return pixd;
 }
-

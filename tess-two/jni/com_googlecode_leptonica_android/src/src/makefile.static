@@ -40,14 +40,6 @@
 #   To remove object files in src: make clean
 #   To remove object files and executables in prog: make clean
 #
-#   Customization for endianness of machine hardware:
-#   When using the gnu compiler, endianness is automatically
-#   determined and set properly.  Otherwise, set the $CPPFLAGS variable:
-#       On little-endian machines (e.g., i386, x86-64):
-#          CPPFLAGS = $(INCLUDES) -DL_LITTLE_ENDIAN
-#       On big-endian machines (e.g., Mac Power PC, Sun Sparc):
-#          CPPFLAGS = $(INCLUDES) -DL_BIG_ENDIAN
-#
 #   Customization for I/O with external libraries (jpeg, png, tiff, webp, gif):
 #   Set flags in environ.h.  The default is to have libjpeg, libpng,
 #   libtiff and libz, but not libgif.
@@ -76,6 +68,7 @@ TEST		= test
 MKDIR		= mkdir -p
 LIBRARIAN	= ar cq
 RANLIB		= ranlib
+SED		= sed
 
 # Libraries are built into a binary tree determined by the environmental
 # variable  BINARY_BASE_DIR
@@ -99,31 +92,35 @@ INCLUDES =	-I./ $(EXTRAINCLUDES)
 PROTOTYPE_DIR =	.
 
 #   Which flags to use?
-#     - gcc 4.3.3 enforces checking return values of built-in C functions
-#       such as fgets().  This should compile with the -Werror flag,
-#       but it is turned off in the distribution (just in case...).
-#     - use g++ to apply stricter rules.  Libraries made with g++ may not
-#       link to programs compiled with gcc (depends on the glibc version).
-#     - use -Wunused to identify unused varables
+#     - std=c89 and std=c99 both define __STRICT_ANSI__, which causes
+#       the omission of declarations of a number of functions, such
+#       as mkstemp, fmemopen, open_memstream, fdopen, etc.  So if you
+#       use one of these, also use -U__STRICT_ANSI__.  e.g.,
+#          gcc -std=c89 -U__STRICT_ANSI__
+#     - std=gnu89 and std=gnu99 do not define __STRICT_ANSI__, so
+#       declaration of these other functions is included.
+#     - On mingw, it is necessary to use -D__USE_MINGW_ANSI_STDIO.
+#       This has no effect on non-mingw systems.
+#     - use -Wunused to identify unused variables
 #     - use -DNO_CONSOLE_IO to remove all L_INFO, L_WARNING, L_ERROR and
 #        ERROR_* logging, and to remove all DEBUG information dependent
 #        on whether or not NO_CONSOLE_IO has been defined.
 #     - remove -fPIC for Cygwin
-CC =		gcc -ansi -D_BSD_SOURCE -DANSI -fPIC
-#CC =		gcc -ansi -D_BSD_SOURCE -DANSI -Werror -fPIC
+CC =		gcc -std=c99 -U__STRICT_ANSI__ -D__USE_MINGW_ANSI_STDIO
+#CC =		gcc -std=c89 -U__STRICT_ANSI__ -D__USE_MINGW_ANSI_STDIO
+#CC =		gcc -std=c99 -D_POSIX_C_SOURCE=200809L -D__USE_MINGW_ANSI_STDIO -D_BSD_SOURCE -DANSI -fPIC
+#CC =		gcc -std=gnu89 -D__USE_MINGW_ANSI_STDIO
+#CC =		gcc -std=gnu89 -D_BSD_SOURCE -DANSI -Werror -fPIC
+#CC =		gcc -std=c99 -U__STRICT_ANSI__ -D__USE_MINGW_ANSI_STDIO -DNO_CONSOLE_IO
 #CC =		g++ -D_BSD_SOURCE -fPIC
 #CC =		g++ -Werror -D_BSD_SOURCE -fPIC
 #CC =		g++ -Wunused -D_BSD_SOURCE -fPIC
-#CC =		gcc -ansi -DNO_CONSOLE_IO -D_BSD_SOURCE -DANSI -fPIC
-#CC =		gcc -ansi -D_BSD_SOURCE -DANSI
 
-#   Test for processor endianness (valid with gnu make only)
-ENDIANNESS := $(shell $(CC) -o endiantest endiantest.c; ./endiantest; rm -f endiantest)
-
-# Conditional compilation (depending on processor endianness)
-CPPFLAGS =      $(INCLUDES) -D$(ENDIANNESS)
-#CPPFLAGS =	$(INCLUDES) -DL_LITTLE_ENDIAN
-#CPPFLAGS =	$(INCLUDES) -DL_BIG_ENDIAN
+#   Test for processor endianness
+#   This version (using the definition of __BYTE_ORDER in endian.h)
+#   was provided by rofl0r.  It has been modified to return L_LITTLE_ENDIAN
+#   if the file endian.h does not exist, which is the situation on mingw.
+ENDIANNESS = $(shell echo __BYTE_ORDER | $(CC) -include endian.h -E - | grep -q 4321 && echo L_BIG_ENDIAN || echo L_LITTLE_ENDIAN)
 
 #   Shared library linker options
 SONAME_OPTION = -Wl,-h,
@@ -140,6 +137,7 @@ endif
 
 
 OPTIONS =
+CPPFLAGS =		$(INCLUDES)
 CFLAGS =		$(OPTIMIZE) $(OPTIONS)
 LIBRARIAN_SHARED =	gcc -shared
 
@@ -150,7 +148,8 @@ LIBRARIAN_SHARED =	gcc -shared
 #  Links are created among the files <libname>.X.Y,
 #  <libname>.X, and <libname>, where Y is the minor revision number.
 MAJOR_REV = 1
-MINOR_REV = 73
+MINOR_REV = 74
+PATCH_REV = 1
 
 #########################################################
 
@@ -167,7 +166,7 @@ LEPTLIB_C =	adaptmap.c affine.c \
 		bilateral.c bilinear.c binarize.c \
 		binexpand.c binreduce.c \
 		blend.c bmf.c bmpio.c bmpiostub.c \
-		bootnumgen1.c bootnumgen2.c \
+		bootnumgen1.c bootnumgen2.c bootnumgen3.c \
 		boxbasic.c boxfunc1.c boxfunc2.c \
 		boxfunc3.c boxfunc4.c \
 		bytearray.c ccbord.c ccthin.c classapp.c \
@@ -177,7 +176,8 @@ LEPTLIB_C =	adaptmap.c affine.c \
 		colorseg.c colorspace.c \
 		compare.c conncomp.c convertfiles.c \
 		convolve.c correlscore.c \
-		dewarp1.c dewarp2.c dewarp3.c dewarp4.c dnabasic.c \
+		dewarp1.c dewarp2.c dewarp3.c dewarp4.c \
+		dnabasic.c dnafunc1.c dnahash.c \
 		dwacomb.2.c dwacomblow.2.c \
 		edge.c encoding.c enhance.c \
 		fhmtauto.c fhmtgen.1.c fhmtgenlow.1.c \
@@ -204,7 +204,7 @@ LEPTLIB_C =	adaptmap.c affine.c \
 		pnmio.c pnmiostub.c \
 		projective.c \
 		psio1.c psio1stub.c psio2.c psio2stub.c \
-		ptabasic.c ptafunc1.c \
+		ptabasic.c ptafunc1.c ptafunc2.c \
 		ptra.c quadtree.c queue.c rank.c rbtree.c \
 		readbarcode.c readfile.c \
 		recogbasic.c recogdid.c recogident.c recogtrain.c \
@@ -212,15 +212,15 @@ LEPTLIB_C =	adaptmap.c affine.c \
 		rop.c ropiplow.c roplow.c \
 		rotate.c rotateam.c rotateamlow.c \
 		rotateorth.c rotateshear.c \
-		runlength.c sarray.c \
+		runlength.c sarray1.c sarray2.c \
 		scale.c scalelow.c \
 		seedfill.c seedfilllow.c \
 		sel1.c sel2.c selgen.c \
 		shear.c skew.c spixio.c \
-		stack.c stringcode.c sudoku.c \
+		stack.c stringcode.c \
+		strokes.c sudoku.c \
 		textops.c tiffio.c tiffiostub.c \
-		utils.c viewfiles.c \
-		warper.c watershed.c \
+		utils1.c utils2.c warper.c watershed.c \
 		webpio.c webpiostub.c writefile.c \
 		zlibmem.c zlibmemstub.c
 
@@ -305,9 +305,9 @@ $(LIB_DEBUG)/%.a:
 $(LIB_SHARED)/%.so:
 		$(RM) $@
 		$(LIBRARIAN_SHARED) $(SONAME_OPTION)$(notdir $@).$(MAJOR_REV) -o $@ $<
-	mv $@ $@.$(MAJOR_REV).$(MINOR_REV)
+	mv $@ $@.$(MAJOR_REV).$(MINOR_REV).$(PATCH_REV)
 	cd $(LIB_SHARED); rm $(notdir $@).$(MAJOR_REV); \
-	  ln -s $(notdir $@).$(MAJOR_REV).$(MINOR_REV) $(notdir $@).$(MAJOR_REV)
+	  ln -s $(notdir $@).$(MAJOR_REV).$(MINOR_REV).$(PATCH_REV) $(notdir $@).$(MAJOR_REV)
 	cd $(LIB_SHARED); rm $(notdir $@); \
 	  ln -s $(notdir $@).$(MAJOR_REV) $(notdir $@)
 
@@ -335,9 +335,9 @@ leptlibs:	$(LIB_SHARED)/$(LEPTLIB_SHARED)
 $(LIB_SHARED)/$(LEPTLIB_SHARED):	$(LEPTLIB_C:%.c=$(OBJ_SHARED)/%.o)
 		$(RM) $@
 		$(LIBRARIAN_SHARED) $(SONAME_OPTION)$(notdir $@).$(MAJOR_REV) -o $@ $(LEPTLIB_C:%.c=$(OBJ_SHARED)/%.o)
-	mv $@ $@.$(MAJOR_REV).$(MINOR_REV)
+	mv $@ $@.$(MAJOR_REV).$(MINOR_REV).$(PATCH_REV)
 	cd $(LIB_SHARED); rm $(notdir $@).$(MAJOR_REV); \
-	  ln -s $(notdir $@).$(MAJOR_REV).$(MINOR_REV) $(notdir $@).$(MAJOR_REV)
+	  ln -s $(notdir $@).$(MAJOR_REV).$(MINOR_REV).$(PATCH_REV) $(notdir $@).$(MAJOR_REV)
 	cd $(LIB_SHARED); rm $(notdir $@); \
 	  ln -s $(notdir $@).$(MAJOR_REV) $(notdir $@)
 
@@ -345,15 +345,18 @@ $(LIB_SHARED)/$(LEPTLIB_SHARED):	$(LEPTLIB_C:%.c=$(OBJ_SHARED)/%.o)
 
 #   Rules for compiling source
 
-$(OBJ_NODEBUG)/%.o:	%.c  $(LEPTLIB_H)
+endianness.h:	endianness.h.in
+		$(SED) -e 's/@APPLE_UNIVERSAL_BUILD@/defined (__APPLE_CC__)/g' -e 's/@ENDIANNESS@/$(ENDIANNESS)/g' endianness.h.in > endianness.h
+
+$(OBJ_NODEBUG)/%.o:	%.c  $(LEPTLIB_H) endianness.h
 		@$(TEST) -d $(OBJ_NODEBUG) || $(MKDIR) $(OBJ_NODEBUG)
 		$(COMPILE.c) -o $@ $<
 
-$(OBJ_DEBUG)/%.o:	%.c  $(LEPTLIB_H)
+$(OBJ_DEBUG)/%.o:	%.c  $(LEPTLIB_H) endianness.h
 		@$(TEST) -d $(OBJ_DEBUG) || $(MKDIR) $(OBJ_DEBUG)
 		$(COMPILE.c) -o $@ $<
 
-$(OBJ_SHARED)/%.o:	%.c  $(LEPTLIB_H)
+$(OBJ_SHARED)/%.o:	%.c  $(LEPTLIB_H) endianness.h
 		@$(TEST) -d $(OBJ_SHARED) || $(MKDIR) $(OBJ_SHARED)
 		$(COMPILE.c) -o $@ $<
 
@@ -380,7 +383,8 @@ clean:
 			$(LIB_NODEBUG)/*.a $(LIB_DEBUG)/*.a \
 			$(LIB_SHARED)/*.so $(LIB_SHARED)/*.so.? \
 			$(LIB_SHARED)/*.so.?.* \
-			xtractprotos.o xtractprotos
+			xtractprotos.o xtractprotos \
+			endianness.h
 
 ###########################################################
 

@@ -41,13 +41,16 @@ l_int32      size, i, n, n0;
 BOXA        *boxa;
 GPLOT       *gplot;
 NUMA        *nax, *nay1, *nay2;
-PIX         *pixs, *pixd;
+PIX         *pixs, *pix1, *pix2, *pixd;
+PIXA        *pixa;
 static char  mainName[] = "pixa1_reg";
 
     if (argc != 1)
         return ERROR_INT(" Syntax:  pixa1_reg", mainName, 1);
     if ((pixs = pixRead("feyn.tif")) == NULL)
         return ERROR_INT("pixs not made", mainName, 1);
+
+    lept_mkdir("lept/pixa");
 
     /* ----------------  Remove small components --------------- */
     boxa = pixConnComp(pixs, NULL, 8);
@@ -87,7 +90,7 @@ static char  mainName[] = "pixa1_reg";
         pixDestroy(&pixd);
     }
 
-    gplot = gplotCreate("/tmp/junkroot1", GPLOT_X11,
+    gplot = gplotCreate("/tmp/lept/pixa/root1", GPLOT_PNG,
                         "Select large: number of cc vs size removed",
                         "min size", "number of c.c.");
     gplotAddPlot(gplot, nax, nay1, GPLOT_LINES, "select if both");
@@ -129,7 +132,7 @@ static char  mainName[] = "pixa1_reg";
         pixDestroy(&pixd);
     }
 
-    gplot = gplotCreate("/tmp/junkroot2", GPLOT_X11,
+    gplot = gplotCreate("/tmp/lept/pixa/root2", GPLOT_PNG,
                         "Remove large: number of cc vs size removed",
                         "min size", "number of c.c.");
     gplotAddPlot(gplot, nax, nay1, GPLOT_LINES, "select if both");
@@ -137,10 +140,20 @@ static char  mainName[] = "pixa1_reg";
     gplotMakeOutput(gplot);
     gplotDestroy(&gplot);
 
+    pixa = pixaCreate(2);
+    pix1 = pixRead("/tmp/lept/pixa/root1.png");
+    pix2 = pixRead("/tmp/lept/pixa/root2.png");
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixd = pixaDisplayTiledInRows(pixa, 32, 1500, 1.0, 0, 20, 2);
+    pixDisplay(pixd, 100, 0);
+    pixWrite("/tmp/lept/pixa/root.png", pixd, IFF_PNG);
+    pixDestroy(&pixd);
+    pixaDestroy(&pixa);
+
     numaDestroy(&nax);
     numaDestroy(&nay1);
     numaDestroy(&nay2);
     pixDestroy(&pixs);
     return 0;
 }
-

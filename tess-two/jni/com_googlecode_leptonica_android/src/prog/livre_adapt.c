@@ -37,7 +37,7 @@
 int main(int    argc,
          char **argv)
 {
-PIX         *pixs, *pixc, *pixr, *pixg, *pixb, *pixsg, *pixsm, *pixd;
+PIX         *pixs, *pix1, *pix2, *pix3, *pixr, *pixg, *pixb, *pixsg, *pixsm;
 PIXA        *pixa;
 static char  mainName[] = "livre_adapt";
 
@@ -45,60 +45,56 @@ static char  mainName[] = "livre_adapt";
         return ERROR_INT(" Syntax:  livre_adapt", mainName, 1);
 
         /* Read the image in at 150 ppi. */
-    pixDisplayWrite(NULL, -1);
     if ((pixs = pixRead("brothers.150.jpg")) == NULL)
         return ERROR_INT("pix not made", mainName, 1);
-    pixDisplayWriteFormat(pixs, 2, IFF_JFIF_JPEG);
+    pixa = pixaCreate(0);
+    pixaAddPix(pixa, pixs, L_INSERT);
 
         /* Normalize for uneven illumination on RGB image */
     pixBackgroundNormRGBArraysMorph(pixs, NULL, 4, 5, 200,
                                     &pixr, &pixg, &pixb);
-    pixd = pixApplyInvBackgroundRGBMap(pixs, pixr, pixg, pixb, 4, 4);
-    pixDisplayWriteFormat(pixd, 2, IFF_JFIF_JPEG);
+    pix1 = pixApplyInvBackgroundRGBMap(pixs, pixr, pixg, pixb, 4, 4);
+    pixaAddPix(pixa, pix1, L_INSERT);
     pixDestroy(&pixr);
     pixDestroy(&pixg);
     pixDestroy(&pixb);
-    pixDestroy(&pixd);
 
         /* Convert the RGB image to grayscale. */
     pixsg = pixConvertRGBToLuminance(pixs);
-    pixDisplayWriteFormat(pixsg, 2, IFF_JFIF_JPEG);
+    pixaAddPix(pixa, pixsg, L_INSERT);
 
         /* Remove the text in the fg. */
-    pixc = pixCloseGray(pixsg, 25, 25);
-    pixDisplayWriteFormat(pixc, 2, IFF_JFIF_JPEG);
+    pix1 = pixCloseGray(pixsg, 25, 25);
+    pixaAddPix(pixa, pix1, L_INSERT);
 
         /* Smooth the bg with a convolution. */
-    pixsm = pixBlockconv(pixc, 15, 15);
-    pixDisplayWriteFormat(pixsm, 2, IFF_JFIF_JPEG);
-    pixDestroy(&pixc);
+    pixsm = pixBlockconv(pix1, 15, 15);
+    pixaAddPix(pixa, pixsm, L_INSERT);
 
         /* Normalize for uneven illumination on gray image. */
     pixBackgroundNormGrayArrayMorph(pixsg, NULL, 4, 5, 200, &pixg);
-    pixc = pixApplyInvBackgroundGrayMap(pixsg, pixg, 4, 4);
-    pixDisplayWriteFormat(pixc, 2, IFF_JFIF_JPEG);
+    pix1 = pixApplyInvBackgroundGrayMap(pixsg, pixg, 4, 4);
+    pixaAddPix(pixa, pix1, L_INSERT);
     pixDestroy(&pixg);
 
         /* Increase the dynamic range. */
-    pixd = pixGammaTRC(NULL, pixc, 1.0, 30, 180);
-    pixDisplayWriteFormat(pixd, 2, IFF_JFIF_JPEG);
-    pixDestroy(&pixc);
+    pix2 = pixGammaTRC(NULL, pix1, 1.0, 30, 180);
+    pixaAddPix(pixa, pix2, L_INSERT);
 
         /* Threshold to 1 bpp. */
-    pixb = pixThresholdToBinary(pixd, 120);
-    pixDisplayWriteFormat(pixb, 2, IFF_PNG);
-    pixDestroy(&pixd);
-    pixDestroy(&pixb);
+    pix3 = pixThresholdToBinary(pix2, 120);
+    pixaAddPix(pixa, pix3, L_INSERT);
 
-            /* Generate the output image */
-    pixa = pixaReadFiles("/tmp/display", "file");
-    pixd = pixaDisplayTiledAndScaled(pixa, 8, 350, 4, 0, 25, 2);
-    pixWrite("/tmp/adapt.jpg", pixd, IFF_JFIF_JPEG);
-    pixDisplayWithTitle(pixd, 100, 100, NULL, 1);
-    pixDestroy(&pixd);
-
-    pixDestroy(&pixs);
-    pixDestroy(&pixsg);
+            /* Generate the output image and pdf */
+    lept_mkdir("lept/livre");
+    fprintf(stderr, "Writing jpg and pdf to: /tmp/lept/livre/adapt.*\n");
+    pix1 = pixaDisplayTiledAndScaled(pixa, 8, 350, 4, 0, 25, 2);
+    pixWrite("/tmp/lept/livre/adapt.jpg", pix1, IFF_DEFAULT);
+    pixDisplay(pix1, 100, 100);
+    pixaConvertToPdf(pixa, 0, 1.0, 0, 0, "Livre: adaptive thresholding",
+                     "/tmp/lept/livre/adapt.pdf");
+    pixDestroy(&pix1);
+    pixaDestroy(&pixa);
     return 0;
 }
 

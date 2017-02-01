@@ -25,8 +25,9 @@
  *====================================================================*/
 
 
-/*
- *  rotateam.c
+/*!
+ * \file rotateam.c
+ * <pre>
  *
  *     Grayscale and color rotation for area mapping (== interpolation)
  *
@@ -62,10 +63,10 @@
  *     the area-weighted average of those 4 source pixels.
  *     We make two simplifying approximations:
  *
- *       -  For simplicity, compute the areas as if the dest
+ *       ~  For simplicity, compute the areas as if the dest
  *          pixel were translated but not rotated.
  *
- *       -  Compute area overlaps on a discrete sub-pixel grid.
+ *       ~  Compute area overlaps on a discrete sub-pixel grid.
  *          Because we are using 8 bpp images with 256 levels,
  *          it is convenient to break each pixel into a
  *          16x16 sub-pixel grid, and count the number of
@@ -92,6 +93,7 @@
  *     total angle of 360 degrees, it has been noted that the
  *     center wanders -- it seems to be doing a 1 pixel translation
  *     in addition to the rotation.
+ * </pre>
  */
 
 #include <string.h>
@@ -104,17 +106,19 @@ static const l_float32  MIN_ANGLE_TO_ROTATE = 0.001;  /* radians; ~0.06 deg */
  *                     Rotation about the center                    *
  *------------------------------------------------------------------*/
 /*!
- *  pixRotateAM()
+ * \brief   pixRotateAM()
  *
- *      Input:  pixs (2, 4, 8 bpp gray or colormapped, or 32 bpp RGB)
- *              angle (radians; clockwise is positive)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 2, 4, 8 bpp gray or colormapped, or 32 bpp RGB
+ * \param[in]    angle radians; clockwise is positive
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Rotates about image center.
  *      (2) A positive angle gives a clockwise rotation.
  *      (3) Brings in either black or white pixels from the boundary.
+ * </pre>
  */
 PIX *
 pixRotateAM(PIX       *pixs,
@@ -165,17 +169,19 @@ PIX      *pixt1, *pixt2, *pixd;
 
 
 /*!
- *  pixRotateAMColor()
+ * \brief   pixRotateAMColor()
  *
- *      Input:  pixs (32 bpp)
- *              angle (radians; clockwise is positive)
- *              colorval (e.g., 0 to bring in BLACK, 0xffffff00 for WHITE)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 32 bpp
+ * \param[in]    angle radians; clockwise is positive
+ * \param[in]    colorval e.g., 0 to bring in BLACK, 0xffffff00 for WHITE
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Rotates about image center.
  *      (2) A positive angle gives a clockwise rotation.
  *      (3) Specify the color to be brought in from outside the image.
+ * </pre>
  */
 PIX *
 pixRotateAMColor(PIX       *pixs,
@@ -217,17 +223,19 @@ PIX       *pix1, *pix2, *pixd;
 
 
 /*!
- *  pixRotateAMGray()
+ * \brief   pixRotateAMGray()
  *
- *      Input:  pixs (8 bpp)
- *              angle (radians; clockwise is positive)
- *              grayval (0 to bring in BLACK, 255 for WHITE)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 8 bpp
+ * \param[in]    angle radians; clockwise is positive
+ * \param[in]    grayval 0 to bring in BLACK, 255 for WHITE
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Rotates about image center.
  *      (2) A positive angle gives a clockwise rotation.
  *      (3) Specify the grayvalue to be brought in from outside the image.
+ * </pre>
  */
 PIX *
 pixRotateAMGray(PIX       *pixs,
@@ -265,17 +273,19 @@ PIX        *pixd;
  *                    Rotation about the UL corner                  *
  *------------------------------------------------------------------*/
 /*!
- *  pixRotateAMCorner()
+ * \brief   pixRotateAMCorner()
  *
- *      Input:  pixs (1, 2, 4, 8 bpp gray or colormapped, or 32 bpp RGB)
- *              angle (radians; clockwise is positive)
- *              incolor (L_BRING_IN_WHITE, L_BRING_IN_BLACK)
- *      Return: pixd, or null on error
+ * \param[in]    pixs 1, 2, 4, 8 bpp gray or colormapped, or 32 bpp RGB
+ * \param[in]    angle radians; clockwise is positive
+ * \param[in]    incolor L_BRING_IN_WHITE, L_BRING_IN_BLACK
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Rotates about the UL corner of the image.
  *      (2) A positive angle gives a clockwise rotation.
  *      (3) Brings in either black or white pixels from the boundary.
+ * </pre>
  */
 PIX *
 pixRotateAMCorner(PIX       *pixs,
@@ -324,17 +334,19 @@ PIX      *pixt1, *pixt2, *pixd;
 
 
 /*!
- *  pixRotateAMColorCorner()
+ * \brief   pixRotateAMColorCorner()
  *
- *      Input:  pixs
- *              angle (radians; clockwise is positive)
- *              colorval (e.g., 0 to bring in BLACK, 0xffffff00 for WHITE)
- *      Return: pixd, or null on error
+ * \param[in]    pixs
+ * \param[in]    angle radians; clockwise is positive
+ * \param[in]    fillval e.g., 0 to bring in BLACK, 0xffffff00 for WHITE
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Rotates the image about the UL corner.
  *      (2) A positive angle gives a clockwise rotation.
  *      (3) Specify the color to be brought in from outside the image.
+ * </pre>
  */
 PIX *
 pixRotateAMColorCorner(PIX       *pixs,
@@ -376,17 +388,19 @@ PIX       *pix1, *pix2, *pixd;
 
 
 /*!
- *  pixRotateAMGrayCorner()
+ * \brief   pixRotateAMGrayCorner()
  *
- *      Input:  pixs
- *              angle (radians; clockwise is positive)
- *              grayval (0 to bring in BLACK, 255 for WHITE)
- *      Return: pixd, or null on error
+ * \param[in]    pixs
+ * \param[in]    angle radians; clockwise is positive
+ * \param[in]    grayval 0 to bring in BLACK, 255 for WHITE
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) Rotates the image about the UL corner.
  *      (2) A positive angle gives a clockwise rotation.
  *      (3) Specify the grayvalue to be brought in from outside the image.
+ * </pre>
  */
 PIX *
 pixRotateAMGrayCorner(PIX       *pixs,
@@ -424,14 +438,15 @@ PIX       *pixd;
  *                    Fast rotation about the center                *
  *------------------------------------------------------------------*/
 /*!
- *  pixRotateAMColorFast()
+ * \brief   pixRotateAMColorFast()
  *
- *      Input:  pixs
- *              angle (radians; clockwise is positive)
- *              colorval (e.g., 0 to bring in BLACK, 0xffffff00 for WHITE)
- *      Return: pixd, or null on error
+ * \param[in]    pixs
+ * \param[in]    angle radians; clockwise is positive
+ * \param[in]    colorval e.g., 0 to bring in BLACK, 0xffffff00 for WHITE
+ * \return  pixd, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This rotates a color image about the image center.
  *      (2) A positive angle gives a clockwise rotation.
  *      (3) It uses area mapping, dividing each pixel into
@@ -443,6 +458,7 @@ PIX       *pixd;
  *          No attempt is made to rotate the alpha component.
  *
  *  *** Warning: implicit assumption about RGB component ordering ***
+ * </pre>
  */
 PIX *
 pixRotateAMColorFast(PIX       *pixs,

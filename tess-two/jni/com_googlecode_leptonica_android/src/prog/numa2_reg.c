@@ -62,7 +62,7 @@ static char  mainName[] = "numa2_reg";
     if (argc != 1)
         return ERROR_INT(" Syntax:  numa2_reg", mainName, 1);
 
-    lept_mkdir("lept");
+    lept_mkdir("lept/numa2");
 
     /* -------------------------------------------------------------------*
      *                         Numa-windowed stats                        *
@@ -70,42 +70,32 @@ static char  mainName[] = "numa2_reg";
 #if  DO_ALL
     na = numaRead("lyra.5.na");
     numaWindowedStats(na, 5, &na1, &na2, &na3, &na4);
-    gplotSimple1(na, GPLOT_PNG, "/tmp/lept/numa_lyra6", "Original");
-    gplotSimple1(na1, GPLOT_PNG, "/tmp/lept/numa_lyra7", "Mean");
-    gplotSimple1(na2, GPLOT_PNG, "/tmp/lept/numa_lyra8", "Mean Square");
-    gplotSimple1(na3, GPLOT_PNG, "/tmp/lept/numa_lyra9", "Variance");
-    gplotSimple1(na4, GPLOT_PNG, "/tmp/lept/numa_lyra10", "RMS Difference");
-#ifndef  _WIN32
-    sleep(1);
-#else
-    Sleep(1000);
-#endif  /* _WIN32 */
+    gplotSimple1(na, GPLOT_PNG, "/tmp/lept/numa2/lyra6", "Original");
+    gplotSimple1(na1, GPLOT_PNG, "/tmp/lept/numa2/lyra7", "Mean");
+    gplotSimple1(na2, GPLOT_PNG, "/tmp/lept/numa2/lyra8", "Mean Square");
+    gplotSimple1(na3, GPLOT_PNG, "/tmp/lept/numa2/lyra9", "Variance");
+    gplotSimple1(na4, GPLOT_PNG, "/tmp/lept/numa2/lyra10", "RMS Difference");
     pixa = pixaCreate(5);
-    pix1 = pixRead("/tmp/lept/numa_lyra6.png");
-    pix2 = pixRead("/tmp/lept/numa_lyra7.png");
-    pix3 = pixRead("/tmp/lept/numa_lyra8.png");
-    pix4 = pixRead("/tmp/lept/numa_lyra9.png");
-    pix5 = pixRead("/tmp/lept/numa_lyra10.png");
-    pixSaveTiled(pix1, pixa, 1.0, 1, 25, 32);
-    pixSaveTiled(pix2, pixa, 1.0, 1, 25, 32);
-    pixSaveTiled(pix3, pixa, 1.0, 0, 25, 32);
-    pixSaveTiled(pix4, pixa, 1.0, 1, 25, 32);
-    pixSaveTiled(pix5, pixa, 1.0, 0, 25, 32);
-    pixd = pixaDisplay(pixa, 0, 0);
-    pixDisplay(pixd, 100, 100);
-    pixWrite("/tmp/lept/numa_window.png", pixd, IFF_PNG);
+    pix1 = pixRead("/tmp/lept/numa2/lyra6.png");
+    pix2 = pixRead("/tmp/lept/numa2/lyra7.png");
+    pix3 = pixRead("/tmp/lept/numa2/lyra8.png");
+    pix4 = pixRead("/tmp/lept/numa2/lyra9.png");
+    pix5 = pixRead("/tmp/lept/numa2/lyra10.png");
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixaAddPix(pixa, pix3, L_INSERT);
+    pixaAddPix(pixa, pix4, L_INSERT);
+    pixaAddPix(pixa, pix5, L_INSERT);
+    pixd = pixaDisplayTiledInRows(pixa, 32, 1500, 1.0, 0, 20, 2);
+    pixDisplay(pixd, 100, 0);
+    pixWrite("/tmp/lept/numa2/window.png", pixd, IFF_PNG);
+    pixDestroy(&pixd);
+    pixaDestroy(&pixa);
     numaDestroy(&na);
     numaDestroy(&na1);
     numaDestroy(&na2);
     numaDestroy(&na3);
     numaDestroy(&na4);
-    pixaDestroy(&pixa);
-    pixDestroy(&pix1);
-    pixDestroy(&pix2);
-    pixDestroy(&pix3);
-    pixDestroy(&pix4);
-    pixDestroy(&pix5);
-    pixDestroy(&pixd);
 #endif
 
     /* -------------------------------------------------------------------*
@@ -135,42 +125,31 @@ static char  mainName[] = "numa2_reg";
     na2 = pixExtractOnLine(pixg, 40, 30, 40, 170, 1);
     na3 = pixExtractOnLine(pixg, 20, 170, 180, 30, 1);
     na4 = pixExtractOnLine(pixg, 20, 190, 180, 10, 1);
-    gplotSimple1(na1, GPLOT_PNG, "/tmp/lept/numa_ext1", "Horizontal");
-    gplotSimple1(na2, GPLOT_PNG, "/tmp/lept/numa_ext2", "Vertical");
-    gplotSimple1(na3, GPLOT_PNG, "/tmp/lept/numa_ext3",
+    gplotSimple1(na1, GPLOT_PNG, "/tmp/lept/numa2/ext1", "Horizontal");
+    gplotSimple1(na2, GPLOT_PNG, "/tmp/lept/numa2/ext2", "Vertical");
+    gplotSimple1(na3, GPLOT_PNG, "/tmp/lept/numa2/ext3",
                 "Slightly more horizontal than vertical");
-    gplotSimple1(na4, GPLOT_PNG, "/tmp/lept/numa_ext4",
+    gplotSimple1(na4, GPLOT_PNG, "/tmp/lept/numa2/ext4",
                 "Slightly more vertical than horizontal");
-#ifndef  _WIN32
-    sleep(1);
-#else
-    Sleep(1000);
-#endif  /* _WIN32 */
     pixa = pixaCreate(4);
-    pix1 = pixRead("/tmp/lept/numa_ext1.png");
-    pix2 = pixRead("/tmp/lept/numa_ext2.png");
-    pix3 = pixRead("/tmp/lept/numa_ext3.png");
-    pix4 = pixRead("/tmp/lept/numa_ext4.png");
-    pixSaveTiled(pix1, pixa, 1.0, 1, 25, 32);
-    pixSaveTiled(pix2, pixa, 1.0, 0, 25, 32);
-    pixSaveTiled(pix3, pixa, 1.0, 1, 25, 32);
-    pixSaveTiled(pix4, pixa, 1.0, 0, 25, 32);
-    pixd = pixaDisplay(pixa, 0, 0);
-    pixDisplay(pixd, 100, 500);
-    pixWrite("/tmp/lept/numa_extract.png", pixd, IFF_PNG);
+    pix1 = pixRead("/tmp/lept/numa2/ext1.png");
+    pix2 = pixRead("/tmp/lept/numa2/ext2.png");
+    pix3 = pixRead("/tmp/lept/numa2/ext3.png");
+    pix4 = pixRead("/tmp/lept/numa2/ext4.png");
+    pixaAddPix(pixa, pix1, L_INSERT);
+    pixaAddPix(pixa, pix2, L_INSERT);
+    pixaAddPix(pixa, pix3, L_INSERT);
+    pixaAddPix(pixa, pix4, L_INSERT);
+    pixd = pixaDisplayTiledInRows(pixa, 32, 1500, 1.0, 0, 20, 2);
+    pixDisplay(pixd, 100, 450);
+    pixWrite("/tmp/lept/numa2/extract.png", pixd, IFF_PNG);
+    pixDestroy(&pixd);
+    pixaDestroy(&pixa);
+    pixDestroy(&pixg);
     numaDestroy(&na1);
     numaDestroy(&na2);
     numaDestroy(&na3);
     numaDestroy(&na4);
-    pixaDestroy(&pixa);
-    pixDestroy(&pix1);
-    pixDestroy(&pix2);
-    pixDestroy(&pix3);
-    pixDestroy(&pix4);
-    pixDestroy(&pix5);
-    pixDestroy(&pixs);
-    pixDestroy(&pixg);
-    pixDestroy(&pixd);
 #endif
 
     /* -------------------------------------------------------------------*

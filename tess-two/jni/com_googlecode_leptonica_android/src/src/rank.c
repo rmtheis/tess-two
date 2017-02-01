@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  rank.c
+/*!
+ * \file rank.c
+ * <pre>
  *
  *      Rank filter (gray and rgb)
  *          PIX      *pixRankFilter()
@@ -114,6 +115,7 @@
  *  achieved because the time goes as the square of the scaling factor.
  *  We provide an interface that handles the details, and only
  *  requires the amount of downscaling to be input.
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -122,14 +124,15 @@
  *                           Rank order filter                          *
  *----------------------------------------------------------------------*/
 /*!
- *  pixRankFilter()
+ * \brief   pixRankFilter()
  *
- *      Input:  pixs (8 or 32 bpp; no colormap)
- *              wf, hf  (width and height of filter; each is >= 1)
- *              rank (in [0.0 ... 1.0])
- *      Return: pixd (of rank values), or null on error
+ * \param[in]    pixs 8 or 32 bpp; no colormap
+ * \param[in]    wf, hf  width and height of filter; each is >= 1
+ * \param[in]    rank in [0.0 ... 1.0]
+ * \return  pixd of rank values, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This defines, for each pixel in pixs, a neighborhood of
  *          pixels given by a rectangle "centered" on the pixel.
  *          This set of wf*hf pixels has a distribution of values.
@@ -138,6 +141,7 @@
  *          pixels have a lower or equal value and
  *          (1-rank)*(wf*hf-1) pixels have an equal or greater value.
  *      (2) See notes in pixRankFilterGray() for further details.
+ * </pre>
  */
 PIX  *
 pixRankFilter(PIX       *pixs,
@@ -171,14 +175,15 @@ l_int32  d;
 
 
 /*!
- *  pixRankFilterRGB()
+ * \brief   pixRankFilterRGB()
  *
- *      Input:  pixs (32 bpp)
- *              wf, hf  (width and height of filter; each is >= 1)
- *              rank (in [0.0 ... 1.0])
- *      Return: pixd (of rank values), or null on error
+ * \param[in]    pixs 32 bpp
+ * \param[in]    wf, hf  width and height of filter; each is >= 1
+ * \param[in]    rank in [0.0 ... 1.0]
+ * \return  pixd of rank values, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This defines, for each pixel in pixs, a neighborhood of
  *          pixels given by a rectangle "centered" on the pixel.
  *          This set of wf*hf pixels has a distribution of values.
@@ -188,6 +193,7 @@ l_int32  d;
  *          (1-rank)*(wf*hf-1) pixels have an equal or greater value.
  *      (2) Apply gray rank filtering to each component independently.
  *      (3) See notes in pixRankFilterGray() for further details.
+ * </pre>
  */
 PIX  *
 pixRankFilterRGB(PIX       *pixs,
@@ -230,14 +236,15 @@ PIX  *pixr, *pixg, *pixb, *pixrf, *pixgf, *pixbf, *pixd;
 
 
 /*!
- *  pixRankFilterGray()
+ * \brief   pixRankFilterGray()
  *
- *      Input:  pixs (8 bpp; no colormap)
- *              wf, hf  (width and height of filter; each is >= 1)
- *              rank (in [0.0 ... 1.0])
- *      Return: pixd (of rank values), or null on error
+ * \param[in]    pixs 8 bpp; no colormap
+ * \param[in]    wf, hf  width and height of filter; each is >= 1
+ * \param[in]    rank in [0.0 ... 1.0]
+ * \return  pixd of rank values, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This defines, for each pixel in pixs, a neighborhood of
  *          pixels given by a rectangle "centered" on the pixel.
  *          This set of wf*hf pixels has a distribution of values,
@@ -254,6 +261,7 @@ PIX  *pixr, *pixg, *pixb, *pixrf, *pixgf, *pixbf, *pixd;
  *      (5) Returns a copy if both wf and hf are 1.
  *      (6) Uses row-major or column-major incremental updates to the
  *          histograms depending on whether hf > wf or hv <= wf, rsp.
+ * </pre>
  */
 PIX  *
 pixRankFilterGray(PIX       *pixs,
@@ -439,11 +447,11 @@ PIX       *pixt, *pixd;
  *                             Median filter                            *
  *----------------------------------------------------------------------*/
 /*!
- *  pixMedianFilter()
+ * \brief   pixMedianFilter()
  *
- *      Input:  pixs (8 or 32 bpp; no colormap)
- *              wf, hf  (width and height of filter; each is >= 1)
- *      Return: pixd (of median values), or null on error
+ * \param[in]    pixs 8 or 32 bpp; no colormap
+ * \param[in]    wf, hf  width and height of filter; each is >= 1
+ * \return  pixd of median values, or NULL on error
  */
 PIX  *
 pixMedianFilter(PIX     *pixs,
@@ -462,21 +470,23 @@ pixMedianFilter(PIX     *pixs,
  *                Rank filter (accelerated with downscaling)            *
  *----------------------------------------------------------------------*/
 /*!
- *  pixRankFilterWithScaling()
+ * \brief   pixRankFilterWithScaling()
  *
- *      Input:  pixs (8 or 32 bpp; no colormap)
- *              wf, hf  (width and height of filter; each is >= 1)
- *              rank (in [0.0 ... 1.0])
- *              scalefactor (scale factor; must be >= 0.2 and <= 0.7)
- *      Return: pixd (of rank values), or null on error
+ * \param[in]    pixs 8 or 32 bpp; no colormap
+ * \param[in]    wf, hf  width and height of filter; each is >= 1
+ * \param[in]    rank in [0.0 ... 1.0]
+ * \param[in]    scalefactor scale factor; must be >= 0.2 and <= 0.7
+ * \return  pixd of rank values, or NULL on error
  *
- *  Notes:
+ * <pre>
+ * Notes:
  *      (1) This is a convenience function that downscales, does
  *          the rank filtering, and upscales.  Because the down-
  *          and up-scaling functions are very fast compared to
  *          rank filtering, the time it takes is reduced from that
  *          for the simple rank filtering operation by approximately
  *          the square of the scaling factor.
+ * </pre>
  */
 PIX  *
 pixRankFilterWithScaling(PIX       *pixs,

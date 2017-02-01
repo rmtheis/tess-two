@@ -130,10 +130,10 @@ static l_int32 getOffsetForMatchingRP(SARRAY *sa, l_int32 start,
  *      (6) When a prototype is extracted, it is put in a canonical
  *          form (i.e., cleaned up).  Finally, we check that it is
  *          not static and save it.  (If static, it is ignored).
- *      (7) The @prestring for unix is NULL; it is included here so that
+ *      (7) The %prestring for unix is NULL; it is included here so that
  *          you can use Microsoft's declaration for importing or
  *          exporting to a dll.  See environ.h for examples of use.
- *          Here, we set: @prestring = "LEPT_DLL ".  Note in particular
+ *          Here, we set: %prestring = "LEPT_DLL ".  Note in particular
  *          the space character that will separate 'LEPT_DLL' from
  *          the standard unix prototype that follows.
  */

@@ -68,7 +68,7 @@ void     *result = NULL;
 
     lept_mkdir("lept/auto");
 
-        /* Unencode selected string, write to file, and read it */
+        /* Unencode the selected string, uncompress it, and read it */
     switch (index) {
 ---    case 0:
 ---        data1 = decodeBase64(l_strdata_0, strlen(l_strdata_0), &size1);

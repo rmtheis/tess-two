@@ -24,8 +24,9 @@
  -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *====================================================================*/
 
-/*
- *  map.c
+/*!
+ * \file map.c
+ * <pre>
  *
  *  This is an interface for map and set functions, based on using
  *  red-black binary search trees.  Because these trees are sorted,
@@ -94,6 +95,7 @@
  *           L_ASET_NODE   *l_asetGetLast()
  *           L_ASET_NODE   *l_asetGetPrev()
  *           l_int32        l_asetSize()
+ * </pre>
  */
 
 #include "allheaders.h"
@@ -256,4 +258,3 @@ l_asetSize(L_ASET  *s)
 {
     return l_rbtreeGetCount(s);
 }
-

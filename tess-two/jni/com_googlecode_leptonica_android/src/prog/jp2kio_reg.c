@@ -115,6 +115,7 @@ PIX     *pix1, *pix2, *pix3;
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixDestroy(&pix3);
+    boxDestroy(&box);
     return;
 }
 
@@ -136,10 +137,11 @@ PIX      *pix1, *pix2, *pix3;
     regTestCheckFile(rp, buf);
     pix2 = pixRead(buf);
     data = l_binaryRead(buf, &nbytes);
-    pix2 = pixReadMemJp2k(data, nbytes, 1, NULL, 0, 0);
-    pixDisplayWithTitle(pix2, 0, 100, "1", rp->display);
+    pix3 = pixReadMemJp2k(data, nbytes, 1, NULL, 0, 0);
+    pixDisplayWithTitle(pix3, 0, 100, "1", rp->display);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
+    pixDestroy(&pix3);
     lept_free(data);
 
     pix1 = pixReadJp2k(buf, 1, box, 0, 0);  /* just read the box region */
@@ -152,6 +154,7 @@ PIX      *pix1, *pix2, *pix3;
     pix3 = pixReadMemJp2k(data, nbytes, 2, NULL, 0, 0);  /* read at 2x red */
     regTestWritePixAndCheck(rp, pix3, IFF_JP2);
     pixDisplayWithTitle(pix3, 1000, 100, "3", rp->display);
+    boxDestroy(&box);
     pixDestroy(&pix1);
     pixDestroy(&pix2);
     pixDestroy(&pix3);

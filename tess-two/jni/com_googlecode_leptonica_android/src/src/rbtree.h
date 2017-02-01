@@ -43,17 +43,20 @@
 #ifndef  LEPTONICA_RBTREE_H
 #define  LEPTONICA_RBTREE_H
 
-    /* The three valid key types for red-black trees, maps and sets. */
+    /*! The three valid key types for red-black trees, maps and sets. */
 enum {
     L_INT_TYPE = 1,
     L_UINT_TYPE = 2,
     L_FLOAT_TYPE = 3
 };
 
-    /* Storage for keys and values for red-black trees, maps and sets.
+    /*!
+     * Storage for keys and values for red-black trees, maps and sets.
+     * <pre>
      * Note:
      *   (1) Keys and values of the valid key types are all 64-bit
      *   (2) (void *) can be used for values but not for keys.
+     * </pre>
      */
 union Rb_Type {
     l_int64    itype;
