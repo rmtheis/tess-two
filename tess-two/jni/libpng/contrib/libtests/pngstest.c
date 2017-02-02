@@ -1,9 +1,9 @@
 /*-
  * pngstest.c
  *
- * Copyright (c) 2013-2015 John Cunningham Bowler
+ * Copyright (c) 2013-2016 John Cunningham Bowler
  *
- * Last changed in libpng 1.6.19 [(PENDING RELEASE)]
+ * Last changed in libpng 1.6.24 [August 4, 2016]
  *
  * This code is released under the libpng license.
  * For conditions of distribution and use, see the disclaimer
@@ -33,6 +33,15 @@
 #  include <png.h>
 #else
 #  include "../../png.h"
+#endif
+
+/* 1.6.1 added support for the configure test harness, which uses 77 to indicate
+ * a skipped test, in earlier versions we need to succeed on a skipped test, so:
+ */
+#if PNG_LIBPNG_VER >= 10601 && defined(HAVE_CONFIG_H)
+#  define SKIP 77
+#else
+#  define SKIP 0
 #endif
 
 #ifdef PNG_SIMPLIFIED_READ_SUPPORTED /* Else nothing can be done */
@@ -99,10 +108,18 @@ make_random_bytes(png_uint_32* seed, void* pv, size_t size)
    seed[1] = u1;
 }
 
+static png_uint_32 color_seed[2];
+
+static void
+reseed(void)
+{
+   color_seed[0] = 0x12345678U;
+   color_seed[1] = 0x9abcdefU;
+}
+
 static void
 random_color(png_colorp color)
 {
-   static png_uint_32 color_seed[2] = { 0x12345678, 0x9abcdef };
    make_random_bytes(color_seed, color, sizeof *color);
 }
 
@@ -307,7 +324,7 @@ compare_16bit(int v1, int v2, int error_limit, int multiple_algorithms)
 }
 #endif /* unused */
 
-#define READ_FILE 1      /* else memory */
+#define USE_FILE 1       /* else memory */
 #define USE_STDIO 2      /* else use file name */
 #define STRICT 4         /* fail on warnings too */
 #define VERBOSE 8
@@ -316,16 +333,19 @@ compare_16bit(int v1, int v2, int error_limit, int multiple_algorithms)
 #define ACCUMULATE 64
 #define FAST_WRITE 128
 #define sRGB_16BIT 256
+#define NO_RESEED  512   /* do not reseed on each new file */
+#define GBG_ERROR 1024   /* do not ignore the gamma+background_rgb_to_gray
+                          * libpng warning. */
 
 static void
 print_opts(png_uint_32 opts)
 {
-   if (opts & READ_FILE)
+   if (opts & USE_FILE)
       printf(" --file");
    if (opts & USE_STDIO)
       printf(" --stdio");
-   if (opts & STRICT)
-      printf(" --strict");
+   if (!(opts & STRICT))
+      printf(" --nostrict");
    if (opts & VERBOSE)
       printf(" --verbose");
    if (opts & KEEP_TMPFILES)
@@ -338,6 +358,12 @@ print_opts(png_uint_32 opts)
       printf(" --slow");
    if (opts & sRGB_16BIT)
       printf(" --sRGB-16bit");
+   if (opts & NO_RESEED)
+      printf(" --noreseed");
+#if PNG_LIBPNG_VER < 10700 /* else on by default */
+   if (opts & GBG_ERROR)
+      printf(" --fault-gbg-warning");
+#endif
 }
 
 #define FORMAT_NO_CHANGE 0x80000000 /* additional flag */
@@ -741,8 +767,15 @@ checkopaque(Image *image)
       return logerror(image, image->file_name, ": opaque not NULL", "");
    }
 
-   else if (image->image.warning_or_error != 0 && (image->opts & STRICT) != 0)
-      return logerror(image, image->file_name, " --strict", "");
+   /* Separate out the gamma+background_rgb_to_gray warning because it may
+    * produce opaque component errors:
+    */
+   else if (image->image.warning_or_error != 0 &&
+            (strcmp(image->image.message,
+               "libpng does not support gamma+background+rgb_to_gray") == 0 ?
+                  (image->opts & GBG_ERROR) != 0 : (image->opts & STRICT) != 0))
+      return logerror(image, image->file_name, (image->opts & GBG_ERROR) != 0 ?
+                      " --fault-gbg-warning" : " --strict", "");
 
    else
       return 1;
@@ -3008,14 +3041,14 @@ read_file(Image *image, png_uint_32 format, png_const_colorp background)
 static int
 read_one_file(Image *image)
 {
-   if (!(image->opts & READ_FILE) || (image->opts & USE_STDIO))
+   if (!(image->opts & USE_FILE) || (image->opts & USE_STDIO))
    {
       /* memory or stdio. */
       FILE *f = fopen(image->file_name, "rb");
 
       if (f != NULL)
       {
-         if (image->opts & READ_FILE)
+         if (image->opts & USE_FILE)
             image->input_file = f;
 
          else /* memory */
@@ -3096,7 +3129,8 @@ write_one_file(Image *output, Image *image, int convert_to_8bit)
 
    if (image->opts & USE_STDIO)
    {
-#ifndef PNG_USE_MKSTEMP
+#ifdef PNG_SIMPLIFIED_WRITE_STDIO_SUPPORTED
+#ifndef __COVERITY__
       FILE *f = tmpfile();
 #else
       /* Experimental. Coverity says tmpfile() is insecure because it
@@ -3158,10 +3192,14 @@ write_one_file(Image *output, Image *image, int convert_to_8bit)
 
       else
          return logerror(image, "tmpfile", ": open: ", strerror(errno));
+#else /* SIMPLIFIED_WRITE_STDIO */
+      return logerror(image, "tmpfile", ": open: unsupported", "");
+#endif /* SIMPLIFIED_WRITE_STDIO */
    }
 
-   else
+   else if (image->opts & USE_FILE)
    {
+#ifdef PNG_SIMPLIFIED_WRITE_STDIO_SUPPORTED
       static int counter = 0;
       char name[32];
 
@@ -3181,6 +3219,51 @@ write_one_file(Image *output, Image *image, int convert_to_8bit)
 
       else
          return logerror(image, name, ": write failed", "");
+#else /* SIMPLIFIED_WRITE_STDIO */
+      return logerror(image, "stdio", ": open: unsupported", "");
+#endif /* SIMPLIFIED_WRITE_STDIO */
+   }
+
+   else /* use memory */
+   {
+      png_alloc_size_t size;
+
+      if (png_image_write_get_memory_size(image->image, size, convert_to_8bit,
+               image->buffer+16, (png_int_32)image->stride, image->colormap))
+      {
+         /* This is non-fatal but ignoring it was causing serious problems in
+          * the macro to be ignored:
+          */
+         if (size > PNG_IMAGE_PNG_SIZE_MAX(image->image))
+            return logerror(image, "memory", ": PNG_IMAGE_SIZE_MAX wrong", "");
+
+         initimage(output, image->opts, "memory", image->stride_extra);
+         output->input_memory = malloc(size);
+
+         if (output->input_memory != NULL)
+         {
+            output->input_memory_size = size;
+
+            if (png_image_write_to_memory(&image->image, output->input_memory,
+                  &output->input_memory_size, convert_to_8bit, image->buffer+16,
+                  (png_int_32)image->stride, image->colormap))
+            {
+               /* This is also non-fatal but it safes safer to error out anyway:
+                */
+               if (size != output->input_memory_size)
+                  return logerror(image, "memory", ": memory size wrong", "");
+            }
+
+            else
+               return logerror(image, "memory", ": write failed", "");
+         }
+
+         else
+            return logerror(image, "memory", ": out of memory", "");
+      }
+
+      else
+         return logerror(image, "memory", ": get size:", "");
    }
 
    /* 'output' has an initialized temporary image, read this back in and compare
@@ -3356,6 +3439,8 @@ test_one_file(const char *file_name, format_list *formats, png_uint_32 opts,
    int result;
    Image image;
 
+   if (!(opts & NO_RESEED))
+      reseed(); /* ensure that the random numbers don't depend on file order */
    newimage(&image);
    initimage(&image, opts, file_name, stride_extra);
    result = read_one_file(&image);
@@ -3393,7 +3478,7 @@ test_one_file(const char *file_name, format_list *formats, png_uint_32 opts,
 int
 main(int argc, char **argv)
 {
-   png_uint_32 opts = FAST_WRITE;
+   png_uint_32 opts = FAST_WRITE | STRICT;
    format_list formats;
    const char *touch = NULL;
    int log_pass = 0;
@@ -3402,11 +3487,17 @@ main(int argc, char **argv)
    int retval = 0;
    int c;
 
+#if PNG_LIBPNG_VER >= 10700
+      /* This error should not exist in 1.7 or later: */
+      opts |= GBG_ERROR;
+#endif
+
    init_sRGB_to_d();
 #if 0
    init_error_via_linear();
 #endif
    format_init(&formats);
+   reseed(); /* initialize random number seeds */
 
    for (c=1; c<argc; ++c)
    {
@@ -3421,17 +3512,17 @@ main(int argc, char **argv)
       }
       else if (strcmp(arg, "--file") == 0)
 #        ifdef PNG_STDIO_SUPPORTED
-            opts |= READ_FILE;
+            opts |= USE_FILE;
 #        else
-            return 77; /* skipped: no support */
+            return SKIP; /* skipped: no support */
 #        endif
       else if (strcmp(arg, "--memory") == 0)
-         opts &= ~READ_FILE;
+         opts &= ~USE_FILE;
       else if (strcmp(arg, "--stdio") == 0)
 #        ifdef PNG_STDIO_SUPPORTED
             opts |= USE_STDIO;
 #        else
-            return 77; /* skipped: no support */
+            return SKIP; /* skipped: no support */
 #        endif
       else if (strcmp(arg, "--name") == 0)
          opts &= ~USE_STDIO;
@@ -3457,10 +3548,16 @@ main(int argc, char **argv)
          opts &= ~KEEP_GOING;
       else if (strcmp(arg, "--strict") == 0)
          opts |= STRICT;
+      else if (strcmp(arg, "--nostrict") == 0)
+         opts &= ~STRICT;
       else if (strcmp(arg, "--sRGB-16bit") == 0)
          opts |= sRGB_16BIT;
       else if (strcmp(arg, "--linear-16bit") == 0)
          opts &= ~sRGB_16BIT;
+      else if (strcmp(arg, "--noreseed") == 0)
+         opts |= NO_RESEED;
+      else if (strcmp(arg, "--fault-gbg-warning") == 0)
+         opts |= GBG_ERROR;
       else if (strcmp(arg, "--tmpfile") == 0)
       {
          if (c+1 < argc)
@@ -3717,6 +3814,6 @@ int main(void)
 {
    fprintf(stderr, "pngstest: no read support in libpng, test skipped\n");
    /* So the test is skipped: */
-   return 77;
+   return SKIP;
 }
 #endif /* PNG_SIMPLIFIED_READ_SUPPORTED */

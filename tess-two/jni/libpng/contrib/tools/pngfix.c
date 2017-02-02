@@ -1,8 +1,8 @@
 /* pngfix.c
  *
- * Copyright (c) 2014-2015 John Cunningham Bowler
+ * Copyright (c) 2014-2016 John Cunningham Bowler
  *
- * Last changed in libpng 1.6.20 [December 3, 2015]
+ * Last changed in libpng 1.6.21 [January 15, 2016]
  *
  * This code is released under the libpng license.
  * For conditions of distribution and use, see the disclaimer
@@ -319,13 +319,13 @@ uarb_mult32(uarb acc, int a_digits, uarb num, int n_digits, png_uint_32 val)
       a_digits = uarb_mult_digit(acc, a_digits, num, n_digits,
          (png_uint_16)(val & 0xffff));
 
-      /* Because n_digits and val are >0 the following must be true: */
-      assert(a_digits > 0);
-
       val >>= 16;
       if (val > 0)
          a_digits = uarb_mult_digit(acc+1, a_digits-1, num, n_digits,
             (png_uint_16)val) + 1;
+
+      /* Because n_digits and val are >0 the following must be true: */
+      assert(a_digits > 0);
    }
 
    return a_digits;

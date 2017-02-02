@@ -1,8 +1,8 @@
 
 /* pngunknown.c - test the read side unknown chunk handling
  *
- * Last changed in libpng 1.6.10 [March 6, 2014]
- * Copyright (c) 2014 Glenn Randers-Pehrson
+ * Last changed in libpng 1.6.22 [May 26, 2016]
+ * Copyright (c) 2015,2016 Glenn Randers-Pehrson
  * Written by John Cunningham Bowler
  *
  * This code is released under the libpng license.
@@ -30,10 +30,21 @@
 #  include "../../png.h"
 #endif
 
+/* 1.6.1 added support for the configure test harness, which uses 77 to indicate
+ * a skipped test, in earlier versions we need to succeed on a skipped test, so:
+ */
+#if PNG_LIBPNG_VER >= 10601 && defined(HAVE_CONFIG_H)
+#  define SKIP 77
+#else
+#  define SKIP 0
+#endif
+
+
 /* Since this program tests the ability to change the unknown chunk handling
  * these must be defined:
  */
 #if defined(PNG_SET_UNKNOWN_CHUNKS_SUPPORTED) &&\
+   defined(PNG_STDIO_SUPPORTED) &&\
    defined(PNG_READ_SUPPORTED)
 
 /* One of these must be defined to allow us to find out what happened.  It is
@@ -615,7 +626,7 @@ get_unknown(display *d, png_infop info_ptr, int after_IDAT)
 
    return flags;
 }
-#else
+#else /* SAVE_UNKNOWN_CHUNKS */
 static png_uint_32
 get_unknown(display *d, png_infop info_ptr, int after_IDAT)
    /* Otherwise this will return the cached values set by any user callback */
@@ -634,8 +645,8 @@ get_unknown(display *d, png_infop info_ptr, int after_IDAT)
        * a check to ensure the logic is correct.
        */
 #     error No store support and no user chunk support, this will not work
-#  endif
-#endif
+#  endif /* READ_USER_CHUNKS */
+#endif /* SAVE_UNKNOWN_CHUNKS */
 
 static int
 check(FILE *fp, int argc, const char **argv, png_uint_32p flags/*out*/,
@@ -1001,6 +1012,20 @@ perform_one_test(FILE *fp, int argc, const char **argv,
 
    def = check(fp, argc, argv, flags[1], d, set_callback);
 
+   /* If IDAT is being handled as unknown the image read is skipped and all the
+    * IDATs after the first end up in the end info struct, so in this case add
+    * IDAT to the list of unknowns.  (Do this after 'check' above sets the
+    * chunk_info 'keep' fields.)
+    *
+    * Note that the flag setting has to be in the 'known' field to avoid
+    * triggering the consistency check below and the flag must only be set if
+    * there are multiple IDATs, so if the check above did find an unknown IDAT
+    * after IDAT.
+    */
+   if (chunk_info[0/*IDAT*/].keep != PNG_HANDLE_CHUNK_AS_DEFAULT &&
+       (flags[1][3] & PNG_INFO_IDAT) != 0)
+      flags[0][2] |= PNG_INFO_IDAT;
+
    /* Chunks should either be known or unknown, never both and this should apply
     * whether the chunk is before or after the IDAT (actually, the app can
     * probably change this by swapping the handling after the image, but this
@@ -1245,7 +1270,7 @@ main(void)
    fprintf(stderr,
       " test ignored: no support to find out about unknown chunks\n");
    /* So the test is skipped: */
-   return 77;
+   return SKIP;
 }
 #endif /* READ_USER_CHUNKS || SAVE_UNKNOWN_CHUNKS */
 
@@ -1256,6 +1281,6 @@ main(void)
    fprintf(stderr,
       " test ignored: no support to modify unknown chunk handling\n");
    /* So the test is skipped: */
-   return 77;
+   return SKIP;
 }
 #endif /* SET_UNKNOWN_CHUNKS && READ*/

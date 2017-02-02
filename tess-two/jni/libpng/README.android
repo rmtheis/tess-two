@@ -1,4 +1,4 @@
-Any Android specific modifications to upstream libpng (1.6.20) should
+Any Android specific modifications to upstream libpng (1.6.25) should
 be listed here:
 
 (1) Android has added the following files.
@@ -16,4 +16,8 @@ be listed here:
     There is no reason to check in all of these files if we won't
     be using them.
 
-(4) PNG_INDEX_SUPPORTED optimizations.
+(4) Applied the Intel SSE patch
+    Upstream places the patch for SSE support
+    in contrib/intel/intel_sse.patch.
+    The patch was applied using the following command:
+    'patch -i contrib/intel/intel_sse.patch -p1'

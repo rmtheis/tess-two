@@ -1,4 +1,4 @@
-Libpng 1.6.20 - December 3, 2015
+Libpng 1.6.25 - September 1, 2016
 
 This is a public release of libpng, intended for use in production codes.
 
@@ -7,43 +7,30 @@ Files available for download:
 Source files with LF line endings (for Unix/Linux) and with a
 "configure" script
 
-   libpng-1.6.20.tar.xz (LZMA-compressed, recommended)
-   libpng-1.6.20.tar.gz
+   libpng-1.6.25.tar.xz (LZMA-compressed, recommended)
+   libpng-1.6.25.tar.gz
 
 Source files with CRLF line endings (for Windows), without the
 "configure" script
 
-   /scratch/glennrp/Libpng16/lpng1620.7z  (LZMA-compressed, recommended)
-   /scratch/glennrp/Libpng16/lpng1620.zip
+   lpng1625.7z  (LZMA-compressed, recommended)
+   lpng1625.zip
 
 Other information:
 
-   libpng-1.6.20-README.txt
-   libpng-1.6.20-LICENSE.txt
-   libpng-1.6.20-*.asc (armored detached GPG signatures)
+   libpng-1.6.25-README.txt
+   libpng-1.6.25-LICENSE.txt
+   libpng-1.6.25-*.asc (armored detached GPG signatures)
 
-Changes since the last public release (1.6.19):
-  Avoid potential pointer overflow/underflow in png_handle_sPLT() and
-    png_handle_pCAL() (Bug report by John Regehr).
-  Fixed incorrect implementation of png_set_PLTE() that uses png_ptr
-    not info_ptr, that left png_set_PLTE() open to the CVE-2015-8126
-    vulnerability.
-  Backported tests from libpng-1.7.0beta69.
-  Fixed an error in handling of bad zlib CMINFO field in pngfix, found by
-    American Fuzzy Lop, reported by Brian Carpenter.  inflate() doesn't
-    immediately fault a bad CMINFO field; instead a 'too far back' error
-    happens later (at least some times).  pngfix failed to limit CMINFO to
-    the allowed values but then assumed that window_bits was in range,
-    triggering an assert. The bug is mostly harmless; the PNG file cannot
-    be fixed.
-  In libpng 1.6 zlib initialization was changed to use the window size
-    in the zlib stream, not a fixed value. This causes some invalid images,
-    where CINFO is too large, to display 'correctly' if the rest of the
-    data is valid.  This provides a workaround for zlib versions where the
-    error arises (ones that support the API change to use the window size
-    in the stream).
+Changes since the last public release (1.6.24):
+  Reject oversized iCCP profile immediately.
+  Cleaned up PNG_DEBUG compile of pngtest.c.
+  Conditionally compile png_inflate().
+  Don't install pngcp; it conflicts with pngcp in the pngtools package.
+  Minor editing of INSTALL, (whitespace, added copyright line)
+  Added MIPS support (Mandar Sahastrabuddhe <Mandar.Sahastrabuddhe@imgtec.com>).
+  Rebased contrib/intel/intel_sse.patch after the MIPS implementation.
 
-Send comments/corrections/commendations to png-mng-implement at lists.sf.net
 (subscription required; visit
 https://lists.sourceforge.net/lists/listinfo/png-mng-implement
 to subscribe)

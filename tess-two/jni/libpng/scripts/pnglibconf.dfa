@@ -8,7 +8,7 @@ com pnglibconf.h - library build configuration
 com
 version
 com
-com Copyright (c) 1998-2014 Glenn Randers-Pehrson
+com Copyright (c) 1998-2016 Glenn Randers-Pehrson
 com
 com This code is released under the libpng license.
 com For conditions of distribution and use, see the disclaimer
@@ -274,12 +274,12 @@ setting DEFAULT_READ_MACROS default 1
 
 option READ_INT_FUNCTIONS requires READ
 
-# The same for write, but these can only be switched off if
-# no writing is required at all - hence the use of an 'enables'
-# not a 'requires' below:
+# The same for write  but these can only be switched off if no writing
+# is required at all - hence the use of a 'disabled', not a 'requires'.
+# If these are needed, they are enabled in the 'WRITE options' section
+# below.
 
 option WRITE_INT_FUNCTIONS disabled
-option WRITE enables WRITE_INT_FUNCTIONS
 
 # Error controls
 #
@@ -490,7 +490,7 @@ option BUILD_GRAYSCALE_PALETTE
 
 # WRITE options
 
-option WRITE
+option WRITE enables WRITE_INT_FUNCTIONS
 
 # Disabling WRITE_16BIT prevents 16-bit PNG files from being
 # generated.
@@ -552,6 +552,7 @@ option WRITE_ANCILLARY_CHUNKS requires WRITE
 
 # These options disable *all* the text chunks if turned off
 
+option TEXT disabled
 option READ_TEXT requires READ_ANCILLARY_CHUNKS enables TEXT
 option WRITE_TEXT requires WRITE_ANCILLARY_CHUNKS enables TEXT
 
@@ -873,8 +874,11 @@ option SIMPLIFIED_READ_BGR enables FORMAT_BGR,
 
 # Write:
 option SIMPLIFIED_WRITE,
-   requires WRITE STDIO, SETJMP, WRITE_SWAP, WRITE_PACK,
+   requires WRITE, SETJMP, WRITE_SWAP, WRITE_PACK,
       WRITE_tRNS, WRITE_gAMA, WRITE_sRGB, WRITE_cHRM
+
+# 1.6.22: allow simplified write without stdio support:
+option SIMPLIFIED_WRITE_STDIO requires SIMPLIFIED_WRITE STDIO
 
 option SIMPLIFIED_WRITE_AFIRST enables FORMAT_AFIRST,
    requires SIMPLIFIED_WRITE WRITE_SWAP_ALPHA

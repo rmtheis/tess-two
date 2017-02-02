@@ -3,7 +3,7 @@
 /* Copyright: */
 #define COPYRIGHT "\251 2013,2015 John Cunningham Bowler"
 /*
- * Last changed in libpng 1.7.0 [(PENDING RELEASE)]
+ * Last changed in libpng 1.6.20 [November 24, 2015]
  *
  * This code is released under the libpng license.
  * For conditions of distribution and use, see the disclaimer
