@@ -6,23 +6,15 @@
 ## [6.2.0](https://github.com/rmtheis/tess-two/tree/6.2.0) (2017-02-04)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/6.1.1...6.2.0)
 
-**Implemented enhancements:**
+**Updates:**
 
-- Recognition time deadline - set\_deadline\_msecs\(\) [\#137](https://github.com/rmtheis/tess-two/issues/137)
+- Leptonica 1.74.1
+- Libpng 1.6.25
 
 **Fixed bugs:**
 
 - Stop\(\) does not work with GetUTF8Text\(\) [\#185](https://github.com/rmtheis/tess-two/issues/185)
 - TessBaseAPI stop\(\) sometimes causes SIGSEGV [\#97](https://github.com/rmtheis/tess-two/issues/97)
-
-**Closed issues:**
-
-- How to 'extract'? [\#191](https://github.com/rmtheis/tess-two/issues/191)
-- Can't download gradle dependency [\#190](https://github.com/rmtheis/tess-two/issues/190)
-- Is there any document or sample code for HydrogenTextDetector? [\#189](https://github.com/rmtheis/tess-two/issues/189)
-- Advise users of training data incompatibility issues [\#188](https://github.com/rmtheis/tess-two/issues/188)
-- Simple Android OCR has unexpectedly stopped [\#187](https://github.com/rmtheis/tess-two/issues/187)
-- chinese language  init failed [\#184](https://github.com/rmtheis/tess-two/issues/184)
 
 **Merged pull requests:**
 
