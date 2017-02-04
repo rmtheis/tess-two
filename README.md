@@ -6,8 +6,14 @@ additional functions. Tesseract Tools for Android is a set of Android APIs and
 build files for the [Tesseract OCR][tesseract-ocr] and [Leptonica][leptonica] 
 image processing libraries.
 
-This project works with Tesseract 3.05.00dev, Leptonica 1.73, libjpeg 9b, and
-libpng 1.6.20. The source code for these dependencies is included within the
+This project works with:
+
+ - Tesseract 3.05
+ - Leptonica 1.74.1
+ - libjpeg 9b
+ - libpng 1.6.25
+ 
+ The source code for these dependencies is included within the
 `tess-two/jni` folder. 
 
 The `tess-two` module contains tools for compiling the Tesseract and Leptonica
@@ -33,7 +39,7 @@ To use tess-two from your app, edit your app module's `build.gradle` file to add
 tess-two as an external dependency:
 
 	dependencies {
-	    compile 'com.rmtheis:tess-two:6.1.1'
+	    compile 'com.rmtheis:tess-two:6.2.0'
 	}
 	
 [Javadoc][javadoc] is available.
