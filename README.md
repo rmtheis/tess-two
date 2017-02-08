@@ -13,7 +13,7 @@ This project works with:
  - libjpeg 9b
  - libpng 1.6.25
  
- The source code for these dependencies is included within the
+The source code for these dependencies is included within the
 `tess-two/jni` folder. 
 
 The `tess-two` module contains tools for compiling the Tesseract and Leptonica
