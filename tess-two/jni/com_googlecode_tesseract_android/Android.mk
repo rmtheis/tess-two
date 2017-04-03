@@ -8,11 +8,11 @@ LOCAL_MODULE := libtess
 
 BLACKLIST_SRC_FILES := \
   %api/tesseractmain.cpp \
-  %ccstruct/imagedata.cpp \
   %viewer/svpaint.cpp
 
 TESSERACT_SRC_FILES := \
   $(wildcard $(TESSERACT_PATH)/api/*.cpp) \
+  $(wildcard $(TESSERACT_PATH)/arch/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/ccmain/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/ccstruct/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/ccutil/*.cpp) \
@@ -20,8 +20,9 @@ TESSERACT_SRC_FILES := \
   $(wildcard $(TESSERACT_PATH)/cube/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/cutil/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/dict/*.cpp) \
-  $(wildcard $(TESSERACT_PATH)/opencl/*.cpp) \
+  $(wildcard $(TESSERACT_PATH)/lstm/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/neural_networks/runtime/*.cpp) \
+  $(wildcard $(TESSERACT_PATH)/opencl/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/textord/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/viewer/*.cpp) \
   $(wildcard $(TESSERACT_PATH)/wordrec/*.cpp)
@@ -31,6 +32,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_C_INCLUDES := \
   $(TESSERACT_PATH)/api \
+  $(TESSERACT_PATH)/arch \
   $(TESSERACT_PATH)/ccmain \
   $(TESSERACT_PATH)/ccstruct \
   $(TESSERACT_PATH)/ccutil \
@@ -38,8 +40,9 @@ LOCAL_C_INCLUDES := \
   $(TESSERACT_PATH)/cube \
   $(TESSERACT_PATH)/cutil \
   $(TESSERACT_PATH)/dict \
-  $(TESSERACT_PATH)/opencl \
+  $(TESSERACT_PATH)/lstm \
   $(TESSERACT_PATH)/neural_networks/runtime \
+  $(TESSERACT_PATH)/opencl \
   $(TESSERACT_PATH)/textord \
   $(TESSERACT_PATH)/viewer \
   $(TESSERACT_PATH)/wordrec \
