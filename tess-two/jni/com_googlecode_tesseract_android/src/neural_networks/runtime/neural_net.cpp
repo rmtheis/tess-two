@@ -4,6 +4,15 @@
 //
 // neural_net.cpp: Declarations of a class for an object that
 // represents an arbitrary network of neurons
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 #include <vector>
 #include <string>
@@ -148,9 +157,6 @@ bool NeuralNet::CreateFastNet() {
       node->fan_in_cnt = neurons_[node_idx].fan_in_cnt();
       // allocate memory for fan-in nodes
       node->inputs = new WeightedNode[node->fan_in_cnt];
-      if (node->inputs == NULL) {
-        return false;
-      }
       for (int fan_in = 0; fan_in < node->fan_in_cnt; fan_in++) {
         // identify fan-in neuron
         const int id = neurons_[node_idx].fan_in(fan_in)->id();
@@ -213,9 +219,6 @@ NeuralNet *NeuralNet::FromFile(const string file_name) {
 NeuralNet *NeuralNet::FromInputBuffer(InputFileBuffer *ib) {
       // create a new net object
   NeuralNet *net_obj = new NeuralNet();
-  if (net_obj == NULL) {
-    return NULL;
-  }
       // load the net
   if (!net_obj->ReadBinary(ib)) {
     delete net_obj;

@@ -25,6 +25,8 @@
 #include "host.h"
 #include "unichar.h"
 
+#include <stdint.h>
+
 template <typename T> class UnicityTable;
 
 namespace tesseract {
@@ -135,8 +137,8 @@ struct FontInfo {
 // the FontInfo in the FontSet structure, it's better to share FontInfos among
 // FontSets (Classify::fontinfo_table_).
 struct FontSet {
-  int           size;
-  int*          configs;  // FontInfo ids
+  int32_t       size;
+  int32_t*      configs;  // FontInfo ids
 };
 
 // Class that adds a bit of functionality on top of GenericVector to

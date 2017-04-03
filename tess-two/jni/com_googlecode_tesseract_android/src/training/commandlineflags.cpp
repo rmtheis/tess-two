@@ -1,3 +1,12 @@
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 #include "commandlineflags.h"
 
 #ifdef USE_STD_NAMESPACE
@@ -106,36 +115,36 @@ void PrintCommandLineFlags() {
     if (!strncmp(GlobalParams()->int_params[i]->name_str(),
                  kFlagNamePrefix, kFlagNamePrefixLen)) {
       printf("  --%s  %s  (type:int default:%d)\n",
-              GlobalParams()->int_params[i]->name_str() + kFlagNamePrefixLen,
-              GlobalParams()->int_params[i]->info_str(),
-              inT32(*(GlobalParams()->int_params[i])));
+             GlobalParams()->int_params[i]->name_str() + kFlagNamePrefixLen,
+             GlobalParams()->int_params[i]->info_str(),
+             inT32(*(GlobalParams()->int_params[i])));
     }
   }
   for (int i = 0; i < GlobalParams()->double_params.size(); ++i) {
     if (!strncmp(GlobalParams()->double_params[i]->name_str(),
                  kFlagNamePrefix, kFlagNamePrefixLen)) {
       printf("  --%s  %s  (type:double default:%g)\n",
-              GlobalParams()->double_params[i]->name_str() + kFlagNamePrefixLen,
-              GlobalParams()->double_params[i]->info_str(),
-              static_cast<double>(*(GlobalParams()->double_params[i])));
+             GlobalParams()->double_params[i]->name_str() + kFlagNamePrefixLen,
+             GlobalParams()->double_params[i]->info_str(),
+             static_cast<double>(*(GlobalParams()->double_params[i])));
     }
   }
   for (int i = 0; i < GlobalParams()->bool_params.size(); ++i) {
     if (!strncmp(GlobalParams()->bool_params[i]->name_str(),
                  kFlagNamePrefix, kFlagNamePrefixLen)) {
       printf("  --%s  %s  (type:bool default:%s)\n",
-              GlobalParams()->bool_params[i]->name_str() + kFlagNamePrefixLen,
-              GlobalParams()->bool_params[i]->info_str(),
-              (BOOL8(*(GlobalParams()->bool_params[i])) ? "true" : "false"));
+             GlobalParams()->bool_params[i]->name_str() + kFlagNamePrefixLen,
+             GlobalParams()->bool_params[i]->info_str(),
+             (BOOL8(*(GlobalParams()->bool_params[i])) ? "true" : "false"));
     }
   }
   for (int i = 0; i < GlobalParams()->string_params.size(); ++i) {
     if (!strncmp(GlobalParams()->string_params[i]->name_str(),
                  kFlagNamePrefix, kFlagNamePrefixLen)) {
       printf("  --%s  %s  (type:string default:%s)\n",
-              GlobalParams()->string_params[i]->name_str() + kFlagNamePrefixLen,
-              GlobalParams()->string_params[i]->info_str(),
-              GlobalParams()->string_params[i]->string());
+             GlobalParams()->string_params[i]->name_str() + kFlagNamePrefixLen,
+             GlobalParams()->string_params[i]->info_str(),
+             GlobalParams()->string_params[i]->string());
     }
   }
 }

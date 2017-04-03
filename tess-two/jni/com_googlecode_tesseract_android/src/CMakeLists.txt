@@ -46,19 +46,25 @@ set(VERSION_PLAIN ${VERSION_MAJOR}.${VERSION_MINOR})
 
 set(MINIMUM_LEPTONICA_VERSION 1.71)
 
-if(NOT EXISTS ${PROJECT_SOURCE_DIR}/cppan)
+if(NOT EXISTS ${PROJECT_SOURCE_DIR}/.cppan)
     if (NOT Leptonica_DIR AND NOT MSVC)
         find_package(PkgConfig REQUIRED)
-        pkg_check_modules(Leptonica REQUIRED lept)
+        pkg_check_modules(Leptonica REQUIRED lept>=${MINIMUM_LEPTONICA_VERSION})
     else()
         find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} REQUIRED CONFIG)
     endif()
 else()
-    add_subdirectory(cppan)
+    if (STATIC)
+        set(CPPAN_BUILD_SHARED_LIBS 0)
+    else()
+        set(CPPAN_BUILD_SHARED_LIBS 1)
+    endif()
+    add_subdirectory(.cppan)
 endif()
 
 find_package(OpenCL QUIET)
-find_package(PkgConfig)
+
+option(BUILD_TRAINING_TOOLS "Build training tools" ON)
 
 ###############################################################################
 #
@@ -76,6 +82,9 @@ if (WIN32)
         add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+        if (APPVEYOR)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0")
+        endif()
     endif()
 
     set(LIB_Ws2_32 Ws2_32)
@@ -201,25 +210,29 @@ set(tesseract_src ${tesseract_src}
     api/pdfrenderer.cpp
 )
 
-add_library                     (tesseract ${LIBRARY_TYPE} ${tesseract_src} ${tesseract_hdr})
+add_library                     (libtesseract ${LIBRARY_TYPE} ${tesseract_src} ${tesseract_hdr})
 if (NOT STATIC)
-target_compile_definitions      (tesseract PUBLIC -DTESS_EXPORTS)
+target_compile_definitions      (libtesseract
+    PRIVATE -DTESS_EXPORTS
+    INTERFACE -DTESS_IMPORTS
+)
+set_target_properties           (libtesseract PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS True)
 endif()
-target_link_libraries           (tesseract ${LIB_Ws2_32} ${LIB_pthread})
-set_target_properties           (tesseract PROPERTIES VERSION ${VERSION_MAJOR}.${VERSION_MINOR_0}.${VERSION_MINOR_1})
-set_target_properties           (tesseract PROPERTIES SOVERSION ${VERSION_MAJOR}.${VERSION_MINOR_0}.${VERSION_MINOR_1})
+target_link_libraries           (libtesseract ${LIB_Ws2_32} ${LIB_pthread})
+set_target_properties           (libtesseract PROPERTIES VERSION ${VERSION_MAJOR}.${VERSION_MINOR_0}.${VERSION_MINOR_1})
+set_target_properties           (libtesseract PROPERTIES SOVERSION ${VERSION_MAJOR}.${VERSION_MINOR_0}.${VERSION_MINOR_1})
 if (WIN32)
-set_target_properties           (tesseract PROPERTIES OUTPUT_NAME tesseract${VERSION_MAJOR}${VERSION_MINOR})
-set_target_properties           (tesseract PROPERTIES DEBUG_OUTPUT_NAME tesseract${VERSION_MAJOR}${VERSION_MINOR}d)
+set_target_properties           (libtesseract PROPERTIES OUTPUT_NAME tesseract${VERSION_MAJOR}${VERSION_MINOR})
+set_target_properties           (libtesseract PROPERTIES DEBUG_OUTPUT_NAME tesseract${VERSION_MAJOR}${VERSION_MINOR}d)
 endif()
 
 if (NOT CPPAN_BUILD)
-    target_link_libraries       (tesseract ${Leptonica_LIBRARIES})
-    export(TARGETS tesseract FILE ${CMAKE_BINARY_DIR}/TesseractTargets.cmake)
+    target_link_libraries       (libtesseract ${Leptonica_LIBRARIES})
+    export(TARGETS libtesseract FILE ${CMAKE_BINARY_DIR}/TesseractTargets.cmake)
 else()
-    target_link_libraries       (tesseract cppan)
+    target_link_libraries       (libtesseract pvt.cppan.demo.danbloomberg.leptonica)
     file(WRITE ${CMAKE_BINARY_DIR}/TesseractTargets.cmake "include(${CMAKE_BINARY_DIR}/cppan.cmake)\n")
-    export(TARGETS tesseract APPEND FILE ${CMAKE_BINARY_DIR}/TesseractTargets.cmake)
+    export(TARGETS libtesseract APPEND FILE ${CMAKE_BINARY_DIR}/TesseractTargets.cmake)
 endif()
 
 ########################################
@@ -231,12 +244,13 @@ set(tesseractmain_src
     vs2010/tesseract/resource.h
     vs2010/tesseract/tesseract.rc
 )
-add_executable                  (tesseractmain ${tesseractmain_src})
-target_link_libraries           (tesseractmain tesseract)
-set_target_properties           (tesseractmain PROPERTIES OUTPUT_NAME tesseract)
+add_executable                  (tesseract ${tesseractmain_src})
+target_link_libraries           (tesseract libtesseract)
 
 ########################################
 
+if (BUILD_TRAINING_TOOLS)
 add_subdirectory(training)
+endif()
 
 ###############################################################################

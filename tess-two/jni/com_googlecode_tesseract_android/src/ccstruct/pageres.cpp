@@ -882,17 +882,17 @@ void WERD_RES::FakeClassifyWord(int blob_count, BLOB_CHOICE** choices) {
     choice_it.add_after_then_move(choices[c]);
     ratings->put(c, c, choice_list);
   }
-  FakeWordFromRatings();
+  FakeWordFromRatings(TOP_CHOICE_PERM);
   reject_map.initialise(blob_count);
   done = true;
 }
 
 // Creates a WERD_CHOICE for the word using the top choices from the leading
 // diagonal of the ratings matrix.
-void WERD_RES::FakeWordFromRatings() {
+void WERD_RES::FakeWordFromRatings(PermuterType permuter) {
   int num_blobs = ratings->dimension();
   WERD_CHOICE* word_choice = new WERD_CHOICE(uch_set, num_blobs);
-  word_choice->set_permuter(TOP_CHOICE_PERM);
+  word_choice->set_permuter(permuter);
   for (int b = 0; b < num_blobs; ++b) {
     UNICHAR_ID unichar_id = UNICHAR_SPACE;
     float rating = MAX_INT32;
@@ -1105,6 +1105,7 @@ void WERD_RES::InitNonPointers() {
   x_height = 0.0;
   caps_height = 0.0;
   baseline_shift = 0.0f;
+  space_certainty = 0.0f;
   guessed_x_ht = TRUE;
   guessed_caps_ht = TRUE;
   combination = FALSE;

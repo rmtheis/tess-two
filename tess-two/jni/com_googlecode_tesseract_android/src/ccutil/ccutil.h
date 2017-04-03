@@ -26,9 +26,7 @@
 #include "params.h"
 #include "unicharset.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifndef _WIN32
 #include <pthread.h>
 #include <semaphore.h>
 #endif
@@ -51,7 +49,7 @@ class CCUtilMutex {
 };
 
 
-class CCUtil {
+class TESS_API CCUtil {
  public:
   CCUtil();
   virtual ~CCUtil();

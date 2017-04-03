@@ -44,7 +44,7 @@
 #include "params.h"
 
 #define VARDIR        "configs/" /*variables files */
-                                 //config under api
+                                 // config under api
 #define API_CONFIG      "configs/api_config"
 
 ETEXT_DESC *global_monitor = NULL;  // progress monitor
@@ -468,7 +468,9 @@ int Tesseract::init_tesseract_lm(const char *arg0,
   if (!init_tesseract_lang_data(arg0, textbase, language, OEM_TESSERACT_ONLY,
                                 NULL, 0, NULL, NULL, false))
     return -1;
-  getDict().Load(Dict::GlobalDawgCache());
+  getDict().SetupForLoad(Dict::GlobalDawgCache());
+  getDict().Load(tessdata_manager.GetDataFileName().string(), lang);
+  getDict().FinishLoad();
   tessdata_manager.End();
   return 0;
 }

@@ -40,9 +40,7 @@ void CharSampSet::Cleanup() {
     // only free samples if owned by class
     if (own_samples_ == true) {
       for (int samp_idx = 0; samp_idx < cnt_; samp_idx++) {
-        if (samp_buff_[samp_idx] != NULL) {
-          delete samp_buff_[samp_idx];
-        }
+        delete samp_buff_[samp_idx];
       }
     }
     delete []samp_buff_;
@@ -57,9 +55,6 @@ bool CharSampSet::Add(CharSamp *char_samp) {
       // create an extended buffer
     CharSamp **new_samp_buff =
         reinterpret_cast<CharSamp **>(new CharSamp *[cnt_ + SAMP_ALLOC_BLOCK]);
-    if (new_samp_buff == NULL) {
-      return false;
-    }
     // copy old contents
     if (cnt_ > 0) {
       memcpy(new_samp_buff, samp_buff_, cnt_ * sizeof(*samp_buff_));
@@ -109,10 +104,6 @@ CharSampSet * CharSampSet::FromCharDumpFile(string file_name) {
   }
   // create an object
   CharSampSet *samp_set = new CharSampSet();
-  if (samp_set == NULL) {
-    fclose(fp);
-    return NULL;
-  }
   if (samp_set->LoadCharSamples(fp) == false) {
     delete samp_set;
     samp_set = NULL;
@@ -148,9 +139,6 @@ bool CharSampSet::EnumSamples(string file_name, CharSampEnum *enum_obj) {
     i64_pos;
   // open the file
   fp_in = new CachedFile(file_name);
-  if (fp_in == NULL) {
-    return false;
-  }
   i64_size = fp_in->Size();
   if (i64_size < 1) {
     return false;

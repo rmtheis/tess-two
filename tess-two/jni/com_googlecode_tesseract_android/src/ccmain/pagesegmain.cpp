@@ -18,9 +18,6 @@
  **********************************************************************/
 
 #ifdef _WIN32
-#ifndef __GNUC__
-#include <windows.h>
-#endif  // __GNUC__
 #ifndef unlink
 #include <io.h>
 #endif
@@ -412,9 +409,10 @@ ColumnFinder* Tesseract::SetupPageSegAndDetectOrientation(
                   "Don't rotate.\n", osd_margin);
           osd_orientation = 0;
         } else {
-          tprintf("OSD: Weak margin (%.2f) for %d blob text block, "
-                  "but using orientation anyway: %d\n",
-                  osd_margin, osd_blobs.length(), osd_orientation);
+          tprintf(
+              "OSD: Weak margin (%.2f) for %d blob text block, "
+              "but using orientation anyway: %d\n",
+              osd_margin, osd_blobs.length(), osd_orientation);
         }
       }
     }

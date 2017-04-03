@@ -61,11 +61,6 @@ CharBigrams *CharBigrams::Create(const string &data_file_path,
 
   // construct a new object
   CharBigrams *char_bigrams_obj = new CharBigrams();
-  if (char_bigrams_obj == NULL) {
-    fprintf(stderr, "Cube ERROR (CharBigrams::Create): could not create "
-            "character bigrams object.\n");
-    return NULL;
-  }
   CharBigramTable *table = &char_bigrams_obj->bigram_table_;
 
   table->total_cnt = 0;
@@ -90,11 +85,6 @@ CharBigrams *CharBigrams::Create(const string &data_file_path,
     // expand the bigram table
     if (ch1 > table->max_char) {
       CharBigram *char_bigram = new CharBigram[ch1 + 1];
-      if (char_bigram == NULL) {
-        fprintf(stderr, "Cube ERROR (CharBigrams::Create): error allocating "
-                "additional memory for character bigram table.\n");
-        return NULL;
-      }
 
       if (table->char_bigram != NULL && table->max_char >= 0) {
         memcpy(char_bigram, table->char_bigram,
@@ -115,12 +105,6 @@ CharBigrams *CharBigrams::Create(const string &data_file_path,
 
     if (ch2 > table->char_bigram[ch1].max_char) {
       Bigram *bigram = new Bigram[ch2 + 1];
-      if (bigram == NULL) {
-        fprintf(stderr, "Cube ERROR (CharBigrams::Create): error allocating "
-                "memory for bigram.\n");
-        delete char_bigrams_obj;
-        return NULL;
-      }
 
       if (table->char_bigram[ch1].bigram != NULL &&
           table->char_bigram[ch1].max_char >= 0) {
@@ -179,14 +163,14 @@ int CharBigrams::Cost(const char_32 *char_32_ptr, CharSet *char_set) const {
     if (lower_32 && lower_32[0] != 0) {
       int cost_lower = MeanCostWithSpaces(lower_32);
       cost = MIN(cost, cost_lower);
-      delete [] lower_32;
     }
+    delete [] lower_32;
     char_32 *upper_32 = CubeUtils::ToUpper(char_32_ptr, char_set);
     if (upper_32 && upper_32[0] != 0) {
       int cost_upper = MeanCostWithSpaces(upper_32);
       cost = MIN(cost, cost_upper);
-      delete [] upper_32;
     }
+    delete [] upper_32;
   }
   return cost;
 }

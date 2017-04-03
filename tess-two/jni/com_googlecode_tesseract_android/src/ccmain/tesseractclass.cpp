@@ -398,8 +398,8 @@ Tesseract::Tesseract()
                  "Don't suspect dict wds longer than this", this->params()),
       BOOL_MEMBER(suspect_constrain_1Il, false, "UNLV keep 1Il chars rejected",
                   this->params()),
-      double_MEMBER(suspect_rating_per_ch, 999.9, "Don't touch bad rating limit",
-                    this->params()),
+      double_MEMBER(suspect_rating_per_ch, 999.9,
+                    "Don't touch bad rating limit", this->params()),
       double_MEMBER(suspect_accept_rating, -999.9, "Accept good rating limit",
                     this->params()),
       BOOL_MEMBER(tessedit_minimal_rejection, false,
@@ -512,7 +512,6 @@ Tesseract::Tesseract()
                     "Page separator (default is form feed control character)",
                     this->params()),
 
-
       // The following parameters were deprecated and removed from their
       // original
       // locations. The parameters are temporarily kept here to give Tesseract
@@ -606,6 +605,7 @@ Tesseract::Tesseract()
       pix_binary_(NULL),
       cube_binary_(NULL),
       pix_grey_(NULL),
+      pix_original_(NULL),
       pix_thresholds_(NULL),
       source_resolution_(0),
       textord_(this),
@@ -625,6 +625,7 @@ Tesseract::Tesseract()
 
 Tesseract::~Tesseract() {
   Clear();
+  pixDestroy(&pix_original_);
   end_tesseract();
   sub_langs_.delete_data_pointers();
 #ifndef NO_CUBE_BUILD

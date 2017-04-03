@@ -55,40 +55,26 @@ CubeRecoContext::CubeRecoContext(Tesseract *tess_obj) {
 }
 
 CubeRecoContext::~CubeRecoContext() {
-  if (char_classifier_ != NULL) {
-    delete char_classifier_;
-    char_classifier_ = NULL;
-  }
+  delete char_classifier_;
+  char_classifier_ = NULL;
 
-  if (word_size_model_ != NULL) {
-    delete word_size_model_;
-    word_size_model_ = NULL;
-  }
+  delete word_size_model_;
+  word_size_model_ = NULL;
 
-  if (char_set_ != NULL) {
-    delete char_set_;
-    char_set_ = NULL;
-  }
+  delete char_set_;
+  char_set_ = NULL;
 
-  if (char_bigrams_ != NULL) {
-    delete char_bigrams_;
-    char_bigrams_ = NULL;
-  }
+  delete char_bigrams_;
+  char_bigrams_ = NULL;
 
-  if (word_unigrams_ != NULL) {
-    delete word_unigrams_;
-    word_unigrams_ = NULL;
-  }
+  delete word_unigrams_;
+  word_unigrams_ = NULL;
 
-  if (lang_mod_ != NULL) {
-    delete lang_mod_;
-    lang_mod_ = NULL;
-  }
+  delete lang_mod_;
+  lang_mod_ = NULL;
 
-  if (params_ != NULL) {
-    delete params_;
-    params_ = NULL;
-  }
+  delete params_;
+  params_ = NULL;
 }
 
 /**
@@ -145,11 +131,6 @@ bool CubeRecoContext::Load(TessdataManager *tessdata_manager,
   lang_mod_ = new TessLangModel(lm_params, data_file_path,
                                 tess_obj_->getDict().load_system_dawg,
                                 tessdata_manager, this);
-  if (lang_mod_ == NULL) {
-    fprintf(stderr, "Cube ERROR (CubeRecoContext::Load): unable to create "
-            "TessLangModel\n");
-    return false;
-  }
 
   // Create the optional char bigrams object.
   char_bigrams_ = CharBigrams::Create(data_file_path, lang_);
@@ -190,11 +171,6 @@ CubeRecoContext * CubeRecoContext::Create(Tesseract *tess_obj,
                                           UNICHARSET *tess_unicharset) {
   // create the object
   CubeRecoContext *cntxt = new CubeRecoContext(tess_obj);
-  if (cntxt == NULL) {
-    fprintf(stderr, "Cube ERROR (CubeRecoContext::Create): unable to create "
-            "CubeRecoContext object\n");
-    return NULL;
-  }
   // load the necessary components
   if (cntxt->Load(tessdata_manager, tess_unicharset) == false) {
     fprintf(stderr, "Cube ERROR (CubeRecoContext::Create): unable to init "

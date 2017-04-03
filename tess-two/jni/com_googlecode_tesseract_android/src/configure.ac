@@ -5,8 +5,8 @@
 # ----------------------------------------
 # Initialization
 # ----------------------------------------
-AC_PREREQ([2.50])
-AC_INIT([tesseract], [3.05.00dev], [https://github.com/tesseract-ocr/tesseract/issues])
+AC_PREREQ([2.59])
+AC_INIT([tesseract], [3.05.00], [https://github.com/tesseract-ocr/tesseract/issues])
 AC_PROG_CXX([g++ clang++])
 AC_LANG([C++])
 AC_LANG_COMPILER_REQUIRE
@@ -18,8 +18,8 @@ AC_PREFIX_DEFAULT([/usr/local])
 
 # Define date of package, etc. Could be useful in auto-generated
 # documentation.
-PACKAGE_YEAR=2015
-PACKAGE_DATE="07/11"
+PACKAGE_YEAR=2017
+PACKAGE_DATE="02/16"
 
 abs_top_srcdir=`AS_DIRNAME([$0])`
 gitrev="`git --git-dir=${abs_top_srcdir}/.git --work-tree=${abs_top_srcdir} describe --always --tags`"
@@ -43,7 +43,7 @@ GENERIC_LIBRARY_NAME=tesseract
 
 # Release versioning
 GENERIC_MAJOR_VERSION=3
-GENERIC_MINOR_VERSION=4
+GENERIC_MINOR_VERSION=5
 GENERIC_MICRO_VERSION=0
 
 # API version (often = GENERIC_MAJOR_VERSION.GENERIC_MINOR_VERSION)
@@ -75,6 +75,7 @@ AM_CONDITIONAL([T_WIN], false)
 AM_CONDITIONAL([MINGW], false)
 AM_CONDITIONAL([OSX], false)
 AM_CONDITIONAL([GRAPHICS_DISABLED], false)
+AC_SUBST([AM_CPPFLAGS])
 
 OPENCL_INC="/opt/AMDAPP/include"
 OPENCL_LIBS="-lOpenCL -ltiff"
@@ -117,7 +118,7 @@ esac
 includedir="${includedir}/tesseract"
 
 AC_ARG_WITH([extra-includes],
-            [AC_HELP_STRING([--with-extra-includes=DIR],
+            [AS_HELP_STRING([--with-extra-includes=DIR],
                        [Define an additional directory for include files])],
             [if test -d "$withval" ; then
                CFLAGS="$CFLAGS -I$withval"
@@ -126,7 +127,7 @@ AC_ARG_WITH([extra-includes],
              fi])
 
 AC_ARG_WITH([extra-libraries],
-            [AC_HELP_STRING([--with-extra-libraries=DIR],
+            [AS_HELP_STRING([--with-extra-libraries=DIR],
                        [Define an additional directory for library files])],
             [if test -d "$withval" ; then
               LDFLAGS="$LDFLAGS -L$withval"
@@ -136,8 +137,8 @@ AC_ARG_WITH([extra-libraries],
 
 AC_MSG_CHECKING([--enable-graphics argument])
 AC_ARG_ENABLE([graphics],
- [AC_HELP_STRING([--enable-graphics],[enable graphics (ScrollView) (default)])
-AC_HELP_STRING([--disable-graphics],[disable graphics (ScrollView)])],
+ [AS_HELP_STRING([--enable-graphics],[enable graphics (ScrollView) (default)])
+AS_HELP_STRING([--disable-graphics],[disable graphics (ScrollView)])],
     [enable_graphics=$enableval],
     [enable_graphics="yes"])
 AC_MSG_RESULT([$enable_graphics])
@@ -149,12 +150,12 @@ fi
 # Check if cube should be disabled
 AC_MSG_CHECKING([whether to disable cube])
 AC_ARG_ENABLE([cube],
-  [AC_HELP_STRING([--disable-cube], [don't build cube support (experimental)])],
+  [AS_HELP_STRING([--disable-cube], [don't build cube support (experimental)])],
     [disable_cube="yes"], [disable_cube="no"])
 AC_MSG_RESULT([$disable_cube])
 AM_CONDITIONAL([NO_CUBE_BUILD], [test "$disable_cube" = "yes"])
 if test "$disable_cube" = "yes"; then
-  AC_SUBST([AM_CPPFLAGS], [-DNO_CUBE_BUILD])
+  AM_CPPFLAGS="-DNO_CUBE_BUILD $AM_CPPFLAGS"
 fi
 
 # check whether to build embedded version
@@ -166,18 +167,8 @@ AC_ARG_ENABLE([embedded],
 AC_MSG_RESULT([$enable_embedded])
 AM_CONDITIONAL([EMBEDDED], [test "$enable_embedded" = "yes"])
 if test "$enable_embedded" = "yes"; then
-  AC_SUBST([AM_CPPFLAGS], [-DEMBEDDED])
+  AM_CPPFLAGS="-DEMBEDDED $AM_CPPFLAGS"
 fi
-
-# check whether to build OpenMP support
-AM_CONDITIONAL([OPENMP], false)
-AC_OPENMP
-AS_IF([test "x$OPENMP_CFLAGS" != "x"],
-  [AM_CONDITIONAL([OPENMP], true)
-   AC_SUBST([AM_CPPFLAGS], ["$OPENMP_CXXFLAGS"])
-   AC_DEFINE([OPENMP], [], [Defined when compiled with OpenMP support])]
-)
-
 
 # check whether to build opencl version
 AC_MSG_CHECKING([--enable-opencl argument])
@@ -227,7 +218,7 @@ case "${host_os}" in
       if !($have_opencl_lib); then
         AC_MSG_ERROR([Required OpenCL library not found!])
       fi
-      AC_SUBST([AM_CPPFLAGS], [-DUSE_OPENCL])
+      AM_CPPFLAGS="-DUSE_OPENCL $AM_CPPFLAGS"
       OPENCL_CPPFLAGS=""
       OPENCL_LDFLAGS="-framework OpenCL"
     fi
@@ -246,7 +237,7 @@ case "${host_os}" in
         if !($have_tiff); then
             AC_MSG_ERROR([Required TIFF headers not found! Try to install libtiff-dev?? package.])
         fi
-        AC_SUBST([AM_CPPFLAGS], [-DUSE_OPENCL])
+        AM_CPPFLAGS="-DUSE_OPENCL $AM_CPPFLAGS"
         OPENCL_CPPFLAGS="-I${OPENCL_INC}"
         OPENCL_LDFLAGS="${OPENCL_LIBS}"
     fi
@@ -261,7 +252,7 @@ AC_SUBST([OPENCL_LDFLAGS])
 # http://groups.google.com/group/tesseract-dev/browse_thread/thread/976645ae98189127
 AC_MSG_CHECKING([--enable-visibility argument])
 AC_ARG_ENABLE([visibility],
-    [AC_HELP_STRING([--enable-visibility],[enable experimental build with fvisibility (default=no)])],
+    [AS_HELP_STRING([--enable-visibility],[enable experimental build with fvisibility (default=no)])],
     [enable_visibility=$enableval],
     [enable_visibility="no"])
 AC_MSG_RESULT([$enable_visibility])
@@ -270,7 +261,7 @@ AM_CONDITIONAL([VISIBILITY], [test "$enable_visibility" = "yes"])
 # check whether to build multiple libraries
 AC_MSG_CHECKING([--enable-multiple-libraries argument])
 AC_ARG_ENABLE([multiple-libraries],
-    [AC_HELP_STRING([--enable-multiple-libraries],[enable multiple libraries (default=no)])],
+    [AS_HELP_STRING([--enable-multiple-libraries],[enable multiple libraries (default=no)])],
     [enable_mlibs=$enableval],
     [enable_mlibs="no"])
 AC_MSG_RESULT([$enable_mlibs])
@@ -279,7 +270,7 @@ AM_CONDITIONAL([USING_MULTIPLELIBS], [test "$enable_mlibs" = "yes"])
 # Check if tessdata-prefix is disabled
 AC_MSG_CHECKING([whether to use tessdata-prefix])
 AC_ARG_ENABLE([tessdata-prefix],
-    [AC_HELP_STRING([--disable-tessdata-prefix],
+    [AS_HELP_STRING([--disable-tessdata-prefix],
             [don't set TESSDATA-PREFIX during compile])],
     [tessdata_prefix="no"], [tessdata_prefix="yes"])
 AC_MSG_RESULT([$tessdata_prefix])
@@ -288,7 +279,7 @@ AM_CONDITIONAL([NO_TESSDATA_PREFIX], [test "$tessdata_prefix" = "no"])
 # Check whether enable debuging
 AC_MSG_CHECKING([whether to enable debugging])
 AC_ARG_ENABLE([debug],
-    [AC_HELP_STRING([--enable-debug],
+    [AS_HELP_STRING([--enable-debug],
         [turn on debugging (default=no)])],
     [debug=$enableval],
     [debug="no"])
@@ -447,16 +438,16 @@ else
   AC_MSG_ERROR([leptonica not found])
 fi
 
-AC_MSG_CHECKING([leptonica headers version >= 1.71])
+AC_MSG_CHECKING([leptonica headers version >= 1.74])
 AC_PREPROC_IFELSE(
     [AC_LANG_PROGRAM([#include "allheaders.h"],
-[#if (LIBLEPT_MAJOR_VERSION >= 1) && (LIBLEPT_MINOR_VERSION >= 71)
+[#if (LIBLEPT_MAJOR_VERSION >= 1) && (LIBLEPT_MINOR_VERSION >= 74)
 int i = 0;
 #else
 #error You need to upgrade your leptonica library!
 #endif])],
     [AC_MSG_RESULT(yes)],
-    [AC_MSG_FAILURE([leptonica 1.71 or higher is required])])
+    [AC_MSG_FAILURE([leptonica 1.74 or higher is required])])
 
 AM_CONDITIONAL([ENABLE_TRAINING], true)
 

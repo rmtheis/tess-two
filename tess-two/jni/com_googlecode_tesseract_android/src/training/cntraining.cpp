@@ -20,7 +20,6 @@
  ** limitations under the License.
 ******************************************************************************/
 
-
 /*----------------------------------------------------------------------------
           Include Files and Type Defines
 ----------------------------------------------------------------------------*/
@@ -53,10 +52,8 @@ int main (
           Private Function Prototypes
 ----------------------------------------------------------------------------*/
 
-void WriteNormProtos (
-     const char  *Directory,
-     LIST  LabeledProtoList,
-   CLUSTERER *Clusterer);
+void WriteNormProtos(const char *Directory, LIST LabeledProtoList,
+                     const FEATURE_DESC_STRUCT *feature_desc);
 
 /*
 PARAMDESC *ConvertToPARAMDESC(
@@ -80,7 +77,6 @@ CLUSTERCONFIG  CNConfig =
 {
   elliptical, 0.025, 0.05, 0.8, 1e-3, 0
 };
-
 
 /*----------------------------------------------------------------------------
               Public Code
@@ -134,8 +130,7 @@ CLUSTERCONFIG  CNConfig =
 * @note Exceptions: none
 * @note History: Fri Aug 18 08:56:17 1989, DSJ, Created.
 */
-int main(int  argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
   // Set the global Config parameters before parsing the command line.
   Config = CNConfig;
 
@@ -165,13 +160,18 @@ int main(int  argc, char* argv[])
   // reduce the min samples:
   // Config.MinSamples = 0.5 / num_fonts;
   pCharList = CharList;
+  // The norm protos will count the source protos, so we keep them here in
+  // freeable_protos, so they can be freed later.
+  GenericVector<LIST> freeable_protos;
   iterate(pCharList) {
     //Cluster
-    if (Clusterer)
-       FreeClusterer(Clusterer);
     CharSample = (LABELEDLIST)first_node(pCharList);
     Clusterer =
       SetUpForClustering(FeatureDefs, CharSample, PROGRAM_FEATURE_TYPE);
+    if (Clusterer == NULL) {  // To avoid a SIGSEGV
+      fprintf(stderr, "Error: NULL clusterer!\n");
+      return 1;
+    }
     float SavedMinSamples = Config.MinSamples;
     // To disable the tendency to produce a single cluster for all fonts,
     // make MagicSamples an impossible to achieve number:
@@ -190,20 +190,20 @@ int main(int  argc, char* argv[])
     }
     Config.MinSamples = SavedMinSamples;
     AddToNormProtosList(&NormProtoList, ProtoList, CharSample->Label);
+    freeable_protos.push_back(ProtoList);
+    FreeClusterer(Clusterer);
   }
   FreeTrainingSamples(CharList);
-  if (Clusterer == NULL) { // To avoid a SIGSEGV
-    fprintf(stderr, "Error: NULL clusterer!\n");
-    return 1;
-  }
-  WriteNormProtos(FLAGS_D.c_str(), NormProtoList, Clusterer);
+  int desc_index = ShortNameToFeatureType(FeatureDefs, PROGRAM_FEATURE_TYPE);
+  WriteNormProtos(FLAGS_D.c_str(), NormProtoList,
+                  FeatureDefs.FeatureDesc[desc_index]);
   FreeNormProtoList(NormProtoList);
-  FreeProtoList(&ProtoList);
-  FreeClusterer(Clusterer);
+  for (int i = 0; i < freeable_protos.size(); ++i) {
+    FreeProtoList(&freeable_protos[i]);
+  }
   printf ("\n");
   return 0;
 }  // main
-
 
 /*----------------------------------------------------------------------------
               Private Code
@@ -216,16 +216,13 @@ int main(int  argc, char* argv[])
 * of the samples.
 * @param Directory  directory to place sample files into
 * @param LabeledProtoList List of labeled protos
-* @param Clusterer The CLUSTERER to use
+* @param feature_desc Description of the features
 * @return none
 * @note Exceptions: none
 * @note History: Fri Aug 18 16:17:06 1989, DSJ, Created.
 */
-void WriteNormProtos (
-     const char  *Directory,
-     LIST  LabeledProtoList,
-     CLUSTERER *Clusterer)
-{
+void WriteNormProtos(const char *Directory, LIST LabeledProtoList,
+                     const FEATURE_DESC_STRUCT *feature_desc) {
   FILE    *File;
   STRING Filename;
   LABELEDLIST LabeledProto;
@@ -240,8 +237,8 @@ void WriteNormProtos (
   Filename += "normproto";
   printf ("\nWriting %s ...", Filename.string());
   File = Efopen (Filename.string(), "wb");
-  fprintf(File,"%0d\n",Clusterer->SampleSize);
-  WriteParamDesc(File,Clusterer->SampleSize,Clusterer->ParamDesc);
+  fprintf(File, "%0d\n", feature_desc->NumParams);
+  WriteParamDesc(File, feature_desc->NumParams, feature_desc->ParamDesc);
   iterate(LabeledProtoList)
   {
     LabeledProto = (LABELEDLIST) first_node (LabeledProtoList);
@@ -256,7 +253,7 @@ void WriteNormProtos (
       exit(1);
     }
     fprintf(File, "\n%s %d\n", LabeledProto->Label, N);
-    WriteProtos(File, Clusterer->SampleSize, LabeledProto->List, true, false);
+    WriteProtos(File, feature_desc->NumParams, LabeledProto->List, true, false);
   }
   fclose (File);
 
