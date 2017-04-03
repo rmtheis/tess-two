@@ -8,7 +8,7 @@ Studio project, or follow the instructions below to build on the command line.
 Note: When building from Android Studio, you may need to set the path to your
 NDK installation in the Project Structure dialog (File->Project Structure).
 
-##_Android Studio and Gradle_
+## _Android Studio and Gradle_
 
 The Gradle build uses the gradle-stable plugin and the Android NDK to
 build the Tesseract and Leptonica native C/C++ code through a call to
@@ -29,8 +29,6 @@ Run the following commands:
     export ANDROID_HOME=/path/to/your/android-sdk
     git clone git://github.com/rmtheis/tess-two tess
     cd tess
-    android update project --path tess-two
-    cp tess-two/local.properties .
     ./gradlew assemble
 		
 _On Windows:_
@@ -44,8 +42,6 @@ Run the following commands:
     set ANDROID_HOME=C:\\path\\to\\your\\android-sdk
     git clone git://github.com/rmtheis/tess-two tess
     cd tess
-    android update project --path tess-two
-    copy tess-two\local.properties .
     gradlew assemble
 
 ### Testing

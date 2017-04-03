@@ -7,8 +7,6 @@ Steps to reproduce the issue:
 1. 
 2. 
 3.
-4. 
-5.
 
 Expected result:
 
@@ -18,6 +16,19 @@ Actual result:
 
 
 
-Tess-two version used:
+Tess-two version:
+
+
+
+Android version:
+
+
+
+Phone/device model:
+
+
+
+Phone/device architecture (armeabi, armeabi-v7a, x86, mips, arm64-v8a, x86_64, mips64):
+
 
 
