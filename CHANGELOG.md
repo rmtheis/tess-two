@@ -3,7 +3,7 @@
 ## [Unreleased](https://github.com/rmtheis/tess-two/tree/HEAD)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/6.3.0...HEAD)
 
-## [6.3.0](https://github.com/rmtheis/tess-two/tree/6.2.0) (2017-02-04)
+## [6.3.0](https://github.com/rmtheis/tess-two/tree/6.2.0) (2017-04-06)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/6.2.0...6.3.0)
 
 **Updates:**
