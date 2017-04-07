@@ -10,6 +10,8 @@
 
 - Tesseract code updated to version 3.05.00
 
+[Tesseract change log](https://github.com/tesseract-ocr/tesseract/blob/cf0b378577e7ed0c75bfaf97cae7e35d7634cf4d/ChangeLog#L22)
+
 ## [6.2.0](https://github.com/rmtheis/tess-two/tree/6.2.0) (2017-02-04)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/6.1.1...6.2.0)
 
