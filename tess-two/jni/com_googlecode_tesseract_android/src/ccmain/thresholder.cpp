@@ -184,7 +184,7 @@ void ImageThresholder::ThresholdToPix(PageSegMode pageseg_mode, Pix** pix) {
     // We have a binary image, but it still has to be copied, as this API
     // allows the caller to modify the output.
     Pix* original = GetPixRect();
-    *pix = pixCopy(NULL, original);
+    *pix = pixCopy(nullptr, original);
     pixDestroy(&original);
   } else {
     OtsuThresholdRectToPix(pix_, pix);

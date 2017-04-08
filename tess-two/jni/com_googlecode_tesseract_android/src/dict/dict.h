@@ -244,7 +244,7 @@ class Dict {
                              CHAR_FRAGMENT_INFO *char_frag_info);
 
   /* stopper.cpp *************************************************************/
-  bool TESS_API NoDangerousAmbig(WERD_CHOICE *BestChoice,
+  bool NoDangerousAmbig(WERD_CHOICE *BestChoice,
                         DANGERR *fixpt,
                         bool fix_replaceable,
                         MATRIX* ratings);
@@ -260,7 +260,7 @@ class Dict {
                     MATRIX *ratings);
 
   /// Returns the length of the shortest alpha run in WordChoice.
-  int LengthOfShortestAlphaRun(const WERD_CHOICE &WordChoice);
+  int LengthOfShortestAlphaRun(const WERD_CHOICE &WordChoice) const;
   /// Returns true if the certainty of the BestChoice word is within a
   /// reasonable range of the average certainties for the best choices for
   /// each character in the segmentation.  This test is used to catch words
@@ -275,7 +275,7 @@ class Dict {
   /// Returns false if the best choice for the current word is questionable
   /// and should be tried again on the second pass or should be flagged to
   /// the user.
-  bool AcceptableResult(WERD_RES* word);
+  bool AcceptableResult(WERD_RES *word) const;
   void EndDangerousAmbigs();
   /// Prints the current choices for this word to stdout.
   void DebugWordChoices();
@@ -285,7 +285,7 @@ class Dict {
   void SettupStopperPass2();
   /* context.cpp *************************************************************/
   /// Check a string to see if it matches a set of lexical rules.
-  int case_ok(const WERD_CHOICE &word, const UNICHARSET &unicharset);
+  int case_ok(const WERD_CHOICE &word, const UNICHARSET &unicharset) const;
   /// Returns true if the word looks like an absolute garbage
   /// (e.g. image mistakenly recognized as text).
   bool absolute_garbage(const WERD_CHOICE &word, const UNICHARSET &unicharset);
@@ -295,11 +295,13 @@ class Dict {
   /// Initialize Dict class - load dawgs from [lang].traineddata and
   /// user-specified wordlist and parttern list.
   static DawgCache *GlobalDawgCache();
-  // Sets up ready for a Load.
+  // Sets up ready for a Load or LoadLSTM.
   void SetupForLoad(DawgCache *dawg_cache);
   // Loads the dawgs needed by Tesseract. Call FinishLoad() after.
   void Load(const char *data_file_name, const STRING &lang);
-  // Completes the loading process after Load().
+  // Loads the dawgs needed by the LSTM model. Call FinishLoad() after.
+  void LoadLSTM(const char *data_file_name, const STRING &lang);
+  // Completes the loading process after Load() and/or LoadLSTM().
   // Returns false if no dictionaries were loaded.
   bool FinishLoad();
   void End();

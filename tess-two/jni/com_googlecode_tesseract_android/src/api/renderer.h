@@ -15,8 +15,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifndef TESSERACT_API_RENDERER_H__
-#define TESSERACT_API_RENDERER_H__
+#ifndef TESSERACT_API_RENDERER_H_
+#define TESSERACT_API_RENDERER_H_
 
 // To avoid collision with other typenames include the ABSOLUTE MINIMUM
 // complexity of includes here. Use forward declarations wherever possible
@@ -57,6 +57,7 @@ class TESS_API TessResultRenderer {
     /**
      * Starts a new document with the given title.
      * This clears the contents of the output data.
+     * Title should use UTF-8 encoding.
      */
     bool BeginDocument(const char* title);
 
@@ -186,7 +187,7 @@ class TESS_API TessPDFRenderer : public TessResultRenderer {
  public:
   // datadir is the location of the TESSDATA. We need it because
   // we load a custom PDF font from this location.
-  TessPDFRenderer(const char *outputbase, const char *datadir);
+  TessPDFRenderer(const char* outputbase, const char* datadir, bool textonly);
 
  protected:
   virtual bool BeginDocumentHandler();
@@ -196,20 +197,20 @@ class TESS_API TessPDFRenderer : public TessResultRenderer {
  private:
   // We don't want to have every image in memory at once,
   // so we store some metadata as we go along producing
-  // PDFs one page at a time. At the end that metadata is
+  // PDFs one page at a time. At the end, that metadata is
   // used to make everything that isn't easily handled in a
   // streaming fashion.
   long int obj_;                     // counter for PDF objects
   GenericVector<long int> offsets_;  // offset of every PDF object in bytes
   GenericVector<long int> pages_;    // object number for every /Page object
   const char *datadir_;              // where to find the custom font
+  bool textonly_;                    // skip images if set
   // Bookkeeping only. DIY = Do It Yourself.
   void AppendPDFObjectDIY(size_t objectsize);
   // Bookkeeping + emit data.
   void AppendPDFObject(const char *data);
   // Create the /Contents object for an entire page.
-  static char* GetPDFTextObjects(TessBaseAPI* api,
-                                 double width, double height);
+  char* GetPDFTextObjects(TessBaseAPI* api, double width, double height);
   // Turn an image into a PDF object. Only transcode if we have to.
   static bool imageToPDFObj(Pix *pix, char *filename, long int objnum,
                           char **pdf_object, long int *pdf_object_size);
@@ -251,4 +252,4 @@ class TESS_API TessOsdRenderer : public TessResultRenderer {
 
 }  // namespace tesseract.
 
-#endif  // TESSERACT_API_RENDERER_H__
+#endif  // TESSERACT_API_RENDERER_H_

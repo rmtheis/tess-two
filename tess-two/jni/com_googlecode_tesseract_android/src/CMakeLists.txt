@@ -10,6 +10,12 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
+if (NOT APPVEYOR)
+if (WIN32 AND (CMAKE_VERSION VERSION_EQUAL 3.6 OR (CMAKE_VERSION VERSION_GREATER 3.6 AND CMAKE_VERSION VERSION_LESS 3.7)))
+    message(FATAL_ERROR "You have bugged CMake version 3.6 which is known to not work with tesseract. Please, upgrade CMake.")
+endif()
+endif()
+
 # In-source builds are disabled.
 if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR
@@ -40,11 +46,11 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMake Targets")
 
 project(tesseract C CXX)
 
-set(VERSION_MAJOR 3)
-set(VERSION_MINOR 05)
+set(VERSION_MAJOR 4)
+set(VERSION_MINOR 00)
 set(VERSION_PLAIN ${VERSION_MAJOR}.${VERSION_MINOR})
 
-set(MINIMUM_LEPTONICA_VERSION 1.71)
+set(MINIMUM_LEPTONICA_VERSION 1.74)
 
 if(NOT EXISTS ${PROJECT_SOURCE_DIR}/.cppan)
     if (NOT Leptonica_DIR AND NOT MSVC)
@@ -146,14 +152,14 @@ include_directories(${Leptonica_INCLUDE_DIRS})
 include_directories(${CMAKE_BINARY_DIR})
 
 include_directories(api)
+include_directories(arch)
 include_directories(ccmain)
 include_directories(ccstruct)
 include_directories(ccutil)
 include_directories(classify)
-include_directories(cube)
 include_directories(cutil)
 include_directories(dict)
-include_directories(neural_networks/runtime)
+include_directories(lstm)
 include_directories(opencl)
 include_directories(textord)
 include_directories(vs2010/port)
@@ -168,14 +174,14 @@ string(SUBSTRING ${VERSION_MINOR} 0 1 VERSION_MINOR_0)
 string(SUBSTRING ${VERSION_MINOR} 1 1 VERSION_MINOR_1)
 
 file(GLOB tesseract_src
+    arch/*.cpp
     ccmain/*.cpp
     ccstruct/*.cpp
     ccutil/*.cpp
     classify/*.cpp
-    cube/*.cpp
     cutil/*.cpp
     dict/*.cpp
-    neural_networks/runtime/*.cpp
+    lstm/*.cpp
     opencl/*.cpp
     textord/*.cpp
     viewer/*.cpp
@@ -183,14 +189,14 @@ file(GLOB tesseract_src
 )
 file(GLOB tesseract_hdr
     api/*.h
+    arch/*.h
     ccmain/*.h
     ccstruct/*.h
     ccutil/*.h
     classify/*.h
-    cube/*.h
     cutil/*.h
     dict/*.h
-    neural_networks/runtime/*.h
+    lstm/*.h
     opencl/*.h
     textord/*.h
     viewer/*.h
@@ -209,6 +215,17 @@ set(tesseract_src ${tesseract_src}
     api/renderer.cpp
     api/pdfrenderer.cpp
 )
+
+if (WIN32)
+    set_source_files_properties(
+        ${CMAKE_CURRENT_SOURCE_DIR}/arch/dotproductsse.cpp
+        PROPERTIES COMPILE_DEFINITIONS __SSE4_1__)
+    if (MSVC)
+        set_source_files_properties(
+            ${CMAKE_CURRENT_SOURCE_DIR}/arch/dotproductavx.cpp
+            PROPERTIES COMPILE_FLAGS "/arch:AVX")
+    endif()
+endif()
 
 add_library                     (libtesseract ${LIBRARY_TYPE} ${tesseract_src} ${tesseract_hdr})
 if (NOT STATIC)

@@ -18,8 +18,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifndef TESSERACT_CCMAIN_LTR_RESULT_ITERATOR_H__
-#define TESSERACT_CCMAIN_LTR_RESULT_ITERATOR_H__
+#ifndef TESSERACT_CCMAIN_LTR_RESULT_ITERATOR_H_
+#define TESSERACT_CCMAIN_LTR_RESULT_ITERATOR_H_
 
 #include "platform.h"
 #include "pageiterator.h"
@@ -124,6 +124,9 @@ class TESS_API LTRResultIterator : public PageIterator {
   // Returns true if the current word was found in a dictionary.
   bool WordIsFromDictionary() const;
 
+  // Returns the number of blanks before the current word.
+  int BlanksBeforeWord() const;
+
   // Returns true if the current word is numeric.
   bool WordIsNumeric() const;
 
@@ -215,4 +218,4 @@ class ChoiceIterator {
 
 }  // namespace tesseract.
 
-#endif  // TESSERACT_CCMAIN_LTR_RESULT_ITERATOR_H__
+#endif  // TESSERACT_CCMAIN_LTR_RESULT_ITERATOR_H_

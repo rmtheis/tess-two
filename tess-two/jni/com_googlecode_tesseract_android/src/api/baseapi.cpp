@@ -127,7 +127,6 @@ TessBaseAPI::TessBaseAPI()
     truth_cb_(NULL),
     rect_left_(0), rect_top_(0), rect_width_(0), rect_height_(0),
     image_width_(0), image_height_(0) {
-    unknown_title_ = "";
 }
 
 TessBaseAPI::~TessBaseAPI() {
@@ -744,53 +743,6 @@ void TessBaseAPI::DumpPGM(const char* filename) {
   fclose(fp);
 }
 
-#ifndef NO_CUBE_BUILD
-/**
- * Placeholder for call to Cube and test that the input data is correct.
- * reskew is the direction of baselines in the skewed image in
- * normalized (cos theta, sin theta) form, so (0.866, 0.5) would represent
- * a 30 degree anticlockwise skew.
- */
-int CubeAPITest(Boxa* boxa_blocks, Pixa* pixa_blocks,
-                Boxa* boxa_words, Pixa* pixa_words,
-                const FCOORD& reskew, Pix* page_pix,
-                PAGE_RES* page_res) {
-  int block_count = boxaGetCount(boxa_blocks);
-  ASSERT_HOST(block_count == pixaGetCount(pixa_blocks));
-  // Write each block to the current directory as junk_write_display.nnn.png.
-  for (int i = 0; i < block_count; ++i) {
-    Pix* pix = pixaGetPix(pixa_blocks, i, L_CLONE);
-    pixDisplayWrite(pix, 1);
-  }
-  int word_count = boxaGetCount(boxa_words);
-  ASSERT_HOST(word_count == pixaGetCount(pixa_words));
-  int pr_word = 0;
-  PAGE_RES_IT page_res_it(page_res);
-  for (page_res_it.restart_page(); page_res_it.word () != NULL;
-       page_res_it.forward(), ++pr_word) {
-    WERD_RES *word = page_res_it.word();
-    WERD_CHOICE* choice = word->best_choice;
-    // Write the first 100 words to files names wordims/<wordstring>.tif.
-    if (pr_word < 100) {
-      STRING filename("wordims/");
-      if (choice != NULL) {
-        filename += choice->unichar_string();
-      } else {
-        char numbuf[32];
-        filename += "unclassified";
-        snprintf(numbuf, 32, "%03d", pr_word);
-        filename += numbuf;
-      }
-      filename += ".tif";
-      Pix* pix = pixaGetPix(pixa_words, pr_word, L_CLONE);
-      pixWrite(filename.string(), pix, IFF_TIFF_G4);
-    }
-  }
-  ASSERT_HOST(pr_word == word_count);
-  return 0;
-}
-#endif  // NO_CUBE_BUILD
-
 /**
  * Runs page layout analysis in the mode set by SetPageSegMode.
  * May optionally be called prior to Recognize to get access to just
@@ -845,12 +797,16 @@ int TessBaseAPI::Recognize(ETEXT_DESC* monitor) {
   } else if (tesseract_->tessedit_resegment_from_boxes) {
     page_res_ = tesseract_->ApplyBoxes(*input_file_, false, block_list_);
   } else {
-    // TODO(rays) LSTM here.
-    page_res_ = new PAGE_RES(false,
+    page_res_ = new PAGE_RES(tesseract_->AnyLSTMLang(),
                              block_list_, &tesseract_->prev_word_best_choice_);
   }
   if (page_res_ == NULL) {
     return -1;
+  }
+  if (tesseract_->tessedit_train_line_recognizer) {
+    tesseract_->TrainLineRecognizer(*input_file_, *output_file_, block_list_);
+    tesseract_->CorrectClassifyWords(page_res_);
+    return 0;
   }
   if (tesseract_->tessedit_make_boxes_from_boxes) {
     tesseract_->CorrectClassifyWords(page_res_);
@@ -1024,26 +980,13 @@ bool TessBaseAPI::ProcessPagesMultipageTiff(const l_uint8 *data,
                                             int tessedit_page_number) {
 #ifndef ANDROID_BUILD
   Pix *pix = NULL;
-#ifdef USE_OPENCL
-  OpenclDevice od;
-#endif  // USE_OPENCL
   int page = (tessedit_page_number >= 0) ? tessedit_page_number : 0;
   size_t offset = 0;
   for (; ; ++page) {
     if (tessedit_page_number >= 0)
       page = tessedit_page_number;
-#ifdef USE_OPENCL
-    if ( od.selectedDeviceIsOpenCL() ) {
-      pix = (data) ?
-          od.pixReadMemTiffCl(data, size, page) :
-          od.pixReadTiffCl(filename, page);
-    } else {
-#endif  // USE_OPENCL
     pix = (data) ? pixReadMemFromMultipageTiff(data, size, &offset)
                  : pixReadFromMultipageTiff(filename, &offset);
-#ifdef USE_OPENCL
-    }
-#endif  // USE_OPENCL
     if (pix == NULL) break;
     tprintf("Page %d\n", page + 1);
     char page_str[kMaxIntSize];
@@ -1673,13 +1616,7 @@ char* TessBaseAPI::GetTSVText(int page_number) {
 
     // Now, process the word...
     int left, top, right, bottom;
-    bool bold, italic, underlined, monospace, serif, smallcaps;
-    int pointsize, font_id;
-    const char* font_name;
     res_it->BoundingBox(RIL_WORD, &left, &top, &right, &bottom);
-    font_name =
-        res_it->WordFontAttributes(&bold, &italic, &underlined, &monospace,
-                                   &serif, &smallcaps, &pointsize, &font_id);
     word_num++;
     tsv_str.add_str_int("5\t", page_num);  // level 5 - word
     tsv_str.add_str_int("\t", block_num);
@@ -1899,13 +1836,16 @@ char* TessBaseAPI::GetUNLVText() {
 
 /**
  * Detect the orientation of the input image and apparent script (alphabet).
- * orient_deg is the detected clockwise rotation of the input image in degrees (0, 90, 180, 270)
+ * orient_deg is the detected clockwise rotation of the input image in degrees
+ * (0, 90, 180, 270)
  * orient_conf is the confidence (15.0 is reasonably confident)
  * script_name is an ASCII string, the name of the script, e.g. "Latin"
  * script_conf is confidence level in the script
  * Returns true on success and writes values to each parameter as an output
  */
-bool TessBaseAPI::DetectOrientationScript(int* orient_deg, float* orient_conf, const char** script_name, float* script_conf) {
+bool TessBaseAPI::DetectOrientationScript(int* orient_deg, float* orient_conf,
+                                          const char** script_name,
+                                          float* script_conf) {
   OSResults osr;
 
   bool osd = DetectOS(&osr);
@@ -1915,21 +1855,17 @@ bool TessBaseAPI::DetectOrientationScript(int* orient_deg, float* orient_conf, c
 
   int orient_id = osr.best_result.orientation_id;
   int script_id = osr.get_best_script(orient_id);
-  if (orient_conf)
-    *orient_conf = osr.best_result.oconfidence;
-  if (orient_deg)
-    *orient_deg = orient_id * 90; // convert quadrant to degrees
+  if (orient_conf) *orient_conf = osr.best_result.oconfidence;
+  if (orient_deg) *orient_deg = orient_id * 90;  // convert quadrant to degrees
 
   if (script_name) {
-    const char* script =
-      osr.unicharset->get_script_from_script_id(script_id);
+    const char* script = osr.unicharset->get_script_from_script_id(script_id);
 
     *script_name = script;
   }
 
-  if (script_conf)
-    *script_conf = osr.best_result.sconfidence;
-  
+  if (script_conf) *script_conf = osr.best_result.sconfidence;
+
   return true;
 }
 
@@ -1944,7 +1880,8 @@ char* TessBaseAPI::GetOsdText(int page_number) {
   const char* script_name;
   float script_conf;
 
-  if (!DetectOrientationScript(&orient_deg, &orient_conf, &script_name, &script_conf))
+  if (!DetectOrientationScript(&orient_deg, &orient_conf, &script_name,
+                               &script_conf))
     return NULL;
 
   // clockwise rotation needed to make the page upright
@@ -2037,7 +1974,7 @@ bool TessBaseAPI::AdaptToWordStr(PageSegMode mode, const char* wordstr) {
     for (t = 0; text[t] != '\0'; ++t) {
       if (text[t] == '\n' || text[t] == ' ')
         continue;
-      while (wordstr[w] != '\0' && wordstr[w] == ' ')
+      while (wordstr[w] == ' ')
         ++w;
       if (text[t] != wordstr[w])
         break;
@@ -2256,8 +2193,8 @@ void TessBaseAPI::Threshold(Pix** pix) {
   if (y_res < kMinCredibleResolution || y_res > kMaxCredibleResolution) {
     // Use the minimum default resolution, as it is safer to under-estimate
     // than over-estimate resolution.
-    tprintf("Warning. Invalid resolution %d dpi. Using %d instead.\n",
-            y_res, kMinCredibleResolution);
+    tprintf("Warning. Invalid resolution %d dpi. Using %d instead.\n", y_res,
+            kMinCredibleResolution);
     thresholder_->SetSourceYResolution(kMinCredibleResolution);
   }
   PageSegMode pageseg_mode =
@@ -2862,13 +2799,6 @@ const Dawg *TessBaseAPI::GetDawg(int i) const {
 int TessBaseAPI::NumDawgs() const {
   return tesseract_ == NULL ? 0 : tesseract_->getDict().NumDawgs();
 }
-
-#ifndef NO_CUBE_BUILD
-/** Return a pointer to underlying CubeRecoContext object if present. */
-CubeRecoContext *TessBaseAPI::GetCubeRecoContext() const {
-  return (tesseract_ == NULL) ? NULL : tesseract_->GetCubeRecoContext();
-}
-#endif  // NO_CUBE_BUILD
 
 /** Escape a char string - remove <>&"' with HTML codes. */
 STRING HOcrEscape(const char* text) {

@@ -21,11 +21,11 @@
 #define TESSERACT_TRAINING_PANGO_FONT_INFO_H_
 
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "commandlineflags.h"
-#include "hashfn.h"
 #include "host.h"
 #include "pango/pango-font.h"
 #include "pango/pango.h"
@@ -162,11 +162,11 @@ class FontUtils {
   // Returns true if the font of the given description name is available in the
   // target directory specified by --fonts_dir
   static bool IsAvailableFont(const char* font_desc) {
-    return IsAvailableFont(font_desc, NULL);
+    return IsAvailableFont(font_desc, nullptr);
   }
   // Returns true if the font of the given description name is available in the
   // target directory specified by --fonts_dir. If false is returned, and
-  // best_match is not NULL, the closest matching font is returned there.
+  // best_match is not nullptr, the closest matching font is returned there.
   static bool IsAvailableFont(const char* font_desc, string* best_match);
   // Outputs description names of available fonts.
   static const std::vector<string>& ListAvailableFonts();
@@ -203,7 +203,7 @@ class FontUtils {
   // corresponding character (in order of iterating ch_map) can be rendered.
   // The return string is a list of the acceptable fonts that were used.
   static string BestFonts(
-      const TessHashMap<char32, inT64>& ch_map,
+      const std::unordered_map<char32, inT64>& ch_map,
       std::vector<std::pair<const char*, std::vector<bool> > >* font_flag);
 
   // FontScore returns the weighted renderability score of the given
@@ -211,7 +211,7 @@ class FontUtils {
   // is also returned in raw_score.
   // The values in the bool vector ch_flags correspond to whether the
   // corresponding character (in order of iterating ch_map) can be rendered.
-  static int FontScore(const TessHashMap<char32, inT64>& ch_map,
+  static int FontScore(const std::unordered_map<char32, inT64>& ch_map,
                        const string& fontname, int* raw_score,
                        std::vector<bool>* ch_flags);
 

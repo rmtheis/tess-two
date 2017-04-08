@@ -27,11 +27,12 @@
 #include "allheaders.h"
 #include "baseapi.h"
 #include "basedir.h"
-#include "renderer.h"
-#include "strngs.h"
-#include "tprintf.h"
 #include "openclwrapper.h"
 #include "osdetect.h"
+#include "renderer.h"
+#include "simddetect.h"
+#include "strngs.h"
+#include "tprintf.h"
 
 #if defined(HAVE_TIFFIO_H) && defined(_WIN32)
 
@@ -63,27 +64,39 @@ void PrintVersionInfo() {
   lept_free(versionStrP);
 
 #ifdef USE_OPENCL
-    cl_platform_id platform;
-    cl_uint num_platforms;
-    cl_device_id devices[2];
-    cl_uint num_devices;
-    char info[256];
-    int i;
+  cl_platform_id platform[4];
+  cl_uint num_platforms;
 
-    printf(" OpenCL info:\n");
-    clGetPlatformIDs(1, &platform, &num_platforms);
-    printf("  Found %d platforms.\n", num_platforms);
-    clGetPlatformInfo(platform, CL_PLATFORM_NAME, 256, info, 0);
-    printf("  Platform name: %s.\n", info);
-    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 256, info, 0);
-    printf("  Version: %s.\n", info);
-    clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 2, devices, &num_devices);
-    printf("  Found %d devices.\n", num_devices);
-    for (i = 0; i < num_devices; ++i) {
-      clGetDeviceInfo(devices[i], CL_DEVICE_NAME, 256, info, 0);
-      printf("    Device %d name: %s.\n", i + 1, info);
+  printf(" OpenCL info:\n");
+  if (clGetPlatformIDs(4, platform, &num_platforms) == CL_SUCCESS) {
+    printf("  Found %u platform(s).\n", num_platforms);
+    for (unsigned n = 0; n < num_platforms; n++) {
+      char info[256];
+      if (clGetPlatformInfo(platform[n], CL_PLATFORM_NAME, 256, info, 0) ==
+          CL_SUCCESS) {
+        printf("  Platform %u name: %s.\n", n + 1, info);
+      }
+      if (clGetPlatformInfo(platform[n], CL_PLATFORM_VERSION, 256, info, 0) ==
+          CL_SUCCESS) {
+        printf("  Version: %s.\n", info);
+      }
+      cl_device_id devices[2];
+      cl_uint num_devices;
+      if (clGetDeviceIDs(platform[n], CL_DEVICE_TYPE_ALL, 2, devices,
+                         &num_devices) == CL_SUCCESS) {
+        printf("  Found %u device(s).\n", num_devices);
+        for (unsigned i = 0; i < num_devices; ++i) {
+          if (clGetDeviceInfo(devices[i], CL_DEVICE_NAME, 256, info, 0) ==
+              CL_SUCCESS) {
+            printf("    Device %u name: %s.\n", i + 1, info);
+          }
+        }
+      }
+    }
     }
 #endif
+    if (SIMDDetect::IsAVXAvailable()) printf(" Found AVX\n");
+    if (SIMDDetect::IsSSEAvailable()) printf(" Found SSE\n");
 }
 
 void PrintUsage(const char* program) {
@@ -123,8 +136,8 @@ void PrintHelpForOEM() {
   const char* msg =
       "OCR Engine modes:\n"
       "  0    Original Tesseract only.\n"
-      "  1    Cube only.\n"
-      "  2    Tesseract + cube.\n"
+      "  1    Neural nets LSTM only.\n"
+      "  2    Tesseract + LSTM.\n"
       "  3    Default, based on what is available.\n";
 
   printf("%s", msg);
@@ -337,8 +350,10 @@ void PreloadRenderers(
 
     api->GetBoolVariable("tessedit_create_pdf", &b);
     if (b) {
-      renderers->push_back(
-          new tesseract::TessPDFRenderer(outputbase, api->GetDatapath()));
+      bool textonly;
+      api->GetBoolVariable("textonly_pdf", &textonly);
+      renderers->push_back(new tesseract::TessPDFRenderer(
+          outputbase, api->GetDatapath(), textonly));
     }
 
     api->GetBoolVariable("tessedit_write_unlv", &b);
@@ -390,7 +405,7 @@ int main(int argc, char** argv) {
 
 #if !defined(DEBUG)
   // Disable debugging and informational messages from Leptonica.
-  setMsgSeverity(L_SEVERITY_WARNING);
+  setMsgSeverity(L_SEVERITY_ERROR);
 #endif
 
 #if defined(HAVE_TIFFIO_H) && defined(_WIN32)

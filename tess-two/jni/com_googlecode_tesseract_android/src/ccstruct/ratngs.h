@@ -268,7 +268,7 @@ const char *ScriptPosToString(tesseract::ScriptPos script_pos);
 
 }  // namespace tesseract.
 
-class TESS_API WERD_CHOICE : public ELIST_LINK {
+class WERD_CHOICE : public ELIST_LINK {
  public:
   static const float kBadRating;
   static const char *permuter_name(uinT8 permuter);
@@ -507,6 +507,20 @@ class TESS_API WERD_CHOICE : public ELIST_LINK {
       word_str += " ";
     }
     return word_str;
+  }
+  // Returns true if any unichar_id in the word is a non-space-delimited char.
+  bool ContainsAnyNonSpaceDelimited() const {
+    for (int i = 0; i < length_; ++i) {
+      if (!unicharset_->IsSpaceDelimited(unichar_ids_[i])) return true;
+    }
+    return false;
+  }
+  // Returns true if the word is all spaces.
+  bool IsAllSpaces() const {
+    for (int i = 0; i < length_; ++i) {
+      if (unichar_ids_[i] != UNICHAR_SPACE) return false;
+    }
+    return true;
   }
 
   // Call this to override the default (strict left to right graphemes)

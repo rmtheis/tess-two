@@ -16,8 +16,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifndef TESSERACT_CCUTIL_CCUTIL_H__
-#define TESSERACT_CCUTIL_CCUTIL_H__
+#ifndef TESSERACT_CCUTIL_CCUTIL_H_
+#define TESSERACT_CCUTIL_CCUTIL_H_
 
 #include "ambigs.h"
 #include "errcode.h"
@@ -49,7 +49,7 @@ class CCUtilMutex {
 };
 
 
-class TESS_API CCUtil {
+class CCUtil {
  public:
   CCUtil();
   virtual ~CCUtil();
@@ -94,4 +94,4 @@ class TESS_API CCUtil {
 extern CCUtilMutex tprintfMutex;  // should remain global
 }  // namespace tesseract
 
-#endif  // TESSERACT_CCUTIL_CCUTIL_H__
+#endif  // TESSERACT_CCUTIL_CCUTIL_H_
