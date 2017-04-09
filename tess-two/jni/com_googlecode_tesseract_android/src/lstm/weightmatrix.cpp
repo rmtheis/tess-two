@@ -298,7 +298,7 @@ const int kHistogramBuckets = 16;
 static void HistogramWeight(double weight, STATS* histogram) {
   int bucket = kHistogramBuckets - 1;
   if (weight != 0.0) {
-    double logval = -log2(fabs(weight));
+    double logval = -log(fabs(weight)/log(2));
     bucket = ClipToRange(IntCastRounded(logval), 0, kHistogramBuckets - 1);
   }
   histogram->add(bucket, 1);
