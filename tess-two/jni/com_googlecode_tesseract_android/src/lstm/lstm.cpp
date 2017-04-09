@@ -82,7 +82,7 @@ LSTM::LSTM(const STRING& name, int ni, int ns, int no, bool two_dimensional,
     // networkbuilder ensures this is always true.
     ASSERT_HOST(no == ns);
   } else if (type_ == NT_LSTM_SOFTMAX || type_ == NT_LSTM_SOFTMAX_ENCODED) {
-    nf_ = type_ == NT_LSTM_SOFTMAX ? no_ : IntCastRounded(ceil(log2(no_)));
+    nf_ = type_ == NT_LSTM_SOFTMAX ? no_ : IntCastRounded(ceil(log(no_)/log(2)));
     softmax_ = new FullyConnected("LSTM Softmax", ns_, no_, NT_SOFTMAX);
   } else {
     tprintf("%d is invalid type of LSTM!\n", type);
@@ -180,7 +180,7 @@ bool LSTM::DeSerialize(bool swap, TFile* fp) {
   if (type_ == NT_LSTM_SOFTMAX) {
     nf_ = no_;
   } else if (type_ == NT_LSTM_SOFTMAX_ENCODED) {
-    nf_ = IntCastRounded(ceil(log2(no_)));
+    nf_ = IntCastRounded(ceil(log(no_)/log(2)));
   } else {
     nf_ = 0;
   }
