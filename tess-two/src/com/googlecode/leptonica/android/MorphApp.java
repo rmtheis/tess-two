@@ -122,8 +122,8 @@ public class MorphApp {
      * </ol>
      *
      * @param pixs Source pix (8bpp)
-     * @param xsize width of max/min op, smoothing; any integer >= 1
-     * @param ysize height of max/min op, smoothing; any integer >= 1
+     * @param xsize width of max/min op, smoothing; any integer &gt;= 1
+     * @param ysize height of max/min op, smoothing; any integer &gt;= 1
      * @param type L_TOPHAT_WHITE: image - min, or L_TOPHAT_BLACK: max - image
      * @return a new Pix image
      */

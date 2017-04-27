@@ -52,7 +52,6 @@ public class Edge {
      * using pixThresholdToBinary().  If the high edge values are to be fg (1),
      * invert after running pixThresholdToBinary().
      * <li> Label the pixels as follows:
-     * <p>
      * <p>         1    4    7
      * <p>         2    5    8
      * <p>         3    6    9

@@ -256,7 +256,7 @@ public class TessBaseAPI {
      * multiple times on the same instance to change language, or just to reset
      * the classifier.
      * <p>
-     * The language may be a string of the form [~]<lang>[+[~]<lang>]* indicating
+     * The language may be a string of the form {@code [~]<lang>[+[~]<lang>]*} indicating
      * that multiple languages are to be loaded. Eg hin+eng will load Hindi and
      * English. Languages may specify internally that they want to be loaded
      * with one or more other languages, so the ~ sign is available to override

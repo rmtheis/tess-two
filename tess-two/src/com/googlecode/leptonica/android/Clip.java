@@ -33,7 +33,6 @@ public class Clip {
      * This should be simple, but there are choices to be made. The box is
      * defined relative to the pix coordinates.  However, if the box is not
      * contained within the pix, we have two choices:
-     * <p>
      * <p>     (1) clip the box to the pix
      * <p>     (2) make a new pix equal to the full box dimensions,
      *             but let rasterop do the clipping and positioning

@@ -70,7 +70,7 @@ public class PageIterator {
      * ============= Accessing data ==============.
      * <p>
      * Coordinate system:
-     * <p><ul>
+     * <ul>
      * <li> Integer coordinates are at the cracks between the pixels.
      * <li> The top-left corner of the top-left pixel in the image is at (0,0).
      * <li> The bottom-right corner of the bottom-right pixel in the image is at
@@ -78,7 +78,7 @@ public class PageIterator {
      * <li> Every bounding box goes from the top-left of the top-left contained
      * pixel to the bottom-right of the bottom-right contained pixel, so
      * the bounding box of the single top-left pixel in the image is:
-     * (0,0)->(1,1).
+     * (0,0)-&gt;(1,1).
      * <li> If an image rectangle has been set in the API, then returned coordinates
      * relate to the original (full) image, rather than the rectangle.
      * </ul><p>
