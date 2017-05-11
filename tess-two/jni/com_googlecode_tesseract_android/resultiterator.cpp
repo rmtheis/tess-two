@@ -72,7 +72,7 @@ jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetSymbo
     const char *utfText = cb.GetUTF8Text();
 
     // Add each string to the object array elements
-    char newString[strlen(utfText) + 5];
+    char newString[strlen(utfText) + 7];
     sprintf(newString, "%s|%.2f", utfText, cb.Confidence());
     env->SetObjectArrayElement(ret, i, env->NewStringUTF(newString));
 
