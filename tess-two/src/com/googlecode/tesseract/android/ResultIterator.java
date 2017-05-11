@@ -150,5 +150,5 @@ public class ResultIterator extends PageIterator {
     private static native float nativeConfidence(long nativeResultIterator, int level);
     private static native boolean nativeIsAtBeginningOf(long nativeResultIterator, int level);
     private static native boolean nativeIsAtFinalElement(long nativeResultIterator, int level, int element);
-    private static native void nativeDelete(long nativeIterator);
+    private static native void nativeDelete(long nativeResultIterator);
 }

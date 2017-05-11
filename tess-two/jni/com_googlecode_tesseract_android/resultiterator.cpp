@@ -107,7 +107,6 @@ void Java_com_googlecode_tesseract_android_ResultIterator_nativeDelete(JNIEnv *e
   if (resultIterator != 0) {
     delete resultIterator;
   }
-  return;
 }
 
 #ifdef __cplusplus
