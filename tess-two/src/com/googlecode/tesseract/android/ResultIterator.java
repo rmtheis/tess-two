@@ -76,12 +76,11 @@ public class ResultIterator extends PageIterator {
      * The default matching text is blank (""). 
      * The default confidence level is zero (0.0) 
      *
-     * @param level the page iterator level. See {@link PageIteratorLevel}.
-     * @return A list of pairs with the UTF string and the confidence
+     * @return A list of pairs with the UTF symbol and the confidence
      */
-    public List<Pair<String, Double>> getChoicesAndConfidence(int level) {
+    public List<Pair<String, Double>> getSymbolChoicesAndConfidence() {
         // Get the native choices
-        String[] nativeChoices = nativeGetChoices(mNativeResultIterator, level);
+        String[] nativeChoices = nativeGetSymbolChoices(mNativeResultIterator);
 
         // Create the output list
         ArrayList<Pair<String, Double>> pairedResults = new ArrayList<Pair<String, Double>>();
@@ -121,7 +120,7 @@ public class ResultIterator extends PageIterator {
         nativeDelete(mNativeResultIterator);
     }
     
-    private static native String[] nativeGetChoices(long nativeResultIterator, int level);
+    private static native String[] nativeGetSymbolChoices(long nativeResultIterator);
 
     private static native String nativeGetUTF8Text(long nativeResultIterator, int level);
     private static native float nativeConfidence(long nativeResultIterator, int level);

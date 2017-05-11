@@ -48,21 +48,20 @@ jfloat Java_com_googlecode_tesseract_android_ResultIterator_nativeConfidence(JNI
   return (jfloat) resultIterator->Confidence(enumLevel);
 }
 
-jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetChoices(JNIEnv *env,
-    jobject thiz, jlong nativeResultIterator, jint level) {
+jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetSymbolChoices(JNIEnv *env,
+    jobject thiz, jlong nativeResultIterator) {
 
-  // Get the actual result iterator and level (as C objects)
-  PageIteratorLevel enumLevel = (PageIteratorLevel) level;
+  // Get the actual result iterator (as C object)
   ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
 
-  // Create a choice iterator to determine to the number of alternatives
+  // Create a choice iterator to determine the number of alternatives
   tesseract::ChoiceIterator ci(*resultIterator);
   int numberOfAlternatives = 0;
   do {
     numberOfAlternatives++;
   } while (ci.Next());
 
-  // Create a string array to hold the results
+  // Create a string array to hold the choices
   jobjectArray ret = (jobjectArray) env->NewObjectArray(numberOfAlternatives, env->FindClass("java/lang/String"), env->NewStringUTF(""));
 
   // Save each result to the output array
