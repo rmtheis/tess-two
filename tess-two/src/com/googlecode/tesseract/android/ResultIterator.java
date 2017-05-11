@@ -70,6 +70,30 @@ public class ResultIterator extends PageIterator {
     }
 
     /**
+     * Returns true if the iterator is at the start of an object at the given
+     * level. Possible uses include determining if a call to Next(RIL_WORD)
+     * moved to the start of a RIL_PARA.
+     *
+     * @param level the page iterator level. See {@link PageIteratorLevel}.
+     * @return {@code true} if iterator points to the start of an object at the given level.
+     */
+    public boolean isAtBeginningOf(int level) {
+        return nativeIsAtBeginningOf(mNativeResultIterator, level);
+    }
+
+    /**
+     * Returns whether the iterator is positioned at the last element in a
+     * given level. (e.g. the last word in a line, the last line in a block)
+     *
+     * @param level the page iterator level. See {@link PageIteratorLevel}.
+     * @param element the page iterator level. See {@link PageIteratorLevel}.
+     * @return {@code true} if iterator points to the last element in a given level.
+     */
+    public boolean isAtFinalElement(int level, int element) {
+        return nativeIsAtFinalElement(mNativeResultIterator, level, element);
+    }
+
+    /**
      * Returns all possible matching text strings and their confidence level 
      * for the current object at the given level.
      * <p>
@@ -124,5 +148,7 @@ public class ResultIterator extends PageIterator {
 
     private static native String nativeGetUTF8Text(long nativeResultIterator, int level);
     private static native float nativeConfidence(long nativeResultIterator, int level);
+    private static native boolean nativeIsAtBeginningOf(long nativeResultIterator, int level);
+    private static native boolean nativeIsAtFinalElement(long nativeResultIterator, int level, int element);
     private static native void nativeDelete(long nativeIterator);
 }

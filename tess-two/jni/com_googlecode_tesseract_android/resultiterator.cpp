@@ -84,6 +84,23 @@ jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetSymbo
   return ret;
 }
 
+jboolean Java_com_googlecode_tesseract_android_ResultIterator_nativeIsAtBeginningOf(JNIEnv *env,
+    jclass clazz, jlong nativeResultIterator, jint level) {
+  ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
+  PageIteratorLevel enumLevel = (PageIteratorLevel) level;
+
+  return (jboolean) (resultIterator->IsAtBeginningOf(enumLevel) ? JNI_TRUE : JNI_FALSE);
+}
+
+jboolean Java_com_googlecode_tesseract_android_ResultIterator_nativeIsAtFinalElement(JNIEnv *env,
+    jclass clazz, jlong nativeResultIterator, jint level, jint element) {
+  ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
+  PageIteratorLevel enumLevel = (PageIteratorLevel) level;
+  PageIteratorLevel enumElement = (PageIteratorLevel) element;
+
+  return (jboolean) (resultIterator->IsAtFinalElement(enumLevel, enumElement) ? JNI_TRUE : JNI_FALSE);
+}
+
 void Java_com_googlecode_tesseract_android_ResultIterator_nativeDelete(JNIEnv *env, jclass clazz,
     jlong nativeResultIterator) {
   ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
