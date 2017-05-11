@@ -49,7 +49,7 @@ jfloat Java_com_googlecode_tesseract_android_ResultIterator_nativeConfidence(JNI
 }
 
 jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetSymbolChoices(JNIEnv *env,
-    jobject thiz, jlong nativeResultIterator) {
+    jclass clazz, jlong nativeResultIterator) {
 
   // Get the actual result iterator (as C object)
   ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
