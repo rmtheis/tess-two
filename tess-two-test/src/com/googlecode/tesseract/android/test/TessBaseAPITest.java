@@ -112,7 +112,7 @@ public class TessBaseAPITest extends TestCase {
         List<Pair<String, Double>> choicesAndConfidences;
         iterator.begin();
         do {
-            choicesAndConfidences = iterator.getChoicesAndConfidence(PageIteratorLevel.RIL_SYMBOL);
+            choicesAndConfidences = iterator.getSymbolChoicesAndConfidence();
             assertNotNull("Invalid result.", choicesAndConfidences);
 
             for (Pair<String, Double> choiceAndConfidence : choicesAndConfidences) {
