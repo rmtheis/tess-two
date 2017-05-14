@@ -95,7 +95,7 @@ public class ResultIterator extends PageIterator {
 
     /**
      * Returns all possible matching text strings and their confidence level 
-     * for the current object at the given level.
+     * for the current object.
      * <p>
      * The default matching text is blank (""). 
      * The default confidence level is zero (0.0) 
