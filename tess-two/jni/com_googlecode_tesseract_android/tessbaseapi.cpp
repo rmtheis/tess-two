@@ -647,15 +647,11 @@ jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeBeginDocument(J
   const char *c_title = env->GetStringUTFChars(title, NULL);
   tesseract::TessPDFRenderer* pdfRenderer = (tesseract::TessPDFRenderer*) jRenderer;
 
-  jboolean res = JNI_TRUE;
-
-  if (pdfRenderer->BeginDocument(c_title)) {
-    res = JNI_FALSE;
-  }
+  bool res = pdfRenderer->BeginDocument(c_title);
 
   env->ReleaseStringUTFChars(title, c_title);
 
-  return res;
+  return (jboolean) (res ? JNI_TRUE : JNI_FALSE);
 }
 
 jboolean Java_com_googlecode_tesseract_android_TessBaseAPI_nativeEndDocument(JNIEnv *env,
