@@ -90,8 +90,11 @@ public class TessBaseAPI {
         /** Sparse text with orientation and script detection. */
         public static final int PSM_SPARSE_TEXT_OSD = 12;
 
+        /** Treat the image as a single text line, bypassing hacks that are Tesseract-specific. */
+        public static final int PSM_RAW_LINE = 13;
+
         /** Number of enum entries. */
-        public static final int PSM_COUNT = 13;
+        public static final int PSM_COUNT = 14;
     }
 
     /** Whitelist of characters to recognize. */
