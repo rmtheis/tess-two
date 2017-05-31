@@ -135,30 +135,17 @@ jlong Java_com_googlecode_leptonica_android_ReadFile_nativeReadBitmap(JNIEnv *en
   PIX *pixd = pixCreate(info.width, info.height, 8);
 
   l_uint32 *src = (l_uint32 *) pixels;
-  l_int32 srcWpl = (info.stride / 4);
   l_uint32 *dst = pixGetData(pixd);
-  l_int32 dstWpl = pixGetWpl(pixd);
-  l_uint8 a, r, g, b, pixel8;
+  l_int32 srcBpl = info.stride;
+  l_int32 dstBpl = pixGetWpl(pixd) * 4;
 
-  for (int y = 0; y < info.height; y++) {
-    l_uint32 *dst_line = dst + (y * dstWpl);
-    l_uint32 *src_line = src + (y * srcWpl);
+  for (int dy = 0; dy < info.height; dy++) {
+		memcpy(dst, src, 4 * info.width);
+		dst += dstBpl;
+		src += srcBpl;
 
-    for (int x = 0; x < info.width; x++) {
-      // Get pixel from RGBA_8888
-      r = *src_line >> SK_R32_SHIFT;
-      g = *src_line >> SK_G32_SHIFT;
-      b = *src_line >> SK_B32_SHIFT;
-      a = *src_line >> SK_A32_SHIFT;
-      pixel8 = (l_uint8)((r + g + b) / 3);
-
-      // Set pixel to LUMA_8
-      SET_DATA_BYTE(dst_line, x, pixel8);
-
-      // Move to the next pixel
-      src_line++;
-    }
-  }
+	}
+	pixEndianByteSwap(pixd);
 
   AndroidBitmap_unlockPixels(env, bitmap);
 
