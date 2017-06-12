@@ -33,7 +33,9 @@
 // to process a single image is ~5 milliseconds.
 
 #include <math.h>
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "blur.h"
 #include "utils.h"
 

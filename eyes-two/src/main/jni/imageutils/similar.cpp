@@ -32,6 +32,7 @@
 //
 // For performance consideration, 480x480 of central area of
 // a given image is used for signature computation.
+#include <string.h>
 
 #include "similar.h"
 #include "utils.h"
