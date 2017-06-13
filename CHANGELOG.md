@@ -1,7 +1,32 @@
 # Change Log
 
 ## [Unreleased](https://github.com/rmtheis/tess-two/tree/HEAD)
-[Full Changelog](https://github.com/rmtheis/tess-two/compare/6.3.0...HEAD)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/7.0.0...HEAD)
+
+## [7.0.0](https://github.com/rmtheis/tess-two/tree/7.0.0) (2017-06-12)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/6.3.0...7.0.0)
+
+**API-breaking change:**
+
+- ResultIterator getChoicesAndConfidence\(\) is now getSymbolChoicesAndConfidence\(\)
+
+**Fixed bugs:**
+
+- ResultIterator crashes with certain character combinations [\#126](https://github.com/rmtheis/tess-two/issues/126)
+- ResultIterator returns single Character as Alternatives for Words [\#119](https://github.com/rmtheis/tess-two/issues/119)
+- beginDocument\(\) returns false even when successful [\#103](https://github.com/rmtheis/tess-two/issues/103)
+
+**Closed issues:**
+
+- Hardcoded path in TessBaseAPITest.java [\#208](https://github.com/rmtheis/tess-two/issues/208)
+
+**Merged pull requests:**
+
+- Add missing PageSegMode constant [\#209](https://github.com/rmtheis/tess-two/pull/209) ([Robyer](https://github.com/Robyer))
+- Fix return value of BeginDocument \(fixes \#103\) [\#207](https://github.com/rmtheis/tess-two/pull/207) ([Robyer](https://github.com/Robyer))
+- Improve ResultIterator [\#206](https://github.com/rmtheis/tess-two/pull/206) ([Robyer](https://github.com/Robyer))
+- Update gradle plugin [\#205](https://github.com/rmtheis/tess-two/pull/205) ([Robyer](https://github.com/Robyer))
+- Fix javadocs errors and warnings [\#202](https://github.com/rmtheis/tess-two/pull/202) ([Robyer](https://github.com/Robyer))
 
 ## [6.3.0](https://github.com/rmtheis/tess-two/tree/6.2.0) (2017-04-06)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/6.2.0...6.3.0)
