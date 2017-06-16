@@ -2,7 +2,7 @@
 
 DIR="`adb shell echo \\$EXTERNAL_STORAGE`"
 
-git clone https://github.com/tesseract-ocr/tessdata.git
+git clone -b 3.04.00 https://github.com/tesseract-ocr/tessdata.git
 
 adb shell rm $DIR/testAddPageToDocument.pdf
 adb shell rm $DIR/testCreate.pdf
