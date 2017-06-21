@@ -20,6 +20,7 @@
 
 #include "stringrenderer.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
@@ -100,6 +101,7 @@ StringRenderer::StringRenderer(const string& font_desc, int page_width,
       page_height_(page_height),
       h_margin_(50),
       v_margin_(50),
+      pen_color_{0.0, 0.0, 0.0},
       char_spacing_(0),
       leading_(0),
       vertical_text_(false),
@@ -119,15 +121,12 @@ StringRenderer::StringRenderer(const string& font_desc, int page_width,
       start_box_(0),
       page_(0),
       box_padding_(0),
+      page_boxes_(nullptr),
       total_chars_(0),
       font_index_(0),
       last_offset_(0) {
-  pen_color_[0] = 0.0;
-  pen_color_[1] = 0.0;
-  pen_color_[2] = 0.0;
   set_font(font_desc);
   set_resolution(kDefaultOutputResolution);
-  page_boxes_ = nullptr;
 }
 
 bool StringRenderer::set_font(const string& desc) {
@@ -241,7 +240,7 @@ void StringRenderer::SetWordUnderlineAttributes(const string& page_text) {
   PangoAttrList* attr_list = pango_layout_get_attributes(layout_);
 
   const char* text = page_text.c_str();
-  int offset = 0;
+  size_t offset = 0;
   TRand rand;
   bool started_underline = false;
   PangoAttribute* und_attr = nullptr;
@@ -326,7 +325,7 @@ int StringRenderer::FindFirstPageBreakOffset(const char* text,
   return offset;
 }
 
-const vector<BoxChar*>& StringRenderer::GetBoxes() const {
+const std::vector<BoxChar*>& StringRenderer::GetBoxes() const {
     return boxchars_;
 }
 
@@ -341,7 +340,7 @@ void StringRenderer::RotatePageBoxes(float rotation) {
 
 
 void StringRenderer::ClearBoxes() {
-  for (int i = 0; i < boxchars_.size(); ++i)
+  for (size_t i = 0; i < boxchars_.size(); ++i)
     delete boxchars_[i];
   boxchars_.clear();
   boxaDestroy(&page_boxes_);
@@ -358,8 +357,8 @@ void StringRenderer::WriteAllBoxes(const string& filename) {
 }
 
 // Returns cluster strings in logical order.
-bool StringRenderer::GetClusterStrings(vector<string>* cluster_text) {
-  map<int, string> start_byte_to_text;
+bool StringRenderer::GetClusterStrings(std::vector<string>* cluster_text) {
+  std::map<int, string> start_byte_to_text;
   PangoLayoutIter* run_iter = pango_layout_get_iter(layout_);
   const char* full_text = pango_layout_get_text(layout_);
   do {
@@ -396,7 +395,7 @@ bool StringRenderer::GetClusterStrings(vector<string>* cluster_text) {
   pango_layout_iter_free(run_iter);
 
   cluster_text->clear();
-  for (map<int, string>::const_iterator it = start_byte_to_text.begin();
+  for (std::map<int, string>::const_iterator it = start_byte_to_text.begin();
        it != start_byte_to_text.end(); ++it) {
     cluster_text->push_back(it->second);
   }
@@ -413,10 +412,10 @@ bool StringRenderer::GetClusterStrings(vector<string>* cluster_text) {
 // hyphens. When this is detected the word is split at that location into
 // multiple BoxChars. Otherwise, each resulting BoxChar will contain a word and
 // its bounding box.
-static void MergeBoxCharsToWords(vector<BoxChar*>* boxchars) {
-  vector<BoxChar*> result;
+static void MergeBoxCharsToWords(std::vector<BoxChar*>* boxchars) {
+  std::vector<BoxChar*> result;
   bool started_word = false;
-  for (int i = 0; i < boxchars->size(); ++i) {
+  for (size_t i = 0; i < boxchars->size(); ++i) {
     if (boxchars->at(i)->ch() == " " || boxchars->at(i)->box() == nullptr) {
       result.push_back(boxchars->at(i));
       boxchars->at(i) = nullptr;
@@ -469,7 +468,7 @@ void StringRenderer::ComputeClusterBoxes() {
   PangoLayoutIter* cluster_iter = pango_layout_get_iter(layout_);
 
   // Do a first pass to store cluster start indexes.
-  vector<int> cluster_start_indices;
+  std::vector<int> cluster_start_indices;
   do {
     cluster_start_indices.push_back(pango_layout_iter_get_index(cluster_iter));
     tlog(3, "Added %d\n", cluster_start_indices.back());
@@ -478,9 +477,9 @@ void StringRenderer::ComputeClusterBoxes() {
   cluster_start_indices.push_back(strlen(text));
   tlog(3, "Added last index %d\n", cluster_start_indices.back());
   // Sort the indices and create a map from start to end indices.
-  sort(cluster_start_indices.begin(), cluster_start_indices.end());
-  map<int, int> cluster_start_to_end_index;
-  for (int i = 0; i < cluster_start_indices.size() - 1; ++i) {
+  std::sort(cluster_start_indices.begin(), cluster_start_indices.end());
+  std::map<int, int> cluster_start_to_end_index;
+  for (size_t i = 0; i + 1 < cluster_start_indices.size(); ++i) {
     cluster_start_to_end_index[cluster_start_indices[i]]
         = cluster_start_indices[i + 1];
   }
@@ -489,7 +488,7 @@ void StringRenderer::ComputeClusterBoxes() {
   // cluster extent information.
   cluster_iter = pango_layout_get_iter(layout_);
   // Store BoxChars* sorted by their byte start positions
-  map<int, BoxChar*> start_byte_to_box;
+  std::map<int, BoxChar*> start_byte_to_box;
   do {
     PangoRectangle cluster_rect;
     pango_layout_iter_get_cluster_extents(cluster_iter, &cluster_rect, nullptr);
@@ -548,21 +547,21 @@ void StringRenderer::ComputeClusterBoxes() {
   // accurate.
   // TODO(ranjith): Revisit whether this is still needed in newer versions of
   // pango.
-  vector<string> cluster_text;
+  std::vector<string> cluster_text;
   if (GetClusterStrings(&cluster_text)) {
     ASSERT_HOST(cluster_text.size() == start_byte_to_box.size());
     int ind = 0;
-    for (map<int, BoxChar*>::iterator it = start_byte_to_box.begin();
+    for (std::map<int, BoxChar*>::iterator it = start_byte_to_box.begin();
          it != start_byte_to_box.end(); ++it, ++ind) {
       it->second->mutable_ch()->swap(cluster_text[ind]);
     }
   }
 
   // Append to the boxchars list in byte order.
-  vector<BoxChar*> page_boxchars;
+  std::vector<BoxChar*> page_boxchars;
   page_boxchars.reserve(start_byte_to_box.size());
   string last_ch;
-  for (map<int, BoxChar*>::const_iterator it = start_byte_to_box.begin();
+  for (std::map<int, BoxChar*>::const_iterator it = start_byte_to_box.begin();
        it != start_byte_to_box.end(); ++it) {
     if (it->second->ch() == kWordJoinerUTF8) {
       // Skip zero-width joiner characters (ZWJs) here.
@@ -574,7 +573,7 @@ void StringRenderer::ComputeClusterBoxes() {
   CorrectBoxPositionsToLayout(&page_boxchars);
 
   if (render_fullwidth_latin_) {
-    for (map<int, BoxChar*>::iterator it = start_byte_to_box.begin();
+    for (std::map<int, BoxChar*>::iterator it = start_byte_to_box.begin();
          it != start_byte_to_box.end(); ++it) {
       // Convert fullwidth Latin characters to their halfwidth forms.
       string half(ConvertFullwidthLatinToBasicLatin(it->second->ch()));
@@ -592,7 +591,7 @@ void StringRenderer::ComputeClusterBoxes() {
   // Compute the page bounding box
   Box* page_box = nullptr;
   Boxa* all_boxes = nullptr;
-  for (int i = 0; i < page_boxchars.size(); ++i) {
+  for (size_t i = 0; i < page_boxchars.size(); ++i) {
     if (page_boxchars[i]->box() == nullptr) continue;
     if (all_boxes == nullptr) all_boxes = boxaCreate(0);
     boxaAddBox(all_boxes, page_boxchars[i]->mutable_box(), L_CLONE);
@@ -606,7 +605,8 @@ void StringRenderer::ComputeClusterBoxes() {
 }
 
 
-void StringRenderer::CorrectBoxPositionsToLayout(vector<BoxChar*>* boxchars) {
+void StringRenderer::CorrectBoxPositionsToLayout(
+    std::vector<BoxChar*>* boxchars) {
   if (vertical_text_) {
     const double rotation = - pango_gravity_to_rotation(
         pango_context_get_base_gravity(pango_layout_get_context(layout_)));
@@ -621,7 +621,7 @@ void StringRenderer::CorrectBoxPositionsToLayout(vector<BoxChar*>* boxchars) {
 int StringRenderer::StripUnrenderableWords(string* utf8_text) const {
   string output_text;
   const char* text = utf8_text->c_str();
-  int offset = 0;
+  size_t offset = 0;
   int num_dropped = 0;
   while (offset < utf8_text->length()) {
     int space_len = SpanUTF8Whitespace(text + offset);
@@ -864,8 +864,9 @@ int StringRenderer::RenderAllFontsToImage(double min_coverage,
     }
     tprintf("Total chars = %d\n", total_chars_);
   }
-  const vector<string>& all_fonts = FontUtils::ListAvailableFonts();
-  for (int i = font_index_; i < all_fonts.size(); ++i) {
+  const std::vector<string>& all_fonts = FontUtils::ListAvailableFonts();
+  assert(0 <= font_index_);
+  for (unsigned int i = static_cast<unsigned int>(font_index_); i < all_fonts.size(); ++i) {
     ++font_index_;
     int raw_score = 0;
     int ok_chars =

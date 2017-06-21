@@ -93,9 +93,10 @@ enum TrainingState {
   // Valid states of training_.
   TS_DISABLED,      // Disabled permanently.
   TS_ENABLED,       // Enabled for backprop and to write a training dump.
+                    // Re-enable from ANY disabled state.
   TS_TEMP_DISABLE,  // Temporarily disabled to write a recognition dump.
   // Valid only for SetEnableTraining.
-  TS_RE_ENABLE,  // Re-Enable whatever the current state.
+  TS_RE_ENABLE,  // Re-Enable from TS_TEMP_DISABLE, but not TS_DISABLED.
 };
 
 // Base class for network types. Not quite an abstract base class, but almost.
@@ -208,9 +209,8 @@ class Network {
   // Should be overridden by subclasses, but called by their Serialize.
   virtual bool Serialize(TFile* fp) const;
   // Reads from the given file. Returns false in case of error.
-  // If swap is true, assumes a big/little-endian swap is needed.
   // Should be overridden by subclasses, but NOT called by their DeSerialize.
-  virtual bool DeSerialize(bool swap, TFile* fp);
+  virtual bool DeSerialize(TFile* fp);
 
   // Updates the weights using the given learning rate and momentum.
   // num_samples is the quotient to be used in the adagrad computation iff
@@ -223,10 +223,9 @@ class Network {
                                 double* changed) const {}
 
   // Reads from the given file. Returns NULL in case of error.
-  // If swap is true, assumes a big/little-endian swap is needed.
   // Determines the type of the serialized class and calls its DeSerialize
   // on a new object of the appropriate type, which is returned.
-  static Network* CreateFromFile(bool swap, TFile* fp);
+  static Network* CreateFromFile(TFile* fp);
 
   // Runs forward propagation of activations on the input line.
   // Note that input and output are both 2-d arrays.

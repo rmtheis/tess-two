@@ -88,25 +88,27 @@ bool LSTMRecognizer::Serialize(TFile* fp) const {
 }
 
 // Reads from the given file. Returns false in case of error.
-// If swap is true, assumes a big/little-endian swap is needed.
-bool LSTMRecognizer::DeSerialize(bool swap, TFile* fp) {
+bool LSTMRecognizer::DeSerialize(TFile* fp) {
   delete network_;
-  network_ = Network::CreateFromFile(swap, fp);
+  network_ = Network::CreateFromFile(fp);
   if (network_ == NULL) return false;
   if (!ccutil_.unicharset.load_from_file(fp, false)) return false;
-  if (!network_str_.DeSerialize(swap, fp)) return false;
-  if (fp->FRead(&training_flags_, sizeof(training_flags_), 1) != 1)
+  if (!network_str_.DeSerialize(fp)) return false;
+  if (fp->FReadEndian(&training_flags_, sizeof(training_flags_), 1) != 1)
     return false;
-  if (fp->FRead(&training_iteration_, sizeof(training_iteration_), 1) != 1)
+  if (fp->FReadEndian(&training_iteration_, sizeof(training_iteration_), 1) !=
+      1)
     return false;
-  if (fp->FRead(&sample_iteration_, sizeof(sample_iteration_), 1) != 1)
+  if (fp->FReadEndian(&sample_iteration_, sizeof(sample_iteration_), 1) != 1)
     return false;
-  if (fp->FRead(&null_char_, sizeof(null_char_), 1) != 1) return false;
-  if (fp->FRead(&weight_range_, sizeof(weight_range_), 1) != 1) return false;
-  if (fp->FRead(&learning_rate_, sizeof(learning_rate_), 1) != 1) return false;
-  if (fp->FRead(&momentum_, sizeof(momentum_), 1) != 1) return false;
+  if (fp->FReadEndian(&null_char_, sizeof(null_char_), 1) != 1) return false;
+  if (fp->FReadEndian(&weight_range_, sizeof(weight_range_), 1) != 1)
+    return false;
+  if (fp->FReadEndian(&learning_rate_, sizeof(learning_rate_), 1) != 1)
+    return false;
+  if (fp->FReadEndian(&momentum_, sizeof(momentum_), 1) != 1) return false;
   if (IsRecoding()) {
-    if (!recoder_.DeSerialize(swap, fp)) return false;
+    if (!recoder_.DeSerialize(fp)) return false;
     RecodedCharID code;
     recoder_.EncodeUnichar(UNICHAR_SPACE, &code);
     if (code(0) != UNICHAR_SPACE) {
@@ -114,7 +116,6 @@ bool LSTMRecognizer::DeSerialize(bool swap, TFile* fp) {
       return false;
     }
   }
-  // TODO(rays) swaps!
   network_->SetRandomizer(&randomizer_);
   network_->CacheXScaleFactor(network_->XScaleFactor());
   return true;
@@ -127,12 +128,11 @@ bool LSTMRecognizer::DeSerialize(bool swap, TFile* fp) {
 // on the unicharset matching. This enables training to deserialize a model
 // from checkpoint or restore without having to go back and reload the
 // dictionary.
-bool LSTMRecognizer::LoadDictionary(const char* data_file_name,
-                                    const char* lang) {
+bool LSTMRecognizer::LoadDictionary(const char* lang, TessdataManager* mgr) {
   delete dict_;
   dict_ = new Dict(&ccutil_);
   dict_->SetupForLoad(Dict::GlobalDawgCache());
-  dict_->LoadLSTM(data_file_name, lang);
+  dict_->LoadLSTM(lang, mgr);
   if (dict_->FinishLoad()) return true;  // Success.
   tprintf("Failed to load any lstm-specific dictionaries for lang %s!!\n",
           lang);

@@ -42,8 +42,7 @@ bool LSTMTester::LoadAllEvalData(const STRING& filenames_file) {
 // loaded.
 bool LSTMTester::LoadAllEvalData(const GenericVector<STRING>& filenames) {
   test_data_.Clear();
-  bool result =
-      test_data_.LoadDocuments(filenames, "eng", CS_SEQUENTIAL, nullptr);
+  bool result = test_data_.LoadDocuments(filenames, CS_SEQUENTIAL, nullptr);
   total_pages_ = test_data_.TotalPages();
   return result;
 }
@@ -120,7 +119,7 @@ STRING LSTMTester::RunEvalSync(int iteration, const double* training_errors,
 // it will call UnlockRunning to release the lock after RunEvalSync completes.
 /* static */
 void* LSTMTester::ThreadFunc(void* lstmtester_void) {
-  LSTMTester* lstmtester = reinterpret_cast<LSTMTester*>(lstmtester_void);
+  LSTMTester* lstmtester = static_cast<LSTMTester*>(lstmtester_void);
   lstmtester->test_result_ = lstmtester->RunEvalSync(
       lstmtester->test_iteration_, lstmtester->test_training_errors_,
       lstmtester->test_model_data_, lstmtester->test_training_stage_);

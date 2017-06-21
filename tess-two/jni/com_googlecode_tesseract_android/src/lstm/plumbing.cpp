@@ -136,7 +136,7 @@ void Plumbing::EnumerateLayers(const STRING* prefix,
     if (prefix) layer_name = *prefix;
     layer_name.add_str_int(":", i);
     if (stack_[i]->IsPlumbingType()) {
-      Plumbing* plumbing = reinterpret_cast<Plumbing*>(stack_[i]);
+      Plumbing* plumbing = static_cast<Plumbing*>(stack_[i]);
       plumbing->EnumerateLayers(&layer_name, layers);
     } else {
       layers->push_back(layer_name);
@@ -150,7 +150,7 @@ Network* Plumbing::GetLayer(const char* id) const {
   int index = strtol(id, &next_id, 10);
   if (index < 0 || index >= stack_.size()) return NULL;
   if (stack_[index]->IsPlumbingType()) {
-    Plumbing* plumbing = reinterpret_cast<Plumbing*>(stack_[index]);
+    Plumbing* plumbing = static_cast<Plumbing*>(stack_[index]);
     ASSERT_HOST(*next_id == ':');
     return plumbing->GetLayer(next_id + 1);
   }
@@ -163,7 +163,7 @@ float* Plumbing::LayerLearningRatePtr(const char* id) const {
   int index = strtol(id, &next_id, 10);
   if (index < 0 || index >= stack_.size()) return NULL;
   if (stack_[index]->IsPlumbingType()) {
-    Plumbing* plumbing = reinterpret_cast<Plumbing*>(stack_[index]);
+    Plumbing* plumbing = static_cast<Plumbing*>(stack_[index]);
     ASSERT_HOST(*next_id == ':');
     return plumbing->LayerLearningRatePtr(next_id + 1);
   }
@@ -187,19 +187,18 @@ bool Plumbing::Serialize(TFile* fp) const {
 }
 
 // Reads from the given file. Returns false in case of error.
-// If swap is true, assumes a big/little-endian swap is needed.
-bool Plumbing::DeSerialize(bool swap, TFile* fp) {
+bool Plumbing::DeSerialize(TFile* fp) {
   stack_.truncate(0);
   no_ = 0;  // We will be modifying this as we AddToStack.
   inT32 size;
-  if (fp->FRead(&size, sizeof(size), 1) != 1) return false;
+  if (fp->FReadEndian(&size, sizeof(size), 1) != 1) return false;
   for (int i = 0; i < size; ++i) {
-    Network* network = CreateFromFile(swap, fp);
+    Network* network = CreateFromFile(fp);
     if (network == NULL) return false;
     AddToStack(network);
   }
   if ((network_flags_ & NF_LAYER_SPECIFIC_LR) &&
-      !learning_rates_.DeSerialize(swap, fp)) {
+      !learning_rates_.DeSerialize(fp)) {
     return false;
   }
   return true;
@@ -228,7 +227,7 @@ void Plumbing::Update(float learning_rate, float momentum, int num_samples) {
 void Plumbing::CountAlternators(const Network& other, double* same,
                                 double* changed) const {
   ASSERT_HOST(other.type() == type_);
-  const Plumbing* plumbing = reinterpret_cast<const Plumbing*>(&other);
+  const Plumbing* plumbing = static_cast<const Plumbing*>(&other);
   ASSERT_HOST(plumbing->stack_.size() == stack_.size());
   for (int i = 0; i < stack_.size(); ++i)
     stack_[i]->CountAlternators(*plumbing->stack_[i], same, changed);

@@ -28,7 +28,11 @@
 #include "networkscratch.h"
 
 // Number of threads to use for parallel calculation of Forward and Backward.
+#ifdef _OPENMP
 const int kNumThreads = 4;
+#else
+const int kNumThreads = 1;
+#endif
 
 namespace tesseract {
 
@@ -56,13 +60,17 @@ StaticShape FullyConnected::OutputShape(const StaticShape& input_shape) const {
   return result;
 }
 
-// Suspends/Enables training by setting the training_ flag. Serialize and
-// DeSerialize only operate on the run-time data if state is false.
+// Suspends/Enables training by setting the training_ flag.
 void FullyConnected::SetEnableTraining(TrainingState state) {
   if (state == TS_RE_ENABLE) {
-    if (training_ == TS_DISABLED) weights_.InitBackward(false);
-    training_ = TS_ENABLED;
+    // Enable only from temp disabled.
+    if (training_ == TS_TEMP_DISABLE) training_ = TS_ENABLED;
+  } else if (state == TS_TEMP_DISABLE) {
+    // Temp disable only from enabled.
+    if (training_ == TS_ENABLED) training_ = state;
   } else {
+    if (state == TS_ENABLED && training_ != TS_ENABLED)
+      weights_.InitBackward();
     training_ = state;
   }
 }
@@ -94,10 +102,8 @@ bool FullyConnected::Serialize(TFile* fp) const {
 }
 
 // Reads from the given file. Returns false in case of error.
-// If swap is true, assumes a big/little-endian swap is needed.
-bool FullyConnected::DeSerialize(bool swap, TFile* fp) {
-  if (!weights_.DeSerialize(IsTraining(), swap, fp)) return false;
-  return true;
+bool FullyConnected::DeSerialize(TFile* fp) {
+  return weights_.DeSerialize(IsTraining(), fp);
 }
 
 // Runs forward propagation of activations on the input line.
@@ -115,7 +121,7 @@ void FullyConnected::Forward(bool debug, const NetworkIO& input,
   temp_lines.init_to_size(kNumThreads, NetworkScratch::FloatVec());
   GenericVector<NetworkScratch::FloatVec> curr_input;
   curr_input.init_to_size(kNumThreads, NetworkScratch::FloatVec());
-  for (int i = 0; i < temp_lines.size(); ++i) {
+  for (int i = 0; i < kNumThreads; ++i) {
     temp_lines[i].Init(no_, scratch);
     curr_input[i].Init(ni_, scratch);
   }
@@ -206,7 +212,7 @@ bool FullyConnected::Backward(bool debug, const NetworkIO& fwd_deltas,
   back_deltas->Resize(fwd_deltas, ni_);
   GenericVector<NetworkScratch::FloatVec> errors;
   errors.init_to_size(kNumThreads, NetworkScratch::FloatVec());
-  for (int i = 0; i < errors.size(); ++i) errors[i].Init(no_, scratch);
+  for (int i = 0; i < kNumThreads; ++i) errors[i].Init(no_, scratch);
   GenericVector<NetworkScratch::FloatVec> temp_backprops;
   if (needs_to_backprop_) {
     temp_backprops.init_to_size(kNumThreads, NetworkScratch::FloatVec());
@@ -289,7 +295,7 @@ void FullyConnected::Update(float learning_rate, float momentum,
 void FullyConnected::CountAlternators(const Network& other, double* same,
                                       double* changed) const {
   ASSERT_HOST(other.type() == type_);
-  const FullyConnected* fc = reinterpret_cast<const FullyConnected*>(&other);
+  const FullyConnected* fc = static_cast<const FullyConnected*>(&other);
   weights_.CountAlternators(fc->weights_, same, changed);
 }
 

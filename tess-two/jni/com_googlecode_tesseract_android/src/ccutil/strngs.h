@@ -20,6 +20,7 @@
 #ifndef           STRNGS_H
 #define           STRNGS_H
 
+#include          <assert.h>
 #include          <stdio.h>
 #include          <string.h>
 #include          "platform.h"
@@ -59,13 +60,19 @@ class TESS_API STRING
     bool Serialize(tesseract::TFile* fp) const;
     // Reads from the given file. Returns false in case of error.
     // If swap is true, assumes a big/little-endian swap is needed.
-    bool DeSerialize(bool swap, tesseract::TFile* fp);
+    bool DeSerialize(tesseract::TFile* fp);
     // As DeSerialize, but only seeks past the data - hence a static method.
-    static bool SkipDeSerialize(bool swap, tesseract::TFile* fp);
+    static bool SkipDeSerialize(tesseract::TFile* fp);
 
     BOOL8 contains(const char c) const;
     inT32 length() const;
     inT32 size() const { return length(); }
+    // Workaround to avoid g++ -Wsign-compare warnings.
+    uinT32 unsigned_size() const {
+      const inT32 len = length();
+      assert(0 <= len);
+      return static_cast<uinT32>(len);
+    }
     const char *string() const;
     const char *c_str() const;
 

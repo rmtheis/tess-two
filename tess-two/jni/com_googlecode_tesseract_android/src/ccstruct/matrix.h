@@ -38,7 +38,7 @@
 class BLOB_CHOICE;
 class BLOB_CHOICE_LIST;
 
-#define NOT_CLASSIFIED reinterpret_cast<BLOB_CHOICE_LIST*>(0)
+#define NOT_CLASSIFIED static_cast<BLOB_CHOICE_LIST*>(0)
 
 // A generic class to hold a 2-D matrix with entries of type T, but can also
 // act as a base class for other implementations, such as a triangular or
@@ -164,16 +164,11 @@ class GENERIC_2D_ARRAY {
     }
     return true;
   }
-  bool DeSerialize(bool swap, tesseract::TFile* fp) {
-    if (!DeSerializeSize(swap, fp)) return false;
-    if (fp->FRead(&empty_, sizeof(empty_), 1) != 1) return false;
-    if (swap) ReverseN(&empty_, sizeof(empty_));
+  bool DeSerialize(tesseract::TFile* fp) {
+    if (!DeSerializeSize(fp)) return false;
+    if (fp->FReadEndian(&empty_, sizeof(empty_), 1) != 1) return false;
     int size = num_elements();
-    if (fp->FRead(array_, sizeof(*array_), size) != size) return false;
-    if (swap) {
-      for (int i = 0; i < size; ++i)
-        ReverseN(&array_[i], sizeof(array_[i]));
-    }
+    if (fp->FReadEndian(array_, sizeof(*array_), size) != size) return false;
     return true;
   }
 
@@ -487,14 +482,10 @@ class GENERIC_2D_ARRAY {
     Resize(size1, size2, empty_);
     return true;
   }
-  bool DeSerializeSize(bool swap, tesseract::TFile* fp) {
+  bool DeSerializeSize(tesseract::TFile* fp) {
     inT32 size1, size2;
-    if (fp->FRead(&size1, sizeof(size1), 1) != 1) return false;
-    if (fp->FRead(&size2, sizeof(size2), 1) != 1) return false;
-    if (swap) {
-      ReverseN(&size1, sizeof(size1));
-      ReverseN(&size2, sizeof(size2));
-    }
+    if (fp->FReadEndian(&size1, sizeof(size1), 1) != 1) return false;
+    if (fp->FReadEndian(&size2, sizeof(size2), 1) != 1) return false;
     Resize(size1, size2, empty_);
     return true;
   }

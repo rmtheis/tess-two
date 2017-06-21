@@ -20,16 +20,13 @@
 #include "config_auto.h"
 #endif
 
+#include <memory> // std::unique_ptr
 #include "allheaders.h"
 #include "baseapi.h"
 #include "math.h"
 #include "renderer.h"
 #include "strngs.h"
 #include "tprintf.h"
-
-#ifdef _MSC_VER
-#include "mathfix.h"
-#endif
 
 /*
 
@@ -159,7 +156,7 @@ CIDToGIDMap.
 
 OK there is a small problem there, if I use GID 0 then Acrobat gets
 upset about it and complains it cannot extract the font. If I set the
-CIDToGIDMap so that all the entries are 1 instead, its happy. Totally
+CIDToGIDMap so that all the entries are 1 instead, it's happy. Totally
 mad......
 
 */
@@ -169,15 +166,15 @@ namespace tesseract {
 // Use for PDF object fragments. Must be large enough
 // to hold a colormap with 256 colors in the verbose
 // PDF representation.
-const int kBasicBufSize = 2048;
+static const int kBasicBufSize = 2048;
 
 // If the font is 10 pts, nominal character width is 5 pts
-const int kCharWidth = 2;
+static const int kCharWidth = 2;
 
 // Used for memory allocation. A codepoint must take no more than this
 // many bytes, when written in the PDF way. e.g. "<0063>" for the
 // letter 'c'
-const int kMaxBytesPerCodepoint = 20;
+static const int kMaxBytesPerCodepoint = 20;
 
 /**********************************************************************
  * PDF Renderer interface implementation
@@ -309,18 +306,19 @@ void ClipBaseline(int ppi, int x1, int y1, int x2, int y2,
     *line_y1 = *line_y2 = (y1 + y2) / 2;
 }
 
-bool CodepointToUtf16be(int code, char *utf16) {
+bool CodepointToUtf16be(int code, char utf16[kMaxBytesPerCodepoint]) {
   if ((code > 0xD7FF && code < 0xE000) || code > 0x10FFFF) {
     tprintf("Dropping invalid codepoint %d\n", code);
     return false;
   }
   if (code < 0x10000) {
-    snprintf(utf16, sizeof(utf16), "%04X", code);
+    snprintf(utf16, kMaxBytesPerCodepoint, "%04X", code);
   } else {
     int a = code - 0x010000;
     int high_surrogate = (0x03FF & (a >> 10)) + 0xD800;
     int low_surrogate = (0x03FF & a) + 0xDC00;
-    snprintf(utf16, sizeof(utf16), "%04X%04X", high_surrogate, low_surrogate);
+    snprintf(utf16, kMaxBytesPerCodepoint,
+             "%04X%04X", high_surrogate, low_surrogate);
   }
   return true;
 }
@@ -459,10 +457,10 @@ char* TessPDFRenderer::GetPDFTextObjects(TessBaseAPI* api,
     STRING pdf_word("");
     int pdf_word_len = 0;
     do {
-      const char *grapheme = res_it->GetUTF8Text(RIL_SYMBOL);
+      const std::unique_ptr<const char[]> grapheme(res_it->GetUTF8Text(RIL_SYMBOL));
       if (grapheme && grapheme[0] != '\0') {
         GenericVector<int> unicodes;
-        UNICHAR::UTF8ToUnicode(grapheme, &unicodes);
+        UNICHAR::UTF8ToUnicode(grapheme.get(), &unicodes);
         char utf16[kMaxBytesPerCodepoint];
         for (int i = 0; i < unicodes.length(); i++) {
           int code = unicodes[i];
@@ -472,7 +470,6 @@ char* TessPDFRenderer::GetPDFTextObjects(TessBaseAPI* api,
           }
         }
       }
-      delete []grapheme;
       res_it->Next(RIL_SYMBOL);
     } while (!res_it->Empty(RIL_BLOCK) && !res_it->IsAtBeginningOf(RIL_WORD));
     if (word_length > 0 && pdf_word_len > 0 && fontsize > 0) {
@@ -569,14 +566,13 @@ bool TessPDFRenderer::BeginDocumentHandler() {
 
   // CIDTOGIDMAP
   const int kCIDToGIDMapSize = 2 * (1 << 16);
-  unsigned char *cidtogidmap = new unsigned char[kCIDToGIDMapSize];
+  const std::unique_ptr</*non-const*/ unsigned char[]> cidtogidmap(new unsigned char[kCIDToGIDMapSize]);
   for (int i = 0; i < kCIDToGIDMapSize; i++) {
     cidtogidmap[i] = (i % 2) ? 1 : 0;
   }
   size_t len;
   unsigned char *comp =
-      zlibCompress(cidtogidmap, kCIDToGIDMapSize, &len);
-  delete[] cidtogidmap;
+      zlibCompress(cidtogidmap.get(), kCIDToGIDMapSize, &len);
   n = snprintf(buf, sizeof(buf),
                "5 0 obj\n"
                "<<\n"
@@ -669,10 +665,9 @@ bool TessPDFRenderer::BeginDocumentHandler() {
   fseek(fp, 0, SEEK_END);
   long int size = ftell(fp);
   fseek(fp, 0, SEEK_SET);
-  char *buffer = new char[size];
-  if (fread(buffer, 1, size, fp) != size) {
+  const std::unique_ptr</*non-const*/ char[]> buffer(new char[size]);
+  if (fread(buffer.get(), 1, size, fp) != static_cast<unsigned long>(size)) {
     fclose(fp);
-    delete[] buffer;
     return false;
   }
   fclose(fp);
@@ -685,13 +680,11 @@ bool TessPDFRenderer::BeginDocumentHandler() {
                ">>\n"
                "stream\n", size, size);
   if (n >= sizeof(buf)) {
-    delete[] buffer;
     return false;
   }
   AppendString(buf);
   objsize  = strlen(buf);
-  AppendData(buffer, size);
-  delete[] buffer;
+  AppendData(buffer.get(), size);
   objsize += size;
   AppendString(endstream_endobj);
   objsize += strlen(endstream_endobj);
@@ -715,7 +708,7 @@ bool TessPDFRenderer::imageToPDFObj(Pix *pix,
   if (!filename)
     return false;
 
-  L_COMP_DATA *cid = NULL;
+  L_Compressed_Data *cid = NULL;
   const int kJpegQuality = 85;
 
   int format, sad;
@@ -886,12 +879,11 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI* api) {
   AppendPDFObject(buf);
 
   // CONTENTS
-  char* pdftext = GetPDFTextObjects(api, width, height);
-  long pdftext_len = strlen(pdftext);
-  unsigned char *pdftext_casted = reinterpret_cast<unsigned char *>(pdftext);
+  const std::unique_ptr</*non-const*/ char[]> pdftext(GetPDFTextObjects(api, width, height));
+  const long pdftext_len = strlen(pdftext.get());
   size_t len;
   unsigned char *comp_pdftext =
-      zlibCompress(pdftext_casted, pdftext_len, &len);
+      zlibCompress(reinterpret_cast<unsigned char *>(pdftext.get()), pdftext_len, &len);
   long comp_pdftext_len = len;
   n = snprintf(buf, sizeof(buf),
                "%ld 0 obj\n"
@@ -900,7 +892,6 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI* api) {
                ">>\n"
                "stream\n", obj_, comp_pdftext_len);
   if (n >= sizeof(buf)) {
-    delete[] pdftext;
     lept_free(comp_pdftext);
     return false;
   }
@@ -909,7 +900,6 @@ bool TessPDFRenderer::AddImageHandler(TessBaseAPI* api) {
   AppendData(reinterpret_cast<char *>(comp_pdftext), comp_pdftext_len);
   objsize += comp_pdftext_len;
   lept_free(comp_pdftext);
-  delete[] pdftext;
   const char *b2 =
       "endstream\n"
       "endobj\n";
@@ -951,7 +941,7 @@ bool TessPDFRenderer::EndDocumentHandler() {
   if (n >= sizeof(buf)) return false;
   AppendString(buf);
   size_t pages_objsize  = strlen(buf);
-  for (size_t i = 0; i < pages_.size(); i++) {
+  for (size_t i = 0; i < pages_.unsigned_size(); i++) {
     n = snprintf(buf, sizeof(buf),
                  "%ld 0 R ", pages_[i]);
     if (n >= sizeof(buf)) return false;

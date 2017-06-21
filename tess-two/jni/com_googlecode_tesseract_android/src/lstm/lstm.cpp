@@ -82,7 +82,7 @@ LSTM::LSTM(const STRING& name, int ni, int ns, int no, bool two_dimensional,
     // networkbuilder ensures this is always true.
     ASSERT_HOST(no == ns);
   } else if (type_ == NT_LSTM_SOFTMAX || type_ == NT_LSTM_SOFTMAX_ENCODED) {
-    nf_ = type_ == NT_LSTM_SOFTMAX ? no_ : IntCastRounded(ceil(log(no_)/log(2)));
+    nf_ = type_ == NT_LSTM_SOFTMAX ? no_ : IntCastRounded(ceil(log2(no_)));
     softmax_ = new FullyConnected("LSTM Softmax", ns_, no_, NT_SOFTMAX);
   } else {
     tprintf("%d is invalid type of LSTM!\n", type);
@@ -107,14 +107,18 @@ StaticShape LSTM::OutputShape(const StaticShape& input_shape) const {
 // DeSerialize only operate on the run-time data if state is false.
 void LSTM::SetEnableTraining(TrainingState state) {
   if (state == TS_RE_ENABLE) {
-    if (training_ == TS_DISABLED) {
+    // Enable only from temp disabled.
+    if (training_ == TS_TEMP_DISABLE) training_ = TS_ENABLED;
+  } else if (state == TS_TEMP_DISABLE) {
+    // Temp disable only from enabled.
+    if (training_ == TS_ENABLED) training_ = state;
+  } else {
+    if (state == TS_ENABLED && training_ != TS_ENABLED) {
       for (int w = 0; w < WT_COUNT; ++w) {
         if (w == GFS && !Is2D()) continue;
-        gate_weights_[w].InitBackward(false);
+        gate_weights_[w].InitBackward();
       }
     }
-    training_ = TS_ENABLED;
-  } else {
     training_ = state;
   }
   if (softmax_ != NULL) softmax_->SetEnableTraining(state);
@@ -173,21 +177,20 @@ bool LSTM::Serialize(TFile* fp) const {
 }
 
 // Reads from the given file. Returns false in case of error.
-// If swap is true, assumes a big/little-endian swap is needed.
-bool LSTM::DeSerialize(bool swap, TFile* fp) {
-  if (fp->FRead(&na_, sizeof(na_), 1) != 1) return false;
-  if (swap) ReverseN(&na_, sizeof(na_));
+
+bool LSTM::DeSerialize(TFile* fp) {
+  if (fp->FReadEndian(&na_, sizeof(na_), 1) != 1) return false;
   if (type_ == NT_LSTM_SOFTMAX) {
     nf_ = no_;
   } else if (type_ == NT_LSTM_SOFTMAX_ENCODED) {
-    nf_ = IntCastRounded(ceil(log(no_)/log(2)));
+    nf_ = IntCastRounded(ceil(log2(no_)));
   } else {
     nf_ = 0;
   }
   is_2d_ = false;
   for (int w = 0; w < WT_COUNT; ++w) {
     if (w == GFS && !Is2D()) continue;
-    if (!gate_weights_[w].DeSerialize(IsTraining(), swap, fp)) return false;
+    if (!gate_weights_[w].DeSerialize(IsTraining(), fp)) return false;
     if (w == CI) {
       ns_ = gate_weights_[CI].NumOutputs();
       is_2d_ = na_ - nf_ == ni_ + 2 * ns_;
@@ -195,11 +198,10 @@ bool LSTM::DeSerialize(bool swap, TFile* fp) {
   }
   delete softmax_;
   if (type_ == NT_LSTM_SOFTMAX || type_ == NT_LSTM_SOFTMAX_ENCODED) {
-    softmax_ =
-        reinterpret_cast<FullyConnected*>(Network::CreateFromFile(swap, fp));
-    if (softmax_ == NULL) return false;
+    softmax_ = static_cast<FullyConnected*>(Network::CreateFromFile(fp));
+    if (softmax_ == nullptr) return false;
   } else {
-    softmax_ = NULL;
+    softmax_ = nullptr;
   }
   return true;
 }
@@ -649,7 +651,7 @@ void LSTM::Update(float learning_rate, float momentum, int num_samples) {
 void LSTM::CountAlternators(const Network& other, double* same,
                             double* changed) const {
   ASSERT_HOST(other.type() == type_);
-  const LSTM* lstm = reinterpret_cast<const LSTM*>(&other);
+  const LSTM* lstm = static_cast<const LSTM*>(&other);
   for (int w = 0; w < WT_COUNT; ++w) {
     if (w == GFS && !Is2D()) continue;
     gate_weights_[w].CountAlternators(lstm->gate_weights_[w], same, changed);

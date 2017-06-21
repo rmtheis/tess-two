@@ -22,7 +22,6 @@
 #include "emalloc.h"
 #include "callcpp.h"
 #include "danerror.h"
-#include "freelist.h"
 #include "scanutils.h"
 
 #include <assert.h>
@@ -58,12 +57,7 @@ BOOL8 AddFeature(FEATURE_SET FeatureSet, FEATURE Feature) {
  * @note History: Mon May 21 13:33:27 1990, DSJ, Created.
  */
 void FreeFeature(FEATURE Feature) {
-  if (Feature) {
-    free_struct (Feature, sizeof (FEATURE_STRUCT)
-      + sizeof (FLOAT32) * (Feature->Type->NumParams - 1),
-      "sizeof(FEATURE_STRUCT)+sizeof(FLOAT32)*(NumParamsIn(Feature)-1)");
-  }
-
+  free(Feature);
 }                                /* FreeFeature */
 
 /**
@@ -80,7 +74,7 @@ void FreeFeatureSet(FEATURE_SET FeatureSet) {
   if (FeatureSet) {
     for (i = 0; i < FeatureSet->NumFeatures; i++)
       FreeFeature(FeatureSet->Features[i]);
-    memfree(FeatureSet);
+    free(FeatureSet);
   }
 }                                /* FreeFeatureSet */
 
@@ -94,10 +88,9 @@ void FreeFeatureSet(FEATURE_SET FeatureSet) {
 FEATURE NewFeature(const FEATURE_DESC_STRUCT* FeatureDesc) {
   FEATURE Feature;
 
-  Feature = (FEATURE) alloc_struct (sizeof (FEATURE_STRUCT) +
+  Feature = (FEATURE) malloc(sizeof(FEATURE_STRUCT) +
     (FeatureDesc->NumParams - 1) *
-    sizeof (FLOAT32),
-    "sizeof(FEATURE_STRUCT)+sizeof(FLOAT32)*(NumParamsIn(Feature)-1)");
+    sizeof (FLOAT32));
   Feature->Type = FeatureDesc;
   return (Feature);
 

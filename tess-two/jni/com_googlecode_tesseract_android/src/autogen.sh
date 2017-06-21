@@ -59,7 +59,7 @@ else
   bail_out
 fi
 
-# create m4 directory if it not exists
+# create m4 directory if it does not exist
 if [ ! -d m4 ];  then
     mkdir m4
 fi
@@ -104,7 +104,7 @@ autoheader -f || bail_out
 # they are copied from the system so they can be used in a distribution.
 
 echo "Running automake --add-missing --copy"
-automake --add-missing -c  -Wno-portability > /dev/null || bail_out
+automake --add-missing --copy --warnings=all || bail_out
 
 # --- Step 5: Generate configure and include/miaconfig.h from:
 #             . configure.ac

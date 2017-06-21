@@ -24,7 +24,6 @@
 #include "matrix.h"
 #include "tprintf.h"
 #include "danerror.h"
-#include "freelist.h"
 #include <math.h>
 
 #define HOTELLING 1  // If true use Hotelling's test to decide where to split.
@@ -546,7 +545,7 @@ LIST ClusterSamples(CLUSTERER *Clusterer, CLUSTERCONFIG *Config) {
  */
 void FreeClusterer(CLUSTERER *Clusterer) {
   if (Clusterer != NULL) {
-    memfree (Clusterer->ParamDesc);
+    free(Clusterer->ParamDesc);
     if (Clusterer->KDTree != NULL)
       FreeKDTree (Clusterer->KDTree);
     if (Clusterer->Root != NULL)
@@ -558,7 +557,7 @@ void FreeClusterer(CLUSTERER *Clusterer) {
           FreeBuckets(Clusterer->bucket_cache[d][c]);
     }
 
-    memfree(Clusterer);
+    free(Clusterer);
   }
 }                                // FreeClusterer
 
@@ -593,19 +592,14 @@ void FreePrototype(void *arg) {  //PROTOTYPE     *Prototype)
     Prototype->Cluster->Prototype = FALSE;
 
   // deallocate the prototype statistics and then the prototype itself
-  if (Prototype->Distrib != NULL)
-    memfree (Prototype->Distrib);
-  if (Prototype->Mean != NULL)
-    memfree (Prototype->Mean);
+  free (Prototype->Distrib);
+  free (Prototype->Mean);
   if (Prototype->Style != spherical) {
-    if (Prototype->Variance.Elliptical != NULL)
-      memfree (Prototype->Variance.Elliptical);
-    if (Prototype->Magnitude.Elliptical != NULL)
-      memfree (Prototype->Magnitude.Elliptical);
-    if (Prototype->Weight.Elliptical != NULL)
-      memfree (Prototype->Weight.Elliptical);
+    free (Prototype->Variance.Elliptical);
+    free (Prototype->Magnitude.Elliptical);
+    free (Prototype->Weight.Elliptical);
   }
-  memfree(Prototype);
+  free(Prototype);
 }                                // FreePrototype
 
 /**
@@ -756,7 +750,7 @@ void CreateClusterTree(CLUSTERER *Clusterer) {
   FreeKDTree(context.tree);
   Clusterer->KDTree = NULL;
   delete context.heap;
-  memfree(context.candidates);
+  free(context.candidates);
 }                                // CreateClusterTree
 
 /**
@@ -1129,9 +1123,9 @@ PROTOTYPE *TestEllipticalProto(CLUSTERER *Clusterer,
   if (TotalDims < N + 1 || TotalDims < 2)
     return NULL;
   const int kMatrixSize = N * N * sizeof(FLOAT32);
-  FLOAT32* Covariance = reinterpret_cast<FLOAT32 *>(Emalloc(kMatrixSize));
-  FLOAT32* Inverse = reinterpret_cast<FLOAT32 *>(Emalloc(kMatrixSize));
-  FLOAT32* Delta = reinterpret_cast<FLOAT32*>(Emalloc(N * sizeof(FLOAT32)));
+  FLOAT32* Covariance = static_cast<FLOAT32 *>(Emalloc(kMatrixSize));
+  FLOAT32* Inverse = static_cast<FLOAT32 *>(Emalloc(kMatrixSize));
+  FLOAT32* Delta = static_cast<FLOAT32*>(Emalloc(N * sizeof(FLOAT32)));
   // Compute a new covariance matrix that only uses essential features.
   for (int i = 0; i < N; ++i) {
     int row_offset = i * N;
@@ -1173,9 +1167,9 @@ PROTOTYPE *TestEllipticalProto(CLUSTERER *Clusterer,
     }
     Tsq += Delta[x] * temp;
   }
-  memfree(Covariance);
-  memfree(Inverse);
-  memfree(Delta);
+  free(Covariance);
+  free(Inverse);
+  free(Delta);
   // Changed this function to match the formula in
   // Statistical Methods in Medical Research p 473
   // By Peter Armitage, Geoffrey Berry, J. N. S. Matthews.
@@ -1485,7 +1479,7 @@ ComputeStatistics (inT16 N, PARAM_DESC ParamDesc[], CLUSTER * Cluster) {
                                        1.0 / N);
 
   // release temporary memory and return
-  memfree(Distance);
+  free(Distance);
   return (Statistics);
 }                                // ComputeStatistics
 
@@ -1755,13 +1749,13 @@ BUCKETS *MakeBuckets(DISTRIBUTION Distribution,
   BOOL8 Symmetrical;
 
   // allocate memory needed for data structure
-  Buckets = reinterpret_cast<BUCKETS*>(Emalloc(sizeof(BUCKETS)));
+  Buckets = static_cast<BUCKETS*>(Emalloc(sizeof(BUCKETS)));
   Buckets->NumberOfBuckets = OptimumNumberOfBuckets(SampleCount);
   Buckets->SampleCount = SampleCount;
   Buckets->Confidence = Confidence;
-  Buckets->Count = reinterpret_cast<uinT32*>(
+  Buckets->Count = static_cast<uinT32*>(
       Emalloc(Buckets->NumberOfBuckets * sizeof(uinT32)));
-  Buckets->ExpectedCount = reinterpret_cast<FLOAT32*>(
+  Buckets->ExpectedCount = static_cast<FLOAT32*>(
       Emalloc(Buckets->NumberOfBuckets * sizeof(FLOAT32)));
 
   // initialize simple fields
@@ -2157,10 +2151,10 @@ BOOL8 DistributionOK(BUCKETS *Buckets) {
  * @note History: 6/5/89, DSJ, Created.
  */
 void FreeStatistics(STATISTICS *Statistics) {
-  memfree (Statistics->CoVariance);
-  memfree (Statistics->Min);
-  memfree (Statistics->Max);
-  memfree(Statistics);
+  free(Statistics->CoVariance);
+  free(Statistics->Min);
+  free(Statistics->Max);
+  free(Statistics);
 }                                // FreeStatistics
 
 /**
@@ -2190,7 +2184,7 @@ void FreeCluster(CLUSTER *Cluster) {
   if (Cluster != NULL) {
     FreeCluster (Cluster->Left);
     FreeCluster (Cluster->Right);
-    memfree(Cluster);
+    free(Cluster);
   }
 }                                // FreeCluster
 
@@ -2487,8 +2481,7 @@ CLUSTER * Cluster, FLOAT32 MaxIllegal)
   NumIllegalInCluster = 0;
 
   if (Clusterer->NumChar > NumFlags) {
-    if (CharFlags != NULL)
-      memfree(CharFlags);
+    free(CharFlags);
     NumFlags = Clusterer->NumChar;
     CharFlags = (BOOL8 *) Emalloc (NumFlags * sizeof (BOOL8));
   }

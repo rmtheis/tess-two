@@ -27,6 +27,7 @@
 #include "allheaders.h"
 #include "baseapi.h"
 #include "basedir.h"
+#include "dict.h"
 #include "openclwrapper.h"
 #include "osdetect.h"
 #include "renderer.h"
@@ -169,7 +170,7 @@ void PrintHelpMessage(const char* program) {
       "  --help-oem            Show OCR Engine modes.\n"
       "  -v, --version         Show version information.\n"
       "  --list-langs          List available languages for tesseract engine.\n"
-      "  --print-parameters    Print tesseract parameters to stdout.\n";
+      "  --print-parameters    Print tesseract parameters.\n";
 
   printf("\n%s", single_options);
 }
@@ -403,7 +404,7 @@ int main(int argc, char** argv) {
   static GenericVector<STRING> vars_vec;
   static GenericVector<STRING> vars_values;
 
-#if !defined(DEBUG)
+#ifdef NDEBUG
   // Disable debugging and informational messages from Leptonica.
   setMsgSeverity(L_SEVERITY_ERROR);
 #endif
@@ -424,7 +425,14 @@ int main(int argc, char** argv) {
   }
 
   PERF_COUNT_START("Tesseract:main")
-  tesseract::TessBaseAPI api;
+
+  // Call GlobalDawgCache here to create the global DawgCache object before
+  // the TessBaseAPI object. This fixes the order of destructor calls:
+  // first TessBaseAPI must be destructed, DawgCache must be the last object.
+  tesseract::Dict::GlobalDawgCache();
+
+  // Avoid memory leak caused by auto variable when exit() is called.
+  static tesseract::TessBaseAPI api;
 
   api.SetOutputName(outputbase);
 
@@ -432,14 +440,14 @@ int main(int argc, char** argv) {
                              argc - arg_i, &vars_vec, &vars_values, false);
   if (init_failed) {
     fprintf(stderr, "Could not initialize tesseract.\n");
-    exit(1);
+    return EXIT_FAILURE;
   }
 
   SetVariablesFromCLArgs(&api, argc, argv);
 
   if (list_langs) {
     PrintLangsList(&api);
-    exit(0);
+    return EXIT_SUCCESS;
   }
 
   if (print_parameters) {
@@ -447,18 +455,18 @@ int main(int argc, char** argv) {
      fprintf(stdout, "Tesseract parameters:\n");
      api.PrintVariables(fout);
      api.End();
-     exit(0);
+     return EXIT_SUCCESS;
   }
 
   FixPageSegMode(&api, pagesegmode);
 
   if (pagesegmode == tesseract::PSM_AUTO_ONLY) {
-    int ret_val = 0;
+    int ret_val = EXIT_SUCCESS;
 
     Pix* pixs = pixRead(image);
     if (!pixs) {
       fprintf(stderr, "Cannot open input file: %s\n", image);
-      exit(2);
+      return 2;
     }
 
     api.SetImage(pixs);
@@ -476,13 +484,13 @@ int main(int argc, char** argv) {
           "Deskew angle: %.4f\n",
           orientation, direction, order, deskew_angle);
     } else {
-      ret_val = 1;
+      ret_val = EXIT_FAILURE;
     }
 
     delete it;
 
     pixDestroy(&pixs);
-    exit(ret_val);
+    return ret_val;
   }
 
   // set in_training_mode to true when using one of these configs:
@@ -493,7 +501,8 @@ int main(int argc, char** argv) {
       (api.GetBoolVariable("tessedit_resegment_from_boxes", &b) && b) ||
       (api.GetBoolVariable("tessedit_make_boxes_from_boxes", &b) && b);
 
-  tesseract::PointerVector<tesseract::TessResultRenderer> renderers;
+  // Avoid memory leak caused by auto variable when exit() is called.
+  static tesseract::PointerVector<tesseract::TessResultRenderer> renderers;
 
   if (in_training_mode) {
     renderers.push_back(NULL);
@@ -506,10 +515,11 @@ int main(int argc, char** argv) {
     bool succeed = api.ProcessPages(image, NULL, 0, renderers[0]);
     if (!succeed) {
       fprintf(stderr, "Error during processing.\n");
-      exit(1);
+      return EXIT_FAILURE;
     }
   }
 
   PERF_COUNT_END
-  return 0;                      // Normal exit
+
+  return EXIT_SUCCESS;
 }

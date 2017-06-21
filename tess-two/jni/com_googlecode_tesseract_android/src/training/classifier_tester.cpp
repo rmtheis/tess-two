@@ -26,12 +26,12 @@
 #include "params.h"
 #include "strngs.h"
 #include "tessclassifier.h"
+#include "tesseractclass.h"
 
 STRING_PARAM_FLAG(classifier, "", "Classifier to test");
 STRING_PARAM_FLAG(lang, "eng", "Language to test");
 STRING_PARAM_FLAG(tessdata_dir, "", "Directory of traineddata files");
 DECLARE_INT_PARAM_FLAG(debug_level);
-DECLARE_STRING_PARAM_FLAG(T);
 
 enum ClassifierName {
   CN_PRUNER,
@@ -71,7 +71,7 @@ static tesseract::ShapeClassifier* InitializeClassifier(
       return nullptr;
     }
     tesseract = const_cast<tesseract::Tesseract*>((*api)->tesseract());
-    classify = reinterpret_cast<tesseract::Classify*>(tesseract);
+    classify = static_cast<tesseract::Classify*>(tesseract);
     if (classify->shape_table() == nullptr) {
       fprintf(stderr, "Tesseract must contain a ShapeTable!\n");
       return nullptr;
@@ -79,13 +79,6 @@ static tesseract::ShapeClassifier* InitializeClassifier(
   }
   tesseract::ShapeClassifier* shape_classifier = nullptr;
 
-  if (!FLAGS_T.empty()) {
-    const char* config_name;
-    while ((config_name = GetNextFilename(argc, argv)) != nullptr) {
-      tprintf("Reading config file %s ...\n", config_name);
-      (*api)->ReadConfigFile(config_name);
-    }
-  }
   if (classifier == CN_PRUNER) {
     shape_classifier = new tesseract::TessClassifier(true, classify);
   } else if (classifier == CN_FULL) {
