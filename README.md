@@ -84,6 +84,12 @@ submitting a pull request through GitHub.
     See the License for the specific language governing permissions and
     limitations under the License.
 
+## See Also
+
+The Google Mobile Vision API team has made available an OCR capability that is
+provided to developers through the Google Play Services library: The
+[Mobile Vision API][mobile-vision-api] offers a simple API for OCR that
+currently works for Latin-based characters.
 
 [tesseract-android-tools]: https://github.com/alanv/tesseract-android-tools
 [tesseract-ocr]: https://github.com/tesseract-ocr/tesseract
@@ -93,3 +99,4 @@ submitting a pull request through GitHub.
 [javadoc]: https://rmtheis.github.io/tess-two/javadoc/index.html
 [semantic-versioning]: http://semver.org
 [stackoverflow]: https://stackoverflow.com/
+[mobile-vision-api]: https://developers.google.com/vision/
