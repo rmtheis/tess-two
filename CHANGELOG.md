@@ -1,7 +1,23 @@
 # Change Log
 
 ## [Unreleased](https://github.com/rmtheis/tess-two/tree/HEAD)
-[Full Changelog](https://github.com/rmtheis/tess-two/compare/7.0.0...HEAD)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/8.0.0...HEAD)
+
+## [8.0.0](https://github.com/rmtheis/tess-two/tree/8.0.0) (2017-08-13)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/7.0.0...8.0.0)
+
+**Change:**
+
+- This version removes the 64-bit ABIs from the default build in order to avoid crashes due to [\#197](https://github.com/rmtheis/tess-two/issues/197)
+
+**Closed issues:**
+
+- Build failure with Android Studio 3 and NDK ver. 15.x [\#215](https://github.com/rmtheis/tess-two/issues/215)
+
+**Merged pull requests:**
+
+- clone tag 3.04.00 from tessdata [\#217](https://github.com/rmtheis/tess-two/pull/217) ([ivankolev](https://github.com/ivankolev))
+- See issue \#215 [\#216](https://github.com/rmtheis/tess-two/pull/216) ([ivankolev](https://github.com/ivankolev))
 
 ## [7.0.0](https://github.com/rmtheis/tess-two/tree/7.0.0) (2017-06-12)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/6.3.0...7.0.0)
