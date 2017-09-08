@@ -54,7 +54,7 @@ public class ResultIterator extends PageIterator {
      * @param level the page iterator level. See {@link PageIteratorLevel}.
      * @return the text string for the current object at the given level.
      */
-    public String getUTF8Text(int level) {
+    public String getUTF8Text(@PageIteratorLevel.Level int level) {
         return nativeGetUTF8Text(mNativeResultIterator, level);
     }
 
@@ -65,7 +65,7 @@ public class ResultIterator extends PageIterator {
      * @param level the page iterator level. See {@link PageIteratorLevel}.
      * @return the mean confidence of the current object at the given level.
      */
-    public float confidence(int level) {
+    public float confidence(@PageIteratorLevel.Level int level) {
         return nativeConfidence(mNativeResultIterator, level);
     }
 
@@ -77,7 +77,7 @@ public class ResultIterator extends PageIterator {
      * @param level the page iterator level. See {@link PageIteratorLevel}.
      * @return {@code true} if iterator points to the start of an object at the given level.
      */
-    public boolean isAtBeginningOf(int level) {
+    public boolean isAtBeginningOf(@PageIteratorLevel.Level int level) {
         return nativeIsAtBeginningOf(mNativeResultIterator, level);
     }
 
@@ -89,7 +89,8 @@ public class ResultIterator extends PageIterator {
      * @param element the page iterator level. See {@link PageIteratorLevel}.
      * @return {@code true} if iterator points to the last element in a given level.
      */
-    public boolean isAtFinalElement(int level, int element) {
+    public boolean isAtFinalElement(@PageIteratorLevel.Level int level,
+                                    @PageIteratorLevel.Level int element) {
         return nativeIsAtFinalElement(mNativeResultIterator, level, element);
     }
 

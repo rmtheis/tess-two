@@ -16,6 +16,12 @@
 
 package com.googlecode.leptonica.android;
 
+import android.support.annotation.IntDef;
+
+import java.lang.annotation.Retention;
+
+import static java.lang.annotation.RetentionPolicy.SOURCE;
+
 /**
  * Edge detection.
  */
@@ -28,6 +34,9 @@ public class Edge {
     }
 
     // Edge orientation flags
+    @Retention(SOURCE)
+    @IntDef({L_HORIZONTAL_EDGES, L_VERTICAL_EDGES, L_ALL_EDGES})
+    public @interface EdgeOrientationFlag {}
 
     /** Filters for horizontal edges */
     public static final int L_HORIZONTAL_EDGES = 0;
@@ -65,7 +74,7 @@ public class Edge {
      *        L_VERTICAL_EDGES, L_ALL_EDGES)
      * @return a new Pix image (8bpp, edges are brighter), or null on error
      */
-    public static Pix pixSobelEdgeFilter(Pix pixs, int orientFlag) {
+    public static Pix pixSobelEdgeFilter(Pix pixs, @EdgeOrientationFlag int orientFlag) {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
         if (pixs.getDepth() != 8)

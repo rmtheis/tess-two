@@ -16,6 +16,8 @@
 
 package com.googlecode.leptonica.android;
 
+import android.support.annotation.FloatRange;
+
 /**
  * Image binarization methods.
  * 
@@ -118,8 +120,8 @@ public class Binarize {
      *            for standard Otsu).
      * @return A 1 bpp thresholded PIX image.
      */
-    public static Pix otsuAdaptiveThreshold(
-            Pix pixs, int sizeX, int sizeY, int smoothX, int smoothY, float scoreFraction) {
+    public static Pix otsuAdaptiveThreshold(Pix pixs, int sizeX, int sizeY, int smoothX, int smoothY,
+                                            @FloatRange(from=0.0, to=1.0) float scoreFraction) {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
         if (pixs.getDepth() != 8)
@@ -185,7 +187,8 @@ public class Binarize {
      * @param ny Subdivision into tiles; &gt;= 1
      * @return A 1 bpp thresholded PIX image.
      */
-    public static Pix sauvolaBinarizeTiled(Pix pixs, int whsize, float factor, int nx, int ny) {
+    public static Pix sauvolaBinarizeTiled(Pix pixs, int whsize, @FloatRange(from=0.0) float factor,
+                                           int nx, int ny) {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
         if (pixs.getDepth() != 8)

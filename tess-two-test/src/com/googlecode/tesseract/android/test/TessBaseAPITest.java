@@ -16,7 +16,6 @@
 
 package com.googlecode.tesseract.android.test;
 
-import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Canvas;

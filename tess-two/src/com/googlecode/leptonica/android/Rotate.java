@@ -16,6 +16,8 @@
 
 package com.googlecode.leptonica.android;
 
+import android.support.annotation.IntRange;
+
 /**
  * @author alanv@google.com (Alan Viverette)
  */
@@ -101,7 +103,7 @@ public class Rotate {
      * @param quads 0-3; number of 90 degree cw rotations
      * @return the rotated source image
      */
-    public static Pix rotateOrth(Pix pixs, int quads) {
+    public static Pix rotateOrth(Pix pixs, @IntRange(from=0, to=3) int quads) {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
         if (quads < 0 || quads > 3)

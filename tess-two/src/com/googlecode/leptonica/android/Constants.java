@@ -16,6 +16,12 @@
 
 package com.googlecode.leptonica.android;
 
+import android.support.annotation.IntDef;
+
+import java.lang.annotation.Retention;
+
+import static java.lang.annotation.RetentionPolicy.SOURCE;
+
 /**
  * Leptonica constants.
  *
@@ -46,6 +52,10 @@ public class Constants {
      * and L_INSERT and L_NOCOPY are always 0.
      */
 
+    @Retention(SOURCE)
+    @IntDef({L_INSERT, L_COPY, L_CLONE})
+    public @interface StorageFlag {}
+
     /* Stuff it in; no copy, clone or copy-clone */
     public static final int L_INSERT = 0;
 
@@ -65,11 +75,20 @@ public class Constants {
      *                              Sort flags                                  *
      *--------------------------------------------------------------------------*/
 
+    @Retention(SOURCE)
+    @IntDef({L_SORT_INCREASING, L_SORT_DECREASING})
+    public @interface SortOrder {}
+
     /* Sort in increasing order */
     public static final int L_SORT_INCREASING = 1;
 
     /* Sort in decreasing order */
     public static final int L_SORT_DECREASING = 2;
+
+    @Retention(SOURCE)
+    @IntDef({L_SORT_BY_X, L_SORT_BY_Y, L_SORT_BY_WIDTH, L_SORT_BY_HEIGHT, L_SORT_BY_MIN_DIMENSION,
+            L_SORT_BY_MAX_DIMENSION, L_SORT_BY_PERIMETER, L_SORT_BY_ASPECT_RATIO})
+    public @interface SortBy {}
 
     /* Sort box or c.c. by horiz location */
     public static final int L_SORT_BY_X = 3;

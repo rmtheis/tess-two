@@ -60,7 +60,7 @@ public class PageIterator {
      * @return {@code false} if the end of the page was reached, {@code true}
      *         otherwise.
      */
-    public boolean next(int level) {
+    public boolean next(@PageIteratorLevel.Level int level) {
         return nativeNext(mNativePageIterator, level);
     }
 
@@ -90,7 +90,7 @@ public class PageIterator {
      * @param level the page iterator level. See {@link PageIteratorLevel}.
      * @return the bounding rectangle of the current object at the given level
      */
-    public int[] getBoundingBox(int level) {
+    public int[] getBoundingBox(@PageIteratorLevel.Level int level) {
     	return nativeBoundingBox(mNativePageIterator, level);
     }
     
@@ -102,7 +102,7 @@ public class PageIterator {
      * @param level the page iterator level. See {@link PageIteratorLevel}.
      * @return the bounding rectangle of the current object at the given level
      */
-    public Rect getBoundingRect(int level) {
+    public Rect getBoundingRect(@PageIteratorLevel.Level int level) {
         int[] box = getBoundingBox(level);
         return new Rect(box[0], box[1], box[2], box[3]);
     }

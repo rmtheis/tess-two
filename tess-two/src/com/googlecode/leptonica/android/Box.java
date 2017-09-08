@@ -17,6 +17,7 @@
 package com.googlecode.leptonica.android;
 
 import android.graphics.Rect;
+import android.support.annotation.Size;
 import android.util.Log;
 
 /**
@@ -186,7 +187,7 @@ public class Box {
      * @param geometry A 4+ element integer array to fill with coordinates.
      * @return <code>true</code> on success
      */
-    public boolean getGeometry(int[] geometry) {
+    public boolean getGeometry(@Size(min=4) int[] geometry) {
         if (mRecycled)
             throw new IllegalStateException();
 

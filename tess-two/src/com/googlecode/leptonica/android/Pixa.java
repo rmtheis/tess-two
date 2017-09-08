@@ -17,6 +17,7 @@
 package com.googlecode.leptonica.android;
 
 import android.graphics.Rect;
+import android.support.annotation.Size;
 import android.util.Log;
 
 import java.io.File;
@@ -138,7 +139,7 @@ public class Pixa implements Iterable<Pix> {
      *            Constants.L_SORT_INCREASING or Constants.L_SORT_DECREASING.
      * @return a sorted copy of this Pixa
      */
-    public Pixa sort(int field, int order) {
+    public Pixa sort(@Constants.SortBy int field, @Constants.SortOrder int order) {
         if (mRecycled)
             throw new IllegalStateException();
 
@@ -211,7 +212,7 @@ public class Pixa implements Iterable<Pix> {
      * @param mode The mode in which to add this Pix, typically
      *            Constants.L_CLONE.
      */
-    public void addPix(Pix pix, int mode) {
+    public void addPix(Pix pix, @Constants.StorageFlag int mode) {
         if (mRecycled)
             throw new IllegalStateException();
 
@@ -225,7 +226,7 @@ public class Pixa implements Iterable<Pix> {
      * @param mode The mode in which to add this Box, typically
      *            Constants.L_CLONE.
      */
-    public void addBox(Box box, int mode) {
+    public void addBox(Box box, @Constants.StorageFlag int mode) {
         if (mRecycled)
             throw new IllegalStateException();
 
@@ -240,7 +241,7 @@ public class Pixa implements Iterable<Pix> {
      * @param mode The mode in which to add this Pix and Box, typically
      *            Constants.L_CLONE.
      */
-    public void add(Pix pix, Box box, int mode) {
+    public void add(Pix pix, Box box, @Constants.StorageFlag int mode) {
         if (mRecycled)
             throw new IllegalStateException();
 
@@ -355,7 +356,7 @@ public class Pixa implements Iterable<Pix> {
      *            elements.
      * @return <code>true</code> on success
      */
-    public boolean getBoxGeometry(int index, int[] dimensions) {
+    public boolean getBoxGeometry(int index, @Size(min=4) int[] dimensions) {
         if (mRecycled)
             throw new IllegalStateException();
 

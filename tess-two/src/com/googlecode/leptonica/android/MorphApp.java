@@ -16,6 +16,12 @@
 
 package com.googlecode.leptonica.android;
 
+import android.support.annotation.IntDef;
+
+import java.lang.annotation.Retention;
+
+import static java.lang.annotation.RetentionPolicy.SOURCE;
+
 /**
  * Composite image processing operations.
  */
@@ -28,7 +34,9 @@ public class MorphApp {
     }
 
     // Morphological tophat flags
-
+    @Retention(SOURCE)
+    @IntDef({L_TOPHAT_BLACK, L_TOPHAT_WHITE})
+    public @interface TophatType {}
     public static final int L_TOPHAT_WHITE = 0;
     public static final int L_TOPHAT_BLACK = 1;
 
@@ -55,7 +63,7 @@ public class MorphApp {
      * @param type L_TOPHAT_WHITE: image - opening or L_TOPHAT_BLACK: closing - image
      * @return a new Pix image
      */
-    public static Pix pixTophat(Pix pixs, int hsize, int vsize, int type) {
+    public static Pix pixTophat(Pix pixs, int hsize, int vsize, @TophatType int type) {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
         if (pixs.getDepth() != 8)
@@ -127,7 +135,7 @@ public class MorphApp {
      * @param type L_TOPHAT_WHITE: image - min, or L_TOPHAT_BLACK: max - image
      * @return a new Pix image
      */
-    public static Pix pixFastTophat(Pix pixs, int xsize, int ysize, int type) {
+    public static Pix pixFastTophat(Pix pixs, int xsize, int ysize, @TophatType int type) {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
         if (pixs.getDepth() != 8)
