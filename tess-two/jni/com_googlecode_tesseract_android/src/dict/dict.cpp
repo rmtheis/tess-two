@@ -202,7 +202,7 @@ DawgCache *Dict::GlobalDawgCache() {
   return &cache;
 }
 
-// Sets up ready for a Load.
+// Sets up ready for a Load or LoadLSTM.
 void Dict::SetupForLoad(DawgCache *dawg_cache) {
   if (dawgs_.length() != 0) this->End();
 
@@ -301,7 +301,27 @@ void Dict::Load(const char *data_file_name, const STRING &lang) {
                             getUnicharset().size(), dawg_debug_level);
 }
 
-// Completes the loading process after Load().
+// Loads the dawgs needed by the LSTM model. Call FinishLoad() after.
+void Dict::LoadLSTM(const char *data_file_name, const STRING &lang) {
+  // Load dawgs_.
+  if (load_punc_dawg) {
+    punc_dawg_ = dawg_cache_->GetSquishedDawg(
+        lang, data_file_name, TESSDATA_LSTM_PUNC_DAWG, dawg_debug_level);
+    if (punc_dawg_) dawgs_ += punc_dawg_;
+  }
+  if (load_system_dawg) {
+    Dawg *system_dawg = dawg_cache_->GetSquishedDawg(
+        lang, data_file_name, TESSDATA_LSTM_SYSTEM_DAWG, dawg_debug_level);
+    if (system_dawg) dawgs_ += system_dawg;
+  }
+  if (load_number_dawg) {
+    Dawg *number_dawg = dawg_cache_->GetSquishedDawg(
+        lang, data_file_name, TESSDATA_LSTM_NUMBER_DAWG, dawg_debug_level);
+    if (number_dawg) dawgs_ += number_dawg;
+  }
+}
+
+// Completes the loading process after Load() and/or LoadLSTM().
 // Returns false if no dictionaries were loaded.
 bool Dict::FinishLoad() {
   if (dawgs_.empty()) return false;
@@ -834,6 +854,7 @@ bool Dict::IsSpaceDelimitedLang() const {
   const UNICHARSET &u_set = getUnicharset();
   if (u_set.han_sid() > 0) return false;
   if (u_set.katakana_sid() > 0) return false;
+  if (u_set.thai_sid() > 0) return false;
   return true;
 }
 

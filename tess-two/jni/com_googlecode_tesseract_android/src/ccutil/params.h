@@ -55,7 +55,7 @@ class ParamUtils {
   // ORed or ANDed with any current values.
   // Blank lines and lines beginning # are ignored.
   // Values may have any whitespace after the name and are the rest of line.
-  static bool TESS_API ReadParamsFile(
+  static bool ReadParamsFile(
       const char *file,   // filename to read
       SetParamConstraint constraint,
       ParamsVectors *member_params);
@@ -252,7 +252,7 @@ class DoubleParam : public Param {
 //
 // TODO(daria): remove GlobalParams() when all global Tesseract
 // parameters are converted to members.
-tesseract::ParamsVectors TESS_API *GlobalParams();
+tesseract::ParamsVectors *GlobalParams();
 
 /*************************************************************************
  * Note on defining parameters.

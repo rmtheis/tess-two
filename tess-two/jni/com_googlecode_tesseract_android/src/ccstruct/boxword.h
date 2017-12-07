@@ -17,8 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifndef TESSERACT_CSTRUCT_BOXWORD_H__
-#define TESSERACT_CSTRUCT_BOXWORD_H__
+#ifndef TESSERACT_CSTRUCT_BOXWORD_H_
+#define TESSERACT_CSTRUCT_BOXWORD_H_
 
 #include "genericvector.h"
 #include "rect.h"
@@ -97,5 +97,4 @@ class BoxWord {
 
 }  // namespace tesseract.
 
-
-#endif  // TESSERACT_CSTRUCT_BOXWORD_H__
+#endif  // TESSERACT_CSTRUCT_BOXWORD_H_

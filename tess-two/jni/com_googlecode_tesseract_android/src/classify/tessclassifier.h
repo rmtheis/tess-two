@@ -23,7 +23,6 @@
 #define THIRD_PARTY_TESSERACT_CLASSIFY_TESSCLASSIFIER_H_
 
 #include "shapeclassifier.h"
-#include "platform.h"
 
 namespace tesseract {
 
@@ -34,7 +33,7 @@ class TrainingSample;
 // Due to limitations in the content of TrainingSample, this currently
 // only works for the static classifier and only works if the ShapeTable
 // in classify is not NULL.
-class TESS_API TessClassifier : public ShapeClassifier {
+class TessClassifier : public ShapeClassifier {
  public:
   TessClassifier(bool pruner_only, tesseract::Classify* classify)
     : pruner_only_(pruner_only), classify_(classify) {}

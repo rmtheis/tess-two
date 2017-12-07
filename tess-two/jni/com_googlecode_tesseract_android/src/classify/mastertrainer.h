@@ -19,8 +19,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifndef TESSERACT_TRAINING_MASTERTRAINER_H__
-#define TESSERACT_TRAINING_MASTERTRAINER_H__
+#ifndef TESSERACT_TRAINING_MASTERTRAINER_H_
+#define TESSERACT_TRAINING_MASTERTRAINER_H_
 
 /**----------------------------------------------------------------------------
           Include Files and Type Defines
@@ -66,7 +66,7 @@ struct ShapeDist {
 // Initially supports shape clustering and mftrainining.
 // Other important features of the MasterTrainer are conditioning the data
 // by outlier elimination, replication with perturbation, and serialization.
-class TESS_API MasterTrainer {
+class MasterTrainer {
  public:
   MasterTrainer(NormalizationMode norm_mode, bool shape_analysis,
                 bool replicate_samples, int debug_level);
@@ -309,4 +309,4 @@ class TESS_API MasterTrainer {
 
 }  // namespace tesseract.
 
-#endif
+#endif  // TESSERACT_TRAINING_MASTERTRAINER_H_

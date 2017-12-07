@@ -17,8 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifndef TESSERACT_CCSTRUCT_PUBLICTYPES_H__
-#define TESSERACT_CCSTRUCT_PUBLICTYPES_H__
+#ifndef TESSERACT_CCSTRUCT_PUBLICTYPES_H_
+#define TESSERACT_CCSTRUCT_PUBLICTYPES_H_
 
 // This file contains types that are used both by the API and internally
 // to Tesseract. In order to decouple the API from Tesseract and prevent cyclic
@@ -255,17 +255,20 @@ enum ParagraphJustification {
 */
 enum OcrEngineMode {
   OEM_TESSERACT_ONLY,           // Run Tesseract only - fastest
-  OEM_CUBE_ONLY,                // Run Cube only - better accuracy, but slower
-  OEM_TESSERACT_CUBE_COMBINED,  // Run both and combine results - best accuracy
-  OEM_DEFAULT                   // Specify this mode when calling init_*(),
+  OEM_LSTM_ONLY,                // Run just the LSTM line recognizer.
+  OEM_TESSERACT_LSTM_COMBINED,  // Run the LSTM recognizer, but allow fallback
+                                // to Tesseract when things get difficult.
+  OEM_DEFAULT,                  // Specify this mode when calling init_*(),
                                 // to indicate that any of the above modes
                                 // should be automatically inferred from the
                                 // variables in the language-specific config,
                                 // command-line configs, or if not specified
                                 // in any of the above should be set to the
                                 // default OEM_TESSERACT_ONLY.
+  OEM_CUBE_ONLY,                // Run Cube only - better accuracy, but slower
+  OEM_TESSERACT_CUBE_COMBINED,  // Run both and combine results - best accuracy
 };
 
 }  // namespace tesseract.
 
-#endif  // TESSERACT_CCSTRUCT_PUBLICTYPES_H__
+#endif  // TESSERACT_CCSTRUCT_PUBLICTYPES_H_

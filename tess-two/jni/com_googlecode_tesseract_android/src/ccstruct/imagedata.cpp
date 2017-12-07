@@ -24,17 +24,17 @@
 
 #include "imagedata.h"
 
+#if defined(__MINGW32__)
+#include <unistd.h>
+#else
+#include <thread>
+#endif
+
 #include "allheaders.h"
 #include "boxread.h"
 #include "callcpp.h"
 #include "helpers.h"
 #include "tprintf.h"
-
-#if defined(__MINGW32__)
-# include <unistd.h>
-#elif __cplusplus > 199711L   // in C++11
-# include <thread>
-#endif
 
 // Number of documents to read ahead while training. Doesn't need to be very
 // large.
@@ -438,9 +438,7 @@ void DocumentData::LoadPageInBackground(int index) {
   if (pages_offset_ == index) return;
   pages_offset_ = index;
   pages_.clear();
-  #ifndef GRAPHICS_DISABLED
   SVSync::StartThread(ReCachePagesFunc, this);
-  #endif  // GRAPHICS_DISABLED
 }
 
 // Returns a pointer to the page with the given index, modulo the total
@@ -455,12 +453,10 @@ const ImageData* DocumentData::GetPage(int index) {
     if (needs_loading) LoadPageInBackground(index);
     // We can't directly load the page, or the background load will delete it
     // while the caller is using it, so give it a chance to work.
-#if __cplusplus > 199711L
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-#elif _WIN32  // MSVS
-    Sleep(1000);
-#else
+#if defined(__MINGW32__)
     sleep(1);
+#else
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 #endif
   }
   return page;
@@ -498,6 +494,21 @@ inT64 DocumentData::UnCache() {
   tprintf("Unloaded document %s, saving %d memory\n", document_name_.string(),
           memory_saved);
   return memory_saved;
+}
+
+// Shuffles all the pages in the document.
+void DocumentData::Shuffle() {
+  TRand random;
+  // Different documents get shuffled differently, but the same for the same
+  // name.
+  random.set_seed(document_name_.string());
+  int num_pages = pages_.size();
+  // Execute one random swap for each page in the document.
+  for (int i = 0; i < num_pages; ++i) {
+    int src = random.IntRand() % num_pages;
+    int dest = random.IntRand() % num_pages;
+    std::swap(pages_[src], pages_[dest]);
+  }
 }
 
 // Locks the pages_mutex_ and Loads as many pages can fit in max_memory_
@@ -541,7 +552,7 @@ bool DocumentData::ReCachePages() {
     pages_.truncate(0);
   } else {
     tprintf("Loaded %d/%d pages (%d-%d) of document %s\n", pages_.size(),
-            loaded_pages, pages_offset_, pages_offset_ + pages_.size(),
+            loaded_pages, pages_offset_ + 1, pages_offset_ + pages_.size(),
             document_name_.string());
   }
   set_total_pages(loaded_pages);
@@ -582,7 +593,6 @@ bool DocumentCache::LoadDocuments(const GenericVector<STRING>& filenames,
 
 // Adds document to the cache.
 bool DocumentCache::AddToCache(DocumentData* data) {
-  inT64 new_memory = data->memory_used();
   documents_.push_back(data);
   return true;
 }

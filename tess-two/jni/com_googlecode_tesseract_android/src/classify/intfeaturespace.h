@@ -17,8 +17,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifndef TESSERACT_CLASSIFY_INTFEATURESPACE_H__
-#define TESSERACT_CLASSIFY_INTFEATURESPACE_H__
+#ifndef TESSERACT_CLASSIFY_INTFEATURESPACE_H_
+#define TESSERACT_CLASSIFY_INTFEATURESPACE_H_
 
 #include "genericvector.h"
 #include "intproto.h"
@@ -35,7 +35,7 @@ class IndexMap;
 
 // Down-sampling quantization of the INT_FEATURE_STRUCT feature space and
 // conversion to a single scalar index value, used as a binary feature space.
-class TESS_API IntFeatureSpace {
+class IntFeatureSpace {
  public:
   IntFeatureSpace();
   // Default copy constructors and assignment OK!
@@ -106,5 +106,4 @@ class TESS_API IntFeatureSpace {
 
 }  // namespace tesseract.
 
-
-#endif  // TESSERACT_CLASSIFY_INTFEATURESPACE_H__
+#endif  // TESSERACT_CLASSIFY_INTFEATURESPACE_H_

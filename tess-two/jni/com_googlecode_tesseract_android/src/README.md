@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/tesseract-ocr/tesseract.svg?branch=master)](https://travis-ci.org/tesseract-ocr/tesseract)
-[![Build status](https://ci.appveyor.com/api/projects/status/miah0ikfsf0j3819?svg=true)](https://ci.appveyor.com/project/zdenop/tesseract/)
+[![Build status](https://ci.appveyor.com/api/projects/status/miah0ikfsf0j3819/branch/master?svg=true)](https://ci.appveyor.com/project/zdenop/tesseract/)
 
 For the latest online version of the README.md see:
     
@@ -22,7 +22,7 @@ This project does not include a GUI application. If you need one, please see the
 
 You should note that in many cases, in order to get better OCR results, you'll need to [improve the quality](https://github.com/tesseract-ocr/tesseract/wiki/ImproveQuality) of the image you are giving Tesseract.
 
-The latest stable version is 3.05.00, released in February 2017.
+The latest stable version is 3.04.01, released in February 2016.
 
 # Brief history
 
@@ -59,6 +59,14 @@ Documentation of Tesseract generated from source code by doxygen can be found on
 # Installing Tesseract
 
 You can either [Install Tesseract via pre-built binary package](https://github.com/tesseract-ocr/tesseract/wiki) or [build it from source](https://github.com/tesseract-ocr/tesseract/wiki/Compiling).
+
+## Supported Compilers
+
+* GCC 4.8 and above
+* Clang 3.4 and above
+* MSVC 2015, 2017
+
+Other compilers might work, but are not officially supported.
 
 # Running Tesseract
 

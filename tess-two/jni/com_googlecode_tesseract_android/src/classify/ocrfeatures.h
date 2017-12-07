@@ -108,7 +108,7 @@ BOOL8 AddFeature(FEATURE_SET FeatureSet, FEATURE Feature);
 
 void FreeFeature(FEATURE Feature);
 
-void TESS_API FreeFeatureSet(FEATURE_SET FeatureSet);
+void FreeFeatureSet(FEATURE_SET FeatureSet);
 
 FEATURE NewFeature(const FEATURE_DESC_STRUCT *FeatureDesc);
 

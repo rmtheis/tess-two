@@ -22,28 +22,28 @@ projects:
         export_all_symbols: true
         files:
           - api/.*\.cpp
+          - arch/.*\.cpp
           - ccmain/.*\.cpp
           - ccstruct/.*\.cpp
           - ccutil/.*\.cpp
           - classify/.*\.cpp
-          - cube/.*\.cpp
           - cutil/.*\.cpp
           - dict/.*\.cpp
-          - neural_networks/runtime/.*\.cpp
+          - lstm/.*\.cpp
           - opencl/.*\.cpp
           - textord/.*\.cpp
           - viewer/.*\.cpp
           - wordrec/.*\.cpp
 
           - api/.*\.h
+          - arch/.*\.h
           - ccmain/.*\.h
           - ccstruct/.*\.h
           - ccutil/.*\.h
           - classify/.*\.h
-          - cube/.*\.h
           - cutil/.*\.h
           - dict/.*\.h
-          - neural_networks/runtime/.*\.h
+          - lstm/.*\.h
           - opencl/.*\.h
           - textord/.*\.h
           - viewer/.*\.h
@@ -58,11 +58,12 @@ projects:
         include_directories:
           public:
           #private:
+            - arch
             - classify
-            - cube
             - cutil
+            - ccutil
             - dict
-            - neural_networks/runtime
+            - lstm
             - opencl
             - textord
             - vs2010/port
@@ -98,11 +99,6 @@ projects:
           - sys/wait.h
           - tiffio.h
           - unistd.h
-          - cairo/cairo-version.h
-          - CL/cl.h
-          - OpenCL/cl.h
-          - pango-1.0/pango/pango-features.h
-          - unicode/uchar.h
 
         check_type_size:
           - long long int
@@ -111,10 +107,20 @@ projects:
           - wchar_t
           - _Bool
 
+        pre_sources: |
+            file_write_once(${BDIR}/config_auto.h "")
 
         post_sources: |
-            file_write_once(${BDIR}/config_auto.h "")
-            if (NOT WIN32)
+            if (WIN32)
+                set_source_files_properties(
+                    ${SDIR}/arch/dotproductsse.cpp
+                    PROPERTIES COMPILE_DEFINITIONS __SSE4_1__)
+                if (MSVC)
+                    set_source_files_properties(
+                        ${SDIR}/arch/dotproductavx.cpp
+                        PROPERTIES COMPILE_FLAGS "/arch:AVX")
+                endif()
+            else()
                 remove_src_dir(vs2010/port/*)
             endif()
 
@@ -134,7 +140,7 @@ projects:
                         - TESS_IMPORTS
 
         dependencies:
-            pvt.cppan.demo.danbloomberg.leptonica: 1.74
+            pvt.cppan.demo.danbloomberg.leptonica: 1
 
     tesseract:
         files: api/tesseractmain.cpp
@@ -162,7 +168,8 @@ projects:
 
     ambiguous_words:
         files: training/ambiguous_words.cpp
-        dependencies: libtesseract
+        dependencies:
+            - libtesseract
 
     classifier_tester:
         files: training/classifier_tester.cpp
@@ -212,6 +219,14 @@ projects:
             - common_training
             - pvt.cppan.demo.unicode.icu.i18n
 
+    lstmeval:
+        files: training/lstmeval.cpp
+        dependencies: unicharset_training
+
+    lstmtraining:
+        files: training/lstmtraining.cpp
+        dependencies: unicharset_training
+
     set_unicharset_properties:
         files: training/set_unicharset_properties.cpp
         dependencies: unicharset_training
@@ -239,3 +254,17 @@ projects:
         dependencies:
             - unicharset_training
             - pvt.cppan.demo.gnome.pango.pangocairo: 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -18,8 +18,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifndef TESSERACT_CLASSIFY_INTFEATUREMAP_H__
-#define TESSERACT_CLASSIFY_INTFEATUREMAP_H__
+#ifndef TESSERACT_CLASSIFY_INTFEATUREMAP_H_
+#define TESSERACT_CLASSIFY_INTFEATUREMAP_H_
 
 #include "intfeaturespace.h"
 #include "indexmapbidi.h"
@@ -75,7 +75,7 @@ class IntFeatureMap {
 
   // Copies the given feature_space and uses it as the index feature map
   // from INT_FEATURE_STRUCT.
-  void TESS_API Init(const IntFeatureSpace& feature_space);
+  void Init(const IntFeatureSpace& feature_space);
 
   // Helper to return an offset index feature. In this context an offset
   // feature with a dir of +/-1 is a feature of a similar direction,
@@ -160,4 +160,4 @@ class IntFeatureMap {
 
 }  // namespace tesseract.
 
-#endif  // TESSERACT_CLASSIFY_INTFEATUREMAP_H__
+#endif  // TESSERACT_CLASSIFY_INTFEATUREMAP_H_

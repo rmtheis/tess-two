@@ -48,7 +48,7 @@ const double kStandardFeatureLength = 64.0 / 5;
 /**----------------------------------------------------------------------------
           Public Function Prototypes
 ----------------------------------------------------------------------------**/
-void TESS_API InitIntegerFX();
+void InitIntegerFX();
 
 // Returns a vector representing the direction of a feature with the given
 // theta direction in an INT_FEATURE_STRUCT.

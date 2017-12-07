@@ -303,8 +303,9 @@ bool WERD_RES::SetupForRecognition(const UNICHARSET& unicharset_in,
       static_cast<tesseract::OcrEngineMode>(norm_mode);
   tesseract = tess;
   POLY_BLOCK* pb = block != NULL ? block->poly_block() : NULL;
-  if ((norm_mode_hint != tesseract::OEM_CUBE_ONLY &&
-       word->cblob_list()->empty()) || (pb != NULL && !pb->IsText())) {
+  if ((norm_mode_hint != tesseract::OEM_LSTM_ONLY &&
+       word->cblob_list()->empty()) ||
+      (pb != NULL && !pb->IsText())) {
     // Empty words occur when all the blobs have been moved to the rej_blobs
     // list, which seems to occur frequently in junk.
     SetupFake(unicharset_in);
@@ -528,13 +529,12 @@ void WERD_RES::FilterWordChoices(int debug_level) {
       if (choice->unichar_id(i) != best_choice->unichar_id(j) &&
           choice->certainty(i) - best_choice->certainty(j) < threshold) {
         if (debug_level >= 2) {
-          STRING label;
-          label.add_str_int("\nDiscarding bad choice #", index);
-          choice->print(label.string());
-          tprintf("i %d j %d Chunk %d Choice->Blob[i].Certainty %.4g"
-              " BestChoice->ChunkCertainty[Chunk] %g Threshold %g\n",
-              i, j, chunk, choice->certainty(i),
-              best_choice->certainty(j), threshold);
+          choice->print("WorstCertaintyDiffWorseThan");
+          tprintf(
+              "i %d j %d Choice->Blob[i].Certainty %.4g"
+              " WorstOtherChoiceCertainty %g Threshold %g\n",
+              i, j, choice->certainty(i), best_choice->certainty(j), threshold);
+          tprintf("Discarding bad choice #%d\n", index);
         }
         delete it.extract();
         break;
@@ -884,6 +884,7 @@ void WERD_RES::FakeClassifyWord(int blob_count, BLOB_CHOICE** choices) {
   }
   FakeWordFromRatings(TOP_CHOICE_PERM);
   reject_map.initialise(blob_count);
+  best_state.init_to_size(blob_count, 1);
   done = true;
 }
 
