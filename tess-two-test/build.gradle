@@ -28,6 +28,6 @@ android {
 }
 
 dependencies {
-    compile project(':tess-two')
-    testCompile 'junit:junit:4.12'
+    implementation project(':tess-two')
+    testImplementation 'junit:junit:4.12'
 }
