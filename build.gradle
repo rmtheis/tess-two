@@ -17,12 +17,6 @@ allprojects {
     group = 'com.rmtheis'
     version = '8.0.0'
 
-    project.ext {
-        compileSdkVersion=27
-        buildToolsVersion='27.0.3'
-        androidSupportVersion='27.0.2'
-    }
-
     repositories {
         google()
         jcenter()
