@@ -337,6 +337,17 @@ public class TessBaseAPI {
                             languageCode + ".traineddata");
                     if (!datafile.exists())
                         throw new IllegalArgumentException("Data file not found at " + datafile);
+
+                    // Catch some common problematic initialization cases.
+                    if (languageCode.equals("ara") || (languageCode.equals("hin") &&
+                            ocrEngineMode == OEM_DEFAULT)) {
+                        boolean sampleCubeFileExists = new File(tessdata +
+                                File.separator + languageCode + ".cube.params").exists();
+                        if (!sampleCubeFileExists) {
+                            throw new IllegalArgumentException("Cube data files not found." +
+                                    " See https://github.com/rmtheis/tess-two/issues/239");
+                        }
+                    }
                 }
             }
         }
