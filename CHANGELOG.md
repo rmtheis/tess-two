@@ -1,7 +1,41 @@
 # Change Log
 
 ## [Unreleased](https://github.com/rmtheis/tess-two/tree/HEAD)
-[Full Changelog](https://github.com/rmtheis/tess-two/compare/8.0.0...HEAD)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/9.0.0...HEAD)
+
+## [9.0.0](https://github.com/rmtheis/tess-two/tree/9.0.0) (2018-04-20)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/8.0.0...9.0.0)
+
+**Implemented enhancements:**
+
+- Improve developer support for Hindi/Arabic [\#240](https://github.com/rmtheis/tess-two/issues/240)
+
+**Fixed bugs:**
+
+- Crashing reported on 64-bit devices [\#197](https://github.com/rmtheis/tess-two/issues/197)
+
+**Closed issues:**
+
+- Tess two issue :  scan only digital meter using this code [\#241](https://github.com/rmtheis/tess-two/issues/241)
+- make: \*\*\* \[obj/local/armeabi/objs/tess/tessbaseapi.o\] Error 1  [\#238](https://github.com/rmtheis/tess-two/issues/238)
+- No JNI\_OnLoad found in /data/app-lib/\*\*\*\*/libjpgt.so 0x43738aa0, skipping init [\#237](https://github.com/rmtheis/tess-two/issues/237)
+- Where should I download traineddata files for tesseract-android? [\#236](https://github.com/rmtheis/tess-two/issues/236)
+- Could not initialize Tesseract API with language=ind! [\#235](https://github.com/rmtheis/tess-two/issues/235)
+- run nativeInitOem\(\) ;return false;why? [\#234](https://github.com/rmtheis/tess-two/issues/234)
+- Text is not getting properly  [\#232](https://github.com/rmtheis/tess-two/issues/232)
+- Build failure with Android Studio 3 and Gradle 4.3.1 [\#229](https://github.com/rmtheis/tess-two/issues/229)
+- TessBaseAPI - clear/end/stop doesn't really free all native memory [\#227](https://github.com/rmtheis/tess-two/issues/227)
+- UnsatisfiedLinkError, libopencv\_java3.so is 64-bit instead of 32-bit [\#226](https://github.com/rmtheis/tess-two/issues/226)
+- base.apk!/lib/arm64-v8a, /vendor/lib64, /system/lib64\]\]\] couldn't find "libjpgt.so" [\#225](https://github.com/rmtheis/tess-two/issues/225)
+- How can recognize half-split page using Tesstwo? [\#224](https://github.com/rmtheis/tess-two/issues/224)
+- about white file [\#223](https://github.com/rmtheis/tess-two/issues/223)
+- OCR processing Accuracy issue [\#222](https://github.com/rmtheis/tess-two/issues/222)
+- ndk lib [\#221](https://github.com/rmtheis/tess-two/issues/221)
+
+**Merged pull requests:**
+
+- Updated repositories. Changed compile to implementation. [\#233](https://github.com/rmtheis/tess-two/pull/233) ([mauriciotogneri](https://github.com/mauriciotogneri))
+- Updated version of SDK, build tools and support libraries [\#231](https://github.com/rmtheis/tess-two/pull/231) ([mauriciotogneri](https://github.com/mauriciotogneri))
 
 ## [8.0.0](https://github.com/rmtheis/tess-two/tree/8.0.0) (2017-08-13)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/7.0.0...8.0.0)
