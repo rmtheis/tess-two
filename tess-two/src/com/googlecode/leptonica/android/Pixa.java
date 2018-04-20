@@ -120,7 +120,7 @@ public class Pixa implements Iterable<Pix> {
         if (mRecycled)
             throw new IllegalStateException();
 
-        int nativePixa = nativeCopy(mNativePixa);
+        long nativePixa = nativeCopy(mNativePixa);
 
         if (nativePixa == 0) {
             throw new OutOfMemoryError();
@@ -143,7 +143,7 @@ public class Pixa implements Iterable<Pix> {
         if (mRecycled)
             throw new IllegalStateException();
 
-        int nativePixa = nativeSort(mNativePixa, field, order);
+        long nativePixa = nativeSort(mNativePixa, field, order);
 
         if (nativePixa == 0) {
             throw new OutOfMemoryError();
@@ -484,11 +484,11 @@ public class Pixa implements Iterable<Pix> {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeCreate(int size);
+    private static native long nativeCreate(int size);
 
-    private static native int nativeCopy(long nativePixa);
+    private static native long nativeCopy(long nativePixa);
 
-    private static native int nativeSort(long nativePixa, int field, int order);
+    private static native long nativeSort(long nativePixa, int field, int order);
 
     private static native boolean nativeJoin(long nativePixa, long otherPixa);
 

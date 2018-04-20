@@ -55,7 +55,7 @@ public class Clip {
      * @return clipped pix, or null if rectangle doesn't intersect source pix
      */
     public static Pix clipRectangle(Pix source, Box box) {
-        int result = nativeClipRectangle(source.getNativePix(),
+        long result = nativeClipRectangle(source.getNativePix(),
                 box.getNativeBox());
         if (result != 0) {
             return new Pix(result);
@@ -67,5 +67,5 @@ public class Clip {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeClipRectangle(long nativePix, long nativeBox);
+    private static native long nativeClipRectangle(long nativePix, long nativeBox);
 }

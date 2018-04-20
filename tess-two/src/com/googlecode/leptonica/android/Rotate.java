@@ -109,7 +109,7 @@ public class Rotate {
         if (quads < 0 || quads > 3)
             throw new IllegalArgumentException("quads not in {0,1,2,3}");
 
-        int nativePix = nativeRotateOrth(pixs.getNativePix(), quads);
+        long nativePix = nativeRotateOrth(pixs.getNativePix(), quads);
 
         if (nativePix == 0)
             return null;
@@ -121,7 +121,7 @@ public class Rotate {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeRotateOrth(long nativePix, int quads);
+    private static native long nativeRotateOrth(long nativePix, int quads);
 
     private static native long nativeRotate(long nativePix, float degrees, boolean quality,
             boolean resize);
