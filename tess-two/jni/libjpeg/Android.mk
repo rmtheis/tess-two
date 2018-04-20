@@ -56,6 +56,7 @@ LOCAL_SRC_FILES := \
 
 LOCAL_CFLAGS := \
   -include stdlib.h \
+  -Wno-deprecated-declarations \
   -Wno-pointer-sign \
   -Wno-implicit-function-declaration
 
