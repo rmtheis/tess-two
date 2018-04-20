@@ -6,6 +6,10 @@
 ## [9.0.0](https://github.com/rmtheis/tess-two/tree/9.0.0) (2018-04-20)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/8.0.0...9.0.0)
 
+**Change:**
+
+- This version fixes and adds back in the 64-bit ABIs, and removes the deprecated armv5 and mips/mips64 ABIs.
+
 **Implemented enhancements:**
 
 - Improve developer support for Hindi/Arabic [\#240](https://github.com/rmtheis/tess-two/issues/240)
