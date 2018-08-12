@@ -16,6 +16,8 @@
 
 // Author: Andrew Harp
 
+#include <string.h>
+
 #include "utils.h"
 #include "time_log.h"
 

@@ -19,6 +19,7 @@
 // Various feature detecting functions.
 
 #include <float.h>
+#include <string.h>
 
 #include "utils.h"
 #include "time_log.h"
