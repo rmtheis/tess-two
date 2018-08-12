@@ -33,7 +33,6 @@ public class Clip {
      * This should be simple, but there are choices to be made. The box is
      * defined relative to the pix coordinates.  However, if the box is not
      * contained within the pix, we have two choices:
-     * <p>
      * <p>     (1) clip the box to the pix
      * <p>     (2) make a new pix equal to the full box dimensions,
      *             but let rasterop do the clipping and positioning
@@ -56,7 +55,7 @@ public class Clip {
      * @return clipped pix, or null if rectangle doesn't intersect source pix
      */
     public static Pix clipRectangle(Pix source, Box box) {
-        int result = nativeClipRectangle(source.getNativePix(),
+        long result = nativeClipRectangle(source.getNativePix(),
                 box.getNativeBox());
         if (result != 0) {
             return new Pix(result);
@@ -68,5 +67,5 @@ public class Clip {
     // * NATIVE CODE *
     // ***************
 
-    private static native int nativeClipRectangle(long nativePix, long nativeBox);
+    private static native long nativeClipRectangle(long nativePix, long nativeBox);
 }

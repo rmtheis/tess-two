@@ -16,7 +16,6 @@
 
 package com.googlecode.tesseract.android.test;
 
-import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Canvas;
@@ -26,6 +25,7 @@ import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
 import android.graphics.Rect;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.text.Html;
 import android.util.Pair;
@@ -47,10 +47,9 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 
 public class TessBaseAPITest extends TestCase {
-    @SuppressLint("SdCardPath")
-    static final String TESSBASE_PATH = "/sdcard/tesseract/";
+    static final String TESSBASE_PATH = Environment.getExternalStorageDirectory().toString();
     static final String DEFAULT_LANGUAGE = "eng";
-    private static final String TESSDATA_PATH = TESSBASE_PATH + "tessdata/";
+    private static final String TESSDATA_PATH = TESSBASE_PATH + "/tessdata/";
     private static final String[] EXPECTED_CUBE_DATA_FILES_ENG = {
         "eng.cube.bigrams",
         "eng.cube.fold",
@@ -112,7 +111,7 @@ public class TessBaseAPITest extends TestCase {
         List<Pair<String, Double>> choicesAndConfidences;
         iterator.begin();
         do {
-            choicesAndConfidences = iterator.getChoicesAndConfidence(PageIteratorLevel.RIL_SYMBOL);
+            choicesAndConfidences = iterator.getSymbolChoicesAndConfidence();
             assertNotNull("Invalid result.", choicesAndConfidences);
 
             for (Pair<String, Double> choiceAndConfidence : choicesAndConfidences) {

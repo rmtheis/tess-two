@@ -1,20 +1,21 @@
-git clone https://github.com/tesseract-ocr/tessdata.git
+for /f %%i in ('adb shell echo $EXTERNAL_STORAGE') do set DIR=%%i
 
-adb shell rm /sdcard/testAddPageToDocument.pdf
-adb shell rm /sdcard/testCreate.pdf
+git clone -b 3.04.00 https://github.com/tesseract-ocr/tessdata.git
+
+adb shell rm %DIR%/testAddPageToDocument.pdf
+adb shell rm %DIR%/testCreate.pdf
 
 adb uninstall com.googlecode.tesseract.android.test
 
-adb shell mkdir /sdcard/tesseract
-adb shell mkdir /sdcard/tesseract/tessdata
+adb shell mkdir %DIR%/tessdata
 
-adb push -p tessdata/eng.cube.bigrams /sdcard/tesseract/tessdata
-adb push -p tessdata/eng.cube.fold /sdcard/tesseract/tessdata
-adb push -p tessdata/eng.cube.lm /sdcard/tesseract/tessdata
-adb push -p tessdata/eng.cube.nn /sdcard/tesseract/tessdata
-adb push -p tessdata/eng.cube.params /sdcard/tesseract/tessdata
-adb push -p tessdata/eng.cube.size /sdcard/tesseract/tessdata
-adb push -p tessdata/eng.cube.word-freq /sdcard/tesseract/tessdata
-adb push -p tessdata/eng.tesseract_cube.nn /sdcard/tesseract/tessdata
-adb push -p tessdata/eng.traineddata /sdcard/tesseract/tessdata
-adb push -p tess-two/jni/com_googlecode_tesseract_android/src/tessdata/pdf.ttf /sdcard/tesseract/tessdata
+adb push -p tessdata/eng.cube.bigrams %DIR%/tessdata
+adb push -p tessdata/eng.cube.fold %DIR%/tessdata
+adb push -p tessdata/eng.cube.lm %DIR%/tessdata
+adb push -p tessdata/eng.cube.nn %DIR%/tessdata
+adb push -p tessdata/eng.cube.params %DIR%/tessdata
+adb push -p tessdata/eng.cube.size %DIR%/tessdata
+adb push -p tessdata/eng.cube.word-freq %DIR%/tessdata
+adb push -p tessdata/eng.tesseract_cube.nn %DIR%/tessdata
+adb push -p tessdata/eng.traineddata %DIR%/tessdata
+adb push -p tess-two/jni/com_googlecode_tesseract_android/src/tessdata/pdf.ttf %DIR%/tessdata

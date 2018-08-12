@@ -18,6 +18,7 @@ package com.googlecode.leptonica.android;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
+import android.support.annotation.IntRange;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -60,7 +61,8 @@ public class JpegIO {
      * @param progressive Whether to use progressive compression.
      * @return a compressed JPEG byte array representation of the Pix
      */
-    public static byte[] compressToJpeg(Pix pixs, int quality, boolean progressive) {
+    public static byte[] compressToJpeg(Pix pixs, @IntRange(from=0, to=100) int quality,
+                                        boolean progressive) {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
         if (quality < 0 || quality > 100)

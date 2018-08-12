@@ -17,6 +17,8 @@
 package com.googlecode.leptonica.android;
 
 import android.graphics.Rect;
+import android.support.annotation.ColorInt;
+import android.support.annotation.Size;
 
 /**
  * Java representation of a native Leptonica PIX object.
@@ -125,7 +127,7 @@ public class Pix {
      * @param dimensions An integer array with at least three elements.
      * @return <code>true</code> on success
      */
-    public boolean getDimensions(int[] dimensions) {
+    public boolean getDimensions(@Size(min=3) int[] dimensions) {
         if (mRecycled)
             throw new IllegalStateException();
 
@@ -297,7 +299,7 @@ public class Pix {
      *            specified coordinate.
      * @throws IllegalArgumentException If x, y exceeds the image bounds.
      */
-    public void setPixel(int x, int y, int color) {
+    public void setPixel(int x, int y, @ColorInt int color) {
         if (mRecycled)
             throw new IllegalStateException();
 

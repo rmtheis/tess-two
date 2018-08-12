@@ -48,21 +48,20 @@ jfloat Java_com_googlecode_tesseract_android_ResultIterator_nativeConfidence(JNI
   return (jfloat) resultIterator->Confidence(enumLevel);
 }
 
-jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetChoices(JNIEnv *env,
-    jobject thiz, jlong nativeResultIterator, jint level) {
+jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetSymbolChoices(JNIEnv *env,
+    jclass clazz, jlong nativeResultIterator) {
 
-  // Get the actual result iterator and level (as C objects)
-  PageIteratorLevel enumLevel = (PageIteratorLevel) level;
+  // Get the actual result iterator (as C object)
   ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
 
-  // Create a choice iterator to determine to the number of alternatives
+  // Create a choice iterator to determine the number of alternatives
   tesseract::ChoiceIterator ci(*resultIterator);
   int numberOfAlternatives = 0;
   do {
     numberOfAlternatives++;
   } while (ci.Next());
 
-  // Create a string array to hold the results
+  // Create a string array to hold the choices
   jobjectArray ret = (jobjectArray) env->NewObjectArray(numberOfAlternatives, env->FindClass("java/lang/String"), env->NewStringUTF(""));
 
   // Save each result to the output array
@@ -73,7 +72,7 @@ jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetChoic
     const char *utfText = cb.GetUTF8Text();
 
     // Add each string to the object array elements
-    char newString[strlen(utfText) + 5];
+    char newString[strlen(utfText) + 7];
     sprintf(newString, "%s|%.2f", utfText, cb.Confidence());
     env->SetObjectArrayElement(ret, i, env->NewStringUTF(newString));
 
@@ -85,13 +84,29 @@ jobjectArray Java_com_googlecode_tesseract_android_ResultIterator_nativeGetChoic
   return ret;
 }
 
+jboolean Java_com_googlecode_tesseract_android_ResultIterator_nativeIsAtBeginningOf(JNIEnv *env,
+    jclass clazz, jlong nativeResultIterator, jint level) {
+  ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
+  PageIteratorLevel enumLevel = (PageIteratorLevel) level;
+
+  return (jboolean) (resultIterator->IsAtBeginningOf(enumLevel) ? JNI_TRUE : JNI_FALSE);
+}
+
+jboolean Java_com_googlecode_tesseract_android_ResultIterator_nativeIsAtFinalElement(JNIEnv *env,
+    jclass clazz, jlong nativeResultIterator, jint level, jint element) {
+  ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
+  PageIteratorLevel enumLevel = (PageIteratorLevel) level;
+  PageIteratorLevel enumElement = (PageIteratorLevel) element;
+
+  return (jboolean) (resultIterator->IsAtFinalElement(enumLevel, enumElement) ? JNI_TRUE : JNI_FALSE);
+}
+
 void Java_com_googlecode_tesseract_android_ResultIterator_nativeDelete(JNIEnv *env, jclass clazz,
     jlong nativeResultIterator) {
   ResultIterator *resultIterator = (ResultIterator *) nativeResultIterator;
   if (resultIterator != 0) {
     delete resultIterator;
   }
-  return;
 }
 
 #ifdef __cplusplus

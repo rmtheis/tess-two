@@ -32,3 +32,12 @@ Phone/device architecture (armeabi, armeabi-v7a, x86, mips, arm64-v8a, x86_64, m
 
 
 
+Link to training data used:
+
+
+
+Link to image used as input:
+
+
+
+

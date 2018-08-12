@@ -16,6 +16,8 @@
 
 package com.googlecode.leptonica.android;
 
+import android.support.annotation.FloatRange;
+
 /**
  * Image binarization methods.
  * 
@@ -118,8 +120,8 @@ public class Binarize {
      *            for standard Otsu).
      * @return A 1 bpp thresholded PIX image.
      */
-    public static Pix otsuAdaptiveThreshold(
-            Pix pixs, int sizeX, int sizeY, int smoothX, int smoothY, float scoreFraction) {
+    public static Pix otsuAdaptiveThreshold(Pix pixs, int sizeX, int sizeY, int smoothX, int smoothY,
+                                            @FloatRange(from=0.0, to=1.0) float scoreFraction) {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
         if (pixs.getDepth() != 8)
@@ -154,7 +156,7 @@ public class Binarize {
      * Notes:
      * <ol>
      * <li> The window width and height are 2 * whsize + 1.  The minimum
-     * value for whsize is 2; typically it is >= 7.
+     * value for whsize is 2; typically it is &gt;= 7.
      * <li> For nx == ny == 1, this defaults to pixSauvolaBinarize().
      * <li> Why a tiled version?
      * (a) Because the mean value accumulator is a uint32, overflow
@@ -169,7 +171,7 @@ public class Binarize {
      * where:
      *   t = local threshold
      *   m = local mean
-     *   k = @factor (>= 0)   [ typ. 0.35 ]
+     *   k = @factor (&gt;= 0)   [ typ. 0.35 ]
      *   s = local standard deviation, which is maximized at
      *       127.5 when half the samples are 0 and half are 255.
      * <li> The basic idea of Niblack and Sauvola binarization is that
@@ -180,12 +182,13 @@ public class Binarize {
      *   
      * @param pixs An 8 bpp PIX source image.
      * @param whsize Window half-width for measuring local statistics
-     * @param factor Factor for reducing threshold due to variance; >= 0
-     * @param nx Subdivision into tiles; >= 1
-     * @param ny Subdivision into tiles; >= 1
+     * @param factor Factor for reducing threshold due to variance; &gt;= 0
+     * @param nx Subdivision into tiles; &gt;= 1
+     * @param ny Subdivision into tiles; &gt;= 1
      * @return A 1 bpp thresholded PIX image.
      */
-    public static Pix sauvolaBinarizeTiled(Pix pixs, int whsize, float factor, int nx, int ny) {
+    public static Pix sauvolaBinarizeTiled(Pix pixs, int whsize, @FloatRange(from=0.0) float factor,
+                                           int nx, int ny) {
         if (pixs == null)
             throw new IllegalArgumentException("Source pix must be non-null");
         if (pixs.getDepth() != 8)

@@ -33,3 +33,4 @@ build/
 .idea/
 *.iml
 javadoc/
+tessdata/

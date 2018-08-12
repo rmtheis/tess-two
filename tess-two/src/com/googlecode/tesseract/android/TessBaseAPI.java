@@ -17,14 +17,19 @@
 
 package com.googlecode.tesseract.android;
 
-import java.io.File;
-
 import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.support.annotation.IntDef;
+import android.support.annotation.WorkerThread;
 
 import com.googlecode.leptonica.android.Pix;
 import com.googlecode.leptonica.android.Pixa;
 import com.googlecode.leptonica.android.ReadFile;
+
+import java.io.File;
+import java.lang.annotation.Retention;
+
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
  * Java interface for the Tesseract OCR engine. Does not implement all available
@@ -51,6 +56,12 @@ public class TessBaseAPI {
 
     /** Page segmentation mode. */
     public static final class PageSegMode {
+        @Retention(SOURCE)
+        @IntDef({PSM_OSD_ONLY, PSM_AUTO_OSD, PSM_AUTO_ONLY, PSM_AUTO, PSM_SINGLE_COLUMN,
+                PSM_SINGLE_BLOCK_VERT_TEXT, PSM_SINGLE_BLOCK, PSM_SINGLE_LINE, PSM_SINGLE_WORD,
+        PSM_CIRCLE_WORD, PSM_SINGLE_CHAR, PSM_SPARSE_TEXT, PSM_SPARSE_TEXT_OSD, PSM_RAW_LINE})
+        public @interface Mode {}
+
         /** Orientation and script detection only. */
         public static final int PSM_OSD_ONLY = 0;
 
@@ -90,8 +101,8 @@ public class TessBaseAPI {
         /** Sparse text with orientation and script detection. */
         public static final int PSM_SPARSE_TEXT_OSD = 12;
 
-        /** Number of enum entries. */
-        public static final int PSM_COUNT = 13;
+        /** Treat the image as a single text line, bypassing hacks that are Tesseract-specific. */
+        public static final int PSM_RAW_LINE = 13;
     }
 
     /** Whitelist of characters to recognize. */
@@ -108,6 +119,10 @@ public class TessBaseAPI {
 
     /** String value used to assign a boolean variable to false. */
     public static final String VAR_FALSE = "F";
+
+    @Retention(SOURCE)
+    @IntDef({OEM_TESSERACT_ONLY, OEM_CUBE_ONLY, OEM_TESSERACT_CUBE_COMBINED, OEM_DEFAULT})
+    public @interface OcrEngineMode {}
 
     /** Run Tesseract only - fastest */
     public static final int OEM_TESSERACT_ONLY = 0;
@@ -132,6 +147,10 @@ public class TessBaseAPI {
      * as there is no paragraph internally yet.
      */
     public static final class PageIteratorLevel {
+        @Retention(SOURCE)
+        @IntDef({RIL_BLOCK, RIL_PARA, RIL_TEXTLINE, RIL_WORD, RIL_SYMBOL})
+        public @interface Level {}
+
         /** Block of text/image/separator line. */
         public static final int RIL_BLOCK = 0;
 
@@ -256,7 +275,7 @@ public class TessBaseAPI {
      * multiple times on the same instance to change language, or just to reset
      * the classifier.
      * <p>
-     * The language may be a string of the form [~]<lang>[+[~]<lang>]* indicating
+     * The language may be a string of the form {@code [~]<lang>[+[~]<lang>]*} indicating
      * that multiple languages are to be loaded. Eg hin+eng will load Hindi and
      * English. Languages may specify internally that they want to be loaded
      * with one or more other languages, so the ~ sign is available to override
@@ -296,7 +315,7 @@ public class TessBaseAPI {
      * @param ocrEngineMode the OCR engine mode to be set
      * @return <code>true</code> on success
      */
-    public boolean init(String datapath, String language, int ocrEngineMode) {
+    public boolean init(String datapath, String language, @OcrEngineMode int ocrEngineMode) {
         if (datapath == null)
             throw new IllegalArgumentException("Data path must not be null!");
         if (!datapath.endsWith(File.separator))
@@ -318,6 +337,17 @@ public class TessBaseAPI {
                             languageCode + ".traineddata");
                     if (!datafile.exists())
                         throw new IllegalArgumentException("Data file not found at " + datafile);
+
+                    // Catch some common problematic initialization cases.
+                    if (languageCode.equals("ara") || (languageCode.equals("hin") &&
+                            ocrEngineMode == OEM_DEFAULT)) {
+                        boolean sampleCubeFileExists = new File(tessdata +
+                                File.separator + languageCode + ".cube.params").exists();
+                        if (!sampleCubeFileExists) {
+                            throw new IllegalArgumentException("Cube data files not found." +
+                                    " See https://github.com/rmtheis/tess-two/issues/239");
+                        }
+                    }
                 }
             }
         }
@@ -409,7 +439,7 @@ public class TessBaseAPI {
      *
      * @return value of the current page segmentation mode
      */
-    public int getPageSegMode() {
+    public @PageSegMode.Mode int getPageSegMode() {
         if (mRecycled)
             throw new IllegalStateException();
 
@@ -426,7 +456,7 @@ public class TessBaseAPI {
      *
      * @param mode the {@link PageSegMode} to set
      */
-    public void setPageSegMode(int mode) {
+    public void setPageSegMode(@PageSegMode.Mode int mode) {
         if (mRecycled)
             throw new IllegalStateException();
 
@@ -486,6 +516,7 @@ public class TessBaseAPI {
      *
      * @param file absolute path to the image file
      */
+    @WorkerThread
     public void setImage(File file) {
         if (mRecycled)
             throw new IllegalStateException();
@@ -510,6 +541,7 @@ public class TessBaseAPI {
      *
      * @param bmp bitmap representation of the image
      */
+    @WorkerThread
     public void setImage(Bitmap bmp) {
         if (mRecycled)
             throw new IllegalStateException();
@@ -532,6 +564,7 @@ public class TessBaseAPI {
      *
      * @param image Leptonica pix representation of the image
      */
+    @WorkerThread
     public void setImage(Pix image) {
         if (mRecycled)
             throw new IllegalStateException();
@@ -552,6 +585,7 @@ public class TessBaseAPI {
      * @param bpp bytes per pixel
      * @param bpl bytes per line
      */
+    @WorkerThread
     public void setImage(byte[] imagedata, int width, int height, int bpp, int bpl) {
         if (mRecycled)
             throw new IllegalStateException();
@@ -567,6 +601,7 @@ public class TessBaseAPI {
      *
      * @return the recognized text
      */
+    @WorkerThread
     public String getUTF8Text() {
         if (mRecycled)
             throw new IllegalStateException();
@@ -726,6 +761,7 @@ public class TessBaseAPI {
      * @param page is 0-based but will appear in the output as 1-based. 
      * @return HTML-formatted string with hOCR markup
      */
+    @WorkerThread
     public String getHOCRText(int page){
         if (mRecycled)
             throw new IllegalStateException();
@@ -934,6 +970,7 @@ public class TessBaseAPI {
 
     private native void nativeSetDebug(long mNativeData, boolean debug);
 
+    @PageSegMode.Mode
     private native int nativeGetPageSegMode(long mNativeData);
 
     private native void nativeSetPageSegMode(long mNativeData, int mode);

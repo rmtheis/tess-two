@@ -1,7 +1,68 @@
 # Change Log
 
 ## [Unreleased](https://github.com/rmtheis/tess-two/tree/HEAD)
-[Full Changelog](https://github.com/rmtheis/tess-two/compare/6.3.0...HEAD)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/9.0.0...HEAD)
+
+## [9.0.0](https://github.com/rmtheis/tess-two/tree/9.0.0) (2018-04-20)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/8.0.0...9.0.0)
+
+**Change:**
+
+- This version fixes and adds back in the 64-bit ABIs, and removes the deprecated armv5 and mips/mips64 ABIs.
+
+**Implemented enhancements:**
+
+- Improve developer support for Hindi/Arabic [\#240](https://github.com/rmtheis/tess-two/issues/240)
+
+**Fixed bugs:**
+
+- Crashing reported on 64-bit devices [\#197](https://github.com/rmtheis/tess-two/issues/197)
+
+**Merged pull requests:**
+
+- Updated repositories. Changed compile to implementation. [\#233](https://github.com/rmtheis/tess-two/pull/233) ([mauriciotogneri](https://github.com/mauriciotogneri))
+- Updated version of SDK, build tools and support libraries [\#231](https://github.com/rmtheis/tess-two/pull/231) ([mauriciotogneri](https://github.com/mauriciotogneri))
+
+## [8.0.0](https://github.com/rmtheis/tess-two/tree/8.0.0) (2017-08-13)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/7.0.0...8.0.0)
+
+**Change:**
+
+- This version removes the 64-bit ABIs from the default build in order to avoid crashes due to [\#197](https://github.com/rmtheis/tess-two/issues/197)
+
+**Closed issues:**
+
+- Build failure with Android Studio 3 and NDK ver. 15.x [\#215](https://github.com/rmtheis/tess-two/issues/215)
+
+**Merged pull requests:**
+
+- clone tag 3.04.00 from tessdata [\#217](https://github.com/rmtheis/tess-two/pull/217) ([ivankolev](https://github.com/ivankolev))
+- See issue \#215 [\#216](https://github.com/rmtheis/tess-two/pull/216) ([ivankolev](https://github.com/ivankolev))
+
+## [7.0.0](https://github.com/rmtheis/tess-two/tree/7.0.0) (2017-06-12)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/6.3.0...7.0.0)
+
+**API-breaking change:**
+
+- ResultIterator getChoicesAndConfidence\(\) is now getSymbolChoicesAndConfidence\(\)
+
+**Fixed bugs:**
+
+- ResultIterator crashes with certain character combinations [\#126](https://github.com/rmtheis/tess-two/issues/126)
+- ResultIterator returns single Character as Alternatives for Words [\#119](https://github.com/rmtheis/tess-two/issues/119)
+- beginDocument\(\) returns false even when successful [\#103](https://github.com/rmtheis/tess-two/issues/103)
+
+**Closed issues:**
+
+- Hardcoded path in TessBaseAPITest.java [\#208](https://github.com/rmtheis/tess-two/issues/208)
+
+**Merged pull requests:**
+
+- Add missing PageSegMode constant [\#209](https://github.com/rmtheis/tess-two/pull/209) ([Robyer](https://github.com/Robyer))
+- Fix return value of BeginDocument \(fixes \#103\) [\#207](https://github.com/rmtheis/tess-two/pull/207) ([Robyer](https://github.com/Robyer))
+- Improve ResultIterator [\#206](https://github.com/rmtheis/tess-two/pull/206) ([Robyer](https://github.com/Robyer))
+- Update gradle plugin [\#205](https://github.com/rmtheis/tess-two/pull/205) ([Robyer](https://github.com/Robyer))
+- Fix javadocs errors and warnings [\#202](https://github.com/rmtheis/tess-two/pull/202) ([Robyer](https://github.com/Robyer))
 
 ## [6.3.0](https://github.com/rmtheis/tess-two/tree/6.2.0) (2017-04-06)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/6.2.0...6.3.0)

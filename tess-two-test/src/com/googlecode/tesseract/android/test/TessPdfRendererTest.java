@@ -75,7 +75,7 @@ public class TessPdfRendererTest extends TestCase {
 
         // Start the PDF writing process.
         boolean beginSuccess = baseApi.beginDocument(pdfRenderer, "title");
-        // assertTrue(beginSuccess);
+        assertTrue(beginSuccess);
 
         // Add a page to the PDF.
         final Pix pixOne = getTextImage("page one", 640, 480);
