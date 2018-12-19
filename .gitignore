@@ -34,3 +34,4 @@ build/
 *.iml
 javadoc/
 tessdata/
+.externalNativeBuild
