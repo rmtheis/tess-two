@@ -25,6 +25,9 @@ android {
             jniLibs.srcDirs = ['libs']
         }
     }
+
+    useLibrary 'android.test.runner'
+    useLibrary 'android.test.base'
 }
 
 dependencies {
