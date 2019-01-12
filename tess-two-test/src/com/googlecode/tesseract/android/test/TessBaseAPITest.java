@@ -16,6 +16,7 @@
 
 package com.googlecode.tesseract.android.test;
 
+import android.Manifest;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Canvas;
@@ -61,18 +62,24 @@ public class TessBaseAPITest extends TestCase {
         "eng.tesseract_cube.nn"
     };
 
-    private static final int DEFAULT_PAGE_SEG_MODE = 
+    private static final int DEFAULT_PAGE_SEG_MODE =
             TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK;
 
     protected void setUp() throws Exception {
         super.setUp();
 
+        // Grant permission to use external storage
+        AllTests.grantPermissions(new String[] {
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        });
+
         // Check that the data file(s) exist.
         for (String languageCode : DEFAULT_LANGUAGE.split("\\+")) {
             if (!languageCode.startsWith("~")) {
-                File expectedFile = new File(TESSDATA_PATH + File.separator + 
+                File expectedFile = new File(TESSDATA_PATH + File.separator +
                         languageCode + ".traineddata");
-                assertTrue("Make sure that you've copied " + languageCode + 
+                assertTrue("Make sure that you've copied " + languageCode +
                         ".traineddata to " + TESSDATA_PATH, expectedFile.exists());
             }
         }
@@ -83,7 +90,7 @@ public class TessBaseAPITest extends TestCase {
         for (String expectedFilename : EXPECTED_CUBE_DATA_FILES_ENG) {
             String expectedFilePath = TESSDATA_PATH + expectedFilename;
             File expectedFile = new File(expectedFilePath);
-            assertTrue("Make sure that you've copied " + expectedFilename + 
+            assertTrue("Make sure that you've copied " + expectedFilename +
                     " to " + expectedFilePath, expectedFile.exists());
         }
     }
@@ -400,7 +407,7 @@ public class TessBaseAPITest extends TestCase {
         assertTrue("Result was not high-confidence.", lastConfidence > 80);
         assertTrue("Result bounding box not found.", lastBoundingBox[2] > 0 && lastBoundingBox[3] > 0);
 
-        boolean validBoundingRect =  lastBoundingRect.left < lastBoundingRect.right 
+        boolean validBoundingRect =  lastBoundingRect.left < lastBoundingRect.right
                 && lastBoundingRect.top < lastBoundingRect.bottom;
         assertTrue("Result bounding box Rect is incorrect.", validBoundingRect);
 
@@ -424,7 +431,7 @@ public class TessBaseAPITest extends TestCase {
     public void testInit_ocrEngineMode() {
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
-        boolean result = baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE, 
+        boolean result = baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE,
                 TessBaseAPI.OEM_TESSERACT_ONLY);
 
         assertTrue("Init was unsuccessful.", result);
@@ -513,7 +520,7 @@ public class TessBaseAPITest extends TestCase {
         assertTrue(success);
 
         baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
-        baseApi.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, 
+        baseApi.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST,
                 leftInput + rightInput);
         baseApi.setImage(bmp);
 
@@ -630,13 +637,13 @@ public class TessBaseAPITest extends TestCase {
         assertTrue(success);
 
         // Check the default page segmentation mode.
-        assertEquals("Found unexpected default page segmentation mode.", 
+        assertEquals("Found unexpected default page segmentation mode.",
                 baseApi.getPageSegMode(), DEFAULT_PAGE_SEG_MODE);
 
         // Ensure that the page segmentation mode can be changed.
         final int newPageSegMode = TessBaseAPI.PageSegMode.PSM_SINGLE_CHAR;
         baseApi.setPageSegMode(newPageSegMode);
-        assertEquals("Found unexpected page segmentation mode.", 
+        assertEquals("Found unexpected page segmentation mode.",
                 baseApi.getPageSegMode(), newPageSegMode);
 
         // Attempt to shut down the API.

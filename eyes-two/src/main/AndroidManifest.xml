@@ -14,14 +14,6 @@
      limitations under the License.
 -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.googlecode.eyesfree.ocr"
-          android:versionCode="4"
-          android:versionName="0.6.1"
-          android:installLocation="auto">
-
-    <uses-sdk
-        android:minSdkVersion="9"
-        android:targetSdkVersion="22" />
+<manifest package="com.googlecode.eyesfree.ocr">
 
 </manifest>

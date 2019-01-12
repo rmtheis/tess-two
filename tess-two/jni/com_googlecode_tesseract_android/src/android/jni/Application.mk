@@ -9,5 +9,5 @@ endif
 # Specify the hash namespace that we're using, based on the APP_STL we're using.
 APP_CFLAGS += -Werror -DHASH_NAMESPACE=__gnu_cxx -Wno-error=deprecated-register
 APP_PLATFORM := android-16
-APP_STL := gnustl_static
+APP_STL := c++_static
 NDK_TOOLCHAIN_VERSION := clang

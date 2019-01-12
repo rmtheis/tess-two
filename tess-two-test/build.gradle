@@ -1,14 +1,16 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
-        minSdkVersion 9
-        targetSdkVersion 22
+        minSdkVersion 16
+        targetSdkVersion 28
         versionCode 1
         versionName '1.0'
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
     sourceSets {
@@ -25,9 +27,16 @@ android {
             jniLibs.srcDirs = ['libs']
         }
     }
+
+    useLibrary 'android.test.runner'
+    useLibrary 'android.test.base'
 }
 
 dependencies {
     implementation project(':tess-two')
     testImplementation 'junit:junit:4.12'
+
+    // AndroidJUnitRunner and JUnit Rules
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    //androidTestImplementation 'com.android.support.test:rules:1.0.2'
 }
