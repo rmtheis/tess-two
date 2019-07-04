@@ -264,6 +264,30 @@ public class Pix {
         return nativeGetDepth(mNativePix);
     }
 
+    /**
+     * Returns the spp of this Pix.
+     *
+     * @return the spp of this Pix
+     */
+    public int getSpp() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
+        return nativeGetSpp(mNativePix);
+    }
+
+    /**
+     * Returns the imageFormat of this Pix.
+     *
+     * @return the imageFormat of this Pix
+     */
+    public int getImageFormat() {
+        if (mRecycled)
+            throw new IllegalStateException();
+
+        return nativeGetInputFormat(mNativePix);
+    }
+
     public int getRefCount() {
         return nativeGetRefCount(mNativePix);
     }
@@ -330,4 +354,30 @@ public class Pix {
     private static native int nativeGetDepth(long nativePix);
     private static native int nativeGetPixel(long nativePix, int x, int y);
     private static native void nativeSetPixel(long nativePix, int x, int y, int color);
+
+    private static native int nativeGetSpp(long nativePix);
+
+    /*! Image Formats */
+    public static final int IFF_UNKNOWN        = 0;
+    public static final int IFF_BMP            = 1;
+    public static final int IFF_JFIF_JPEG      = 2;
+    public static final int IFF_PNG            = 3;
+    public static final int IFF_TIFF           = 4;
+    public static final int IFF_TIFF_PACKBITS  = 5;
+    public static final int IFF_TIFF_RLE       = 6;
+    public static final int IFF_TIFF_G3        = 7;
+    public static final int IFF_TIFF_G4        = 8;
+    public static final int IFF_TIFF_LZW       = 9;
+    public static final int IFF_TIFF_ZIP       = 10;
+    public static final int IFF_PNM            = 11;
+    public static final int IFF_PS             = 12;
+    public static final int IFF_GIF            = 13;
+    public static final int IFF_JP2            = 14;
+    public static final int IFF_WEBP           = 15;
+    public static final int IFF_LPDF           = 16;
+    public static final int IFF_TIFF_JPEG      = 17;
+    public static final int IFF_DEFAULT        = 18;
+    public static final int IFF_SPIX           = 19;
+
+    private static native int nativeGetInputFormat(long nativePix);
 }

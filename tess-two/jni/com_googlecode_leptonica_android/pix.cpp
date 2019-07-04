@@ -246,6 +246,18 @@ jint Java_com_googlecode_leptonica_android_Pix_nativeGetPixel(JNIEnv *env, jclas
   return (jint) color;
 }
 
+jint Java_com_googlecode_leptonica_android_Pix_nativeGetSpp(JNIEnv *env, jclass clazz,
+                                                            jlong nativePix) {
+  PIX *pix = (PIX *) nativePix;
+  return pixGetSpp(pix);
+}
+
+jint Java_com_googlecode_leptonica_android_Pix_nativeGetInputFormat(JNIEnv *env, jclass clazz,
+                                                                    jlong nativePix) {
+  PIX *pix = (PIX *) nativePix;
+  return pixGetInputFormat(pix);
+}
+
 #ifdef __cplusplus
 }
 #endif  /* __cplusplus */
