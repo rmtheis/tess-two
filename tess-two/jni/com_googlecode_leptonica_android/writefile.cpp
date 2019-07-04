@@ -62,7 +62,7 @@ jboolean Java_com_googlecode_leptonica_android_WriteFile_nativeWriteImpliedForma
 
   jboolean result = JNI_TRUE;
 
-  if (pixWriteImpliedFormat(c_fileName, pixs, 0, JNI_FALSE)) {
+  if (pixWriteImpliedFormat(c_fileName, pixs, 85, JNI_FALSE)) {
     LOGE("could not write pix data to %s", c_fileName);
     result = JNI_FALSE;
   }
