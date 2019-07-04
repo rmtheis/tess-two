@@ -56,7 +56,7 @@ public class WriteFileTest extends TestCase {
         pix.recycle();
         bmp.recycle();
 
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match. match=" + match, (match >= 0.9999f));
     }
 
     @SmallTest
@@ -86,7 +86,7 @@ public class WriteFileTest extends TestCase {
         pixs.recycle();
         pixd.recycle();
 
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match. match=" + match, (match >= 0.9999f));
     }
 
     @SmallTest
@@ -127,6 +127,6 @@ public class WriteFileTest extends TestCase {
         float match = TestUtils.comparePix(pixs, pixd);
         pixd.recycle();
 
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match. match=" + match, (match >= 0.9999f));
     }
 }
