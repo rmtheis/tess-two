@@ -45,17 +45,18 @@ public class WriteFileTest extends TestCase {
 
     private void testWriteBitmap(int width, int height) {
         Pix pix = TestUtils.createTestPix(width, height);
-        Bitmap bmp = WriteFile.writeBitmap(pix);
+        Pix pcopy = pix.copy();                      // keep unchanged copy
+        Bitmap bmp = WriteFile.writeBitmap(pix);     // pix changed
 
         assertNotNull(bmp);
         assertEquals(pix.getWidth(), bmp.getWidth());
         assertEquals(pix.getHeight(), bmp.getHeight());
 
-        float match = TestUtils.compareImages(pix, bmp);
+        float match = TestUtils.compareImages(pcopy, bmp); // compare against the unchanged copy
         pix.recycle();
         bmp.recycle();
 
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match. match=" + match, (match >= 0.9999f));
     }
 
     @SmallTest
@@ -85,7 +86,7 @@ public class WriteFileTest extends TestCase {
         pixs.recycle();
         pixd.recycle();
 
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match. match=" + match, (match >= 0.9999f));
     }
 
     @SmallTest
@@ -126,6 +127,6 @@ public class WriteFileTest extends TestCase {
         float match = TestUtils.comparePix(pixs, pixd);
         pixd.recycle();
 
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match. match=" + match, (match >= 0.9999f));
     }
 }

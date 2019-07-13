@@ -59,7 +59,7 @@ public class ReadFileTest extends TestCase {
         assertEquals(bmp.getHeight(), pix.getHeight());
 
         float match = TestUtils.compareImages(pix, bmp);
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match. match=" + match, (match >= 0.9999f));
 
         bmp.recycle();
         pix.recycle();
@@ -80,7 +80,7 @@ public class ReadFileTest extends TestCase {
         assertEquals(bmp.getHeight(), pix.getHeight());
 
         float match = TestUtils.compareImages(pix, bmp);
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match. match=" + match, (match >= 0.9999f));
 
         fileStream.close();
         bmp.recycle();
@@ -102,7 +102,7 @@ public class ReadFileTest extends TestCase {
         assertEquals(bmp.getHeight(), pix.getHeight());
 
         float match = TestUtils.compareImages(pix, bmp);
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match. match=" + match, (match >= 0.9999f));
 
         fileStream.close();
         bmp.recycle();
@@ -124,7 +124,7 @@ public class ReadFileTest extends TestCase {
         assertEquals(bmp.getHeight(), pix.getHeight());
 
         float match = TestUtils.compareImages(pix, bmp);
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match. match=" + match, (match >= 0.9999f));
 
         fileStream.close();
         bmp.recycle();
@@ -170,7 +170,7 @@ public class ReadFileTest extends TestCase {
         assertEquals(bmp.getHeight(), pix.getHeight());
 
         float match = TestUtils.compareImages(pix, bmp);
-        assertTrue("Images do not match. match=" + match, (match >= 0.99f));
+        assertTrue("Images do not match. match=" + match, (match >= 0.9999f));
 
         byteStream.close();
         bmp.recycle();

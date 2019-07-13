@@ -55,6 +55,17 @@ public class TestUtils {
                 if (a.getPixel(x, y) == b.getPixel(x, y)) {
                     found++;
                 }
+                // Jpeg compression does not support alpha channel, introduces some noise in the low bit
+                else if (a.getImageFormat() == Pix.IFF_JFIF_JPEG) {
+                    if ( (a.getPixel(x, y) & 0xfefefe) == (b.getPixel(x, y) & 0xfefefe) ) {
+                        found++;
+                    }
+                }
+                else if (a.getSpp() < 4) {
+                    if ( (a.getPixel(x, y) & 0xffffff) == (b.getPixel(x, y) & 0xffffff) ) {
+                        found++;
+                    }
+                }
             }
         }
 
@@ -68,6 +79,17 @@ public class TestUtils {
             for (int x = 0; x < a.getWidth(); x++) {
                 if (a.getPixel(x, y) == b.getPixel(x, y)) {
                     found++;
+                }
+                // Jpeg compression does not support alpha channel, introduces some noise in the low bit
+                else if (a.getImageFormat() == Pix.IFF_JFIF_JPEG || b.getImageFormat() == Pix.IFF_JFIF_JPEG) {
+                    if ( (a.getPixel(x, y) & 0xfefefe) == (b.getPixel(x, y) & 0xfefefe) ) {
+                        found++;
+                    }
+                }
+                else if (a.getSpp() < 4 || b.getSpp() < 4) {
+                    if ( (a.getPixel(x, y) & 0xffffff) == (b.getPixel(x, y) & 0xffffff) ) {
+                        found++;
+                    }
                 }
             }
         }
