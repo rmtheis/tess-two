@@ -71,8 +71,6 @@ _On Windows:_
     preparetests.cmd
     gradlew connectedAndroidTest
 
-Note that some tests will fail due to existing issues.
-
 # Removing
 
 If you want to remove your app's dependency on the tess-two module, reverse
