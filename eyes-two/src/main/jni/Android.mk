@@ -1,8 +1,7 @@
-# Set this to the absolute path of the tesseract-android-tools project.
-TESSERACT_TOOLS_PATH := $(call my-dir)/../../../../tess-two
+out_path := $(realpath $(NDK_OUT))
+out_path := $(out_path:$(realpath $(out_path)/../../../..)%=%)
+TESSERACT_TOOLS_PATH := $(TESSERACT_BUILD_PATH)/$(out_path)/local
 
-# Do not modify anything below this line.
-
-PREBUILT_PATH := $(TESSERACT_TOOLS_PATH)/libs/$(TARGET_ARCH_ABI)
+PREBUILT_PATH := $(TESSERACT_TOOLS_PATH)/$(TARGET_ARCH_ABI)
 
 include $(call all-subdir-makefiles)

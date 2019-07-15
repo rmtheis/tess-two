@@ -1,9 +1,4 @@
-import org.apache.tools.ant.taskdefs.condition.Os
-
 apply plugin: 'com.android.library'
-
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
 android {
     compileSdkVersion 28
@@ -14,51 +9,25 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName '1.0'
-    }
 
-    sourceSets {
-        main {
-            jni.srcDirs = []
-            jniLibs.srcDirs = ['src/main/libs']
+        externalNativeBuild {
+            ndkBuild {
+                arguments "TESSERACT_BUILD_PATH=${project(':tess-two').getBuildDir().path}"
+            }
         }
     }
 
-    // Call external ndk-build(.cmd) script to build the native code
-    task ndkBuild(type: Exec) {
-        def ndkDirProperty = properties.getProperty('ndk.dir')
-        def ndkDirPrefix = ndkDirProperty != null ? ndkDirProperty + '/' : ''
-
-        def ndkBuildExt = Os.isFamily(Os.FAMILY_WINDOWS) ? ".cmd" : ''
-
-        commandLine "${ndkDirPrefix}ndk-build${ndkBuildExt}", '-C', file('src/main').absolutePath,
-                '-j', Runtime.runtime.availableProcessors()
-    }
-
-    tasks.withType(JavaCompile) {
-        compileTask -> compileTask.dependsOn ndkBuild
-    }
-
-    // Cleanup task to remove previously generated binaries
-    task ndkClean(type: Exec) {
-        def ndkDirProperty = properties.getProperty('ndk.dir')
-        def ndkDirPrefix = ndkDirProperty != null ? ndkDirProperty + '/' : ''
-
-        def ndkBuildExt = Os.isFamily(Os.FAMILY_WINDOWS) ? ".cmd" : ''
-
-        commandLine "${ndkDirPrefix}ndk-build${ndkBuildExt}",'-C', file('src/main').absolutePath, 'clean'
-    }
-
-    tasks.withType(Delete) {
-        cleanTask -> cleanTask.dependsOn ndkClean
+    externalNativeBuild {
+        ndkBuild {
+            path "src/main/jni/Android.mk"
+        }
     }
 
     lintOptions {
         abortOnError false
     }
-
 }
 
 dependencies {
     implementation project(':tess-two')
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
 }

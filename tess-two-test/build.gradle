@@ -24,7 +24,6 @@ android {
             aidl.srcDirs = ['src']
             java.srcDirs = ['src']
             res.srcDirs = ['res']
-            jniLibs.srcDirs = ['libs']
         }
     }
 
@@ -34,7 +33,6 @@ android {
 
 dependencies {
     implementation project(':tess-two')
-    testImplementation 'junit:junit:4.12'
 
     // AndroidJUnitRunner and JUnit Rules
     androidTestImplementation 'com.android.support.test:runner:1.0.2'

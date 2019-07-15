@@ -1,5 +1,3 @@
-import org.apache.tools.ant.taskdefs.condition.Os
-
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
@@ -24,43 +22,17 @@ android {
             manifest.srcFile 'AndroidManifest.xml'
             java.srcDirs = ['src']
             res.srcDirs = ['res']
-            jni.srcDirs = []
-            jniLibs.srcDirs = ['libs']
         }
     }
 
-    // Call external ndk-build(.cmd) script to build the native code
-    task ndkBuild(type: Exec) {
-        def ndkDirProperty = properties.getProperty('ndk.dir')
-        def ndkDirPrefix = ndkDirProperty != null ? ndkDirProperty + '/' : ''
-
-        def ndkBuildExt = Os.isFamily(Os.FAMILY_WINDOWS) ? ".cmd" : ""
-
-        commandLine "${ndkDirPrefix}ndk-build${ndkBuildExt}", '-C', file('.').absolutePath,
-				'-j', Runtime.runtime.availableProcessors()
-    }
-
-    tasks.withType(JavaCompile) {
-        compileTask -> compileTask.dependsOn ndkBuild
-    }
-
-    // Cleanup task to remove previously generated binaries
-    task ndkClean(type: Exec) {
-        def ndkDirProperty = properties.getProperty('ndk.dir')
-        def ndkDirPrefix = ndkDirProperty != null ? ndkDirProperty + '/' : ''
-
-        def ndkBuildExt = Os.isFamily(Os.FAMILY_WINDOWS) ? ".cmd" : ""
-
-        commandLine "${ndkDirPrefix}ndk-build${ndkBuildExt}", '-C', file('.').absolutePath, 'clean'
-    }
-
-    tasks.withType(Delete) {
-        cleanTask -> cleanTask.dependsOn ndkClean
+    externalNativeBuild {
+        ndkBuild {
+            path "jni/Android.mk"
+        }
     }
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "com.android.support:support-annotations:28.0.0"
 }
 
