@@ -412,11 +412,11 @@ public class Pixa implements Iterable<Pix> {
 
     /**
      * Replaces the Pix and Box at the specified index with the specified Pix
-     * and Box, both of which may be recycled after calling this method.
+     * and Box, both of which should not be recycled after calling this method.
      *
      * @param index The index of the Pix to replace.
-     * @param pix The Pix to replace the existing Pix.
-     * @param box The Box to replace the existing Box.
+     * @param pix The Pix to replace the existing Pix; it becomes an alias of the one stored in Pixa.
+     * @param box The Box to replace the existing Box; it becomes an alias of the one stored in Pixa.
      */
     public void replacePix(int index, Pix pix, Box box) {
         if (mRecycled)
