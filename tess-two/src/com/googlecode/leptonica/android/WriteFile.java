@@ -103,9 +103,12 @@ public class WriteFile {
      * Writes a Pix to an Android Bitmap object. The output Bitmap will always
      * be in ARGB_8888 format, but the input Pixs may be any bit-depth.
      *
+     * Warning: This method alters the original source image! Using the source
+     * image after calling this method is not recommended.
+     *
      * @param pixs The source image.
-     * @return a Bitmap containing a copy of the source image, or <code>null
-     *         </code> on failure
+     * @return a Bitmap containing a modified copy of the source image, or
+     *         <code>null</code> on failure
      */
     public static Bitmap writeBitmap(Pix pixs) {
         if (pixs == null)
