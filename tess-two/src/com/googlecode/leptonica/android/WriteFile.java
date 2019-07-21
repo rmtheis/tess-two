@@ -107,8 +107,8 @@ public class WriteFile {
      * image after calling this method is not recommended.
      *
      * @param pixs The source image.
-     * @return a Bitmap containing a modified copy of the source image, or
-     *         <code>null</code> on failure
+     * @return a Bitmap containing a copy of the source image, or <code>null
+     *         </code> on failure
      */
     public static Bitmap writeBitmap(Pix pixs) {
         if (pixs == null)
