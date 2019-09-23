@@ -16,7 +16,7 @@
 
 package com.googlecode.leptonica.android;
 
-import android.support.annotation.IntRange;
+import androidx.annotation.IntRange;
 
 /**
  * @author alanv@google.com (Alan Viverette)

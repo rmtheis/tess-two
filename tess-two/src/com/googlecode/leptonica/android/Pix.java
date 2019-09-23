@@ -17,8 +17,8 @@
 package com.googlecode.leptonica.android;
 
 import android.graphics.Rect;
-import android.support.annotation.ColorInt;
-import android.support.annotation.Size;
+import androidx.annotation.ColorInt;
+import androidx.annotation.Size;
 
 /**
  * Java representation of a native Leptonica PIX object.

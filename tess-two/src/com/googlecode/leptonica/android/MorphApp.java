@@ -16,7 +16,7 @@
 
 package com.googlecode.leptonica.android;
 
-import android.support.annotation.IntDef;
+import androidx.annotation.IntDef;
 
 import java.lang.annotation.Retention;
 

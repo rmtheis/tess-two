@@ -18,7 +18,7 @@ package com.googlecode.leptonica.android;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
-import android.support.annotation.IntRange;
+import androidx.annotation.IntRange;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

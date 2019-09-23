@@ -21,8 +21,9 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
 import android.test.suitebuilder.TestSuiteBuilder;
+
+import androidx.annotation.NonNull;
 
 import com.googlecode.leptonica.android.test.ReadFileTest;
 
@@ -31,8 +32,8 @@ import junit.framework.TestSuite;
 
 import java.io.IOException;
 
-import static android.support.test.InstrumentationRegistry.getInstrumentation;
-import static android.support.test.InstrumentationRegistry.getTargetContext;
+import static androidx.test.InstrumentationRegistry.getTargetContext;
+import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 
 /**
  * To run all suites found in this apk:

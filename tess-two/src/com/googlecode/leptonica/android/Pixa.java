@@ -17,7 +17,7 @@
 package com.googlecode.leptonica.android;
 
 import android.graphics.Rect;
-import android.support.annotation.Size;
+import androidx.annotation.Size;
 import android.util.Log;
 
 import java.io.File;
