@@ -1,7 +1,45 @@
 # Change Log
 
-## [Unreleased](https://github.com/rmtheis/tess-two/tree/HEAD)
-[Full Changelog](https://github.com/rmtheis/tess-two/compare/9.0.0...HEAD)
+## [9.1.0](https://github.com/rmtheis/tess-two/tree/9.1.0) (2019-10-19)
+[Full Changelog](https://github.com/rmtheis/tess-two/compare/9.0.0...9.1.0)
+
+**Fixed bugs:**
+
+- WriteFile.writeBytes altering the source image endiannes and producing artefacts [\#228](https://github.com/rmtheis/tess-two/issues/228)
+- Crashing reported on 64-bit devices [\#197](https://github.com/rmtheis/tess-two/issues/197)
+- testPixaReplacePix crashes in native code [\#159](https://github.com/rmtheis/tess-two/issues/159)
+- ReadFile.readBitmap alters image colors [\#87](https://github.com/rmtheis/tess-two/issues/87)
+
+**Closed issues:**
+
+- read Jpeg and PNG produce wrong alpha in 32bpp pix [\#264](https://github.com/rmtheis/tess-two/issues/264)
+- Native crush when 'vert'.tessdata is used [\#263](https://github.com/rmtheis/tess-two/issues/263)
+- In versions higher than 5.4.1 TessBaseAPI.ProgressNotifier never called [\#262](https://github.com/rmtheis/tess-two/issues/262)
+- Decoding is slow when multiple languages are used [\#261](https://github.com/rmtheis/tess-two/issues/261)
+- Getting different results when using tesseract on mobile vs on PC using Python. [\#260](https://github.com/rmtheis/tess-two/issues/260)
+-  Illegible words recognition in Persian lang   [\#259](https://github.com/rmtheis/tess-two/issues/259)
+- Could not initialize Tesseract API with language=ces! [\#258](https://github.com/rmtheis/tess-two/issues/258)
+- Can't lanch [\#257](https://github.com/rmtheis/tess-two/issues/257)
+- Tess4 initialize crash [\#255](https://github.com/rmtheis/tess-two/issues/255)
+- tess4 on android studio [\#254](https://github.com/rmtheis/tess-two/issues/254)
+- How I can init the tesseract to work only with digits? [\#253](https://github.com/rmtheis/tess-two/issues/253)
+- java.lang.NoSuchFieldError: no "I" field "mNativeData" in class "Lcom/googlecode/tesseract/android/TessBaseAPI;" or its superclasses [\#252](https://github.com/rmtheis/tess-two/issues/252)
+- java.lang.NoSuchFieldError: no "I" field "mNativeData" in class "Lcom/googlecode/tesseract/android/TessBaseAPI;" or its superclasses [\#251](https://github.com/rmtheis/tess-two/issues/251)
+- Arabic trained-data produce 20% accuracy  [\#250](https://github.com/rmtheis/tess-two/issues/250)
+- import tess two error [\#249](https://github.com/rmtheis/tess-two/issues/249)
+- error in Android 7.0 [\#248](https://github.com/rmtheis/tess-two/issues/248)
+- How to build tess-two without JNI? [\#247](https://github.com/rmtheis/tess-two/issues/247)
+- Initializing TessBaseAPI crashes app [\#246](https://github.com/rmtheis/tess-two/issues/246)
+- OCR number [\#245](https://github.com/rmtheis/tess-two/issues/245)
+- compile binary only [\#244](https://github.com/rmtheis/tess-two/issues/244)
+- Skip tesseract's default image preprocessing \(Otsu\) [\#243](https://github.com/rmtheis/tess-two/issues/243)
+- How to add OPTITypewriter-Special font [\#242](https://github.com/rmtheis/tess-two/issues/242)
+- Special requirements for Hindi and Arabic OCR [\#239](https://github.com/rmtheis/tess-two/issues/239)
+
+**Merged pull requests:**
+
+- fix Java tests for leptronica [\#265](https://github.com/rmtheis/tess-two/pull/265) ([alexcohn](https://github.com/alexcohn))
+- Update to support latest Android Studio [\#256](https://github.com/rmtheis/tess-two/pull/256) ([Robyer](https://github.com/Robyer))
 
 ## [9.0.0](https://github.com/rmtheis/tess-two/tree/9.0.0) (2018-04-20)
 [Full Changelog](https://github.com/rmtheis/tess-two/compare/8.0.0...9.0.0)
