@@ -3,7 +3,7 @@
 This project won't be receiving further updates or maintenance.
 
 Please consider trying one of the forks of this project such as 
-[https://github.com/alexcohn/tess-two](https://github.com/alexcohn/tess-two).
+[https://github.com/adaptech-cz/Tesseract4Android](https://github.com/adaptech-cz/Tesseract4Android).
 
 # tess-two
 
